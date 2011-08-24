@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<components-simulator.xml>
+    <management-server class="com.cloud.server.ManagementServerSimulatorImpl" library="com.cloud.configuration.SimulatorComponentLibrary" extends="components-premium.xml:management-server">
+        <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
+             <param name="premium">true</param>
+        </dao>
+        <adapters key="com.cloud.ha.Investigator">
+            <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
+            <adapter name="PingInvestigator" class="com.cloud.ha.UserVmDomRInvestigator"/>
+			<adapter name="ManagementIPSysVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator"/>
+        </adapters>
+        <adapters key="com.cloud.resource.Discoverer">
+            <adapter name="Simulator Agent" class="com.cloud.resource.SimulatorDiscoverer"/>
+            <adapter name="SecondaryStorage" class="com.cloud.resource.SimulatorSecondaryDiscoverer"/>
+        </adapters>
+        <adapters key="com.cloud.alert.AlertAdapter">
+            <adapter name="ClusterAlert" class="com.cloud.alert.ClusterAlertAdapter"/>
+            <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter"/>
+            <adapter name="SecondaryStorageVmAlert" class="com.cloud.alert.SecondaryStorageVmAlertAdapter"/>
+        </adapters>
+        <adapters key="com.cloud.hypervisor.HypervisorGuru">
+            <adapter name="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru"/>
+        </adapters>
+        <adapters key="com.cloud.agent.StartupCommandProcessor">
+            <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
+        </adapters>
+    </management-server>
+
+    <configuration-server class="com.cloud.server.ConfigurationServerImpl" extends="components.xml:configuration-server">
+        <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
+             <param name="premium">true</param>
+        </dao>
+    </configuration-server>
+    
+</components-simulator.xml>

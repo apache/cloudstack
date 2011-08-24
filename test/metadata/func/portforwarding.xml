@@ -1,0 +1,1050 @@
+<portforwardtest>
+
+<!--  make preparations for test - deploy a VM, got an additional ip address -->
+
+	<command>
+		<name>createAccount</name>
+		<testcase>	[Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>pfuser@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>pfuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>pfuserlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>	[List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>			
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>portforwardingregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>portforwardingregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- 	<command>
+		<name>createUser</name>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>pfuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>pfuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>pfuserlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>pfuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernamevar</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy Virtual Machine in the created Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>PortForwarding-VM-1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listRouters</name>
+		<testcase>	[List the Created DomR for the Account]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>zoneid</name>
+			<param>globalzoneid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+			<item setparam="true">
+				<name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>associateIpAddress</name>
+		<testcase>	[Acquire a new IP Address for the Account]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>zoneid</name>
+			<param>globalzoneid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!--  Test case 323 - create port forwarding rule for sourcenat ip address -->
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>323 [Create Port Forwarding Rule from Source NAT ip address]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>sourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>22</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>22</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<!--  Test case 324 - create port forwarding rule for non-sourcenate ip address -->
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>324 [Create Port Forwarding Rule from Non-Source NAT ip address]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>22</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>22</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 325 - create port forwarding rule with protocol TCP -->
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>325 [Create Port Forwarding Rule with TCP protocol]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>23</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>23</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 326 - create port forwarding rule with protocol UDP -->
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>326 [Create Port Forwarding Rule with UDP protocol]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>345</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>345</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>udp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 327 - update existing port forwarding rule -->
+<!-- 
+	<command>
+		<name>updatePortForwardingRule</name>
+		<testcase>327</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>24</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>23</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>udp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+-->	
+<!--  Test case 328 - bug 6159 - verify that you can create portForwarding rules with the same parameters for UDP/TCP -->
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>328 [Create Port Forwarding Rule with TCP protocol] </testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>328 [Create Port Forwarding Rule with same parameters with UDP protocol]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>udp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+<!--  Test case 329 - delete portForwarding rule -->
+	<command>
+		<name>associateIpAddress</name>
+		<testcase>	[Acquire IP Address for the account (del pf rule exercise begin) ] </testcase>
+		<parameters>
+		<item getparam="true">
+			<name>zoneid</name>
+			<param>globalzoneid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>	[Create Port Forwarding Rule with the acquired IP Address] </testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip1</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>udp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>id</name>
+				<param>portforwardingruleid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deletePortForwardingRule</name>
+		<testcase>329 [Delete Port Forwarding Rule]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>portforwardingruleid1</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listPortForwardingRules</name>
+		<testcase>329 [Try to list the Deleted Port Forwarding Rules (del pf rule exercise end)]</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+		</returnvalue>
+	</command>
+
+<!--  test case 331 - delete non source nat public ip address and make sure that all port forwarding rules for this ip got removed as well -->
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>	[Create Port Forwarding Rule with the Non-Source NAT IP Address (del ip exercise begin)] </testcase>
+		<parameters>
+		<item getparam="true">
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>nonsourcenatpublicip1</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>25</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>udp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>id</name>
+				<param>portforwardingruleid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>disassociateIpAddress</name>
+		<testcase>	[Release the Non-Source NAT IP Address] </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listPortForwardingRules</name>
+		<testcase>331 [Try to List the Port Forwarding Rules created from Released IP Address(del ip exercise end)]</testcase>
+		<error>true</error>
+		<parameters>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+		</returnvalue>
+	</command>
+	
+<!--  Test case 332 - try to create a port forwarding rule with the parameters that are already in use by existing load balancing rule - Negative case-->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<testcase>	[Create Load Balancing Rule Inorder to test PF-LBrule collision (pf-lb collision exercise begin)] </testcase>
+		<parameters>
+		<item getparam="true"> 
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>publicip</name>
+			<param>sourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>220</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>220</value>
+		</item>
+		<item>
+			<name>algorithm</name>
+			<value>roundrobin</value>
+		</item>
+		<item random="true">
+			<name>name</name>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue>
+		<item setparam="true">
+			<name>id</name>
+			<param>lbid</param>
+		</item>
+		</returnvalue>
+	</command>
+	
+	
+	<command>
+		<name>assignToLoadBalancerRule</name>
+		<testcase>	[Assign the Created LB Rule to the VM created in the Test] </testcase>
+		<parameters>
+		<item getparam="true"> 
+			<name>virtualmachineids</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>id</name>
+			<param>lbid</param>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>	[Create Port Forwarding Rule to test PF-LBrule collision (pf-lb rule collison exercise end)] </testcase>
+		<testcase>332</testcase>
+		<error>true</error>
+		<parameters>
+		<item getparam="true"> 
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>sourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>220</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>220</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+<!--  test case 336 - try to add a new port forwarding rule when domR is stopped -->
+	<command>
+		<name>stopRouter</name>
+		<testcase>	[	Stop the DomR (add new pfrule when domR is stopped exercise begin)] </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>336 [Create Port Forwarding Rule with the Source NAT IP Address]</testcase>
+		<parameters>
+		<item getparam="true"> 
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>sourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>336</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>336</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startRouter</name>
+		<testcase>	[Start the DomR (add new pfrule when domR is stopped exercise end)] </testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!--  test case 337 - try to update an existing port forwarding rule when domR is stopped - negative case -->
+
+		<command>
+		<name>createPortForwardingRule</name>
+		<testcase>337 [Create Port Forwarding Rule with the Source NAT IP Address]</testcase>
+		<parameters>
+		<item getparam="true"> 
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>sourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>337</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>337</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>id</name>
+				<param>portforwardingruleid_forremove</param>
+			</item>
+		</returnvalue>
+	</command>
+<!-- 
+		THIS CASE IS OBSOLETE AS WE NO LONGER ALLOW TO UPDATE A PF RULE
+			
+	<command>
+		<name>stopRouter</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createPortForwardingRule</name>
+		<testcase>337</testcase>
+		<error>true</error>
+		<parameters>
+		<item getparam="true"> 
+			<name>privateip</name>
+			<param>vmipaddress</param>
+		</item>
+		<item getparam="true">
+			<name>ipaddress</name>
+			<param>sourcenatpublicip</param>
+		</item>
+		<item>
+			<name>privateport</name>
+			<value>338</value>
+		</item>
+		<item>
+			<name>publicport</name>
+			<value>337</value>
+		</item>
+		<item>
+			<name>protocol</name>
+			<value>tcp</value>
+		</item>
+		<item getparam="true">
+			<name>virtualmachineid</name>
+			<param>vmid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startRouter</name>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+-->
+	
+<!--  Test case 338 - delete existing port forwarding rule while domR is stopped -->
+	<command>
+		<name>stopRouter</name>
+		<testcase>	[Stop the DomR (del pf rule exercise begin)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>deletePortForwardingRule</name>
+		<testcase>338 [Delete Port Forwarding Rule]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>portforwardingruleid_forremove</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startRouter</name>
+		<testcase>	[Start the DomR (del pf rule exercise end)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+
+<!-- Cleanup section -->
+	<command>
+		<name>deleteAccount</name>
+		<testcase>	[Delete Account as part of Clean Up]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+
+</portforwardtest>

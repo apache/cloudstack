@@ -1,0 +1,2364 @@
+<sanity>
+
+<!-- Test case #   - Create the Account and a User -->
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>user@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>userlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatelimit</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+				<value>Unlimited</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+		</returnvalue>
+	</command>
+
+	<!-- Test case #5 - listUsers command -->
+	<command>
+		<name>listUsers</name>
+		<testcase>  5 [List the Created User in (3)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+		
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>user</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>userlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>user@gmail.com</value>
+			</item>
+			<item setparam="true">
+				<name>created</name>
+				<param>createtimestamp</param>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>			
+		</returnvalue>
+	</command>
+
+<!-- Test case #3 - createUser command -->
+<!-- <command>
+		<name>createUser</name>
+		<testcase>3</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+			    <name>username</name>
+			    <param>usernameparam</param>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>alena123</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item getparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>state</name>
+				<value>enabled</value>
+			</item>
+		</returnvalue>
+	</command>
+-->	
+	<command>
+		<name>registerUserKeys</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>regression_user_network</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>regression_user_network</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Test case #950 - listAccounts -->
+	<command>
+		<name>listAccounts</name>
+		<usercommand>true</usercommand>
+		<testcase>950</testcase>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domain</name>
+				<value>ROOT</value>
+			</item>
+			<item>
+				<name>receivedbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>sentbytes</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>ipavailable</name>
+			</item>
+			<item>
+				<name>iptotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>iplimit</name>
+			</item>
+			<item>
+				<name>vmavailable</name>
+			</item>
+			<item>
+				<name>vmlimit</name>
+			</item>
+			<item>
+				<name>vmtotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmstopped</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>vmrunning</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumelimit</name>
+			</item>
+			<item>
+				<name>volumetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>volumeavailable</name>
+			</item>
+			<item>
+				<name>snapshotlimit</name>
+			</item>
+			<item>
+				<name>snapshottotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>snapshotavailable</name>
+			</item>
+			<item>
+				<name>templatelimit</name>
+			</item>
+			<item>
+				<name>templatetotal</name>
+				<value>0</value>
+			</item>
+			<item>
+				<name>templateavailable</name>
+			</item>
+		</returnvalue>
+	</command>	
+
+	
+	<!-- Test case #13 - deployVirtualMachine command -->
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>13</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>RegularUser-VM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>			
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>RegularUser-VM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case #957 - listVirtualMachines command -->
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<testcase>957</testcase>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>RegularUser-VM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+		</returnvalue>
+	</command>			
+	
+	<!-- Test case #35 - listRouters command -->
+	<command>
+		<name>listRouters</name>
+		<testcase>35</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue list="true">
+			<name>router</name>
+		    <element>0</element>
+			<item setparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+			<item setparam="true">
+				<name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item getparam="true">
+				<name>dns1</name>
+				<param>dns1</param>
+			</item>
+			<item getparam="true">
+				<name>dns2</name>
+				<param>dns2</param>
+			</item>
+			<item setparam="true">
+				<name>networkdomain</name>
+				<param>routernetworkdomain</param>
+			</item>
+			<item>
+				<name>gateway</name>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>routername</param>
+			</item>
+			<item>
+				<name>podid</name>
+			</item>
+			<item>
+				<name>privateip</name>
+			</item>
+			<item>
+				<name>privatemacaddress</name>
+			</item>
+			<item>
+				<name>privatenetmask</name>
+			</item>
+			<item setparam="true">
+				<name>publicmacaddress</name>
+				<param>routerpublicmacaddress</param>
+			</item>
+			<item setparam="true">
+				<name>guestipaddress</name>
+				<param>routeripaddress</param>
+			</item>
+			<item setparam="true" >
+				<name>guestmacaddress</name>
+				<param>routermacaddress</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>hostid</name>
+			</item>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<!-- Test case #546 - associateIpAddress command -->	
+	<command>
+		<name>associateIpAddress</name>
+		<usercommand>true</usercommand>
+		<testcase>546</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>zoneid</name>
+			<param>globalzoneid</param>
+		</item>
+		</parameters>
+		<returnvalue> 
+			<item setparam="true">
+				<name>id</name>
+				<param>nonsourcenatpublicipid</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+			<item>
+				<name>allocated</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>issourcenat</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!--  LOAD BALANCING RULES SECTION -->
+	
+	<!-- Test case #986 - create a load balancer -->
+	<command>
+		<name>createLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<testcase>986</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+			    <name>name</name>
+			    <param>lbname</param>
+			</item>
+			<item getparam="true">
+			    <name>publicipid</name>
+				<param>sourcenatpublicipid</param>
+			</item>
+			<item randomnumber="true" setparam="true">
+			    <name>privateport</name>
+				<param>privateport</param>
+			</item>
+			<item randomnumber="true" setparam="true">
+			    <name>publicport</name>
+				<param>publicport</param>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>lbname</param>
+			</item>
+			<item getparam="true">
+				<name>privateport</name>
+				<param>privateport</param>
+			</item>
+			<item getparam="true">
+				<name>publicport</name>
+				<param>publicport</param>
+			</item>
+			<item>
+				<name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item getparam="true">
+				<name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	
+	<!-- Test case #988 - listLoadBalancerRules -->
+	<command>
+		<name>listLoadBalancerRules</name>
+		<usercommand>true</usercommand>
+		<testcase>988</testcase>
+		<empty>false</empty>
+	</command>
+	
+	
+	<!-- Test case #989 - assignToLoadBalancerRule -->
+	<command>
+		<name>assignToLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<testcase>989</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<!-- Test case #987 - deleteLoadBalancerRule; make sure to return the lb rule after the verification -->
+	<command>
+		<name>deleteLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<testcase>987</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>listLoadBalancerRules</name>
+		<usercommand>true</usercommand>
+		<empty>true</empty>
+	</command>
+	
+	<command>
+		<name>createLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true" setparam="true"> 
+			    <name>name</name>
+			    <param>lbname</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+			<item randomnumber="true" setparam="true">
+			    <name>privateport</name>
+				<param>privateport</param>
+			</item>
+			<item randomnumber="true" setparam="true">
+			    <name>publicport</name>
+				<param>publicport</param>
+			</item>
+			<item>
+			    <name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>lbname</param>
+			</item>
+			<item setparam="true">
+				<name>id</name>
+				<param>nonsourcenatpublicipid</param>
+			</item>
+			<item getparam="true">
+				<name>privateport</name>
+				<param>privateport</param>
+			</item>
+			<item getparam="true">
+				<name>publicport</name>
+				<param>publicport</param>
+			</item>
+			<item>
+				<name>algorithm</name>
+				<value>roundrobin</value>
+			</item>
+			<item getparam="true">
+				<name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>assignToLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+	<!-- Test case #991 - listLoadBalancerRuleInstances; make sure to return the lb rule after the verification -->
+	<command>
+		<name>listLoadBalancerRuleInstances</name>
+		<usercommand>true</usercommand>
+		<testcase>991</testcase>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<!-- Test case #990 - removeFromLoadBalancerRule -->
+	<command>
+		<name>removeFromLoadBalancerRule</name>
+		<usercommand>true</usercommand>
+		<testcase>990</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+			    <name>account</name>
+				<param>accountname</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>listLoadBalancerRuleInstances</name>
+		<usercommand>true</usercommand>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>lbid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<!--  PORT FORWARDING RULES SECTION -->
+	
+	<!-- Test case #965 - create a security group -->
+<!-- 	I NEED TO TAKE ADVICE FROM ALENA BEFORE I GO AHEAD WITH THIS SECTION
+		
+		<command>
+		<name>createPortForwardingService</name>
+		<usercommand>true</usercommand>
+		<testcase>965</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+			    <name>name</name>
+			    <param>pfgroupname</param>
+			</item>
+			<item>
+			    <name>description</name>
+				<value>none</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>pfgroupid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>pfgroupname</param>
+			</item>
+			<item>
+				<name>description</name>
+				<value>none</value>
+			</item>
+		</returnvalue>
+	</command>	
+-->	
+	<!-- Test case #972 - listPortForwardingServices-->
+<!-- <command>
+		<name>listPortForwardingServices</name>
+		<usercommand>true</usercommand>
+		<testcase>972</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>name</name>
+				<param>pfgroupname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>pfgroupid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>pfgroupname</param>
+			</item>
+			<item>
+				<name>description</name>
+				<value>none</value>
+			</item>
+		</returnvalue>
+	</command>	
+	
+-->	
+	<!-- Test case #967 - create a network rule -->
+<!-- 	<command>
+		<name>createPortForwardingServiceRule</name>
+		<usercommand>true</usercommand>
+		<testcase>967</testcase>
+		<parameters>
+			<item>
+			    <name>publicport</name>
+				<value>22</value>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>22</value>
+			</item>
+			<item getparam="true">
+			    <name>portforwardingserviceid</name>
+				<param>pfgroupid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>pfruleid</param>
+			</item>
+			<item getparam="true">
+				<name>portforwardingserviceid</name>
+				<param>pfgroupid</param>
+			</item>
+			<item>
+				<name>publicport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>privateport</name>
+				<value>22</value>
+			</item>
+		</returnvalue>
+	</command>	
+-->	
+	<!-- Test case #968 - listPortForwardingServiceRules -->
+<!-- <command>
+		<name>listPortForwardingServiceRules</name>
+		<usercommand>true</usercommand>
+		<testcase>968</testcase>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfgroupid</param>
+			</item>
+		</parameters>
+	</command>	
+-->	
+	
+	<!-- Test case #970 - assignPortForwardingService command -->
+<!-- 	<command>
+		<name>assignPortForwardingService</name>
+		<usercommand>true</usercommand>
+		<testcase>970</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfgroupid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+		</parameters>
+	</command>	
+-->	
+	<!-- Test case #973 - listPortForwardingServicesByVm command -->
+<!-- 	<command>
+		<name>listPortForwardingServicesByVm</name>
+		<usercommand>true</usercommand>
+		<testcase>973</testcase>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+			    <name>ipaddress</name>
+				<param>sourcenatpublicip</param>
+			</item>
+		</parameters>
+	</command>	
+-->	
+	
+	<!-- Test case #969 - deletePortForwardingServiceRule -->
+<!-- 	<command>
+		<name>deletePortForwardingServiceRule</name>
+		<usercommand>true</usercommand>
+		<testcase>969</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfruleid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>listPortForwardingServiceRules</name>
+		<usercommand>true</usercommand>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfgroupid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createPortForwardingServiceRule</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item>
+			    <name>publicport</name>
+				<value>22</value>
+			</item>
+			<item>
+			    <name>privateport</name>
+				<value>22</value>
+			</item>
+			<item getparam="true">
+			    <name>portforwardingserviceid</name>
+				<param>pfgroupid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>pfruleid</param>
+			</item>
+			<item getparam="true">
+				<name>portforwardingserviceid</name>
+				<param>pfgroupid</param>
+			</item>
+			<item>
+				<name>publicport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>privateport</name>
+				<value>22</value>
+			</item>
+		</returnvalue>
+	</command>	
+-->	
+	<!-- Test case #971 - removePortForwardingService command -->
+<!-- 	<command>
+		<name>removePortForwardingService</name>
+		<usercommand>true</usercommand>
+		<testcase>971</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfgroupid</param>
+			</item>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+			    <name>publicip</name>
+				<param>sourcenatpublicip</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>listPortForwardingServicesByVm</name>
+		<usercommand>true</usercommand>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+			    <name>ipaddress</name>
+				<param>sourcenatpublicip</param>
+			</item>
+		</parameters>
+	</command>	
+-->	
+
+	<!-- Test case #966 - deletePortForwardingService command -->
+<!-- 	<command>
+		<name>deletePortForwardingService</name>
+		<usercommand>true</usercommand>
+		<testcase>966</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfgroupid</param>
+			</item>
+		</parameters>
+	</command>	
+-->	
+	<!-- Test case #<add number> - listPortForwardingServices command -->
+<!-- <command>
+		<name>listPortForwardingServices</name>
+		<usercommand>true</usercommand>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>pfgroupid</param>
+			</item>
+			<item>
+			    <name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+			    <name>name</name>
+				<param>pfgroupname</param>
+			</item>
+		</parameters>
+	</command>	
+-->	
+	
+	<!-- Test case #15 - listVirtualMachines command -->
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<testcase>15</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>namefordisplay</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case #16 - rebootVirtualMachine command; verfiy that machine is in Running state after it's rebooted -->
+	<command>
+		<name>rebootVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>16</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case #17 - stopVirtualMachine command; verify that machine is in Stopped state after it's stopped -->
+	<command>
+		<name>stopVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>17</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!-- VOLUME COMMANDS -->	
+
+<!--  listVolumes command -->
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>DATADISK</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>datavolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!--  Detach volume command - detach volume from the vm and make sure that you don't see it in the list of volumes for this vm -->
+	<command>
+		<name>detachVolume</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>datavolumeid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>DATADISK</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	<!--  Create volume command - create a volume and make sure that it appeared in the list -->
+	<command>
+		<name>createVolume</name>
+		<usercommand>true</usercommand>
+		<testcase>1026</testcase>
+		<parameters>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>datavolumeid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	
+	<!--  Attach volume command - attach volume from to the vm and make sure that you see it in the list of volumes for this vm -->
+	<command>
+		<name>attachVolume</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>datavolumeid</param>
+			</item>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVolumes</name>
+		<usercommand>true</usercommand>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>DATADISK</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	<!--  Delete volume command - delete volume and make sure that you don't see it in the list of volumes any more -->
+	<command>
+		<name>createVolume</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>datavolumeid1</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>deleteVolume</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>datavolumeid1</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>listVolumes</name>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>datavolumeid1</param>
+			</item>
+		</parameters>
+	</command>	
+	
+
+<!--  SNAPSHOT COMMANDS -->	
+	<!-- Test case #<> - createSnapshot command; verify that snapshot got created -->
+	<command>
+		<name>createSnapshot</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>datavolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snapshotid1</param>
+			</item>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>datavolumeid</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>name</name>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listSnapshots</name>
+		<usercommand>true</usercommand>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>datavolumeid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case #24 - deleteSnapshot command; verify that you got true, and listSnapshots doesn't display anything -->
+	<command>
+		<name>deleteSnapshot</name>
+		<usercommand>true</usercommand>
+		<testcase>24</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>snapshotid1</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case #26 - listSnapshots command -->
+	<command>
+		<name>listSnapshots</name>
+		<usercommand>true</usercommand>
+		<testcase>26</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>datavolumeid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case #958 - createTemplate command -->
+	<command>
+		<name>createSnapshot</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>datavolumeid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>snapshotid1</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>958</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>snapshotid</name>
+				<param>snapshotid1</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>ispublic</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>passwordenabled</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Test case #27 - listTemplates command -->
+	<command>
+		<name>listTemplates</name>
+		<usercommand>true</usercommand>
+		<testcase>27</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+		    </item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>ispublic</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>passwordenabled</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Test case - updateTemplate command -->
+	<command>
+		<name>updateTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>Update template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>blahblahblah</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>blah</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listTemplates</name>
+		<usercommand>true</usercommand>
+		<testcase>List updated template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+		    </item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>displaytext</name>
+				<value>blahblahblah</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case - listTemplatePermissions command -->
+	<command>
+		<name>listTemplatePermissions</name>
+		<usercommand>true</usercommand>
+		<testcase>list template permissions command</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>ispublic</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case - updateTemplate command -->
+	<command>
+		<name>updateTemplatePermissions</name>
+		<usercommand>true</usercommand>
+		<testcase>update template permissions</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>ispublic</name>
+				<value>true</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listTemplates</name>
+		<usercommand>true</usercommand>
+		<testcase>List template with updated permission</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+		    </item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>ispublic</name>
+				<value>true</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case #959 - deleteTemplate command -->
+	<command>
+		<name>deleteTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>959</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listTemplates</name>
+		<usercommand>true</usercommand>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+		    </item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase> Stop the VM before changing the Service</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case #20 - changeServiceOffering command; make sure that vm has correct service offering assigned -->
+	<command>
+		<name>changeServiceForVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>20</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>serviceofferingid</name>
+				<value>2</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+			<item>
+				<name>serviceofferingid</name>
+				<value>2</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<!-- Test case #19 - resetpassword for virtual machine; make sure the machine is in Running state after it comes back -->
+	<command>
+		<name>resetPasswordForVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>19</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>password</name>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Test case #18 - stop vm than start it; verify that VM status is Running -->
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>startVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>18</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>zonename</name>
+				<param>globalzonename</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>serviceofferingid</name>
+				<value>2</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Test case #21- enable/disable HA for the VM; verify that HA is enabled -->
+	<command>
+		<name>updateVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>true</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<testcase>21</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>haenable</name>
+				<value>true</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>updateVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<usercommand>true</usercommand>
+		<testcase>21</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	
+	<!-- Test case #547- list IP addresses for the account -->
+	<command>
+		<name>listPublicIpAddresses</name>
+		<usercommand>true</usercommand>
+		<testcase>547</testcase>
+	</command>
+	
+	
+	<!-- Test case #548- disassociate ip address -->
+	<command>
+		<name>disassociateIpAddress</name>
+		<usercommand>true</usercommand>
+		<testcase>548</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	<!-- Test case #40- list events -->
+	<command>
+		<name>listEvents</name>
+		<usercommand>true</usercommand>
+		<testcase>40</testcase>
+	</command>
+	
+	<!-- Test case #14- destroy virtualMachine and verify its state -->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>14</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	
+<!-- Test case # - register Iso command -->	
+		<command>
+		<name>registerIso</name>
+		<usercommand>true</usercommand>
+		<testcase>Register iso</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>globalisoid</param>
+			</item>
+		</parameters>
+				<parameters>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>isoname</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>displaytext</name>
+				<param>isodisplay</param>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://172.16.0.220/images/sumita/iso/ubuntu-9.04-server-amd64.iso</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>128</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privateisoid</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>ispublic</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>bootable</name>
+				<value>true</value>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>isfeatured</name>
+				<value>false</value>
+			</item>
+			<item param="true">
+				<name>name</name>
+				<param>registername</param>
+			</item>
+			<item param="true">
+				<name>displaytext</name>
+				<param>registerdisplay</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Test case # - listIsos command -->	
+		<command>
+		<name>listIsos</name>
+		<usercommand>true</usercommand>
+		<testcase>List isos</testcase>
+		<empty>false</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>privateisoid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- Test case - register template command -->
+	<command>
+		<name>registerTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>Register template</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>registername</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>displaytext</name>
+				<param>registerdisplay</param>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.10.231/templates/routing/latest/systemvm.vhd.bz2</value>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>132</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>systemtemplateid</param>
+			</item>
+			<item>
+				<name>created</name>
+			</item>
+			<item>
+				<name>ispublic</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>isfeatured</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>passwordenabled</name>
+				<value>false</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>VHD</value>
+			</item>
+			<item>
+				<name>isready</name>
+				<value>false</value>
+			</item>
+			<item param="true">
+				<name>name</name>
+				<param>registername</param>
+			</item>
+			<item param="true">
+				<name>displaytext</name>
+				<param>registerdisplay</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+<!--  Delete iso command -->
+	<command>
+		<name>deleteIso</name>
+		<usercommand>true</usercommand>
+		<testcase>Delete iso</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>privateisoid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>listIsos</name>
+		<usercommand>true</usercommand>
+		<testcase>List isos</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>privateisoid</param>
+			</item>
+		</parameters>
+	</command>
+	
+<!--  Delete template command -->
+	<command>
+		<name>deleteTemplate</name>
+		<usercommand>true</usercommand>
+		<testcase>Delete template</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>systemtemplateid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>listTemplates</name>
+		<usercommand>true</usercommand>
+		<testcase>List templates</testcase>
+		<empty>true</empty>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>systemtemplateid</param>
+			</item>
+			<item>
+				<name>templatefilter</name>
+				<value>self</value>
+		    </item>
+		</parameters>
+	</command>
+
+	
+</sanity>

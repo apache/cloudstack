@@ -1,0 +1,739 @@
+<templatedwnldstress>
+
+	<!-- 
+		STEPS/TEST CASES COVERED:
+		1. Create an Account and a User
+		2. Create a Network for that Account
+		3. Deploy a VM in the account
+			a. List the Root Volume
+		4. Stop the VM
+		5. Start the VM 
+		6. Reboot the VM
+		7. Destroy VM
+		8. Verify that vm is destroyed
+		9. Delete Account		
+	 -->
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Create default network-->
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy a Virtual Machine under the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+		
+	<command>
+		<name>listVolumes</name>
+		<testcase>	[List the ROOT Volume of the VM]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>virtualmachineid</name>
+				<param>vmid</param>
+			</item>
+			<item>
+				<name>type</name>
+				<value>ROOT</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>rootvolumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<testcase>	[Stop virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>createTemplate</name>
+		<testcase>	[Create template from root volume]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>rootvolumeid</param>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+		
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploying virtual machine from the Private Template]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMcreatedfrmTemplate</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>vm_hostid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listHosts</name>
+		<testcase>List host where vm is running</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vm_hostid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmhost_ipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>select install_path from template_spool_ref</name>
+		<mysql>true</mysql>
+		<testcase>Getting private template vdi from the db</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>template_id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>install_path</name>
+				<param>template_uuid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listvdi.sh</name>
+		<script>true</script>
+		<testcase>List VDI for template on the xen host before vm is destroyed</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmhost_ipaddress</param>
+			</item>
+			<item getparam="true">
+			    <name>u</name>
+				<param>template_uuid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy virtual machine created from the private template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+		</parameters>
+	</command>	
+		
+	<!-- SLEEP TIME BEGINS-->	
+	<command>
+		<name>listConfigurations</name>
+		<testcase>Getting expunge interval value</testcase>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>expunge.interval</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>value</name>
+				<param>expunge.interval</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>updateConfiguration</name>
+		<testcase>Updating storage.cleanup.interval</testcase>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>storage.cleanup.interval</value>
+			</item>
+			<item>
+				<name>value</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listConfigurations</name>
+		<testcase>Getting expunge interval value</testcase>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>storage.cleanup.interval</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>value</name>
+				<param>storage.cleanup.interval</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for expunge interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>expunge.interval</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for another expunge interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>expunge.interval</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for Storage CleanUp interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>storage.cleanup.interval</param>
+			</item>
+		</parameters>
+	</command>	
+		
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for another Storage CleanUp interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>storage.cleanup.interval</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<!-- SLEEP TIME ENDS-->
+	
+	<command>
+		<name>listvdi.sh</name>
+		<error>true</error>
+		<script>true</script>
+		<testcase>List VDI for template on the xen host after vm using template is destroyed</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmhost_ipaddress</param>
+			</item>
+			<item getparam="true">
+			    <name>u</name>
+				<param>template_uuid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<!-- Second VM -->
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploying virtual machine from the private template</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>VMcreatedfrmTemplate</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>vm_hostid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listHosts</name>
+		<testcase>List host where vm is running</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vm_hostid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmhost_ipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>select install_path from template_spool_ref</name>
+		<mysql>true</mysql>
+		<testcase>Getting private template vdi from the db</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>template_id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>install_path</name>
+				<param>template_uuid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listvdi.sh</name>
+		<script>true</script>
+		<testcase>List VDI for template on the xen host before vm is destroyed</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmhost_ipaddress</param>
+			</item>
+			<item getparam="true">
+			    <name>u</name>
+				<param>template_uuid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy virtual machine created from the private template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid1</param>
+			</item>
+		</parameters>
+	</command>	
+		
+	<!-- SLEEP TIME BEGINS-->	
+	<command>
+		<name>listConfigurations</name>
+		<testcase>Getting expunge interval value</testcase>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>expunge.interval</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>value</name>
+				<param>expunge.interval</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for expunge interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>expunge.interval</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for another expunge interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>expunge.interval</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for Storage CleanUp interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>storage.cleanup.interval</param>
+			</item>
+		</parameters>
+	</command>	
+		
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for another Storage CleanUp interval</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>s</name>
+				<param>storage.cleanup.interval</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	<!-- SLEEP TIME ENDS-->
+	
+	<command>
+		<name>listvdi.sh</name>
+		<error>true</error>
+		<script>true</script>
+		<testcase>List VDI for template on the xen host after vm using template is destroyed</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmhost_ipaddress</param>
+			</item>
+			<item getparam="true">
+			    <name>u</name>
+				<param>template_uuid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<!-- Clean Up Section -->
+		
+	
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>	[Start virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>rebootVirtualMachine</name>
+		<testcase>	[Reboot Virtual Machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>	[Destroy virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>	[Verify that vm was destroyed]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Destroyed</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deleteTemplate</name>
+		<testcase>Delete private template</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deleteAccount</name>
+		<testcase>	[Delete account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+</templatedwnldstress>

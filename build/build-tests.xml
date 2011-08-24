@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 Cloud, Inc. All Rights Reserved -->
+
+<project name="Cloud Stack Tests" default="help" basedir=".">
+  <description>
+		Cloud Stack ant build file
+    </description>
+
+  <!--
+ 	Always use this variable to refer to the base directory because this
+	variable is changeable
+    -->
+  <dirname property="base.dir" file="${ant.file.Cloud Stack Tests}/.." />
+  <property name="build.dir" location="${base.dir}/build" />
+
+  <import file="${build.dir}/build-cloud.xml" optional="false" />
+
+  <property name="server.test.dir" location="${server.dir}/test" />
+  <property name="core.test.dir" location="${core.dir}/test/" />
+  <property name="agent.test.dir" location="${utils.dir}/test/" />
+  <!-- directories for agent simulator code compilation-->
+  <property name="agent-simulator.dir" location="${base.dir}/agent-simulator" />
+  <property name="agent-simulator.dist.dir" location="${dist.dir}/agent-simulator" />
+
+  <!-- directories for the test client code compilation-->
+  <property name="testclient.dir" location="${base.dir}/test" />
+  <property name="testclient.dist.dir" location="${dist.dir}/test" />
+   <property name="tools.dist.dir" location="${dist.dir}/cloudapitools" />
+
+  <property name="test.target.dir" location="${target.dir}/test" />
+  <property name="test.classes.dir" location="${test.target.dir}/classes" />
+
+  <property name="agent-simulator.jar" value="cloud-agent-simulator.jar" />
+  <property name="testclient.jar" value="cloud-test.jar" />
+
+  <!-- =================== Agent Simulator ==================== -->
+  <path id="agent-simulator.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-agent-simulator" depends="-init, compile-api, compile-utils, compile-core, compile-agent, compile-server" description="Compile the agent simulator.">
+    <compile-java jar.name="${agent-simulator.jar}" top.dir="${agent-simulator.dir}" classpath="agent-simulator.classpath" />
+    <copy overwrite="true" todir="${server.dist.dir}/conf">
+      <fileset dir="${agent-simulator.dir}/tomcatconf">
+        <include name="*.in" />
+      </fileset>
+      <globmapper from="*.in" to="*" />
+    </copy>
+  </target>
+
+  <target name="build-agent-simulator" depends="-init, compile-agent-simulator">
+    <mkdir dir="${agent-simulator.dist.dir}" />
+    <mkdir dir="${agent-simulator.dist.dir}/conf" />
+    <mkdir dir="${agent-simulator.dist.dir}/logs" />
+
+    <copy todir="${agent-simulator.dist.dir}">
+      <fileset dir="${jar.dir}">
+        <include name="${agent-simulator.jar}" />
+        <include name="${agent.jar}" />
+        <include name="${utils.jar}" />
+        <include name="${core.jar}" />
+        <include name="${api.jar}" />
+      </fileset>
+      <fileset dir="${thirdparty.dir}">
+        <include name="log4j-1.2.15.jar" />
+        <include name="gson-1.3.jar" />
+        <include name="commons-logging-1.1.1.jar" />
+        <include name="commons-collections-3.2.1.jar" />
+      </fileset>
+    </copy>
+    <copy todir="${agent-simulator.dist.dir}">
+      <fileset dir="${agent-simulator.dir}/scripts">
+      </fileset>
+    </copy>
+    <copy overwrite="true" todir="${server.dist.dir}/conf">
+      <fileset dir="${agent-simulator.dir}/tomcatconf">
+        <include name="*.in" />
+      </fileset>
+      <globmapper from="*.in" to="*" />
+    </copy>
+    <copy todir="${agent-simulator.dist.dir}/conf">
+      <fileset dir="${agent.dir}/conf">
+        <include name="log4j-cloud.xml" />
+        <include name="simulator.properties" />
+      </fileset>
+    </copy>
+  </target>
+  <!-- =================== Agent Simulator ==================== -->
+
+
+  <!-- =================== QA Testing Client ==================== -->
+  <target name="-init-test" depends="-init">
+    <mkdir dir="${test.target.dir}" />
+    <mkdir dir="${test.classes.dir}" />
+  </target>
+
+  <path id="testclient.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-testclient" depends="-init-test, compile-utils" description="Compile the test client.">
+    <echo message="src is ${testclient.dir}"/>
+    <compile-java jar.name="${testclient.jar}" top.dir="${testclient.dir}" classpath="testclient.classpath" />
+  </target>
+
+  <target name="build-testclient" depends="-init-test, compile-testclient">
+    <mkdir dir="${testclient.dist.dir}/src" />
+    <mkdir dir="${testclient.dist.dir}/conf" />
+    <mkdir dir="${testclient.dist.dir}/metadata" />
+    <mkdir dir="${testclient.dist.dir}/usage" />
+
+    <copy todir="${testclient.dist.dir}/src">
+      <fileset dir="${jar.dir}">
+        <include name="${testclient.jar}" />
+        <include name="${utils.jar}" />
+      </fileset>
+      <fileset dir="${thirdparty.dir}">
+        <include name="commons-httpclient-3.1.jar" />
+        <include name="commons-logging-1.1.1.jar" />
+        <include name="commons-codec-1.4.jar" />
+        <include name="log4j.jar" />
+        <include name="log4j-extras.jar" />
+        <include name="trilead-ssh2-build213.jar" />
+        <include name="mysql-connector-java-5.1.7-bin.jar" />
+      </fileset>
+    </copy>
+    <copy overwrite="true" todir="${testclient.dist.dir}/conf">
+      <fileset dir="${testclient.dir}/conf">
+        <include name="log4j.properties" />
+        <include name="templates.sql" />
+        <include name="deploy.xml" />
+        <include name="config.xml" />
+        <include name="tool.properties" />
+      </fileset>
+    </copy>
+
+    <copy overwrite="true" todir="${testclient.dist.dir}/scripts">
+      <fileset dir="${testclient.dir}/scripts" />
+    </copy>
+
+    <copy overwrite="true" todir="${testclient.dist.dir}/metadata">
+      <fileset dir="${testclient.dir}/metadata" />
+    </copy>
+
+    <copy todir="${testclient.dist.dir}/usage" overwrite="true">
+      <fileset dir="${testclient.dir}/scripts/usage" />
+    </copy>
+
+    <copy overwrite="true" todir="${testclient.dist.dir}">
+      <fileset dir="${testclient.dir}/conf/">
+        <include name="deploy.properties" />
+      </fileset>
+    </copy>
+
+    <chmod file="${testclient.dist.dir}/scripts/deploy.sh" perm="uog+xr" />
+    <chmod file="${testclient.dist.dir}/scripts/cleanup.sh" perm="uog+xr" />
+    <chmod file="${testclient.dist.dir}/scripts/cleanparallel.sh" perm="uog+xr" />
+    <chmod file="${testclient.dist.dir}/scripts/deploycluster.sh" perm="uog+xr" />
+    
+  </target>
+
+
+  <target name="build-tools" depends="-init-test, compile-testclient">
+    <mkdir dir="${tools.dist.dir}/src" />
+    <mkdir dir="${tools.dist.dir}/conf" />
+
+
+    <copy todir="${tools.dist.dir}/src">
+      <fileset dir="${jar.dir}">
+        <include name="${testclient.jar}" />
+        <include name="${utils.jar}" />
+      </fileset>
+      <fileset dir="${thirdparty.dir}">
+        <include name="commons-httpclient-3.1.jar" />
+        <include name="commons-logging-1.1.1.jar" />
+        <include name="commons-codec-1.4.jar" />
+        <include name="log4j-1.2.15.jar" />
+        <include name="apache-log4j-extras-1.0.jar" />
+        <include name="trilead-ssh2-build213.jar" />
+        <include name="mysql-connector-java-5.1.7-bin.jar" />
+    </fileset>
+    </copy>
+
+    <copy overwrite="true" todir="${tools.dist.dir}/conf">
+      <fileset dir="${testclient.dir}/conf">
+        <include name="tool.properties" />
+	<include name="log4j.properties" />
+      </fileset>
+    </copy>
+
+    <copy overwrite="true" todir="${tools.dist.dir}">
+      <fileset dir="${testclient.dir}/scripts" >
+	<include name="certSubmitEC2.sh" />
+	<include name="certDeleteEC2.sh" />
+	<include name="sign.sh" />
+      </fileset>
+	<fileset dir="${testclient.dir}/conf">
+        <include name="README" />
+     </fileset>
+    </copy>
+
+    <chmod file="${tools.dist.dir}/certSubmitEC2.sh" perm="a+xr" />
+    <chmod file="${tools.dist.dir}/certDeleteEC2.sh" perm="a+xr" />
+    <chmod file="${tools.dist.dir}/sign.sh" perm="a+xr" />
+  </target>
+
+  <target name="-clean-test">
+    <delete dir="${test.classes.dir}" />
+    <delete dir="${test.target.dir}" />
+  </target>
+  <!-- =================== QA Testing Client ==================== -->
+
+  <!-- ============== Server Testing =============== -->
+  <target name="compile-server-test" depends="-init-test, compile-server" description="Compile all the source code in the server directory">
+    <property name="server.test.target.dir" location="${test.classes.dir}/server" />
+    <property name="jarname" value="server-test.jar" />
+
+    <mkdir dir="${server.test.target.dir}" />
+
+    <depend srcdir="${server.test.dir}" destdir="${server.test.target.dir}" cache="${dep.cache.dir}">
+    </depend>
+    <javac srcdir="${server.test.dir}" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" source="1.5" target="1.5" destdir="${server.test.target.dir}" includeantruntime="false">
+      <classpath refid="thirdparty.classpath" />
+      <classpath refid="test.classpath" />
+      <compilerarg value="-Xlint:all" />
+    </javac>
+    <jar jarfile="${test.target.dir}/${jarname}" basedir="${server.test.target.dir}">
+      <metainf dir="${server.dir}/metadata">
+        <include name="**/*.xml" />
+      </metainf>
+      <manifest>
+        <attribute name="Class-Path" value="" />
+        <attribute name="Built-By" value="${built.by}" />
+        <section name="com/cloud/">
+          <attribute name="Specification-Title" value="Cloud Stack" />
+          <attribute name="Specification-Version" value="${version}" />
+          <attribute name="Specification-Vendor" value="${company.name}" />
+          <attribute name="Implementation-Title" value="Server" />
+          <attribute name="Implementation-Version" value="${impl.version}" />
+          <attribute name="Implementation-Vendor" value="${company.name}" />
+        </section>
+      </manifest>
+    </jar>
+  </target>
+
+</project>
+
+

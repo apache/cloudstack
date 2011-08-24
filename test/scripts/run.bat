@@ -1,0 +1,1 @@
+java -cp "commons-httpclient-3.1.jar;commons-logging-1.1.1.jar;commons-codec-1.3.jar;testclient.jar;log4j-1.2.15.jar;trilead-ssh2-build213.jar;utils.jar;./conf" com.vmops.test.TestClientWithAPI %*

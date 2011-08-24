@@ -1,0 +1,318 @@
+<regression>
+	<globalparam>
+		
+	<!-- PARAMETERS USED BY SANITY TEST, HAVE TO BE SET -->
+	
+		<param description="Management server ip address">
+			<name>192.168.131.168</name>
+			<variable>hostip</variable>
+		</param>
+		<param description="Zone id">
+			<name>2</name>
+			<variable>globalzoneid</variable>
+		</param>
+		<param description="Service offering id">
+			<name>7</name>
+			<variable>globalserviceofferingid</variable>
+		</param>
+		<param description="Disk offering id, used for volume creation">
+			<name>5</name>
+			<variable>globaldiskofferingid</variable>
+		</param>
+		<param description="Template id used for deployVm">
+			<name>2</name>
+			<variable>globaltemplateid</variable>
+		</param>
+		<param description="Hypervisor type: Xen, KVM or VmWare">
+			<name>XenServer</name>
+			<variable>globalhypervisortype</variable>
+		</param>
+		<param description="Default network offering - used for virtual network creation">
+			<name>6</name>
+			<variable>globalnetworkofferingid</variable>
+		</param>
+		<param description="NetworkID of the admin - used for virtual network VMs under admin account">
+			<name>204</name>
+			<variable>globalnetworkid</variable>
+		</param>
+		
+	<!-- PARAMETERS USED BY OTHER TESTS -->
+		<param>
+			<name>192.168.131.168</name>
+			<variable>db</variable>
+		</param>
+		<param>
+			<name>192.168.131.168</name>
+			<variable>ms1</variable>
+		</param>
+		<param>
+			<name>192.168.130.199</name>
+			<variable>ms2</variable>
+		</param>
+		<param>
+			<name>root</name>
+			<variable>dbUserName</variable>
+		</param>
+		<param>
+			<name></name>
+			<variable>dbPassword</variable>
+		</param>
+		<param>
+			<name>72.52.126.11</name>
+			<variable>dns1</variable>
+		</param>
+		<param>
+			<name>72.52.126.12</name>
+			<variable>dns2</variable>
+		</param>
+		<param>
+			<name>192.168.10.253</name>
+			<variable>internaldns1</variable>
+		</param>
+		<param>
+			<name>192.168.10.254</name>
+			<variable>internaldns2</variable>
+		</param>
+		<param>
+			<name>4</name>
+			<variable>mediumglobalserviceofferingid</variable>
+		</param>
+		<param>
+			<name>6</name>
+			<variable>mediumglobaldiskofferingid</variable>
+		</param>
+		<param>
+			<name>3</name>
+			<variable>globalzoneid1</variable>
+		</param>
+		<param>
+			<name>ZONE1</name>
+			<variable>globalzonename</variable>
+		</param>
+		<param>
+			<name>3</name>
+			<variable>globaltemplateid_passwordenabled</variable>
+		</param>
+		<param>
+			<name>205</name>
+			<variable>globalisoid</variable>
+		</param>
+		<param>
+			<name>http://172.16.0.220/images/sumita/iso/ubuntu-9.04-server-amd64.iso</name>
+			<variable>globalisourl</variable>
+		</param>
+		<param>
+			<name>http://172.16.0.220/template/5d67394c-4efd-4b62-966b-51aa53b35277.vhd</name>
+			<variable>globaltemplateurl</variable>
+		</param>
+		<param>
+			<name>../metadata/func/commands</name>
+			<variable>apicommands</variable>
+		</param>
+		<param>
+			<name>root</name>
+			<variable>xenusername</variable>
+		</param>
+		<param>
+			<name>password</name>
+			<variable>xenpassword</variable>
+		</param>
+		<param>
+			<name>192.168.161.21</name>
+			<variable>secondary_storage_ip</variable>
+		</param>
+		<param>
+			<name>/export/regression/secondary</name>
+			<variable>secondary_storage_dir</variable>
+		</param>
+		<param>
+			<name>13</name>
+			<variable>flatnetworkserviceofferingid</variable>
+		</param>
+		<param>
+			<name>12</name>
+			<variable>flatnetworkdiskofferingid</variable>
+		</param>
+	</globalparam>
+	
+
+	<test>
+		<filename>../metadata/func/sanity.xml</filename>
+		<testname>SANITY TEST</testname>
+	</test>
+
+	<test> 
+		<class>com.cloud.test.regression.SanityTest</class>
+		<filename>../metadata/func/regression.xml</filename>
+		<testname>REGRESSION TEST</testname>
+	</test>
+	
+	<test>
+		<filename>../metadata/func/templatedwnldstress.xml</filename>
+		<testname>TEMPLATE DOWNLOAD STRESS TEST</testname>
+	</test>
+<!--	<test> -->
+<!--		<filename>../metadata/func/static_nat.xml</filename> -->
+<!--		<testname>1-1 NAT FEATURE</testname>-->
+<!--	</test>-->
+	
+	
+<!--	<test>-->
+<!--		<filename>../metadata/func/ha.xml</filename>-->
+<!--		<testname>HA TEST - BASIC CASES ONLY</testname>-->
+<!--	</test>-->
+<!--	-->
+<!--	<test>-->
+<!--		<filename>../metadata/func/templates_sync.xml</filename>-->
+<!--		<testname>TEMPLATES SYNC TEST</testname>-->
+<!--	</test>-->
+
+<!--	<test>-->
+<!--		<filename>../metadata/func/expunge.xml</filename>-->
+<!--		<testname>EXPUNGE TEST FOR VOLUMES, SNAPSHOTS AND TEMPLATES</testname>-->
+<!--	</test>-->
+<!--	-->
+<!--	-->
+<!--	<test>-->
+<!--		<filename>../metadata/func/regression_user.xml</filename>-->
+<!--		<testname>REGRESSION TEST FOR REGULAR USER</testname>-->
+<!--	</test>-->
+<!--	-->
+<!--	<test>-->
+<!--		<filename>../metadata/func/userapi.xml</filename>-->
+<!--		<testname>USER/ACCOUNT/DOMAIN TEST</testname>-->
+<!--	</test>-->
+<!--	-->
+<!--	<test>-->
+<!--		<filename>../metadata/func/vmapi.xml</filename>-->
+<!--		<testname>VM TEST</testname>-->
+<!--	</test>-->
+<!--	-->
+<!---->
+<!--	<test>-->
+<!--		<class>com.cloud.test.regression.LoadBalancingTest</class>-->
+<!--		<filename>../metadata/func/loadbalancers.xml</filename>-->
+<!--		<testname>LOAD BALANCING TEST</testname>-->
+<!--	</test>-->
+<!--	-->
+<!--	<test>-->
+<!--		<class>com.cloud.test.regression.PortForwardingTest</class>-->
+<!--		<filename>../metadata/func/securitygroups.xml</filename>-->
+<!--		<testname>SECURITY GROUP TEST</testname>-->
+<!--	</test>-->
+
+<!--	<test>-->
+<!--		<filename>../metadata/func/portforwarding.xml</filename>-->
+<!--		<testname>PORT FORWARDING TEST</testname>-->
+<!--	</test>-->
+
+<!--	<test>-->
+<!--		<filename>../metadata/func/sharedstorage_volume_test.xml</filename>-->
+<!--		<testname>VOLUMES IN SHARED STORAGE SETUP</testname>-->
+<!--	</test>-->
+
+<!--	<test>-->
+<!--		<filename>../metadata/func/localstorage_volume_test.xml</filename>-->
+<!--		<testname>VOLUMES IN LOCAL STORAGE SETUP</testname>-->
+<!--	</test>-->
+<!---->
+<!--	<test>-->
+<!--		<filename>../metadata/func/private_templates.xml</filename>-->
+<!--		<testname>PRIVATE TEMPLATES TEST</testname>-->
+<!--	</test>-->
+<!---->
+<!--	-->
+<!--		<test>-->
+<!--		<filename>../metadata/func/iso.xml</filename>-->
+<!--		<testname>ISO TEST</testname>-->
+<!--	</test>-->
+<!---->
+<!--	<test>-->
+<!--		<filename>../metadata/func/snapshots.xml</filename>-->
+<!--		<testname>SNAPSHOTS TEST</testname>-->
+<!--	</test>-->
+
+<!--		<test>-->
+<!--			<filename>../metadata/func/resource_limits.xml</filename>-->
+<!--			<testname>RESOURCE LIMITS TEST</testname>-->
+<!--		</test>-->
+<!--	-->
+
+<!--		<test>-->
+<!--			<filename>../metadata/func/vmsync.xml</filename>-->
+<!--			<testname>VM SYNCHRONIZATION TEST</testname>-->
+<!--		</test>-->
+<!--	-->
+
+<!--		<test>-->
+<!--			<filename>../metadata/func/mgmtvmsync.xml</filename>-->
+<!--			<testname>MANAGEMENT SERVER SYNCHRONIZATION WITH KILLED VM'S TEST</testname>-->
+<!--		</test>-->
+<!--	-->
+
+<!--		<test>-->
+<!--			<filename>../metadata/func/flatnetwork.xml</filename>-->
+<!--			<testname>Flat network test</testname>-->
+<!--		</test>-->
+	
+
+<!--	<test>
+		<class>com.cloud.test.regression.DelegatedAdminTest</class>
+		<testname>DELEGATED ADMIN TEST</testname>
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_rootadmin1_rootadmin2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_rootadmin_vs_domainlevel1admin.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_domainlevel1admin_rootadmin.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_domainlevel1admin_domainlevel1admin.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_domainlevel1_domainlevel2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_domainlevel2_child_domainlevel1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_domainlevel2_nonchild_domainlevel1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename>
+
+		<filename>../metadata/delegatedAdmin/delegated_admin_createusers.xml</filename>
+		<filename>../metadata/delegatedAdmin/pickuser_domainlevel2_rootadmin1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part1.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_verify_part2.xml</filename>
+		<filename>../metadata/delegatedAdmin/delegated_admin_cleanup.xml</filename> -->
+<!--	</test> -->
+	
+
+
+</regression>

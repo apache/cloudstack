@@ -1,0 +1,360 @@
+<sanity>
+
+	<!-- 
+		STEPS/TEST CASES COVERED:
+		1. Create an Account
+		2. Create a User in that Account
+		3. Deploy a VM in the account
+		4. Acquire an IP Address
+		5. Release the IP Address
+		6. Reboot the VM
+		7. Stop the VM
+		8. Start the VM 
+		9. List Routers
+		10. Stop Router
+		11.	List Router
+		12. Start Router
+		13. Destroy VM
+		14. Verify that vm is destroyed
+		15.	Recover virtual machine
+		16. Verify that vm is destroyed
+		17. Delete Account
+		
+	 -->
+
+	<command>
+		<name>createAccount</name>
+		<testcase>    [Create the Account and a User for the account]</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>admin@gmail.com</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>adminlastname</value>
+			</item>
+			<item random="true" setparam="true">
+				<name>username</name>
+				<param>usernameparam</param>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>accountid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<!-- Create default network-->
+	<command>
+		<name>createNetwork</name>
+		<testcase>	[Creating default network]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkOfferingId</name>
+				<param>globalnetworkofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>defaultregressionnetwork</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>networkid</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>	[Deploy a Virtual Machine under the Account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>networkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmipaddress</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<command>
+		<name>associateIpAddress</name>
+		<testcase>	[Acquire an IP Address (Non-Source NAT*)]</testcase>
+		<parameters>
+		<item getparam="true">
+			<name>zoneid</name>
+			<param>globalzoneid</param>
+		</item>
+		<item getparam="true">
+			<name>account</name>
+			<param>accountname</param>
+		</item>
+		<item>
+			<name>domainid</name>
+			<value>1</value>
+		</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>nonsourcenatpublicipid</param>
+			</item>  
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>nonsourcenatpublicip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>disassociateIpAddress</name>
+		<testcase>	[Release the IP Address (Non-Source NAT*)]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>nonsourcenatpublicipid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>rebootVirtualMachine</name>
+		<testcase>	[Reboot Virtual Machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<testcase>	[Stop virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startVirtualMachine</name>
+		<testcase>	[Start virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	
+	<command>
+		<name>listRouters</name>
+		<testcase>	[List Routers]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	
+	<command>
+		<name>stopRouter</name>
+		<testcase>	[Stop router]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>startRouter</name>
+		<testcase>	[Start router]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>routerid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Running</value>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>	[Destroy virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>	[Verify that vm was destroyed]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Destroyed</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>recoverVirtualMachine</name>
+		<testcase>	[Recover virtual machine]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>	[Verify that machine was recovered]</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>deleteAccount</name>
+		<testcase>	[Delete account]</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>accountid</param>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+</sanity>

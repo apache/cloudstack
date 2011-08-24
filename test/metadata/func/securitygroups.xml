@@ -1,0 +1,752 @@
+<securitygroups>
+<!-- 
+		STEPS/TEST CASES COVERED:
+		2. Create a User and its Account
+		2. Register User Keys
+		3. Deploy a VM in the account
+		4. Acquire an IP Address
+		5. Release the IP Address
+		6. Reboot the VM
+		7. Stop the VM
+		8. Start the VM 
+		9. List Routers
+		10. Stop Router
+		11.	List Router
+		12. Start Router
+		13. Destroy VM
+		14. Verify that vm is destroyed
+		15.	Recover virtual machine
+		16. Verify that vm is destroyed
+		17. Delete Account
+		
+-->
+
+	<command>
+		<name>createUser</name>
+		<testcase>Create User and Account</testcase>
+		<parameters>
+			<item random="true">
+			    <name>username</name>
+			</item>
+			<item>
+			    <name>password</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>firstname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>lastname</name>
+				<value>apiuser</value>
+			</item>
+			<item>
+				<name>email</name>
+				<value>apiuser@gmail.com</value>
+			</item>
+			<item>
+				<name>accounttype</name>
+				<value>0</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>registerUserKeys</name>
+		<testcase>Registering the User</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>apikey</name>
+				<param>apikey</param>
+			</item>
+			<item setparam="true">
+				<name>secretkey</name>
+				<param>secretkey</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>createNetworkGroup</name>
+		<usercommand>true</usercommand>
+		<testcase>Create a Network Group</testcase>
+		<parameters>
+			<item setparam="true" random="true">
+				<name>name</name>
+				<param>networkgrp-1</param>
+			</item>
+		</parameters>
+	</command>
+
+	<!-- FIRST INGRESS RULE -->
+	
+	<command>
+		<name>authorizeNetworkGroupIngress</name>
+		<testcase>Add the First Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.131.171/32</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Deploy a VM with the Network Group Assigned</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>flatnetworkserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkgrouplist</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<testcase>Ssh access test for the VM</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmip</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 1 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>stopVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Stopping VM</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>startVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Starting VM</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>rebootVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Rebooting VM</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>revokeNetworkGroupIngress</name>
+		<testcase>Revoke The First Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.131.171/32</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+			
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Ssh access test for the vm - should fail as ingress rule is revoked</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmip</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- SECOND INGRESS RULE -->
+	
+	<command>
+		<name>authorizeNetworkGroupIngress</name>
+		<testcase>Add the Second Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.131.172/32</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Deploy a VM with the Network Group Assigned</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>flatnetworkserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkgrouplist</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Ssh test for the vm - should fail as no access provided by ingress rule</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmip</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>revokeNetworkGroupIngress</name>
+		<testcase>Revoke The Second Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.131.172/32</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>22</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+
+	<!-- THIRD INGRESS RULE -->
+	
+	<command>
+		<name>authorizeNetworkGroupIngress</name>
+		<testcase>Add the Third Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.131.0/24</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Deploy a VM with the Network Group Assigned</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>flatnetworkserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkgrouplist</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Ssh test for the vm - should fail as no access provided by ingress rule</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmip</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>revokeNetworkGroupIngress</name>
+		<testcase>Revoke The Third Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.131.0/24</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<!-- FOURTH INGRESS RULE -->
+	
+	<command>
+		<name>authorizeNetworkGroupIngress</name>
+		<testcase>Add the Fourth Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.130.0/24</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>deployVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Deploy a VM with the Network Group Assigned</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>flatnetworkserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>networkgrouplist</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>vmip</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>ssh.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Ssh test for the vm - should fail as no access provided by ingress rule</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>vmip</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>password</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>revokeNetworkGroupIngress</name>
+		<testcase>Revoke The Fourth Ingress Rule</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>networkgroupname</name>
+				<param>networkgrp-1</param>
+			</item>
+			<item>
+				<name>cidrlist</name>
+				<value>192.168.130.0/24</value>		<!-- CHANGE IF REQUIRED -->
+			</item>
+			<item>
+				<name>endport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>startport</name>
+				<value>80</value>
+			</item>
+			<item>
+				<name>protocol</name>
+				<value>tcp</value>
+			</item>
+			<item getparam="true">
+				<name>account</name>
+				<param>accountname</param>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+	
+	<!-- Clean Up -->
+	<command>
+		<name>deleteNetworkGroup</name>
+		<usercommand>true</usercommand>
+		<testcase>Delete First network group</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>name</name>
+				<param>networkgrp-1</param>
+			</item>
+		</parameters>
+	</command>
+		
+	<command>
+		<name>destroyVirtualMachine</name>
+		<usercommand>true</usercommand>
+		<testcase>Destroying virutal machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 2 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>120</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	
+<!--  Delete user as a part of cleanup -->	
+	<command>
+		<name>deleteUser</name>
+		<testcase>Deleting the user</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>userid</param>
+			</item>
+		</parameters>
+	</command>			
+
+</securitygroups>

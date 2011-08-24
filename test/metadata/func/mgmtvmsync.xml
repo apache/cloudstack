@@ -1,0 +1,633 @@
+<mgmtvmsync>
+<!-- 1. Deploy two VMs -->
+<!-- 1.1 Deploy HA enabled VM -->
+<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy First VM test case</testcase>
+            
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item>
+				<name>displayname</name>
+				<value>FirstVM</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid_1st</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname_1st</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>hostid_1st</param>
+			</item>
+		</returnvalue>
+</command>
+
+<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy Second VM test case</testcase>
+            
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item>
+				<name>displayname</name>
+				<value>SecondVM</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid_2nd</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname_2nd</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>hostid_2nd</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 2. Disable HA on the two VMs respectively -->
+<!-- 2.1 Disable HA for First VM -->
+<command>
+		<name>updateVirtualMachine</name>
+		<testcase>HA disable first virtual machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_1st</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>HAdisabledFirstVirtualMachine</value>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>
+		</parameters>
+</command>
+
+<!-- 2.2 Disable HA for Second VM -->
+<command>
+		<name>updateVirtualMachine</name>
+		<testcase>HA disable second virtual machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_2nd</param>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>HAdisabledSecondVirtualMachine</value>
+			</item>
+			<item>
+				<name>haenable</name>
+				<value>false</value>
+			</item>			
+		</parameters>
+</command>
+
+<!-- 3. Obtain the Host IP addresses for the Hosts accommodating the VMs -->
+<!-- 3.1 Obtains the Host IP address of the HA enabled VM's Host machine -->
+<command>
+		<name>listHosts</name>
+		<testcase>Obtain IP address of ha disabled VM's Host Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_1st</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+<!-- 3.2 Obtains the Host IP address of the HA disabled VM's Host machine -->
+
+<command>
+		<name>listHosts</name>
+		<testcase>Obtain IP address of ha enabled VM's Host Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_2nd</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_2nd</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 4. Get VM instance name of the VMs from the db -->
+	<command>
+		<name>select instance_name from vm_instance</name>
+		<mysql>true</mysql>
+		<testcase>Obtaining the internal instance name for the ha disabled VM Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>instance_name</name>
+				<param>instance_name_1st</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>select instance_name from vm_instance</name>
+		<mysql>true</mysql>
+		<testcase>Obtaining the internal instance name for the ha enabled VM Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_2nd</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>instance_name</name>
+				<param>instance_name_2nd</param>
+			</item>
+		</returnvalue>
+	</command>
+
+<!-- 5. Stop the Management Server -->
+
+<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Stopping management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>stop</value>
+			</item>
+		</parameters>
+</command>
+
+	
+
+<!-- 6. Kill the two VMs -->
+
+<command>
+	<name>killvm.sh</name>
+	<testcase>Kill the First HA disabled VM</testcase>
+	<script>true</script>
+	
+	<parameters>
+		<item getparam="true">
+			<name>n</name>
+			<param>instance_name_1st</param>
+		</item>
+		
+		<item getparam="true">
+			<name>h</name>
+			<param>ipaddress_1st</param>
+		</item>
+	</parameters>
+</command>
+
+<command>
+	<name>killvm.sh</name>
+	<testcase>Kill the Second HA disabled VM</testcase>
+	<script>true</script>
+	
+	<parameters>
+		<item getparam="true">
+			<name>n</name>
+			<param>instance_name_2nd</param>
+		</item>
+		
+		<item getparam="true">
+			<name>h</name>
+			<param>ipaddress_2nd</param>
+		</item>
+	</parameters>
+</command>
+
+<!-- 7. Wait for some time for the management server to respond -->
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for some time</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>100</value>
+			</item>
+		</parameters>
+	</command>	
+
+
+<!-- 8. Start the Management Server -->
+
+<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Starting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>start</value>
+			</item>
+		</parameters>
+</command>
+
+<!--9. Wait for some time for the management server to respond -->
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for some time</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>100</value>
+			</item>
+		</parameters>
+	</command>	
+
+<!-- 10. Check the Management Server Database for the states of the killed VMs -->
+
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>Check the stopped status of First virtual machine with ha disabled</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>			
+		</returnvalue>
+	</command>		
+	
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>Check the stopped status of Second virtual machine with ha disabled</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_2nd</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+			
+		</returnvalue>
+	</command>
+
+<!-- Clean up -->
+<!-- 11. Destroy VMs-->
+<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy the First vm as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_1st</param>
+			</item>
+		</parameters>
+</command>
+	
+<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy the Second vm as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid_2nd</param>
+			</item>
+		</parameters>
+</command>
+
+
+<!-- SECOND SCENARIO -->
+<!-- 1. Deploy VM -->
+<command>
+		    <name>deployVirtualMachine</name>  <!--deploy vm 1-->
+            <testcase>deploy VM test case</testcase>
+            
+         <parameters>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>	
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>	
+			<item>
+				<name>displayname</name>
+				<value>FirstVM</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid_1st</param>
+			</item>
+			<item setparam="true">
+				<name>name</name>
+				<param>vmname_1st</param>
+			</item>
+			<item setparam="true">
+				<name>hostid</name>
+				<param>hostid_1st</param>
+			</item>
+		</returnvalue>
+</command>
+
+<!-- 2. Obtains the Host IP address of the HA enabled VM's Host machine -->
+<command>
+		<name>listHosts</name>
+		<testcase>Obtain IP address of the VM's Host Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_1st</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+
+<!-- 3. Get VM instance name of the VMs from the db -->
+	<command>
+		<name>select instance_name from vm_instance</name>
+		<mysql>true</mysql>
+		<testcase>Obtaining the internal instance name for the VM Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>instance_name</name>
+				<param>instance_name_1st</param>
+			</item>
+		</returnvalue>
+</command>
+	
+<!-- 4. Stop the Management Server -->
+<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Stopping management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>stop</value>
+			</item>
+		</parameters>
+</command>
+
+<!-- 5. Kill the VM -->
+
+<command>
+	<name>shutdown.sh</name>
+	<testcase>Shut down the VM Test Case</testcase>
+	<script>true</script>
+	
+	<parameters>
+		<item getparam="true">
+			<name>n</name>
+			<param>instance_name_1st</param>
+		</item>
+		
+		<item getparam="true">
+			<name>h</name>
+			<param>ipaddress_1st</param>
+		</item>
+	</parameters>
+</command>
+
+<!-- 6. Wait for some time for the management server to respond -->
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for some time</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>	
+
+
+<!-- 7. Start the Management Server -->
+<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Starting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>start</value>
+			</item>
+		</parameters>
+</command>
+
+<!-- 8. Wait for some time for the management server to respond -->
+<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for some time</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>60</value>
+			</item>
+		</parameters>
+</command>	
+
+<!-- 9. Check the Management Server Database for the state of the killed VM -->
+
+	<command>
+		<name>listVirtualMachines</name>
+		<testcase>Check the stopped status of virtual machine</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>vmid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item>
+				<name>state</name>
+				<value>Stopped</value>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listHosts</name>
+		<testcase>List host that is presumed to have the VM Test Case</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>hostid_1st</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>ipaddress</name>
+				<param>ipaddress_1st</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listvm.sh</name>
+		<script>true</script>
+		<testcase> VM Not Found on the host Test Case</testcase>
+		<error>true</error>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>ipaddress_1st</param>
+			</item>
+			<item getparam="true">
+			    <name>n</name>
+				<param>instance_name_1st</param>
+			</item>
+		</parameters>
+	</command>							
+
+</mgmtvmsync>

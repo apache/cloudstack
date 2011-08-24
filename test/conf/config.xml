@@ -1,0 +1,86 @@
+<config>
+
+<!-- HERE IS THE POST DEPLOYMENT SECTIION; YOU ADD HOSTS/SECONDARY AND PRIMARY STORAGE HERE -->
+	<command>
+		<name>addSecondaryStorage</name>
+		<parameters>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>nfs://192.168.161.21/export/regression/secondary</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>addHost</name>
+		<parameters>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>podid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.161.25</value>
+			</item>
+			<item>
+				<name>username</name>
+				<value>root</value>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>clustername</name>
+				<value>firstcluster</value>
+			</item>
+		</parameters>
+	</command>
+	
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 3 min to ensure that host is in UP state</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>180</value>
+			</item>
+		</parameters>
+	</command>	
+	
+	<command>
+		<name>createStoragePool</name>
+		<parameters>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>podid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>primary storage</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>nfs://192.168.161.21/export/regression/primary</value>
+			</item>
+			<item>
+				<name>clusterid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+	
+</config>

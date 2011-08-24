@@ -1,0 +1,104 @@
+<pickuser>
+
+<!-- PICK UP THE USERS FOR FUTURE EXECUTION - THIS PART CAN BE MODIFIED WITH DIFFERENT USERIDs -->
+
+<!--  User who executes first set of commands -->
+	<command>
+		<name>listUsers</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>domain21adminid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid1</param>
+			</item>
+			<item setparam="true">
+				<name>domainid</name>
+				<param>domainid1</param>
+			</item>
+			<item setparam="true">
+				<name>accounttype</name>
+				<param>accounttype1</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>account1</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+	<command>
+		<name>listDomains</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domainid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>name</name>
+				<param>domainname1</param>
+			</item>
+			<item setparam="true">
+				<name>level</name>
+				<param>domainlevel1</param>
+			</item>
+		</returnvalue>
+	</command>	
+	
+
+<!--  User who executes second set of commands -->	
+	<command>
+		<name>listUsers</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domain11adminid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid2</param>
+			</item>
+			<item setparam="true">
+				<name>domainid</name>
+				<param>domainid2</param>
+			</item>
+			<item setparam="true">
+				<name>accounttype</name>
+				<param>accounttype2</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>account2</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+	<command>
+		<name>listDomains</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domainid2</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>name</name>
+				<param>domainname2</param>
+			</item>
+			<item setparam="true">
+				<name>level</name>
+				<param>domainlevel2</param>
+			</item>
+		</returnvalue>
+	</command>
+	
+</pickuser>
