@@ -299,19 +299,20 @@ Group:     System Environment/Libraries
 %description cli
 The Cloud.com command line tools contain a few Python modules that can call cloudStack APIs.
 
+%package test
+Summary:   Cloud.com test suite
+Requires: java >= 1.6.0
+Requires: %{name}-utils = %{version}, %{name}-deps = %{version}, wget
+Group:     System Environment/Libraries
+Obsoletes: vmops-test < %{version}-%{release}
+%description test
+The Cloud.com test package contains a suite of automated tests
+that the very much appreciated QA team at Cloud.com constantly
+uses to help increase the quality of the Cloud.com Stack.
+
 
 #%if %{_premium}
 #
-#%package test
-#Summary:   Cloud.com test suite
-#Requires: java >= 1.6.0
-#Requires: %{name}-utils = %{version}, %{name}-deps = %{version}, wget
-#Group:     System Environment/Libraries
-#Obsoletes: vmops-test < %{version}-%{release}
-#%description test
-#The Cloud.com test package contains a suite of automated tests
-#that the very much appreciated QA team at Cloud.com constantly
-#uses to help increase the quality of the Cloud.com Stack.
 #
 #%package usage
 #Summary:   Cloud.com usage monitor
@@ -597,15 +598,16 @@ fi
 %files baremetal-agent
 %attr(0755,root,root) %{_bindir}/cloud-setup-baremetal
 
-#%if %{_premium}
-#
-#%files test
-#%defattr(0644,root,root,0755)
-#%attr(0755,root,root) %{_bindir}/%{name}-run-test
-#%{_javadir}/%{name}-test.jar
+%files test
+%defattr(0644,root,root,0755)
+%attr(0755,root,root) %{_bindir}/%{name}-run-test
+%{_javadir}/%{name}-test.jar
 #%{_sharedstatedir}/%{name}/test/*
 #%{_libdir}/%{name}/test/*
 #%{_sysconfdir}/%{name}/test/*
+
+#%if %{_premium}
+#
 #
 #%files usage
 #%defattr(0644,root,root,0775)
