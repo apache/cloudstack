@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateAccountCmd;
 import com.cloud.api.commands.CreateUserCmd;
@@ -907,7 +908,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void checkAccess(Account caller, ControlledEntity... entities) {
+    public void checkAccess(Account caller, AccessType accessType, ControlledEntity... entities) {
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
 
         for (ControlledEntity entity : entities) {
@@ -926,7 +927,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
-                if (checker.checkAccess(caller, entity)) {
+                if (checker.checkAccess(caller, entity, accessType)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
                     }
@@ -1431,7 +1432,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
         }
 
-        checkAccess(UserContext.current().getCaller(), account);
+        checkAccess(UserContext.current().getCaller(), null, account);
 
         if (firstName != null) {
             user.setFirstname(firstName);
@@ -1633,7 +1634,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
-        checkAccess(UserContext.current().getCaller(), account);
+        checkAccess(UserContext.current().getCaller(), null, account);
         if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
         }
@@ -1812,7 +1813,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if ((user != null) && (user.getAccountId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
-        checkAccess(UserContext.current().getCaller(), _accountDao.findById(user.getAccountId()));
+        checkAccess(UserContext.current().getCaller(), null, _accountDao.findById(user.getAccountId()));
         return _userDao.remove(id);
     }
 

@@ -108,7 +108,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             throw new InvalidParameterValueException("Unable to create remote access vpn, invalid public IP address id" + publicIpId);
         }
 
-        _accountMgr.checkAccess(caller, ipAddr);
+        _accountMgr.checkAccess(caller, null, ipAddr);
 
         if (!ipAddr.readyToUse() || ipAddr.getAssociatedWithNetworkId() == null) {
             throw new InvalidParameterValueException("The Ip address is not ready to be used yet: " + ipAddr.getAddress());
@@ -211,7 +211,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             return;
         }
         
-        _accountMgr.checkAccess(caller, vpn);
+        _accountMgr.checkAccess(caller, null, vpn);
         
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
         
@@ -297,7 +297,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (owner == null) {
             throw new InvalidParameterValueException("Unable to add vpn user: Another operation active");
         }
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         long userCount = _vpnUsersDao.getVpnUserCount(owner.getId());
         if (userCount >= _userLimit) {
@@ -317,7 +317,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (user == null) {
             throw new InvalidParameterValueException("Could not find vpn user " + username);
         }
-        _accountMgr.checkAccess(caller, user);
+        _accountMgr.checkAccess(caller, null, user);
 
         user.setState(State.Revoke);
         _vpnUsersDao.update(user.getId(), user);
@@ -328,7 +328,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     public List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName) {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountDao.findById(vpnOwnerId);
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
         return _vpnUsersDao.listByAccount(vpnOwnerId);
     }
 
@@ -341,7 +341,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             throw new InvalidParameterValueException("Unable to find your vpn: " + vpnId);
         }
 
-        _accountMgr.checkAccess(caller, vpn);
+        _accountMgr.checkAccess(caller, null, vpn);
         
       
 
@@ -378,7 +378,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     public boolean applyVpnUsers(long vpnOwnerId) {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountDao.findById(vpnOwnerId);
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         s_logger.debug("Applying vpn users for " + owner);
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
@@ -535,7 +535,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                             + " is not associated with an account.");
                 }
             }
-            _accountMgr.checkAccess(caller, publicIp);
+            _accountMgr.checkAccess(caller, null, publicIp);
         }
 
         

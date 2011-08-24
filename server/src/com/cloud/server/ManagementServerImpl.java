@@ -53,6 +53,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -1708,7 +1709,7 @@ public class ManagementServerImpl implements ManagementServer {
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 Account owner = _accountMgr.getAccount(template.getAccountId());
-                _accountMgr.checkAccess(caller, owner);
+                _accountMgr.checkAccess(caller, null, owner);
             }
             templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
         }
@@ -1791,7 +1792,7 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Unable to find account by id " + accountId);
             }
 
-            _accountMgr.checkAccess(caller, account);
+            _accountMgr.checkAccess(caller, null, account);
         }
         
         if (domainId != null) {
@@ -1807,7 +1808,7 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
                 }
 
-                _accountMgr.checkAccess(caller, account);
+                _accountMgr.checkAccess(caller, null, account);
             }
         }
 
@@ -2009,7 +2010,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // do a permission check
-        _accountMgr.checkAccess(account, template);
+        _accountMgr.checkAccess(account, AccessType.ModifyEntry, template);
 
         boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null);
         if (!updateNeeded) {
@@ -3333,7 +3334,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        _accountMgr.checkAccess(caller, template);
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
 
         // If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {
@@ -3473,7 +3474,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (!template.isPublicTemplate()) {
-            _accountMgr.checkAccess(caller, template);
+            _accountMgr.checkAccess(caller, null, template);
         }
 
         List<String> accountNames = new ArrayList<String>();
@@ -4114,7 +4115,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // check permissions
-        _accountMgr.checkAccess(caller, _accountMgr.getAccount(user.getAccountId()));
+        _accountMgr.checkAccess(caller, null, _accountMgr.getAccount(user.getAccountId()));
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
@@ -4311,7 +4312,7 @@ public class ManagementServerImpl implements ManagementServer {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
 
-        _accountMgr.checkAccess(account, volume);
+        _accountMgr.checkAccess(account, null, volume);
         // If mode is upload perform extra checks on url and also see if there is an ongoing upload on the same.
         if (extractMode == Upload.Mode.FTP_UPLOAD) {
             URI uri = new URI(url);
@@ -4760,7 +4761,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // make permission check
-        _accountMgr.checkAccess(caller, vm);
+        _accountMgr.checkAccess(caller, null, vm);
 
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");

@@ -1283,7 +1283,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         // Verify permissions
-        _accountMgr.checkAccess(caller, volume);
+        _accountMgr.checkAccess(caller, null, volume);
 
         Account owner = _accountMgr.getAccount(volume.getAccountId());
         if (_accountMgr.resourceLimitExceeded(owner, ResourceType.snapshot)) {
