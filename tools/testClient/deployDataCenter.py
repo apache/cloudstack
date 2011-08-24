@@ -202,7 +202,7 @@ class deployDataCenters():
         self.apiClient = self.testClient.getApiClient()
     
     def updateConfiguration(self, globalCfg):
-        if len(globalCfg) == 0:
+        if globalCfg is None:
             return None
         
         for config in globalCfg:
