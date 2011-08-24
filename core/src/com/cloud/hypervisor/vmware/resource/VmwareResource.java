@@ -1997,8 +1997,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         StorageFilerTO pool = cmd.getPool();
         try {
-            VmwareHypervisorHost hyperHost = this.getHyperHost(getServiceContext());
-            hyperHost.unmountDatastore(pool.getUuid());
+        	// We will leave datastore cleanup management to vCenter. Since for cluster VMFS datastore, it will always
+        	// be mounted by vCenter.
+        	
+            // VmwareHypervisorHost hyperHost = this.getHyperHost(getServiceContext());
+            // hyperHost.unmountDatastore(pool.getUuid());
             Answer answer = new Answer(cmd, true, "success");
             return answer;
         } catch (Throwable e) {
@@ -2600,6 +2603,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (s_logger.isInfoEnabled())
                         s_logger.info("Destroy volume by original name: " + cmd.getVolume().getPath() + ".vmdk");
                     dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
+                    
+                    // root volume may be created via linked-clone, delete the delta disk as well
+                    if (s_logger.isInfoEnabled())
+                    	s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-delta.vmdk");
+                    dsMo.deleteFile(cmd.getVolume().getPath() + "-delta.vmdk", morDc, true);
                     return new Answer(cmd, true, "Success");
                 }
 
@@ -2635,12 +2643,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         s_logger.info("Empty disk chain info, fall back to try to delete by original backing file name");
                     }
                     dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
+                    
+                    if (s_logger.isInfoEnabled()) {
+                    	s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                    }
+                    dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Destroy volume by original name: " + cmd.getVolume().getPath() + ".vmdk");
                 }
                 dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
+                
+                if (s_logger.isInfoEnabled()) {
+                	s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                }
+                dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
             }
 
             return new Answer(cmd, true, "Success");

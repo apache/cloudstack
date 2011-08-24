@@ -9,5 +9,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/vmware-base"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/agent"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
