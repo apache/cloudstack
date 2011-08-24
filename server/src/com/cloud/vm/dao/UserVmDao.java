@@ -18,6 +18,7 @@
 package com.cloud.vm.dao;
 
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 
 import com.cloud.api.response.UserVmResponse;
@@ -71,5 +72,5 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId);	
     public Long countAllocatedVMsForAccount(long accountId);
 
-    UserVmData listVmDetails(UserVm userVm, boolean show_host);
+    Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmData);
 }

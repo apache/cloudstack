@@ -17,8 +17,11 @@
  */
 package com.cloud.vm.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.response.IngressRuleResponse;
@@ -63,12 +66,28 @@ public class UserVmData {
     private Long guestOsId;
     private Long rootDeviceId;
     private String rootDeviceType;
-    private List<SecurityGroupData> securityGroupList;
+    private Set<SecurityGroupData> securityGroupList;
     private String password;
     private Long jobId;
     private Integer jobStatus;
-    private List<NicData> nics;
+    private Set<NicData> nics;
     private String hypervisor;
+    
+    private boolean initialized;
+    
+    public UserVmData(){
+        securityGroupList = new HashSet<SecurityGroupData>();
+        nics = new HashSet<NicData>();
+        initialized = false;
+    }
+    
+    public void setInitialized(){
+        initialized = true;
+    }
+    
+    public boolean isInitialized(){
+        return initialized;
+    }
     
     public NicData newNicData(){
         return new NicData();
@@ -394,20 +413,20 @@ public class UserVmData {
         this.forVirtualNetwork = forVirtualNetwork;
     }
 
-    public List<NicData> getNics() {
+    public Set<NicData> getNics() {
         return nics;
     }
 
-    public void setNics(List<NicData> nics) {
-        this.nics = nics;
+    public void addNic(NicData nics) {
+        this.nics.add(nics);
     }
     
-    public List<SecurityGroupData> getSecurityGroupList() {
+    public Set<SecurityGroupData> getSecurityGroupList() {
         return securityGroupList;
     }
 
-    public void setSecurityGroupList(List<SecurityGroupData> securityGroups) {
-        this.securityGroupList = securityGroups;
+    public void addSecurityGroup(SecurityGroupData securityGroups) {
+        this.securityGroupList.add(securityGroups);
     }
     
 
@@ -649,6 +668,10 @@ public class UserVmData {
             return true;
         }
         
+    }
+    
+    public String toString(){
+        return "id=" + id + ", name=" + name;
     }
     
 }
