@@ -186,10 +186,10 @@ disable_rpfilter() {
 disable_rpfilter_domR() {
   log_it "cloud: disable rp_filter"
   log_it "disable rpfilter"
-  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
   if [ "$DISABLE_RP_FILTER" == "true" ]
   then
-      log_it "cloud: disable rp_filter : updating proc"
+      log_it "cloud: disable rp_filter on public interfaces"
+#FIXME : currently public interfaces are assumed  as eth2 and eth3.
       sed -i "s/net.ipv4.conf.eth2.rp_filter.*$/net.ipv4.conf.eth2.rp_filter = 0/" /etc/sysctl.conf 
       sed -i "s/net.ipv4.conf.eth3.rp_filter.*$/net.ipv4.conf.eth3.rp_filter = 0/" /etc/sysctl.conf 
       echo "0" > /proc/sys/net/ipv4/conf/eth2/rp_filter

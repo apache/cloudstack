@@ -1226,7 +1226,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 dhcpRange = NetUtils.getDhcpRange(cidr);
             }
         }
+        
 
+        String rpValue = _configDao.getValue(Config.NetworkRouterRpFilter.key());
+        if (rpValue != null && rpValue.equalsIgnoreCase("true")) {
+            _disable_rp_filter = true;
+        }else
+        {
+            _disable_rp_filter = false;
+        }
         if (router.getRole() == Role.DHCP_USERDATA) {
             type = "dhcpsrvr";
         } else {
