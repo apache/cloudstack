@@ -25,12 +25,10 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.utils.db.GenericDao;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
-    void clearNonStorageCapacities();
-    void clearStorageCapacities();
 	CapacityVO findByHostIdType(Long hostId, short capacityType);
-	void clearNonStorageCapacities2();
 	List<Long> orderClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor);
 	List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType, float cpuOverprovisioningFactor);	
 	 List<SummedCapacity> findCapacityByType(short capacityType, Long zoneId, Long podId,
 			Long clusterId, Long startIndex, Long pageSize);
+	boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId);
 }
