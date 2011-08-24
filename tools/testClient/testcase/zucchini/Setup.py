@@ -1,8 +1,24 @@
+from optparse import OptionParser
 from configGenerator import *
+
 if __name__ == "__main__":
+    
+    parser = OptionParser()
+    parser.add_option('-n', '--number-of-agents', action='store', dest='agents', help='number of agents in the deployment')
+    parser.add_option('-o', '--output', action='store', default='./setup.conf', dest='output', help='the path where the json config file generated')
+    parser.add_option('-d', '--dbnode', dest='dbnode', help='hostname/ip of the database node', action='store')
+    parser.add_option('-m', '--mshost', dest='mshost', help='hostname/ip of management server', action='store')
+    
+    (opts, args) = parser.parse_args()
+    mandatories = ['mshost', 'dbnode', 'agents']
+    for m in mandatories:
+        if not opts.__dict__[m]:
+            print "mandatory option - " + m +" missing"
+   
     zs = cloudstackConfiguration()
     #Define tags
     tag="TAG1","TAG1","TAG1","TAG1","TAG1","TAG2","TAG2","TAG3","TAG3","TAG3","TAG3","TAG3" 
+   
     #Define Zone
     z = zone()
     z.dns1 = "8.8.8.8"
@@ -17,11 +33,13 @@ if __name__ == "__main__":
     ss.url ="nfs://172.16.15.32/export/share/secondary"
     z.secondaryStorages.append(ss)
     
+    numOfAgents=int(opts.agents)
     #Define pods
+    numOfPods = numOfAgents/10
     a = 1
     b = 1
     tagcount = 0
-    for i in range(10):
+    for i in range(numOfPods):
         p = pod()
         p.name = "POD-" + str(i)
         p.gateway = "172."+ str(a)+"."+ str(b)+"."+"129"
@@ -64,15 +82,15 @@ if __name__ == "__main__":
     
     '''Add one mgt server'''
     mgt = managementServer()
-    mgt.mgtSvrIp = "192.168.132.253"
+    mgt.mgtSvrIp = opts.mshost
     zs.mgtSvr.append(mgt)
     
     '''Add a database'''
     db = dbServer()
-    db.dbSvr = "192.168.132.253"
+    db.dbSvr = opts.dbnode
     db.user = "root"
     db.passwd = ""
     zs.dbSvr = db
 
-    generate_setup_config(zs,"setup.conf")
+    generate_setup_config(zs,opts.output)
     

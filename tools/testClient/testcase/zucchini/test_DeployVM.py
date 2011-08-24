@@ -80,7 +80,6 @@ class TestDeployVM(cloudstackTestCase):
 			depVmcmd.domainid=1
 			depVmcmd.account="admin"
 			depVmcmdList.append(depVmcmd)
-			#depVmresponse = apiClient.deployVirtualMachine(depVmcmd)
 			if soCount == 11:
 				soCount = 0
 			else:
