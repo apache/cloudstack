@@ -502,7 +502,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 }
             }
             if(hostCanAccessPool){
-                s_logger.debug("Found a potential host and associated storage pools for this VM");
+                s_logger.debug("Found a potential host " + "id: "+potentialHost.getId() + " name: " +potentialHost.getName()+ " and associated storage pools for this VM");
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
             }
         }
