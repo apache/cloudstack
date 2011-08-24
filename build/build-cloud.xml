@@ -218,7 +218,7 @@
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-server" depends="-init, compile-utils, compile-core" description="Compile the management server.">
+  <target name="compile-server" depends="-init, compile-utils, compile-core, compile-agent" description="Compile the management server.">
     <compile-java jar.name="${server.jar}" top.dir="${server.dir}" classpath="server.classpath" />
   </target>
 
@@ -279,6 +279,8 @@
       </fileset>
     </copy>
   </target>
+
+  <target name="build-ovm" depends="compile-ovm" />
 
   <target name="build-server" depends="compile-server">
     <mkdir dir="${server.dist.dir}" />
@@ -529,7 +531,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui, package-oss-systemvm-iso">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -629,7 +631,19 @@
     <delete dir="${unittest.dir}"/>
   </target>
   
-  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server"/>
+  <!-- ===================== Ovm.Jar ===================== -->
+  <property name="ovm.jar" value="cloud-ovm.jar" />
+  <property name="ovm.dir" location="${base.dir}/ovm" />
+  <property name="ovm-scripts.dir" location="${ovm.dir}/scripts" />
+  <path id="ovm.classpath" >
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
+    <compile-java jar.name="${ovm.jar}" top.dir="${ovm.dir}" classpath="ovm.classpath" />
+  </target>
+
+  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm"/>
 
   <target name="clean-all" depends="clean" description="Clean all of the generated files, including dependency cache and javadoc">
     <delete dir="${target.dir}" />

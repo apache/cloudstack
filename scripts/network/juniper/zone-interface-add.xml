@@ -1,0 +1,17 @@
+<rpc>
+<load-configuration>
+<configuration>
+<security>        
+<zones>            
+<security-zone>                
+<name>%private-zone-name%</name>                               
+<interfaces>                    
+<name>%zone-interface-name%</name>                
+</interfaces>                
+</security-zone>        
+</zones>    
+</security>
+</configuration>
+</load-configuration>
+</rpc>
+

@@ -1,0 +1,14 @@
+host=127.0.0.1
+port=8250
+workers=3
+zone=1
+pod=1
+run=13
+sequence=r
+agent.save.path=/tmp/agents
+latency=2
+latency.start.range=2
+latency.end.range=2
+delay.distribution={(5,10); (5,10); (5,10); (5,10); (5,10); (5,10); (5,10); (5,10); (5,10); (10,120)}
+property.scan.enabled=1
+property.scan.interval=300

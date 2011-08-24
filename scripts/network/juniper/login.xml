@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<junoscript version="1.0">
+<rpc>
+<request-login>
+<username>
+%username%
+</username>
+<challenge-response>
+%password%
+</challenge-response>
+</request-login>
+</rpc>
+</junoscript>

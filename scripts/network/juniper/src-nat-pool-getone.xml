@@ -1,0 +1,15 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<nat>
+<source>
+<pool %delete%>
+<name>%pool-name%</name>
+</pool>
+</source>
+</nat>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

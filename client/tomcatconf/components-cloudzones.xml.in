@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<components-cloudzones.xml>
+    <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
+        <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
+        <checker name="PremiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
+    </system-integrity-checker>
+
+    <management-server class="com.cloud.server.ManagementServerExtImpl" library="com.cloud.configuration.CloudZonesComponentLibrary" extends="components-premium.xml:management-server"/>
+    
+    <configuration-server class="com.cloud.server.ConfigurationServerImpl" extends="components.xml:configuration-server">
+        <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
+             <param name="premium">true</param>
+        </dao>
+    </configuration-server>
+</components-cloudzones.xml>

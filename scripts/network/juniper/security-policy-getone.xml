@@ -1,0 +1,17 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<policies>
+<policy>
+<from-zone-name>%from-zone%</from-zone-name>
+<to-zone-name>%to-zone%</to-zone-name>
+<policy %delete%>
+<name>%policy-name%</name>
+</policy>
+</policy>
+</policies>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

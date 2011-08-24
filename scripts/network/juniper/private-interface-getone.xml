@@ -1,0 +1,15 @@
+<rpc>
+<get-configuration>
+<configuration>
+<interfaces>
+<interface>            
+<name>%private-interface-name%</name>            
+<vlan-tagging/>            
+<unit %delete%>                
+<name>%vlan-id%</name>                        
+</unit>                           
+</interface>    
+</interfaces>
+</configuration>
+</get-configuration>
+</rpc>

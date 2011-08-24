@@ -25,7 +25,8 @@ except ImportError:
 # Global variables setup
 sourcedir = bld.srcnode.abspath()
 builddir = bld.path.abspath(bld.env)
-buildpremium = _exists(_join(sourcedir,"cloudstack-proprietary"))
+#buildpremium = _exists(_join(sourcedir,"cloudstack-proprietary"))
+buildpremium = False
 filelist = bld.path.ant_glob
 distdir = Utils.relpath(_join(sourcedir,"dist"))
 targetdir = Utils.relpath(_join(sourcedir,"target"))
@@ -113,7 +114,7 @@ def build_dependences ():
 				"cloud-commons-httpclient-3.1.jar", "cloud-commons-pool-1.4.jar",
 				"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
 				"cloud-ws-commons-util-1.0.2.jar",
-				"cloud-commons-collections-3.2.1.jar", "vmware*.jar"]
+				"cloud-commons-collections-3.2.1.jar"]
 
 	start_path = bld.path.find_dir ("deps")
 	bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
@@ -220,9 +221,13 @@ def build_scripts ():
 	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 def build_bin_exec_dirs ():
-	bld.install_files_filtered("${LIBEXECDIR}","*/libexec/* cloudstack-proprietary/*/libexec/*",chmod=0755)
-	bld.install_files_filtered("${BINDIR}","*/bindir/* cloudstack-proprietary/*/bindir/*",chmod=0755)
-	bld.install_files_filtered("${SBINDIR}","*/sbindir/* cloudstack-proprietary/*/sbindir/*",chmod=0755)
+	#bld.install_files_filtered("${LIBEXECDIR}","*/libexec/* cloudstack-proprietary/*/libexec/*",chmod=0755)
+	#bld.install_files_filtered("${BINDIR}","*/bindir/* cloudstack-proprietary/*/bindir/*",chmod=0755)
+	#bld.install_files_filtered("${SBINDIR}","*/sbindir/* cloudstack-proprietary/*/sbindir/*",chmod=0755)
+
+	bld.install_files_filtered("${LIBEXECDIR}","*/libexec/*",chmod=0755)
+	bld.install_files_filtered("${BINDIR}","*/bindir/*",chmod=0755)
+	bld.install_files_filtered("${SBINDIR}","*/sbindir/*",chmod=0755)
 
 def build_server_client ():
 	start_path = bld.path.find_dir("client/WEB-INF")
@@ -261,7 +266,8 @@ def build_ui ():
 def build_conf_files ():
 	# apply distro-specific config on top of the 'all' generic cloud-management config
 	globspec = _join("*","distro",bld.env.DISTRO.lower(),"*") # matches premium/distro/centos/SYSCONFDIR
-	distrospecificdirs=_glob(globspec) + _glob(_join("cloudstack-proprietary",globspec))
+	#distrospecificdirs=_glob(globspec) + _glob(_join("cloudstack-proprietary",globspec))
+	distrospecificdirs=_glob(globspec)
 	for dsdir in distrospecificdirs:
 		start_path = bld.srcnode.find_dir(dsdir)
 		subpath,varname = _split(dsdir)
@@ -319,7 +325,7 @@ def build_xml_api_description ():
 			sources.append (str)
 		sources.append ("client/tomcatconf/commands.properties.in")
 		if buildpremium:
-			sources.append("cloudstack-proprietary/premium/tomcatconf/commands-ext.properties.in")
+			sources.append("client/tomcatconf/commands-ext.properties.in")
 
 		buildproducts = []
 		for i in sources:
@@ -350,6 +356,10 @@ def build_xml_api_description ():
 	bld.install_files("${PYTHONDIR}/cloudutils", 'python/lib/cloudutils/*')
 	bld.install_as("${PYTHONDIR}/cloudapis.py", 'cloud-cli/cloudapis/cloud.py')
 
+def build_ovm():
+	start_path = bld.path.find_dir("ovm/scripts")
+	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
+
 
 
 # Get started to execute here
@@ -357,7 +367,7 @@ build_utils_docs ()
 build_jars ()
 build_python_and_daemonize ()
 build_premium ()
-build_thirdparty_dir()
+#build_thirdparty_dir()
 build_dependences ()
 build_console_proxy ()
 build_patches ()
@@ -372,6 +382,7 @@ build_conf_files ()
 build_db_files ()
 build_plugins ()
 build_xml_api_description ()
+build_ovm ()
 
 # ====================== Magic! =========================================
 bld.use_the_magic()

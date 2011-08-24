@@ -1,0 +1,20 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<nat>
+<static>
+<rule-set>
+<name>%rule-set%</name>
+<rule %delete%>
+<name>%rule-name%</name>
+</rule>
+</rule-set>
+</static>
+</nat>
+</security>
+</configuration>
+</get-configuration>
+</rpc>
+
+

@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<ipsec>
+<vpn %delete%>
+<name>%ipsec-vpn-name%</name>
+</vpn>
+</ipsec>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

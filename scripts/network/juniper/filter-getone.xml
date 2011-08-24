@@ -1,0 +1,11 @@
+<rpc>
+<get-configuration>
+<configuration>
+<firewall>
+<filter %delete%>
+<name>%filter-name%</name>
+</filter>
+</firewall>
+</configuration>
+</get-configuration>
+</rpc>

@@ -1,0 +1,12 @@
+<rpc>
+<get-configuration>
+<configuration>
+<access>
+<address-assignment>
+<pool>
+</pool>
+</address-assignment>
+</access>
+</configuration>
+</get-configuration>
+</rpc>

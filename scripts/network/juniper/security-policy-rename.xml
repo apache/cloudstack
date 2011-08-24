@@ -1,0 +1,17 @@
+<rpc>
+<load-configuration>
+<configuration>
+<security>
+<policies>
+<policy>
+<from-zone-name>%from-zone%</from-zone-name>
+<to-zone-name>%to-zone%</to-zone-name>
+<policy rename="rename" name="%new-policy-name%">
+<name>%policy-name%</name>
+</policy>
+</policy>
+</policies>
+</security>
+</configuration>
+</load-configuration>
+</rpc>

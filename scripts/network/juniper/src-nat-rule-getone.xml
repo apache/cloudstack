@@ -1,0 +1,20 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<nat>
+<source>
+<rule-set>
+<name>%from-zone%</name>
+<rule %delete%>
+<name>%rule-name%</name>
+</rule>
+</rule-set>
+</source>
+</nat>
+</security>
+</configuration>
+</get-configuration>
+</rpc>
+
+
