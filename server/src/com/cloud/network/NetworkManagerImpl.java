@@ -544,7 +544,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
         }
 
-        _accountMgr.checkAccess(caller, ipOwner);
+        _accountMgr.checkAccess(caller, null, ipOwner);
 
         DataCenterVO zone = null;
         if (zoneId != null) {
@@ -654,7 +654,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         IpAddress ipToAssoc = getIp(cmd.getEntityId());
         if (ipToAssoc != null) {
-            _accountMgr.checkAccess(caller, ipToAssoc);
+            _accountMgr.checkAccess(caller, null, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAccountId());
         } else {
             s_logger.debug("Unable to find ip address by id: " + cmd.getEntityId());
@@ -1413,7 +1413,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         if (ipVO.getAllocatedToAccountId() != null) {
-            _accountMgr.checkAccess(caller, ipVO);
+            _accountMgr.checkAccess(caller, null, ipVO);
         }
 
         if (ipVO.isSourceNat()) {
@@ -1856,7 +1856,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
                 
-                _accountMgr.checkAccess(caller, owner);
+                _accountMgr.checkAccess(caller, null, owner);
                 accountId = owner.getId();
             }
         }
@@ -2046,7 +2046,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not own network id=" + networkId + ", permission denied");
             }
         } else {
-            _accountMgr.checkAccess(caller, owner);
+            _accountMgr.checkAccess(caller, null, owner);
         }
 
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
@@ -2378,7 +2378,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
 
-        _accountMgr.checkAccess(callerAccount, network);
+        _accountMgr.checkAccess(callerAccount, null, network);
 
         boolean success = true;
 
@@ -3033,7 +3033,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
         }
-        _accountMgr.checkAccess(caller, network);
+        _accountMgr.checkAccess(caller, null, network);
         
         // Don't allow to update system network - make an exception for the Guest network in Basic zone
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
