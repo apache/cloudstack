@@ -280,6 +280,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             pstmt.setLong(4, threadId);
             int rows = pstmt.executeUpdate();
             assert (rows <= 1) : "hmmm....keys not unique? " + pstmt;
+           
+            
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("lck-" + key + " released");
             }
@@ -293,7 +295,10 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                     s_logger.trace("lck-" + key + " removed");
                 }
                 decrCount();
+            } else  if (rows < 1) {
+                s_logger.warn("Was unable to find lock for the key " + key + " and thread id " + threadId);
             }
+            
             return rows == 1;
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to release " + key, e);

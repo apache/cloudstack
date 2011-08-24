@@ -865,10 +865,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     @DB
     protected List<DomainRouterVO> findOrCreateVirtualRouters(Network guestNetwork, DeployDestination dest, Account owner, boolean isRedundant) throws ConcurrentOperationException, InsufficientCapacityException {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         
-        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
@@ -965,8 +963,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 routers.add(router);
             }
-
-            txn.commit();
         } finally {
             if (network != null) {
                 _networkDao.releaseFromLockTable(network.getId());
@@ -1079,11 +1075,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return runningRouters;
     }
     
-    @DB
     List<DomainRouterVO> findOrCreateDhcpServers(Network guestNetwork, DeployDestination dest, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        Network network = _networkDao.lockRow(guestNetwork.getId(), true);
+        Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
@@ -1156,8 +1149,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
                 _userStatsDao.persist(stats);
             }
-
-            txn.commit();
 
         } finally {
             if (network != null) {
