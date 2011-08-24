@@ -678,10 +678,16 @@ function bindAddIpRangeToPublicNetworkButton() {
 				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();	//optional field (might be empty)
 				if(endip != null && endip.length > 0)
 				    array1.push("&endip="+todb(endip));			
-													
+				
+				//zoneObj.networktype == "Advanced", only advanced zone has option to Add IP Range (in network node)
+				if(zoneObj.securitygroupsenabled == false)   
+                    array1.push("&forVirtualNetwork=true");
+				else
+					array1.push("&forVirtualNetwork=false");
+				
 				// Add IP Range to public network
 				$.ajax({
-					data: createURL("command=createVlanIpRange&forVirtualNetwork=true&zoneId="+zoneObj.id+vlan+scopeParams+array1.join("")),
+					data: createURL("command=createVlanIpRange&zoneId="+zoneObj.id+vlan+scopeParams+array1.join("")),
 					dataType: "json",
 					success: function(json) {	
 						$thisDialog.find("#spinning_wheel").hide();
