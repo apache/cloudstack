@@ -183,20 +183,6 @@ disable_rpfilter() {
   sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
 }
 
-disable_rpfilter_domR() {
-  log_it "cloud: disable rp_filter"
-  log_it "disable rpfilter"
-  sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
-  if [ "$DISABLE_RP_FILTER" == "true" ]
-  then
-      log_it "cloud: disable rp_filter : updating proc"
-      sed -i "s/net.ipv4.conf.eth2.rp_filter.*$/net.ipv4.conf.eth2.rp_filter = 0/" /etc/sysctl.conf 
-      sed -i "s/net.ipv4.conf.eth3.rp_filter.*$/net.ipv4.conf.eth3.rp_filter = 0/" /etc/sysctl.conf 
-      echo "0" > /proc/sys/net/ipv4/conf/eth2/rp_filter
-      echo "0" > /proc/sys/net/ipv4/conf/eth3/rp_filter
-  fi
-}
-
 enable_svc() {
   local svc=$1
   local enabled=$2
@@ -390,7 +376,7 @@ setup_router() {
   enable_svc haproxy 1
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
-  disable_rpfilter_domR
+  disable_rpfilter
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
@@ -575,7 +561,6 @@ parse_cmd_line() {
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="unknown"
 BOOTPROTO="static"
-DISABLE_RP_FILTER="false"
 
 for i in $CMDLINE
   do
@@ -583,9 +568,6 @@ for i in $CMDLINE
     KEY=$(echo $i | cut -d= -f1)
     VALUE=$(echo $i | cut -d= -f2)
     case $KEY in 
-      disable_rp_filter)
-          DISABLE_RP_FILTER=$VALUE
-          ;;
       eth0ip)
           ETH0_IP=$VALUE
           ;;
