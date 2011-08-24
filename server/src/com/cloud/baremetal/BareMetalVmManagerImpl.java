@@ -49,7 +49,6 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.org.Grouping;
-import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
@@ -83,10 +82,10 @@ import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
-import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
@@ -211,7 +210,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
 		}
 
-		_accountMgr.checkAccess(caller, owner);
+		_accountMgr.checkAccess(caller, null, owner);
 		long accountId = owner.getId();
 
 		DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
@@ -286,7 +285,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			sshPublicKey = pair.getPublicKey();
 		}
 
-		_accountMgr.checkAccess(caller, template);
+		_accountMgr.checkAccess(caller, null, template);
 
 		DataCenterDeployment plan = new DataCenterDeployment(dc.getId());
 
