@@ -32,7 +32,7 @@ public interface SecurityGroupWorkQueue {
     
     int submitWorkForVms(Set<Long> vmIds);
     
-    List<SecurityGroupWork> getWork(int numberOfWorkItems);
+    List<SecurityGroupWork> getWork(int numberOfWorkItems) throws InterruptedException;
     
     int size();
     
