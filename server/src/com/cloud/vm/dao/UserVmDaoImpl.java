@@ -529,7 +529,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             sb.append(" ?,");
         }
         sb.deleteCharAt(sb.length()-1).append(")");
-        System.out.println("Appending " + sb.toString());
         return sb.toString();
     }
 
