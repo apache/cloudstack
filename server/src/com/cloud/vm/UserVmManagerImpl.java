@@ -536,7 +536,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // If the account is not an admin, check that the volume and the virtual machine are owned by the account that was
         // passed in
-        _accountMgr.checkAccess(account, volume);
+        _accountMgr.checkAccess(account, null, volume);
         /*
          * if (account != null) { if (!isAdmin(account.getType())) { if (account.getId() != volume.getAccountId()) { throw new
          * PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName()
@@ -738,7 +738,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // If the account is not an admin, check that the volume is owned by the account that was passed in
-        _accountMgr.checkAccess(account, volume);
+        _accountMgr.checkAccess(account, null, volume);
         /*
          * if (!isAdmin) { if (account.getId() != volume.getAccountId()) { throw new
          * InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " +
@@ -2042,7 +2042,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
         // Verify that caller can perform actions in behalf of vm owner
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         // Get default guest network in Basic zone
         Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
@@ -2102,7 +2102,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
         
         //Verify that caller can perform actions in behalf of vm owner
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
@@ -2210,7 +2210,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
         // Verify that caller can perform actions in behalf of vm owner
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
 
         if (networkIdList == null || networkIdList.isEmpty()) {
             NetworkVO defaultNetwork = null;
@@ -2329,7 +2329,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
             Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, String> requestedIps, String defaultNetworkIp, String keyboard) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
-        _accountMgr.checkAccess(caller, owner);
+        _accountMgr.checkAccess(caller, null, owner);
         long accountId = owner.getId();
         
         assert !(requestedIps != null && defaultNetworkIp != null) : "requestedIp list and defaultNetworkIp should never be specified together";
@@ -2390,7 +2390,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Check templates permissions
         if (!template.isPublicTemplate()) {
             Account templateOwner = _accountMgr.getAccount(template.getAccountId());
-            _accountMgr.checkAccess(owner, templateOwner);
+            _accountMgr.checkAccess(owner, null, templateOwner);
         }
 
         // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk

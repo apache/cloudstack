@@ -74,14 +74,13 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     }
 
     @Override
-    public boolean checkAccess(Account caller, ControlledEntity entity) throws PermissionDeniedException {
+    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType) throws PermissionDeniedException {
         if (entity instanceof VirtualMachineTemplate) {
             
             VirtualMachineTemplate template = (VirtualMachineTemplate)entity;
-            
+            Account owner = _accountDao.findById(template.getAccountId());
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
-                Account owner = _accountDao.findById(template.getAccountId());
                 if (BaseCmd.isRootAdmin(caller.getType()) || (owner.getId() == caller.getId())) {
                     return true;
                 }
@@ -91,6 +90,13 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
                     throw new PermissionDeniedException(caller + " does not have permission to launch instances from " + template);
+                }
+            } else {
+                // Domain admin and regular user can delete/modify only templates created by them
+                if (accessType != null && accessType == AccessType.ModifyEntry) {
+                    if (!BaseCmd.isRootAdmin(caller.getType()) && owner.getId() != caller.getId()) {
+                        throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                    }
                 }
             }
             
@@ -109,7 +115,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(User user, ControlledEntity entity) throws PermissionDeniedException {
         Account account = _accountDao.findById(user.getAccountId());
-        return checkAccess(account, entity);
+        return checkAccess(account, entity, null);
     }
 
 	@Override

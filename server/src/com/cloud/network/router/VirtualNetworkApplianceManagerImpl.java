@@ -455,7 +455,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
 
-        _accountMgr.checkAccess(account, router);
+        _accountMgr.checkAccess(account, null, router);
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
 
@@ -1840,7 +1840,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
-        _accountMgr.checkAccess(account, router);
+        _accountMgr.checkAccess(account, null, router);
 
         Account owner = _accountMgr.getAccount(router.getAccountId());
 

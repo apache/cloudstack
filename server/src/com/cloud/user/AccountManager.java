@@ -21,6 +21,7 @@ package com.cloud.user;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -122,7 +123,7 @@ public interface AccountManager extends AccountService {
     
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
     
-    void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
+    void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException;
 
 	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
 

@@ -115,8 +115,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
         }
 
-        _accountMgr.checkAccess(caller, ipAddress);
-        _accountMgr.checkAccess(caller, userVm);
+        _accountMgr.checkAccess(caller, null, ipAddress);
+        _accountMgr.checkAccess(caller, null, userVm);
 
         // validate that IP address and userVM belong to the same account
         if (ipAddress.getAllocatedToAccountId().longValue() != userVm.getAccountId()) {
@@ -136,8 +136,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return;
         }
 
-        _accountMgr.checkAccess(caller, rule);
-        _accountMgr.checkAccess(caller, userVm);
+        _accountMgr.checkAccess(caller, null, rule);
+        _accountMgr.checkAccess(caller, null, userVm);
 
         if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
@@ -391,7 +391,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
 
-        _accountMgr.checkAccess(caller, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         return revokePortForwardingRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply);
     }
@@ -423,7 +423,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
 
-        _accountMgr.checkAccess(caller, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         return revokeStaticNatRuleInternal(ruleId, caller, ctx.getCallerUserId(), apply);
     }
@@ -534,7 +534,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for port forwarding rules yet");
             }
-            _accountMgr.checkAccess(caller, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -600,7 +600,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
 
         try {
@@ -648,7 +648,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, staticNatRules.toArray(new StaticNatRule[staticNatRules.size()]));
+            _accountMgr.checkAccess(caller, null, staticNatRules.toArray(new StaticNatRule[staticNatRules.size()]));
         }
 
         try {
@@ -672,7 +672,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
 
         try {
@@ -698,7 +698,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, rules.toArray(new FirewallRule[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRule[rules.size()]));
         }
 
         for (FirewallRuleVO rule : rules) {
@@ -726,7 +726,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         if (caller != null) {
-            _accountMgr.checkAccess(caller, ips.toArray(new IPAddressVO[ips.size()]));
+            _accountMgr.checkAccess(caller, null, ips.toArray(new IPAddressVO[ips.size()]));
         }
         
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
@@ -763,7 +763,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for port forwarding rules yet");
             }
-            _accountMgr.checkAccess(caller, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -1091,7 +1091,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         if (caller != null) {
-            _accountMgr.checkAccess(caller, sourceIp);
+            _accountMgr.checkAccess(caller, null, sourceIp);
         }
 
         //create new static nat rule

@@ -187,7 +187,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for firewall rules yet");
             }
-            _accountMgr.checkAccess(caller, ipAddressVO);
+            _accountMgr.checkAccess(caller, null, ipAddressVO);
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -297,7 +297,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @Override
     public void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose) {
         // Validate ip address
-        _accountMgr.checkAccess(caller, ipAddress);
+        _accountMgr.checkAccess(caller, null, ipAddress);
 
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         if (networkId == null) {
@@ -382,7 +382,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         
 
         if (caller != null) {
-            _accountMgr.checkAccess(caller, rules.toArray(new FirewallRuleVO[rules.size()]));
+            _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRuleVO[rules.size()]));
         }
 
         try {
@@ -406,7 +406,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.Firewall);
         }
 
-        _accountMgr.checkAccess(caller, rule);
+        _accountMgr.checkAccess(caller, null, rule);
         
         
         revokeRule(rule, caller, userId, false);
@@ -435,7 +435,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @DB
     public void revokeRule(FirewallRuleVO rule, Account caller, long userId, boolean needUsageEvent) {
         if (caller != null) {
-            _accountMgr.checkAccess(caller, rule);
+            _accountMgr.checkAccess(caller, null, rule);
         }
 
         Transaction txn = Transaction.currentTxn();

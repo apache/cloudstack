@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
@@ -63,7 +64,6 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
@@ -104,9 +104,7 @@ import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
@@ -219,7 +217,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public Long extract(ExtractTemplateCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -227,7 +225,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         Long eventId = cmd.getStartEventId();
 
         // FIXME: async job needs fixing
-        return extract(account, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
+        return extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
     }
     
     @Override
@@ -241,7 +239,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	return vmTemplate;
     }
 
-    private Long extract(Account account, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
+    private Long extract(Account caller, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
         String desc = "template";
         if (isISO) {
             desc = "ISO";
@@ -270,20 +268,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
         
-        /*
-         * GLOBAL ADMINS - always allowed to extract
-         * OTHERS - allowed to extract if
-         * 			1) Its own template and extractable=true
-         * 			2) Its not its own template but public=true and extractable=true
-         */
-        if (account!=null && account.getType() != Account.ACCOUNT_TYPE_ADMIN){//Not a ROOT Admin
-        	if (template.getAccountId() == account.getId() && template.isExtractable()){        
-        	}else if (template.getAccountId() != account.getId() && template.isPublicTemplate() && template.isExtractable()){
-        	}else{
-        		throw new PermissionDeniedException("Unable to extract " + desc + "=" + templateId + " - permission denied.");
-        	}
+        if (!template.isExtractable()) {
+            throw new InvalidParameterValueException("Unable to extract template id=" + templateId + " as it's not extractable");
         }
-
+        
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+        
         List<HostVO> sservers = _storageMgr.getSecondaryStorageHosts(zoneId);
 
         VMTemplateHostVO tmpltHostRef = null;
@@ -593,10 +583,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	Long userId = UserContext.current().getCallerUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
     	Long destZoneId = cmd.getDestinationZoneId();
-    	Account account = UserContext.current().getCaller();
+    	Account caller = UserContext.current().getCaller();
         
         //Verify parameters
-    	
         if (sourceZoneId == destZoneId) {
             throw new InvalidParameterValueException("Please specify different source and destination zones.");
         }
@@ -626,16 +615,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if ( srcSecHost == null ) {
             throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId );
         }
-        //Verify account information
-        String errMsg = "Unable to copy template " + templateId;
-        userId = accountAndUserValidation(account, userId, null, template, errMsg);
+       
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
         
         boolean success = copy(userId, template, srcSecHost, sourceZone, dstZone);
         
         if (success) {
             return template;
-        } else {
-            s_logger.warn(errMsg);
         }
        
         return null;
@@ -785,7 +771,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	@Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
 	public boolean detachIso(DetachIsoCmd cmd)  {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
         Long vmId = cmd.getVirtualMachineId();
         
@@ -799,6 +785,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (userVM == null) {
             throw new InvalidParameterValueException("Please specify a valid VM.");
         }
+        
+        _accountMgr.checkAccess(caller, null, userVM);
 
         Long isoId = userVM.getIsoId();
         if (isoId == null) {
@@ -810,12 +798,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (vmState != State.Running && vmState != State.Stopped) {
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
-        
-        String errMsg = "Unable to detach ISO " + isoId + " from virtual machine";
-        userId = accountAndUserValidation(account, userId, vmInstanceCheck, null, errMsg);
-        
-        return attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
 
+        return attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
 	}
 	
 	@Override
@@ -837,14 +821,15 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
     	}
     	
+    	//check permissions
+    	_accountMgr.checkAccess(caller, null, iso);
+    	_accountMgr.checkAccess(caller, null, vm);
+    	
         State vmState = vm.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
         
-        String errMsg = "Unable to attach ISO" + isoId + "to virtual machine " + vmId;
-        userId = accountAndUserValidation(caller, userId, vm, iso, errMsg);
-
         if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
         	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
@@ -870,40 +855,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }    
         return success;
     }
-
-	private Long accountAndUserValidation(Account caller, Long userId, UserVmVO userVm, VMTemplateVO template, String msg) throws PermissionDeniedException{
-		
-    	if (caller != null) {
-    	    if (!isAdmin(caller.getType())) {
-				if ((userVm != null) && (caller.getId() != userVm.getAccountId())) {
-		            throw new PermissionDeniedException(msg + ". Permission denied.");
-		        }
-
-	    		if ((template != null) && (!template.isPublicTemplate() && (caller.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
-                    throw new PermissionDeniedException(msg + ". Permission denied.");
-                }
-                
-    	    } else {
-    	        if (userVm != null) {
-                    _accountMgr.checkAccess(caller, userVm);
-    	        }
-    	        
-    	        if (template != null && !template.isPublicTemplate()) {
-    	        	Account templateOwner = _accountDao.findById(template.getAccountId());
-    	        	_accountMgr.checkAccess(caller, templateOwner);
-    	        }
-    	    }
-    	}
-        
-        return userId;
-	}
-	
-	private static boolean isAdmin(short accountType) {
-	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
-	    		(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
-	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-	}
 	
 	@Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_DELETE, eventDescription = "deleting template", async = true)
@@ -916,16 +867,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
         
-        if (template != null) {
-            Account templateOwner = _accountDao.findById(template.getAccountId());
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                if (caller.getId() != templateOwner.getId()) {
-                    throw new PermissionDeniedException("Account " + caller + " can't operate with template id=" + template.getId());
-                }
-            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                _accountMgr.checkAccess(caller, templateOwner);
-            }
-        }   
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
     	
     	if (template.getFormat() == ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
@@ -947,17 +889,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
         
-        if (template != null) {
-            Account templateOwner = _accountDao.findById(template.getAccountId());
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                if (caller.getId() != templateOwner.getId()) {
-                    throw new PermissionDeniedException("Account " + caller + " can't operate with iso id=" + template.getId());
-                }
-            } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                _accountMgr.checkAccess(caller, templateOwner);
-            }
-        }   
-    	
+        _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
+         	
     	if (template.getFormat() != ImageFormat.ISO) {
     		throw new InvalidParameterValueException("Please specify a valid iso.");
     	}

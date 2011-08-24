@@ -226,7 +226,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
         }
 
-        _accountMgr.checkAccess(caller.getCaller(), loadBalancer);
+        _accountMgr.checkAccess(caller.getCaller(), null, loadBalancer);
 
         try {
             loadBalancer.setState(FirewallRule.State.Add);
@@ -299,7 +299,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Unable to find load balancer rule " + loadBalancerId);
         }
 
-        _accountMgr.checkAccess(caller, rule);
+        _accountMgr.checkAccess(caller, null, rule);
 
         return deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallerUserId());
     }
@@ -407,7 +407,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
         NetworkVO network = _networkDao.findById(networkId);
 
-        _accountMgr.checkAccess(caller.getCaller(), ipAddr);
+        _accountMgr.checkAccess(caller.getCaller(), null, ipAddr);
 
         // verify that lb service is supported by the network
         if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Lb)) {
@@ -658,7 +658,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             return null;
         }
 
-        _accountMgr.checkAccess(caller, loadBalancer);
+        _accountMgr.checkAccess(caller, null, loadBalancer);
 
         List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
         List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;

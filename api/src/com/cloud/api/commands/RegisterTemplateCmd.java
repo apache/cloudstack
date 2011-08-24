@@ -18,7 +18,6 @@
 package com.cloud.api.commands;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -36,7 +35,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.Pair;
 
 @Implementation(description="Registers an existing template into the Cloud.com cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {

@@ -35,6 +35,11 @@ import com.cloud.utils.component.Adapter;
  * the management stack for users and accounts. 
  */
 public interface SecurityChecker extends Adapter {
+    
+    public enum AccessType {
+        ListEntry,
+        ModifyEntry,
+    }
     /**
      * Checks if the account owns the object.
      * 
@@ -60,10 +65,11 @@ public interface SecurityChecker extends Adapter {
      * 
      * @param caller account to check against.
      * @param entity object that the account is trying to access.
+     * @param accessType TODO
      * @return true if access allowed.  false if this adapter cannot provide permission.
      * @throws PermissionDeniedException if this adapter is suppose to authenticate ownership and the check failed.
      */
-    boolean checkAccess(Account caller, ControlledEntity entity) throws PermissionDeniedException;
+    boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType) throws PermissionDeniedException;
 
     /**
      * Checks if the user belongs to an account that can access the object.
