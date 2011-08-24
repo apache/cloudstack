@@ -275,12 +275,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (preSnapshotPath != null && preSnapshotPath.equals(answer.getSnapshotPath())) {
                 // empty snapshot
                 s_logger.debug("CreateSnapshot: this is empty snapshot ");
-                HostVO secHost = getSecHost(volumeId, volume.getDataCenterId());
                 snapshot.setPath(preSnapshotPath);
                 snapshot.setBackupSnapshotId(preSnapshotVO.getBackupSnapshotId());
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 snapshot.setPrevSnapshotId(preId);
-                snapshot.setSecHostId(secHost.getId());
+                snapshot.setSecHostId(preSnapshotVO.getSecHostId());
                 _snapshotDao.update(snapshotId, snapshot);
             } else {
                 long preSnapshotId = 0;
