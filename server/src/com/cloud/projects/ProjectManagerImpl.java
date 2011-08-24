@@ -122,7 +122,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
         }
         
-        _accountMgr.checkAccess(caller, project);
+        _accountMgr.checkAccess(caller, null, project);
         
         //TODO - delete all project resources here
         

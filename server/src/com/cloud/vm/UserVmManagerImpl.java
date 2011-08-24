@@ -3295,7 +3295,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VirtualMachineTemplate template = _templateDao.findById(vm.getTemplateId());
         if (!template.isPublicTemplate()) {
             Account templateOwner = _accountMgr.getAccount(template.getAccountId());
-            _accountMgr.checkAccess(newAccount, templateOwner);
+            _accountMgr.checkAccess(newAccount, null, templateOwner);
         }
 
         // VV 5: check that vm owner can create vm in the domain
