@@ -1,0 +1,37 @@
+#### usage commands
+generateUsageRecords=com.cloud.api.commands.GenerateUsageRecordsCmd;1
+listUsageRecords=com.cloud.api.commands.GetUsageRecordsCmd;1
+
+#### external firewall commands
+addExternalFirewall=com.cloud.api.commands.AddExternalFirewallCmd;1
+deleteExternalFirewall=com.cloud.api.commands.DeleteExternalFirewallCmd;1
+listExternalFirewalls=com.cloud.api.commands.ListExternalFirewallsCmd;1
+
+#### external loadbalancer commands
+addExternalLoadBalancer=com.cloud.api.commands.AddExternalLoadBalancerCmd;1
+deleteExternalLoadBalancer=com.cloud.api.commands.DeleteExternalLoadBalancerCmd;1
+listExternalLoadBalancers=com.cloud.api.commands.ListExternalLoadBalancersCmd;1
+
+### Network Devices commands
+addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
+listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
+deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+
+#### traffic monitor commands
+addTrafficMonitor=com.cloud.api.commands.AddTrafficMonitorCmd;1
+deleteTrafficMonitor=com.cloud.api.commands.DeleteTrafficMonitorCmd;1
+listTrafficMonitors=com.cloud.api.commands.ListTrafficMonitorsCmd;1
+
+####Netapp integration commands
+createVolumeOnFiler=com.cloud.api.commands.netapp.CreateVolumeCmd;15
+destroyVolumeOnFiler=com.cloud.api.commands.netapp.DestroyVolumeCmd;15
+listVolumesOnFiler=com.cloud.api.commands.netapp.ListVolumesCmd;15
+createLunOnFiler=com.cloud.api.commands.netapp.CreateLunCmd;15
+destroyLunOnFiler=com.cloud.api.commands.netapp.DestroyLunCmd;15
+listLunsOnFiler=com.cloud.api.commands.netapp.ListLunsCmd;15
+associateLun=com.cloud.api.commands.netapp.AssociateLunCmd;15
+dissociateLun=com.cloud.api.commands.netapp.DissociateLunCmd;15
+createPool=com.cloud.api.commands.netapp.CreatePoolCmd;15
+deletePool=com.cloud.api.commands.netapp.DeletePoolCmd;15
+modifyPool=com.cloud.api.commands.netapp.ModifyPoolCmd;15
+listPools=com.cloud.api.commands.netapp.ListPoolsCmd;15

@@ -113,10 +113,13 @@ def build_dependences ():
 				"cloud-commons-httpclient-3.1.jar", "cloud-commons-pool-1.4.jar",
 				"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
 				"cloud-ws-commons-util-1.0.2.jar",
-				"cloud-commons-collections-3.2.1.jar", "vmware*.jar"]
+				"cloud-commons-collections-3.2.1.jar"]
 
 	start_path = bld.path.find_dir ("deps")
 	bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
+	if buildpremium:
+		start_path = bld.path.find_dir ("cloudstack-proprietary/premium/deps")
+		bld.install_files('${JAVADIR}',start_path.ant_glob("*.jar", excl = excludes), cwd=start_path)
 
 def build_console_proxy ():
 	# binary unsubstitutable files:
@@ -316,7 +319,7 @@ def build_xml_api_description ():
 			sources.append (str)
 		sources.append ("client/tomcatconf/commands.properties.in")
 		if buildpremium:
-			sources.append("cloudstack-proprietary/premium/tomcatconf/commands-ext.properties.in")
+			sources.append("client/tomcatconf/commands-ext.properties.in")
 
 		buildproducts = []
 		for i in sources:
@@ -347,6 +350,10 @@ def build_xml_api_description ():
 	bld.install_files("${PYTHONDIR}/cloudutils", 'python/lib/cloudutils/*')
 	bld.install_as("${PYTHONDIR}/cloudapis.py", 'cloud-cli/cloudapis/cloud.py')
 
+def build_ovm():
+	start_path = bld.path.find_dir("ovm/scripts")
+	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
+
 
 
 # Get started to execute here
@@ -354,7 +361,7 @@ build_utils_docs ()
 build_jars ()
 build_python_and_daemonize ()
 build_premium ()
-build_thirdparty_dir()
+#build_thirdparty_dir()
 build_dependences ()
 build_console_proxy ()
 build_patches ()
@@ -369,6 +376,7 @@ build_conf_files ()
 build_db_files ()
 build_plugins ()
 build_xml_api_description ()
+build_ovm ()
 
 # ====================== Magic! =========================================
 bld.use_the_magic()

@@ -1,0 +1,13 @@
+<rpc>
+<load-configuration>
+<configuration>
+<applications>
+<application>           
+<name>%name%</name>     
+<protocol>%protocol%</protocol>    
+<destination-port>%dest-port%</destination-port>        
+</application>   
+</applications>
+</configuration>
+</load-configuration>
+</rpc>

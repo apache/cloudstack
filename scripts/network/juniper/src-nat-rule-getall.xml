@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<nat>
+<source>
+</source>
+</nat>
+</security>
+</configuration>
+</get-configuration>
+</rpc>
+

@@ -1,0 +1,15 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<nat>
+<destination>
+<rule-set>
+<name>%rule-set%</name>
+</rule-set>
+</destination>
+</nat>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

@@ -1,0 +1,16 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<nat>
+<source>
+<rule-set>
+<name>trust</name>
+</rule-set>
+</source>
+</nat>
+</security>
+</configuration>
+</get-configuration>
+</rpc>
+

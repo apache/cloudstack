@@ -1,0 +1,16 @@
+<rpc>
+<load-configuration>
+<configuration>
+<security>
+<nat>
+<source>
+<pool>
+<name>%pool-name%</name>
+<address>%address%</address>
+</pool>
+</source>
+</nat>
+</security>
+</configuration>
+</load-configuration>
+</rpc>

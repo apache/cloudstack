@@ -1,0 +1,14 @@
+<rpc>
+<get-configuration>
+<configuration>
+<firewall>
+<filter>
+<name>%filter-name%</name>
+<term %delete%>
+<name>%term-name%</name>
+</term>
+</filter>
+</firewall>
+</configuration>
+</get-configuration>
+</rpc>
