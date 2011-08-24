@@ -1,8 +1,11 @@
 package com.cloud.network.security;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.cloud.utils.Profiler;
 
 import junit.framework.TestCase;
 
@@ -44,7 +47,13 @@ public class SecurityGroupQueueTest extends TestCase {
         }
         
         public void run() {
-            List<SecurityGroupWork> result = queue.getWork(_numJobsToDequeue);
+            List<SecurityGroupWork> result = new ArrayList<SecurityGroupWork>();
+            try {
+                result = queue.getWork(_numJobsToDequeue);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             this._numJobsDequeued = result.size();
         }
         
@@ -79,18 +88,18 @@ public class SecurityGroupQueueTest extends TestCase {
             }
         }
         System.out.println("Num Vms= " + numProducers + " Queue size = " + queue.size());
-        assert(numProducers == queue.size());
+        assertEquals(numProducers, queue.size());
     }
     
-    public void testNumJobsEqToNumVms2() {
+    protected void testNumJobsEqToNumVms2(int numProducers, int maxVmId) {
         queue.clear();
 
-        final int numProducers = 50;
         Thread [] pThreads = new Thread[numProducers];
         
         Producer [] producers = new Producer[numProducers];
         int numProduced = 0;
-        int maxVmId = 10000;
+        Profiler p = new Profiler();
+        p.start();
         for (int i=0; i < numProducers; i++) {
             producers[i] = new Producer(maxVmId);
             pThreads[i] = new Thread(producers[i]);
@@ -104,16 +113,22 @@ public class SecurityGroupQueueTest extends TestCase {
                 ie.printStackTrace();
             }
         }
-        System.out.println("Num Vms= " + maxVmId + " Queue size = " + queue.size());
-        assert(maxVmId == queue.size());
+        p.stop();
+        System.out.println("Num Vms= " + maxVmId + " Queue size = " + queue.size() + " time=" + p.getDuration() + " ms");
+        assertEquals(maxVmId, queue.size());
     }
     
-    public void testDequeueOneJob() {
-        queue.clear();
+    public  void testNumJobsEqToNumVms3() {
+        testNumJobsEqToNumVms2(50,20000);
+        testNumJobsEqToNumVms2(400,5000);
+        testNumJobsEqToNumVms2(1,1);
+        testNumJobsEqToNumVms2(1,1000000);
+        testNumJobsEqToNumVms2(1000,1);
 
-        final int numProducers = 2;
-        final int numConsumers = 5;
-        final int maxVmId = 200;
+    }
+    
+    protected void _testDequeueOneJob(final int numConsumers, final int numProducers, final int maxVmId) {
+        queue.clear();
 
         Thread [] pThreads = new Thread[numProducers];
         Thread [] cThreads = new Thread[numConsumers];
@@ -141,12 +156,14 @@ public class SecurityGroupQueueTest extends TestCase {
                 ie.printStackTrace();
             }
         }
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
+        for (int i=0; i < numProducers ; i++) {
+            try {
+                pThreads[i].join();
+            } catch (InterruptedException ie){
+                ie.printStackTrace();
+            }
+        }
+
         int totalDequeued = 0;
         for (int i=0; i < numConsumers; i++) {
             //System.out.println("Consumer " + i + " ask to dequeue " + consumers[i].getNumJobsToDequeue() + ", dequeued " + consumers[i].getNumJobsDequeued());
@@ -158,8 +175,29 @@ public class SecurityGroupQueueTest extends TestCase {
             totalQueued += producers[i].getNewWork();
         }
         System.out.println("Total jobs dequeued = " + totalDequeued + ", num queued=" + totalQueued + " queue current size=" + queue.size());
-        assert(totalDequeued == numConsumers);
-        assert(totalQueued - totalDequeued == queue.size());
+        assertEquals(totalDequeued, numConsumers);
+        assertEquals(totalQueued - totalDequeued, queue.size());
+    }
+    
+    public void testDequeueOneJobAgain() {
+        _testDequeueOneJob(10,10,1000);
+        int queueSize = queue.size();
+        Thread cThread = new Thread(new Consumer(1));
+        cThread.start();
+        try {
+            cThread.join();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        assertEquals(queue.size(), queueSize-1);
+    }
+    
+    public void testDequeueOneJob() {
+        _testDequeueOneJob(10,10,1000);
+        _testDequeueOneJob(1,10,1000);
+        _testDequeueOneJob(10,1,1000);
+        _testDequeueOneJob(10,1,10);
     }
 
 }

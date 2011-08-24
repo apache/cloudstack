@@ -18,6 +18,8 @@
 package com.cloud.network.security;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -37,7 +39,9 @@ import com.cloud.network.security.SecurityGroupWork.Step;
 public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
     protected static Logger s_logger = Logger.getLogger(LocalSecurityGroupWorkQueue.class);
 
-    protected TreeSet<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();    
+    protected Set<SecurityGroupWork> _currentWork = new HashSet<SecurityGroupWork>(); 
+    //protected Set<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();    
+
     private final ReentrantLock _lock = new ReentrantLock();
     private final Condition _notEmpty = _lock.newCondition(); 
     private final AtomicInteger _count = new AtomicInteger(0);
@@ -83,6 +87,20 @@ public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
         public int compareTo(LocalSecurityGroupWork o) {
             return this._instanceId.compareTo(o.getInstanceId());
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof LocalSecurityGroupWork) {
+                LocalSecurityGroupWork other = (LocalSecurityGroupWork)obj;
+                return this.getInstanceId().longValue()==other.getInstanceId().longValue();
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return getInstanceId().hashCode();
+        }
         
     }
     
@@ -124,7 +142,7 @@ public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
 
     
     @Override
-    public List<SecurityGroupWork> getWork(int numberOfWorkItems) {
+    public List<SecurityGroupWork> getWork(int numberOfWorkItems) throws InterruptedException {
         List<SecurityGroupWork> work = new ArrayList<SecurityGroupWork>(numberOfWorkItems);
         _lock.lock();
         int i = 0;
@@ -133,16 +151,14 @@ public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
                 _notEmpty.await();
             }
             int n = Math.min(numberOfWorkItems, _count.get());
+            Iterator<SecurityGroupWork> iter = _currentWork.iterator();
             while (i < n ) {
-                SecurityGroupWork w = _currentWork.first();
+                SecurityGroupWork w = iter.next();
                 w.setStep(Step.Processing);
                 work.add(w);
-                _currentWork.remove(w);
+                iter.remove();
                 ++i;
             }
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } finally {
             int c = _count.addAndGet(-i);
             if (c > 0)

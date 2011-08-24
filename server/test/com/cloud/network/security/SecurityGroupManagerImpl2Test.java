@@ -65,7 +65,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
     }
     
     public void testSchedule() {
-        final int numVms = 100000;
+        final int numVms = 10000;
         System.out.println("Starting");
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         SecurityGroupManagerImpl2 sgMgr = ComponentLocator.inject(SecurityGroupManagerImpl2.class);
