@@ -358,6 +358,22 @@ def build_ovm():
 	start_path = bld.path.find_dir("ovm/scripts")
 	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
+def build_test():
+	start_path = bld.path.find_dir("test/scripts")
+	bld.install_files('${LIBDIR}/${PACKAGE}/test', \
+		start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True), \
+		cwd=start_path,relative_trick=True)
+
+	start_path = bld.path.find_dir("test/metadata")
+	bld.install_files('${SHAREDSTATEDIR}/${PACKAGE}/test', \
+		start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True), \
+		cwd=start_path,relative_trick=True)
+
+	if not Options.options.PRESERVECONFIG:
+		start_path = bld.path.find_dir("test")
+		bld.install_files('${SYSCONFDIR}/${PACKAGE}/test','conf/*', cwd = start_path)
+	Utils.pprint ("GREEN", "Installed files of test/")
+
 
 
 # Get started to execute here
@@ -381,6 +397,7 @@ build_db_files ()
 build_plugins ()
 build_xml_api_description ()
 build_ovm ()
+build_test()
 
 # ====================== Magic! =========================================
 bld.use_the_magic()
