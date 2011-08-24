@@ -30,7 +30,11 @@ public interface SecurityGroupWorkQueue {
     
     void submitWorkForVm(long vmId, long sequenceNumber);
     
-    void submitWorkForVms(Set<Long> vmIds);
+    int submitWorkForVms(Set<Long> vmIds);
     
     List<SecurityGroupWork> getWork(int numberOfWorkItems);
+    
+    int size();
+    
+    void clear();
 }

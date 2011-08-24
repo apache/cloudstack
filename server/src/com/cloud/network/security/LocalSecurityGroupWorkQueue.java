@@ -18,10 +18,12 @@
 package com.cloud.network.security;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -35,40 +37,149 @@ import com.cloud.network.security.SecurityGroupWork.Step;
 public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
     protected static Logger s_logger = Logger.getLogger(LocalSecurityGroupWorkQueue.class);
 
-    protected LinkedBlockingQueue<SecurityGroupWork> _queue = new LinkedBlockingQueue<SecurityGroupWork>();
+    protected TreeSet<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();    
+    private final ReentrantLock _lock = new ReentrantLock();
+    private final Condition _notEmpty = _lock.newCondition(); 
+    private final AtomicInteger _count = new AtomicInteger(0);
+    
+    public static class LocalSecurityGroupWork implements SecurityGroupWork, Comparable<LocalSecurityGroupWork> {
+        Long _logSequenceNumber;
+        Long _instanceId;
+        Step _step;
+        
+        public LocalSecurityGroupWork(Long instanceId, Long logSequence, Step step){
+            this._instanceId = instanceId;
+            this._logSequenceNumber = logSequence;
+            this._step = step;
+        }
+        
+        @Override
+        public Long getInstanceId() {
+            return _instanceId;
+        }
+
+        @Override
+        public Long getLogsequenceNumber() {
+            return _logSequenceNumber;
+        }
+
+        @Override
+        public Step getStep() {
+           return _step;
+        }
+
+        @Override
+        public void setStep(Step step) {
+            this._step = step;
+        }
+
+        @Override
+        public void setLogsequenceNumber(Long logsequenceNumber) {
+            this._logSequenceNumber = logsequenceNumber;
+            
+        }
+
+        @Override
+        public int compareTo(LocalSecurityGroupWork o) {
+            return this._instanceId.compareTo(o.getInstanceId());
+        }
+        
+    }
+    
     
     @Override
     public void submitWorkForVm(long vmId, long sequenceNumber) {
-        
-        SecurityGroupWorkVO work = new SecurityGroupWorkVO(vmId, null, new Date(), SecurityGroupWork.Step.Scheduled, null);
-        boolean result = _queue.offer(work);
-        if (!result) {
-            s_logger.warn("Failed to add work item into queue for vm id " + vmId);
+        _lock.lock(); 
+        try {
+            SecurityGroupWork work = new LocalSecurityGroupWork(vmId, sequenceNumber, Step.Scheduled);
+            boolean added = _currentWork.add(work);
+            if (added)
+                _count.incrementAndGet();
+        } finally {
+            _lock.unlock();
         }
+        signalNotEmpty();
 
     }
 
    
     @Override
-    public void submitWorkForVms(Set<Long> vmIds) {
-        for (Long vmId: vmIds) {
-            SecurityGroupWorkVO work = new SecurityGroupWorkVO(vmId, null, new Date(), SecurityGroupWork.Step.Scheduled, null);
-            boolean result = _queue.offer(work);
-            if (!result) {
-                s_logger.warn("Failed to add work item into queue for vm id " + vmId);
+    public int submitWorkForVms(Set<Long> vmIds) {
+        _lock.lock(); 
+        int newWork = _count.get();
+        try {
+            for (Long vmId: vmIds) {
+                SecurityGroupWork work = new LocalSecurityGroupWork(vmId, null, SecurityGroupWork.Step.Scheduled);
+                boolean added = _currentWork.add(work);
+                if (added)
+                    _count.incrementAndGet();
             }
+        } finally {
+            newWork = _count.get() - newWork;
+            _lock.unlock();
         }
+        signalNotEmpty();
+        return newWork;
     }
 
     
     @Override
     public List<SecurityGroupWork> getWork(int numberOfWorkItems) {
-        List<SecurityGroupWork> work = new ArrayList<SecurityGroupWork>();
-        _queue.drainTo(work, numberOfWorkItems);
-        for (SecurityGroupWork w: work) {
-            w.setStep(Step.Processing);
+        List<SecurityGroupWork> work = new ArrayList<SecurityGroupWork>(numberOfWorkItems);
+        _lock.lock();
+        int i = 0;
+        try {
+            while (_count.get() == 0) {
+                _notEmpty.await();
+            }
+            int n = Math.min(numberOfWorkItems, _count.get());
+            while (i < n ) {
+                SecurityGroupWork w = _currentWork.first();
+                w.setStep(Step.Processing);
+                work.add(w);
+                _currentWork.remove(w);
+                ++i;
+            }
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } finally {
+            int c = _count.addAndGet(-i);
+            if (c > 0)
+                _notEmpty.signal();
+            _lock.unlock();
         }
         return work;
+
     }
+    
+    private void signalNotEmpty() {
+        _lock.lock();
+        try {
+            _notEmpty.signal();
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+
+    @Override
+    public int size() {
+        return _count.get();
+    }
+
+
+    @Override
+    public void clear() {
+        _lock.lock();
+        try {
+            _currentWork.clear();
+            _count.set(0);
+        } finally {
+            _lock.unlock();
+        }
+        
+    }
+        
 
 }
