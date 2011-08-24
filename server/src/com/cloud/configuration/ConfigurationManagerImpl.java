@@ -57,6 +57,8 @@ import com.cloud.api.commands.UpdateNetworkOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
@@ -195,6 +197,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     AlertManager _alertMgr;
     @Inject(adapter = SecurityChecker.class)
     Adapters<SecurityChecker> _secChecker;
+    @Inject
+    CapacityDao _capacityDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -659,6 +663,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public boolean deletePod(DeletePodCmd cmd) {
         Long podId = cmd.getId();
+        
+        Transaction txn = Transaction.currentTxn();
 
         // Make sure the pod exists
         if (!validPod(podId)) {
@@ -669,14 +675,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         HostPodVO pod = _podDao.findById(podId);
 
+        txn.start();
+        
         // Delete private ip addresses for the pod if there are any
         List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(Long.valueOf(podId), pod.getDataCenterId());
-        if (privateIps != null && privateIps.size() != 0) {
+        if (!privateIps.isEmpty()) {
             if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
                 throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
             }
+            
+            // Delete corresponding capacity record
+            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_PRIVATE_IP, null, podId, null);
         }
-
+        
         // Delete link local ip addresses for the pod
         List<DataCenterLinkLocalIpAddressVO> localIps = _LinkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
         if (!localIps.isEmpty()) {
@@ -697,6 +708,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (!(_podDao.remove(podId))) {
             throw new CloudRuntimeException("Failed to delete pod " + podId);
         }
+        
+        txn.commit();
 
         return true;
     }
@@ -1138,6 +1151,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         success = _zoneDao.remove(zoneId);
+        
+        if (success) {
+            //delete all capacity records for the zone
+            _capacityDao.removeBy(null, zoneId, null, null);
+        }
 
         txn.commit();
 

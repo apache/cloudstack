@@ -1728,6 +1728,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // collect all the capacity types, sum allocated/used and sum total...get one capacity number for each
         for (Capacity capacity : hostCapacities) {
+            
+            //check if zone exist
+            DataCenter zone = ApiDBUtils.findZoneById(capacity.getDataCenterId());
+            if (zone == null) {
+                continue;
+            }
+            
             short capacityType = capacity.getCapacityType();
             
             //If local storage then ignore
@@ -1841,7 +1848,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
         List<CapacityVO> summedCapacities = sumCapacities(result);
-        for (CapacityVO summedCapacity : summedCapacities) {
+        for (CapacityVO summedCapacity : summedCapacities) { 
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
             capacityResponse.setCapacityType(summedCapacity.getCapacityType());

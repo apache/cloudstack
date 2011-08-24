@@ -41,9 +41,6 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String ADD_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ? WHERE host_id = ? AND capacity_type = ?";
     private static final String SUBTRACT_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity - ? WHERE host_id = ? AND capacity_type = ?";
-    private static final String CLEAR_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type=2 OR capacity_type=3 OR capacity_type=6"; //clear storage and secondary_storage capacities
-    private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6"; //clear non-storage and non-secondary_storage capacities
-    private static final String CLEAR_NON_STORAGE_CAPACITIES2 = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6 AND capacity_type<>0 AND capacity_type<>1"; //clear non-storage and non-secondary_storage capacities
 
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1 = "SELECT DISTINCT capacity.cluster_id  FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster` cluster on (cluster.id = capacity.cluster_id AND cluster.removed is NULL) WHERE ";
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2 = " AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ? " +
@@ -53,6 +50,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
+	private SearchBuilder<CapacityVO> _allFieldsSearch;
+	
 	
 	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
 			"AND (a.total_capacity * ? - a.used_capacity) >= ? and a.capacity_type = 1) " +
@@ -67,6 +66,16 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	_hostOrPoolIdSearch = createSearchBuilder();
     	_hostOrPoolIdSearch.and("hostId", _hostOrPoolIdSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
     	_hostOrPoolIdSearch.done();
+    	
+    	_allFieldsSearch = createSearchBuilder();
+    	_allFieldsSearch.and("id", _allFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+    	_allFieldsSearch.and("hostId", _allFieldsSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
+    	_allFieldsSearch.and("zoneId", _allFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+    	_allFieldsSearch.and("podId", _allFieldsSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+    	_allFieldsSearch.and("clusterId", _allFieldsSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+    	_allFieldsSearch.and("capacityType", _allFieldsSearch.entity().getCapacityType(), SearchCriteria.Op.EQ);
+    	
+    	_allFieldsSearch.done();
     }
     
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
@@ -92,54 +101,6 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
     }
 
-
-    @Override
-    public void clearNonStorageCapacities() {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            txn.start();
-            String sql = CLEAR_NON_STORAGE_CAPACITIES;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (Exception e) {
-            txn.rollback();
-            s_logger.warn("Exception clearing non storage capacities", e);
-        }
-    }
-    
-    @Override
-    public void clearNonStorageCapacities2() {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            txn.start();
-            String sql = CLEAR_NON_STORAGE_CAPACITIES2;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (Exception e) {
-            txn.rollback();
-            s_logger.warn("Exception clearing non storage capacities", e);
-        }
-    }
-
-    @Override
-    public void clearStorageCapacities() {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            txn.start();
-            String sql = CLEAR_STORAGE_CAPACITIES;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (Exception e) {
-            txn.rollback();
-            s_logger.warn("Exception clearing storage capacities", e);
-        }
-    }
     
     @Override
     public CapacityVO findByHostIdType(Long hostId, short capacityType) {
@@ -231,5 +192,28 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+    
+    @Override
+    public boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId) {
+        SearchCriteria<CapacityVO> sc = _allFieldsSearch.create();
+        
+        if (capacityType != null) {
+            sc.setParameters("capacityType", capacityType);
+        }
+        
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+        
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        
+        return remove(sc) > 0;
     }
 }
