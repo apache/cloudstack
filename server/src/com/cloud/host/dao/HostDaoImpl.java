@@ -634,18 +634,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (10 * 60)));
         }
         int result = update(ub, sc, null);
+        
         assert result <= 1 : "How can this update " + result + " rows? ";
+        if (result < 1) {
+            s_logger.warn("Unable to update db record for host id=" + host.getId() + "; it's possible that the host is removed");
+        }
 
-        if (s_logger.isDebugEnabled() && result == 0) {
+        if (s_logger.isDebugEnabled() && result == 1) {
             HostVO vo = findById(host.getId());
-            assert vo != null : "How how how? : " + host.getId();
+      
+            if (vo != null) {
+                StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
+                str.append(". New=[status=").append(newStatus.toString()).append(":msid=").append(newStatus.lostConnection() ? "null" : msId).append(":lastpinged=").append(host.getLastPinged())
+                .append("]");
+                str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(msId).append(":lastpinged=").append(oldPingTime).append("]");
+                str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=").append(vo.getLastPinged()).append("]");
+                s_logger.debug(str.toString());
+            } else {
+                s_logger.warn("Can't find host db record by id=" + host.getId() + "; host might be already marked as removed");
+            }
 
-            StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
-            str.append(". New=[status=").append(newStatus.toString()).append(":msid=").append(newStatus.lostConnection() ? "null" : msId).append(":lastpinged=").append(host.getLastPinged())
-            .append("]");
-            str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(msId).append(":lastpinged=").append(oldPingTime).append("]");
-            str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=").append(vo.getLastPinged()).append("]");
-            s_logger.debug(str.toString());
         }
         return result > 0;
     }
