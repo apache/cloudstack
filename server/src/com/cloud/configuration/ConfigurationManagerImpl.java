@@ -1566,10 +1566,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
-        if (userId == null) {
-            userId = User.UID_SYSTEM;
-        }
-
+      
         String name = cmd.getServiceOfferingName();
         if ((name == null) || (name.length() == 0)) {
             throw new InvalidParameterValueException("Failed to create service offering: specify the name that has non-zero length");
@@ -1596,23 +1593,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // check if valid domain
-        if (cmd.getDomainId() != null) {
-            DomainVO domain = _domainDao.findById(cmd.getDomainId());
-            if (domain == null) {
-                throw new InvalidParameterValueException("Please specify a valid domain id");
-            }
+        if (cmd.getDomainId() != null && _domainDao.findById(cmd.getDomainId()) == null) {
+            throw new InvalidParameterValueException("Please specify a valid domain id");
         }
 
         boolean localStorageRequired = false;
         String storageType = cmd.getStorageType();
-        if (storageType == null) {
-            localStorageRequired = false;
-        } else if (storageType.equals("local")) {
-            localStorageRequired = true;
-        } else if (storageType.equals("shared")) {
-            localStorageRequired = false;
-        } else {
-            throw new InvalidParameterValueException("Invalid storage type " + storageType + " specified, valid types are: 'local' and 'shared'");
+        if (storageType != null) {
+            if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
+                localStorageRequired = true;
+            } else if (!storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
+                throw new InvalidParameterValueException("Invalid storage type " + storageType + " specified, valid types are: 'local' and 'shared'");
+            }
         }
 
         Boolean offerHA = cmd.getOfferHa();
@@ -1624,24 +1616,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (limitCpuUse == null) {
             limitCpuUse = false;
         }
-        String vm_type_string = cmd.getSystemVmType();
-        VirtualMachine.Type vm_type = null;
-        if (cmd.getIsSystem() && vm_type_string == null){
-            vm_type = VirtualMachine.Type.DomainRouter;
+        
+        String vmTypeString = cmd.getSystemVmType();
+        VirtualMachine.Type vmType = null;
+        boolean allowNetworkRate = false;
+        if (cmd.getIsSystem()) {
+            if (vmTypeString == null || VirtualMachine.Type.DomainRouter.toString().toLowerCase().equals(vmTypeString)){
+                vmType = VirtualMachine.Type.DomainRouter;
+                allowNetworkRate = true;
+            } else if (VirtualMachine.Type.ConsoleProxy.toString().toLowerCase().equals(vmTypeString)){
+                vmType = VirtualMachine.Type.ConsoleProxy;
+            } else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vmTypeString)){
+                vmType = VirtualMachine.Type.SecondaryStorageVm;
+            } else {
+                throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy + ", " + VirtualMachine.Type.SecondaryStorageVm);
+            }
+        } else {
+            allowNetworkRate = true;;
         }
-        else {
-            if (VirtualMachine.Type.ConsoleProxy.toString().toLowerCase().equals(vm_type_string)){
-                vm_type = VirtualMachine.Type.ConsoleProxy;
-            }
-            else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vm_type_string)){
-                vm_type = VirtualMachine.Type.SecondaryStorageVm;
-            }
-            else if (VirtualMachine.Type.DomainRouter.toString().toLowerCase().equals(vm_type_string)){
-                vm_type = VirtualMachine.Type.DomainRouter;
-            }
+        
+        if (cmd.getNetworkRate() != null && !allowNetworkRate) {
+            throw new InvalidParameterValueException("Network rate can be specified only for non-System offering and system offerings having \"domainrouter\" systemvmtype");
         }
 
-        return createServiceOffering(userId, cmd.getIsSystem(), vm_type, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
+        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
                 limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
     }
 
@@ -3202,7 +3200,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offering.getRateMbps() != null) {
             networkRate = offering.getRateMbps();
         } else {
-            networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
+            //for domain router service offering, get network rate from 
+            if (offering.getSystemVmType() != null && offering.getSystemVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
+                networkRate = Integer.parseInt(_configDao.getValue(Config.NetworkThrottlingRate.key()));
+            } else {
+                networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
+            }
         }
 
         // networkRate is unsigned int in serviceOffering table, and can't be set to -1
