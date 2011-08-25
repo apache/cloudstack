@@ -26,6 +26,7 @@ public class TemplateProfile {
 	Boolean bootable;
 	Long templateId;
 	VMTemplateVO template;
+	String templateTag;
 	
 	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
 			String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
@@ -57,6 +58,14 @@ public class TemplateProfile {
 		this.template = template;
 		this.zoneId = zoneId;
 	}
+	
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
+            String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
+            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag) {
+        this(templateId, userId, name, displayText, bits, passwordEnabled, requiresHvm, url, isPublic, featured, isExtractable, format, guestOsId, zoneId,
+                hypervisorType, accountName, domainId, accountId, chksum, bootable);
+        this.templateTag = templateTag;
+    }	
 	
 	public Long getTemplateId() {
 		return templateId;
@@ -197,5 +206,13 @@ public class TemplateProfile {
 	public void setTemplate(VMTemplateVO template) {
 		this.template = template;
 	}
+	
+    public String getTemplateTag() {
+        return templateTag;
+    }    
+
+    public void setTemplateTag(String templateTag) {
+        this.templateTag = templateTag;
+    }  	
 	
 }

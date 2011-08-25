@@ -38,7 +38,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Registers an existing template into the Cloud.com cloud. ", responseObject=TemplateResponse.class)
 public class RegisterTemplateCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 
     private static final String s_name = "registertemplateresponse";
 
@@ -72,7 +72,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
-    
+
     @Parameter(name=ApiConstants.IS_EXTRACTABLE, type=CommandType.BOOLEAN, description="true if the template or its derivatives are extractable; default is false")
     private Boolean extractable;
 
@@ -84,15 +84,18 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone the template is to be hosted on")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional accountName. Must be used with domainId.")
     private String accountName;
-    
+
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this template")
     private String checksum;
+
+    @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
+    private String templateTag;        
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -135,9 +138,9 @@ public class RegisterTemplateCmd extends BaseCmd {
     }
 
     public Boolean isExtractable() {
-    	return extractable;
+        return extractable;
     }
-    
+
     public Boolean getRequiresHvm() {
         return requiresHvm;
     }
@@ -151,30 +154,33 @@ public class RegisterTemplateCmd extends BaseCmd {
     }
 
     public Long getDomainId() {
-		return domainId;
-	}
+        return domainId;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
-	
+    public String getAccountName() {
+        return accountName;
+    }
+
     public String getChecksum() {
         return checksum;
     }	
-	
+
+    public String getTemplateTag() {
+        return templateTag;
+    } 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
-	
-	public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Template;
+
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.Template;
     }
-	
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -188,9 +194,9 @@ public class RegisterTemplateCmd extends BaseCmd {
                 }
             }
         }
-        
+
         return account.getId();
-     } 	
+    } 	
 
     @Override
     public void execute() throws ResourceAllocationException{

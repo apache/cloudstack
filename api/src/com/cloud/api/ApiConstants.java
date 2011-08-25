@@ -256,4 +256,5 @@ public class ApiConstants {
     public static final String FOR_LOAD_BALANCING = "forloadbalancing";
     public static final String KEYBOARD="keyboard";
     public static final String OPEN_FIREWALL="openfirewall";
+    public static final String TEMPLATE_TAG = "templatetag";
 }

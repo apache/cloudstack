@@ -26,9 +26,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOS;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -41,7 +41,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 
 public abstract class TemplateAdapterBase implements TemplateAdapter {
@@ -88,9 +87,16 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	}
 
 	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
+            Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
+            Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
+            String accountName, Long domainId, String chksum, Boolean bootable) throws ResourceAllocationException {
+	    return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId, hypervisorType,
+	            accountName, domainId, chksum, bootable, null);
+	}
+	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-			String accountName, Long domainId, String chksum, Boolean bootable) throws ResourceAllocationException {
+			String accountName, Long domainId, String chksum, Boolean bootable, String templateTag) throws ResourceAllocationException {
 		Account ctxAccount = UserContext.current().getCaller();
 		Account resourceAccount = null;
 		Long accountId = null;
@@ -232,7 +238,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         UserContext.current().setEventDetails("Id: " +id+ " name: " + name);
 		return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
-				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, accountName, domainId, accountId, chksum, true);
+				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, accountName, domainId, accountId, chksum, true, templateTag);
 	}
 	
 	@Override
@@ -240,13 +246,13 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 		return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
 				cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
 				cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()),
-				cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), true);
+				cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), true, cmd.getTemplateTag());
 	}
 
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), HypervisorType.None, cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), cmd.isBootable());
+					cmd.getZoneId(), HypervisorType.None, cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), cmd.isBootable(), null);
 	}
 	
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {
@@ -254,7 +260,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 		VMTemplateVO template = new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.getIsPublic(),
 				profile.getFeatured(), profile.getIsExtractable(), TemplateType.USER, profile.getUrl(), profile.getRequiresHVM(),
 				profile.getBits(), profile.getAccountId(), profile.getCheckSum(), profile.getDisplayText(),
-				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType());
+				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(), profile.getTemplateTag());
         
 		if (zoneId == null || zoneId == -1) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();

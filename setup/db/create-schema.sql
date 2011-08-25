@@ -856,6 +856,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `extractable` int(1) unsigned NOT NULL default 0 COMMENT 'Is this template extractable',
   `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template belongs to',
   `source_template_id` bigint unsigned COMMENT 'Id of the original template, if this template is created from snapshot',
+  `template_tag` varchar(255) COMMENT 'template tag',
   PRIMARY KEY  (`id`),
   INDEX `i_vm_template__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
