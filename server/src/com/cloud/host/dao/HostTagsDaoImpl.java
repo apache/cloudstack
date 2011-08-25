@@ -19,7 +19,9 @@ package com.cloud.host.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.ejb.Local;
+
 import com.cloud.host.HostTagVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -39,7 +41,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
 
     @Override
     public List<String> gethostTags(long hostId) {
-        SearchCriteria sc = HostSearch.create();
+        SearchCriteria<HostTagVO> sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
         
         List<HostTagVO> results = search(sc, null);
@@ -56,6 +58,10 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         Transaction txn = Transaction.currentTxn();
 
         txn.start();
+        SearchCriteria<HostTagVO> sc = HostSearch.create();
+        sc.setParameters("hostId", hostId);
+        expunge(sc);
+        
         for (String tag : hostTags) {
         	HostTagVO vo = new HostTagVO(hostId, tag);
             persist(vo);

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
@@ -51,7 +52,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -59,9 +59,9 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
@@ -111,6 +111,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HostDao                        _hostDao;
     @Inject
     protected HostDetailsDao                 _hostDetailsDao;
+    @Inject
+    protected HostTagsDao                    _hostTagsDao;    
     @Inject
     protected GuestOSCategoryDao             _guestOSCategoryDao;
 
@@ -920,6 +922,19 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
 
             _hostDao.update(hostId, host);
+        }
+        
+        List<String> hostTags = cmd.getHostTags();
+        if (hostTags != null) {
+            // Verify that the host exists
+            HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+            }
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Updating Host Tags to :"+hostTags);
+            }
+            _hostTagsDao.persist(hostId, hostTags);
         }
 
         HostVO updatedHost = _hostDao.findById(hostId);
