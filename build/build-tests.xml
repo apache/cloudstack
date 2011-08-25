@@ -35,7 +35,7 @@
 
   <!-- =================== Agent Simulator ==================== -->
   <path id="agent-simulator.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="compile-agent-simulator" depends="-init, compile-api, compile-utils, compile-core, compile-agent, compile-server" description="Compile the agent simulator.">
@@ -61,7 +61,7 @@
         <include name="${core.jar}" />
         <include name="${api.jar}" />
       </fileset>
-      <fileset dir="${thirdparty.dir}">
+      <fileset dir="${deps.dir}">
         <include name="log4j-1.2.15.jar" />
         <include name="gson-1.3.jar" />
         <include name="commons-logging-1.1.1.jar" />
@@ -95,7 +95,7 @@
   </target>
 
   <path id="testclient.classpath">
-    <path refid="thirdparty.classpath" />
+    <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
   <target name="compile-testclient" depends="-init-test, compile-utils" description="Compile the test client.">
@@ -114,7 +114,7 @@
         <include name="${testclient.jar}" />
         <include name="${utils.jar}" />
       </fileset>
-      <fileset dir="${thirdparty.dir}">
+      <fileset dir="${deps.dir}">
         <include name="commons-httpclient-3.1.jar" />
         <include name="commons-logging-1.1.1.jar" />
         <include name="commons-codec-1.4.jar" />
@@ -170,7 +170,7 @@
         <include name="${testclient.jar}" />
         <include name="${utils.jar}" />
       </fileset>
-      <fileset dir="${thirdparty.dir}">
+      <fileset dir="${deps.dir}">
         <include name="commons-httpclient-3.1.jar" />
         <include name="commons-logging-1.1.1.jar" />
         <include name="commons-codec-1.4.jar" />
@@ -220,7 +220,7 @@
     <depend srcdir="${server.test.dir}" destdir="${server.test.target.dir}" cache="${dep.cache.dir}">
     </depend>
     <javac srcdir="${server.test.dir}" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" source="1.5" target="1.5" destdir="${server.test.target.dir}" includeantruntime="false">
-      <classpath refid="thirdparty.classpath" />
+      <classpath refid="deps.classpath" />
       <classpath refid="test.classpath" />
       <compilerarg value="-Xlint:all" />
     </javac>
