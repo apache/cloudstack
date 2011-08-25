@@ -26,6 +26,8 @@ import java.util.Map;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
+import com.cloud.network.security.SecurityGroupRulesVO;
+import com.cloud.network.security.SecurityGroupEgressRulesVO;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
 
@@ -50,6 +52,9 @@ public class SecurityGroupResultObject {
 
     @Param(name = "ingressrules")
     private List<IngressRuleResultObject> ingressRules = null;
+    
+    @Param(name = "egressrules")
+    private List<EgressRuleResultObject> egressRules = null;
 
     public SecurityGroupResultObject() {
     }
@@ -120,6 +125,14 @@ public class SecurityGroupResultObject {
         this.ingressRules = ingressRules;
     }
 
+    public List<EgressRuleResultObject> getEgressRules() {
+        return egressRules;
+    }
+
+    public void setEgressRules(List<EgressRuleResultObject> egressRules) {
+        this.egressRules = egressRules;
+    }
+    
     public static List<SecurityGroupResultObject> transposeNetworkGroups(List<? extends SecurityGroupRules> groups) {
         List<SecurityGroupResultObject> resultObjects = new ArrayList<SecurityGroupResultObject>();
         Map<Long, SecurityGroup> allowedSecurityGroups = new HashMap<Long, SecurityGroup>();
@@ -127,6 +140,7 @@ public class SecurityGroupResultObject {
 
         if ((groups != null) && !groups.isEmpty()) {
             List<IngressRuleResultObject> ingressDataList = new ArrayList<IngressRuleResultObject>();
+            List<EgressRuleResultObject> egressDataList = new ArrayList<EgressRuleResultObject>();
             SecurityGroupResultObject currentGroup = null;
 
             List<Long> processedGroups = new ArrayList<Long>();
@@ -161,8 +175,13 @@ public class SecurityGroupResultObject {
 
                     currentGroup = groupResult;
                 }
+                SecurityGroupRulesVO  dummyIngressobj=new SecurityGroupRulesVO(); 
+                SecurityGroupEgressRulesVO  dummyEgressobj=new SecurityGroupEgressRulesVO() ;
+String str=dummyIngressobj.getClass().getName();
+ 
+String s1=netGroupRule.getClass().getSimpleName();
 
-                if (netGroupRule.getRuleId() != null) {
+                if (netGroupRule.getRuleId() != null && netGroupRule.getClass().getSimpleName().indexOf("SecurityGroupRulesVO") != -1) {
                     // there's at least one ingress rule for this network group, add the ingress rule data
                     IngressRuleResultObject ingressData = new IngressRuleResultObject();
                     ingressData.setEndPort(netGroupRule.getEndPort());
@@ -191,6 +210,34 @@ public class SecurityGroupResultObject {
                         ingressData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
                     }
                     ingressDataList.add(ingressData);
+                }else if (netGroupRule.getRuleId() != null && netGroupRule.getClass().getSimpleName().indexOf("SecurityGroupEgressRulesVO") != -1) {
+                	EgressRuleResultObject egressData = new EgressRuleResultObject();
+                    egressData.setEndPort(netGroupRule.getEndPort());
+                    egressData.setStartPort(netGroupRule.getStartPort());
+                    egressData.setId(netGroupRule.getRuleId());
+                    egressData.setProtocol(netGroupRule.getProtocol());
+
+                    Long allowedSecurityGroupId = netGroupRule.getAllowedNetworkId();
+                    if (allowedSecurityGroupId != null) {
+                        SecurityGroup allowedSecurityGroup = allowedSecurityGroups.get(allowedSecurityGroupId);
+                        if (allowedSecurityGroup == null) {
+                            allowedSecurityGroup = ApiDBUtils.findSecurityGroupById(allowedSecurityGroupId);
+                            allowedSecurityGroups.put(allowedSecurityGroupId, allowedSecurityGroup);
+                        }
+
+                        egressData.setAllowedSecurityGroup(allowedSecurityGroup.getName());
+
+                        Account allowedAccount = accounts.get(allowedSecurityGroup.getAccountId());
+                        if (allowedAccount == null) {
+                            allowedAccount = ApiDBUtils.findAccountById(allowedSecurityGroup.getAccountId());
+                            accounts.put(allowedAccount.getId(), allowedAccount);
+                        }
+
+                        egressData.setAllowedSecGroupAcct(allowedAccount.getAccountName());
+                    } else if (netGroupRule.getAllowedSourceIpCidr() != null) {
+                    	egressData.setAllowedDestinationIpCidr(netGroupRule.getAllowedSourceIpCidr());
+                    }
+                    egressDataList.add(egressData);
                 }
             }
 

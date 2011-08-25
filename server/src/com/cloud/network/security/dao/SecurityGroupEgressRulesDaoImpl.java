@@ -22,19 +22,19 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.network.security.SecurityGroupRulesVO;
+import com.cloud.network.security.SecurityGroupEgressRulesVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value={SecurityGroupRulesDao.class})
-public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRulesVO, Long> implements SecurityGroupRulesDao {
-    private SearchBuilder<SecurityGroupRulesVO> AccountGroupNameSearch;
-    private SearchBuilder<SecurityGroupRulesVO> AccountSearch;
-    private SearchBuilder<SecurityGroupRulesVO> GroupSearch;
+@Local(value={SecurityGroupEgressRulesDao.class})
+public class SecurityGroupEgressRulesDaoImpl extends GenericDaoBase<SecurityGroupEgressRulesVO, Long> implements SecurityGroupEgressRulesDao {
+    private SearchBuilder<SecurityGroupEgressRulesVO> AccountGroupNameSearch;
+    private SearchBuilder<SecurityGroupEgressRulesVO> AccountSearch;
+    private SearchBuilder<SecurityGroupEgressRulesVO> GroupSearch;
 
-    protected SecurityGroupRulesDaoImpl() {
+    protected SecurityGroupEgressRulesDaoImpl() {
         AccountGroupNameSearch = createSearchBuilder();
         AccountGroupNameSearch.and("accountId", AccountGroupNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountGroupNameSearch.and("name", AccountGroupNameSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -51,35 +51,34 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
     }
 
     @Override
-    public List<SecurityGroupRulesVO> listSecurityGroupRules() {
-        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
+    public List<SecurityGroupEgressRulesVO> listSecurityGroupEgressRules() {
+        Filter searchFilter = new Filter(SecurityGroupEgressRulesVO.class, "id", true, null, null);
         return listAll(searchFilter);
     }
 
     @Override
-    public List<SecurityGroupRulesVO> listSecurityGroupRules(long accountId, String groupName) {
-        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
+    public List<SecurityGroupEgressRulesVO> listSecurityGroupEgressRules(long accountId, String groupName) {
+        Filter searchFilter = new Filter(SecurityGroupEgressRulesVO.class, "id", true, null, null);
 
-        SearchCriteria<SecurityGroupRulesVO> sc = AccountGroupNameSearch.create();
+        SearchCriteria<SecurityGroupEgressRulesVO> sc = AccountGroupNameSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("name", groupName);
-
         return listBy(sc, searchFilter);
     }
 
     @Override
-    public List<SecurityGroupRulesVO> listSecurityGroupRules(long accountId) {
-        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
-        SearchCriteria<SecurityGroupRulesVO> sc = AccountSearch.create();
+    public List<SecurityGroupEgressRulesVO> listSecurityGroupEgressRules(long accountId) {
+        Filter searchFilter = new Filter(SecurityGroupEgressRulesVO.class, "id", true, null, null);
+        SearchCriteria<SecurityGroupEgressRulesVO> sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc, searchFilter);
     }
     
     
     @Override
-    public List<SecurityGroupRulesVO> listSecurityRulesByGroupId(long groupId) {
-        Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);
-        SearchCriteria<SecurityGroupRulesVO> sc = GroupSearch.create();
+    public List<SecurityGroupEgressRulesVO> listSecurityEgressRulesByGroupId(long groupId) {
+        Filter searchFilter = new Filter(SecurityGroupEgressRulesVO.class, "id", true, null, null);
+        SearchCriteria<SecurityGroupEgressRulesVO> sc = GroupSearch.create();
         sc.setParameters("groupId", groupId);
         return listBy(sc, searchFilter);
     }

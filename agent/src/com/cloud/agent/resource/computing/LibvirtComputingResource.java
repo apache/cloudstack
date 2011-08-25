@@ -56,6 +56,7 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
+import org.libvirt.Network;
 import org.libvirt.NodeInfo;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
@@ -120,6 +121,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityIngressRuleAnswer;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityEgressRuleAnswer;
+import com.cloud.agent.api.SecurityEgressRulesCmd;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -134,8 +137,8 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -877,6 +880,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((ModifyStoragePoolCommand) cmd);
             } else if (cmd instanceof SecurityIngressRulesCmd) {
                 return execute((SecurityIngressRulesCmd) cmd);
+            } else if (cmd instanceof SecurityEgressRulesCmd) {
+                return execute((SecurityEgressRulesCmd) cmd);
             } else if (cmd instanceof DeleteStoragePoolCommand) {
                 return execute((DeleteStoragePoolCommand) cmd);
             } else if (cmd instanceof FenceCommand ) {
@@ -1583,7 +1588,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return new SecurityIngressRuleAnswer(cmd, false, e.toString());
         }
         
-    	boolean result = add_network_rules(cmd.getVmName(),
+    	boolean result = add_network_rules("ingress",cmd.getVmName(),
     			Long.toString(cmd.getVmId()), 
     			cmd.getGuestIp(),cmd.getSignature(), 
     			Long.toString(cmd.getSeqNum()), 
@@ -1598,6 +1603,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		return new SecurityIngressRuleAnswer(cmd);
     	}
     }
+    
+    private Answer execute(SecurityEgressRulesCmd cmd) {
+        String vif = null;
+        String brname = null;
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            List<InterfaceDef> nics = getInterfaces(conn, cmd.getVmName());
+            vif = nics.get(0).getDevName();
+            brname = nics.get(0).getBrName();
+        } catch (LibvirtException e) {
+            return new SecurityEgressRuleAnswer(cmd, false, e.toString());
+        }
+        
+    	boolean result = add_network_rules("egress", cmd.getVmName(),
+    			Long.toString(cmd.getVmId()), 
+    			cmd.getGuestIp(),cmd.getSignature(), 
+    			Long.toString(cmd.getSeqNum()), 
+    			cmd.getGuestMac(), 
+    			cmd.stringifyRules(), vif, brname);
+
+    	if (!result) {
+    		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
+    		return new SecurityEgressRuleAnswer(cmd, false, "programming network rules failed");
+    	} else {
+    		s_logger.debug("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
+    		return new SecurityEgressRuleAnswer(cmd);
+    	}
+    } 
     
     private Answer execute(CleanupNetworkRulesCmd cmd) {
         boolean result = cleanup_rules();
@@ -1979,7 +2012,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    		} catch (Exception e) {
 	    			
 	    		}
-	    		get_rule_logs_for_vms();
 	    		return new RebootAnswer(cmd, null, bytesSent, bytesReceived, vncPort);
 	    	} else {
 	    		return new RebootAnswer(cmd, result);
@@ -2463,7 +2495,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		    }
 		    
 		    DiskDef disk = new DiskDef();
+
 	        disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+	        
 	        String xml = disk.toString();
 	        return attachOrDetachDevice(conn, attach, vmName, xml);
 		} finally {
@@ -3444,7 +3478,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
-    private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules, String vif, String brname) {
+    private boolean add_network_rules(String type, String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules, String vif, String brname) {
     	if (!_can_bridge_firewall) {
             return false;
         }
@@ -3455,6 +3489,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	cmd.add("--vmname", vmName);
     	cmd.add("--vmid", vmId);
     	cmd.add("--vmip", guestIP);
+    	/* type of the rule : ingress or egress */
+    	cmd.add("--type", type);
     	cmd.add("--sig", sig);
     	cmd.add("--seq", seq);
     	cmd.add("--vmmac", mac);

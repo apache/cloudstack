@@ -45,7 +45,6 @@ import com.cloud.api.response.CreateCmdResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.response.EgressRuleResponse;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ExtractResponse;
 import com.cloud.api.response.FirewallResponse;
@@ -54,6 +53,8 @@ import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.IngressRuleResultObject;
+import com.cloud.api.response.EgressRuleResponse;
+import com.cloud.api.response.EgressRuleResultObject;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
@@ -119,8 +120,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.security.EgressRule;
 import com.cloud.network.security.IngressRule;
+import com.cloud.network.security.EgressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
@@ -165,10 +166,10 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmData;
 import com.cloud.vm.dao.UserVmData.NicData;
 import com.cloud.vm.dao.UserVmData.SecurityGroupData;
+import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -452,7 +453,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
             offeringResponse.setDomainId(offering.getDomainId());
         }
-        offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setObjectName("serviceoffering");
 
@@ -1620,6 +1620,35 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 netGrpResponse.setIngressRules(ingressRulesResponse);
             }
+            List<EgressRuleResultObject> egressRules = networkGroup.getEgressRules();
+            if ((egressRules != null) && !egressRules.isEmpty()) {
+                List<EgressRuleResponse> egressRulesResponse = new ArrayList<EgressRuleResponse>();
+
+                for (EgressRuleResultObject egressRule : egressRules) {
+                    EgressRuleResponse egressData = new EgressRuleResponse();
+
+                    egressData.setRuleId(egressRule.getId());
+                    egressData.setProtocol(egressRule.getProtocol());
+                    if ("icmp".equalsIgnoreCase(egressRule.getProtocol())) {
+                        egressData.setIcmpType(egressRule.getStartPort());
+                        egressData.setIcmpCode(egressRule.getEndPort());
+                    } else {
+                        egressData.setStartPort(egressRule.getStartPort());
+                        egressData.setEndPort(egressRule.getEndPort());
+                    }
+
+                    if (egressRule.getAllowedSecurityGroup() != null) {
+                        egressData.setSecurityGroupName(egressRule.getAllowedSecurityGroup());
+                        egressData.setAccountName(egressRule.getAllowedSecGroupAcct());
+                    } else {
+                        egressData.setCidr(egressRule.getAllowedDestinationIpCidr());
+                    }
+
+                    egressData.setObjectName("egressrule");
+                    egressRulesResponse.add(egressData);
+                }
+                netGrpResponse.setEgressRules(egressRulesResponse);
+            }
             netGrpResponse.setObjectName("securitygroup");
             netGrpResponses.add(netGrpResponse);
         }
@@ -2247,8 +2276,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("project");
         return response;
     }
-    
-    
     public FirewallResponse createFirewallResponse(FirewallRule fwRule) {
         FirewallResponse response = new FirewallResponse();
 
