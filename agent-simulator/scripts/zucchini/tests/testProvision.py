@@ -59,7 +59,7 @@ class Provision(unittest.case.TestCase):
             deployVmCmd.serviceofferingid=solist[tag]
             deployVmCmd.account='admin'
             deployVmCmd.domainid=1
-            deployVmCmd.templateid=2
+            deployVmCmd.templateid=10
             return deployVmCmd
             
     def deployN(self,nargs=300,batchsize=0):
@@ -90,7 +90,7 @@ class Provision(unittest.case.TestCase):
 
     def test_bulkDeploy(self):
         deployN(130,0)
-        deployN(nargs=3000,batchsize=100)
+        deployN(nargs=9000,batchsize=100)
             
             
         

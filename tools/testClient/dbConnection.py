@@ -2,6 +2,7 @@ import pymysql
 import cloudstackException
 import sys
 import os
+import traceback
 class dbConnection(object):
     def __init__(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
         self.host = host
@@ -13,6 +14,7 @@ class dbConnection(object):
         try:
             self.db = pymysql.Connect(host=host, port=port, user=user, passwd=passwd, db=db)
         except:
+            traceback.print_exc()
             raise cloudstackException.InvalidParameterException(sys.exc_info())
         
     def __copy__(self):
@@ -73,4 +75,4 @@ if __name__ == "__main__":
     for i in range(10):
         result = db.execute("select job_status, created, last_updated from async_job where id=%d"%i)
         print result
-       
+
