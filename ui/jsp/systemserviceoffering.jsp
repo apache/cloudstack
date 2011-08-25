@@ -127,6 +127,16 @@ dictionary = {
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
+	                        <fmt:message key="network.rate"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="network_rate">
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
 	                        <fmt:message key="label.offer.ha"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
@@ -262,7 +272,12 @@ dictionary = {
 					<label for="user_name"><fmt:message key="label.memory.mb"/>:</label>
 					<input class="text" type="text" name="add_service_memory" id="add_service_memory"/>
 					<div id="add_service_memory_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>				
+				</li>		
+				<li>
+					<label><fmt:message key="network.rate"/>:</label>
+					<input class="text" type="text" id="network_rate"/>
+					<div id="network_rate_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>			
 				<li id="add_service_offerha_container">
 					<label><fmt:message key="label.offer.ha"/>:</label>
 					<select class="select" id="add_service_offerha">						
