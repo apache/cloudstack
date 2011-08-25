@@ -1923,11 +1923,11 @@ function firewallJsonToTemplate(jsonObj, $template) {
 
 function refreshCreateFirewallRow() {  
 	var $createFirewallRow = $("#tab_content_firewall").find("#create_firewall_row");    
-	$createFirewallRow.find("#cidr").text("");     
-	$createFirewallRow.find("#start_port").text("");           
-	$createFirewallRow.find("#end_port").text("");    
-	$createFirewallRow.find("#ICMP_type").text("");          
-	$createFirewallRow.find("#ICMP_code").text("");    
+	$createFirewallRow.find("#cidr").val("");     
+	$createFirewallRow.find("#start_port").val("");           
+	$createFirewallRow.find("#end_port").val("");    
+	$createFirewallRow.find("#ICMP_type").val("");          
+	$createFirewallRow.find("#ICMP_code").val("");    
 	$createFirewallRow.find("#protocol").click();
 }
 
