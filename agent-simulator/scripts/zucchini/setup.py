@@ -58,7 +58,7 @@ def getGlobalSettings():
                        'systemvm.use.local.storage':'true',
                        'use.local.storage':'true',
                        'check.pod.cidrs':'false',
-                       }
+                      }
     for k,v in global_settings.iteritems():
         cfg=configuration()
         cfg.name=k
@@ -69,33 +69,31 @@ def podIpRangeGenerator():
     x=1
     y=2
     while 1:
-        if y == 256:
+        if y == 255:
             x=x+1
-            if x == 256:
+            if x == 255:
+                x=1
                 break
             y=1
         y=y+1            
         #pod mangement network
-        yield ('172.'+str(x)+'.'+str(y)+'.129',
-               '172.'+str(x)+'.'+str(y)+'.130',
-               '172.'+str(x)+'.'+str(y)+'.189')
+        yield ('172.'+str(x)+'.'+str(y)+'.129', '172.'+str(x)+'.'+str(y)+'.130', '172.'+str(x)+'.'+str(y)+'.189')
 
 
 def vlanIpRangeGenerator():
     x=1
     y=2
     while 1:
-        if y == 256:
+        if y == 255:
             x=x+1
-            if x==256:
+            if x==255:
+                x=1
                 break
             y=1
         y=y+1            
         #vlan ip range
-        yield ('172.'+str(x)+'.'+str(y)+'.129',
-               '172.'+str(x)+'.'+str(y)+'.190',
-               '172.'+str(x)+'.'+str(y)+'.249')
-  
+        yield ('172.'+str(x)+'.'+str(y)+'.129', '172.'+str(x)+'.'+str(y)+'.190', '172.'+str(x)+'.'+str(y)+'.249')
+
 
 def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='localhost', randomize=False):
     zs=cloudstackConfiguration()
@@ -106,7 +104,7 @@ def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='l
 
     clustersPerPod=10
     hostsPerPod=10
-  
+
     z = zone()
     z.dns1 = '4.2.2.2'
     z.dns2 = '192.168.110.254'
@@ -114,12 +112,13 @@ def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='l
     z.internaldns2 = '192.168.110.254'
     z.name = 'Zucchini'
     z.networktype = 'Basic'    
-    
+
     hosttags=['TAG1' for x in range(tagOneHosts)] + ['TAG2' for x in range(tagTwoHosts)] + ['TAG3' for x in range(tagThreeHosts)]
     if randomize:
-	    random.shuffle(hosttags) #randomize the host distribution     
-    curhost=0
-    curpod=0
+        random.shuffle(hosttags) #randomize the host distribution     
+        curhost=0
+        curpod=0
+
     for podRange,vlanRange in zip(podIpRangeGenerator(), vlanIpRangeGenerator()):
         p = pod()
         curpod=curpod+1
@@ -141,12 +140,12 @@ def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='l
             c.clustername = 'POD'+str(curpod)+'-CLUSTER'+str(i)
             c.hypervisor = 'Simulator'
             c.clustertype = 'CloudManaged'
-    
+
             try:
                 h = host()
                 h.username = 'root'
                 h.password = 'password'
-                h.url = "http://sim/%d/cpucore=4&cpuspeed=8000&memory=%d&localstorage=%d"%(i,8*1024*1024*1024,1*1024*1024*1024*1024)
+                h.url = "http://sim/test-%d"%(curhost)
                 h.hosttags = hosttags.pop()
                 c.hosts.append(h)
                 curhost=curhost+1
@@ -162,43 +161,43 @@ def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='l
     secondary.url = 'nfs://172.16.25.32/secondary/path'
     z.secondaryStorages.append(secondary)
     zs.zones.append(z)
-  
+
     '''Add mgt server'''
     mgt = managementServer()
     mgt.mgtSvrIp = mshost #could be the LB balancing the cluster of management server as well
     zs.mgtSvr.append(mgt)
-    
+
     '''Add a database'''
     db = dbServer()
     db.dbSvr = opts.dbnode
     zs.dbSvr = db
-    
+
     '''Add some configuration'''
     [zs.globalConfig.append(cfg) for cfg in getGlobalSettings()]
-    
+
     ''''add loggers'''
     testClientLogger = logger()
     testClientLogger.name = "TestClient"
     testClientLogger.file = "/var/log/testclient.log"
-    
+
     testCaseLogger = logger()
     testCaseLogger.name = "TestCase"
     testCaseLogger.file = "/var/log/testcase.log"
-    
+
     zs.logger.append(testClientLogger)
     zs.logger.append(testCaseLogger)
     return zs   
-        
+
 if __name__=="__main__":
     parser = OptionParser()
-#    parser.add_option('-h','--host',dest='host',help='location of management server(s) or load-balancer')
+    #    parser.add_option('-h','--host',dest='host',help='location of management server(s) or load-balancer')
     parser.add_option('-n', '--number-of-agents', action='store', dest='agents', help='number of agents in the deployment')
     parser.add_option('-g', '--enable-security-groups', dest='sgenabled', help='specify if security groups are to be enabled', default=False, action='store_true')
     parser.add_option('-o', '--output', action='store', default='./zucchiniCfg', dest='output', help='the path where the json config file generated')
     parser.add_option('-d', '--dbnode', dest='dbnode', help='hostname/ip of the database node', action='store')
     parser.add_option('-m', '--mshost', dest='mshost', help='hostname/ip of management server', action='store')
     parser.add_option('-r', '--randomize', dest='randomize', help='randomize the distribution of tags (hetergenous clusters)', action='store_true', default=False)
-    
+
     (opts, args) = parser.parse_args()
     mandatories = ['mshost', 'dbnode', 'agents']
     for m in mandatories:
