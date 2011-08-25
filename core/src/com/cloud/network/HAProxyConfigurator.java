@@ -206,7 +206,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		result.addAll(Arrays.asList(defaultsSection));
 		if (!lbCmd.lbStatsVisibility.equals("disabled"))
 		{		
-			if (lbCmd.lbStatsVisibility.equals("guest-network"))
+			if (lbCmd.lbStatsVisibility.equals("guest-network") || lbCmd.lbStatsVisibility.equals("link-local"))
 			{	 
 				result.add(getBlankLine());
 				

@@ -79,7 +79,7 @@ fw_remove_backup() {
     sudo iptables -X back_load_balancer_$vif 2> /dev/null
   done
   sudo iptables -F back_lb_stats 2> /dev/null
-  sudo iptables -D INPUT -i $STAT_IF -p tcp  -j back_lb_stats 2> /dev/null
+  sudo iptables -D INPUT -p tcp  -j back_lb_stats 2> /dev/null
   sudo iptables -X back_lb_stats 2> /dev/null
 }
 fw_restore() {
@@ -90,7 +90,7 @@ fw_restore() {
     sudo iptables -E back_load_balancer_$vif load_balancer_$vif 2> /dev/null
   done
   sudo iptables -F lb_stats 2> /dev/null
-  sudo iptables -D INPUT -i $STAT_IF -p tcp  -j lb_stats 2> /dev/null
+  sudo iptables -D INPUT -p tcp  -j lb_stats 2> /dev/null
   sudo iptables -X lb_stats 2> /dev/null
   sudo iptables -E back_lb_stats lb_stats 2> /dev/null
 }
@@ -121,7 +121,7 @@ fw_entry() {
   done
   sudo iptables -E lb_stats back_lb_stats 2> /dev/null
   sudo iptables -N lb_stats 2> /dev/null
-  sudo iptables -A INPUT -i $STAT_IF -p tcp  -j lb_stats
+  sudo iptables -A INPUT  -p tcp  -j lb_stats
 
   for i in $a
   do
@@ -259,8 +259,6 @@ if [ "$VIF_LIST" == "eth0"  ]
 then
    ip_entry $addedIps $removedIps
 fi
-# FIXME make the load balancer stat interface generic
-STAT_IF="eth0"
 
 # hot reconfigure haproxy
 reconfig_lb $cfgfile
