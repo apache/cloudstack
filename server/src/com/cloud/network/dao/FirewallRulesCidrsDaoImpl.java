@@ -45,7 +45,7 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
 
     @Override @DB
     public List<String> getSourceCidrs(long firewallRuleId) {
-        SearchCriteria sc = CidrsSearch.create();
+        SearchCriteria<FirewallRulesCidrsVO> sc = CidrsSearch.create();
         sc.setParameters("firewallRuleId", firewallRuleId);
         
         List<FirewallRulesCidrsVO> results = search(sc, null);

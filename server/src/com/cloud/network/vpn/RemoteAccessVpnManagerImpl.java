@@ -246,7 +246,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                     
                     for (FirewallRule vpnFwRule : vpnFwRules) {
                         //don't apply on the backend yet; send all 3 rules in a banch 
-                        _rulesMgr.revokeRelatedFirewallRule(vpnFwRule.getId(), false);
+                        _firewallMgr.revokeRelatedFirewallRule(vpnFwRule.getId(), false);
                         fwRules.add(_rulesDao.findByRelatedId(vpnFwRule.getId()));
                     }
                     

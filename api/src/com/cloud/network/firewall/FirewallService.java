@@ -22,5 +22,6 @@ public interface FirewallService {
     boolean applyFirewallRules(long ipId, Account caller) throws ResourceUnavailableException;
     
     FirewallRule getFirewallRule(long ruleId);
-
+    
+    boolean revokeRelatedFirewallRule(long ruleId, boolean apply);
 }
