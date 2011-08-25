@@ -19,6 +19,8 @@
 package com.cloud.network.firewall;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -248,46 +250,65 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (rule.getId() == newRule.getId()) {
                 continue; // Skips my own rule.
             }
+            
+            boolean oneOfRulesIsFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()))));
+            
+            //if both rules are firewall and their cidrs are different, we can skip port ranges verification
+            boolean bothRulesFirewall = (rule.getPurpose() == newRule.getPurpose() && rule.getPurpose() == Purpose.Firewall);
+            boolean duplicatedCidrs = false;
+            if (bothRulesFirewall) {
+                //Verify that the rules have different cidrs
+                List<String> ruleCidrList = rule.getSourceCidrList();
+                List<String> newRuleCidrList = newRule.getSourceCidrList();
+                
+                if (ruleCidrList == null || newRuleCidrList == null) {
+                    continue;
+                }
+                
+                Collection<String> similar = new HashSet<String>(ruleCidrList);
+                similar.retainAll(newRuleCidrList);
 
-            
-            boolean allowFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()))));
-            
-            
-            if (!allowFirewall) {
-            if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
-                throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" + newRule.getSourceIpAddressId());
-            } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
-                throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id=" + newRule.getSourceIpAddressId());
+                if (similar.size() > 0) {
+                    duplicatedCidrs = true;
+                }
             }
+            
+            if (!oneOfRulesIsFirewall) {
+                if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
+                    throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" + newRule.getSourceIpAddressId());
+                } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
+                    throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id=" + newRule.getSourceIpAddressId());
+                }
             }
 
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
-            }
-            
-            boolean notNullPorts = (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null);
-            if (!allowFirewall && notNullPorts && ((rule.getSourcePortStart() <= newRule.getSourcePortStart() && rule.getSourcePortEnd() >= newRule.getSourcePortStart())
-                    || (rule.getSourcePortStart() <= newRule.getSourcePortEnd() && rule.getSourcePortEnd() >= newRule.getSourcePortEnd())
-                    || (newRule.getSourcePortStart() <= rule.getSourcePortStart() && newRule.getSourcePortEnd() >= rule.getSourcePortStart())
-                    || (newRule.getSourcePortStart() <= rule.getSourcePortEnd() && newRule.getSourcePortEnd() >= rule.getSourcePortEnd()))) {
-
-                // we allow port forwarding rules with the same parameters but different protocols
-                boolean allowPf = (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
-                boolean allowStaticNat = (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
-                
-                if (!(allowPf || allowStaticNat || allowFirewall)) {
-                    throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId()
-                            + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd());
-                }
-            }
+            }  
             
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
                 if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
                     throw new InvalidParameterValueException("New rule conflicts with existing rule id=" + rule.getId());
                 }
             }
-        }
-        
+
+            boolean notNullPorts = (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null) ;
+            if (!notNullPorts) {
+                continue;
+            } else if (!oneOfRulesIsFirewall && !(bothRulesFirewall && !duplicatedCidrs) && ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue())
+                    || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
+                    || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
+                    || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
+
+                // we allow port forwarding rules with the same parameters but different protocols
+                boolean allowPf = (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
+                boolean allowStaticNat = (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
+                
+                if (!(allowPf || allowStaticNat || oneOfRulesIsFirewall)) {
+                    throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId()
+                            + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd());
+                }
+            } 
+        }   
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
         }
@@ -536,6 +557,20 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         return rules.size() == 0;
+    }
+    
+    @Override
+    public boolean revokeRelatedFirewallRule(long ruleId, boolean apply) {
+        FirewallRule fwRule = _firewallDao.findByRelatedId(ruleId);
+        
+        if (fwRule == null) {
+            s_logger.trace("No related firewall rule exists for rule id=" + ruleId + " so returning true here");
+            return true;
+        }
+        
+        s_logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
+        return revokeFirewallRule(fwRule.getId(), apply);
+        
     }
     
 }

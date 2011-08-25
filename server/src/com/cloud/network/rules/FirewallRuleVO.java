@@ -35,6 +35,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
@@ -43,6 +45,8 @@ import com.cloud.utils.net.NetUtils;
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
 public class FirewallRuleVO implements FirewallRule {
+    protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -106,6 +110,9 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Override
     public List<String> getSourceCidrList() {
+        if (sourceCidrs == null && purpose == Purpose.Firewall) {
+            return _firewallRulesCidrsDao.getSourceCidrs(id);
+        }   
         return sourceCidrs;
     }
 
