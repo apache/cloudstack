@@ -536,15 +536,15 @@ fi
 
 %files client
 %defattr(0644,root,root,0775)
-%{_sysconfdir}/%{name}/management/*
-%{_sysconfdir}/%{name}/management/*premium*
+%config(noreplace) %{_sysconfdir}/%{name}/management/*
+%config(noreplace) %{_sysconfdir}/%{name}/management/*premium*
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
 %dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
 %dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
 %dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
-%config %{_sysconfdir}/sysconfig/%{name}-management
+%config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %dir %{_datadir}/%{name}/management
 %{_datadir}/%{name}/management/*
@@ -565,8 +565,8 @@ fi
 %files agent
 %defattr(0644,root,root,0755)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.properties
-%config %{_sysconfdir}/%{name}/agent/developer.properties.template
-%config %{_sysconfdir}/%{name}/agent/environment.properties
+%config(noreplace) %{_sysconfdir}/%{name}/agent/developer.properties.template
+%config(noreplace)  %{_sysconfdir}/%{name}/agent/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/agent/log4j-%{name}.xml
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
 %attr(0755,root,root) %{_libexecdir}/agent-runner
@@ -591,7 +591,7 @@ fi
 %files cli
 %{_bindir}/%{name}-tool
 %{_bindir}/cloudvoladm
-%{_sysconfdir}/%{name}/cli/commands.xml
+%config(noreplace) %{_sysconfdir}/%{name}/cli/commands.xml
 %dir %{_prefix}/lib*/python*/site-packages/%{name}tool
 %{_prefix}/lib*/python*/site-packages/%{name}tool/*
 %{_prefix}/lib*/python*/site-packages/%{name}apis.py
@@ -605,7 +605,7 @@ fi
 %{_javadir}/%{name}-test.jar
 %{_sharedstatedir}/%{name}/test/*
 %{_libdir}/%{name}/test/*
-%{_sysconfdir}/%{name}/test/*
+%config(noreplace) %{_sysconfdir}/%{name}/test/*
 
 #%if %{_premium}
 #
