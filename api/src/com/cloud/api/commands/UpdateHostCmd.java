@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -44,9 +46,12 @@ public class UpdateHostCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="the id of Os category to update the host with")
     private Long osCategoryId;
-    
+
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Host for allocation of new resources")
     private String allocationState;
+
+    @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
+    private List<String> hostTags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,29 +64,33 @@ public class UpdateHostCmd extends BaseCmd {
     public Long getOsCategoryId() {
         return osCategoryId;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
-    }     
+        return allocationState;
+    }
+
+    public List<String> getHostTags() {
+        return hostTags;
+    }    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-   
+
     public static String getResultObjectName() {
-    	return "updatehost";
+        return "updatehost";
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         Host result = _resourceService.updateHost(this);
