@@ -3123,23 +3123,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Network network = getNetwork(networkId);
         NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
 
-        // For default vms network offering get rate information from the service offering; for other situations get information
+        // For default userVm Default network and domR guest/public network, get rate information from the service offering; for other situations get information
         // from the network offering
-        if (vm != null && vm.getType() == Type.User && network.isDefault()) {
+        boolean isUserVmsDefaultNetwork = false;
+        boolean isDomRGuestOrPublicNetwork = false;
+        if (vm != null) {
+            if (vm.getType() == Type.User && network.isDefault()) {
+                isUserVmsDefaultNetwork = true; 
+            } else if (vm.getType() == Type.DomainRouter && networkOffering.getTrafficType() == TrafficType.Public && networkOffering.getGuestType() == null) {
+                isDomRGuestOrPublicNetwork = true;
+            }    
+        }
+        if (isUserVmsDefaultNetwork || isDomRGuestOrPublicNetwork) {
             return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId());
         } else {
-            // For router's public network we use networkRate from guestNetworkOffering
-            if (vm != null && vm.getType() == Type.DomainRouter && networkOffering.getTrafficType() == TrafficType.Public && networkOffering.getGuestType() == null) {
-                List<? extends NetworkOffering> guestOfferings = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
-                if (!guestOfferings.isEmpty()) {
-                    // We have one default guest virtual network offering now
-                    networkOffering = guestOfferings.get(0);
-                }
-            }
-
             return _configMgr.getNetworkOfferingNetworkRate(networkOffering.getId());
         }
-
     }
 
     Random _rand = new Random(System.currentTimeMillis());

@@ -443,7 +443,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         offeringResponse.setCpuSpeed(offering.getSpeed());
         offeringResponse.setMemory(offering.getRamSize());
         offeringResponse.setCreated(offering.getCreated());
-        offeringResponse.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
+        offeringResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         offeringResponse.setOfferHa(offering.getOfferHA());
         offeringResponse.setLimitCpuUse(offering.getLimitCpuUse());
         offeringResponse.setTags(offering.getTags());
@@ -864,7 +864,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     storageType = "unknown";
                 }
             } else {
-                storageType = ApiDBUtils.volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
+                storageType = ApiDBUtils.volumeIsOnSharedStorage(volume.getId()) ? ServiceOffering.StorageType.shared.toString() : ServiceOffering.StorageType.local.toString();
             }
         } catch (InvalidParameterValueException e) {
             s_logger.error(e.getMessage(), e);
