@@ -307,7 +307,7 @@ function afterLoadIpJSP() {
 	    //*** Firewall tab (begin) ***
 	    var $createFirewallRow = $("#tab_content_firewall").find("#create_firewall_row");     
 	  
-	    $createFirewallRow.find("#protocol").bind("click", function(event) {	
+	    $createFirewallRow.find("#protocol").bind("change", function(event) {	
 	    	if($(this).val() == null)
 	    		return true;
 	    	var protocol = $(this).val().toLowerCase();	    
@@ -1928,7 +1928,7 @@ function refreshCreateFirewallRow() {
 	$createFirewallRow.find("#end_port").val("");    
 	$createFirewallRow.find("#ICMP_type").val("");          
 	$createFirewallRow.find("#ICMP_code").val("");    
-	$createFirewallRow.find("#protocol").click();
+	$createFirewallRow.find("#protocol").change();
 }
 
 //***** Firewall tab (end) **********************************************************************************************************
