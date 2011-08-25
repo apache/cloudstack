@@ -1377,7 +1377,7 @@ public class VirtualMachineMO extends BaseMO {
 		HostMO hostMo = getRunningHost();
 		VirtualMachineConfigInfo vmConfigInfo = getConfigInfo();
 		
-		hostMo.createBlankVm(clonedVmName, 1, cpuSpeedMHz, 0, false, memoryMb, vmConfigInfo.getGuestId(), morDs, false);
+		hostMo.createBlankVm(clonedVmName, 1, cpuSpeedMHz, 0, false, memoryMb, 0, vmConfigInfo.getGuestId(), morDs, false);
 		VirtualMachineMO clonedVmMo = hostMo.findVmOnHyperHost(clonedVmName);
 		
 		VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
