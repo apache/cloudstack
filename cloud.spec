@@ -510,7 +510,6 @@ fi
 %{_javadir}/%{name}-iControl.jar
 %{_javadir}/%{name}-manageontap.jar
 %{_javadir}/vmware*.jar
-%{_javadir}/%{name}-charva.jar
 %{_javadir}/%{name}-jnetpcap.jar
 %{_javadir}/%{name}-junit.jar
 %{_javadir}/%{name}-selenium-java-client-driver.jar
