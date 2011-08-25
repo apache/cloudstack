@@ -402,7 +402,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 }
                 rs.close();
             }
-            pstmt.close();
+            
+            if (pstmt!=null)pstmt.close();
             return userVmDataHash;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
