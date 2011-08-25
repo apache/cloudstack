@@ -543,6 +543,13 @@
         <include name="setup/**/*" />
       </fileset>
     </copy>
+    
+    <copy overwrite="true" todir="${jar.dir}">
+      <fileset dir="${deps.dir}">
+        <include name="vmware-*.jar" />
+      </fileset>
+    </copy>
+    
     <chmod file="${dist.dir}/deploy-agent.sh" perm="uog+xr" />
     <chmod file="${dist.dir}/deploy-server.sh" perm="uog+xr" />
   </target>
