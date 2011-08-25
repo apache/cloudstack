@@ -13,7 +13,7 @@ class dbConnection(object):
         try:
             self.db = pymysql.Connect(host=host, port=port, user=user, passwd=passwd, db=db)
         except:
-            raise cloudstackException.InvalidParameterException(sys.exc_value)
+            raise cloudstackException.InvalidParameterException(sys.exc_info())
         
     def __copy__(self):
         return dbConnection(self.host, self.port, self.user, self.passwd, self.database)
@@ -40,14 +40,12 @@ class dbConnection(object):
                     resultRow.append(r)
             return resultRow
         except pymysql.MySQLError, e:
-            if cursor is not None:
-                cursor.close()
             raise cloudstackException.dbException("db Exception:%s"%e[1]) 
         except:
+            raise cloudstackException.internalError(sys.exc_info())
+        finally:
             if cursor is not None:
                 cursor.close()
-            raise cloudstackException.internalError(sys.exc_value)
-        
         
     def executeSqlFromFile(self, fileName=None):
         if fileName is None:
@@ -72,8 +70,7 @@ if __name__ == "__main__":
         print e
     '''
     print db.execute("update vm_template set name='fjkd' where id=200")
-    result = db.execute("select created,last_updated from async_job where id=13")
-    print result
-    delta = result[0][1] - result[0][0]
-    print delta.total_seconds()
-    #print db.execute("update vm_template set name='fjkd' where id=200")
+    for i in range(10):
+        result = db.execute("select job_status, created, last_updated from async_job where id=%d"%i)
+        print result
+       

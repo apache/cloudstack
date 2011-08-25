@@ -28,6 +28,31 @@ class TestCase1(cloudstackTestCase):
         
     def test_cloudstackapi(self):
         apiClient = self.testClient.getApiClient()
+        
+        getzone = listZones.listZonesCmd()
+        getzone.id = self.zoneId
+        zone = apiClient.listZones(getzone)
+        if zone[0].networktype == "Basic":
+            '''create a security group for admin'''
+            admincmd = listUsers.listUsersCmd()
+            admincmd.account = "admin"
+            admin = apiClient.listUsers(admincmd)
+            domainId = admin[0].domainid
+            
+            securitygroup = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
+            securitygroup.domainid = admin[0].domainid
+            securitygroup.account = admin[0].account
+            securitygroup.securitygroupid = 1
+            securitygroup.protocol = "TCP"
+            securitygroup.startport = "22"
+            securitygroup.endport = "22"
+            '''
+            groups = [{"account":"a","group":"default"}, {"account":"b", "group":"default"}]
+            securitygroup.usersecuritygrouplist = groups
+            '''
+            cidrlist = ["192.168.1.1/24", "10.1.1.1/24"]
+            securitygroup.cidrlist = cidrlist
+            apiClient.authorizeSecurityGroupIngress(securitygroup)
        
         createvm = deployVirtualMachine.deployVirtualMachineCmd()
         createvm.serviceofferingid = self.svid
@@ -47,3 +72,19 @@ class TestCase1(cloudstackTestCase):
         attach.id = volumeId
         attach.virtualmachineid = vmId
         apiClient.attachVolume(attach)
+        
+        detach = detachVolume.detachVolumeCmd()
+        detach.id = volumeId
+        detach.virtualmachineid = vmId
+        apiClient.detachVolume(detach)
+        
+        snapshotcmd = createSnapshot.createSnapshotCmd()
+        snapshotcmd.volumeid = volumeId
+        snapshotrespose = apiClient.createSnapshot(snapshotcmd)
+        snapshotId = snapshotrespose.id
+        
+        createvolume = createVolume.createVolumeCmd()
+        createvolume.snapshotid = snapshotId
+        createvolume.name = "volumefrom_snapshot"+ str(snapshotId)
+        apiClient.createVolume(createvolume)
+        

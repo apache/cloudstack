@@ -16,7 +16,12 @@ class cloudstackTestClient(object):
     def dbConfigure(self, host="localhost", port=3306, user='cloud', passwd='cloud', db='cloud'):
         self.dbConnection = dbConnection.dbConnection(host, port, user, passwd, db)
         
-    
+    def close(self):
+        if self.connection is not None:
+            self.connection.close()
+        if self.dbConnection is not None:
+            self.dbConnection.close()
+        
     def getDbConnection(self):
         return self.dbConnection
 
@@ -34,10 +39,10 @@ class cloudstackTestClient(object):
     def getApiClient(self):
         return self.apiClient
     
-    def submitCmdsAndWait(self, cmds):
+    def submitCmdsAndWait(self, cmds, workers=10):
         if self.asyncJobMgr is None:
             self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
-        return self.asyncJobMgr.submitCmdsAndWait(cmds)
+        return self.asyncJobMgr.submitCmdsAndWait(cmds, workers)
     
     '''submit one job and execute the same job ntimes, with nums_threads of threads'''
     def submitJob(self, job, ntimes=1, nums_threads=10, interval=1):

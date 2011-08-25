@@ -165,7 +165,26 @@ class deployDataCenters():
             self.createnetworks(zone.networks, zoneId)
             '''create secondary storage'''
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
-    
+            
+    def registerApiKey(self):
+        listuser = listUsers.listUsersCmd()
+        listuser.account = "admin"
+        listuserRes = self.testClient.getApiClient().listUsers(listuser)
+        userId = listuserRes[0].id
+        apiKey = listuserRes[0].apikey
+        securityKey = listuserRes[0].secretkey
+        if apiKey is None:
+            registerUser = registerUserKeys.registerUserKeysCmd()
+            registerUser.id = userId
+            registerUserRes = self.testClient.getApiClient().registerUserKeys(registerUser)
+            apiKey = registerUserRes.apikey
+            securityKey = registerUserRes.secretkey
+            
+        self.config.mgtSvr[0].port = 8080
+        self.config.mgtSvr[0].apiKey = apiKey
+        self.config.mgtSvr[0].securityKey = securityKey
+        return apiKey, securityKey
+        
     def loadCfg(self):
         try:
             self.config =  configGenerator.get_setup_config(self.configFile)
@@ -193,8 +212,13 @@ class deployDataCenters():
             fh = logging.FileHandler(testClientLogFile)
             testClientLogger.addHandler(fh)
             testClientLogger.setLevel(logging.DEBUG)
+        self.testClientLogger = testClientLogger
         
-        self.testClient = cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.apiKey, mgt.securityKey, logging=testClientLogger)
+        self.testClient = cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, mgt.port, mgt.apiKey, mgt.securityKey, logging=self.testClientLogger)
+        if mgt.apiKey is None:
+            apiKey, securityKey = self.registerApiKey()
+            self.testClient.close()
+            self.testClient = cloudstackTestClient.cloudstackTestClient(mgt.mgtSvrIp, 8080, apiKey, securityKey, logging=self.testClientLogger)
         
         '''config database'''
         dbSvr = self.config.dbSvr
@@ -215,6 +239,7 @@ class deployDataCenters():
         self.loadCfg()
         self.createZones(self.config.zones)
         self.updateConfiguration(self.config.globalConfig)
+        
         
 if __name__ == "__main__":
     

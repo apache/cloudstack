@@ -24,6 +24,7 @@ public class Argument implements Comparable{
 	private String name;
 	private String description;
 	private Boolean required;
+	private String type;
 	private List<Argument> arguments;
 	
 	public Argument(String name) {
@@ -40,6 +41,14 @@ public class Argument implements Comparable{
         this.name = name;
         this.description = description;
     }
+	
+	public String getType() {
+	    return this.type;
+	}
+	
+	public void setType(String type) {
+	    this.type = type;
+	}
 	
 	public String getName() {
 		return name;
