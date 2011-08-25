@@ -2009,11 +2009,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
-        cmd.lbStatsIp = router.getGuestIpAddress();
+
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        if (cmd.lbStatsVisibility.equals("guest-network"))
+        {
+            cmd.lbStatsIp = router.getGuestIpAddress();
+        }else
+        {
+            cmd.lbStatsIp = router.getPrivateIpAddress();
+        }
+	 
         
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
