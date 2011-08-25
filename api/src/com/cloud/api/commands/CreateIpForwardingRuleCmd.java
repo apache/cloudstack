@@ -126,7 +126,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
                 _rulesService.revokeStaticNatRule(getEntityId(), true);
                 
                 if (getOpenFirewall()) {
-                    _rulesService.revokeRelatedFirewallRule(getEntityId(), true);
+                    _firewallService.revokeRelatedFirewallRule(getEntityId(), true);
                 }
                 
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error in creating ip forwarding rule on the domr");

@@ -23,4 +23,6 @@ public interface FirewallService {
     
     FirewallRule getFirewallRule(long ruleId);
     
+    boolean revokeRelatedFirewallRule(long ruleId, boolean apply);
+    
 }

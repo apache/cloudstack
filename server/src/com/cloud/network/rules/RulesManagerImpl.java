@@ -223,8 +223,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } catch (Exception e) {
             
             txn.start();
-            
-            _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
+            //no need to apply the rule as it wasn't programmed on the backend yet
+            _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
             _forwardingDao.remove(newRule.getId());
             
             txn.commit();
@@ -289,7 +289,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } catch (Exception e) {
             
             txn.start();
-            _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
+            //no need to apply the rule as it wasn't programmed on the backend yet
+            _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
             _forwardingDao.remove(newRule.getId()); 
             txn.commit();
             
@@ -1118,19 +1119,4 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return true;
     }
-    
-    @Override
-    public boolean revokeRelatedFirewallRule(long ruleId, boolean apply) {
-        FirewallRule fwRule = _firewallDao.findByRelatedId(ruleId);
-        
-        if (fwRule == null) {
-            s_logger.trace("No related firewall rule exists for rule id=" + ruleId + " so returning true here");
-            return true;
-        }
-        
-        s_logger.debug("Revoking Firewall rule id=" + fwRule.getId() + " as a part of rule delete id=" + ruleId + " with apply=" + apply);
-        return _firewallMgr.revokeFirewallRule(fwRule.getId(), apply);
-        
-    }
-    
 }
