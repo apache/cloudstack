@@ -1461,13 +1461,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh " + argsBuf.toString());
+                    s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
                 }
 
                 Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
 
                 if (!result.first()) {
-                    s_logger.error("VpnUserCfg command on domR " + argsBuf + " failed, message: " + result.second());
+                    s_logger.error("VpnUserCfg command on domR failed, message: " + result.second());
 
                     return new Answer(cmd, false, "VpnUserCfg command failed due to " + result.second());
                 }
