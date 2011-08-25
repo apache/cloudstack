@@ -24,6 +24,11 @@ import java.util.Date;
  * offered.
  */
 public interface ServiceOffering {
+    public enum StorageType {
+        local,
+        shared
+    }
+    
     long getId();
     
     String getDisplayText();
