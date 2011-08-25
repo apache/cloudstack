@@ -314,7 +314,7 @@ function afterLoadIpJSP() {
 	    	if(protocol == "tcp" || protocol == "udp") {
 	    		$createFirewallRow.find("#start_port,#end_port").show();
 	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").hide();
-	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").val("")
+	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").val("");
 	    	}
 	    	else { //protocol == icmp
 	    		$createFirewallRow.find("#ICMP_type,#ICMP_code").show();
