@@ -84,6 +84,7 @@ Requires: unzip
 Requires: /sbin/mount.nfs
 Requires: openssh-clients
 Requires: nfs-utils
+Requires: wget
 # there is a fsimage.so in the source code, which adds xen-libs as a dependence, needs to supress it, as rhel doesn't have this pacakge
 AutoReqProv: no
 Obsoletes: vmops-agent-scripts < %{version}-%{release}
