@@ -398,7 +398,7 @@ public class HypervisorHostHelper {
 	}
 	
 	public static boolean createBlankVm(VmwareHypervisorHost host, String vmName, 
-		int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, String guestOsIdentifier, 
+		int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, 
 		ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 		
 		if(s_logger.isInfoEnabled())
@@ -407,7 +407,7 @@ public class HypervisorHostHelper {
 		// VM config basics
 		VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
 		vmConfig.setName(vmName);
-		VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, guestOsIdentifier, limitCpuUse);
+		VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse);
 
 		// Scsi controller
 		VirtualLsiLogicController scsiController = new VirtualLsiLogicController();

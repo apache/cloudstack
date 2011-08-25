@@ -238,8 +238,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _privateNetworkVSwitchName;
     protected String _publicNetworkVSwitchName;
     protected String _guestNetworkVSwitchName;
+
     protected float _cpuOverprovisioningFactor = 1;
     protected boolean _reserveCpu = false;
+    
+    protected float _memOverprovisioningFactor = 1;
+    protected boolean _reserveMem = false;
 
     protected ManagedObjectReference _morHyperHost;
     protected VmwareContext _serviceContext;
@@ -1099,7 +1103,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     assert (vmSpec.getSpeed() != null) && (rootDiskDataStoreDetails != null);
                     if (!hyperHost.createBlankVm(vmName, vmSpec.getCpus(), vmSpec.getSpeed().intValue(), 
-                    		getReserveCpuMHz(vmSpec.getSpeed().intValue()), vmSpec.getLimitCpuUse(), ramMb, 
+                    		getReserveCpuMHz(vmSpec.getSpeed().intValue()), vmSpec.getLimitCpuUse(), ramMb, getReserveMemMB(ramMb),
                     	translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), rootDiskDataStoreDetails.first(), false)) {
                         throw new Exception("Failed to create VM. vmName: " + vmName);
                     }
@@ -1131,7 +1135,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed().intValue(), 
-            	getReserveCpuMHz(vmSpec.getSpeed().intValue()), ramMb, 
+            	getReserveCpuMHz(vmSpec.getSpeed().intValue()), ramMb, getReserveMemMB(ramMb),
         		translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), vmSpec.getLimitCpuUse());
             
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
@@ -1317,6 +1321,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private int getReserveCpuMHz(int cpuMHz) {
     	if(this._reserveCpu) {
     		return (int)(cpuMHz / this._cpuOverprovisioningFactor);
+    	}
+    	
+    	return 0;
+    }
+    
+    private int getReserveMemMB(int memMB) {
+    	if(this._reserveMem) {
+    		return (int)(memMB / this._memOverprovisioningFactor);
     	}
     	
     	return 0;
@@ -3659,6 +3671,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         value = (String) params.get("vmware.reserve.cpu");
         if(value != null && value.equalsIgnoreCase("true"))
         	_reserveCpu = true;
+        
+        value = (String) params.get("mem.overprovisioning.factor");
+        if(value != null)
+        	_memOverprovisioningFactor = Float.parseFloat(value);
+        
+        value = (String) params.get("vmware.reserve.mem");
+        if(value != null && value.equalsIgnoreCase("true"))
+        	_reserveMem = true;
 
         String[] tokens = _guid.split("@");
         _vCenterAddress = tokens[1];
