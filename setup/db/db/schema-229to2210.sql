@@ -27,7 +27,7 @@ ALTER TABLE `cloud`.`firewall_rules` ADD CONSTRAINT `fk_firewall_rules__related`
 ALTER TABLE `cloud`.`firewall_rules` MODIFY `start_port` int(10) COMMENT 'starting port of a port range';
 ALTER TABLE `cloud`.`firewall_rules` MODIFY `end_port` int(10) COMMENT 'end port of a port range';
 
-INSERT IGNORE INTO `cloud`.`configuration` (category, instance, name, value, description) VALUES ('Network', 'DEFAULT', 'firewall.rule.ui.enabled', 'true', 'enable/disable UI that separates firewall rules from NAT/LB rules');
+INSERT IGNORE INTO `cloud`.`configuration` (category, instance, name, value, description) VALUES ('Network', 'DEFAULT', 'firewall.rule.ui.enabled', 'false', 'enable/disable UI that separates firewall rules from NAT/LB rules');
 
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'agent.load.threshold', '0.70', 'Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening');
