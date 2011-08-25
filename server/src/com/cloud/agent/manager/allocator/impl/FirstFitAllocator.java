@@ -92,18 +92,57 @@ public class FirstFitAllocator implements HostAllocator {
         	return new ArrayList<Host>();
         }
         
-        String hostTag = offering.getHostTag();
-        if(hostTag != null){
-        	s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having host tag:" + hostTag);
-        }else{
-        	s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+        if(s_logger.isDebugEnabled()){
+            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId );
         }
+        
+        String hostTagOnOffering = offering.getHostTag();
+        String hostTagOnTemplate = template.getTemplateTag();
+        
+        boolean hasSvcOfferingTag = hostTagOnOffering != null ? true : false;
+        boolean hasTemplateTag = hostTagOnTemplate != null ? true : false;
 
         List<HostVO> clusterHosts = new ArrayList<HostVO>();
-        if(hostTag != null){
-        	clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag);
+        if(hostTagOnOffering == null && hostTagOnTemplate == null){
+            clusterHosts = _hostDao.listBy(type, clusterId, podId, dcId);
         }else{
-        	clusterHosts = _hostDao.listBy(type, clusterId, podId, dcId);
+            List<HostVO> hostsMatchingOfferingTag = new ArrayList<HostVO>();
+            List<HostVO> hostsMatchingTemplateTag = new ArrayList<HostVO>();
+            if(hasSvcOfferingTag){
+                if(s_logger.isDebugEnabled()){            
+                    s_logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
+                }
+                hostsMatchingOfferingTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
+                if(s_logger.isDebugEnabled()){            
+                    s_logger.debug("Hosts with tag '"+hostTagOnOffering+"' are:" + hostsMatchingOfferingTag);
+                }                
+            }
+            if(hasTemplateTag){
+                if(s_logger.isDebugEnabled()){            
+                    s_logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
+                }
+                hostsMatchingTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);    
+                if(s_logger.isDebugEnabled()){            
+                    s_logger.debug("Hosts with tag '"+hostTagOnTemplate+"' are:" + hostsMatchingTemplateTag);
+                }                  
+            }
+            
+            if(hasSvcOfferingTag && hasTemplateTag){
+                hostsMatchingOfferingTag.retainAll(hostsMatchingTemplateTag);
+                clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);    
+                if(s_logger.isDebugEnabled()){            
+                    s_logger.debug("Found "+ hostsMatchingOfferingTag.size() +" Hosts satisfying both tags, host ids are:" + hostsMatchingOfferingTag);
+                }
+                
+                clusterHosts = hostsMatchingOfferingTag;
+            }else{
+                if(hasSvcOfferingTag){
+                    clusterHosts = hostsMatchingOfferingTag;
+                }else{
+                    clusterHosts = hostsMatchingTemplateTag;
+                }
+            }
+            
         }
 
         return allocateTo(offering, template, avoid, clusterHosts, returnUpTo);

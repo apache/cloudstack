@@ -41,7 +41,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.")
-public class CreateTemplateCmd extends BaseAsyncCreateCmd {
+        public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
@@ -78,14 +78,15 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
     private Long volumeId;
-    
+
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
     private Long vmId;
-    
+
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
     private String url;
-    
-    
+
+    @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
+    private String templateTag;    
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -130,14 +131,18 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public Long getVolumeId() {
         return volumeId;
     }
-    
+
     public Long getVmId() {
-    	return vmId;
+        return vmId;
     }
 
     public String getUrl() {
         return url;
     }
+
+    public String getTemplateTag() {
+        return templateTag;
+    }    
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -187,26 +192,26 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     }
 
     private boolean isBareMetal() {
-    	return (this.getVmId() != null && this.getUrl() != null);
+        return (this.getVmId() != null && this.getUrl() != null);
     }
-    
+
     @Override
     public void create() throws ResourceAllocationException {
-		if (isBareMetal()) {
-			_bareMetalVmService.createPrivateTemplateRecord(this);
-			/*Baremetal creates template record after taking image proceeded, use vmId as entity id here*/
-			this.setEntityId(vmId);
-		} else {
-			VirtualMachineTemplate template = null;
-			template = _userVmService.createPrivateTemplateRecord(this);
+        if (isBareMetal()) {
+            _bareMetalVmService.createPrivateTemplateRecord(this);
+            /*Baremetal creates template record after taking image proceeded, use vmId as entity id here*/
+            this.setEntityId(vmId);
+        } else {
+            VirtualMachineTemplate template = null;
+            template = _userVmService.createPrivateTemplateRecord(this);
 
-			if (template != null) {
-				this.setEntityId(template.getId());
-			} else {
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
-						"Failed to create a template");
-			}
-		}
+            if (template != null) {
+                this.setEntityId(template.getId());
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
+                "Failed to create a template");
+            }
+        }
     }
 
     @Override
@@ -218,13 +223,13 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         } else {
             template = _userVmService.createPrivateTemplate(this);
         }
-        
+
         if (template != null){
             List<TemplateResponse> templateResponses;
             if (isBareMetal()) {
-            	templateResponses = _responseGenerator.createTemplateResponses(template.getId(), vmId);
+                templateResponses = _responseGenerator.createTemplateResponses(template.getId(), vmId);
             } else {
-            	templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
+                templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
             }
             TemplateResponse response = new TemplateResponse();
             if (templateResponses != null && !templateResponses.isEmpty()) {
@@ -235,6 +240,6 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private template");
         }
-        
+
     }
 }

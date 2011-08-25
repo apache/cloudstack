@@ -80,7 +80,7 @@ public class TemplateResponse extends BaseResponse {
 
     @SerializedName("zonename") @Param(description="the name of the zone for this template")
     private String zoneName;
-    
+
     @SerializedName("status") @Param(description="the status of the template")
     private String status;
 
@@ -107,23 +107,27 @@ public class TemplateResponse extends BaseResponse {
 
     @SerializedName("isextractable") @Param(description="true if the template is extractable, false otherwise")
     private Boolean extractable;
-    
+
     @SerializedName("checksum") @Param(description="checksum of the template")
     private String checksum;
-    
+
     @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
     private Long sourcetemplateId;    
-    
+
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the secondary storage host for the template")
     private Long hostId;
 
     @SerializedName("hostname") @Param(description="the name of the secondary storage host for the template")
     private String hostName;
-    
+
+    @SerializedName("templatetag") @Param(description="the tag of this template")
+    private String templateTag;
+
+    @Override
     public Long getObjectId() {
-    	return getId();
+        return getId();
     }
-    
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -300,17 +304,24 @@ public class TemplateResponse extends BaseResponse {
         this.hypervisor = hypervisor;
     }
 
+
+
     public Long getJobId() {
         return jobId;
     }
+
+
 
     public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
+
+
     public Integer getJobStatus() {
         return jobStatus;
     }
+
 
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
@@ -332,14 +343,14 @@ public class TemplateResponse extends BaseResponse {
         this.domainId = domainId;
     }
 
-	public Boolean isExtractable() {
-		return extractable;
-	}
+    public Boolean isExtractable() {
+        return extractable;
+    }
 
-	public void setExtractable(Boolean extractable) {
-		this.extractable = extractable;
-	}
-	
+    public void setExtractable(Boolean extractable) {
+        this.extractable = extractable;
+    }
+
     public String getChecksum() {
         return checksum;
     }
@@ -347,7 +358,7 @@ public class TemplateResponse extends BaseResponse {
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
-    
+
     public Long getSourceTemplateId() {
         return sourcetemplateId;
     }
@@ -355,7 +366,7 @@ public class TemplateResponse extends BaseResponse {
     public void setSourceTemplateId(Long sourcetemplateId) {
         this.sourcetemplateId = sourcetemplateId;
     }    
-    
+
     public Long getHostId() {
         return hostId;
     }
@@ -371,4 +382,12 @@ public class TemplateResponse extends BaseResponse {
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
+
+    public String getTemplateTag() {
+        return templateTag;
+    }
+
+    public void setTemplateTag(String templateTag) {
+        this.templateTag = templateTag;
+    }    
 }

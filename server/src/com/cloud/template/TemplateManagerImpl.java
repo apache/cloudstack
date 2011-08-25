@@ -103,6 +103,7 @@ import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -162,6 +163,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject ConfigurationDao _configDao;
     @Inject UsageEventDao _usageEventDao;
     @Inject HypervisorGuruManager _hvGuruMgr;
+    @Inject AccountService _accountService;    
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     int _storagePoolMaxWaitSeconds = 3600;
@@ -197,6 +199,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template")
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
+        if(cmd.getTemplateTag() != null){
+            Account account = UserContext.current().getCaller();
+            if(!_accountService.isRootAdmin(account.getType())){
+                throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
+            }
+        }        
     	TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
     	TemplateProfile profile = adapter.prepare(cmd);
     	return adapter.create(profile);

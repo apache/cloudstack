@@ -25,7 +25,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 
 public interface VirtualMachineTemplate extends ControlledEntity {
-    
+
     public static enum BootloaderType { PyGrub, HVM, External, CD };
     public enum TemplateFilter {
         featured,           // returns templates that have been marked as featured and public
@@ -36,53 +36,55 @@ public interface VirtualMachineTemplate extends ControlledEntity {
         community,          // returns templates that have been marked as public but not featured
         all                 // all templates (only usable by ROOT admins)
     }
-    
+
     /**
      * @return id.
      */
     long getId();
-    
+
     boolean isFeatured();
-    
+
     /**
      * @return public or private template
      */
     boolean isPublicTemplate();
-    
+
     boolean isExtractable();
-    
+
     /**
      * @return name
      */
     String getName();
-    
+
     ImageFormat getFormat();
 
     boolean isRequiresHvm();
-    
+
     String getDisplayText();
-    
+
     boolean getEnablePassword();
-    
+
     boolean isCrossZones();
-    
+
     Date getCreated();
-    
+
     long getGuestOSId();
-    
+
     boolean isBootable();
-    
+
     TemplateType getTemplateType();
-    
+
     HypervisorType getHypervisorType();
-    
+
     int getBits();
-    
+
     String getUniqueName();
-    
+
     String getUrl();
 
     String getChecksum();
 
-	Long getSourceTemplateId();
+    Long getSourceTemplateId();
+
+    String getTemplateTag();
 }
