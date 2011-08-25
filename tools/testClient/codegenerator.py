@@ -7,6 +7,7 @@ class cmdParameterProperty(object):
         self.name = None
         self.required = False
         self.desc = ""
+        self.type = "planObject"
         self.subProperties = []
         
 class cloudStackCmd:
@@ -76,7 +77,12 @@ class codeGenerator:
                 self.code += self.space + self.space + '"""%s"""\n'%req.desc
             if req.required == "true":
                 self.code += self.space + self.space + '"""Required"""\n'
-            self.code += self.space + self.space  + 'self.%s = None\n'%req.name
+            
+            value = "None"
+            if req.type == "list" or req.type == "map":
+                value = "[]"
+            
+            self.code += self.space + self.space  + 'self.%s = %s\n'%(req.name,value)
             if req.required == "true":
                 self.required.append(req.name)
         
@@ -206,10 +212,14 @@ class codeGenerator:
                 if required:
                     paramProperty.required = getText(required)
             
-                    requestDescription = param.getElementsByTagName('description')
+                requestDescription = param.getElementsByTagName('description')
                 if requestDescription:            
                     paramProperty.desc = getText(requestDescription)
             
+                type = param.getElementsByTagName("type")
+                if type:
+                    paramProperty.type = getText(type)
+                
                 csCmd.request.append(paramProperty)
         
             responseEle = cmd.getElementsByTagName("response")[0]

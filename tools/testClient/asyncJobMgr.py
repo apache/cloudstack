@@ -16,6 +16,7 @@ class jobStatus(object):
         self.startTime = None
         self.endTime = None
         self.duration = None
+        self.jobId = None
 class workThread(threading.Thread):
     def __init__(self, in_queue, out_dict, apiClient, db=None):
         threading.Thread.__init__(self)
@@ -23,8 +24,6 @@ class workThread(threading.Thread):
         self.output = out_dict
         self.connection = copy.copy(apiClient.connection)
         self.db = None
-        if db is not None:
-            self.db = copy.copy(db)
         
     def run(self):
         while self.inqueue.qsize() > 0:
@@ -46,8 +45,8 @@ class workThread(threading.Thread):
                     jobId = self.connection.getAsyncJobId(responseInstance, result)
                     result = self.connection.pollAsyncJob(cmd, responseInstance, jobId)
                     jobstatus.result = result
-                    
-                    
+                    jobstatus.jobId = jobId
+                
                 jobstatus.status = True
             except cloudstackException.cloudstackAPIException, e:
                 jobstatus.result = str(e)
@@ -56,23 +55,15 @@ class workThread(threading.Thread):
                 jobstatus.status = False
                 jobstatus.result = sys.exc_info()
             
-            if self.db is not None and jobId is not None:
-                result = self.db.execute("select created, last_updated from async_job where id=%s"%jobId)
-                if result is not None and len(result) > 0:
-                    jobstatus.startTime = result[0][0]
-                    jobstatus.endTime = result[0][1]
-                    delta = jobstatus.endTime - jobstatus.startTime
-                    jobstatus.duration = delta.total_seconds()
             #print job.id
             self.output.lock.acquire()
             self.output.dict[job.id] = jobstatus
             self.output.lock.release()
             self.inqueue.task_done()
             
+        
         '''release the resource'''
         self.connection.close()
-        if self.db is not None:
-            self.db.close()
 
 class jobThread(threading.Thread):
     def __init__(self, inqueue, interval):
@@ -120,6 +111,21 @@ class asyncJobMgr(object):
     
     def waitForComplete(self):
         self.inqueue.join()
+        
+        for k,jobstatus in self.output.dict.iteritems():
+            jobId = jobstatus.jobId
+            if jobId is not None and self.db is not None:
+                result = self.db.execute("select job_status, created, last_updated from async_job where id=%s"%jobId)
+                if result is not None and len(result) > 0:
+                    if result[0][0] == 1:
+                        jobstatus.status = True
+                    else:
+                        jobstatus.status = False
+                    jobstatus.startTime = result[0][1]
+                    jobstatus.endTime = result[0][2]
+                    delta = jobstatus.endTime - jobstatus.startTime
+                    jobstatus.duration = delta.total_seconds()
+        
         return self.output.dict
     
     '''put commands into a queue at first, then start workers numbers threads to execute this commands'''

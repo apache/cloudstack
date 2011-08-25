@@ -43,7 +43,7 @@ class cloudConnection(object):
         requests.sort(key=lambda x: str.lower(x[0]))
         
         requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
-        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.quote_plus(str.lower(str(request[1])))]) for request in requests])
+        hashStr = "&".join(["=".join([str.lower(request[0]), str.lower(urllib.quote_plus(str(request[1]))).replace("+", "%20")]) for request in requests])
 
         sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, hashStr, hashlib.sha1).digest()).strip())
 
@@ -216,6 +216,20 @@ class cloudConnection(object):
         for param, value in requests.items():
             if value is None:
                 requests.pop(param)
+            elif isinstance(value, list):
+                if len(value) == 0:
+                    requests.pop(param)
+                else:
+                    if not isinstance(value[0], dict):
+                        requests[param] = ",".join(value)
+                    else:
+                        requests.pop(param)
+                        i = 0
+                        for v in value:
+                            for key, val in v.iteritems():
+                                requests["%s[%d].%s"%(param,i,key)] = val
+                            i = i + 1
+        
         if self.logging is not None:
             self.logging.debug("sending command: " + str(requests))
         result = None

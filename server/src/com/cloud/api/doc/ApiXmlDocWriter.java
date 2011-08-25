@@ -400,6 +400,10 @@ public class ApiXmlDocWriter {
                 if (!parameterAnnotation.description().isEmpty()) {
                     reqArg.setDescription(parameterAnnotation.description());
                 }
+                
+                if (parameterAnnotation.type() == BaseCmd.CommandType.LIST || parameterAnnotation.type() == BaseCmd.CommandType.MAP) {
+                    reqArg.setType(parameterAnnotation.type().toString().toLowerCase());
+                }
 
                 if (reqArg.isRequired() == true) {
                     if (parameterAnnotation.name().equals("id")) {
