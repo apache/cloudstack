@@ -510,6 +510,12 @@ fi
 %{_javadir}/%{name}-iControl.jar
 %{_javadir}/%{name}-manageontap.jar
 %{_javadir}/vmware*.jar
+%{_javadir}/%{name}-charva.jar
+%{_javadir}/%{name}-jnetpcap.jar
+%{_javadir}/%{name}-junit.jar
+%{_javadir}/%{name}-selenium-java-client-driver.jar
+%{_javadir}/%{name}-selenium-server.jar
+
 
 %files core
 %defattr(0644,root,root,0755)
