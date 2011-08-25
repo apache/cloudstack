@@ -18,6 +18,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
+import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitch;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
 import com.vmware.vim25.HttpNfcLeaseInfo;
@@ -117,13 +118,23 @@ public class HypervisorHostHelper {
 			shapingPolicy.setBurstSize(5*shapingPolicy.getAverageBandwidth()/8);
 		}
 		
+		boolean bWaitPortGroupReady = false;
 		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
 			hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
+			bWaitPortGroupReady = true;
 		} else {
-			hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+			HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
+			if(!isSpecMatch(spec, vid, shapingPolicy)) {
+				hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+				bWaitPortGroupReady = true;
+			}
 		}
-
-		ManagedObjectReference morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
+		
+		ManagedObjectReference morNetwork;
+		if(bWaitPortGroupReady) 
+			morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
+		else
+			morNetwork = hostMo.getNetworkMor(networkName);
 		if (morNetwork == null) {
 			String msg = "Failed to create public network on vSwitch " + vSwitchName;
 			s_logger.error(msg);
@@ -261,13 +272,23 @@ public class HypervisorHostHelper {
 			shapingPolicy.setBurstSize(5*shapingPolicy.getAverageBandwidth()/8);
 		}
 
+		boolean bWaitPortGroupReady = false;
 		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
 			hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
+			bWaitPortGroupReady = true;
 		} else {
-			hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+			HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
+			if(!isSpecMatch(spec, vid, shapingPolicy)) {
+				hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+				bWaitPortGroupReady = true;
+			}
 		}
 
-		ManagedObjectReference morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
+		ManagedObjectReference morNetwork;
+		if(bWaitPortGroupReady) 
+			morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
+		else
+			morNetwork = hostMo.getNetworkMor(networkName);
 		if (morNetwork == null) {
 			String msg = "Failed to create guest network " + networkName;
 			s_logger.error(msg);
@@ -316,6 +337,43 @@ public class HypervisorHostHelper {
 
 		s_logger.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
 		return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
+	}
+	
+	private static boolean isSpecMatch(HostPortGroupSpec spec, Integer vlanId, HostNetworkTrafficShapingPolicy shapingPolicy) {
+		// check VLAN configuration
+		if(vlanId != null) {
+			if(vlanId.intValue() != spec.getVlanId())
+				return false;
+		} else {
+			if(spec.getVlanId() != 0)
+				return false;
+		}
+
+		// check traffic shaping configuration
+		HostNetworkTrafficShapingPolicy policyInSpec = null;
+		if(spec.getPolicy() != null)
+			policyInSpec = spec.getPolicy().getShapingPolicy();
+		
+		if(policyInSpec != null && shapingPolicy == null || policyInSpec == null && shapingPolicy != null)
+			return false;
+		
+		if(policyInSpec == null && shapingPolicy == null)
+			return true;
+		
+		// so far policyInSpec and shapingPolicy should both not be null
+		if(policyInSpec.getEnabled() == null || !policyInSpec.getEnabled().booleanValue())
+			return false;
+		
+		if(policyInSpec.getAverageBandwidth() == null || policyInSpec.getAverageBandwidth().longValue() != shapingPolicy.getAverageBandwidth().longValue())
+			return false;
+
+		if(policyInSpec.getPeakBandwidth() == null || policyInSpec.getPeakBandwidth().longValue() != shapingPolicy.getPeakBandwidth().longValue())
+			return false;
+
+		if(policyInSpec.getBurstSize() == null || policyInSpec.getBurstSize().longValue() != shapingPolicy.getBurstSize().longValue())
+			return false;
+		
+		return true;
 	}
 	
 	public static ManagedObjectReference waitForNetworkReady(HostMO hostMo,
