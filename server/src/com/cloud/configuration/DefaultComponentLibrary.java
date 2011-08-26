@@ -98,7 +98,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl;
-import com.cloud.network.security.dao.EgressRuleDaoImpl;
+import com.cloud.network.security.SecurityGroupManagerImpl2;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
@@ -203,7 +203,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DataCenterIpAddressDao", DataCenterIpAddressDaoImpl.class);
         addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         addDao("IngressRuleDao", IngressRuleDaoImpl.class);
-        addDao("EgressRuleDao", EgressRuleDaoImpl.class);
         addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         addDao("SecurityGroupWorkDao", SecurityGroupWorkDaoImpl.class);
@@ -307,7 +306,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("Template Manager", TemplateManagerImpl.class);
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
-        addManager("SecurityGroupManager", SecurityGroupManagerImpl.class);
+        addManager("SecurityGroupManager", SecurityGroupManagerImpl2.class);
         addManager("DomainRouterManager", VirtualNetworkApplianceManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
@@ -329,8 +328,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("ProjectManager", ProjectManagerImpl.class);
         addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
-        addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
-
     }
 
     @Override
