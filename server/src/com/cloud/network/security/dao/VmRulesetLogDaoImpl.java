@@ -63,6 +63,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
         boolean success = true;
         try {
             stmtInsert = txn.prepareAutoCloseStatement(INSERT_OR_UPDATE);
+            txn.start();
             for (Long vmId: workItems) {
                 stmtInsert.setLong(1, vmId);
                 stmtInsert.addBatch();

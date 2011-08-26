@@ -23,13 +23,13 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -44,7 +44,6 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
     
     
     WorkerThread[] _workers;
-    long _timeToSleep = 10000;
 
     
     protected class WorkerThread extends Thread {
@@ -54,12 +53,27 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
 
         @Override
         public void run() {
-            work();
+            while (true) {
+                try{
+                    work(); 
+                } catch (final Throwable th) {
+                    s_logger.error("SG Work: Caught this throwable, ", th);
+                } 
+            }
         }
 
     }
+    
+    @Override
+    protected void createThreadPools() {
+        _workers = new WorkerThread[_numWorkerThreads];
+        for (int i = 0; i < _workers.length; i++) {
+            _workers[i] = new WorkerThread("SecGrp-Worker-" + i);
+        }
+    }
 
     @Override
+    @DB
     public void scheduleRulesetUpdateToHosts(List<Long> affectedVms, boolean updateSeqno, Long delayMs) {
         if (affectedVms.size() == 0) {
             return;
@@ -77,47 +91,44 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         _workQueue.submitWorkForVms(workItems);
     }
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        // TODO Auto-generated method stub
-        return super.configure(name, params);
-    }
 
     @Override
     public boolean start() {
-        // TODO Auto-generated method stub
-        return super.start();
+        for (final WorkerThread thread : _workers) {
+            thread.start();
+        }
+        return true;
     }
 
     @Override
     public void work() {
-        while (true) {
-            try {
-                s_logger.trace("Checking the work queue");
-                List<SecurityGroupWork> workItems = _workQueue.getWork(1);
-                
-                for (SecurityGroupWork work: workItems) {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Processing " + work.getInstanceId());
-                    }
-
-                    try {
-                        VmRulesetLogVO rulesetLog = _rulesetLogDao.findByVmId(work.getInstanceId());
-                        if (rulesetLog == null) {
-                            s_logger.warn("Could not find ruleset log for vm " + work.getInstanceId());
-                            continue;
-                        }
-                        work.setLogsequenceNumber(rulesetLog.getLogsequence());
-                        sendRulesetUpdates(work);
-                    }catch (Exception e) {
-                        s_logger.error("Problem during SG work " + work, e);
-                        work.setStep(Step.Error);
-                    }
+        s_logger.trace("Checking the work queue");
+        List<SecurityGroupWork> workItems;
+        try {
+            workItems = _workQueue.getWork(1);
+            for (SecurityGroupWork work: workItems) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Processing " + work.getInstanceId());
                 }
-            } catch (final Throwable th) {
-                s_logger.error("Caught this throwable, ", th);
-            } 
+
+                try {
+                    VmRulesetLogVO rulesetLog = _rulesetLogDao.findByVmId(work.getInstanceId());
+                    if (rulesetLog == null) {
+                        s_logger.warn("Could not find ruleset log for vm " + work.getInstanceId());
+                        continue;
+                    }
+                    work.setLogsequenceNumber(rulesetLog.getLogsequence());
+                    sendRulesetUpdates(work);
+                }catch (Exception e) {
+                    s_logger.error("Problem during SG work " + work, e);
+                    work.setStep(Step.Error);
+                }
+            }
+        } catch (InterruptedException e1) {
+           s_logger.warn("SG work: caught InterruptException", e1);
         }
+
+
     }
     
     protected void sendRulesetUpdates(SecurityGroupWork work){

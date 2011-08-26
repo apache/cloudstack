@@ -151,7 +151,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     private long _serverId;
 
     private  int _timeBetweenCleanups = TIME_BETWEEN_CLEANUPS; // seconds
-    private  int _numWorkerThreads = WORKER_THREAD_COUNT;
+    protected  int _numWorkerThreads = WORKER_THREAD_COUNT;
     private  int _globalWorkLockTimeout = 300; // 5 minutes
 
     private final GlobalLock _workLock = GlobalLock.getInternLock("SecurityGroupWork");
@@ -784,11 +784,17 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
+
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
+                       ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
+        createThreadPools();
+
+        return true;
+    }
+    
+    protected void createThreadPools() {
         _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
-
-        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + ", time between cleanups=" + _timeBetweenCleanups);
-        return true;
     }
 
     @Override

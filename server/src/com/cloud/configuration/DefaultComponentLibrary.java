@@ -98,6 +98,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl;
+import com.cloud.network.security.SecurityGroupManagerImpl2;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
@@ -301,7 +302,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("Template Manager", TemplateManagerImpl.class);
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
-        addManager("SecurityGroupManager", SecurityGroupManagerImpl.class);
+        addManager("SecurityGroupManager", SecurityGroupManagerImpl2.class);
         addManager("DomainRouterManager", VirtualNetworkApplianceManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
