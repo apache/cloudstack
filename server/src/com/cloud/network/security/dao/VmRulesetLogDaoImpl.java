@@ -56,17 +56,24 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
     }
 
     @Override
-    public void createOrUpdate(Set<Long> workItems) {
+    public int createOrUpdate(Set<Long> workItems) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement stmtInsert = null;
         int [] queryResult = null;
+        int count=0;
         boolean success = true;
         try {
             stmtInsert = txn.prepareAutoCloseStatement(INSERT_OR_UPDATE);
+            
             txn.start();
             for (Long vmId: workItems) {
                 stmtInsert.setLong(1, vmId);
                 stmtInsert.addBatch();
+                count++;
+                if (count % 16 ==0) {
+                    queryResult = stmtInsert.executeBatch();
+                    stmtInsert.clearBatch();
+                }
             }
             queryResult = stmtInsert.executeBatch();
             
@@ -87,7 +94,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                 }
             }
         } 
-        return;
+        return count;
     }
 
     

@@ -29,6 +29,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Profiler;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VirtualMachine.State;
@@ -83,14 +84,17 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
-    
+        Profiler p = new Profiler();
+        p.start();
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        _rulesetLogDao.createOrUpdate(workItems);
+        int updated = _rulesetLogDao.createOrUpdate(workItems);
         txn.commit();
         int newJobs = _workQueue.submitWorkForVms(workItems);
+        p.stop();
         if (s_logger.isTraceEnabled()){
-            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates: num new jobs=" + newJobs);
+            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates: num new jobs=" + 
+                           newJobs + " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
         }
     }
 
