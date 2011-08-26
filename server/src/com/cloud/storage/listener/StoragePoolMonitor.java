@@ -68,7 +68,7 @@ public class StoragePoolMonitor implements Listener {
     		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
     		if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
 				scCmd.getHypervisorType() == HypervisorType.VMware) {
-    			List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
+    			List<StoragePoolVO> pools = _poolDao.listByUpStatus(host.getDataCenterId(), host.getPodId(), host.getClusterId());
     			for (StoragePoolVO pool : pools) {
     			    if (!pool.getPoolType().isShared()) {
     			        continue;

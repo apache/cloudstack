@@ -49,6 +49,8 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     protected final SearchBuilder<StoragePoolVO> AllFieldSearch;
 	protected final SearchBuilder<StoragePoolVO> DcPodSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
+    protected final SearchBuilder<StoragePoolVO> DcPodStatusSearch;
+    protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterStatusSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> MaintenanceCountSearch;
     
@@ -86,6 +88,25 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         DcPodAnyClusterSearch.or("podId", DcPodAnyClusterSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         DcPodAnyClusterSearch.cp();
         DcPodAnyClusterSearch.done();
+        
+        DcPodStatusSearch = createSearchBuilder();
+        DcPodStatusSearch.and("datacenterId", DcPodStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DcPodStatusSearch.and("status", DcPodStatusSearch.entity().getStatus(), Op.EQ);
+        DcPodStatusSearch.and().op("nullpod", DcPodStatusSearch.entity().getPodId(), SearchCriteria.Op.NULL);
+        DcPodStatusSearch.or("podId", DcPodStatusSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        DcPodStatusSearch.cp();
+        DcPodStatusSearch.and().op("nullcluster", DcPodStatusSearch.entity().getClusterId(), SearchCriteria.Op.NULL);
+        DcPodStatusSearch.or("cluster", DcPodStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        DcPodStatusSearch.cp();
+        DcPodStatusSearch.done();
+        
+        DcPodAnyClusterStatusSearch = createSearchBuilder();
+        DcPodAnyClusterStatusSearch.and("datacenterId", DcPodAnyClusterStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DcPodAnyClusterStatusSearch.and("status", DcPodAnyClusterStatusSearch.entity().getStatus(), Op.EQ);
+        DcPodAnyClusterStatusSearch.and().op("nullpod", DcPodAnyClusterStatusSearch.entity().getPodId(), SearchCriteria.Op.NULL);
+        DcPodAnyClusterStatusSearch.or("podId", DcPodAnyClusterStatusSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        DcPodAnyClusterStatusSearch.cp();
+        DcPodAnyClusterStatusSearch.done();
         
         DeleteLvmSearch = createSearchBuilder();
         DeleteLvmSearch.and("ids", DeleteLvmSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -176,6 +197,26 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("uuid", uuid);
         
         return findOneBy(sc);
+    }
+    
+    @Override
+    public List<StoragePoolVO> listByUpStatus(long dataCenterId, long podId, Long clusterId) {
+        if (clusterId != null) {
+            SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
+            sc.setParameters("datacenterId", dataCenterId);
+            sc.setParameters("podId", podId);
+           
+            sc.setParameters("cluster", clusterId);
+            sc.setParameters("status", StoragePoolStatus.Up);
+            return listBy(sc);
+        } else {
+            SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
+            sc.setParameters("datacenterId", dataCenterId);
+            sc.setParameters("podId", podId);
+            sc.setParameters("status", StoragePoolStatus.Up);
+            return listBy(sc);
+        }
+        
     }
 
 	@Override
