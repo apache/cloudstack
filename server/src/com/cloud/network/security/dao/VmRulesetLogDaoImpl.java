@@ -74,7 +74,8 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
             if (s_logger.isTraceEnabled())
                 s_logger.trace("Updated or inserted " + workItems.size() + " log items");
         } catch (SQLException e) {
-            s_logger.warn("Failed to execute batch update statement for ruleset log");
+            s_logger.warn("Failed to execute batch update statement for ruleset log: ", e);
+            txn.rollback();
             success = false;
         }
         if (!success && queryResult != null) {

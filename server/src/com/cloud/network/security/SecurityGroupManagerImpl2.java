@@ -79,7 +79,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             return;
         }
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Security Group Mgr2: scheduling ruleset updates for " + affectedVms.size() + " vms");
+            s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms, current queue size=" + _workQueue.size());
         }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
@@ -88,7 +88,10 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         txn.start();
         _rulesetLogDao.createOrUpdate(workItems);
         txn.commit();
-        _workQueue.submitWorkForVms(workItems);
+        int newJobs = _workQueue.submitWorkForVms(workItems);
+        if (s_logger.isTraceEnabled()){
+            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates: num new jobs=" + newJobs);
+        }
     }
 
 
@@ -142,9 +145,16 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                 SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(rules), 
                         work.getLogsequenceNumber(), rules);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
+                                   ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs());
+                }
                 Commands cmds = new Commands(cmd);
                 try {
                     _agentMgr.send(agentId, cmds, _answerListener);
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("SecurityGroupManager v2: sent ruleset updates for " + vm.getInstanceName() + " curr queue size=" + _workQueue.size());
+                    }
                 } catch (AgentUnavailableException e) {
                     s_logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
                 }

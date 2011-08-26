@@ -143,5 +143,14 @@ public class SecurityIngressRulesCmd extends Command {
     public Long getVmId() {
         return vmId;
     }
+    
+    public int getTotalNumCidrs() {
+        //useful for logging
+        int count = 0;
+        for (IpPortAndProto i: ruleSet) {
+            count += i.allowedCidrs.length;
+        }
+        return count;
+    }
 
 }
