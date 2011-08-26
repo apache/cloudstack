@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.domain.DomainVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
