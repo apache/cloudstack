@@ -114,7 +114,7 @@ class cloudConnection(object):
                             i = i + 1
         
         if self.logging is not None:
-            self.logging.debug("sending command: " + str(requests))
+            self.logging.debug("sending command: %s %s"%(commandName, str(requests)))
         result = None
         if self.auth:
             result = self.make_request_with_auth(commandName, requests)
