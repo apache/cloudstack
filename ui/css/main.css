@@ -3261,7 +3261,7 @@ a:hover.search_button {
 	width:132px;
 	height:22px;
 	float:right;
-	background:url(../images/poweredby.gif) no-repeat top left;
+	/*background:url(../images/poweredby.gif) no-repeat top left;*/
 	margin:2px 10px 0 0;
 	padding:0;
 	display:inline;
