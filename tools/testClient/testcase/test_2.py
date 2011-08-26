@@ -18,7 +18,6 @@ class TestCase2(cloudstackTestCase):
         listVMresponse = asyncJobResult[0].result
         self.debug("Total Number of Hosts: " + str(len(listVMresponse)))
     
-        '''  
-        for i in listhostresponse:
-            self.debug("id: " + i.id +" pod id: " + i.podid +" host tag: " + i.hosttags)
-        '''
+        for i in listVMresponse:
+            self.debug("id: " + str(i.id) +" pod id: " + str(i.podid) +" host tag: " + str(i.hosttags))
+        

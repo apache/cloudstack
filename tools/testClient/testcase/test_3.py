@@ -26,7 +26,6 @@ class TestCase1(cloudstackTestCase):
                     self.zoneId = tmpl.zoneid
                     break
     
-    @unittest.skip("demonstrating skipping")
     def test_cloudstackapi(self):
         apiClient = self.testClient.getApiClient()
         

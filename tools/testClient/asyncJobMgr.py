@@ -5,6 +5,7 @@ import Queue
 import copy
 import sys
 import jsonHelper
+import datetime
 
 class job(object):
     def __init__(self):
@@ -52,11 +53,12 @@ class workThread(threading.Thread):
             self.lock.acquire()
             
             if cmd.isAsync == "false":
-                jobstatus.startTime = time.time()
+                jobstatus.startTime = datetime.datetime.now()
                
                 result = self.connection.make_request(cmd)
                 jobstatus.result = result
-                jobstatus.endTime = time.time()
+                jobstatus.endTime = datetime.datetime.now()
+                jobstatus.duration = time.mktime(jobstatus.endTime.timetuple()) - time.mktime(jobstatus.startTime.timetuple())
             else:
                 result = self.connection.make_request(cmd, None, True)
                 if result is None:
