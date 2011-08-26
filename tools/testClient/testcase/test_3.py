@@ -21,7 +21,7 @@ class TestCase1(cloudstackTestCase):
         tmpls = self.testClient.getApiClient().listTemplates(listtmplcmd)
         if tmpls is not None:
             for tmpl in tmpls:
-                if tmpl.isready == "true":
+                if tmpl.isready:
                     self.templateId = tmpl.id
                     self.zoneId = tmpl.zoneid
                     break
@@ -52,14 +52,34 @@ class TestCase1(cloudstackTestCase):
             '''
             cidrlist = ["192.168.1.1/24", "10.1.1.1/24"]
             securitygroup.cidrlist = cidrlist
-            apiClient.authorizeSecurityGroupIngress(securitygroup)
-       
+            try:
+                apiClient.authorizeSecurityGroupIngress(securitygroup)
+            except:
+                pass
+        '''
         createvm = deployVirtualMachine.deployVirtualMachineCmd()
         createvm.serviceofferingid = self.svid
         createvm.templateid = self.templateId
         createvm.zoneid = self.zoneId
         vm = apiClient.deployVirtualMachine(createvm)
         vmId = vm.id
+        '''
+        vmId = 1
+        vmcmds = []
+        for i in range(10):
+            createvm = deployVirtualMachine.deployVirtualMachineCmd()
+            createvm.serviceofferingid = self.svid
+            createvm.templateid = self.templateId
+            createvm.zoneid = self.zoneId
+            vmcmds.append(createvm)
+        
+        result = self.testClient.submitCmdsAndWait(vmcmds)
+        for jobstatus in result:
+            if jobstatus.status == 1:
+                self.debug(jobstatus.result.id)
+                self.debug(jobstatus.result.displayname)
+            else:
+                self.debug(jobstatus.result)
         
         creatvolume = createVolume.createVolumeCmd()
         creatvolume.name = "tetst" + str(uuid.uuid4())

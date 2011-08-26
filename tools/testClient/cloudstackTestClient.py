@@ -39,7 +39,8 @@ class cloudstackTestClient(object):
     def getApiClient(self):
         return self.apiClient
     
-    def submitCmdsAndWait(self, cmds, workers=10):
+    '''FixME, httplib has issue if more than one thread submitted'''
+    def submitCmdsAndWait(self, cmds, workers=1):
         if self.asyncJobMgr is None:
             self.asyncJobMgr = asyncJobMgr.asyncJobMgr(self.apiClient, self.dbConnection)
         return self.asyncJobMgr.submitCmdsAndWait(cmds, workers)
