@@ -29,6 +29,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Profiler;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VirtualMachine.State;
@@ -73,22 +74,26 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
     }
 
     @Override
-    @DB
+    //@DB
     public void scheduleRulesetUpdateToHosts(List<Long> affectedVms, boolean updateSeqno, Long delayMs) {
         if (affectedVms.size() == 0) {
             return;
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Security Group Mgr2: scheduling ruleset updates for " + affectedVms.size() + " vms");
-        }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
-    
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        _rulesetLogDao.createOrUpdate(workItems);
-        txn.commit();
-        _workQueue.submitWorkForVms(workItems);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
+        }
+
+        Profiler p = new Profiler();
+        p.start();
+        int updated = _rulesetLogDao.createOrUpdate(workItems);
+        int newJobs = _workQueue.submitWorkForVms(workItems);
+        p.stop();
+        if (s_logger.isTraceEnabled()){
+            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
+                           newJobs + " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
+        }
     }
 
 
@@ -142,9 +147,16 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                 SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(rules), 
                         work.getLogsequenceNumber(), rules);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
+                                   ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs());
+                }
                 Commands cmds = new Commands(cmd);
                 try {
                     _agentMgr.send(agentId, cmds, _answerListener);
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("SecurityGroupManager v2: sent ruleset updates for " + vm.getInstanceName() + " curr queue size=" + _workQueue.size());
+                    }
                 } catch (AgentUnavailableException e) {
                     s_logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
                 }

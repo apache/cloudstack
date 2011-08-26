@@ -1473,7 +1473,7 @@ CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
   `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
   PRIMARY KEY (`id`),
-  INDEX `i_op_vm_ruleset_log__instance_id`(`instance_id`)
+  UNIQUE `i_op_vm_ruleset_log__instance_id`(`instance_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`instance_group` (

@@ -26,6 +26,6 @@ import com.cloud.utils.db.GenericDao;
 public interface VmRulesetLogDao extends GenericDao<VmRulesetLogVO, Long> {
     VmRulesetLogVO findByVmId(long vmId);
 
-    void createOrUpdate(Set<Long> workItems);
+    int createOrUpdate(Set<Long> workItems);
     
 }
