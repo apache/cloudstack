@@ -1077,6 +1077,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (getVmState(vmMo) != State.Stopped)
                     vmMo.safePowerOff(_shutdown_waitMs);
                 vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                vmMo.ensureScsiDeviceController();
             } else {
                 ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
                 assert (morDc != null);
@@ -1092,6 +1093,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (getVmState(vmMo) != State.Stopped)
                         vmMo.safePowerOff(_shutdown_waitMs);
                     vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
+                    vmMo.ensureScsiDeviceController();
                 } else {
                     int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
