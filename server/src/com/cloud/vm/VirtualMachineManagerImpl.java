@@ -1575,13 +1575,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         		}
         	}
         	
-            if(vm.getHostId() == null || hostId != vm.getHostId()) {
+        	if(serverState == State.Running) {
                 try {
-                    stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+	        		if(hostId != vm.getHostId()) {
+	                    if (s_logger.isDebugEnabled()) {
+	                        s_logger.debug("detected host change when VM " + vm + " is at running state, VM could be live-migrated externally from host " 
+	                        	+ vm.getHostId() + " to host " + hostId);
+	                    }
+	        			
+	            		stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+	        		}
                 } catch (NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
-            }
+        	}
         }
 
         if (agentState == serverState) {
