@@ -1,7 +1,7 @@
 from cloudstackTestCase import *
 
 class TestCase1(cloudstackTestCase):
-
+    @unittest.skip("demonstrating skipping")
     def test_cloudstackapi(self):
         apiClient = self.testClient.getApiClient()
         listtmcmd = listTemplates.listTemplatesCmd()

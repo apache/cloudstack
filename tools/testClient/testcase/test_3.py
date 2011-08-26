@@ -25,7 +25,8 @@ class TestCase1(cloudstackTestCase):
                     self.templateId = tmpl.id
                     self.zoneId = tmpl.zoneid
                     break
-        
+    
+    @unittest.skip("demonstrating skipping")
     def test_cloudstackapi(self):
         apiClient = self.testClient.getApiClient()
         
@@ -73,7 +74,7 @@ class TestCase1(cloudstackTestCase):
             createvm.zoneid = self.zoneId
             vmcmds.append(createvm)
         
-        result = self.testClient.submitCmdsAndWait(vmcmds)
+        result = self.testClient.submitCmdsAndWait(vmcmds, 5)
         for jobstatus in result:
             if jobstatus.status == 1:
                 self.debug(jobstatus.result.id)

@@ -20,21 +20,25 @@ class jobStatus(object):
         self.jobId = None
         self.responsecls = None
 class workThread(threading.Thread):
-    def __init__(self, in_queue, outqueue, apiClient, db=None):
+    def __init__(self, in_queue, outqueue, apiClient, db=None, lock=None):
         threading.Thread.__init__(self)
         self.inqueue = in_queue
         self.output = outqueue
-        self.connection = copy.copy(apiClient.connection)
+        self.connection = apiClient.connection
         self.db = None
+        self.lock = lock
         
     def queryAsynJob(self, job):
         if job.jobId is None:
             return job
         
         try:
+            self.lock.acquire()
             result = self.connection.pollAsyncJob(job.jobId, job.responsecls).jobresult
         except cloudstackException.cloudstackAPIException, e:
             result = str(e)
+        finally:
+            self.lock.release()
             
         job.result = result
         return job
@@ -45,8 +49,11 @@ class workThread(threading.Thread):
         jobstatus = jobStatus()
         jobId = None
         try:
-            if not cmd.isAsync:
+            self.lock.acquire()
+            
+            if cmd.isAsync == "false":
                 jobstatus.startTime = time.time()
+               
                 result = self.connection.make_request(cmd)
                 jobstatus.result = result
                 jobstatus.endTime = time.time()
@@ -69,6 +76,9 @@ class workThread(threading.Thread):
         except:
             jobstatus.status = False
             jobstatus.result = sys.exc_info()
+        finally:
+            self.lock.release()
+        
         return jobstatus
     
     def run(self):
@@ -146,11 +156,11 @@ class asyncJobMgr(object):
     
     def waitForComplete(self, workers=10):
         self.inqueue.join()
-        
+        lock = threading.Lock()
         resultQueue = Queue.Queue()
         '''intermediate result is stored in self.outqueue'''
         for i in range(workers):
-            worker = workThread(self.outqueue, resultQueue, self.apiClient, self.db)
+            worker = workThread(self.outqueue, resultQueue, self.apiClient, self.db, lock)
             worker.start()
         
         self.outqueue.join()
@@ -166,9 +176,9 @@ class asyncJobMgr(object):
     '''put commands into a queue at first, then start workers numbers threads to execute this commands'''
     def submitCmdsAndWait(self, cmds, workers=10):
         self.submitCmds(cmds)
-        
+        lock = threading.Lock()
         for i in range(workers):
-            worker = workThread(self.inqueue, self.outqueue, self.apiClient, self.db)
+            worker = workThread(self.inqueue, self.outqueue, self.apiClient, self.db, lock)
             worker.start()
         
         return self.waitForComplete(workers)
