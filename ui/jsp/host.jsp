@@ -7,6 +7,7 @@
 
 <script language="javascript">
 dictionary = { 	
+	'label.action.edit.host' : '<fmt:message key="label.action.edit.host"/>',
 	'label.action.enable.maintenance.mode' : '<fmt:message key="label.action.enable.maintenance.mode"/>',
 	'label.action.enable.maintenance.mode.processing' : '<fmt:message key="label.action.enable.maintenance.mode.processing"/>',
 	'message.action.host.enable.maintenance.mode' : '<fmt:message key="message.action.host.enable.maintenance.mode"/>',
@@ -120,6 +121,8 @@ dictionary = {
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="hosttags">
 	                    </div>
+	                    <input class="text" id="hosttags_edit" style="width: 200px; display: none;" type="text" />
+	                    <div id="hosttags_edit_errormsg" style="display:none"></div>	                    
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
@@ -189,7 +192,9 @@ dictionary = {
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="oscategoryname">
-	                    </div>
+	                    </div>	                    
+	                    <select class="select" id="os_dropdown" style="width: 202px; display: none;">                    
+                	    </select>
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
@@ -202,7 +207,14 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>
+	            
 	        </div>
+	        
+	        <div class="grid_botactionpanel">
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
+	        </div> 
+	        
 	    </div>        
     </div>
     <!-- Details tab (end)-->
