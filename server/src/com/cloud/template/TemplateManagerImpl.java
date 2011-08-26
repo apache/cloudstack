@@ -240,21 +240,23 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
 
     private Long extract(Account caller, Long templateId, String url, Long zoneId, String mode, Long eventId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) {
-        String desc = "template";
+        String desc = Upload.Type.TEMPLATE.toString();
         if (isISO) {
-            desc = "ISO";
+            desc = Upload.Type.ISO.toString();
         }
         eventId = eventId == null ? 0:eventId;
+        
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);
         }
+        
         if (template.getTemplateType() ==  Storage.TemplateType.SYSTEM){
             throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it is a default System template");
-        }
-        if (template.getTemplateType() ==  Storage.TemplateType.PERHOST){
+        } else if (template.getTemplateType() ==  Storage.TemplateType.PERHOST){
             throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it resides on host and not on SSVM");
         }
+        
         if (isISO) {
             if (template.getFormat() != ImageFormat.ISO ){
                 throw new InvalidParameterValueException("Unsupported format, could not extract the ISO");
@@ -264,6 +266,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 throw new InvalidParameterValueException("Unsupported format, could not extract the template");
             }
         }
+        
         if (_dcDao.findById(zoneId) == null) {
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
@@ -291,14 +294,15 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
         }
         
-        if ( tmpltHostRef == null ) {
+        if (tmpltHostRef == null ) {
             throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
         }
+        
         Upload.Mode extractMode;
-        if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
-            throw new InvalidParameterValueException("Please specify a valid extract Mode "+Upload.Mode.values());
-        }else{
-            extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
+        if (mode == null || (!mode.equalsIgnoreCase(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equalsIgnoreCase(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
+            throw new InvalidParameterValueException("Please specify a valid extract Mode. Supported modes: "+ Upload.Mode.FTP_UPLOAD + ", " + Upload.Mode.HTTP_DOWNLOAD);
+        } else {
+            extractMode = mode.equalsIgnoreCase(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
         
         if (extractMode == Upload.Mode.FTP_UPLOAD){
@@ -325,7 +329,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 throw new InvalidParameterValueException("Unable to resolve " + host);
             }
                     
-            if ( _uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
+            if (_uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
                 throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
             }
         
@@ -333,7 +337,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
         
         UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltHostRef, zoneId, eventId);
-        if (vo!=null){                                  
+        if (vo != null){                                  
             return vo.getId();
         }else{
             return null;
