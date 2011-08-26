@@ -602,6 +602,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 String[] addRules = rules[LoadBalancerConfigurator.ADD];
                 String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+                String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
                 String args = "";
                 args += "-i " + routerIp;
@@ -625,6 +626,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     args += " -d " + sb.toString();
                 }
 
+                sb = new StringBuilder();
+                if (statRules.length > 0) {
+                    for (int i = 0; i < statRules.length; i++) {
+                        sb.append(statRules[i]).append(',');
+                    }
+
+                    args += " -s " + sb.toString();
+                }
+                
                 Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "scp " + tmpCfgFilePath + " /etc/haproxy/haproxy.cfg.new");
 
                 if (!result.first()) {
