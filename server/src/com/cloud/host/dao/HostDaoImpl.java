@@ -623,7 +623,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             s_logger.warn("Unable to update db record for host id=" + host.getId() + "; it's possible that the host is removed");
         }
 
-        if (s_logger.isDebugEnabled() && result == 1) {
+        if (s_logger.isDebugEnabled() && result == 0) {
             HostVO vo = findById(host.getId());
       
             if (vo != null) {
