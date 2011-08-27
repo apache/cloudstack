@@ -74,6 +74,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         
     	DcPodSearch = createSearchBuilder();
     	DcPodSearch.and("datacenterId", DcPodSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+    	DcPodSearch.and("status", DcPodSearch.entity().getStatus(), SearchCriteria.Op.EQ);
     	DcPodSearch.and().op("nullpod", DcPodSearch.entity().getPodId(), SearchCriteria.Op.NULL);
     	DcPodSearch.or("podId", DcPodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
     	DcPodSearch.cp();
@@ -202,7 +203,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     @Override
     public List<StoragePoolVO> listByUpStatus(long dataCenterId, long podId, Long clusterId) {
         if (clusterId != null) {
-            SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
+            SearchCriteria<StoragePoolVO> sc = DcPodStatusSearch.create();
             sc.setParameters("datacenterId", dataCenterId);
             sc.setParameters("podId", podId);
            
@@ -210,7 +211,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
             sc.setParameters("status", StoragePoolStatus.Up);
             return listBy(sc);
         } else {
-            SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
+            SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterStatusSearch.create();
             sc.setParameters("datacenterId", dataCenterId);
             sc.setParameters("podId", podId);
             sc.setParameters("status", StoragePoolStatus.Up);
