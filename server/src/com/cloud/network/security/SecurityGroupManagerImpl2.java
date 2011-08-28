@@ -91,7 +91,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         int newJobs = _workQueue.submitWorkForVms(workItems);
         p.stop();
         if (s_logger.isTraceEnabled()){
-            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates: num new jobs=" + 
+            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
                            newJobs + " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
         }
     }

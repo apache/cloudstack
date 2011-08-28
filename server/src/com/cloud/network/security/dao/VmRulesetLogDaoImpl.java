@@ -105,7 +105,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("Inserted or updated " + numUpdated + " rows");
                         }
-                        Thread.yield();
+                        //Thread.yield();
                         count += stmtSize;
                     }
                     remaining = remaining - numStmts * stmtSize;
