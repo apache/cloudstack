@@ -20,6 +20,8 @@ package com.cloud.network.security.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -38,7 +40,26 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
     private SearchBuilder<VmRulesetLogVO> VmIdSearch;
     private String INSERT_OR_UPDATE = "INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) " +
     		" VALUES(?, now(), 1) ON DUPLICATE KEY UPDATE logsequence=logsequence+1";
+    private static HashMap<Integer, String> cachedPrepStmtStrings = new  HashMap<Integer, String>();
+    final static private int cacheStringSizes [] = {512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
 
+    static {
+        //prepare the cache.
+        for (int size: cacheStringSizes) {
+            cachedPrepStmtStrings.put(size, createPrepStatementString(size));
+        }
+    }
+
+    
+    private static String createPrepStatementString(int numItems) {
+        StringBuilder builder = new StringBuilder("INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) VALUES ");
+        for (int i=0; i < numItems-1; i++) {
+            builder.append("(?, now(), 1), ");
+        }
+        builder.append("(?, now(), 1) ");
+        builder.append(" ON DUPLICATE KEY UPDATE logsequence=logsequence+1");
+        return builder.toString();
+    }
 
     protected VmRulesetLogDaoImpl() {
         VmIdSearch = createSearchBuilder();
@@ -57,6 +78,48 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
 
     @Override
     public int createOrUpdate(Set<Long> workItems) {
+        //return createOrUpdateUsingBatch(workItems);
+        return createOrUpdateUsingMultiInsert(workItems);
+    }
+    
+    protected int createOrUpdateUsingMultiInsert(Set<Long> workItems) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement stmtInsert = null;
+
+        int size = workItems.size();
+        int count = 0;
+        Iterator<Long> workIter = workItems.iterator();
+        int remaining = size;
+        try {
+            for (int stmtSize : cacheStringSizes) {
+                int numStmts = remaining / stmtSize;
+                if (numStmts > 0) {
+                    String pstmt = cachedPrepStmtStrings.get(stmtSize);
+                    stmtInsert = txn.prepareAutoCloseStatement(pstmt);
+                    for (int i=0; i < numStmts; i++) {
+                        for (int argIndex=1; argIndex <= stmtSize; argIndex++) {
+                            Long vmId = workIter.next();
+                            stmtInsert.setLong(argIndex, vmId);
+                        }
+                        int numUpdated = stmtInsert.executeUpdate();
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Inserted or updated " + numUpdated + " rows");
+                        }
+                        Thread.yield();
+                        count += stmtSize;
+                    }
+                    remaining = remaining - numStmts * stmtSize;
+                }
+
+            }
+        } catch (SQLException sqe) {
+            s_logger.warn("Failed to execute multi insert ", sqe);
+        }
+        
+        return count;
+    }
+    
+    protected int createOrUpdateUsingBatch(Set<Long> workItems) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement stmtInsert = null;
         int [] queryResult = null;

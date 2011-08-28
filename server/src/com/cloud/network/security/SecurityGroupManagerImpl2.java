@@ -74,22 +74,20 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
     }
 
     @Override
-    @DB
+    //@DB
     public void scheduleRulesetUpdateToHosts(List<Long> affectedVms, boolean updateSeqno, Long delayMs) {
         if (affectedVms.size() == 0) {
             return;
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms, current queue size=" + _workQueue.size());
-        }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
+        }
+
         Profiler p = new Profiler();
         p.start();
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         int updated = _rulesetLogDao.createOrUpdate(workItems);
-        txn.commit();
         int newJobs = _workQueue.submitWorkForVms(workItems);
         p.stop();
         if (s_logger.isTraceEnabled()){
