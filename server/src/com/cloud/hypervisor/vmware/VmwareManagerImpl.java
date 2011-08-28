@@ -124,6 +124,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _cpuOverprovisioningFactor = "1";
     String _reserveCpu = "false";
     
+    String _memOverprovisioningFactor = "1";
+    String _reserveMem = "false";
+    
     Map<String, String> _storageMounts = new HashMap<String, String>();
 
     Random _rand = new Random(System.currentTimeMillis());
@@ -234,10 +237,17 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         _cpuOverprovisioningFactor = configDao.getValue(Config.CPUOverprovisioningFactor.key());
         if(_cpuOverprovisioningFactor == null || _cpuOverprovisioningFactor.isEmpty())
         	_cpuOverprovisioningFactor = "1";
+
+        _memOverprovisioningFactor = configDao.getValue(Config.MemOverprovisioningFactor.key());
+        if(_memOverprovisioningFactor == null || _memOverprovisioningFactor.isEmpty())
+        	_memOverprovisioningFactor = "1";
         
         _reserveCpu = configDao.getValue(Config.VmwareReserveCpu.key());
         if(_reserveCpu == null || _reserveCpu.isEmpty())
         	_reserveCpu = "false";
+        _reserveMem = configDao.getValue(Config.VmwareReserveMem.key());
+        if(_reserveMem == null || _reserveMem.isEmpty())
+        	_reserveMem = "false";
         
     	s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
@@ -461,6 +471,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         params.put("management.portgroup.name", _managemetPortGroupName);
         params.put("cpu.overprovisioning.factor", _cpuOverprovisioningFactor);
         params.put("vmware.reserve.cpu", _reserveCpu);
+        params.put("mem.overprovisioning.factor", _memOverprovisioningFactor);
+        params.put("vmware.reserve.mem", _reserveMem);
     }
 
     @Override

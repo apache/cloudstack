@@ -49,7 +49,7 @@ if __name__ == "__main__":
     
     asyncJobResult = testclient.submitCmdsAndWait(cmds, 6)
     
-    for handle, jobStatus in asyncJobResult.iteritems():
+    for jobStatus in asyncJobResult:
         if jobStatus.status:
             print jobStatus.result[0].id, jobStatus.result[0].templatename, jobStatus.startTime, jobStatus.endTime
         else:

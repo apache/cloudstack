@@ -664,7 +664,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 	
 	@Override
-	public boolean createBlankVm(String vmName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, 
+	public boolean createBlankVm(String vmName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB,
 		String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 
 		if(s_logger.isTraceEnabled())
@@ -673,7 +673,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 				+ ", guestOS: " + guestOsIdentifier + ", datastore: " + morDs.get_value() + ", snapshotDirToParent: " + snapshotDirToParent);
 		
 		boolean result = HypervisorHostHelper.createBlankVm(this, vmName, cpuCount, cpuSpeedMHz, cpuReservedMHz, limitCpuUse,
-			memoryMB, guestOsIdentifier, morDs, snapshotDirToParent);
+			memoryMB, memoryReserveMB, guestOsIdentifier, morDs, snapshotDirToParent);
 
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - createBlankVm() done");

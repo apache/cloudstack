@@ -1,57 +1,7 @@
 import json
 import os
 from optparse import OptionParser
-class Struct:
-    '''The recursive class for building and representing objects with.'''
-    def __init__(self, obj):
-        for k in obj:
-            v = obj[k]
-            if isinstance(v, dict):
-                setattr(self, k, Struct(v))
-            elif isinstance(v, (list, tuple)):
-                setattr(self, k, [Struct(elem) for elem in v])
-            else:
-                setattr(self,k,v)
-    def __getattr__(self, val):
-        if val in self.__dict__:
-            return self.__dict__[val]
-        else:
-            return None
-    def __repr__(self):
-        return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v) in self.__dict__.iteritems()))
-    
-    
-def json_repr(obj):
-    """Represent instance of a class as JSON.
-    Arguments:
-    obj -- any object
-    Return:
-    String that reprent JSON-encoded object.
-    """
-    def serialize(obj):
-        """Recursively walk object's hierarchy."""
-        if isinstance(obj, (bool, int, long, float, basestring)):
-            return obj
-        elif isinstance(obj, dict):
-            obj = obj.copy()
-            newobj = {}
-            for key in obj:
-                if obj[key] is not None:
-                    if (isinstance(obj[key], list) and len(obj[key]) == 0):
-                        continue
-                    newobj[key] = serialize(obj[key])
-                
-            return newobj
-        elif isinstance(obj, list):
-            return [serialize(item) for item in obj]
-        elif isinstance(obj, tuple):
-            return tuple(serialize([item for item in obj]))
-        elif hasattr(obj, '__dict__'):
-            return serialize(obj.__dict__)
-        else:
-            return repr(obj) # Don't know how to handle, convert to string
-    return serialize(obj)
-
+import jsonHelper
 class managementServer():
     def __init__(self):
         self.mgtSvrIp = None
@@ -199,7 +149,7 @@ def describe_setup_in_basic_mode():
             p.name = "test" +str(l) + str(i)
             p.gateway = "192.168.%d.1"%i
             p.netmask = "255.255.255.0"
-            p.startip = "192.168.%d.200"%i
+            p.startip = "192.168.%d.150"%i
             p.endip = "192.168.%d.220"%i
         
             '''add two pod guest ip ranges'''
@@ -399,10 +349,10 @@ def describe_setup_in_advanced_mode():
 def generate_setup_config(config, file=None):
     describe = config
     if file is None:
-        return json.dumps(json_repr(describe))
+        return json.dumps(jsonHelper.jsonDump.dump(describe))
     else:
         fp = open(file, 'w')
-        json.dump(json_repr(describe), fp, indent=4)
+        json.dump(jsonHelper.jsonDump.dump(describe), fp, indent=4)
         fp.close()
         
     
@@ -412,7 +362,7 @@ def get_setup_config(file):
     config = cloudstackConfiguration()
     fp = open(file, 'r')
     config = json.load(fp)
-    return Struct(config)
+    return jsonHelper.jsonLoader(config)
 
 if __name__ == "__main__":
     parser = OptionParser()

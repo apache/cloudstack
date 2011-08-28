@@ -407,7 +407,7 @@ public class VmwareHelper {
 	}
 	
 	public static void setBasicVmConfig(VirtualMachineConfigSpec vmConfig, int cpuCount, int cpuSpeedMHz, int cpuReservedMhz,
-		int memoryMB, String guestOsIdentifier, boolean limitCpuUse) {
+		int memoryMB, int memoryReserveMB, String guestOsIdentifier, boolean limitCpuUse) {
 		
 		// VM config basics
 		vmConfig.setMemoryMB((long)memoryMB);
@@ -425,7 +425,7 @@ public class VmwareHelper {
 		
 		ResourceAllocationInfo memInfo = new ResourceAllocationInfo();
 		memInfo.setLimit((long)memoryMB);
-		memInfo.setReservation((long)memoryMB);
+		memInfo.setReservation((long)memoryReserveMB);
 		vmConfig.setMemoryAllocation(memInfo);
 		
 		vmConfig.setGuestId(guestOsIdentifier);
