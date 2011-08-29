@@ -94,7 +94,10 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
 
         Profiler p = new Profiler();
         p.start();
-        int updated = _rulesetLogDao.createOrUpdate(workItems);
+        int updated = 0;
+        if (updateSeqno) {
+            updated = _rulesetLogDao.createOrUpdate(workItems);
+        }
         int newJobs = _workQueue.submitWorkForVms(workItems);
         p.stop();
         if (s_logger.isTraceEnabled()){
@@ -183,7 +186,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
 
     @Override
     public void cleanupFinishedWork() {
-        //no-op
+        //TODO: over time clean up op_vm_ruleset_log table for destroyed vms
     }
     
     /* 
