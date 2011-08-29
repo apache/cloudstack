@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -386,6 +387,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected String getDefaultStorageScriptsDir() {
 	    return "scripts/storage/qcow2";
 	}
+	
+	private void saveProperties(Map<String, Object> params) throws ConfigurationException  {
+	    final File file = PropertiesUtil.findConfigFile("agent.properties");
+        if (file == null) {
+            throw new ConfigurationException("Unable to find agent.properties.");
+        }
+
+        s_logger.info("agent.properties found at " + file.getAbsolutePath());
+
+        try {
+            Properties _properties = new  Properties();
+            _properties.load(new FileInputStream(file));
+            Set<String> names = _properties.stringPropertyNames();
+            for (String key : params.keySet()) {
+                if (!names.contains(key)) {
+                    _properties.setProperty(key, (String)params.get(key));
+                }
+            }
+            _properties.store(new FileOutputStream(file), "");
+        } catch (final FileNotFoundException ex) {
+            throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
+        } catch (final IOException ex) {
+            throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
+        }
+	}
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
@@ -560,8 +586,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	}
         }
         
-    
-        
         _localStoragePath = (String)params.get("local.storage.path");
         if (_localStoragePath == null) {
             _localStoragePath = "/var/lib/libvirt/images/";
@@ -569,7 +593,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         
         _localStorageUUID = (String)params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
-        	throw new ConfigurationException("Can't find local.storage.uuid");
+            _localStorageUUID = UUID.randomUUID().toString();
+            params.put("local.storage.uuid", _localStorageUUID);
         }
         
          value = (String)params.get("scripts.timeout");
@@ -663,6 +688,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		
         _storageResource = new LibvirtStorageResource(this, _storage, _createvmPath, _timeout, _mountPoint, _monitor);
 
+        saveProperties(params);
         
 		return true;
 	}
