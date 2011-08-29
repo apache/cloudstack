@@ -20,6 +20,7 @@ package com.cloud.network.security;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
@@ -30,8 +31,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Profiler;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VirtualMachine.State;
 
 /**
@@ -40,6 +39,14 @@ import com.cloud.vm.VirtualMachine.State;
  */
 @Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
 public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
+    /*private final String GET_ALLOWED_IPS_QUERY = 
+        "select CONCAT(nics.ip4_address, '/32') from nics  INNER JOIN " +
+    		"(select vm_map_2.instance_id from " +
+    		      "(select security_ingress_rule.* from security_ingress_rule INNER JOIN " +
+    		      " security_group_vm_map  ON security_ingress_rule.security_group_id=security_group_vm_map.security_group_id " +
+    		      " where security_group_vm_map.instance_id=?) AS ingress_rule_for_vm INNER JOIN " +
+    		      " security_group_vm_map AS vm_map_2 ON vm_map_2.security_group_id = ingress_rule_for_vm.allowed_network_id) AS instance " +
+    		 " ON nics.instance_id=instance.instance_id where nics.default_nic=1;";*/
     
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();
     
@@ -141,6 +148,9 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         UserVm vm = _userVMDao.findById(userVmId);
 
         if (vm != null && vm.getState() == State.Running) {
+            if (s_logger.isTraceEnabled()) { 
+                s_logger.trace("SecurityGroupManager v2: found vm, " + userVmId + " state=" + vm.getState());
+            }
             Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
             Long agentId = vm.getHostId();
             if (agentId != null) {
@@ -176,5 +186,45 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         //no-op
     }
     
+    /* 
+     * Same as the superclass, except that we use the  ip address(es) returned from the join
+     * made with the nics table when retrieving the SecurityGroupVmMapVO. If a vm has a single
+     * nic then that nic is the default and then this query is correct. If the vm has multiple nics
+     * then we get all ips, including the default nic ip. This is also probably the correct behavior.
+     */
+    @Override
+    protected Map<PortAndProto, Set<String>> generateRulesForVM(Long userVmId) {
+
+        Map<PortAndProto, Set<String>> allowed = new TreeMap<PortAndProto, Set<String>>();
+
+        List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVmId);
+        for (SecurityGroupVMMapVO mapVO : groupsForVm) {
+            List<IngressRuleVO> rules = _ingressRuleDao.listBySecurityGroupId(mapVO.getSecurityGroupId());
+            for (IngressRuleVO rule : rules) {
+                PortAndProto portAndProto = new PortAndProto(rule.getProtocol(), rule.getStartPort(), rule.getEndPort());
+                Set<String> cidrs = allowed.get(portAndProto);
+                if (cidrs == null) {
+                    cidrs = new TreeSet<String>(new CidrComparator());
+                }
+                if (rule.getAllowedNetworkId() != null) {
+                    List<SecurityGroupVMMapVO> allowedInstances = _securityGroupVMMapDao.listBySecurityGroup(rule.getAllowedNetworkId(), State.Running);
+                    for (SecurityGroupVMMapVO ngmapVO : allowedInstances) {
+                        //here, we differ from the superclass: instead of creating N more queries to the
+                        //nics table, we use what's already there in the VO since the listBySecurityGroup already
+                        //did a join with the nics table
+                        String cidr = ngmapVO.getGuestIpAddress() + "/32";
+                        cidrs.add(cidr);
+                    }
+                } else if (rule.getAllowedSourceIpCidr() != null) {
+                    cidrs.add(rule.getAllowedSourceIpCidr());
+                }
+                if (cidrs.size() > 0) {
+                    allowed.put(portAndProto, cidrs);
+                }
+            }
+        }
+
+        return allowed;
+    }
 
 }
