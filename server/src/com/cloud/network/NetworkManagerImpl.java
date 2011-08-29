@@ -2809,8 +2809,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         DataCenterVO zone = _dcDao.findById(zoneId);
 
         if (zone.getNetworkType() == NetworkType.Advanced) {
-            return (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) &&
-                    zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
+        	
+        	if (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) &&
+                    zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName())) {
+        		return true;
+        	} else if (zone.getGatewayProvider() != null && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.NetscalerMPX.getName())) {
+        		return true;
+        	} else {
+                return false;
+        	}
         } else {
             return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
         }
