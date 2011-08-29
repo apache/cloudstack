@@ -73,7 +73,7 @@ public class Upgrade229to2210 implements DbUpgrade {
         ResultSet rs = null;
         long currentSnapshotId = 0;
         try {
-            pstmt = conn.prepareStatement("select id, prev_snap_id from snapshots where sechost_id is NULL and prev_snap_id is not NULL order by id");
+            pstmt = conn.prepareStatement("select id, prev_snap_id from snapshots where sechost_id is NULL and prev_snap_id is not NULL and status=\"BackedUp\" and removed is NULL order by id");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
