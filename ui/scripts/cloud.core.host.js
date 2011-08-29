@@ -62,6 +62,24 @@ function afterLoadHostJSP() {
     var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);  
   
+    $readonlyFields  = $("#tab_content_details").find("#hosttags,#oscategoryname");
+    $editFields = $("#tab_content_details").find("#hosttags_edit,#os_dropdown"); 
+    
+    $.ajax({
+	    data: createURL("command=listOsCategories"),
+		dataType: "json",
+		success: function(json) {
+			var categories = json.listoscategoriesresponse.oscategory;
+			var $dropdown = $("#tab_content_details").find("#os_dropdown").empty();	
+			$dropdown.append("<option value=''>None</option>"); 						
+			if (categories != null && categories.length > 0) {
+				for (var i = 0; i < categories.length; i++) {				   
+					 $dropdown.append("<option value='" + categories[i].id + "'>" + fromdb(categories[i].name) + "</option>"); 						
+		        }			    
+			}
+		}
+	});
+    
     hostRefreshDataBinding();  
 }
 
@@ -204,42 +222,44 @@ function hostBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
     var noAvailableActions = true;
     
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
+    	buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 		buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-	    buildActionLinkForTab("label.action.force.reconnect", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
-	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    buildActionLinkForTab("label.action.force.reconnect", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	    
+	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   //temp
 	    noAvailableActions = false;
 	} 
 	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+		buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    	    
         buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }	
 	else if(jsonObj.state == "Alert") {
-	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	    buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 	    buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	
 	    noAvailableActions = false;   
      
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
+		buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	 
 	    buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	 
+        
         noAvailableActions = false;   
     }
 	else if (jsonObj.state == "PrepareForMaintenance") {
-	    buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
+		buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);          
         noAvailableActions = false;    
     }
 	else if (jsonObj.state == "Maintenance") {
-	    buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+		 buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);             
         buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }
 	else if (jsonObj.state == "Disconnected"){
-	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+	    buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
         buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }
@@ -548,6 +568,9 @@ function populateForUpdateOSDialog(oscategoryid) {
 
 
 var hostActionMap = {  
+    "label.action.edit.host": {
+        dialogBeforeActionFn: doEditHost  
+    },
     "label.action.enable.maintenance.mode": {              
         isAsyncJob: true,
         asyncJobResponse: "preparehostformaintenanceresponse",
@@ -603,6 +626,59 @@ var hostActionMap = {
         }
     }          
 } 
+
+function doEditHost($actionLink, $detailsTab, $midmenuItem1) {  
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
+    $detailsTab.find("#os_dropdown").val(jsonObj.oscategoryid);
+    
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        cancelEditMode($detailsTab);    
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditHost2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        return false;
+    });   
+}
+
+function doEditHost2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {   
+    var isValid = true;					
+    isValid &= validateString("Host Tags", $detailsTab.find("#hosttags_edit"), $detailsTab.find("#hosttags_edit_errormsg"), true); //optional    		
+    if (!isValid) 
+        return;
+       
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
+	var id = jsonObj.id;
+	
+	var array1 = [];
+	array1.push("&id="+id);
+							
+	var hosttags = $detailsTab.find("#hosttags_edit").val();
+	array1.push("&hosttags="+todb(hosttags));
+		
+	var osCategoryId = $detailsTab.find("#os_dropdown").val();
+    if (osCategoryId != null && osCategoryId.length > 0)
+	    array1.push("&osCategoryId="+osCategoryId);
+
+	$.ajax({
+	    data: createURL("command=updateHost"+array1.join("")),
+		dataType: "json",
+		async: false,
+		success: function(json) {			
+		    var jsonObj = json.updatehostresponse.host;		
+            hostToMidmenu(jsonObj, $midmenuItem1);
+            hostToRightPanel($midmenuItem1);	
+		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide(); 		    		
+		}
+	});
+}
 
 function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");

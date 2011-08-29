@@ -10,7 +10,7 @@ class TestCase1(cloudstackTestCase):
         listtmcmd.templatefilter = "featured"
         listtmresponse = apiClient.listTemplates(listtmcmd)
         if listtmresponse is not None and len(listtmresponse) > 0:
-            self.debug(listtmresponse[0].isready)
+            self.debug(listtmresponse)
             self.debug("we are here")
         else:
             self.debug("we are there")

@@ -74,7 +74,7 @@ a:hover {
 	width:181px;
 	height:66px;
 	float:left;
-	background:url(../images/login_logo.gif) no-repeat top left;
+	background:url(../images/login_logo.png) no-repeat top left;
 	margin:0 0 0 75px;
 	display:inline;
 	padding:0;
@@ -1391,7 +1391,7 @@ a:hover {
 	width:106px;
 	height:37px;
 	float:left;
-	background:url(../images/logo.gif) no-repeat top left;
+	background:url(../images/logo.png) no-repeat top left;
 	margin:0 0 0 8px;
 	display:inline;
 	padding:0;
@@ -3261,7 +3261,7 @@ a:hover.search_button {
 	width:132px;
 	height:22px;
 	float:right;
-	background:url(../images/poweredby.gif) no-repeat top left;
+	/*background:url(../images/poweredby.gif) no-repeat top left;*/
 	margin:2px 10px 0 0;
 	padding:0;
 	display:inline;

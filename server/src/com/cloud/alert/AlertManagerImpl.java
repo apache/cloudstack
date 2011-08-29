@@ -264,7 +264,7 @@ public class AlertManagerImpl implements AlertManager {
         try {
         	txn.start();   
         	// Calculate new Public IP capacity
-        	List<DataCenterVO> datacenters = _dcDao.listAllIncludingRemoved();
+        	List<DataCenterVO> datacenters = _dcDao.listAll();
         	for (DataCenterVO datacenter : datacenters) {
         		long dcId = datacenter.getId();
 		
@@ -283,7 +283,7 @@ public class AlertManagerImpl implements AlertManager {
         	
         	txn.start();
 	        // Calculate new Private IP capacity
-	        List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
+	        List<HostPodVO> pods = _podDao.listAll();
 	        for (HostPodVO pod : pods) {
 	            long podId = pod.getId();
 	            long dcId = pod.getDataCenterId();

@@ -58,7 +58,7 @@ public enum Config {
 	StorageTemplateCleanupEnabled("Storage", ManagementServer.class, Boolean.class, "storage.template.cleanup.enabled", "true", "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled", null),
 	
 	// Network
-	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, it can be global,guest-network,disabled", null),
+	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, it can take the following four parameters : global,guest-network,link-local,disabled", null),
 	NetworkLBHaproxyStatsUri("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.uri","/admin?stats","Load Balancer(haproxy) uri.",null),
 	NetworkLBHaproxyStatsAuth("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.auth","admin1:AdMiN123","Load Balancer(haproxy) authetication string in the format username:password",null),
 	NetworkLBHaproxyStatsPort("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.port","8081","Load Balancer(haproxy) stats port number.",null),		
@@ -79,7 +79,7 @@ public enum Config {
 	SecurityGroupWorkerThreads("Network", ManagementServer.class, Integer.class, "network.securitygroups.workers.pool.size", "50", "Number of worker threads processing the security group update work queue", null),
 	SecurityGroupWorkGlobalLockTimeout("Network", ManagementServer.class, Integer.class, "network.securitygroups.work.lock.timeout", "300", "Lock wait timeout (seconds) while updating the security group work queue", null),
 
-	FirewallRuleUiEnabled("Network", ManagementServer.class, Boolean.class, "firewall.rule.ui.enabled", "true", "enable/disable UI that separates firewall rules from NAT/LB rules", null),
+	FirewallRuleUiEnabled("Network", ManagementServer.class, Boolean.class, "firewall.rule.ui.enabled", "false", "enable/disable UI that separates firewall rules from NAT/LB rules", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),

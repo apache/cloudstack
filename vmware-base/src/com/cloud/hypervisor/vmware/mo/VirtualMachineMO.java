@@ -81,6 +81,7 @@ import com.vmware.vim25.VirtualMachineSnapshotInfo;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualPCIController;
 import com.vmware.vim25.VirtualSCSIController;
+import com.vmware.vim25.VirtualSCSISharing;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
@@ -1527,6 +1528,42 @@ public class VirtualMachineMO extends BaseMO {
 	    throw new Exception("SCSI Controller Not Found");
 	}
 
+	public int getScsiDeviceControllerKeyNoException() throws Exception {
+	    VirtualDevice[] devices = (VirtualDevice [])_context.getServiceUtil().
+	    	getDynamicProperty(_mor, "config.hardware.device");
+		
+	    if(devices != null && devices.length > 0) {
+	    	for(VirtualDevice device : devices) {
+                if(device instanceof VirtualLsiLogicController) {
+                    return device.getKey();
+                }
+            }
+	    }
+	    
+	    return -1;
+	}
+	
+	public void ensureScsiDeviceController() throws Exception {
+		int scsiControllerKey = getScsiDeviceControllerKeyNoException();
+		if(scsiControllerKey < 0) {
+			VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+
+			// Scsi controller
+			VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
+			scsiController.setSharedBus(VirtualSCSISharing.noSharing);
+			scsiController.setBusNumber(0);
+			scsiController.setKey(1);
+			VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
+			scsiControllerSpec.setDevice(scsiController);
+			scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
+
+			vmConfig.setDeviceChange(new VirtualDeviceConfigSpec[] { scsiControllerSpec });
+			if(configureVm(vmConfig)) {
+				throw new Exception("Unable to add Scsi controller");
+			}
+		}
+	}
+	
 	// return pair of VirtualDisk and disk device bus name(ide0:0, etc)
 	public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath, boolean matchExactly) throws Exception {
 		VirtualDevice[] devices = (VirtualDevice[])_context.getServiceUtil().getDynamicProperty(_mor, "config.hardware.device");
