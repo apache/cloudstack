@@ -44,10 +44,10 @@ def getGlobalSettings():
                        'use.user.concentrated.pod.allocation':'false',
                        'vm.allocation.algorithm':'firstfit',
                        'capacity.check.period':'0',
-                       'host.stats.interval':'-1',
-                       'vm.stats.interval':'-1',
-                       'storage.stats.interval':'-1',
-                       'router.stats.interval':'-1',
+#                       'host.stats.interval':'-1',
+#                       'vm.stats.interval':'-1',
+#                       'storage.stats.interval':'-1',
+#                       'router.stats.interval':'-1',
                        'vm.op.wait.interval':'5',
                        'xen.public.network.device':'10.10.10.10', #only a dummy for the simulator
                        'guest.domain.suffix':'zcloud.simulator',
@@ -55,7 +55,7 @@ def getGlobalSettings():
                        'direct.agent.load.size':'1000',
                        'default.page.size':'10000',
                        'linkLocalIp.nums':'4',
-                       'systemvm.use.local.storage':'true',
+                       'system.vm.use.local.storage':'true',
                        'use.local.storage':'true',
                        'check.pod.cidrs':'false',
                       }
