@@ -46,6 +46,9 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.reserve.mem', 'false', 'Specify whether or not to reserve memory based on memory overprovisioning factor');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'mem.overprovisioning.factor', '1', 'Used for memory overprovisioning calculation');
 
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.psk.length', '24', 'The length of the ipsec preshared key (minimum 8, maximum 256)');
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.client.iprange', '10.1.2.1-10.1.2.8', 'The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server');
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.user.limit', '8', 'The maximum number of VPN users that can be created per account');
 
 CREATE TABLE IF NOT exists `cloud`.`elastic_lb_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
