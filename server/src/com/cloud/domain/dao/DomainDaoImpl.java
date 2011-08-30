@@ -27,6 +27,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -44,6 +45,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 	protected SearchBuilder<DomainVO> DomainPairSearch;
 	protected SearchBuilder<DomainVO> ImmediateChildDomainSearch;
 	protected SearchBuilder<DomainVO> FindAllChildrenSearch;
+	protected SearchBuilder<DomainVO> AllFieldsSearch;
 	
 	public DomainDaoImpl () {
 		DomainNameLikeSearch = createSearchBuilder();
@@ -67,6 +69,14 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 		FindAllChildrenSearch.and("path", FindAllChildrenSearch.entity().getPath(), SearchCriteria.Op.LIKE);
 		FindAllChildrenSearch.and("id", FindAllChildrenSearch.entity().getId(), SearchCriteria.Op.NEQ);
 		FindAllChildrenSearch.done();
+		
+		AllFieldsSearch = createSearchBuilder();
+		AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+		AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+		AllFieldsSearch.and("owner", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+		AllFieldsSearch.and("path", AllFieldsSearch.entity().getPath(), SearchCriteria.Op.EQ);
+		AllFieldsSearch.and("parent", AllFieldsSearch.entity().getParent(), SearchCriteria.Op.EQ);
+		AllFieldsSearch.done();
 
 	}
 	
@@ -238,5 +248,12 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
             }
         }
         return result;
+    }
+    
+    @Override
+    public List<DomainVO> findInactiveDomains() {
+        SearchCriteria<DomainVO> sc = AllFieldsSearch.create();
+        sc.setParameters("state", Domain.State.Inactive);
+        return listBy(sc);
     }
 }

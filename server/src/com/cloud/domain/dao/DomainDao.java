@@ -30,4 +30,5 @@ public interface DomainDao extends GenericDao<DomainVO, Long> {
 	DomainVO findImmediateChildForParent(Long parentId);
 	List<DomainVO> findImmediateChildrenForParent(Long parentId);
 	List<DomainVO> findAllChildren(String path, Long parentId);
+	List<DomainVO> findInactiveDomains();
 }

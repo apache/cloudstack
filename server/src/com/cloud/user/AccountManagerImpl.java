@@ -1860,7 +1860,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     txn = Transaction.open(Transaction.CLOUD_DB);
 
                     //Cleanup removed accounts
-                    List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts();
+                    List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts(null);
                     s_logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
                     for (AccountVO account : removedAccounts) {
                         s_logger.debug("Cleaning up " + account.getId());
@@ -1886,6 +1886,22 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                         }
                     }
                     
+                    //cleanup inactive domains
+                    List<DomainVO> inactiveDomains = _domainDao.findInactiveDomains();
+                    for (DomainVO inactiveDomain : inactiveDomains) {
+                        long domainId = inactiveDomain.getId();
+                        try {
+                            List<AccountVO> accountsForCleanupInDomain = _accountDao.findCleanupsForRemovedAccounts(domainId);
+                            if (accountsForCleanupInDomain.isEmpty()) {
+                                s_logger.debug("Removing inactive domain id=" + domainId);
+                                _domainDao.remove(domainId);
+                            } else {
+                                s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need clenaup");
+                            } 
+                        } catch (Exception e) {
+                            s_logger.error("Skipping due to error on domain " + domainId, e);
+                        }
+                    }
                     
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
