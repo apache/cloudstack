@@ -1818,6 +1818,8 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "SharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
+				} else if(protocol == "ocfs2") {
+					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));						
 				} else if(protocol == "iscsi") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
@@ -1865,7 +1867,13 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = presetupURL(server, path);
-				}
+				}				
+				else if (protocol == "ocfs2") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = ocfs2URL(server, path);
+				} 				
 				else if (protocol == "SharedMountPoint") {
 					var path = trim($thisDialog.find("#add_pool_path").val());
 					if(path.substring(0,1)!="/")
@@ -1958,7 +1966,8 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     	else if(clusterObj.hypervisortype == "Ovm") {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
-    	} 
+			$protocolSelector.append('<option value="ocfs2">' + g_dictionary["label.ocfs2"] + '</option>');
+		} 
     	else {
     	    $protocolSelector.empty();
     	}
@@ -1976,8 +1985,17 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		
     		$dialogAddPool.find("#add_pool_nfs_server").val("");
     		$dialogAddPool.find("#add_pool_server_container").show();    		
-    	} 
-    	if($(this).val() == "PreSetup") {
+    	}   
+    	else if($(this).val() == "ocfs2") {//ocfs2 is the same as nfs, except no server field.   		
+    		$('li[input_group="nfs"]', $dialogAddPool).show();
+    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
+    		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val("");
+    		$dialogAddPool.find("#add_pool_server_container").hide();    		
+    	}     	
+    	else if($(this).val() == "PreSetup") {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
