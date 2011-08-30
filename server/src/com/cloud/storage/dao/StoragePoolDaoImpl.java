@@ -50,7 +50,8 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	protected final SearchBuilder<StoragePoolVO> DcPodSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
-    protected final GenericSearchBuilder<StoragePoolVO, Long> MaintenanceCountSearch;
+    protected final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
+
     
     
     protected final StoragePoolDetailsDao _detailsDao;
@@ -94,11 +95,12 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         DeleteLvmSearch.cp();
         DeleteLvmSearch.done();        
 
-        MaintenanceCountSearch = createSearchBuilder(Long.class);
-        MaintenanceCountSearch.and("pool", MaintenanceCountSearch.entity().getId(), SearchCriteria.Op.EQ);
-        MaintenanceCountSearch.select(null, Func.COUNT, null);
-        MaintenanceCountSearch.and("status", MaintenanceCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
-        MaintenanceCountSearch.done();
+        
+        
+        StatusCountSearch = createSearchBuilder(Long.class);
+        StatusCountSearch.and("status", StatusCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        StatusCountSearch.select(null, Func.COUNT, null);
+        StatusCountSearch.done();
 
         _detailsDao = ComponentLocator.inject(StoragePoolDetailsDaoImpl.class);
     }
@@ -338,12 +340,13 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	    return true;
 	}
 	
+    
+    
     @Override
-    public long countBy(long primaryStorageId, Status... statuses) {
-        SearchCriteria<Long> sc = MaintenanceCountSearch.create();
+    public long countPoolsByStatus( StoragePoolStatus... statuses) {
+        SearchCriteria<Long> sc = StatusCountSearch.create();
         
         sc.setParameters("status", (Object[])statuses);
-        sc.setParameters("pool", primaryStorageId);
         
         List<Long> rs = customSearchIncludingRemoved(sc, null);
         if (rs.size() == 0) {
