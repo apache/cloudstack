@@ -644,7 +644,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     public boolean delete(long userId, long templateId, Long zoneId) {
     	VMTemplateVO template = _tmpltDao.findById(templateId);
     	if (template == null || template.getRemoved() != null) {
-    		throw new InvalidParameterValueException("Please specify a valid template.");
+    	    if (s_logger.isDebugEnabled()) {
+    	        s_logger.debug("The template id=" + templateId + " either doesn't exist or already removed, so not deleting it");
+    	    }
+    		return true;
     	}
     	
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());

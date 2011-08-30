@@ -894,6 +894,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            //no need to make permission checks if the system makes the call
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("No need to make permission check for System account, returning true");
+            } 
+            return;
+        }
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(caller, domain)) {
                 if (s_logger.isDebugEnabled()) {
@@ -910,6 +917,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public void checkAccess(Account caller, AccessType accessType, ControlledEntity... entities) {
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
+        
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            //no need to make permission checks if the system makes the call
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("No need to make permission check for System account, returning true");
+            } 
+            return;
+        }
 
         for (ControlledEntity entity : entities) {
         	long domainId = entity.getDomainId();

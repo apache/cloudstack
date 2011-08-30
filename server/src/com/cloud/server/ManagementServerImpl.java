@@ -3077,16 +3077,14 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        {
-            // delete users which will also delete accounts and release resources for those accounts
-            SearchCriteria<AccountVO> sc = _accountDao.createSearchCriteria();
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-            List<AccountVO> accounts = _accountDao.search(sc, null);
-            for (AccountVO account : accounts) {
-                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
-                if (!success) {
-                    s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
-                }
+        // delete users which will also delete accounts and release resources for those accounts
+        SearchCriteria<AccountVO> sc = _accountDao.createSearchCriteria();
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        List<AccountVO> accounts = _accountDao.search(sc, null);
+        for (AccountVO account : accounts) {
+            success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
+            if (!success) {
+                s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
             }
         }
 

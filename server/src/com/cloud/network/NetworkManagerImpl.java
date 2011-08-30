@@ -2109,7 +2109,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public boolean destroyNetwork(long networkId, ReservationContext context) {
-        Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
+        Account caller = _accountMgr.getAccount(context.getCaller().getAccountId());
 
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
@@ -2146,7 +2146,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
 
-        if (!cleanupNetworkResources(networkId, callerAccount, context.getCaller().getId())) {
+        if (!cleanupNetworkResources(networkId, caller, context.getCaller().getId())) {
             s_logger.warn("Unable to delete network id=" + networkId + ": failed to cleanup network resources");
             return false;
         }
