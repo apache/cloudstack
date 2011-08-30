@@ -1851,7 +1851,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     for (AccountVO account : removedAccounts) {
                         s_logger.debug("Cleaning up " + account.getId());
                         try {
-                            cleanupAccount(account, getSystemUser().getId(), getSystemAccount());
+                            if (cleanupAccount(account, getSystemUser().getId(), getSystemAccount())) {
+                                account.setNeedsCleanup(false);
+                                _accountDao.update(account.getId(), account);
+                            }
                         } catch (Exception e) {
                             s_logger.error("Skipping due to error on account " + account.getId(), e);
                         }
@@ -1874,6 +1877,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     
                     //cleanup inactive domains
                     List<DomainVO> inactiveDomains = _domainDao.findInactiveDomains();
+                    s_logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
                     for (DomainVO inactiveDomain : inactiveDomains) {
                         long domainId = inactiveDomain.getId();
                         try {
