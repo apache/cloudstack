@@ -88,6 +88,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
+        
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
         }
@@ -158,11 +159,11 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             Long agentId = vm.getHostId();
             if (agentId != null) {
                 SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
-                        vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(rules), 
+                        vm.getPrivateMacAddress(), vm.getId(), null, 
                         work.getLogsequenceNumber(), rules);
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
-                                   ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs());
+                                   ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" + cmd.getSignature());
                 }
                 Commands cmds = new Commands(cmd);
                 try {

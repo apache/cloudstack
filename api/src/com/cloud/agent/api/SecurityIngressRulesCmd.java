@@ -17,6 +17,8 @@
  */
 package com.cloud.agent.api;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 
@@ -84,6 +86,10 @@ public class SecurityIngressRulesCmd extends Command {
         this.signature = signature;
         this.seqNum = seqNum;
         this.vmId  = vmId;
+        if (signature == null) {
+            String stringified = stringifyRules();
+            this.signature = DigestUtils.md5Hex(stringified);
+        }
     }
 
 
