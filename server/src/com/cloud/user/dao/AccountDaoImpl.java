@@ -72,6 +72,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         CleanupForRemovedAccountsSearch = createSearchBuilder();
         CleanupForRemovedAccountsSearch.and("cleanup", CleanupForRemovedAccountsSearch.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
         CleanupForRemovedAccountsSearch.and("removed", CleanupForRemovedAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        CleanupForRemovedAccountsSearch.and("domainid", CleanupForRemovedAccountsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         CleanupForRemovedAccountsSearch.done();
         
         CleanupForDisabledAccountsSearch = createSearchBuilder();
@@ -82,9 +83,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
     
     @Override
-    public List<AccountVO> findCleanupsForRemovedAccounts() {
+    public List<AccountVO> findCleanupsForRemovedAccounts(Long domainId) {
     	SearchCriteria<AccountVO> sc = CleanupForRemovedAccountsSearch.create();
     	sc.setParameters("cleanup", true);
+    	
+    	if (domainId != null) {
+    	    sc.setParameters("domainid", domainId);
+    	}
     	
     	return searchIncludingRemoved(sc, null, null, false);
     }

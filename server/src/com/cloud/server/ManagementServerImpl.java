@@ -2947,7 +2947,7 @@ public class ManagementServerImpl implements ManagementServer {
         String name = cmd.getDomainName();
         Long parentId = cmd.getParentDomainId();
         Long ownerId = UserContext.current().getCaller().getId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         String networkDomain = cmd.getNetworkDomain();
 
         if (ownerId == null) {
@@ -2962,11 +2962,13 @@ public class ManagementServerImpl implements ManagementServer {
         if (parentDomain == null) {
             throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
         }
-
-        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), parentId)) {
-            throw new PermissionDeniedException("Unable to create domain " + name + ", permission denied.");
+        
+        if (parentDomain.getState().equals(Domain.State.Inactive)) {
+            throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
         }
         
+        _accountMgr.checkAccess(caller, parentDomain);
+
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
@@ -2995,41 +2997,48 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_DELETE, eventDescription = "deleting Domain", async = true)
     public boolean deleteDomain(DeleteDomainCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getId();
         Boolean cleanup = cmd.getCleanup();
-
-        if ((domainId == DomainVO.ROOT_DOMAIN) || ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId))) {
-            throw new PermissionDeniedException("Unable to delete domain " + domainId + ", permission denied.");
+        
+        DomainVO domain = _domainDao.findById(domainId);
+        
+        if (domain == null) {
+            throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
+        } else if (domainId == DomainVO.ROOT_DOMAIN) {
+            throw new PermissionDeniedException("Can't delete ROOT domain");
         }
+        
+        _accountMgr.checkAccess(caller, domain);
+        
+        //mark domain as inactive
+        s_logger.debug("Marking domain id=" + domainId + " as " + Domain.State.Inactive + " before actually deleting it");
+        domain.setState(Domain.State.Inactive);
+        _domainDao.update(domainId, domain);
 
         try {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (domain != null) {
-                long ownerId = domain.getAccountId();
-                if ((cleanup != null) && cleanup.booleanValue()) {
-                    boolean success = cleanupDomain(domainId, ownerId);
-                    if (!success) {
-                        s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").");
-                        return false;
-                    }
-                } else {
+            long ownerId = domain.getAccountId();
+            if ((cleanup != null) && cleanup.booleanValue()) {
+                if (!cleanupDomain(domainId, ownerId)) {
+                    s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").");
+                    return false;
+                }
+            } else { 
+                List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
+                if (accountsForCleanup.isEmpty()) {
                     if (!_domainDao.remove(domainId)) {
                         s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domainId
                                 + "); please make sure all users and sub domains have been removed from the domain before deleting");
                         return false;
-                    } else {
-                        domain.setState(Domain.State.Inactive);
-                        _domainDao.update(domainId, domain);
-                    }
+                    } 
+                } else {
+                    s_logger.warn("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+                    return false;
                 }
-            } else {
-                throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
             }
+            
             cleanupDomainOfferings(domainId);
             return true;
-        } catch (InvalidParameterValueException ex) {
-            throw ex;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domainId, ex);
             return false;
@@ -3079,21 +3088,25 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        {
-            // delete users which will also delete accounts and release resources for those accounts
-            SearchCriteria<AccountVO> sc = _accountDao.createSearchCriteria();
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-            List<AccountVO> accounts = _accountDao.search(sc, null);
-            for (AccountVO account : accounts) {
-                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
-                if (!success) {
-                    s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
-                }
+        // delete users which will also delete accounts and release resources for those accounts
+        SearchCriteria<AccountVO> sc = _accountDao.createSearchCriteria();
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        List<AccountVO> accounts = _accountDao.search(sc, null);
+        for (AccountVO account : accounts) {
+            success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
+            if (!success) {
+                s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
             }
         }
-
-        // delete the domain itself
-        boolean deleteDomainSuccess = _domainDao.remove(domainId);
+      
+        //don't remove the domain if there are accounts required cleanup
+        boolean deleteDomainSuccess = true;
+        List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
+        if (accountsForCleanup.isEmpty()) {
+            deleteDomainSuccess = _domainDao.remove(domainId);
+        } else {
+            s_logger.debug("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+        }
 
         return success && deleteDomainSuccess;
     }
