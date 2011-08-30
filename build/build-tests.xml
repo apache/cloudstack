@@ -26,19 +26,12 @@
   <property name="testclient.dir" location="${base.dir}/test" />
   <property name="testclient.dist.dir" location="${dist.dir}/test" />
   <property name="tools.dist.dir" location="${dist.dir}/cloudapitools" />
-  <property name="tools.jar.dir" location="${base.dir}/tools/tooljars" />
 
   <property name="test.target.dir" location="${target.dir}/test" />
-  <property name="test.classes.dir" location="${test.target.dir}/classes" />
 
   <property name="agent-simulator.jar" value="cloud-agent-simulator.jar" />
   <property name="testclient.jar" value="cloud-test.jar" />
 
-  <path id="compile.deps.classpath">
-      <fileset dir="${tools.jar.dir}" erroronmissingdir="true">
-          <include name="*.jar" />
-      </fileset>
-  </path>
 
   <!-- =================== Agent Simulator ==================== -->
   <path id="agent-simulator.classpath">
@@ -104,7 +97,6 @@
   <path id="testclient.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
-    <path refid="compile.deps.classpath" />
   </path>
   <target name="compile-testclient" depends="-init-test, compile-utils" description="Compile the test client.">
     <echo message="src is ${testclient.dir}"/>
