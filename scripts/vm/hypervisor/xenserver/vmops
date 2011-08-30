@@ -922,7 +922,8 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     vm_name = vmName;
     logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
-        return [True, True, True, True, True, True]
+        util.SMlog("Failed to find logfile %s" %logfilename)
+        return [True, True, True]
         
     lines = (line.rstrip() for line in open(logfilename))
     
@@ -932,16 +933,43 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
             [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
             break
     except:
-        util.SMlog("Failed to parse log file for vm " + vm_name)
-        remove_rule_log_for_vm(vm_name)
-        return False
+        util.SMlog("Failed to parse log file for vm " + vmName)
+        remove_rule_log_for_vm(vmName)
+        return [True, True, True]
     
-    return [(vm_name != _vmName), \
-        (vmID != _vmID), \
-        (vmIP != _vmIP), \
-        (domID != _domID), \
-        (signature != _signature), \
-        (seqno != _seqno)]
+    reprogramDefault = False
+    if (domID != _domID) or (vmID != _vmID) or (vmIP != _vmIP):
+        util.SMlog("Change in default info set of vm %s" % vmName)
+        return [True, True, True]
+    else:
+        util.SMlog("No change in default info set of vm %s" % vmName)
+    
+    reprogramChain = False
+    rewriteLog = True
+    if (seqno > _seqno):
+        if (_signature != signature):
+            reprogramChain = True
+            util.SMlog("Seqno increased from %s to %s: reprogamming "\
+                        "ingress rules for vm %s" % (_seqno, seqno, vmName))
+        else:
+            util.SMlog("Seqno increased from %s to %s: but no change "\
+                        "in signature for vm: skip programming ingress "\
+                        "rules %s" % (_seqno, seqno, vmName))
+    elif (seqno < _seqno):
+        util.SMlog("Seqno decreased from %s to %s: ignoring these "\
+                        "ingress rules for vm %s" % (_seqno, seqno, vmName))
+        rewriteLog = False
+    elif (signature != _signature):
+        util.SMlog("Seqno %s stayed the same but signature changed from "\
+                    "%s to %s for vm %s" % (seqno, _signature, signature, vmName))
+        rewriteLog = True
+        reprogramChain = True
+    else:
+        util.SMlog("Seqno and signature stayed the same: %s : ignoring these "\
+                        "ingress rules for vm %s" % (seqno, vmName))
+        rewriteLog = False
+        
+    return [reprogramDefault, reprogramChain, rewriteLog]
     
 
 @echo
@@ -1014,15 +1042,22 @@ def network_rules(session, args):
     else:
         vmchain = chain_name(vm_name)
     
-    changes = check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
+    [reprogramDefault, reprogramChain, rewriteLog] = \
+             check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
     
-    if not 1 in changes:
-        util.SMlog("Rules already programmed for vm " + vm_name)
+    if not reprogramDefault and not reprogramChain:
+        util.SMlog("No changes detected between current state and received state")
+        if rewriteLog:
+            write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno)
         return 'true'
-    
-    if changes[1] or changes[2] or changes[3]:
+           
+    if reprogramDefault:
         util.SMlog("Change detected in vmId or vmIp or domId, resetting default rules")
         default_network_rules(session, args)
+    
+    if not reprogramChain:
+        util.SMlog("###Not programming any ingress rules since no changes detected?")
+        return 'true'
         
     rules = args.pop('rules')
     lines = rules.split(' ')
