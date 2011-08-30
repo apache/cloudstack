@@ -82,6 +82,7 @@ def ipset(ipsetname, proto, start, end, ips):
 
 def destroy_network_rules_for_vm(vm_name, vif=None):
     vmchain = vm_name
+    vmchain_egress = vm_name + "-egress"
     vmchain_default = None
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
@@ -111,7 +112,19 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
         execute("iptables -X " + vmchain)
     except:
         logging.debug("Ignoring failure to delete  chain " + vmchain)
+   
+
+    try:
+        execute("iptables -F " + vmchain_egress)
+    except:
+        logging.debug("Ignoring failure to delete  chain " + vmchain_egress)
     
+    try:
+        execute("iptables -X " + vmchain_egress)
+    except:
+        logging.debug("Ignoring failure to delete  chain " + vmchain_egress)
+   
+ 
     if vif is not None:
         try:
             dnats = execute("iptables -t nat -S | grep " + vif + " | sed 's/-A/-D/'").split("\n")
@@ -246,6 +259,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
     domID = getvmId(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
     vmchain = vm_name
+    vmchain_egress =  vm_name +"-egress"
     vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
     
     destroy_ebtables_rules(vmName, vif)
@@ -254,7 +268,12 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
         execute("iptables -N " + vmchain)
     except:
         execute("iptables -F " + vmchain)
-        
+   
+    try:
+        execute("iptables -N " + vmchain_egress)
+    except:
+        execute("iptables -F " + vmchain_egress)
+     
     try:
         execute("iptables -N " + vmchain_default)
     except:
@@ -270,7 +289,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname):
 
         #don't let vm spoof its ip address
         if vm_ip is not None:
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vm_ip +  " -j ACCEPT")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vm_ip +  " -j " + vmchain_egress)
         execute("iptables -A " + vmchain_default + " -j " +  vmchain)
         execute("iptables -A " + vmchain + " -j DROP")
     except:
@@ -552,12 +571,17 @@ def remove_rule_log_for_vm(vmName):
     
     return result
 
-def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif, brname):
+def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif, brname,ruletype):
   try:
     vmName = vm_name
     domId = getvmId(vmName)
-    vmchain = vm_name
     
+    if ruletype == 'egress':
+        vmchain = vm_name + "-egress"
+    else:
+        vmchain = vm_name
+   
+ 
     changes = []
     changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
     
@@ -704,6 +728,7 @@ if __name__ == '__main__':
     parser.add_option("--vmid", dest="vmID")
     parser.add_option("--vmmac", dest="vmMAC")
     parser.add_option("--vif", dest="vif")
+    parser.add_option("--ruletype", dest="ruletype")
     parser.add_option("--sig", dest="sig")
     parser.add_option("--seq", dest="seq")
     parser.add_option("--rules", dest="rules")
@@ -724,7 +749,7 @@ if __name__ == '__main__':
     elif cmd == "get_rule_logs_for_vms":
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":
-        add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules, option.vif, option.brname)
+        add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules, option.vif, option.brname,option.ruletype)
     elif cmd == "cleanup_rules":
         cleanup_rules()
     elif cmd == "post_default_network_rules":
