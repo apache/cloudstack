@@ -146,7 +146,7 @@
     <unzip src="${deploy.work.dir}/usage.zip" dest="${deploy.work.dir}/usage"/>
   </target>
     
-  <target name="deploy-ovm" depends="compile-ovm" >
+  <target name="deploy-ovm" >
       <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts">
           <fileset dir="${ovm-scripts.dir}">
               <include name="**/*"/>
