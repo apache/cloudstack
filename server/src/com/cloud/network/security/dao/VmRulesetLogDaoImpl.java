@@ -20,8 +20,11 @@ package com.cloud.network.security.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLTransactionRollbackException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -82,9 +85,35 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
         return createOrUpdateUsingMultiInsert(workItems);
     }
     
+    private int executeWithRetryOnDeadlock(Transaction txn, String pstmt,  List<Long> vmIds) throws SQLException {
+
+        int numUpdated = 0;
+        final int maxTries = 2;
+        for (int i=0; i < maxTries; i++) {
+            try {
+                PreparedStatement stmtInsert = txn.prepareAutoCloseStatement(pstmt);
+                int argIndex = 1;
+                for (Long vmId: vmIds) {
+                    stmtInsert.setLong(argIndex++, vmId);
+                }
+                numUpdated = stmtInsert.executeUpdate();
+                i = maxTries;
+            } catch (SQLTransactionRollbackException e1) {
+                if (i < maxTries-1)
+                    s_logger.debug("Caught a deadlock exception while inserting security group rule log, retrying");
+                else 
+                    s_logger.warn("Caught another deadlock exception while retrying inserting security group rule log, giving up");
+
+            }
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Inserted or updated " + numUpdated + " rows");
+        }
+        return numUpdated;
+    }
+    
     protected int createOrUpdateUsingMultiInsert(Set<Long> workItems) {
         Transaction txn = Transaction.currentTxn();
-        PreparedStatement stmtInsert = null;
 
         int size = workItems.size();
         int count = 0;
@@ -95,17 +124,16 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                 int numStmts = remaining / stmtSize;
                 if (numStmts > 0) {
                     String pstmt = cachedPrepStmtStrings.get(stmtSize);
-                    stmtInsert = txn.prepareAutoCloseStatement(pstmt);
                     for (int i=0; i < numStmts; i++) {
+                        List<Long> vmIds = new ArrayList<Long>();
                         for (int argIndex=1; argIndex <= stmtSize; argIndex++) {
                             Long vmId = workIter.next();
-                            stmtInsert.setLong(argIndex, vmId);
+                            vmIds.add(vmId);
                         }
-                        int numUpdated = stmtInsert.executeUpdate();
+                        int numUpdated = executeWithRetryOnDeadlock(txn, pstmt, vmIds);
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("Inserted or updated " + numUpdated + " rows");
                         }
-                        //Thread.yield();
                         count += stmtSize;
                     }
                     remaining = remaining - numStmts * stmtSize;
