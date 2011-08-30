@@ -428,8 +428,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.Firewall);
         }
 
-        _accountMgr.checkAccess(caller, null, rule);
-        
+        _accountMgr.checkAccess(caller, null, rule); 
         
         revokeRule(rule, caller, userId, false);
 
@@ -456,9 +455,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @Override 
     @DB
     public void revokeRule(FirewallRuleVO rule, Account caller, long userId, boolean needUsageEvent) {
-        if (caller != null) {
-            _accountMgr.checkAccess(caller, null, rule);
-        }
 
         Transaction txn = Transaction.currentTxn();
         boolean generateUsageEvent = false;
