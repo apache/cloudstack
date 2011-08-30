@@ -323,7 +323,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     vm.destroy(conn);
                 } catch (Exception e) {
-                    s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to " + e.toString());
+                    s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to ", e);
                     success = false;
                 }
              }
@@ -1900,7 +1900,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 stats = getVmStatsRawXML(conn);
             }
         } catch (Exception e1) {
-            s_logger.warn("Error whilst collecting raw stats from plugin:" + e1);
+            s_logger.warn("Error whilst collecting raw stats from plugin: ", e1);
             return null;
         }
 
@@ -1919,7 +1919,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(statsSource);
         } catch (Exception e) {
-        	s_logger.warn("Exception caught whilst processing the document via document factory:"+e);
+        	s_logger.warn("Exception caught whilst processing the document via document factory:", e);
         	return null;
         }
 
@@ -2769,7 +2769,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         vm.hardShutdown(conn);
                     } catch (Exception e) {
                         String msg = "VM hardshutdown failed due to " + e.toString();
-                        s_logger.warn(msg);
+                        s_logger.warn(msg, e);
                     }
                 }
                 if (vm.getPowerState(conn) == VmPowerState.HALTED) {
@@ -2777,12 +2777,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         vm.destroy(conn);
                     } catch (Exception e) {
                         String msg = "VM destroy failed due to " + e.toString();
-                        s_logger.warn(msg);
+                        s_logger.warn(msg, e);
                     }
                 }
             } catch (Exception e) {
                 String msg = "VM getPowerState failed due to " + e.toString();
-                s_logger.warn(msg);
+                s_logger.warn(msg, e);
             }
         }
         if (mounts != null) {
@@ -2793,7 +2793,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     vbds = vdi.getVBDs(conn);
                 } catch (Exception e) {
                     String msg = "VDI getVBDS failed due to " + e.toString();
-                    s_logger.warn(msg);
+                    s_logger.warn(msg, e);
                     continue;
                 }
                 for (VBD vbd : vbds) {
@@ -2802,7 +2802,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         vbd.destroy(conn);
                     } catch (Exception e) {
                         String msg = "VBD destroy failed due to " + e.toString();
-                        s_logger.warn(msg);
+                        s_logger.warn(msg, e);
                     }
                 }
             }
@@ -2989,8 +2989,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     task.destroy(conn);
                 } catch (Exception e1) {
-                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to "
-                            + e1.toString());
+                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to ", e1);
                 }
             }
         }
@@ -3007,7 +3006,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return true;
             }
         } catch (Exception e) {
-            s_logger.warn("swift download failed due to " + e.toString());
+            s_logger.warn("swift download failed due to ", e);
         }
         return false;
     }
@@ -3023,7 +3022,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return true;
             }
         } catch (Exception e) {
-            s_logger.warn("swift download failed due to " + e.toString());
+            s_logger.warn("swift download failed due to ", e);
         }
         return false;
     }
@@ -3038,7 +3037,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 return true;
             }
         } catch (Exception e) {
-            s_logger.warn("swift download failed due to " + e.toString());
+            s_logger.warn("swift download failed due to ", e);
         }
         return false;
     }
@@ -3123,8 +3122,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     task.destroy(conn);
                 } catch (Exception e1) {
-                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to "
-                            + e1.toString());
+                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to ", e1);
                 }
             }
         }
@@ -4024,7 +4022,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 sr = pbd.getSR(conn);
                 srRec = sr.getRecord(conn);
             } catch (Exception e) {
-                s_logger.warn("pbd.getSR get Exception due to " + e.toString());
+                s_logger.warn("pbd.getSR get Exception due to ", e);
                 continue;
             }
             String type = srRec.type;
@@ -4037,7 +4035,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     pbd.destroy(conn);
                     sr.forget(conn);
                 } catch (Exception e) {
-                    s_logger.warn("forget SR catch Exception due to " + e.toString());
+                    s_logger.warn("forget SR catch Exception due to ", e);
                 }
             }
         }
