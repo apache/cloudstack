@@ -91,6 +91,7 @@
 		'label.path': '<fmt:message key="label.path"/>',
 		'label.SR.name': '<fmt:message key="label.SR.name"/>',
 		'label.nfs': '<fmt:message key="label.nfs"/>',
+		'label.ocfs2': '<fmt:message key="label.ocfs2"/>',		
 		'label.SharedMountPoint': '<fmt:message key="label.SharedMountPoint"/>',
 		'label.PreSetup': '<fmt:message key="label.PreSetup"/>',
 		'label.iscsi': '<fmt:message key="label.iscsi"/>',
