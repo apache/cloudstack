@@ -512,8 +512,6 @@ fi
 %{_javadir}/vmware*.jar
 %{_javadir}/%{name}-jnetpcap.jar
 %{_javadir}/%{name}-junit.jar
-%{_javadir}/%{name}-selenium-java-client-driver.jar
-%{_javadir}/%{name}-selenium-server.jar
 
 
 %files core
