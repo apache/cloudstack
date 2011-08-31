@@ -17,13 +17,16 @@
  */
 package com.cloud.network.security;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.manager.Commands;
@@ -32,27 +35,22 @@ import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachine.State;
+
 
 /**
  * Same as the base class -- except it uses the abstracted security group work queue
  *
  */
 @Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
-public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
-    /*private final String GET_ALLOWED_IPS_QUERY = 
-        "select CONCAT(nics.ip4_address, '/32') from nics  INNER JOIN " +
-    		"(select vm_map_2.instance_id from " +
-    		      "(select security_ingress_rule.* from security_ingress_rule INNER JOIN " +
-    		      " security_group_vm_map  ON security_ingress_rule.security_group_id=security_group_vm_map.security_group_id " +
-    		      " where security_group_vm_map.instance_id=?) AS ingress_rule_for_vm INNER JOIN " +
-    		      " security_group_vm_map AS vm_map_2 ON vm_map_2.security_group_id = ingress_rule_for_vm.allowed_network_id) AS instance " +
-    		 " ON nics.instance_id=instance.instance_id where nics.default_nic=1;";*/
-    
+public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();
-    
+    SecurityManagerMBeanImpl _mBean;
     
     WorkerThread[] _workers;
+    private Set<Long> _disabledVms = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+    private boolean _schedulerDisabled = false;
 
     
     protected class WorkerThread extends Thread {
@@ -87,8 +85,13 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         if (affectedVms.size() == 0) {
             return;
         }
+        if (_schedulerDisabled) {
+            s_logger.debug("Security Group Mgr v2: scheduler disabled, doing nothing for " + affectedVms.size() + " vms");
+            return;
+        }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
+        workItems.removeAll(_disabledVms);
         
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
@@ -104,6 +107,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             }
         }
         int newJobs = _workQueue.submitWorkForVms(workItems);
+        _mBean.logScheduledDetails(workItems);
         p.stop();
         if (s_logger.isTraceEnabled()){
             s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
@@ -111,6 +115,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         }
     }
 
+   
+    
 
     @Override
     public boolean start() {
@@ -139,6 +145,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                     }
                     work.setLogsequenceNumber(rulesetLog.getLogsequence());
                     sendRulesetUpdates(work);
+                    _mBean.logUpdateDetails(work.getInstanceId(), work.getLogsequenceNumber());
                 }catch (Exception e) {
                     s_logger.error("Problem during SG work " + work, e);
                     work.setStep(Step.Error);
@@ -151,7 +158,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
 
     }
     
-    protected void sendRulesetUpdates(SecurityGroupWork work){
+    public void sendRulesetUpdates(SecurityGroupWork work){
         Long userVmId = work.getInstanceId();
         UserVm vm = _userVMDao.findById(userVmId);
 
@@ -165,6 +172,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                 SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), null, 
                         work.getLogsequenceNumber(), rules);
+                cmd.setMsId(_serverId);
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
                                    ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" + cmd.getSignature());
@@ -233,6 +241,61 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         }
 
         return allowed;
+    }
+
+ 
+    public int getQueueSize() {
+        return _workQueue.size();
+    }
+    
+    public SecurityGroupWorkQueue getWorkQueue() {
+        return _workQueue;
+    }
+
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _mBean = new SecurityManagerMBeanImpl(this);
+        try {
+            JmxUtil.registerMBean("SecurityGroupManager", "SecurityGroupManagerImpl2", _mBean);
+        } catch (Exception e){
+            s_logger.error("Failed to register MBean", e);
+        }
+        return super.configure(name, params);
+    }
+
+    public void disableSchedulerForVm(Long vmId, boolean disable) {
+        if (disable) {
+            _disabledVms.add(vmId);
+        } else {
+            _disabledVms.remove(vmId);
+        }
+        s_logger.warn("JMX operation: Scheduler state for vm " + vmId + ": new state disabled=" + disable);
+        
+    }
+    
+    public Long[] getDisabledVmsForScheduler() {
+        Long [] result = new Long[_disabledVms.size()];
+        return _disabledVms.toArray(result );
+    }
+
+    public void enableAllVmsForScheduler() {
+        s_logger.warn("Cleared list of disabled VMs (JMX operation?)");
+        _disabledVms.clear();
+    }
+    
+    public void disableScheduler(boolean disable) {
+        _schedulerDisabled = disable;
+        s_logger.warn("JMX operation: Scheduler state changed: new state disabled=" + disable);
+    }
+
+    public boolean isSchedulerDisabled() {
+       return _schedulerDisabled;
+    }
+
+    public void clearWorkQueue() {
+       _workQueue.clear();
+       s_logger.warn("Cleared the work queue (possible JMX operation)");
     }
 
 }

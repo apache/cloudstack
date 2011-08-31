@@ -18,25 +18,41 @@
 package com.cloud.network.security;
 
 import java.util.List;
-import java.util.Set;
-
+import java.util.Map;
+import java.util.Date;
 
 /**
- * Security Group Work queue 
- * standard producer / consumer interface
+ * Allows JMX access
  *
  */
-public interface SecurityGroupWorkQueue {
+public interface SecurityGroupManagerMBean {
+    void enableUpdateMonitor(boolean enable);
     
-    void submitWorkForVm(long vmId, long sequenceNumber);
+    void disableSchedulerForVm(Long vmId);
     
-    int submitWorkForVms(Set<Long> vmIds);
+    void enableSchedulerForVm(Long vmId);
     
-    List<SecurityGroupWork> getWork(int numberOfWorkItems) throws InterruptedException;
+    Long[] getDisabledVmsForScheduler();
+
+    void enableSchedulerForAllVms();
     
-    int size();
+    Map<Long, Date> getScheduledTimestamps();
     
-    void clear();
+    Map<Long, Date> getLastUpdateSentTimestamps();
+    
+    int getQueueSize();
     
     List<Long> getVmsInQueue();
+    
+    void scheduleRulesetUpdateForVm(Long vmId);
+    
+    void tryRulesetUpdateForVmBypassSchedulerVeryDangerous(Long vmId, Long seqno);
+
+    void simulateVmStart(Long vmId);
+
+    void disableSchedulerEntirelyVeryDangerous(boolean disable);
+    
+    boolean isSchedulerDisabledEntirely();
+
+    void clearSchedulerQueueVeryDangerous();
 }

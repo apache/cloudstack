@@ -17,26 +17,14 @@
  */
 package com.cloud.network.security;
 
-import java.util.List;
 import java.util.Set;
 
-
 /**
- * Security Group Work queue 
- * standard producer / consumer interface
+ * Keeps track of scheduling and update events for monitoring purposes.
  *
  */
-public interface SecurityGroupWorkQueue {
-    
-    void submitWorkForVm(long vmId, long sequenceNumber);
-    
-    int submitWorkForVms(Set<Long> vmIds);
-    
-    List<SecurityGroupWork> getWork(int numberOfWorkItems) throws InterruptedException;
-    
-    int size();
-    
-    void clear();
-    
-    List<Long> getVmsInQueue();
+public interface RuleUpdateLog {
+     void logScheduledDetails(Set<Long> vmIds);
+     void logUpdateDetails(Long vmId, Long seqno);
+
 }

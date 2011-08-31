@@ -70,6 +70,7 @@ public class SecurityIngressRulesCmd extends Command {
     String signature;
     Long seqNum;
     Long vmId;
+    Long msId;
     IpPortAndProto [] ruleSet;
 
     public SecurityIngressRulesCmd() {
@@ -157,6 +158,14 @@ public class SecurityIngressRulesCmd extends Command {
             count += i.allowedCidrs.length;
         }
         return count;
+    }
+    
+    public void setMsId(long msId) {
+        this.msId = msId;
+    }
+    
+    public Long getMsId() {
+        return msId;
     }
 
 }

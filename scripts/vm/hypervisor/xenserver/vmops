@@ -946,7 +946,7 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     
     reprogramChain = False
     rewriteLog = True
-    if (seqno > _seqno):
+    if (int(seqno) > int(_seqno)):
         if (_signature != signature):
             reprogramChain = True
             util.SMlog("Seqno increased from %s to %s: reprogamming "\
@@ -955,7 +955,7 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
             util.SMlog("Seqno increased from %s to %s: but no change "\
                         "in signature for vm: skip programming ingress "\
                         "rules %s" % (_seqno, seqno, vmName))
-    elif (seqno < _seqno):
+    elif (int(seqno) < int(_seqno)):
         util.SMlog("Seqno decreased from %s to %s: ignoring these "\
                         "ingress rules for vm %s" % (_seqno, seqno, vmName))
         rewriteLog = False
@@ -1047,22 +1047,28 @@ def network_rules(session, args):
     
     if not reprogramDefault and not reprogramChain:
         util.SMlog("No changes detected between current state and received state")
+        reason = 'seqno_same_sig_same'
         if rewriteLog:
+            reason = 'seqno_increased_sig_same'
             write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno)
+        util.SMlog("Programming network rules for vm  %s seqno=%s signature=%s guestIp=%s,"\
+               " do nothing, reason=%s" % (vm_name, seqno, signature, vm_ip, reason))
         return 'true'
            
-    if reprogramDefault:
-        util.SMlog("Change detected in vmId or vmIp or domId, resetting default rules")
-        default_network_rules(session, args)
-    
     if not reprogramChain:
         util.SMlog("###Not programming any ingress rules since no changes detected?")
         return 'true'
-        
+
+    if reprogramDefault:
+        util.SMlog("Change detected in vmId or vmIp or domId, resetting default rules")
+        default_network_rules(session, args)
+        reason = 'domid_change'
+    
     rules = args.pop('rules')
     lines = rules.split(' ')
 
-    util.SMlog("    programming network rules for  IP: " + vm_ip + " vmname=" + vm_name)
+    util.SMlog("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
+              " update iptables, reason=%s" % (vm_name, seqno, len(lines), signature, vm_ip, reason))
     util.pread2(['iptables', '-F', vmchain])
     
     for line in lines:
