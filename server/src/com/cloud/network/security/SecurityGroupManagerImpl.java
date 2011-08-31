@@ -148,7 +148,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
-    private long _serverId;
+    protected long _serverId;
 
     private  int _timeBetweenCleanups = TIME_BETWEEN_CLEANUPS; // seconds
     protected  int _numWorkerThreads = WORKER_THREAD_COUNT;

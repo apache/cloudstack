@@ -162,6 +162,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                 SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), null, 
                         work.getLogsequenceNumber(), rules);
+                cmd.setMsId(_serverId);
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
                                    ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" + cmd.getSignature());
