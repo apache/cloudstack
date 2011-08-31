@@ -87,6 +87,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("2.2.8", new DbUpgrade[] { new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212()});
         _upgradeMap.put("2.2.9", new DbUpgrade[] { new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212()});
         _upgradeMap.put("2.2.10", new DbUpgrade[] { new Upgrade2210to2211(), new Upgrade2211to2212()});
+        _upgradeMap.put("2.2.11", new DbUpgrade[] { new Upgrade2211to2212()});
     }
 
     protected void runScript(Connection conn, File file) {
