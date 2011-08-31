@@ -63,10 +63,13 @@ applyPatch() {
 }
 
 postSetup() {
-	openPortOnIptables 7777 tcp
-	openPortOnIptables 7777 udp
+    openPortOnIptables 7777 tcp # for OCFS2, maybe tcp only
+    openPortOnIptables 7777 udp
+    openPortOnIptables 3260 tcp # for ISCSI, maybe tcp only
+    openPortOnIptables 3260 udp
     applyPatch "/opt/ovs-agent-latest/OvmPatch.patch" 2
     applyPatch "/opt/ovs-agent-latest/OvmDontTouchOCFS2ClusterWhenAgentStart.patch" 1
+    applyPatch "/opt/ovs-agent-latest/Fixget_storage_reposExceptionDueToWrongReturnValueCheck.patch" 1
 
     stopHeartbeat
 
