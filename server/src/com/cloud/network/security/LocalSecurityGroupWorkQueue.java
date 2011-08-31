@@ -39,8 +39,8 @@ import com.cloud.network.security.SecurityGroupWork.Step;
 public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
     protected static Logger s_logger = Logger.getLogger(LocalSecurityGroupWorkQueue.class);
 
-    protected Set<SecurityGroupWork> _currentWork = new HashSet<SecurityGroupWork>(); 
-    //protected Set<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();    
+    //protected Set<SecurityGroupWork> _currentWork = new HashSet<SecurityGroupWork>(); 
+    protected Set<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();    
 
     private final ReentrantLock _lock = new ReentrantLock();
     private final Condition _notEmpty = _lock.newCondition(); 
@@ -85,7 +85,9 @@ public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
 
         @Override
         public int compareTo(LocalSecurityGroupWork o) {
-            return this._instanceId.compareTo(o.getInstanceId());
+            //return this._instanceId.compareTo(o.getInstanceId());
+            return o.getInstanceId().compareTo(this.getInstanceId());
+
         }
 
         @Override
