@@ -39,9 +39,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveredWithErrorException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -64,7 +62,6 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.StorageLayer;
-import com.cloud.user.UserContext;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -77,8 +74,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.google.gson.Gson;
 import com.vmware.apputils.vim25.ServiceUtil;
 import com.vmware.vim25.HostConnectSpec;
@@ -106,7 +101,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Inject ClusterManager _clusterMgr;
     @Inject CheckPointManager _checkPointMgr;
     @Inject VirtualNetworkApplianceManager _routerMgr;
-    @Inject DomainRouterDao _routerDao;
 
     String _mountParent;
     StorageLayer _storage;
@@ -805,29 +799,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        UserContext context = UserContext.current();
-        context.setAccountId(1);
-        /* Stopped VMware Host's virtual routers */
-        HostVO host = _hostDao.findById(agentId);
-        if (host.getHypervisorType() != HypervisorType.VMware) {
-            return true;
-        }
-        List<DomainRouterVO> routers = _routerDao.listByHostId(agentId);
-        for (DomainRouterVO router : routers) {
-            try {
-                State oldState = router.getState();
-                _routerMgr.stopRouter(router.getId(), true);
-                //In case only vCenter is disconnected, we want to shut down router directly
-                if (oldState == State.Running) {
-                    shutdownRouterVM(router);
-                }
-            } catch (ResourceUnavailableException e) {
-                s_logger.warn("Fail to stop router " + router.getInstanceName() + " when host disconnected!", e);
-            } catch (ConcurrentOperationException e) {
-                s_logger.warn("Fail to stop router " + router.getInstanceName() + " when host disconnected!", e);
-            }
-        }
-        return true;
+        return false;
     }
 
     @Override
