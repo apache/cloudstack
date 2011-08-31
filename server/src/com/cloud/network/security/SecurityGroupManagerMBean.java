@@ -28,6 +28,14 @@ import java.util.Date;
 public interface SecurityGroupManagerMBean {
     void enableUpdateMonitor(boolean enable);
     
+    void disableSchedulerForVm(Long vmId);
+    
+    void enableSchedulerForVm(Long vmId);
+    
+    Long[] getDisabledVmsForScheduler();
+
+    void enableSchedulerForAllVms();
+    
     Map<Long, Date> getScheduledTimestamps();
     
     Map<Long, Date> getLastUpdateSentTimestamps();
@@ -35,5 +43,6 @@ public interface SecurityGroupManagerMBean {
     int getQueueSize();
     
     List<Long> getVmsInQueue();
+
     
 }

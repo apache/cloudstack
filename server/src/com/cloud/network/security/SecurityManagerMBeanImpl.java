@@ -72,4 +72,33 @@ public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityG
         return _sgMgr.getWorkQueue().getVmsInQueue();
     }
 
+
+
+
+    @Override
+    public void disableSchedulerForVm(Long vmId) {
+        _sgMgr.disableSchedulerForVm(vmId,  true);
+        
+    }
+
+    @Override
+    public void enableSchedulerForVm(Long vmId) {
+        _sgMgr.disableSchedulerForVm(vmId,  false);
+        
+    }
+    
+    @Override
+    public Long[] getDisabledVmsForScheduler() {
+        return _sgMgr.getDisabledVmsForScheduler();
+    }
+
+
+
+
+    @Override
+    public void enableSchedulerForAllVms() {
+        _sgMgr.enableAllVmsForScheduler();
+        
+    }
+
 }

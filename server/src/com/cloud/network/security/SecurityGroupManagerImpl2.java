@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -36,6 +37,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachine.State;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 /**
  * Same as the base class -- except it uses the abstracted security group work queue
  *
@@ -46,6 +49,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityManagerMBeanImpl _mBean;
     
     WorkerThread[] _workers;
+    private Set<Long> _disabledVms = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
 
     
     protected class WorkerThread extends Thread {
@@ -82,6 +86,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         }
         Set<Long> workItems = new TreeSet<Long>();
         workItems.addAll(affectedVms);
+        workItems.removeAll(_disabledVms);
         
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
@@ -252,6 +257,24 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
             s_logger.error("Failed to register MBean", e);
         }
         return super.configure(name, params);
+    }
+
+    public void disableSchedulerForVm(Long vmId, boolean disable) {
+        if (disable) {
+            _disabledVms.add(vmId);
+        } else {
+            _disabledVms.remove(vmId);
+        }
+        
+    }
+    
+    public Long[] getDisabledVmsForScheduler() {
+        Long [] result = new Long[_disabledVms.size()];
+        return _disabledVms.toArray(result );
+    }
+
+    public void enableAllVmsForScheduler() {
+        _disabledVms.clear();
     }
 
 }
