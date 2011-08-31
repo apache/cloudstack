@@ -198,6 +198,22 @@ public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
         }
         
     }
+
+
+    @Override
+    public List<Long> getVmsInQueue() {
+        List<Long> vmIds = new ArrayList<Long>();
+        _lock.lock();
+        try {
+           Iterator<SecurityGroupWork> iter = _currentWork.iterator();
+           while (iter.hasNext()) {
+               vmIds.add(iter.next().getInstanceId());
+           }
+        } finally {
+            _lock.unlock();
+        }
+        return vmIds;
+    }
         
 
 }

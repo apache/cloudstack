@@ -17,9 +17,9 @@
  */
 package com.cloud.network.security;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Date;
-import com.cloud.utils.Ternary;
 
 /**
  * Allows JMX access
@@ -28,8 +28,12 @@ import com.cloud.utils.Ternary;
 public interface SecurityGroupManagerMBean {
     void enableUpdateMonitor(boolean enable);
     
-    Map<Long, Ternary<Date, Date, Long>> getVmUpdateDetails();
+    Map<Long, Date> getScheduledTimestamps();
+    
+    Map<Long, Date> getLastUpdateSentTimestamps();
     
     int getQueueSize();
+    
+    List<Long> getVmsInQueue();
     
 }

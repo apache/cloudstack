@@ -236,8 +236,11 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     public int getQueueSize() {
         return _workQueue.size();
     }
+    
+    public SecurityGroupWorkQueue getWorkQueue() {
+        return _workQueue;
+    }
 
-   
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

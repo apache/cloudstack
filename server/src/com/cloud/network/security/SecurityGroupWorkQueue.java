@@ -37,4 +37,6 @@ public interface SecurityGroupWorkQueue {
     int size();
     
     void clear();
+    
+    List<Long> getVmsInQueue();
 }
