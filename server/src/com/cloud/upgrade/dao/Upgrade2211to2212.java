@@ -25,17 +25,17 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade2210to2211 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade2210to2211.class);
+public class Upgrade2211to2212 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade2211to2212.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.10", "2.2.10"};
+        return new String[] { "2.2.11", "2.2.11"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "2.2.11";
+        return "2.2.12";
     }
 
     @Override
@@ -45,9 +45,9 @@ public class Upgrade2210to2211 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-2210to2211.sql");
+        String script = Script.findScript("", "db/schema-2211to2212.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-2210to2211.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-2211to2212.sql");
         }
         
         return new File[] { new File(script) };
