@@ -53,7 +53,5 @@
 	<classpathentry exported="true" kind="lib" path="vmware-vim25.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jnetpcap.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-junit.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-selenium-java-client-driver.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-selenium-server.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
