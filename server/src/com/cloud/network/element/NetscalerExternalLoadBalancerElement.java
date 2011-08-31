@@ -53,9 +53,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalLoadBalancerElement extends AdapterBase implements NetworkElement  {
+public class NetscalerExternalLoadBalancerElement extends AdapterBase implements NetworkElement  {
 
-    private static final Logger s_logger = Logger.getLogger(ExternalLoadBalancerElement.class);
+    private static final Logger s_logger = Logger.getLogger(NetscalerExternalLoadBalancerElement.class);
     
     @Inject NetworkManager _networkManager;
     @Inject ExternalNetworkManager _externalNetworkManager;
@@ -69,7 +69,7 @@ public class ExternalLoadBalancerElement extends AdapterBase implements NetworkE
         }
         
         return (_networkManager.zoneIsConfiguredForExternalNetworking(zone.getId()) && 
-                zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.F5BigIp.getName()));
+                zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.NetscalerMPX.getName()));
     }
 
     @Override
@@ -146,7 +146,7 @@ public class ExternalLoadBalancerElement extends AdapterBase implements NetworkE
     
     @Override
     public Provider getProvider() {
-        return Provider.F5BigIp;
+        return Provider.NetscalerMPX;
     }
     
     @Override

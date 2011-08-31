@@ -25,13 +25,13 @@
   <!-- directories for the test client code compilation-->
   <property name="testclient.dir" location="${base.dir}/test" />
   <property name="testclient.dist.dir" location="${dist.dir}/test" />
-   <property name="tools.dist.dir" location="${dist.dir}/cloudapitools" />
+  <property name="tools.dist.dir" location="${dist.dir}/cloudapitools" />
 
   <property name="test.target.dir" location="${target.dir}/test" />
-  <property name="test.classes.dir" location="${test.target.dir}/classes" />
 
   <property name="agent-simulator.jar" value="cloud-agent-simulator.jar" />
   <property name="testclient.jar" value="cloud-test.jar" />
+
 
   <!-- =================== Agent Simulator ==================== -->
   <path id="agent-simulator.classpath">

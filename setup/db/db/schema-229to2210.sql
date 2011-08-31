@@ -47,6 +47,9 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.reserve.mem', 'false', 'Specify whether or not to reserve memory based on memory overprovisioning factor');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'mem.overprovisioning.factor', '1', 'Used for memory overprovisioning calculation');
 
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.psk.length', '24', 'The length of the ipsec preshared key (minimum 8, maximum 256)');
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.client.iprange', '10.1.2.1-10.1.2.8', 'The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server');
+INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'AgentManager', 'remote.access.vpn.user.limit', '8', 'The maximum number of VPN users that can be created per account');
 
 CREATE TABLE IF NOT exists `cloud`.`elastic_lb_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -60,14 +63,3 @@ CREATE TABLE IF NOT exists `cloud`.`elastic_lb_vm_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 UPDATE `cloud`.`network_offerings` SET lb_service=1 where unique_name='System-Guest-Network';
-
-UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-xenserver-2.2.10';
-UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-kvm-2.2.10';
-UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-vSphere-2.2.10';
-
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.10' AND removed IS NULL) where vm_template_id=1;
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-kvm-2.2.10' AND removed IS NULL) where vm_template_id=3;
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-vSphere-2.2.10' AND removed IS NULL) where vm_template_id=8;
-
--- Update system Vms using systemvm-xenserver-2.2.4 template;
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.10' AND removed IS NULL) where vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.4' AND removed IS NULL);

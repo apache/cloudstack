@@ -731,7 +731,7 @@ public class ApiServer implements HttpRequestHandler {
 
             return;
         }
-        throw new CloudAuthenticationException("Unable to find user " + username + " in domain " + domainId);
+        throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
     }
 
     public void logoutUser(long userId) {

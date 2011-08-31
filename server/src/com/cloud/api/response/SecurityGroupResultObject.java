@@ -175,11 +175,6 @@ public class SecurityGroupResultObject {
 
                     currentGroup = groupResult;
                 }
-                SecurityGroupRulesVO  dummyIngressobj=new SecurityGroupRulesVO(); 
-                SecurityGroupEgressRulesVO  dummyEgressobj=new SecurityGroupEgressRulesVO() ;
-String str=dummyIngressobj.getClass().getName();
- 
-String s1=netGroupRule.getClass().getSimpleName();
 
                 if (netGroupRule.getRuleId() != null && netGroupRule.getClass().getSimpleName().indexOf("SecurityGroupRulesVO") != -1) {
                     // there's at least one ingress rule for this network group, add the ingress rule data
@@ -245,6 +240,9 @@ String s1=netGroupRule.getClass().getSimpleName();
             if (currentGroup != null) {
                 if (!ingressDataList.isEmpty()) {
                     currentGroup.setIngressRules(ingressDataList);
+                }
+                if (!egressDataList.isEmpty()) {
+                    currentGroup.setEgressRules(egressDataList);
                 }
                 resultObjects.add(currentGroup);
             }
