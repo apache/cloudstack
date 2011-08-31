@@ -1,5 +1,6 @@
 package com.cloud.network.security;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.StandardMBean;
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.security.LocalSecurityGroupWorkQueue.LocalSecurityGroupWork;
+import com.cloud.network.security.SecurityGroupWork.Step;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.Type;
 
 public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityGroupManagerMBean, RuleUpdateLog {
     SecurityGroupManagerImpl2 _sgMgr;
@@ -93,12 +100,32 @@ public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityG
     }
 
 
-
-
     @Override
     public void enableSchedulerForAllVms() {
         _sgMgr.enableAllVmsForScheduler();
         
+    }
+
+
+    @Override
+    public void scheduleRulesetUpdateForVm(Long vmId) {
+        List<Long> affectedVms = new ArrayList<Long>(1);
+        affectedVms.add(vmId);
+        _sgMgr.scheduleRulesetUpdateToHosts(affectedVms, true, null);
+    }
+
+
+    @Override
+    public void tryRulesetUpdateForVmBypassSchedulerVeryDangerous(Long vmId, Long seqno) {
+       LocalSecurityGroupWork work = new LocalSecurityGroupWorkQueue.LocalSecurityGroupWork(vmId, seqno, Step.Scheduled);
+        _sgMgr.sendRulesetUpdates(work);
+    }
+    
+    @Override
+    public void simulateVmStart(Long vmId) {
+        //all we need is the vmId
+        VMInstanceVO vm = new VMInstanceVO(vmId, 5, "foo", "foo", Type.User, null, HypervisorType.Any, 8, 1, 1, false, false);
+        _sgMgr.handleVmStarted(vm);
     }
 
 }

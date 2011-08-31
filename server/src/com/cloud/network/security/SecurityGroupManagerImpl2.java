@@ -153,7 +153,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
 
     }
     
-    protected void sendRulesetUpdates(SecurityGroupWork work){
+    public void sendRulesetUpdates(SecurityGroupWork work){
         Long userVmId = work.getInstanceId();
         UserVm vm = _userVMDao.findById(userVmId);
 

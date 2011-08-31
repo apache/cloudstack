@@ -360,7 +360,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return DigestUtils.md5Hex(ruleset);
     }
 
-    protected void handleVmStarted(VMInstanceVO vm) {
+    public void handleVmStarted(VMInstanceVO vm) {
         if (vm.getType() != VirtualMachine.Type.User || !isVmSecurityGroupEnabled(vm.getId()))
             return;
         List<Long> affectedVms = getAffectedVmsForVmStart(vm);

@@ -43,6 +43,10 @@ public interface SecurityGroupManagerMBean {
     int getQueueSize();
     
     List<Long> getVmsInQueue();
-
     
+    void scheduleRulesetUpdateForVm(Long vmId);
+    
+    void tryRulesetUpdateForVmBypassSchedulerVeryDangerous(Long vmId, Long seqno);
+
+    void simulateVmStart(Long vmId);
 }
