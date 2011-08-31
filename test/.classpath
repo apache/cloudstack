@@ -4,14 +4,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/utils"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.USER_LIBRARY/test-deps"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/deps-premium"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/premium"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/server"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/core"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/core-premium"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
