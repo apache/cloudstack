@@ -20,9 +20,10 @@ package com.cloud.storage;
 
 import java.util.Date;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-public interface Snapshot {
+public interface Snapshot extends ControlledEntity{
     public enum Type {
         MANUAL,
         RECURRING,
