@@ -884,9 +884,11 @@ def cleanup_rules(session, args):
         if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-'] ]:
             vm = session.xenapi.VM.get_by_name_label(chain)
             if len(vm) != 1:
-                util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
-                cleanup.append(chain)
-                continue
+                vm = session.xenapi.VM.get_by_name_label(chain + "-untagged")
+                if len(vm) != 1:
+                    util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
+                    cleanup.append(chain)
+                    continue
             vm_rec = session.xenapi.VM.get_record(vm[0])
             state = vm_rec.get('power_state')
             if state != 'Running' and state != 'Paused':
