@@ -127,5 +127,19 @@ public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityG
         VMInstanceVO vm = new VMInstanceVO(vmId, 5, "foo", "foo", Type.User, null, HypervisorType.Any, 8, 1, 1, false, false);
         _sgMgr.handleVmStarted(vm);
     }
+    
+    @Override
+    public void disableSchedulerEntirelyVeryDangerous(boolean disable) {
+        _sgMgr.disableScheduler(disable);
+    }
 
+    @Override
+    public boolean isSchedulerDisabledEntirely() {
+       return _sgMgr.isSchedulerDisabled();
+    }
+
+    @Override
+    public void clearSchedulerQueueVeryDangerous() {
+        _sgMgr.clearWorkQueue();
+    }
 }

@@ -17,6 +17,7 @@
  */
 package com.cloud.network.security;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +38,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachine.State;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  * Same as the base class -- except it uses the abstracted security group work queue
@@ -50,6 +50,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     
     WorkerThread[] _workers;
     private Set<Long> _disabledVms = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+    private boolean _schedulerDisabled = false;
 
     
     protected class WorkerThread extends Thread {
@@ -82,6 +83,10 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     //@DB
     public void scheduleRulesetUpdateToHosts(List<Long> affectedVms, boolean updateSeqno, Long delayMs) {
         if (affectedVms.size() == 0) {
+            return;
+        }
+        if (_schedulerDisabled) {
+            s_logger.debug("Security Group Mgr v2: scheduler disabled, doing nothing for " + affectedVms.size() + " vms");
             return;
         }
         Set<Long> workItems = new TreeSet<Long>();
@@ -265,6 +270,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         } else {
             _disabledVms.remove(vmId);
         }
+        s_logger.warn("JMX operation: Scheduler state for vm " + vmId + ": new state disabled=" + disable);
         
     }
     
@@ -274,7 +280,22 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     }
 
     public void enableAllVmsForScheduler() {
+        s_logger.warn("Cleared list of disabled VMs (JMX operation?)");
         _disabledVms.clear();
+    }
+    
+    public void disableScheduler(boolean disable) {
+        _schedulerDisabled = disable;
+        s_logger.warn("JMX operation: Scheduler state changed: new state disabled=" + disable);
+    }
+
+    public boolean isSchedulerDisabled() {
+       return _schedulerDisabled;
+    }
+
+    public void clearWorkQueue() {
+       _workQueue.clear();
+       s_logger.warn("Cleared the work queue (possible JMX operation)");
     }
 
 }

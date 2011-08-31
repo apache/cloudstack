@@ -49,4 +49,10 @@ public interface SecurityGroupManagerMBean {
     void tryRulesetUpdateForVmBypassSchedulerVeryDangerous(Long vmId, Long seqno);
 
     void simulateVmStart(Long vmId);
+
+    void disableSchedulerEntirelyVeryDangerous(boolean disable);
+    
+    boolean isSchedulerDisabledEntirely();
+
+    void clearSchedulerQueueVeryDangerous();
 }
