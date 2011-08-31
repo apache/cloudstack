@@ -77,6 +77,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		String ticket = queryMap.get("ticket");
 		String ajaxSessionIdStr = queryMap.get("sess");
 		String eventStr = queryMap.get("event");
+		
 		if(tag == null)
 			tag = "";
 		
@@ -172,7 +173,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 					s_logger.debug("Ajax request indicates a fresh client start");
 		
 				String title = queryMap.get("t");
-				handleClientStart(t, viewer, title != null ? title : "");
+				String guest = queryMap.get("guest");
+				handleClientStart(t, viewer, title != null ? title : "", guest);
 			} else {
 				
 				if(s_logger.isTraceEnabled())
@@ -392,9 +394,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		}
 	}
 	
-	private void handleClientStart(HttpExchange t, ConsoleProxyViewer viewer, String title) throws IOException {
+	private void handleClientStart(HttpExchange t, ConsoleProxyViewer viewer, String title, String guest) throws IOException {
 		List<String> languages = t.getRequestHeaders().get("Accept-Language");
-		String response = viewer.onAjaxClientStart(title, languages);
+		String response = viewer.onAjaxClientStart(title, languages, guest);
 		
 		Headers hds = t.getResponseHeaders();
 		hds.set("Content-Type", "text/html");

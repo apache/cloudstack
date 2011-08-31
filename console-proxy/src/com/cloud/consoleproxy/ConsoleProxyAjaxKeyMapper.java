@@ -190,7 +190,7 @@ public class ConsoleProxyAjaxKeyMapper {
         shiftedKeyCharMap.put(new Integer('9'), new Integer('('));
         shiftedKeyCharMap.put(new Integer('0'), new Integer(')'));
         shiftedKeyCharMap.put(new Integer('-'), new Integer('_'));
-        shiftedKeyCharMap.put(new Integer('='), new Integer('+'));
+        //shiftedKeyCharMap.put(new Integer('='), new Integer('+'));
         shiftedKeyCharMap.put(new Integer('`'), new Integer('~'));
         shiftedKeyCharMap.put(new Integer('['), new Integer('{'));
         shiftedKeyCharMap.put(new Integer(']'), new Integer('}'));
