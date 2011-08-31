@@ -103,9 +103,8 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 		if ((cmd.getFormat().equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
-			|| (cmd.getFormat().equalsIgnoreCase("img") && !url.toLowerCase().endsWith("img")) 
-			|| (cmd.getFormat().equalsIgnoreCase("raw") && !url.toLowerCase().endsWith("raw")) ) {
-	        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is a invalid for the format " + cmd.getFormat().toLowerCase());
+			|| (cmd.getFormat().equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
+	        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + cmd.getFormat().toLowerCase());
 		}
 		
 		profile.setUrl(validateUrl(url));
