@@ -108,7 +108,8 @@ public class CitrixHelper {
         _xcpGuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
         _xcpGuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
         _xcpGuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
-        _xcpGuestOsMap.put("Other install media", "Other install media");
+        _xcpGuestOsMap.put("Other Linux (32-bit)", "Other install media");
+        _xcpGuestOsMap.put("Other Linux (64-bit)", "Other install media");
         _xcpGuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
         _xcpGuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
@@ -172,7 +173,8 @@ public class CitrixHelper {
     	_xenServerGuestOsMap.put("Windows Vista (32-bit)", "Windows Vista (32-bit)");
     	_xenServerGuestOsMap.put("Windows XP SP2 (32-bit)", "Windows XP SP2 (32-bit)");
     	_xenServerGuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
-    	_xenServerGuestOsMap.put("Other install media", "Other install media");
+    	_xenServerGuestOsMap.put("Other Linux (32-bit)", "Other install media");
+    	_xenServerGuestOsMap.put("Other Linux (64-bit)", "Other install media");
     	_xenServerGuestOsMap.put("Other PV (32-bit)", "CentOS 5.4 (32-bit)");
     	_xenServerGuestOsMap.put("Other PV (64-bit)", "CentOS 5.4 (64-bit)");
     }
@@ -247,7 +249,8 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
         _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
         _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
-        _xenServer56FP1GuestOsMap.put("Other install media", "Other install media");
+        _xenServer56FP1GuestOsMap.put("Other Linux (32-bit)", "Other install media");
+        _xenServer56FP1GuestOsMap.put("Other Linux (64-bit)", "Other install media");
         _xenServer56FP1GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
         _xenServer56FP1GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
@@ -339,7 +342,8 @@ public class CitrixHelper {
         _xenServer60GuestOsMap.put("Ubuntu 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit)");
         _xenServer60GuestOsMap.put("Ubuntu 10.10 (32-bit)", "Ubuntu Maverick Meerkat 10.10 (32-bit) (experimental)");
         _xenServer60GuestOsMap.put("Ubuntu 10.10 (64-bit)", "Ubuntu Maverick Meerkat 10.10 (64-bit) (experimental)");
-        _xenServer60GuestOsMap.put("Other install media", "Other install media");
+        _xenServer60GuestOsMap.put("Other Linux (32-bit)", "Other install media");
+        _xenServer60GuestOsMap.put("Other Linux (64-bit)", "Other install media");
         _xenServer60GuestOsMap.put("Other PV (32-bit)", "CentOS 5 (32-bit)");
         _xenServer60GuestOsMap.put("Other PV (64-bit)", "CentOS 5 (64-bit)");
     }
