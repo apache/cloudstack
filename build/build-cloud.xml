@@ -165,6 +165,9 @@
     <fileset dir="${target.dir}">
       <include name="**/*.jar" />
     </fileset>
+    <fileset dir="${target.dir}/jar">
+        <include name="**/*.jar" />
+    </fileset>
   </path>
 
   <path id="test.classpath">

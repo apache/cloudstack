@@ -311,24 +311,19 @@ The Cloud.com test package contains a suite of automated tests
 that the very much appreciated QA team at Cloud.com constantly
 uses to help increase the quality of the Cloud.com Stack.
 
+%package usage
+Summary:   Cloud.com usage monitor
+Obsoletes: vmops-usage < %{version}-%{release}
+Requires: java >= 1.6.0
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-premium = %{version}, %{name}-daemonize = %{version}
+Requires: %{name}-setup = %{version}
+Requires: %{name}-client = %{version}
+License:   CSL 1.1
+Group:     System Environment/Libraries
+%description usage
+The Cloud.com usage monitor provides usage accounting across the entire cloud for
+cloud operators to charge based on usage parameters.
 
-#%if %{_premium}
-#
-#
-#%package usage
-#Summary:   Cloud.com usage monitor
-#Obsoletes: vmops-usage < %{version}-%{release}
-#Requires: java >= 1.6.0
-#Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-premium = %{version}, %{name}-daemonize = %{version}
-#Requires: %{name}-setup = %{version}
-#Requires: %{name}-client = %{version}
-#License:   CSL 1.1
-#Group:     System Environment/Libraries
-#%description usage
-#The Cloud.com usage monitor provides usage accounting across the entire cloud for
-#cloud operators to charge based on usage parameters.
-#
-#%endif
 
 %prep
 
@@ -390,35 +385,28 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
 fi
 
+%preun usage
+if [ "$1" == "0" ] ; then
+    /sbin/chkconfig --del %{name}-usage  > /dev/null 2>&1 || true
+    /sbin/service %{name}-usage stop > /dev/null 2>&1 || true
+fi
 
+%pre usage
+id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
+     -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
+# user harcoded here, also hardcoded on wscript
 
-#%if %{_premium}
-#
-#%preun usage
-#if [ "$1" == "0" ] ; then
-#    /sbin/chkconfig --del %{name}-usage  > /dev/null 2>&1 || true
-#    /sbin/service %{name}-usage stop > /dev/null 2>&1 || true
-#fi
-#
-#%pre usage
-#id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
-#     -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
-## user harcoded here, also hardcoded on wscript
-#
-#%post usage
-#if [ "$1" == "1" ] ; then
-#    /sbin/chkconfig --add %{name}-usage > /dev/null 2>&1 || true
-#    /sbin/chkconfig --level 345 %{name}-usage on > /dev/null 2>&1 || true
-#else
-#    /sbin/service %{name}-usage condrestart >/dev/null 2>&1 || true
-#fi
-#
-#%endif
+%post usage
+if [ "$1" == "1" ] ; then
+    /sbin/chkconfig --add %{name}-usage > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 %{name}-usage on > /dev/null 2>&1 || true
+else
+    /sbin/service %{name}-usage condrestart >/dev/null 2>&1 || true
+fi
 
 %pre agent-scripts
 id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
-
 
 %preun agent
 if [ "$1" == "0" ] ; then
@@ -610,20 +598,15 @@ fi
 %{_libdir}/%{name}/test/*
 %config(noreplace) %{_sysconfdir}/%{name}/test/*
 
-#%if %{_premium}
-#
-#
-#%files usage
-#%defattr(0644,root,root,0775)
+%files usage
+%defattr(0644,root,root,0775)
 #%{_javadir}/%{name}-usage.jar
-#%attr(0755,root,root) %{_initrddir}/%{name}-usage
-#%attr(0755,root,root) %{_libexecdir}/usage-runner
+%attr(0755,root,root) %{_initrddir}/%{name}-usage
+%attr(0755,root,root) %{_libexecdir}/usage-runner
 #%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
 #%{_sysconfdir}/%{name}/usage/usage-components.xml
 #%config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 #%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
-#
-#%endif
 
 %changelog
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
