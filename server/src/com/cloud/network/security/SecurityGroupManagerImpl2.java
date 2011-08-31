@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.manager.Commands;
@@ -32,6 +33,7 @@ import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachine.State;
 
 /**
@@ -39,18 +41,9 @@ import com.cloud.vm.VirtualMachine.State;
  *
  */
 @Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
-public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
-    /*private final String GET_ALLOWED_IPS_QUERY = 
-        "select CONCAT(nics.ip4_address, '/32') from nics  INNER JOIN " +
-    		"(select vm_map_2.instance_id from " +
-    		      "(select security_ingress_rule.* from security_ingress_rule INNER JOIN " +
-    		      " security_group_vm_map  ON security_ingress_rule.security_group_id=security_group_vm_map.security_group_id " +
-    		      " where security_group_vm_map.instance_id=?) AS ingress_rule_for_vm INNER JOIN " +
-    		      " security_group_vm_map AS vm_map_2 ON vm_map_2.security_group_id = ingress_rule_for_vm.allowed_network_id) AS instance " +
-    		 " ON nics.instance_id=instance.instance_id where nics.default_nic=1;";*/
-    
+public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();
-    
+    SecurityManagerMBeanImpl _mBean;
     
     WorkerThread[] _workers;
 
@@ -104,6 +97,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             }
         }
         int newJobs = _workQueue.submitWorkForVms(workItems);
+        _mBean.logScheduledDetails(workItems);
         p.stop();
         if (s_logger.isTraceEnabled()){
             s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
@@ -111,6 +105,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         }
     }
 
+   
+    
 
     @Override
     public boolean start() {
@@ -139,6 +135,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                     }
                     work.setLogsequenceNumber(rulesetLog.getLogsequence());
                     sendRulesetUpdates(work);
+                    _mBean.logUpdateDetails(work.getInstanceId(), work.getLogsequenceNumber());
                 }catch (Exception e) {
                     s_logger.error("Problem during SG work " + work, e);
                     work.setStep(Step.Error);
@@ -233,6 +230,24 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         }
 
         return allowed;
+    }
+
+ 
+    public int getQueueSize() {
+        return _workQueue.size();
+    }
+
+   
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _mBean = new SecurityManagerMBeanImpl(this);
+        try {
+            JmxUtil.registerMBean("SecurityGroupManager", "SecurityGroupManagerImpl2", _mBean);
+        } catch (Exception e){
+            s_logger.error("Failed to register MBean", e);
+        }
+        return super.configure(name, params);
     }
 
 }
