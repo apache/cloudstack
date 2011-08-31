@@ -216,12 +216,16 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		/* set to false so each time ModifyStoragePoolCommand will re-setup heartbeat*/
 		_isHeartBeat = false;
 		
+		/*
 		try {
 			_canBridgeFirewall = canBridgeFirewall();
 		} catch (XmlRpcException e) {
 			s_logger.error("Failed to detect whether the host supports security groups.", e);
 			_canBridgeFirewall = false;
 		}
+		*/
+		
+		_canBridgeFirewall = false;
 		
 		s_logger.debug(_canBridgeFirewall ? "OVM host supports security groups." : "OVM host doesn't support security groups.");
 		

@@ -23,6 +23,7 @@ HEARTBEAT_TIMESTAMP_FORMAT='<timestamp>%s</timestamp>'
 HEARTBEAT_TIMESTAMP_PATTERN='(\<timestamp\>\d+.\d+<\/timestamp\>)'
 HEARTBEAT_DIR='heart_beat'
 ETC_HOSTS='/etc/hosts'
+HOSTNAME_FILE='/etc/sysconfig/network'
 
 logger = OvmLogger('OvmCommon')
 
