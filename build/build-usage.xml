@@ -8,7 +8,6 @@
   <property name="oss.build.dir" location="${base.dir}/build"/>
   <property name="usage.jar" value="cloud-usage.jar" />
   <dirname property="proprietary.dir" file="${ant.file.Cloud Stack Usage Server}/../"/>
-  <property name="usage.build.dir" location="${proprietary.dir}/build"/>
 
   <import file="${oss.build.dir}/build-cloud.xml" optional="false"/>
   <property name="usage.dir" location="${base.dir}/usage" />
@@ -16,7 +15,7 @@
 
 <!-- ===================== Usage.Jar ===================== -->
   <path id="usage.classpath">
-    <path refid="thirdparty.classpath" /> 
+    <path refid="deps.classpath" /> 
     <path refid="dist.classpath" /> 
   </path>
   <target name="compile-usage" depends="-init, compile-utils, compile-core, compile-server" description="Compile the usage server">
@@ -37,13 +36,6 @@
         <include name="${usage.jar}" />
       </fileset>
     </copy>
-  </target>
-
-  <target name="run-usage">
-      <echo message="Run usage server ${usage.build.dir}/usage-runner" />
-      <exec dir="${usage.build.dir}" executable="bash">
-          <arg value="usage-runner" />
-      </exec>
   </target>
 
 </project>
