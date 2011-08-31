@@ -8,5 +8,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/server"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

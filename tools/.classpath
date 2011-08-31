@@ -30,5 +30,7 @@
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/xml-apis.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="junit/junit-4.8.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="tooljars/cloud-selenium-java-client-driver.jar"/>
+	<classpathentry exported="true" kind="lib" path="tooljars/cloud-selenium-server.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
