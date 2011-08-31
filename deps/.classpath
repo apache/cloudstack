@@ -52,7 +52,7 @@
 	<classpathentry exported="true" kind="lib" path="cloud-commons-dbcp-1.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-pool-1.5.6.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-google-gson-1.7.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-httpclient-4.1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-commons-httpclient-3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-netscaler.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
