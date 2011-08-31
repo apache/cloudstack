@@ -62,14 +62,3 @@ CREATE TABLE IF NOT exists `cloud`.`elastic_lb_vm_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 UPDATE `cloud`.`network_offerings` SET lb_service=1 where unique_name='System-Guest-Network';
-
-UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-xenserver-2.2.10';
-UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-kvm-2.2.10';
-UPDATE `cloud`.`vm_template` SET type='SYSTEM' WHERE name='systemvm-vSphere-2.2.10';
-
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.10' AND removed IS NULL) where vm_template_id=1;
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-kvm-2.2.10' AND removed IS NULL) where vm_template_id=3;
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-vSphere-2.2.10' AND removed IS NULL) where vm_template_id=8;
-
--- Update system Vms using systemvm-xenserver-2.2.4 template;
-UPDATE vm_instance SET vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.10' AND removed IS NULL) where vm_template_id=(SELECT id FROM vm_template WHERE name='systemvm-xenserver-2.2.4' AND removed IS NULL);
