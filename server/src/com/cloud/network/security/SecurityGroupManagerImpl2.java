@@ -31,6 +31,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Profiler;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 /**
@@ -98,6 +99,9 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         int updated = 0;
         if (updateSeqno) {
             updated = _rulesetLogDao.createOrUpdate(workItems);
+            if (updated < workItems.size()) {
+                throw new CloudRuntimeException("Failed to create ruleset log entries");
+            }
         }
         int newJobs = _workQueue.submitWorkForVms(workItems);
         p.stop();

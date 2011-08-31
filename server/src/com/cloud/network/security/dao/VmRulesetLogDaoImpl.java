@@ -88,7 +88,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
     private int executeWithRetryOnDeadlock(Transaction txn, String pstmt,  List<Long> vmIds) throws SQLException {
 
         int numUpdated = 0;
-        final int maxTries = 2;
+        final int maxTries = 3;
         for (int i=0; i < maxTries; i++) {
             try {
                 PreparedStatement stmtInsert = txn.prepareAutoCloseStatement(pstmt);
@@ -99,8 +99,15 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                 numUpdated = stmtInsert.executeUpdate();
                 i = maxTries;
             } catch (SQLTransactionRollbackException e1) {
-                if (i < maxTries-1)
-                    s_logger.debug("Caught a deadlock exception while inserting security group rule log, retrying");
+                if (i < maxTries-1) {
+                    int delayMs =  (i+1)*1000;
+                    s_logger.debug("Caught a deadlock exception while inserting security group rule log, retrying in " + delayMs);
+                    try {
+                        Thread.sleep(delayMs);
+                    } catch(InterruptedException ie) {
+                        
+                    }
+                }
                 else 
                     s_logger.warn("Caught another deadlock exception while retrying inserting security group rule log, giving up");
 
@@ -134,7 +141,8 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("Inserted or updated " + numUpdated + " rows");
                         }
-                        count += stmtSize;
+                        if (numUpdated > 0)
+                            count += stmtSize;
                     }
                     remaining = remaining - numStmts * stmtSize;
                 }
