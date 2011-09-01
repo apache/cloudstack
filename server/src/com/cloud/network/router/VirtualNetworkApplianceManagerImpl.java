@@ -1063,14 +1063,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         for (DomainRouterVO router : routers) {
             boolean skip = false;
-            if (router.getHostId() != null) {
+            State state = router.getState();
+            if (router.getHostId() != null && state != State.Running) {
                 HostVO host = _hostDao.findById(router.getHostId());
                 if (host == null || host.getStatus() != Status.Up) {
                     skip = true;
                 }
             }
             if (!skip) {
-                State state = router.getState();
                 if (state != State.Running) {
                     router = startVirtualRouter(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
                 }
@@ -1662,6 +1662,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
         boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
 
+        List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
         for (DomainRouterVO router : routers) {
             if (router.getState() != State.Running) {
                 s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is not in Running state");
@@ -1737,9 +1739,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 try {
                     _agentMgr.send(router.getHostId(), cmds);
+                } catch (AgentUnavailableException e){
+                    s_logger.warn("Unable to reach the agent " + router.getHostId(), e);
+                    disconnectedRouters.add(router);
+                    continue;
                 } catch (OperationTimedoutException e) {
-                    throw new AgentUnavailableException("Unable to reach the agent ", router.getHostId(), e);
+                    s_logger.warn("Connection timeout on host " + router.getHostId(), e);
+                    disconnectedRouters.add(router);
+                    continue;
                 }
+                connectedRouters.add(router);
 
                 Answer answer = cmds.getAnswer("dhcp");
                 if (!answer.getResult()) {
@@ -1771,6 +1780,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
            
             rets.add(router);
         }
+        
+        String msg = "Unable to add new VM into network on disconnected router ";
+        if (!connectedRouters.isEmpty()) {
+            // These disconnected ones are out of sync now, stop them for synchronization
+            stopDisconnectedRouters(disconnectedRouters, true, msg);
+        } else if (!disconnectedRouters.isEmpty()) {
+            for (VirtualRouter router : disconnectedRouters) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+                }
+            }
+            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+        }
+        
         return rets;
     }
 
@@ -1780,6 +1803,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
+    //FIXME add partial success and STOP state support
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users, List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
@@ -2143,6 +2167,31 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         return true;
     }
+    
+    protected void stopDisconnectedRouters(List<? extends VirtualRouter> routers, boolean force, String reason)
+    {
+        if (routers.isEmpty()) {
+            return;
+        }
+        for (VirtualRouter router : routers) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("About to stop the router " + router.getInstanceName() + " due to: " + reason);
+            }
+            String title = "Virtual router " + router.getInstanceName() + " would be stopped, due to " + reason;
+            String context =  "Virtual router (name: " + router.getInstanceName() + ", id: " + router.getId() + ") would be stopped, due to: " + reason;
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                    router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+            if (router.getIsRedundantRouter()) {
+                try {
+                    stopRouter(router.getId(), force);
+                } catch (ConcurrentOperationException e) { 
+                    s_logger.warn("Fail to stop router " + router.getInstanceName(), e);
+                } catch (ResourceUnavailableException e) {
+                    s_logger.warn("Fail to stop router " + router.getInstanceName(), e);
+                }
+            }
+        }
+    }
 
     @Override
     public boolean associateIP(Network network, List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
@@ -2151,23 +2200,48 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to assign ip addresses", DataCenter.class, network.getDataCenterId());
         }
 
+        List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
         boolean result = true;
+        String msg = "Unable to associate ip addresses on disconnected router ";
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 Commands cmds = new Commands(OnError.Continue);
                 // Have to resend all already associated ip addresses
                 createAssociateIPCommands(router, ipAddress, cmds, 0);
 
-                result = result && sendCommandsToRouter(router, cmds);
-            } else if (router.getState() != State.Stopped) {
+                try{
+                    result = sendCommandsToRouter(router, cmds);
+                    connectedRouters.add(router);
+                } catch (AgentUnavailableException e) {
+                    s_logger.warn(msg + router.getInstanceName(), e);
+                    disconnectedRouters.add(router);
+                }
+
+                //If rules fail to apply on one domR, no need to proceed with the rest
+                if (!result) {
+                    throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+                }
+
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() +
+                        ", so not sending associate ip address commands to the backend");
+            } else {
                 s_logger.warn("Unable to associate ip addresses, virtual router is not in the right state " + router.getState());
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
             }
+        }
 
-            //If rules fail to apply on one domR, no need to proceed with the rest
-            if (!result) {
-                throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+        if (!connectedRouters.isEmpty()) {
+            // These disconnected ones are out of sync now, stop them for synchronization
+            stopDisconnectedRouters(disconnectedRouters, true, msg);
+        } else if (!disconnectedRouters.isEmpty()) {
+            for (VirtualRouter router : disconnectedRouters) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+                }
             }
+            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
         }
         return result;
     }
@@ -2179,44 +2253,67 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to apply firewall rules", DataCenter.class, network.getDataCenterId());
         }
 
+        List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
+        String msg = "Unable to apply firewall rules on disconnected router ";
         boolean result = true;
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 if (rules != null && !rules.isEmpty()) {
-                    if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                        // for load balancer we have to resend all lb rules for the network
-                        List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
-                        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                        for (LoadBalancerVO lb : lbs) {
-                            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                            lbRules.add(loadBalancing);
+                    try {
+                        if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
+                            // for load balancer we have to resend all lb rules for the network
+                            List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
+                            List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                            for (LoadBalancerVO lb : lbs) {
+                                List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                                lbRules.add(loadBalancing);
+                            }
+                            result = result && applyLBRules(router, lbRules);
+                        } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
+                            result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);
+                        } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {
+                            result = result && applyStaticNatRules(router, (List<StaticNatRule>) rules);
+                        } else if (rules.get(0).getPurpose() == Purpose.Firewall) {
+                            result = result && applyFirewallRules(router, (List<FirewallRule>) rules);
+                        } else {
+                            s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
+                            result = false;
                         }
-                        result = result && applyLBRules(router, lbRules);
-                    } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
-                        result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);
-                    } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {
-                        result = result && applyStaticNatRules(router, (List<StaticNatRule>) rules);
-                    } else if (rules.get(0).getPurpose() == Purpose.Firewall) {
-                        result = result && applyFirewallRules(router, (List<FirewallRule>) rules);
-                    }else {
-                        s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
-                        result = false;
+                        connectedRouters.add(router);
+                    } catch (AgentUnavailableException e) {
+                        s_logger.warn(msg + router.getInstanceName(), e);
+                        disconnectedRouters.add(router);
                     }
                 }
-                
-                //If rules fail to apply on one domR, no need to proceed with the rest
+
+                //If rules fail to apply on one domR and not due to disconnection, no need to proceed with the rest
                 if (!result) {
                     throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
                 }
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() +
+                        ", so not sending apply firewall rules commands to the backend");
             } else {
                 s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
                 throw new ResourceUnavailableException("Unable to apply firewall rules, virtual router is not in the right state", VirtualRouter.class, router.getId());
             }
         }
-        return result;
+        
+        if (!connectedRouters.isEmpty()) {
+            // These disconnected ones are out of sync now, stop them for synchronization
+            stopDisconnectedRouters(disconnectedRouters, true, msg);
+        } else if (!disconnectedRouters.isEmpty()) {
+            for (VirtualRouter router : disconnectedRouters) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+                }
+            }
+            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+        }
+        
+        return true;
     }
 
     protected boolean applyLBRules(VirtualRouter router, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
@@ -2291,26 +2388,47 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to create static nat", DataCenter.class, network.getDataCenterId());
         }
 
+        List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
         boolean result = true;
+        String msg = "Unable to apply static nat on disconnected router ";
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 s_logger.debug("Applying " + rules.size() + " static nat in network " + network);
-                result = applyStaticNat(router, rules);
-                
-                //If rules fail to apply on one domR, no need to proceed with the rest
+                try {
+                    result = applyStaticNat(router, rules);
+                    connectedRouters.add(router);
+                } catch (AgentUnavailableException e) {
+                    s_logger.warn(msg + router.getInstanceName(), e);
+                    disconnectedRouters.add(router);
+                }
+
+                //If rules fail to apply on one domR and not due to disconnection, no need to proceed with the rest
                 if (!result) {
                     throw new ResourceUnavailableException("Unable to apply static nat on router ", VirtualRouter.class, router.getId());
                 }
-                
+
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending apply static nat commands to the backend");
             } else {
                 s_logger.warn("Unable to apply static nat, virtual router is not in the right state " + router.getState());
                 throw new ResourceUnavailableException("Unable to apply static nat, virtual router is not in the right state", VirtualRouter.class, router.getId());
             }
         }
         
-        return result;
+        if (!connectedRouters.isEmpty()) {
+            // These disconnected ones are out of sync now, stop them for synchronization
+            stopDisconnectedRouters(disconnectedRouters, true, msg);
+        } else if (!disconnectedRouters.isEmpty()) {
+            for (VirtualRouter router : disconnectedRouters) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+                }
+            }
+            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+        }
+        
+        return true;
     }
     
     
