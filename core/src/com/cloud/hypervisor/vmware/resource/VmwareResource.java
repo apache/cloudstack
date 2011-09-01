@@ -1269,14 +1269,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualDevice nic;
-            int nicDeviceNumber = -1;
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
                 
-                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), mgr.getGuestNicDeviceType(), networkInfo.second(), nicTo.getMac(), nicDeviceNumber, i + 1, true, true);
-                nicDeviceNumber = nic.getUnitNumber() + 1;
+                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), mgr.getGuestNicDeviceType(), networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 deviceConfigSpecArray[i].setDevice(nic);
                 deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.add);
@@ -3179,7 +3177,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("VM " + vm + " is now missing from host report but we detected that it might be migrated to other host by vCenter");
                         }
-                        _vms.remove(vm);
+                        
+                        if(oldState != State.Starting && oldState != State.Migrating) {
+                        	s_logger.debug("VM " + vm + " is now missing from host report and VM is not at starting state, remove it from host VM-sync map");
+                        	_vms.remove(vm);
+                        } else {
+                        	s_logger.debug("VM " + vm + " is missing from host report, but we will ignore VM " + vm + " in transition state " + oldState);
+                        }
                         continue;
                     }
 
