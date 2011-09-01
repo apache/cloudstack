@@ -3813,7 +3813,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public PingCommand getCurrentStatus(long id) {
         try {
-            Connection conn = getConnection();
             if (!pingXenServer()) {
                 Thread.sleep(1000);
                 if (!pingXenServer()) {
@@ -3821,6 +3820,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     return null;
                 }
             }
+            Connection conn = getConnection();
             HashMap<String, State> newStates = deltaSync(conn);
             if (newStates == null) {
                 s_logger.warn("Unable to get current status from sync");
