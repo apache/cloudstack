@@ -61,6 +61,26 @@ class cloudManagementConfig(serviceCfgBase):
             
                 cfo = configFileOps("/etc/cloud/management/tomcat6.conf", self)
                 cfo.add_lines("JAVA_OPTS+=\" -Djavax.net.ssl.trustStore=%s \""%keyPath)
+        elif self.syscfg.env.svrMode == "HttpsServer":
+            if not os.path.exists("/etc/cloud/management/server-ssl.xml") or not os.path.exists("/etc/cloud/management/tomcat6-ssl.conf"):
+                raise CloudRuntimeException("Cannot find /etc/cloud/management/server-ssl.xml or /etc/cloud/management/tomcat6-ssl.conf, https enables failed")
+            if os.path.exists("/etc/cloud/management/server.xml"):
+                bash("rm -f /etc/cloud/management/server.xml")
+            if os.path.exists("/etc/cloud/management/tomcat6.conf"):
+                bash("rm -f /etc/cloud/management/tomcat6.conf")
+            bash("ln -s /etc/cloud/management/server-ssl.xml /etc/cloud/management/server.xml")
+            bash("ln -s /etc/cloud/management/tomcat6-ssl.conf /etc/cloud/management/tomcat6.conf")
+            if not bash("iptables-save |grep PREROUTING | grep 8443").isSuccess():
+                bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443")
+        else:
+            if not os.path.exists("/etc/cloud/management/server-nonssl.xml") or not os.path.exists("/etc/cloud/management/tomcat6-nonssl.conf"):
+                raise CloudRuntimeException("Cannot find /etc/cloud/management/server-nonssl.xml or /etc/cloud/management/tomcat6-nonssl.conf, https enables failed")
+            if os.path.exists("/etc/cloud/management/server.xml"):
+                bash("rm -f /etc/cloud/management/server.xml")
+            if os.path.exists("/etc/cloud/management/tomcat6.conf"):
+                bash("rm -f /etc/cloud/management/tomcat6.conf")
+            bash("ln -s /etc/cloud/management/server-nonssl.xml /etc/cloud/management/server.xml")
+            bash("ln -s /etc/cloud/management/tomcat6-nonssl.conf /etc/cloud/management/tomcat6.conf")
         
         try:
             self.syscfg.svo.disableService("tomcat6")

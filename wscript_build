@@ -211,6 +211,8 @@ def build_dirs_symlinks ():
 			("${AGENTLIBDIR}/images", '${CPLIBDIR}/images'),
 			("${AGENTLIBDIR}/js", '${CPLIBDIR}/js'),
 			("${AGENTLIBDIR}/ui", '${CPLIBDIR}/ui'),
+            ("${MSCONF}/server.xml", '${MSCONF}/server-nonssl.xml'),
+            ("${MSCONF}/tomcat6.conf", '${MSCONF}/tomcat6-nonssl.conf'),
 		]
 		
 		for lnk,dst in symlinks: bld.symlink_as(lnk,Utils.subst_vars(dst,bld.env))

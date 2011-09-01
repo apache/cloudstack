@@ -4,11 +4,18 @@ from cloudutils.utilities import initLoging
 from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
 from cloudutils.globalEnv import globalEnv
 from cloudutils.serviceConfigServer import cloudManagementConfig
+from optparse import OptionParser
 if __name__ == '__main__':
     initLoging("/var/log/cloud/setupManagement.log")
     glbEnv = globalEnv()
     
-    glbEnv.mode = "Server"
+    parser = OptionParser()
+    parser.add_option("--https", action="store_true", dest="https", help="Enable HTTPs connection of management server")
+    (options, args) = parser.parse_args()
+    if options.https:
+        glbEnv.mode = "HttpsServer"
+    else:
+        glbEnv.mode = "Server"
     
     print "Starting to configure CloudStack Management Server:"
     syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
