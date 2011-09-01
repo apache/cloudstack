@@ -93,10 +93,12 @@ public class VmwareHelper {
 		nic.setAddressType("Manual");
 		nic.setConnectable(connectInfo);
 		nic.setMacAddress(macAddress);
+	
+/*		
 		nic.setControllerKey(vmMo.getPCIDeviceControllerKey());
-		
 		if(deviceNumber < 0)
 			deviceNumber = vmMo.getNextPCIDeviceNumber();
+*/
 		nic.setUnitNumber(deviceNumber);
 		nic.setKey(-contextNumber);
 		return nic;
@@ -105,9 +107,6 @@ public class VmwareHelper {
 	// vmdkDatastorePath: [datastore name] vmdkFilePath
 	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, 
 		int sizeInMb, ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
-		
-		if(controllerKey < 0)
-			controllerKey = vmMo.getIDEDeviceControllerKey();
 		
 		VirtualDisk disk = new VirtualDisk();
 
@@ -119,9 +118,12 @@ public class VmwareHelper {
         backingInfo.setFileName(vmdkDatastorePath);
         disk.setBacking(backingInfo);
 
+		if(controllerKey < 0)
+			controllerKey = vmMo.getIDEDeviceControllerKey();
         if(deviceNumber < 0)
         	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
 		disk.setControllerKey(controllerKey);
+		
 	    disk.setKey(-contextNumber);
 	    disk.setUnitNumber(deviceNumber);
 	    disk.setCapacityInKB(sizeInMb*1024);
@@ -187,9 +189,9 @@ public class VmwareHelper {
 		if(controllerKey < 0)
 			controllerKey = vmMo.getIDEDeviceControllerKey();
 		disk.setControllerKey(controllerKey);
-		
 		if(deviceNumber < 0)
 			deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+		
 	    disk.setKey(-contextNumber);
 	    disk.setUnitNumber(deviceNumber);
 	    disk.setCapacityInKB(sizeInMb*1024);
@@ -208,9 +210,6 @@ public class VmwareHelper {
 		assert(vmdkDatastorePathChain != null);
 		assert(vmdkDatastorePathChain.length >= 1);
 	
-		if(controllerKey < 0)
-			controllerKey = vmMo.getIDEDeviceControllerKey();
-		
 		VirtualDisk disk = new VirtualDisk();
 		
 		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
@@ -227,6 +226,8 @@ public class VmwareHelper {
         
         disk.setBacking(backingInfo);
 
+		if(controllerKey < 0)
+			controllerKey = vmMo.getIDEDeviceControllerKey();
         if(deviceNumber < 0)
         	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
 		
@@ -268,11 +269,12 @@ public class VmwareHelper {
 		if(cdRom == null) {
 			newCdRom = true;
 			cdRom = new VirtualCdrom();
+			
 			assert(vmMo.getIDEDeviceControllerKey() >= 0);
 			cdRom.setControllerKey(vmMo.getIDEDeviceControllerKey());
-			
 			if(deviceNumber < 0)
 				deviceNumber = vmMo.getNextIDEDeviceNumber();
+
 			cdRom.setUnitNumber(deviceNumber);            
 			cdRom.setKey(-contextNumber);
 		}
