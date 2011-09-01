@@ -1024,7 +1024,7 @@ def network_rules(session, args):
         pass
    
     vmchain = chain_name(vm_name)
-    
+    reason = 'seqno_change_or_sig_change'
     [reprogramDefault, reprogramChain, rewriteLog] = \
              check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
     
