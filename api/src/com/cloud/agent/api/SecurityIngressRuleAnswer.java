@@ -18,8 +18,16 @@
 package com.cloud.agent.api;
 
 public class SecurityIngressRuleAnswer extends Answer {
+    public static enum FailureReason {
+        NONE,
+        UNKNOWN,
+        PROGRAMMING_FAILED,
+        CANNOT_BRIDGE_FIREWALL
+    }
     Long logSequenceNumber = null;
     Long vmId = null;
+    FailureReason reason = FailureReason.NONE;
+   
     
     protected SecurityIngressRuleAnswer() {
     }
@@ -34,6 +42,14 @@ public class SecurityIngressRuleAnswer extends Answer {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
+        reason = FailureReason.PROGRAMMING_FAILED;
+    }
+    
+    public SecurityIngressRuleAnswer(SecurityIngressRulesCmd cmd, boolean result, String detail, FailureReason r) {
+        super(cmd, result, detail);
+        this.logSequenceNumber = cmd.getSeqNum();
+        this.vmId = cmd.getVmId();
+        reason = r;
     }
 
 	public Long getLogSequenceNumber() {
@@ -43,5 +59,13 @@ public class SecurityIngressRuleAnswer extends Answer {
 	public Long getVmId() {
 		return vmId;
 	}
+
+    public FailureReason getReason() {
+        return reason;
+    }
+
+    public void setReason(FailureReason reason) {
+        this.reason = reason;
+    }
 
 }
