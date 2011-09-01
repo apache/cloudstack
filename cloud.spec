@@ -469,12 +469,15 @@ fi
 
 %files deps
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-commons-codec-1.4.jar
+%{_javadir}/%{name}-commons-codec-1.5.jar
+%{_javadir}/%{name}-commons-dbcp-1.4.jar
+%{_javadir}/%{name}-commons-pool-1.5.6.jar
+%{_javadir}/%{name}-google-gson-1.7.1.jar
+%{_javadir}/%{name}-netscaler.jar
 %{_javadir}/%{name}-log4j-extras.jar
 %{_javadir}/%{name}-backport-util-concurrent-3.0.jar
 %{_javadir}/%{name}-ehcache.jar
 %{_javadir}/%{name}-email.jar
-%{_javadir}/%{name}-gson.jar
 %{_javadir}/%{name}-httpcore-4.0.jar
 %{_javadir}/%{name}-libvirt-0.4.5.jar
 %{_javadir}/%{name}-log4j.jar
