@@ -93,8 +93,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         workItems.addAll(affectedVms);
         workItems.removeAll(_disabledVms);
         
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" + _workQueue.size());
         }
 
         Profiler p = new Profiler();
@@ -109,8 +109,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         int newJobs = _workQueue.submitWorkForVms(workItems);
         _mBean.logScheduledDetails(workItems);
         p.stop();
-        if (s_logger.isTraceEnabled()){
-            s_logger.trace("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
+        if (s_logger.isDebugEnabled()){
+            s_logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
                            newJobs + " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
         }
     }
@@ -173,8 +173,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                         vm.getPrivateMacAddress(), vm.getId(), null, 
                         work.getLogsequenceNumber(), rules);
                 cmd.setMsId(_serverId);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + 
                                    ": num rules=" + cmd.getRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" + cmd.getSignature());
                 }
                 Commands cmds = new Commands(cmd);
@@ -188,11 +188,11 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                 }
             }
         } else {
-            if (s_logger.isTraceEnabled()) {
+            if (s_logger.isDebugEnabled()) {
                 if (vm != null)
-                    s_logger.trace("No rules sent to vm " + vm + "state=" + vm.getState());
+                    s_logger.debug("No rules sent to vm " + vm + "state=" + vm.getState());
                 else
-                    s_logger.trace("Could not find vm: No rules sent to vm " + userVmId );
+                    s_logger.debug("Could not find vm: No rules sent to vm " + userVmId );
             }
         }
     }

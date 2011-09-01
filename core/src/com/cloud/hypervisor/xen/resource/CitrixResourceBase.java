@@ -4819,8 +4819,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         if (!_canBridgeFirewall) {
-            s_logger.info("Host " + _host.ip + " cannot do bridge firewalling");
-            return new SecurityIngressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
+            s_logger.warn("Host " + _host.ip + " cannot do bridge firewalling");
+            return new SecurityIngressRuleAnswer(cmd, false, 
+                                                 "Host " + _host.ip + " cannot do bridge firewalling",
+                                                 SecurityIngressRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
       
         String result = callHostPlugin(conn, "vmops", "network_rules",

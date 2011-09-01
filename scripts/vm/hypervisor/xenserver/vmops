@@ -453,7 +453,6 @@ def ipset(ipsetname, proto, start, end, ips):
 def destroy_network_rules_for_vm(session, args):
     vm_name = args.pop('vmName')
     vmchain = chain_name(vm_name)
-    vmchain_egress = chain_name(vm_name) + "-egress"
     vmchain_default = chain_name_def(vm_name)
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
@@ -473,11 +472,6 @@ def destroy_network_rules_for_vm(session, args):
         util.SMlog("Ignoring failure to delete  chain " + vmchain)
         
    
-    try:
-        util.pread2(['iptables', '-F', vmchain_egress])
-        util.pread2(['iptables', '-X', vmchain_egress])
-    except:
-        util.SMlog("Ignoring failure to delete  chain " + vmchain_egress)
     
     remove_rule_log_for_vm(vm_name)
     
@@ -654,7 +648,6 @@ def default_network_rules(session, args):
 
      
     vmchain =  chain_name(vm_name)
-    vmchain_egress =  chain_name(vm_name) +"-egress"
     vmchain_default = chain_name_def(vm_name)
     
     destroy_ebtables_rules(vmchain)
@@ -664,11 +657,6 @@ def default_network_rules(session, args):
         util.pread2(['iptables', '-N', vmchain])
     except:
         util.pread2(['iptables', '-F', vmchain])
-    
-    try:
-        util.pread2(['iptables', '-N', vmchain_egress])
-    except:
-        util.pread2(['iptables', '-F', vmchain_egress])
         
     try:
         util.pread2(['iptables', '-N', vmchain_default])
@@ -687,7 +675,7 @@ def default_network_rules(session, args):
 
         #don't let vm spoof its ip address
         for v in vifs:
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
         util.pread2(['iptables', '-A', vmchain_default, '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
@@ -1011,7 +999,6 @@ def network_rules(session, args):
     vm_name = args.get('vmName')
     vm_ip = args.get('vmIP')
     vm_id = args.get('vmID')
-    type = args.get('type')
     signature = args.pop('signature')
     seqno = args.pop('seqno')
     try:
@@ -1036,12 +1023,9 @@ def network_rules(session, args):
         vifs.append(tap)
     except:
         pass
-    
-    if type == 'egress':
-        vmchain = chain_name(vm_name) + "-egress"
-    else:
-        vmchain = chain_name(vm_name)
-    
+   
+    vmchain = chain_name(vm_name)
+    reason = 'seqno_change_or_sig_change'
     [reprogramDefault, reprogramChain, rewriteLog] = \
              check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
     
@@ -1142,7 +1126,6 @@ def checkRouter(session, args):
     return txt
 
 if __name__ == "__main__":
-
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
