@@ -86,10 +86,10 @@ public class SecurityGroupListener implements Listener {
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Done);
 
                 } else {
-                    int deleted = _workDao.deleteWork(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber());
+                    _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Error);;
                     s_logger.debug("Failed to program rule " + ruleAnswer.toString() + " into host " + agentId 
                             +" due to " + ruleAnswer.getDetails()
-                            +" and deleted " + deleted + " jobs");
+                            +" and updated  jobs");
                     if (ruleAnswer.getReason() == FailureReason.CANNOT_BRIDGE_FIREWALL) {
                         s_logger.debug("Not retrying security group rules for vm " + ruleAnswer.getVmId() + " on failure since host " + agentId + " cannot do bridge firewalling");
                     } else if (ruleAnswer.getReason() == FailureReason.PROGRAMMING_FAILED){
