@@ -180,15 +180,18 @@ public enum Status {
         s_fsm.addTransition(Status.Disconnected, Event.WaitedTooLong, Status.Alert);
         s_fsm.addTransition(Status.Disconnected, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Disconnected, Event.HypervisorVersionChanged, Status.Disconnected);
+        s_fsm.addTransition(Status.Disconnected, Event.AgentDisconnected, Status.Disconnected);
         s_fsm.addTransition(Status.Down, Event.MaintenanceRequested, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.Down, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Down, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Down, Event.ManagementServerDown, Status.Down);
+        s_fsm.addTransition(Status.Down, Event.AgentDisconnected, Status.Down);
         s_fsm.addTransition(Status.Alert, Event.MaintenanceRequested, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.Alert, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Alert, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Alert, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Alert, Event.ManagementServerDown, Status.Alert);
+        s_fsm.addTransition(Status.Alert, Event.AgentDisconnected, Status.Alert);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceCompleted, Status.Connecting);
     }
