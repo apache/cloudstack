@@ -221,8 +221,25 @@ public class VirtualMachineMO extends BaseMO {
 		String result = _context.getServiceUtil().waitForTask(morTask);
 		if(result.equals("sucess")) {
 			_context.waitForTaskProgressDone(morTask);
+			
+			 // It seems that even if a power-off task is returned done, VM state may still not be marked,
+			// wait up to 5 seconds to make sure to avoid race conditioning for immediate following on operations
+			// that relies on a powered-off VM
+			long startTick = System.currentTimeMillis();
+			while(getPowerState() != VirtualMachinePowerState.poweredOff && System.currentTimeMillis() - startTick < 5000) {
+				try { 
+					Thread.sleep(1000);
+				} catch(InterruptedException e) {
+				}
+			}
 			return true;
 		} else {
+			 if(getPowerState() == VirtualMachinePowerState.poweredOff) {
+				 // to help deal with possible race-condition 
+				 s_logger.info("Current power-off task failed. However, VM has been switched to the state we are expecting for");
+				 return true;
+			 }
+			
         	s_logger.error("VMware powerOffVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
 		}
 		
