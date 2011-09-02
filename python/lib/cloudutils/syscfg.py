@@ -7,6 +7,8 @@ class sysConfigFactory:
             return sysConfigAgentFactory.getAgent(glbEnv)
         elif glbEnv.mode == "Server":
             return sysConfigServerFactory.getServer(glbEnv)
+        elif glbEnv.mode == "HttpsServer":
+            return sysConfigServerFactory.getServer(glbEnv)
         elif glbEnv.mode == "Db":
             return sysConfigDbFactory.getDb(glbEnv)
         else:
@@ -69,6 +71,9 @@ class sysConfig(object):
         return True
     
 class sysConfigAgent(sysConfig):
+    def __init__(self, env):
+        super(sysConfigServer, self).__init__(env)
+
     def check(self):
         if self.env.debug:
             return True

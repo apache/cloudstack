@@ -13,9 +13,9 @@ if __name__ == '__main__':
     parser.add_option("--https", action="store_true", dest="https", help="Enable HTTPs connection of management server")
     (options, args) = parser.parse_args()
     if options.https:
-        glbEnv.mode = "HttpsServer"
-    else:
-        glbEnv.mode = "Server"
+        glbEnv.svrMode = "HttpsServer"
+
+    glbEnv.mode = "Server"
     
     print "Starting to configure CloudStack Management Server:"
     syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
