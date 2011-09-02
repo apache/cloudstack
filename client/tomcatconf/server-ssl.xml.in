@@ -89,7 +89,8 @@
                />
     -->
 
-    <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true"
+    <!-- Listen on 6443 instead of 8443 because tomcat6 will change 8443 to a random one when CATALINA_HOME is not /usr/share/tomcat6 -->
+    <Connector port="6443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true"
                maxThreads="150" scheme="https" secure="true"
                clientAuth="false" sslProtocol="TLS" 
                keystoreType="JKS"
@@ -97,7 +98,7 @@
                keystorePass="vmops.com"/>
 
     <!-- Define an AJP 1.3 Connector on port 20400 -->
-    <Connector port="20400" protocol="AJP/1.3" redirectPort="8443" />
+    <Connector port="20400" protocol="AJP/1.3" redirectPort="6443" />
 
 
     <!-- An Engine represents the entry point (within Catalina) that processes
