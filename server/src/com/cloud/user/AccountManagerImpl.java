@@ -1069,11 +1069,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
             boolean allTemplatesDeleted = true;
             for (VMTemplateVO template : userTemplates) {
-                try {
-                    allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
-                } catch (Exception e) {
-                    s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
-                    allTemplatesDeleted = false;
+                if (template.getRemoved() == null) {
+                    try {
+                        allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
+                    } catch (Exception e) {
+                        s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
+                        allTemplatesDeleted = false;
+                    }
                 }
             }
 
