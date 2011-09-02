@@ -854,21 +854,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             s_logger.debug("checking if agent (" + hostId + ") is alive");
         }
 
-        try {
-            Request req = new Request(hostId, _nodeId, new CheckHealthCommand(), true);
-            req.setSequence(agent.getNextSequence());
-            Answer[] answers = agent.send(req, 50 * 1000);
-            if (answers != null && answers[0] != null && answers[0].getResult()) {
-                Status status = Status.Up;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
-                }
-                return status;
+        Answer answer = easySend(hostId, new CheckHealthCommand(), 50 * 1000);
+        if (answer != null && answer.getResult()) {
+            Status status = Status.Up;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
             }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug("Agent is unavailable so we move on. Error: " + e.getMessage());
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Timed Out " + e.getMessage());
+            return status;
         }
 
         return _haMgr.investigate(hostId);
