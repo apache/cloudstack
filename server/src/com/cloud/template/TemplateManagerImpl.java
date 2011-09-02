@@ -280,7 +280,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
         
-        if (!template.isExtractable()) {
+        if (!_accountMgr.isRootAdmin(caller.getType()) && !template.isExtractable()) {
             throw new InvalidParameterValueException("Unable to extract template id=" + templateId + " as it's not extractable");
         }
         
