@@ -620,6 +620,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
         String[] tags = nic.getTags();
         XsLocalNetwork network = getNativeNetworkForTraffic(conn, nic.getType(), tags != null && tags.length > 0 ? tags[0] : null);
+        if (network == null) {
+            s_logger.error("Network is not configured on the backend for nic " + nic.toString());
+            throw new CloudRuntimeException("Network for the backend is not configured correctly for network broadcast domain: " + nic.getBroadcastUri());
+        }
         if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
             return network.getNetwork();
         } else if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
