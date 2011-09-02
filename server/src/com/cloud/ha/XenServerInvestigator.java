@@ -56,7 +56,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
             if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != HypervisorType.XenServer) {
                 continue;
             }
-            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+            Answer answer = _agentMgr.easySend(neighbor.getId(), cmd, 50 * 1000);
             if (answer != null && answer.getResult()) {
                 CheckOnHostAnswer ans = (CheckOnHostAnswer)answer;
                 if (!ans.isDetermined()) {
