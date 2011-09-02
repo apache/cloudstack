@@ -487,7 +487,7 @@ def cleanup_rules_for_dead_vms():
 def cleanup_rules():
   try:
 
-    chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | awk '{print $1}' | cut -d':' -f2"
+    chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | grep -v '.*-egress' | awk '{print $1}' | cut -d':' -f2"
     chains = execute(chainscmd).split('\n')
     cleaned = 0
     cleanup = []
@@ -620,16 +620,25 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         if ips:    
             if protocol == 'all':
                 for ip in ips:
-                    execute("iptables -I " + vmchain + " -m state --state NEW -s " + ip + " -j ACCEPT")
+                    if ruletype == 'egress':
+                        execute("iptables -I " + vmchain + " -m state --state NEW -d " + ip + " -j ACCEPT")
+                    else:
+                        execute("iptables -I " + vmchain + " -m state --state NEW -s " + ip + " -j ACCEPT")
             elif protocol != 'icmp':
                 for ip in ips:
-                    execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -s " + ip + " -j ACCEPT")
+                    if ruletype == 'egress':
+                        execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -d " + ip + " -j ACCEPT")
+                    else:
+                        execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -s " + ip + " -j ACCEPT")
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
                     for ip in ips:
-                        execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -s " + ip + " -j ACCEPT")
+                        if ruletype == 'egress':
+                            execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -d " + ip + " -j ACCEPT")
+                        else:
+                            execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -s " + ip + " -j ACCEPT")
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
