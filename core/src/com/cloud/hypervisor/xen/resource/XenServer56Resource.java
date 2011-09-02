@@ -277,8 +277,8 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     protected CheckOnHostAnswer execute(CheckOnHostCommand cmd) {
-        Connection conn = getConnection();
         try {
+            Connection conn = getConnection();
             String result = callHostPluginPremium(conn, "check_heartbeat", "host", cmd.getHost().getGuid(), "interval",
                     Integer.toString(_heartbeatInterval * 2));
             if (result == null) {
