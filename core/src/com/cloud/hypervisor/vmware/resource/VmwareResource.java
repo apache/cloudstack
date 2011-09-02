@@ -3179,7 +3179,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                         
                         if(oldState != State.Starting && oldState != State.Migrating) {
-                        	s_logger.debug("VM " + vm + " is now missing from host report and VM is not at starting state, remove it from host VM-sync map");
+                            s_logger.debug("VM " + vm + " is now missing from host report and VM is not at starting/migrating state, remove it from host VM-sync map, oldState: " + oldState);
                         	_vms.remove(vm);
                         } else {
                         	s_logger.debug("VM " + vm + " is missing from host report, but we will ignore VM " + vm + " in transition state " + oldState);
