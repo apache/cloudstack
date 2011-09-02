@@ -57,7 +57,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
                 continue;
             }
             Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-            if (answer != null) {
+            if (answer != null && answer.getResult()) {
                 CheckOnHostAnswer ans = (CheckOnHostAnswer)answer;
                 if (!ans.isDetermined()) {
                     s_logger.debug("Host " + neighbor + " couldn't determine the status of " + agent);
