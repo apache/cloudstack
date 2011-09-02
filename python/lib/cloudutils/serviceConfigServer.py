@@ -70,8 +70,8 @@ class cloudManagementConfig(serviceCfgBase):
                 bash("rm -f /etc/cloud/management/tomcat6.conf")
             bash("ln -s /etc/cloud/management/server-ssl.xml /etc/cloud/management/server.xml")
             bash("ln -s /etc/cloud/management/tomcat6-ssl.conf /etc/cloud/management/tomcat6.conf")
-            if not bash("iptables-save |grep PREROUTING | grep 8443").isSuccess():
-                bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8443")
+            if not bash("iptables-save |grep PREROUTING | grep 6443").isSuccess():
+                bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 6443")
         else:
             if not os.path.exists("/etc/cloud/management/server-nonssl.xml") or not os.path.exists("/etc/cloud/management/tomcat6-nonssl.conf"):
                 raise CloudRuntimeException("Cannot find /etc/cloud/management/server-nonssl.xml or /etc/cloud/management/tomcat6-nonssl.conf, https enables failed")
