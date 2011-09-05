@@ -94,10 +94,10 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     List<DomainRouterVO> listActive(long networkId);
 
     /**
-     * List domain routers by state and network type
+     * List domain routers by state and network type which reside on Host managed by the specified management server
      * @return
      */    
-    List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType);
+    List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType, long mgmtSrvrId);
     
     List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state, Role role);
     
