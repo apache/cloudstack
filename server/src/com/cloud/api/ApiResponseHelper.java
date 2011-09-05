@@ -1147,7 +1147,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 } else if (network.getTrafficType() == TrafficType.Control) {
                     routerResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
                     routerResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
-                    routerResponse.setLinkLocalMacAddress(singleNicProfile.getNetmask());
+                    routerResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
                     routerResponse.setLinkLocalNetworkId(singleNicProfile.getNetworkId());
                 } else if (network.getTrafficType() == TrafficType.Guest) {
                     routerResponse.setGuestIpAddress(singleNicProfile.getIp4Address());
