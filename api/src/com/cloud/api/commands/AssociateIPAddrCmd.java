@@ -98,7 +98,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         if (zone.getNetworkType() == NetworkType.Advanced) {
             List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
             if (networks.size() == 0) {
-                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domainId=" + getDomainId() + " doesn't have virtual networks in zone " + getZoneId());
+                String domain = _accountService.getDomain(getDomainId()).getName();
+                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
             }
             assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
             return networks.get(0).getId();
