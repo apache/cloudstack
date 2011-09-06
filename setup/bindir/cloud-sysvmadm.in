@@ -5,7 +5,7 @@
 #set -x
 
 usage() {
-  printf "\nThe tool stopping/starting running system vms and domain routers \n\nUsage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-t] [-e]\n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password if not specified \n\n -m - the ip address of management server, defaulted to localhost if not specified\n\n -s - stop then start all running SSVMs and Console Proxies \n -r - stop then start all running Virtual Routers\n -a - stop then start all running SSVMs, Console Proxies, and Virtual Routers \n -e - restart all Guest networks \n -t - number of parallel threads used for stopping Domain Routers. Default is 5.\n -l - log file location. Default is cloud.log under current directory.\n\n" $(basename $0) >&2
+  printf "\nThe tool stopping/starting running system vms and domain routers \n\nUsage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-t] [-e]\n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password if not specified \n\n -m - the ip address of management server, defaulted to localhost if not specified\n\n -s - stop then start all running SSVMs and Console Proxies \n -r - stop then start all running Virtual Routers\n -a - stop then start all running SSVMs, Console Proxies, and Virtual Routers \n -e - restart all Guest networks \n -t - number of parallel threads used for stopping Domain Routers. Default is 10.\n -l - log file location. Default is cloud.log under current directory.\n\n" $(basename $0) >&2
 }
 
 
@@ -17,7 +17,7 @@ ms=localhost
 user=root
 password=
 help=
-maxthreads=5
+maxthreads=10
 LOGFILE=cloud.log
 
 
