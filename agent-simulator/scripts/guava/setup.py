@@ -40,7 +40,7 @@ def describeGuavaResources(dbnode='localhost', mshost='localhost'):
     numberofpods = 1
 
     clustersPerPod = 100
-    hostsPerCluster = 5
+    hostsPerCluster = 10
 
     z = zone()
     z.dns1 = '4.2.2.2'
@@ -80,11 +80,19 @@ def describeGuavaResources(dbnode='localhost', mshost='localhost'):
             h.url = 'http://sim/test-%d'%(curhost)
             c.hosts.append(h)
             curhost = curhost + 1
+
+        ps = primaryStorage()
+        ps.name = 'spool'+str(i)
+        ps.url = 'nfs://172.16.24.32/export/path/'+str(i)
+        c.primaryStorages.append(ps)
         p.clusters.append(c)
-    z.pods.append(p)
+
 
     secondary = secondaryStorage()
     secondary.url = 'nfs://172.16.25.32/secondary/path'
+
+    z.pods.append(p)
+    z.ipranges.append(v)
     z.secondaryStorages.append(secondary)
     zs.zones.append(z)
 
