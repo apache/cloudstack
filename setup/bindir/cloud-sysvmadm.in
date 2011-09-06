@@ -58,14 +58,16 @@ length_secondary=(${#secondary[@]})
 length_console=(${#console[@]})
 
 
-echo -e "\nStopping and starting secondary storage vms..."
-echo -e "Stopping and starting secondary storage vms..." >>$LOGFILE
+echo -e "\nStopping and starting $length_secondary secondary storage vm(s)..."
+echo -e "Stopping and starting $length_secondary secondary storage vm(s)..." >>$LOGFILE
 
 for d in "${secondary[@]}"; do
+	echo "INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
 	jobresult=$(send_request stopSystemVm $d)
 	if [ "$jobresult" != "1" ]; then
 		echo "ERROR: Failed to stop secondary storage vm with id $d" >>$LOGFILE
 	else	
+		echo "INFO: Starting secondary storage vm with id $d" >>$LOGFILE
 		jobresult=$(send_request startSystemVm $d SSVM)
 		if [ "$jobresult" != "1" ]; then
         	echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
@@ -76,27 +78,32 @@ done
 if [ "$length_secondary" == "0" ];then
 	echo -e "No running secondary storage vms found \n"
 else 
-	echo -e "Done stopping and starting secondary storage vms"
-	echo -e "Done stopping and starting secondary storage vms." >>$LOGFILE
+	echo -e "Done stopping and starting secondary storage vm(s)"
+	echo -e "Done stopping and starting secondary storage vm(s)." >>$LOGFILE
 fi
 
-echo -e "\nStopping and starting console proxy vms..."
-echo -e "Stopping and starting console proxy vms..." >>$LOGFILE
+echo -e "\nStopping and starting $length_console console proxy vm(s)..."
+echo -e "Stopping and starting $length_console console proxy vm(s)..." >>$LOGFILE
 
 for d in "${console[@]}"; do
+	echo "INFO: Stopping console proxy with id $d" >>$LOGFILE
     jobresult=$(send_request stopSystemVm $d)
 	if [ "$jobresult" != "1" ]; then
-            echo "ERROR: Failed to stop console proxy vm with id $d" >>$LOGFILE
+        echo "ERROR: Failed to stop console proxy vm with id $d" >>$LOGFILE
     else	
-			jobresult=$(send_request startSystemVm $d consoleProxy)
+		echo "INFO: Starting console proxy vm with id $d" >>$LOGFILE
+		jobresult=$(send_request startSystemVm $d consoleProxy)
+		if [ "$jobresult" != "1" ]; then
+    		echo "ERROR: Failed to start console proxy vm with id $d" >>$LOGFILE
+		fi
     fi
 done
 
 if [ "$length_console" == "0" ];then
         echo -e "No running console proxy vms found \n"
 else
-        echo "Done stopping and starting console proxy vms."
-		echo "Done stopping and starting console proxy vms." >>$LOGFILE
+        echo "Done stopping and starting console proxy vm(s)."
+		echo "Done stopping and starting console proxy vm(s)." >>$LOGFILE
 fi
 }
 
@@ -104,8 +111,8 @@ stop_start_router() {
 	router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"DomainRouter\""`)
 	length_router=(${#router[@]})
 	
-	echo -e "\nStopping and starting running routing vms... "
-	echo -e "Stopping and starting running routing vms... " >>$LOGFILE
+	echo -e "\nStopping and starting $length_router running routing vm(s)... "
+	echo -e "Stopping and starting $length_router running routing vm(s)... " >>$LOGFILE
 	
 	#Spawn reboot router in parallel - run commands in <n> chunks - number of threads is configurable
 
@@ -148,7 +155,6 @@ stop_start_router() {
   		fi
   		
 	done
-
 	
 	if [ "$length_router" == "0" ];then
 		echo -e "No running router vms found \n" >>$LOGFILE
@@ -157,8 +163,8 @@ stop_start_router() {
 			sleep 10
 		done
 		
-		echo -e "Done restarting routers. \n"
-		echo -e "Done restarting routers. \n" >>$LOGFILE
+		echo -e "Done restarting router(s). \n"
+		echo -e "Done restarting router(s). \n" >>$LOGFILE
 		
 	fi
 }
@@ -180,6 +186,7 @@ send_request(){
 
 
 reboot_router(){
+	echo "INFO: Restarting router with id $1" >>$LOGFILE
 	jobid=`curl -sS "http://$ms:8096/?command=rebootRouter&id=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F: {'print $3'}`
 	if [ "$jobid" == "" ]; then
 		echo "ERROR: Failed to restart domainRouter with id $1" >>$LOGFILE
@@ -191,8 +198,10 @@ reboot_router(){
 	
 	if [ "$jobresult" != "1" ]; then
 		echo "ERROR: Failed to restart domainRouter with id $1" >>$LOGFILE
+		exit 0
 	else
 		echo "INFO: Successfully restarted domainRouter with id $1" >>$LOGFILE
+		exit 0
 	fi
 	
 }
