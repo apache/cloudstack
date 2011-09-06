@@ -4,7 +4,7 @@
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
-%define _rel 1
+%define _rel 2
 
 Name:      cloud
 Summary:   Cloud.com Stack
