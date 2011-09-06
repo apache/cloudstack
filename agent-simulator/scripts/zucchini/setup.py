@@ -50,7 +50,7 @@ def getGlobalSettings():
 #                       'router.stats.interval':'-1',
                        'vm.op.wait.interval':'5',
                        'xen.public.network.device':'10.10.10.10', #only a dummy for the simulator
-                       'guest.domain.suffix':'zcloud.simulator',
+                       'guest.domain.suffix':'zucchini.simulator',
                        'instance.name':'ZIM',
                        'direct.agent.load.size':'1000',
                        'default.page.size':'10000',
@@ -95,7 +95,7 @@ def vlanIpRangeGenerator():
         yield ('172.'+str(x)+'.'+str(y)+'.129', '172.'+str(x)+'.'+str(y)+'.190', '172.'+str(x)+'.'+str(y)+'.249')
 
 
-def describeZyngaResources(numberOfAgents=1300, dbnode='localhost', mshost='localhost', randomize=False):
+def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='localhost', randomize=False):
     zs=cloudstackConfiguration()
     numberofpods=numberOfAgents/10
     tagOneHosts = numberOfAgents*5/13
@@ -110,7 +110,7 @@ def describeZyngaResources(numberOfAgents=1300, dbnode='localhost', mshost='loca
     z.dns2 = '192.168.110.254'
     z.internaldns1 = '10.91.28.6'
     z.internaldns2 = '192.168.110.254'
-    z.name = 'Zynga'
+    z.name = 'Zucchini'
     z.networktype = 'Basic'    
 
     hosttags=['TAG1' for x in range(tagOneHosts)] + ['TAG2' for x in range(tagTwoHosts)] + ['TAG3' for x in range(tagThreeHosts)]
@@ -204,5 +204,5 @@ if __name__=="__main__":
         if not opts.__dict__[m]:
             print "mandatory option missing"
 
-    cfg = describeZyngaResources(int(opts.agents), opts.dbnode, opts.mshost, opts.randomize)
+    cfg = describeZucchiniResources(int(opts.agents), opts.dbnode, opts.mshost, opts.randomize)
     generate_setup_config(cfg, opts.output)
