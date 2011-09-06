@@ -50,7 +50,7 @@ def getGlobalSettings():
 #                       'router.stats.interval':'-1',
                        'vm.op.wait.interval':'5',
                        'xen.public.network.device':'10.10.10.10', #only a dummy for the simulator
-                       'guest.domain.suffix':'zcloud.simulator',
+                       'guest.domain.suffix':'zucchini.simulator',
                        'instance.name':'ZIM',
                        'direct.agent.load.size':'1000',
                        'default.page.size':'10000',
@@ -201,7 +201,8 @@ if __name__=="__main__":
     (opts, args) = parser.parse_args()
     mandatories = ['mshost', 'dbnode', 'agents']
     for m in mandatories:
-	if not opts.__dict__[m]:
-		print "mandatory option missing"
-    cfg = describeZucchiniResources(int(opts.agents), opts.dbnode, opts.mshost, opts.randomize)
-    generate_setup_config(cfg, opts.output)
+        if not opts.__dict__[m]:
+            print "mandatory option missing"
+
+   cfg = describeZucchiniResources(int(opts.agents), opts.dbnode, opts.mshost, opts.randomize)
+   generate_setup_config(cfg, opts.output)
