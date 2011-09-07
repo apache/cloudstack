@@ -992,11 +992,18 @@ public class Transaction {
             final boolean cloudLogAbandoned = Boolean.parseBoolean(dbProps.getProperty("db.cloud.logAbandoned"));
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
+            final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
+            if(useSSL){
+                System.setProperty("javax.net.ssl.keyStore", dbProps.getProperty("db.cloud.keyStore"));
+                System.setProperty("javax.net.ssl.keyStorePassword", dbProps.getProperty("db.cloud.keyStorePassword"));
+                System.setProperty("javax.net.ssl.trustStore", dbProps.getProperty("db.cloud.trustStore"));
+                System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
+            }
 
             final GenericObjectPool cloudConnectionPool = new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false, cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
             final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+cloudHost + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect="+cloudAutoReconnect + (url != null ? "&" + url : ""), cloudUsername, cloudPassword);
+                    "?autoReconnect="+cloudAutoReconnect + (url != null ? "&" + url : "")+ (useSSL ? "&useSSL=true" : ""), cloudUsername, cloudPassword);
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
             final PoolableConnectionFactory cloudPoolableConnectionFactory = new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory,
                     cloudValidationQuery, false, false, isolationLevel);

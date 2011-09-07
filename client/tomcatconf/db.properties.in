@@ -26,6 +26,14 @@ db.cloud.logAbandoned=true
 db.cloud.poolPreparedStatements=false
 db.cloud.url.params=prepStmtCacheSize=517&cachePrepStmts=true
 
+# Cloud.com database SSL settings
+db.cloud.useSSL=false
+db.cloud.keyStore=
+db.cloud.keyStorePassword=
+db.cloud.trustStore=
+db.cloud.trustStorePassword=
+
+
 # usage database settings
 db.usage.username=@DBUSER@
 db.usage.password=@DBPW@
