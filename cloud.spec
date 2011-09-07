@@ -108,7 +108,6 @@ CloudStack uses.
 Summary:   Cloud.com library dependencies
 Requires: java >= 1.6.0
 Obsoletes: vmops-deps < %{version}-%{release}
-Obsoletes: cloud-premium-deps < %{version}-%{release}
 Group:     System Environment/Libraries
 %description deps
 This package contains a number of third-party dependencies
@@ -315,7 +314,7 @@ uses to help increase the quality of the Cloud.com Stack.
 Summary:   Cloud.com usage monitor
 Obsoletes: vmops-usage < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-premium = %{version}, %{name}-daemonize = %{version}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-daemonize = %{version}
 Requires: %{name}-setup = %{version}
 Requires: %{name}-client = %{version}
 License:   CSL 1.1
