@@ -47,9 +47,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     transient String password;
 
-    @Transient
-    Map<String, String> details;
-    
     @Override
     public String getPassword() {
         return password;
@@ -119,26 +116,10 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 	    this.displayName = displayName;
 	}
 	
-	@Override
-    public Map<String, String> getDetails() {
-        return details;
-    }
-    
     @Override
     public String getDetail(String name) {
         assert (details != null) : "Did you forget to load the details?";
         
         return details != null ? details.get(name) : null;
     }
-    
-    public void setDetail(String name, String value) {
-        assert (details != null) : "Did you forget to load the details?";
-        
-        details.put(name, value);
-    }
-    
-    public void setDetails(Map<String, String> details) {
-        this.details = details;
-    }
-	
 }

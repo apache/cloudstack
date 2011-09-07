@@ -195,6 +195,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -301,6 +302,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     VolumeDao _volumeDao = null;
     @Inject
     FirewallRulesCidrsDao _firewallCidrsDao;
+    @Inject
+    UserVmDetailsDao _vmDetailsDao;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1211,6 +1214,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
 
         DomainRouterVO router = profile.getVirtualMachine();
+        Map<String, String> details = _vmDetailsDao.findDetails(router.getId());
+        router.setDetails(details);
+
         NetworkVO network = _networkDao.findById(router.getNetworkId());
 
         String type = null;
