@@ -454,13 +454,17 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new CloudRuntimeException("Unable to add rule for ip address id=" + newRule.getSourceIpAddressId(), e);
         } finally {
             if (!success) {
+                
                 txn.start();
-                //no need to apply the rule as it wasn't programmed on the backend yet
-                _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
+                _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
                 _lbDao.remove(newRule.getId());
                 txn.commit();
+                
+                _lbDao.remove(newRule.getId());
             }
         }
+        
+       
     }
 
     @Override
@@ -488,10 +492,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         for (LoadBalancerVO lb : lbs) {
             List<LbDestination> dstList = getExistingDestinations(lb.getId());
 
-            if (dstList != null && !dstList.isEmpty()) {
-                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                rules.add(loadBalancing);
-            }
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            rules.add(loadBalancing);
         }
 
         if (!_networkMgr.applyRules(rules, false)) {

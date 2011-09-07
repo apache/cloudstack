@@ -42,4 +42,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     void removeNicsForInstance(long instanceId);
     
     NicVO findByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
+    
+    NicVO findByIp4Address(String ip4Address);
 }

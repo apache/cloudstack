@@ -46,6 +46,7 @@ import com.cloud.utils.net.NetUtils;
  */
 public class FirewallRuleTO {
     long id;
+    String srcVlanTag;
     String srcIp;
     String protocol;
     int[] srcPortRange;
@@ -60,8 +61,9 @@ public class FirewallRuleTO {
     protected FirewallRuleTO() {
     }
     
-    public FirewallRuleTO(long id, String srcIp, String protocol, Integer srcPortStart, Integer srcPortEnd, boolean revoked, boolean alreadyAdded, FirewallRule.Purpose purpose, List<String> sourceCidr,Integer icmpType,Integer icmpCode) {
-        this.srcIp = srcIp;
+    public FirewallRuleTO(long id, String srcVlanTag, String srcIp, String protocol, Integer srcPortStart, Integer srcPortEnd, boolean revoked, boolean alreadyAdded, FirewallRule.Purpose purpose, List<String> sourceCidr,Integer icmpType,Integer icmpCode) {
+        this.srcVlanTag = srcVlanTag;
+    	this.srcIp = srcIp;
         this.protocol = protocol;
         
         if (srcPortStart != null) {
@@ -87,12 +89,16 @@ public class FirewallRuleTO {
         this.icmpCode = icmpCode;
     }
     
-    public FirewallRuleTO(FirewallRule rule, String srcIp) {
-        this(rule.getId(), srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(),rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
+    public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp) {
+        this(rule.getId(), srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(),rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
     }
     
     public long getId() {
         return id;
+    }
+    
+    public String getSrcVlanTag() {
+    	return srcVlanTag;
     }
 
     public String getSrcIp() {

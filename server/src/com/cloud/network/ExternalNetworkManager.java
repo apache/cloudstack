@@ -18,5 +18,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicVO;
 
 public interface ExternalNetworkManager extends Manager {
-		
+	public int getVlanOffset(DataCenter zone, int vlanTag);	
+	public int getGloballyConfiguredCidrSize();
 }

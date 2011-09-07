@@ -24,13 +24,16 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -49,7 +52,11 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.Nic.ReservationStrategy;
+import com.cloud.vm.Nic.State;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 
 @Local(value = {ExternalNetworkManager.class})
 public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
@@ -65,13 +72,16 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 	@Inject AccountDao _accountDao;
 	@Inject DomainRouterDao _routerDao;
 	@Inject IPAddressDao _ipAddressDao;
+	@Inject VlanDao _vlanDao;
 	@Inject UserStatisticsDao _userStatsDao;
 	@Inject NetworkDao _networkDao;
 	@Inject PortForwardingRulesDao _portForwardingRulesDao;
 	@Inject LoadBalancerDao _loadBalancerDao;
+	@Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
 	@Inject ConfigurationDao _configDao;
 	@Inject HostDetailsDao _detailsDao;
 	@Inject NetworkOfferingDao _networkOfferingDao;
+	@Inject NicDao _nicDao;
 	
 	ScheduledExecutorService _executor;
 	int _externalNetworkStatsInterval;
@@ -126,7 +136,39 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 		}
 	}
 	
-	protected class ExternalNetworkUsageTask implements Runnable {				
+	public NicVO savePlaceholderNic(Network network, String ipAddress) {
+		NicVO nic = new NicVO(null, null, network.getId(), null);
+		nic.setIp4Address(ipAddress);
+		nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
+		nic.setState(State.Reserved);
+		return _nicDao.persist(nic);
+	}
+	
+	protected boolean externalLoadBalancerIsInline(HostVO externalLoadBalancer) {
+        DetailVO detail = _detailsDao.findDetail(externalLoadBalancer.getId(), "inline");
+        return (detail != null && detail.getValue().equals("true"));
+	}
+	
+	public int getGloballyConfiguredCidrSize() {
+        try {
+            String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
+            return 8 + Integer.parseInt(globalVlanBits);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
+        }
+    }
+	
+	public int getVlanOffset(DataCenter zone, int vlanTag) {
+        if (zone.getVnet() == null) {
+            throw new CloudRuntimeException("Could not find vlan range for zone " + zone.getName() + ".");
+        }
+
+        String vlanRange[] = zone.getVnet().split("-");
+        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
+        return vlanTag - lowestVlanTag;
+    }
+	
+protected class ExternalNetworkUsageTask implements Runnable {				
 		
 		public ExternalNetworkUsageTask() {		
 		}
@@ -180,15 +222,28 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 			long newCurrentBytesReceived = 0;
 			
 			if (publicIp != null) {
-			    long[] bytesSentAndReceived = answer.ipBytes.get(publicIp);
-			    statsEntryIdentifier += ", public IP: " + publicIp;
-			    
-			    if (bytesSentAndReceived == null) {
-			        s_logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
-			    } else {
-			        newCurrentBytesSent += bytesSentAndReceived[0];
-			        newCurrentBytesReceived += bytesSentAndReceived[1];
-			    }
+				long[] bytesSentAndReceived = null;
+				statsEntryIdentifier += ", public IP: " + publicIp;
+				
+				if (host.getType().equals(Host.Type.ExternalLoadBalancer) && externalLoadBalancerIsInline(host)) {
+					// Look up stats for the guest IP address that's mapped to the public IP address
+					InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(publicIp);
+					
+					if (mapping != null) {
+						NicVO nic = _nicDao.findById(mapping.getNicId());
+						String loadBalancingIpAddress = nic.getIp4Address();
+						bytesSentAndReceived = answer.ipBytes.get(loadBalancingIpAddress);
+					}
+				} else {
+					bytesSentAndReceived = answer.ipBytes.get(publicIp);
+				}
+				
+				if (bytesSentAndReceived == null) {
+		    		s_logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
+		    	} else {
+		        	newCurrentBytesSent += bytesSentAndReceived[0];
+		        	newCurrentBytesReceived += bytesSentAndReceived[1];
+		    	}
 			} else {
 			    URI broadcastURI = network.getBroadcastUri();
                 if (broadcastURI == null) {

@@ -28,6 +28,12 @@ public interface PortForwardingRule extends FirewallRule {
      */
     Ip getDestinationIpAddress();
     
+  
+    /**
+     * updates the destination ip address.
+     */
+    void setDestinationIpAddress(Ip destinationIpAddress);
+    
     /**
      * @return start of destination port.
      */

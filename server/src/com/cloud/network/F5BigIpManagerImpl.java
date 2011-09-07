@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
@@ -31,9 +32,11 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.F5BigIpResource;
@@ -72,6 +75,8 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
     ConfigurationManager _configMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    ExternalFirewallManager _externalFirewallMgr;
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(F5BigIpManagerImpl.class);
 
@@ -108,6 +113,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         String publicInterface = params.get("publicinterface");
         String privateInterface = params.get("privateinterface");
         String numRetries = params.get("numretries");
+        boolean inline =  Boolean.parseBoolean(params.get("inline"));
 
         if (publicInterface == null) {
             throw new InvalidParameterValueException("Please specify a public interface.");
@@ -134,6 +140,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         hostDetails.put("numRetries", numRetries);
         hostDetails.put("guid", guid);
         hostDetails.put("name", guid);
+        hostDetails.put("inline", String.valueOf(inline));
 
         try {
             resource.configure(guid, hostDetails);
@@ -196,6 +203,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         response.setPublicInterface(lbDetails.get("publicInterface"));
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setNumRetries(lbDetails.get("numRetries"));
+        response.setInline(lbDetails.get("inline"));
         return response;
     }
 
@@ -221,7 +229,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         String guestVlanNetmask = NetUtils.cidr2Netmask(guestConfig.getCidr());
         Integer networkRate = _networkMgr.getNetworkRate(guestConfig.getId(), null);
 
-        IpAddressTO ip = new IpAddressTO(null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, null, networkRate, false);
+        IpAddressTO ip = new IpAddressTO(guestConfig.getAccountId(), null, add, false, true, String.valueOf(guestVlanTag), selfIp, guestVlanNetmask, null, null, networkRate, false);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);
@@ -238,11 +246,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         List<String> reservedIpAddressesForGuestNetwork = _nicDao.listIpAddressInNetwork(guestConfig.getId());
         if (add && (!reservedIpAddressesForGuestNetwork.contains(selfIp))) {
             // Insert a new NIC for this guest network to reserve the self IP
-            NicVO nic = new NicVO(null, null, guestConfig.getId(), null);
-            nic.setIp4Address(selfIp);
-            nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
-            nic.setState(Nic.State.Reserved);
-            _nicDao.persist(nic);
+        	savePlaceholderNic(guestConfig, selfIp);
         }
 
         Account account = _accountDao.findByIdIncludingRemoved(guestConfig.getAccountId());
@@ -262,6 +266,18 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         if (externalLoadBalancer == null) {
             return false;
         }
+        
+        // If the load balancer is inline, find the external firewall in this zone
+        boolean externalLoadBalancerIsInline = externalLoadBalancerIsInline(externalLoadBalancer);
+        HostVO externalFirewall = null;
+        if (externalLoadBalancerIsInline) {
+        	externalFirewall = getExternalNetworkAppliance(zoneId, Host.Type.ExternalFirewall);
+        	if (externalFirewall == null) {
+        		String msg = "External load balancer in zone " + zone.getName() + " is inline, but no external firewall in this zone.";
+        		s_logger.error(msg);
+        		throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+        	}
+        }
 
         if (network.getState() == Network.State.Allocated) {
             s_logger.debug("F5BigIpManager was asked to apply LB rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
@@ -276,7 +292,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
             }
         }
 
-        LoadBalancerTO[] loadBalancers = new LoadBalancerTO[loadBalancingRules.size()];
+        List<LoadBalancerTO> loadBalancersToApply = new ArrayList<LoadBalancerTO>();
         for (int i = 0; i < loadBalancingRules.size(); i++) {
             LoadBalancingRule rule = loadBalancingRules.get(i);
 
@@ -287,13 +303,73 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
-            LoadBalancerTO loadBalancer = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
-            loadBalancers[i] = loadBalancer;
+            if (externalLoadBalancerIsInline) {
+            	InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(srcIp);
+            	NicVO loadBalancingIpNic = null;
+
+            	if (!revoked) {
+            		if (mapping == null) {
+            			// Acquire a new guest IP address and save it as the load balancing IP address
+            			String loadBalancingIpAddress = _networkMgr.acquireGuestIpAddress(network, null);
+
+            			if (loadBalancingIpAddress == null) {
+            				String msg = "Ran out of guest IP addresses.";
+            				s_logger.error(msg);
+            				throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+            			}
+
+            			// If a NIC doesn't exist for the load balancing IP address, create one
+            			loadBalancingIpNic = _nicDao.findByIp4Address(loadBalancingIpAddress);
+            			if (loadBalancingIpNic == null) {
+            				loadBalancingIpNic = savePlaceholderNic(network, loadBalancingIpAddress); 
+            			}
+
+            			// Save a mapping between the source IP address and the load balancing IP address NIC
+            			mapping = new InlineLoadBalancerNicMapVO(rule.getId(), srcIp, loadBalancingIpNic.getId());
+            			_inlineLoadBalancerNicMapDao.persist(mapping);
+
+            			// On the external firewall, create a static NAT rule between the source IP address and the load balancing IP address                   
+            			_externalFirewallMgr.applyStaticNatRuleForInlineLBRule(zone, network, externalFirewall, revoked, srcIp, loadBalancingIpNic.getIp4Address());
+            		} else {
+            			loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
+            		}
+            	} else {
+            		if (mapping != null) {
+            			// Find the NIC that the mapping refers to
+            			loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
+
+            			// On the external firewall, delete the static NAT rule between the source IP address and the load balancing IP address
+            			_externalFirewallMgr.applyStaticNatRuleForInlineLBRule(zone, network, externalFirewall, revoked, srcIp, loadBalancingIpNic.getIp4Address());
+
+            			// Delete the mapping between the source IP address and the load balancing IP address
+            			_inlineLoadBalancerNicMapDao.expunge(mapping.getId());
+
+            			// Delete the NIC
+            			_nicDao.expunge(loadBalancingIpNic.getId());
+            		} else {
+            			s_logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
+            			continue;
+            		}
+            	}
+
+            	// Change the source IP address for the load balancing rule to be the load balancing IP address
+            	srcIp = loadBalancingIpNic.getIp4Address();
+            }
+
+            if (destinations != null && !destinations.isEmpty()) {
+            	LoadBalancerTO loadBalancer = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
+            	loadBalancersToApply.add(loadBalancer);
+            }
         }
 
-        if (loadBalancers.length > 0) {
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancers);
-            Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+        if (loadBalancersToApply.size() > 0) {
+        	int numLoadBalancersForCommand = loadBalancersToApply.size(); 
+        	LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
+        	LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+        	long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
+        	cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
+        	
+        	Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
                 String msg = "Unable to apply load balancer rules to the F5 BigIp appliance in zone " + zone.getName() + " due to: " + details + ".";
@@ -304,4 +380,5 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
 
         return true;
     }
+ 
 }

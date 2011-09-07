@@ -15,6 +15,7 @@
 </match>
 <then>
 <permit>
+%tunnel%
 </permit>
 <count>
 </count>

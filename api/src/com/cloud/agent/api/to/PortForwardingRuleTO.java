@@ -38,14 +38,14 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
         super();
     }
     
-    public PortForwardingRuleTO(PortForwardingRule rule, String srcIp) {
-        super(rule, srcIp);
+    public PortForwardingRuleTO(PortForwardingRule rule, String srcVlanTag, String srcIp) {
+        super(rule, srcVlanTag, srcIp);
         this.dstIp = rule.getDestinationIpAddress().addr();
         this.dstPortRange = new int[] { rule.getDestinationPortStart(), rule.getDestinationPortEnd() };
     }
     
-    protected PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.PortForwarding, null,0,0);
+    protected PortForwardingRuleTO(long id, String srcVlanTag, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
+        super(id, srcVlanTag, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.PortForwarding, null,0,0);
         this.dstIp = dstIp;
         this.dstPortRange = new int[] { dstPortStart, dstPortEnd };
     }

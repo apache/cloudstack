@@ -73,6 +73,7 @@ import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
+import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
@@ -270,8 +271,9 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DcDetailsDao", DcDetailsDaoImpl.class);
         addDao("SwiftDao", SwiftDaoImpl.class);
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
+        addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
         addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
-
+        
     }
 
     @Override

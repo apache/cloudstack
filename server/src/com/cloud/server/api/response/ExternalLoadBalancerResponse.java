@@ -31,6 +31,9 @@ public class ExternalLoadBalancerResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.NUM_RETRIES) @Param(description="the number of times to retry requests to the external load balancer")
     private String numRetries;
+    
+    @SerializedName(ApiConstants.INLINE) @Param(description="configures the external load balancer to be inline with an external firewall")
+    private String inline;
 	
 	public Long getId() {
     	return id;
@@ -88,4 +91,11 @@ public class ExternalLoadBalancerResponse extends BaseResponse {
     	this.numRetries = numRetries;
     }
 
+    public String getInline() {
+    	return inline;
+    }
+    
+    public void setInline(String inline) {
+    	this.inline = inline;
+    }
 }

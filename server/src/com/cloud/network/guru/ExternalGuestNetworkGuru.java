@@ -1,5 +1,20 @@
 /**
- *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
+ * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+*
+ *
+ * This software is licensed under the GNU General Public License v3 or later.
+ *
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package com.cloud.network.guru;
@@ -8,7 +23,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
@@ -19,6 +33,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.ExternalNetworkManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
@@ -27,11 +42,14 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -46,11 +64,15 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     NetworkManager _networkMgr;
     @Inject
+    ExternalNetworkManager _externalNetworkMgr;
+    @Inject
     NetworkDao _networkDao;
     @Inject
     DataCenterDao _zoneDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    PortForwardingRulesDao _pfRulesDao;
     @Inject
     OvsNetworkManager _ovsNetworkMgr;
     @Inject
@@ -108,12 +130,12 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         // Determine the offset from the lowest vlan tag
-        int offset = getVlanOffset(zone, vlanTag);
+        int offset = _externalNetworkMgr.getVlanOffset(zone, vlanTag);
 
         // Determine the new gateway and CIDR
         String[] oldCidr = config.getCidr().split("/");
         String oldCidrAddress = oldCidr[0];
-        int cidrSize = getGloballyConfiguredCidrSize();
+        int cidrSize = _externalNetworkMgr.getGloballyConfiguredCidrSize();
 
         // If the offset has more bits than there is room for, return null
         long bitsInOffset = 32 - Integer.numberOfLeadingZeros(offset);
@@ -130,10 +152,21 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         List<NicVO> nicsInNetwork = _nicDao.listByNetworkId(config.getId());
         for (NicVO nic : nicsInNetwork) {
             if (nic.getIp4Address() != null) {
-                long ipMask = NetUtils.ip2Long(nic.getIp4Address()) & ~(0xffffffffffffffffl << (32 - cidrSize));
+                long ipMask = getIpMask(nic.getIp4Address(), cidrSize);
                 nic.setIp4Address(NetUtils.long2Ip(newCidrAddress | ipMask));
                 _nicDao.persist(nic);
             }
+        }       
+        
+        // Mask the destination address of all port forwarding rules in this network with the new guest VLAN offset
+        List<PortForwardingRuleVO> pfRulesInNetwork = _pfRulesDao.listByNetwork(config.getId());
+        for (PortForwardingRuleVO pfRule : pfRulesInNetwork) {
+        	if (pfRule.getDestinationIpAddress() != null) {
+        		long ipMask = getIpMask(pfRule.getDestinationIpAddress().addr(), cidrSize);
+        		String maskedDestinationIpAddress = NetUtils.long2Ip(newCidrAddress | ipMask);
+        		pfRule.setDestinationIpAddress(new Ip(maskedDestinationIpAddress));
+        		_pfRulesDao.update(pfRule.getId(), pfRule);
+        	}
         }
 
         return implemented;
@@ -195,7 +228,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             nic.setDns2(dc.getDns2());
             nic.setNetmask(NetUtils.cidr2Netmask(config.getCidr()));
             long cidrAddress = NetUtils.ip2Long(config.getCidr().split("/")[0]);
-            int cidrSize = getGloballyConfiguredCidrSize();
+            int cidrSize = _externalNetworkMgr.getGloballyConfiguredCidrSize();
             nic.setGateway(config.getGateway());
 
             if (nic.getIp4Address() == null) {
@@ -229,23 +262,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return super.release(nic, vm, reservationId);
         }
     }
-
-    private int getGloballyConfiguredCidrSize() {
-        try {
-            String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-            return 8 + Integer.parseInt(globalVlanBits);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
-        }
+    
+    private long getIpMask(String ipAddress, long cidrSize) {
+    	return NetUtils.ip2Long(ipAddress) & ~(0xffffffffffffffffl << (32 - cidrSize));
     }
 
-    private int getVlanOffset(DataCenter zone, int vlanTag) {
-        if (zone.getVnet() == null) {
-            throw new CloudRuntimeException("Could not find vlan range for zone " + zone.getName() + ".");
-        }
-
-        String vlanRange[] = zone.getVnet().split("-");
-        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
-        return vlanTag - lowestVlanTag;
-    }
 }

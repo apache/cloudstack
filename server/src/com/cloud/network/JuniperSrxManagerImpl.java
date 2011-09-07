@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -28,20 +29,27 @@ import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
@@ -74,6 +82,8 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
     FirewallRulesDao _firewallRulesDao;
     @Inject
     UserStatisticsDao _userStatsDao;
+    @Inject
+    VlanDao _vlanDao;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -119,11 +129,7 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
         String numRetries = params.get("numretries");
         String timeout = params.get("timeout");
 
-        if (publicInterface != null) {
-            if (!publicInterface.contains(".")) {
-                publicInterface += ".0";
-            }
-        } else {
+        if (publicInterface == null) {
             throw new InvalidParameterValueException("Please specify a public interface.");
         }
 
@@ -300,31 +306,39 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
 
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());
         boolean sharedSourceNat = offering.isSharedSourceNatService();
-        String sourceNatIp = null;
+        IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
             // Get the source NAT IP address for this network          
             List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(network.getAccountId(), zoneId, true, null);
 
             if (sourceNatIps.size() != 1) {
                 String errorMsg = "JuniperSrxManager was unable to find the source NAT IP address for account " + account.getAccountName();
+                s_logger.error(errorMsg);
                 return true;
             } else {
-                sourceNatIp = sourceNatIps.get(0).getAddress().addr();
+            	sourceNatIp = sourceNatIps.get(0);
             }
         }
 
         // Send a command to the external firewall to implement or shutdown the guest network
         long guestVlanTag = Long.parseLong(network.getBroadcastUri().getHost());
         String guestVlanGateway = network.getGateway();
-        String guestVlanNetmask = NetUtils.cidr2Netmask(network.getCidr());
+        String guestVlanCidr = network.getCidr();
+        String sourceNatIpAddress = sourceNatIp.getAddress().addr();
+        
+        VlanVO publicVlan = _vlanDao.findById(sourceNatIp.getVlanId());
+        String publicVlanTag = publicVlan.getVlanTag();
 
         // Get network rate
         Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
 
-        IpAddressTO ip = new IpAddressTO(sourceNatIp, add, false, !sharedSourceNat, String.valueOf(guestVlanTag), guestVlanGateway, guestVlanNetmask, null, null, networkRate, false);
+        IpAddressTO ip = new IpAddressTO(account.getId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, null, networkRate, sourceNatIp.isOneToOneNat());
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);
+        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY, guestVlanGateway);
+        cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, guestVlanCidr);
+        cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
         Answer answer = _agentMgr.easySend(externalFirewall.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
@@ -338,17 +352,37 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
         List<String> reservedIpAddressesForGuestNetwork = _nicDao.listIpAddressInNetwork(network.getId());
         if (add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
             // Insert a new NIC for this guest network to reserve the gateway address
-            NicVO nic = new NicVO(null, null, network.getId(), null);
-            nic.setIp4Address(network.getGateway());
-            nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
-            nic.setState(State.Reserved);
-            _nicDao.persist(nic);
+        	savePlaceholderNic(network,  network.getGateway());
+        }
+        
+        // Delete any mappings used for inline external load balancers in this network
+        List<NicVO> nicsInNetwork = _nicDao.listByNetworkId(network.getId());
+        for (NicVO nic : nicsInNetwork) {
+        	InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByNicId(nic.getId());
+        	if (mapping != null) {
+        		_nicDao.expunge(mapping.getNicId());
+        		_inlineLoadBalancerNicMapDao.expunge(mapping.getId());
+        	}
         }
 
         String action = add ? "implemented" : "shut down";
         s_logger.debug("JuniperSrxManager has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() + ") with VLAN tag " + guestVlanTag);
 
         return true;
+    }
+    
+    public void applyStaticNatRuleForInlineLBRule(DataCenterVO zone, Network network, HostVO externalFirewall, boolean revoked, String publicIp, String privateIp) throws ResourceUnavailableException {
+        List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
+        IPAddressVO ipVO = _ipAddressDao.listByDcIdIpAddress(zone.getId(), publicIp).get(0);
+        VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
+        FirewallRuleVO fwRule = new FirewallRuleVO(null, ipVO.getId(), -1, -1, "any", network.getId(), network.getAccountId(), network.getDomainId(), Purpose.StaticNat, null, null, null, null);
+        FirewallRule.State state = !revoked ? FirewallRule.State.Add : FirewallRule.State.Revoke;
+        fwRule.setState(state);
+        StaticNatRule rule = new StaticNatRuleImpl(fwRule, privateIp);
+        StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, vlan.getVlanTag(), publicIp, privateIp);
+        staticNatRules.add(ruleTO);
+        
+        applyStaticNatRules(staticNatRules, zone, externalFirewall.getId());
     }
 
     @Override
@@ -372,12 +406,14 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
 
         for (FirewallRule rule : rules) {
             IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
+
             if (rule.getPurpose() == Purpose.StaticNat) {
                 StaticNatRule staticNatRule = (StaticNatRule) rule;
-                StaticNatRuleTO ruleTO = new StaticNatRuleTO(staticNatRule, sourceIp.getAddress().addr(), staticNatRule.getDestIpAddress());
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(staticNatRule, vlan.getVlanTag(), sourceIp.getAddress().addr(), staticNatRule.getDestIpAddress());
                 staticNatRules.add(ruleTO);
             } else if (rule.getPurpose() == Purpose.PortForwarding) {
-                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO((PortForwardingRule) rule, sourceIp.getAddress().addr());
+                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO((PortForwardingRule) rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
                 portForwardingRules.add(ruleTO);
             }
         }

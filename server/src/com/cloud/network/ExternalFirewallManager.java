@@ -9,6 +9,7 @@ import java.util.List;
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.DeleteExternalFirewallCmd;
 import com.cloud.api.commands.ListExternalFirewallsCmd;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -29,6 +30,8 @@ public interface ExternalFirewallManager extends ExternalNetworkManager {
 	public boolean manageGuestNetwork(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException;
 	
 	public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+	
+	public void applyStaticNatRuleForInlineLBRule(DataCenterVO zone, Network network, HostVO externalFirewall, boolean revoked, String publicIp, String privateIp) throws ResourceUnavailableException;
 
 	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddresses) throws ResourceUnavailableException;
 	

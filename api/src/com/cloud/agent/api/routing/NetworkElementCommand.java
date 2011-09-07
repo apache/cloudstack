@@ -24,11 +24,15 @@ import com.cloud.agent.api.Command;
 public abstract class NetworkElementCommand extends Command {
     HashMap<String, String> accessDetails = new HashMap<String, String>(0);
     
+    public static final String ACCOUNT_ID = "account.id";
+    public static final String GUEST_NETWORK_CIDR = "guest.network.cidr";
+    public static final String GUEST_NETWORK_GATEWAY = "guest.network.gateway";
+    public static final String GUEST_VLAN_TAG = "guest.vlan.tag";
     public static final String ROUTER_NAME = "router.name";
     public static final String ROUTER_IP = "router.ip";
     public static final String ROUTER_GUEST_IP = "router.guest.ip";
     public static final String ZONE_NETWORK_TYPE = "zone.network.type";
-    
+       
     protected NetworkElementCommand() {
         super();
     }

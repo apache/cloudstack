@@ -1,5 +1,20 @@
 /**
- *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
+ * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+*
+ *
+ * This software is licensed under the GNU General Public License v3 or later.
+ *
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package com.cloud.network.resource;
@@ -23,6 +38,7 @@ import iControl.LocalLBVirtualServerVirtualServerStatistics;
 import iControl.LocalLBVirtualServerVirtualServerType;
 import iControl.NetworkingMemberTagType;
 import iControl.NetworkingMemberType;
+import iControl.NetworkingRouteDomainBindingStub;
 import iControl.NetworkingSelfIPBindingStub;
 import iControl.NetworkingVLANBindingStub;
 import iControl.NetworkingVLANMemberEntry;
@@ -53,6 +69,7 @@ import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
@@ -99,6 +116,7 @@ public class F5BigIpResource implements ServerResource {
 	private String _privateInterface;
 	private Integer _numRetries; 
 	private String _guid;
+	private boolean _inline;
 
 	private Interfaces _interfaces;
 	private LocalLBVirtualServerBindingStub _virtualServerApi;
@@ -106,8 +124,10 @@ public class F5BigIpResource implements ServerResource {
 	private LocalLBNodeAddressBindingStub _nodeApi;
 	private NetworkingVLANBindingStub _vlanApi;
 	private NetworkingSelfIPBindingStub _selfIpApi;
+	private NetworkingRouteDomainBindingStub _routeDomainApi;
 	private SystemConfigSyncBindingStub _configSyncApi;
 	private String _objectNamePathSep = "-";
+	private String _routeDomainIdentifier = "%";
 	
 	private static final Logger s_logger = Logger.getLogger(F5BigIpResource.class);
 	
@@ -157,6 +177,8 @@ public class F5BigIpResource implements ServerResource {
             if (_guid == null) {
                 throw new ConfigurationException("Unable to find the guid");
             }
+            
+            _inline = Boolean.parseBoolean((String) params.get("inline"));
     		    		    	
             if (!login()) {
             	throw new ExecutionException("Failed to login to the F5 BigIp.");
@@ -268,7 +290,7 @@ public class F5BigIpResource implements ServerResource {
 			IpAddressTO[] ips = cmd.getIpAddresses();
             for (IpAddressTO ip : ips) {
                 long guestVlanTag = Long.valueOf(ip.getVlanId());
-                String vlanSelfIp = ip.getVlanGateway();
+                String vlanSelfIp = _inline ? tagAddressWithRouteDomain(ip.getVlanGateway(), guestVlanTag) : ip.getVlanGateway();
                 String vlanNetmask = ip.getVlanNetmask();      
                 
                 // Delete any existing guest VLAN with this tag, self IP, and netmask
@@ -298,6 +320,7 @@ public class F5BigIpResource implements ServerResource {
 	
 	private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {
 		try {			
+			long guestVlanTag = Long.parseLong(cmd.getAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG));
 			LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
 			for (LoadBalancerTO loadBalancer : loadBalancers) {
 				LbProtocol lbProtocol;
@@ -320,7 +343,7 @@ public class F5BigIpResource implements ServerResource {
 					throw new ExecutionException("Got invalid algorithm: " + loadBalancer.getAlgorithm());
 				}		
 				
-				String srcIp = loadBalancer.getSrcIp();
+				String srcIp = _inline ? tagAddressWithRouteDomain(loadBalancer.getSrcIp(), guestVlanTag) : loadBalancer.getSrcIp();
 				int srcPort = loadBalancer.getSrcPort();	
 				String virtualServerName = genVirtualServerName(lbProtocol, srcIp, srcPort);
 												
@@ -340,8 +363,9 @@ public class F5BigIpResource implements ServerResource {
 					List<String> activePoolMembers = new ArrayList<String>();
 					for (DestinationTO destination : loadBalancer.getDestinations()) {
 						if (!destination.isRevoked()) {
-							addPoolMember(virtualServerName, destination.getDestIp(), destination.getDestPort());
-							activePoolMembers.add(destination.getDestIp() + "-" + destination.getDestPort());
+							String destIp = _inline ? tagAddressWithRouteDomain(destination.getDestIp(), guestVlanTag) : destination.getDestIp();
+							addPoolMember(virtualServerName, destIp, destination.getDestPort());
+							activePoolMembers.add(destIp + "-" + destination.getDestPort());
 						}
 					}			
 					
@@ -372,7 +396,7 @@ public class F5BigIpResource implements ServerResource {
 	
 	private synchronized ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
 		try {
-			return getPublicIpBytesSentAndReceived(cmd);
+			return getIpBytesSentAndReceived(cmd);
 		} catch (ExecutionException e) {
 			return new ExternalNetworkResourceUsageAnswer(cmd, e);
 		}
@@ -412,6 +436,21 @@ public class F5BigIpResource implements ServerResource {
 				}
 			}
 			
+			if (_inline) {
+				List<Long> allRouteDomains = getRouteDomains();
+				if (!allRouteDomains.contains(vlanTag)) {
+					long[] routeDomainIds = genLongArray(vlanTag);
+					String[][] vlanNames = new String[][]{genStringArray(genVlanName(vlanTag))};
+					
+					s_logger.debug("Creating route domain " + vlanTag);
+					_routeDomainApi.create(routeDomainIds, vlanNames);
+					
+					if (!getRouteDomains().contains(vlanTag)) {
+						throw new ExecutionException("Failed to create route domain " + vlanTag);
+					}
+				}
+			}
+			
 			List<String> allSelfIps = getSelfIps();
 			if (!allSelfIps.contains(vlanSelfIp)) {
 				String[] selfIpsToCreate = genStringArray(vlanSelfIp);
@@ -439,13 +478,25 @@ public class F5BigIpResource implements ServerResource {
 			// Delete all virtual servers and pools that use this guest VLAN
 			deleteVirtualServersInGuestVlan(vlanSelfIp, vlanNetmask);
 
-			List<String> selfIps = getSelfIps();
-			if (selfIps.contains(vlanSelfIp)) {
+			List<String> allSelfIps = getSelfIps();
+			if (allSelfIps.contains(vlanSelfIp)) {
 				s_logger.debug("Deleting self IP " + vlanSelfIp);
 				_selfIpApi.delete_self_ip(genStringArray(vlanSelfIp));
 
 				if (getSelfIps().contains(vlanSelfIp)) {
 					throw new ExecutionException("Failed to delete self IP " + vlanSelfIp);
+				}
+			}
+			
+			if (_inline) {
+				List<Long> allRouteDomains = getRouteDomains();
+				if (allRouteDomains.contains(vlanTag)) {
+					s_logger.debug("Deleting route domain " + vlanTag);
+					_routeDomainApi.delete_route_domain(genLongArray(vlanTag));
+					
+					if (getRouteDomains().contains(vlanTag)) {
+						throw new ExecutionException("Failed to delete route domain " + vlanTag);
+					}
 				}
 			}
 
@@ -464,6 +515,7 @@ public class F5BigIpResource implements ServerResource {
 	}
 	
 	private void deleteVirtualServersInGuestVlan(String vlanSelfIp, String vlanNetmask) throws ExecutionException {
+		vlanSelfIp = stripRouteDomainFromAddress(vlanSelfIp);
 		List<String> virtualServersToDelete = new ArrayList<String>();
 		
 		List<String> allVirtualServers = getVirtualServers();
@@ -471,7 +523,7 @@ public class F5BigIpResource implements ServerResource {
 			// Check if the virtual server's default pool has members in this guest VLAN
 			List<String> poolMembers = getMembers(virtualServerName);
 			for (String poolMemberName : poolMembers) {
-				String poolMemberIp = getIpAndPort(poolMemberName)[0];
+				String poolMemberIp = stripRouteDomainFromAddress(getIpAndPort(poolMemberName)[0]);
 				if (NetUtils.sameSubnet(vlanSelfIp, poolMemberIp, vlanNetmask)) {
 					virtualServersToDelete.add(virtualServerName);
 					break;
@@ -487,6 +539,21 @@ public class F5BigIpResource implements ServerResource {
 	
 	private String genVlanName(long vlanTag) {
 		return "vlan-" + String.valueOf(vlanTag);
+	}
+	
+	private List<Long> getRouteDomains() throws ExecutionException {
+		try {
+			List<Long> routeDomains = new ArrayList<Long>();
+			long[] routeDomainsArray = _routeDomainApi.get_list();
+			
+			for (long routeDomainName : routeDomainsArray) {
+				routeDomains.add(routeDomainName);
+			}
+			
+			return routeDomains;
+		} catch (RemoteException e) {
+			throw new ExecutionException(e.getMessage());
+		}
 	}
 	
 	private List<String> getSelfIps() throws ExecutionException {
@@ -534,6 +601,7 @@ public class F5BigIpResource implements ServerResource {
 			_nodeApi = _interfaces.getLocalLBNodeAddress();
 			_vlanApi = _interfaces.getNetworkingVLAN();
 			_selfIpApi = _interfaces.getNetworkingSelfIP();
+			_routeDomainApi = _interfaces.getNetworkingRouteDomain();
 			_configSyncApi = _interfaces.getSystemConfigSync();
 			
 			return true;
@@ -587,6 +655,7 @@ public class F5BigIpResource implements ServerResource {
 	}
 	
 	private String genVirtualServerName(LbProtocol protocol, String srcIp, long srcPort) {
+		srcIp = stripRouteDomainFromAddress(srcIp);
 		return genObjectName("vs", protocol, srcIp, srcPort);
 	}
 	
@@ -834,14 +903,19 @@ public class F5BigIpResource implements ServerResource {
 	
 	// Stats methods
 	
-	private ExternalNetworkResourceUsageAnswer getPublicIpBytesSentAndReceived(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
+	private ExternalNetworkResourceUsageAnswer getIpBytesSentAndReceived(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
 		ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
 		
 		try {
 			LocalLBVirtualServerVirtualServerStatistics stats = _virtualServerApi.get_all_statistics();
 			for (LocalLBVirtualServerVirtualServerStatisticEntry entry : stats.getStatistics()) {
-				String publicIp = entry.getVirtual_server().getAddress();
-				long[] bytesSentAndReceived = answer.ipBytes.get(publicIp);
+				String virtualServerIp = entry.getVirtual_server().getAddress();
+				
+				if (_inline) {
+					virtualServerIp = stripRouteDomainFromAddress(virtualServerIp);
+				}
+				
+				long[] bytesSentAndReceived = answer.ipBytes.get(virtualServerIp);
 				
 				if (bytesSentAndReceived == null) {
 				    bytesSentAndReceived = new long[]{0, 0};
@@ -858,7 +932,7 @@ public class F5BigIpResource implements ServerResource {
 				}
 				
 				if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
-					answer.ipBytes.put(publicIp, bytesSentAndReceived);			
+					answer.ipBytes.put(virtualServerIp, bytesSentAndReceived);			
 				}
 			}
 		} catch (Exception e) {
@@ -869,7 +943,21 @@ public class F5BigIpResource implements ServerResource {
 		return answer;
 	}
 	
-	// Array util methods	
+	// Misc methods
+	
+	private String tagAddressWithRouteDomain(String address, long vlanTag) {
+		return address + _routeDomainIdentifier + vlanTag;
+	}
+	
+	private String stripRouteDomainFromAddress(String address) {
+		int i = address.indexOf(_routeDomainIdentifier);
+		
+		if (i > 0) {
+			address = address.substring(0, i);
+		}
+		
+		return address;
+	}
 	
 	private String genObjectName(Object... args) {
 		String objectName = "";

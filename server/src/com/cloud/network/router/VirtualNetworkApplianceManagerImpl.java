@@ -1506,8 +1506,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
                 for (LoadBalancerVO lb : lbs) {
                     List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                    lbRules.add(loadBalancing);
+                    
+                    if (dstList != null && !dstList.isEmpty()) {
+                    	LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                    	lbRules.add(loadBalancing);
+                    }
                 }
 
                 s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
@@ -1968,7 +1971,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 String vmGuestAddress = null;
 
-                IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate, ipAddr.isOneToOneNat());
+                IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate, ipAddr.isOneToOneNat());
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkTags(network.getTags());
                 ipsToSend[i++] = ip;
@@ -1991,7 +1994,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<PortForwardingRuleTO>();
             for (PortForwardingRule rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, sourceIp.getAddress().addr());
+                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }
         }
@@ -2012,7 +2015,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<StaticNatRuleTO>();
             for (StaticNatRule rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, sourceIp.getAddress().addr(), rule.getDestIpAddress());
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, null, sourceIp.getAddress().addr(), rule.getDestIpAddress());
                 rulesTO.add(ruleTO);
             }
         }
@@ -2354,7 +2357,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, sourceIp.getAddress().addr());
+                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }
         }
@@ -2446,7 +2449,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rulesTO = new ArrayList<StaticNatRuleTO>();
             for (StaticNat rule : rules) {
                 IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, null, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
                 rulesTO.add(ruleTO);
             }
         }
