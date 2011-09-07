@@ -123,6 +123,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -1163,7 +1164,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     }
 
-    @Override
+    @Override @DB
     public DataCenter editZone(UpdateZoneCmd cmd) {
         // Parameter validation as from execute() method in V1
         Long zoneId = cmd.getId();
@@ -1172,24 +1173,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String vnetRange = cmd.getVlan();
+        String newVnetRangeString = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
         List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
-        Long userId = UserContext.current().getCallerUserId();
-        int startVnetRange = 0;
-        int stopVnetRange = 0;
         Boolean isPublic = cmd.isPublic();
         String allocationStateStr = cmd.getAllocationState();
         String dhcpProvider = cmd.getDhcpProvider();        
-        Map detailsMap = cmd.getDetails();
+        Map<?, ?> detailsMap = cmd.getDetails();
         String networkDomain = cmd.getDomain();
 
         Map<String, String> newDetails = new HashMap<String, String>();
         if (detailsMap != null) {
-            Collection zoneDetailsCollection = detailsMap.values();
-            Iterator iter = zoneDetailsCollection.iterator();
+            Collection<?> zoneDetailsCollection = detailsMap.values();
+            Iterator<?> iter = zoneDetailsCollection.iterator();
             while (iter.hasNext()) {
-                HashMap detail = (HashMap)iter.next();
+                HashMap<?, ?> detail = (HashMap<?, ?>)iter.next();
                 String key = (String)detail.get("key");
                 String value = (String)detail.get("value");
                 if ((key == null) || (value == null)) {
@@ -1215,10 +1213,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             newDetails.put(ZoneConfig.DnsSearchOrder.getName(), StringUtils.join(dnsSearchOrder, ","));
         }
 
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-
         DataCenterVO zone = _zoneDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
@@ -1230,7 +1224,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         // if zone is of Basic type, don't allow to add vnet range and cidr
         if (zone.getNetworkType() == NetworkType.Basic) {
-            if (vnetRange != null) {
+            if (newVnetRangeString != null) {
                 throw new InvalidParameterValueException("Can't add vnet range for the zone that supports " + zone.getNetworkType() + " network");
             } else if (guestCidr != null) {
                 throw new InvalidParameterValueException("Can't add cidr for the zone that supports " + zone.getNetworkType() + " network");
@@ -1246,37 +1240,60 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
         }
 
-        // If the Vnet range is being changed, make sure there are no allocated VNets
-        if (vnetRange != null) {
-            if (zoneHasAllocatedVnets(zoneId)) {
-                throw new CloudRuntimeException("The vlan range is not editable because there are allocated vlans.");
-            }
+        // Vnet range can be extended only
+        boolean replaceVnet = false;
+        ArrayList<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>(2); 
+        
+        if (newVnetRangeString != null) {
+            Integer newStartVnet = 0;
+            Integer newEndVnet = 0;
+            String[] newVnetRange = newVnetRangeString.split("-");
 
-            String[] startStopRange = new String[2];
-            startStopRange = vnetRange.split("-");
-
-            if (startStopRange.length == 1) {
+            if (newVnetRange.length < 2) {
                 throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
             }
 
-            if (startStopRange[0] == null || startStopRange[1] == null) {
+            if (newVnetRange[0] == null || newVnetRange[1] == null) {
                 throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
             }
 
             try {
-                startVnetRange = Integer.parseInt(startStopRange[0]);
-                stopVnetRange = Integer.parseInt(startStopRange[1]);
+                newStartVnet = Integer.parseInt(newVnetRange[0]);
+                newEndVnet = Integer.parseInt(newVnetRange[1]);
             } catch (NumberFormatException e) {
                 s_logger.warn("Unable to parse vnet range:", e);
                 throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
             }
 
-            if (startVnetRange < 0 || stopVnetRange > 4096) {
+            if (newStartVnet < 0 || newEndVnet > 4096) {
                 throw new InvalidParameterValueException("Vnet range has to be between 0-4096");
             }
 
-            if (startVnetRange > stopVnetRange) {
+            if (newStartVnet > newEndVnet) {
                 throw new InvalidParameterValueException("Vnet range has to be between 0-4096 and start range should be lesser than or equal to stop range");
+            } 
+            
+            if (zoneHasAllocatedVnets(zoneId)) {
+                String[] existingRange = zone.getVnet().split("-");
+                int existingStartVnet = Integer.parseInt(existingRange[0]);
+                int existingEndVnet = Integer.parseInt(existingRange[1]);
+                
+                //check if vnet is being extended
+                if (!(newStartVnet.intValue() <= existingStartVnet && newEndVnet.intValue() >= existingEndVnet)) {
+                    throw new InvalidParameterValueException("Can's shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
+                }
+                
+                if (newStartVnet < existingStartVnet) {
+                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
+                }
+                
+                if (newEndVnet > existingEndVnet) {
+                    vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
+                }
+                
+            } else {
+                vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
+                replaceVnet = true;
             }
         }
 
@@ -1284,12 +1301,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (zoneName == null) {
             zoneName = oldZoneName;
-        }
-
-        boolean dnsUpdate = false;
-
-        if (dns1 != null || dns2 != null) {
-            dnsUpdate = true;
         }
 
         if (dns1 == null) {
@@ -1339,8 +1350,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone.setGuestNetworkCidr(guestCidr);
         zone.setDomain(networkDomain);
 
-        if (vnetRange != null) {
-            zone.setVnet(vnetRange);
+        if (newVnetRangeString != null) {
+            zone.setVnet(newVnetRangeString);
         }
 
         // update a private zone to public; not vice versa
@@ -1349,6 +1360,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             zone.setDomain(null);
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         Map<String, String> updatedDetails = new HashMap<String, String>();
         _zoneDao.loadDetails(zone);
         if(zone.getDetails() != null){
@@ -1365,20 +1379,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if(dhcpProvider != null){
             zone.setDhcpProvider(dhcpProvider);
         }
-
+        
         if (!_zoneDao.update(zoneId, zone)) {
             throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
         }
 
-        if (vnetRange != null) {
-            String[] tokens = vnetRange.split("-");
-            int begin = Integer.parseInt(tokens[0]);
-            int end = tokens.length == 1 ? (begin) : Integer.parseInt(tokens[1]);
-
+        if (replaceVnet) {
+            s_logger.debug("Deleting existing vnet range for the zone id=" + zoneId + " as a part of updateZone call");
             _zoneDao.deleteVnet(zoneId);
-            _zoneDao.addVnet(zone.getId(), begin, end);
         }
 
+        for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
+            s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the zone id=" + zoneId + " as a part of updateZone call");
+            _zoneDao.addVnet(zone.getId(), vnetToAdd.first(), vnetToAdd.second());
+        }
+        
+        txn.commit();
         return zone;
     }
 
