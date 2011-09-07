@@ -17,12 +17,9 @@
  */
 package com.cloud.agent.api;
 
-import java.util.Random;
-
 
 public class CleanupNetworkRulesCmd extends Command implements CronCommand {
 
-    static private Random random = new Random();
     private int interval = 10*60;
     
     @Override
@@ -31,9 +28,9 @@ public class CleanupNetworkRulesCmd extends Command implements CronCommand {
     }
 
 
-    public CleanupNetworkRulesCmd() {
+    public CleanupNetworkRulesCmd(int intervalSecs) {
         super();
-        interval = 8*60 +  random.nextInt(120);
+        interval = intervalSecs;
     }
 
 

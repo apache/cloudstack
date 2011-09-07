@@ -10,11 +10,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import static org.mockito.Mockito.*;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.MockAgentManagerImpl;
 import com.cloud.configuration.DefaultInterceptorLibrary;
@@ -35,7 +30,6 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.MockComponentLocator;
 import com.cloud.vm.MockUserVmManagerImpl;
 import com.cloud.vm.MockVirtualMachineManagerImpl;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDaoImpl;
@@ -71,22 +65,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addManager("AccountManager", MockAccountManagerImpl.class); 
         locator.makeActive(new DefaultInterceptorLibrary());
         _sgMgr = ComponentLocator.inject(SecurityGroupManagerImpl2.class);
-
-        _vmDao = spy((UserVmDaoImpl)locator.getDao(UserVmDao.class));
-        when(_vmDao.findById(anyLong())).thenAnswer(new Answer<UserVmVO>() {
-
-            @Override
-            public UserVmVO answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                Long vmId = (Long) args[0];
-                String vmName = VirtualMachineName.getVmName(vmId,3, "VM");
-                UserVmVO result = new UserVmVO(vmId, vmName, vmName, 1, HypervisorType.XenServer, 5, false, false, 1, 3, 1, null, vmName);
-                result.setHostId(vmId);
-                return result;
-            }
-            
-        });
-        AgentManager agentMgr = spy(locator.getManager(AgentManager.class));
+     
     }
     
     @Override

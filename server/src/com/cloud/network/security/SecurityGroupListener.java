@@ -20,6 +20,7 @@ package com.cloud.network.security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -51,6 +52,8 @@ public class SecurityGroupListener implements Listener {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupListener.class.getName());
 
     private static final int MAX_RETRIES_ON_FAILURE = 3;
+    private static final int MIN_TIME_BETWEEN_CLEANUPS = 30*60;//30 minutes
+    private final Random _cleanupRandom = new Random();
 
     SecurityGroupManagerImpl _securityGroupManager;
     AgentManager _agentMgr;
@@ -81,7 +84,7 @@ public class SecurityGroupListener implements Listener {
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        Set<Long> affectedVms = new HashSet<Long>();
+        List<Long> affectedVms = new ArrayList<Long>();
         int commandNum = 0;
         for (Answer ans: answers) {
             if (ans instanceof SecurityIngressRuleAnswer) {
@@ -158,13 +161,15 @@ public class SecurityGroupListener implements Listener {
         if (cmd instanceof StartupRoutingCommand) {
             //if (Boolean.toString(true).equals(host.getDetail("can_bridge_firewall"))) {
             try {
-                CleanupNetworkRulesCmd cleanupCmd = new CleanupNetworkRulesCmd();
+                int interval = MIN_TIME_BETWEEN_CLEANUPS + _cleanupRandom.nextInt(MIN_TIME_BETWEEN_CLEANUPS/2);
+                CleanupNetworkRulesCmd cleanupCmd = new CleanupNetworkRulesCmd(interval);
                 Commands c = new Commands(cleanupCmd);
                 _agentMgr.send(host.getId(), c,  this);
                 if(s_logger.isInfoEnabled())
                     s_logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
             } catch (AgentUnavailableException e) {
-                s_logger.warn("Unable to schedule network rules cleanup");
+                //usually hypervisors that do not understand sec group rules.
+                s_logger.debug("Unable to schedule network rules cleanup for host " + host.getId(), e);
             }
         }
     }

@@ -27,7 +27,9 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.PasswordResetElement;
+import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
@@ -186,11 +188,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    @Override
-    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    
 
     @Override
     public PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
@@ -452,6 +450,54 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public IPAddressVO markIpAsUnavailable(long addrId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String acquireGuestIpAddress(Network network, String requestedIp) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getGlobalGuestDomainSuffix() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getStartIpAddress(long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getIpInNetwork(long vmId, long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getIpInNetworkIncludingRemoved(long vmId, long networkId) {
         // TODO Auto-generated method stub
         return null;
     }
