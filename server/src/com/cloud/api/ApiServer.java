@@ -120,6 +120,7 @@ public class ApiServer implements HttpRequestHandler {
     public static final short RESOURCE_DOMAIN_ADMIN_COMMAND = 2;
     public static final short USER_COMMAND = 8;
     public static boolean encodeApiResponse = false;
+    public static String jsonContentType = "text/javascript";
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
     private ManagementServer _ms = null;
@@ -233,6 +234,11 @@ public class ApiServer implements HttpRequestHandler {
         }
         
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
+        
+        String jsonType = configDao.getValue(Config.JavaScriptDefaultContentType.key());
+        if (jsonType != null) {
+            jsonContentType = jsonType;
+        }
 
         ListenerThread listenerThread = new ListenerThread(this, apiPort);
         listenerThread.start();
@@ -773,7 +779,7 @@ public class ApiServer implements HttpRequestHandler {
             BasicHttpEntity body = new BasicHttpEntity();
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 // JSON response
-                body.setContentType("text/javascript");
+                body.setContentType(jsonContentType);
                 if (responseText == null) {
                     body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes("UTF-8")));
                 }
