@@ -121,6 +121,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -130,6 +131,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -195,6 +197,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     StoragePoolDao _storagePoolDao;
+    @Inject
+    UserVmDetailsDao _vmDetailsDao;
 
     private ConsoleProxyListener _listener;
 
@@ -1288,6 +1292,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    	
+    	ConsoleProxyVO vm = profile.getVirtualMachine();
+        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+        vm.setDetails(details);
+    	
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
         buf.append(" host=").append(_mgmt_host);

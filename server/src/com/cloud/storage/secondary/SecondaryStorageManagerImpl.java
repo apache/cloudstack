@@ -108,6 +108,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 //
@@ -186,6 +187,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     protected VMInstanceDao                       _vmDao;
     @Inject
     protected CapacityDao                         _capacityDao;
+    @Inject
+    UserVmDetailsDao _vmDetailsDao;
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
@@ -940,6 +943,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest, ReservationContext context) {
 
+    	SecondaryStorageVmVO vm = profile.getVirtualMachine();
+        Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
+        vm.setDetails(details);
+    	
         HostVO secHost = _hostDao.findSecondaryStorageHost(dest.getDataCenter().getId());
         assert (secHost != null);
 

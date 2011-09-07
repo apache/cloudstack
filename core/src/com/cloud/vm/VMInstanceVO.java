@@ -35,6 +35,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
@@ -140,6 +141,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="hypervisor_type")
     @Enumerated(value=EnumType.STRING)
     protected HypervisorType hypervisorType;
+
+    @Transient
+    Map<String, String> details;
     
     public VMInstanceVO(long id,
                         long serviceOfferingId,
@@ -396,9 +400,19 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	    return this.reservationId;
 	}
 	
-	public Map<String, String> getDetails() {
-		return null;
-	}
+    public Map<String, String> getDetails() {
+        return details;
+    }
+    
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        details.put(name, value);
+    }
+    
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
 
 	transient String toString;
     @Override
