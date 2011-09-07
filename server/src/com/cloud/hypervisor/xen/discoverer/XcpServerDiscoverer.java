@@ -43,6 +43,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -105,6 +106,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject VMTemplateDao _tmpltDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject ClusterDao _clusterDao;
+    @Inject protected ConfigurationDao _configDao;
     
     protected XcpServerDiscoverer() {
     }
@@ -276,8 +278,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     params.put("storage.network.device2", _storageNic2);
                     details.put("storage.network.device2", _storageNic2);
                 }                             
-                params.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
-                details.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
+                params.put("wait", Integer.toString(_wait));
+                details.put("wait", Integer.toString(_wait));
+                params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 details.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {

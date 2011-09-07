@@ -1248,7 +1248,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 	
 	        params.put("ipaddress", host.getPrivateIpAddress());
 	        params.put("secondary.storage.vm", "false");
-	        params.put("max.template.iso.size", _configDao.getValue("max.template.iso.size"));
+	        params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
+	        params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
 	
 	        try {
 	            resource.configure(host.getName(), params);
