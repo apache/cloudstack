@@ -269,7 +269,9 @@ public enum Config {
 
 	DnsBasicZoneUpdates("Advanced", NetworkManager.class, String.class, "network.dns.basiczone.updates", "all", "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod", "all,pod"),
 	ClusterMessageTimeOutSeconds("Advanced", ManagementServer.class, Integer.class, "cluster.message.timeout.seconds", "300", "Time (in seconds) to wait before a inter-management server message post times out.", null),
-	AgentLoadThreshold("Advanced", ManagementServer.class, Float.class, "agent.load.threshold", "0.7", "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening", null);
+	AgentLoadThreshold("Advanced", ManagementServer.class, Float.class, "agent.load.threshold", "0.7", "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening", null),
+	
+	JavaScriptDefaultContentType("Advanced", ManagementServer.class, String.class, "json.content.type", "text/javascript", "Http response content type for .js files (default is text/javascript)", null);
 
 	private final String _category;
 	private final Class<?> _componentClass;

@@ -352,7 +352,7 @@ public class ApiServlet extends HttpServlet {
     private void writeResponse(HttpServletResponse resp, String response, int responseCode, String responseType) {
         try {
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType("text/javascript; charset=UTF-8");
+                resp.setContentType(ApiServer.jsonContentType + "; charset=UTF-8");
             } else {
                 resp.setContentType("text/xml; charset=UTF-8");
             }
