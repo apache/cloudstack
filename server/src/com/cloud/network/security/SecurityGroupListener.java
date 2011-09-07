@@ -132,9 +132,7 @@ public class SecurityGroupListener implements Listener {
             } catch (AgentUnavailableException e) {
                 s_logger.warn("Unable to schedule network rules cleanup");
             }
-
         }
-
     }
 
 
