@@ -17,8 +17,10 @@
  */
 package com.cloud.network.security;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -48,9 +50,12 @@ import com.cloud.network.security.dao.SecurityGroupWorkDao;
 public class SecurityGroupListener implements Listener {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupListener.class.getName());
 
+    private static final int MAX_RETRIES_ON_FAILURE = 3;
+
     SecurityGroupManagerImpl _securityGroupManager;
     AgentManager _agentMgr;
     SecurityGroupWorkDao _workDao;
+    Map<Long, Integer> _vmFailureCounts = new ConcurrentHashMap<Long, Integer>();
 
 
     public SecurityGroupListener(SecurityGroupManagerImpl securityGroupManager,
@@ -84,7 +89,7 @@ public class SecurityGroupListener implements Listener {
                 if (ans.getResult()) {
                     s_logger.debug("Successfully programmed rule " + ruleAnswer.toString() + " into host " + agentId);
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Done);
-
+                    recordSuccess(ruleAnswer.getVmId());
                 } else {
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Error);;
                     s_logger.debug("Failed to program rule " + ruleAnswer.toString() + " into host " + agentId 
@@ -93,8 +98,12 @@ public class SecurityGroupListener implements Listener {
                     if (ruleAnswer.getReason() == FailureReason.CANNOT_BRIDGE_FIREWALL) {
                         s_logger.debug("Not retrying security group rules for vm " + ruleAnswer.getVmId() + " on failure since host " + agentId + " cannot do bridge firewalling");
                     } else if (ruleAnswer.getReason() == FailureReason.PROGRAMMING_FAILED){
-                        s_logger.debug("Retrying on failure for vm " + ruleAnswer.getVmId());
-                        affectedVms.add(ruleAnswer.getVmId());
+                        if (checkShouldRetryOnFailure(ruleAnswer.getVmId())) {
+                            s_logger.debug("Retrying security group rules on failure for vm " + ruleAnswer.getVmId());
+                            affectedVms.add(ruleAnswer.getVmId());
+                        } else {
+                            s_logger.debug("Not retrying security group rules for vm " + ruleAnswer.getVmId() + " on failure: too many retries");
+                        }
                     }
                 }
                 commandNum++;
@@ -106,6 +115,23 @@ public class SecurityGroupListener implements Listener {
         }
 
         return true;
+    }
+    
+    protected boolean checkShouldRetryOnFailure(long vmId) {
+        Integer currCount = _vmFailureCounts.get(vmId);
+        if (currCount == null) 
+            currCount = 0;
+        
+        if (currCount.intValue() < MAX_RETRIES_ON_FAILURE) {
+            _vmFailureCounts.put(vmId, ++currCount);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    protected void recordSuccess(long vmId) {
+        _vmFailureCounts.remove(vmId);
     }
 
     @Override
