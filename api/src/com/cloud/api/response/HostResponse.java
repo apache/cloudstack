@@ -80,7 +80,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("cpuused") @Param(description="the amount of the host's CPU currently used")
     private String cpuUsed;
-    
+
     @SerializedName("cpuwithoverprovisioning") @Param(description="the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
     private String cpuWithOverprovisioning;
 
@@ -122,7 +122,7 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("clustername") @Param(description="the cluster name of the host")
     private String clusterName;
-    
+
     @SerializedName("clustertype") @Param(description="the cluster type of the cluster that host belongs to")
     private String clusterType;
 
@@ -137,28 +137,31 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("events") @Param(description="events available for the host")
     private String events;
-    
+
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the host")
     private Long jobId;
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
-    
+
     @SerializedName("hosttags") @Param(description="comma-separated list of tags for the host")
     private String hostTags;
-    
+
     @SerializedName("hasEnoughCapacity") @Param(description="true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
     private Boolean hasEnoughCapacity;
-    
+
     @SerializedName("allocationstate") @Param(description="the allocation state of the host")
     private String allocationState;
+
+    @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
+    private String hypervisorVersion;
 
 
     @Override
     public Long getObjectId() {
         return getId();
     }
-    
+
     @Override
     public Long getJobId() {
         return jobId;
@@ -168,7 +171,7 @@ public class HostResponse extends BaseResponse {
     public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
-    
+
     @Override
     public Integer getJobStatus() {
         return jobStatus;
@@ -426,13 +429,13 @@ public class HostResponse extends BaseResponse {
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
     }
-    
+
     public String getClusterType() {
-    	return clusterType;
+        return clusterType;
     }
-    
+
     public void setClusterType(String clusterType) {
-    	this.clusterType = clusterType;
+        this.clusterType = clusterType;
     }
 
     public Boolean isLocalStorageActive() {
@@ -466,7 +469,7 @@ public class HostResponse extends BaseResponse {
     public void setEvents(String events) {
         this.events = events;
     }
-    
+
     public String getHostTags() {
         return hostTags;
     }
@@ -474,7 +477,7 @@ public class HostResponse extends BaseResponse {
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
     }
-    
+
     public Boolean hasEnoughCapacity() {
         return hasEnoughCapacity;
     }
@@ -482,20 +485,29 @@ public class HostResponse extends BaseResponse {
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
         this.hasEnoughCapacity = hasEnoughCapacity;
     }
-    
+
     public String getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
-    
+
     public void setAllocationState(String allocationState) {
-    	this.allocationState = allocationState;
+        this.allocationState = allocationState;
     }
-    
+
     public String getCpuWithOverprovisioning() {
         return cpuWithOverprovisioning;
     }
 
     public void setCpuWithOverprovisioning(String cpuWithOverprovisioning) {
         this.cpuWithOverprovisioning = cpuWithOverprovisioning;
-    }    
+    }
+
+    public void setHypervisorVersion(String hypervisorVersion) {
+        this.hypervisorVersion = hypervisorVersion;
+    }
+
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
+    }   
+
 }

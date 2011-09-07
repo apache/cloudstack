@@ -2137,7 +2137,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             host.setSpeed(scc.getSpeed());
             HypervisorType hyType = scc.getHypervisorType();
             host.setHypervisorType(hyType);
-
+            host.setHypervisorVersion(scc.getHypervisorVersion());
         } else if (startup instanceof StartupStorageCommand) {
             final StartupStorageCommand ssc = (StartupStorageCommand) startup;
             host.setParent(ssc.getParent());

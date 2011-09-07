@@ -62,6 +62,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostUpSearch;
     protected final GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
+    
 
     protected final Attribute _updateTimeAttr;
 
@@ -140,6 +142,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountVirtualRoutersByAccount.and("type", CountVirtualRoutersByAccount.entity().getType(), SearchCriteria.Op.EQ);
         CountVirtualRoutersByAccount.and("state", CountVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);        
         CountVirtualRoutersByAccount.done();
+        
+        CountRunningByHost = createSearchBuilder(Long.class);
+        CountRunningByHost.select(null, Func.COUNT, null);
+        CountRunningByHost.and("host", CountRunningByHost.entity().getHostId(), SearchCriteria.Op.EQ);
+        CountRunningByHost.and("state", CountRunningByHost.entity().getState(), SearchCriteria.Op.EQ);
+        CountRunningByHost.done();        
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -341,4 +349,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("state", State.Migrating);
         return listBy(sc);
     }
+    
+    @Override
+    public Long countRunningByHostId(long hostId){
+        SearchCriteria<Long> sc = CountRunningByHost.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("state", State.Running);
+        return customSearch(sc, null).get(0);
+    }    
 }

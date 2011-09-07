@@ -174,6 +174,9 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorCapabilities;
+import com.cloud.hypervisor.HypervisorCapabilitiesVO;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
@@ -331,7 +334,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadDao _uploadDao;
     private final SSHKeyPairDao _sshKeyPairDao;
     private final LoadBalancerDao _loadbalancerDao;
-
+    private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    
     private final KeystoreManager _ksMgr;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -401,6 +405,7 @@ public class ManagementServerImpl implements ManagementServer {
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
+        _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
         }
@@ -4860,5 +4865,55 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.error("Error while listing Event Types", e);
         }
         return null;
+    }
+    
+    @Override
+    public List<HypervisorCapabilitiesVO> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, Long startIndex, Long pageSizeVal){
+        Filter searchFilter = new Filter(HypervisorCapabilitiesVO.class, "id", true, startIndex, pageSizeVal);
+        SearchCriteria<HypervisorCapabilitiesVO> sc = _hypervisorCapabilitiesDao.createSearchCriteria();
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (hypervisorType != null) {
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
+        }
+
+        return _hypervisorCapabilitiesDao.search(sc, searchFilter);
+        
+    }
+    
+    @Override
+    public HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled){
+        HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
+        
+        if(hpvCapabilities == null){
+            throw new InvalidParameterValueException("unable to find the hypervisor capabilities " + id);
+        }
+        
+        boolean updateNeeded = (maxGuestsLimit != null || securityGroupEnabled != null);
+        if (!updateNeeded) {
+            return hpvCapabilities;
+        }
+        
+        
+        hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
+
+        if(maxGuestsLimit != null){
+            hpvCapabilities.setMaxGuestsLimit(maxGuestsLimit);
+        }
+        
+        if(securityGroupEnabled != null){
+            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        }
+
+        if(_hypervisorCapabilitiesDao.update(id, hpvCapabilities)){
+            hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
+            UserContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
+            return hpvCapabilities;            
+        }else{
+            return null;
+        }
     }
 }

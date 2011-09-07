@@ -52,6 +52,7 @@ public class StartupRoutingCommand extends StartupCommand {
     String pool;
     HypervisorType hypervisorType;
     Map<String, String> hostDetails; //stuff like host os, cpu capabilities
+    String hypervisorVersion;
 
     public StartupRoutingCommand() {
         super(Host.Type.Routing);
@@ -59,7 +60,7 @@ public class StartupRoutingCommand extends StartupCommand {
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), RouterPrivateIpStrategy.DcGlobal.toString());
 
     }
-    
+
     public StartupRoutingCommand(int cpus,
                                    long speed,
                                    long memory,
@@ -71,7 +72,7 @@ public class StartupRoutingCommand extends StartupCommand {
         this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, vms);
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
     }
-    
+
     public StartupRoutingCommand(int cpus,
             long speed,
             long memory,
@@ -82,50 +83,55 @@ public class StartupRoutingCommand extends StartupCommand {
 this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, new HashMap<String,String>(), new HashMap<String, VmState>());
 getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
 }
-    
+
     public StartupRoutingCommand(int cpus,
-    		long speed,
-    		long memory,
-    		long dom0MinMemory,
-    		final String caps,
-    		final HypervisorType hypervisorType,   		
-    		final Map<String, String> hostDetails,
-    		Map<String, VmState> vms) {
-    	super(Host.Type.Routing);
-    	this.cpus = cpus;
-    	this.speed = speed;
-    	this.memory = memory;
-    	this.dom0MinMemory = dom0MinMemory;
-    	this.vms = vms;
-    	this.hypervisorType = hypervisorType;
-    	this.hostDetails = hostDetails;
-    	this.caps = caps;
-    	this.poolSync = false;
+            long speed,
+            long memory,
+            long dom0MinMemory,
+            final String caps,
+            final HypervisorType hypervisorType,   		
+            final Map<String, String> hostDetails,
+            Map<String, VmState> vms) {
+        super(Host.Type.Routing);
+        this.cpus = cpus;
+        this.speed = speed;
+        this.memory = memory;
+        this.dom0MinMemory = dom0MinMemory;
+        this.vms = vms;
+        this.hypervisorType = hypervisorType;
+        this.hostDetails = hostDetails;
+        this.caps = caps;
+        this.poolSync = false;
     }
-    
+
     public StartupRoutingCommand(int cpus2, long speed2, long memory2,
-			long dom0MinMemory2, String caps2, HypervisorType hypervisorType2,
-			Map<String, VmState> vms2) {
-		this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String,String>(), vms2);
-	}
-    
-	public void setChanges(Map<String, VmState> vms) {
+            long dom0MinMemory2, String caps2, HypervisorType hypervisorType2,
+            Map<String, VmState> vms2) {
+        this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String,String>(), vms2);
+    }
+
+    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, final String caps, final HypervisorType hypervisorType, final Map<String, String> hostDetails, Map<String, VmState> vms, String hypervisorVersion) {
+        this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, hostDetails, vms);
+        this.hypervisorVersion = hypervisorVersion;
+    }    
+
+    public void setChanges(Map<String, VmState> vms) {
         this.vms = vms;
     }
-	
-	public void setStateChanges(Map<String, State> vms) {
-	    for( String vm_name : vms.keySet() ) {
-	        if( this.vms == null ) {
-	            this.vms = new HashMap<String, VmState>();
-	        }
-	        this.vms.put(vm_name, new VmState(vms.get(vm_name), null));
-	    }
-	}
+
+    public void setStateChanges(Map<String, State> vms) {
+        for( String vm_name : vms.keySet() ) {
+            if( this.vms == null ) {
+                this.vms = new HashMap<String, VmState>();
+            }
+            this.vms.put(vm_name, new VmState(vms.get(vm_name), null));
+        }
+    }
 
     public int getCpus() {
         return cpus;
     }
-    
+
     public String getCapabilities() {
         return caps;
     }
@@ -145,36 +151,36 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     public Map<String, VmState> getVmStates() {
         return vms;
     }
-    
+
     public void setSpeed(long speed) {
         this.speed = speed;
     }
-    
+
     public void setCpus(int cpus) {
         this.cpus = cpus;
     }
-    
+
     public void setMemory(long memory) {
         this.memory = memory;
     }
-    
+
     public void setDom0MinMemory(long dom0MinMemory) {
         this.dom0MinMemory = dom0MinMemory;
     }
-    
+
     public void setCaps(String caps) {
         this.caps = caps;
     }
-    
+
     public String getPool() {
-    	return pool;
-    }
-    
-    public void setPool(String pool) {
-    	this.pool = pool;
+        return pool;
     }
 
-	public boolean isPoolSync() {
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
+
+    public boolean isPoolSync() {
         return poolSync;
     }
 
@@ -183,19 +189,27 @@ getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStr
     }
 
     public HypervisorType getHypervisorType() {
-		return hypervisorType;
-	}
+        return hypervisorType;
+    }
 
-	public void setHypervisorType(HypervisorType hypervisorType) {
-		this.hypervisorType = hypervisorType;
-	}
+    public void setHypervisorType(HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
 
-	public Map<String, String> getHostDetails() {
-		return hostDetails;
-	}
+    public Map<String, String> getHostDetails() {
+        return hostDetails;
+    }
 
-	public void setHostDetails(Map<String, String> hostDetails) {
-		this.hostDetails = hostDetails;
-	}
+    public void setHostDetails(Map<String, String> hostDetails) {
+        this.hostDetails = hostDetails;
+    }
+
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
+    }
+
+    public void setHypervisorVersion(String hypervisorVersion) {
+        this.hypervisorVersion = hypervisorVersion;
+    }	
 }
 

@@ -50,15 +50,15 @@ public class HostVO implements Host {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-	private long id;
+    private long id;
 
     @Column(name="disconnected")
     @Temporal(value=TemporalType.TIMESTAMP)
     private Date disconnectedOn;
-    
+
     @Column(name="name", nullable=false)
-	private String name = null;
-    
+    private String name = null;
+
     /**
      * Note: There is no setter for status because it has to be set in the dao code.
      */
@@ -68,76 +68,78 @@ public class HostVO implements Host {
     @Column(name="type", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
     private Type type;
-    
+
     @Column(name="private_ip_address", nullable=false)
-	private String privateIpAddress;
-    
+    private String privateIpAddress;
+
     @Column(name="private_mac_address", nullable=false)
     private String privateMacAddress;
-    
+
     @Column(name="private_netmask", nullable=false)
     private String privateNetmask;
-    
+
     @Column(name="public_netmask")
     private String publicNetmask;
-    
+
     @Column(name="public_ip_address")
     private String publicIpAddress;
-    
+
     @Column(name="public_mac_address")
     private String publicMacAddress;
-    
+
     @Column(name="storage_ip_address")
     private String storageIpAddress;
 
     @Column(name="cluster_id")
     private Long clusterId;
-    
+
     @Column(name="storage_netmask")
     private String storageNetmask;
-    
+
     @Column(name="storage_mac_address")
     private String storageMacAddress;
-    
+
     @Column(name="storage_ip_address_2")
     private String storageIpAddressDeux;
-    
+
     @Column(name="storage_netmask_2")
     private String storageNetmaskDeux;
-    
+
     @Column(name="storage_mac_address_2")
     private String storageMacAddressDeux;
-    
+
     @Column(name="hypervisor_type", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
     private HypervisorType hypervisorType;
-    
+
     @Column(name="proxy_port")
     private Integer proxyPort;
-    
+
     @Column(name="resource")
     private String resource;
-    
+
     @Column(name="fs_type")
     private StoragePoolType fsType;
-    
+
     @Column(name="available")
     private boolean available = true;
-    
+
     @Column(name="setup")
     private boolean setup = false;
-    
+
     @Column(name="allocation_state", nullable=false)
     @Enumerated(value=EnumType.STRING)
     private HostAllocationState hostAllocationState;
 
+    @Column(name="hypervisor_version")
+    private String hypervisorVersion;
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call host dao to load it.
     @Transient
     Map<String, String> details;
-    
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call host dao to load it.
@@ -146,41 +148,41 @@ public class HostVO implements Host {
 
     @Override
     public String getStorageIpAddressDeux() {
-		return storageIpAddressDeux;
-	}
+        return storageIpAddressDeux;
+    }
 
-	public void setStorageIpAddressDeux(String deuxStorageIpAddress) {
-		this.storageIpAddressDeux = deuxStorageIpAddress;
-	}
+    public void setStorageIpAddressDeux(String deuxStorageIpAddress) {
+        this.storageIpAddressDeux = deuxStorageIpAddress;
+    }
 
-	@Override
+    @Override
     public String getStorageNetmaskDeux() {
-		return storageNetmaskDeux;
-	}
+        return storageNetmaskDeux;
+    }
 
-	@Override
+    @Override
     public Long getClusterId() {
-	    return clusterId;
-	}
-	
-	public void setClusterId(Long clusterId) {
-	    this.clusterId = clusterId;
-	}
-	
-	public void setStorageNetmaskDeux(String deuxStorageNetmask) {
-		this.storageNetmaskDeux = deuxStorageNetmask;
-	}
+        return clusterId;
+    }
 
-	@Override
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public void setStorageNetmaskDeux(String deuxStorageNetmask) {
+        this.storageNetmaskDeux = deuxStorageNetmask;
+    }
+
+    @Override
     public String getStorageMacAddressDeux() {
-		return storageMacAddressDeux;
-	}
+        return storageMacAddressDeux;
+    }
 
-	public void setStorageMacAddressDeux(String duexStorageMacAddress) {
-		this.storageMacAddressDeux = duexStorageMacAddress;
-	}
+    public void setStorageMacAddressDeux(String duexStorageMacAddress) {
+        this.storageMacAddressDeux = duexStorageMacAddress;
+    }
 
-	@Override
+    @Override
     public String getPrivateMacAddress() {
         return privateMacAddress;
     }
@@ -188,11 +190,11 @@ public class HostVO implements Host {
     public void setPrivateMacAddress(String privateMacAddress) {
         this.privateMacAddress = privateMacAddress;
     }
-    
+
     public boolean isAvailable() {
         return available;
     }
-    
+
     public void setAvailable(boolean available) {
         this.available = available;
     }
@@ -255,11 +257,11 @@ public class HostVO implements Host {
     public String getStorageMacAddress() {
         return storageMacAddress;
     }
-    
+
     public boolean isSetup() {
         return setup;
     }
-    
+
     public void setSetup(boolean setup) {
         this.setup = setup;
     }
@@ -267,31 +269,31 @@ public class HostVO implements Host {
     public void setStorageMacAddress(String storageMacAddress) {
         this.storageMacAddress = storageMacAddress;
     }
-    
+
     public String getResource() {
         return resource;
     }
-    
+
     public void setResource(String resource) {
         this.resource = resource;
     }
-    
+
     public Map<String, String> getDetails() {
         return details;
     }
-    
+
     public String getDetail(String name) {
         assert (details != null) : "Did you forget to load the details?";
-        
+
         return details != null ? details.get(name) : null;
     }
-    
+
     public void setDetail(String name, String value) {
         assert (details != null) : "Did you forget to load the details?";
-        
+
         details.put(name, value);
     }
-    
+
     public void setDetails(Map<String, String> details) {
         this.details = details;
     }
@@ -299,59 +301,59 @@ public class HostVO implements Host {
     public List<String> getHostTags() {
         return hostTags;
     }
-   
+
     public void setHostTags(List<String> hostTags) {
         this.hostTags = hostTags;
     }
 
     @Column(name="data_center_id", nullable=false)
     private long dataCenterId;
-    
+
     @Column(name="pod_id")
-	private Long podId;
-    
+    private Long podId;
+
     @Column(name="cpus")
     private Integer cpus;
-    
+
     @Column(name="url")
     private String storageUrl;
 
     @Column(name="speed")
     private Long speed;
-    
+
     @Column(name="ram")
     private long totalMemory;
-    
+
     @Column(name="parent", nullable=false)
     private String parent;
-    
+
     @Column(name="guid", updatable=true, nullable=false)
     private String guid;
 
-	@Column(name="capabilities")
+    @Column(name="capabilities")
     private String caps;
-    
+
     @Column(name="total_size")
     private Long totalSize;
-    
+
     @Column(name="last_ping")
     private long lastPinged;
-    
+
     @Column(name="mgmt_server_id")
     private Long managementServerId;
-    
+
     @Column(name="dom0_memory")
     private long dom0MinMemory;
-    
+
     @Column(name="version")
     private String version;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
-    
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     public HostVO(String guid) {
         this.guid = guid;
         this.status = Status.Up;
@@ -359,70 +361,70 @@ public class HostVO implements Host {
         this.dom0MinMemory = 0;
         this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
-    
+
     protected HostVO() {
     }
-    
-	public HostVO(long id,
-	              String name,
-	              Type type,
-	              String privateIpAddress,
-	              String privateNetmask,
-	              String privateMacAddress,
-	              String publicIpAddress,
-	              String publicNetmask,
-	              String publicMacAddress,
-	              String storageIpAddress,
-	              String storageNetmask,
-	              String storageMacAddress,
-	              String deuxStorageIpAddress,
-	              String duxStorageNetmask,
-	              String deuxStorageMacAddress,
-	              String guid,
-	              Status status,
-	              String version,
-	              String iqn,
-	              Date disconnectedOn,
-	              long dcId,
-	              Long podId,
-	              long serverId,
-	              long ping,
-	              String parent,
-	              long totalSize,
-	              StoragePoolType fsType) {
-	    this(id, name, type, privateIpAddress, privateNetmask, privateMacAddress, publicIpAddress, publicNetmask, publicMacAddress, storageIpAddress, storageNetmask, storageMacAddress, guid, status, version, iqn, disconnectedOn, dcId, podId, serverId, ping, null, null, null, 0, null);
-	    this.parent = parent;
-	    this.totalSize = totalSize;
-	    this.fsType = fsType;
-	    this.hostAllocationState = Host.HostAllocationState.Enabled;
-	}
-	
+
     public HostVO(long id,
-                  String name,
-                  Type type,
-                  String privateIpAddress,
-                  String privateNetmask,
-                  String privateMacAddress,
-                  String publicIpAddress,
-                  String publicNetmask,
-                  String publicMacAddress,
-                  String storageIpAddress,
-                  String storageNetmask,
-                  String storageMacAddress,
-                  String guid,
-                  Status status,
-                  String version,
-                  String url,
-                  Date disconnectedOn,
-                  long dcId,
-                  Long podId,
-                  long serverId,
-                  long ping,
-                  Integer cpus,
-                  Long speed,
-                  Long totalMemory,
-                  long dom0MinMemory,
-                  String caps) {
+            String name,
+            Type type,
+            String privateIpAddress,
+            String privateNetmask,
+            String privateMacAddress,
+            String publicIpAddress,
+            String publicNetmask,
+            String publicMacAddress,
+            String storageIpAddress,
+            String storageNetmask,
+            String storageMacAddress,
+            String deuxStorageIpAddress,
+            String duxStorageNetmask,
+            String deuxStorageMacAddress,
+            String guid,
+            Status status,
+            String version,
+            String iqn,
+            Date disconnectedOn,
+            long dcId,
+            Long podId,
+            long serverId,
+            long ping,
+            String parent,
+            long totalSize,
+            StoragePoolType fsType) {
+        this(id, name, type, privateIpAddress, privateNetmask, privateMacAddress, publicIpAddress, publicNetmask, publicMacAddress, storageIpAddress, storageNetmask, storageMacAddress, guid, status, version, iqn, disconnectedOn, dcId, podId, serverId, ping, null, null, null, 0, null);
+        this.parent = parent;
+        this.totalSize = totalSize;
+        this.fsType = fsType;
+        this.hostAllocationState = Host.HostAllocationState.Enabled;
+    }
+
+    public HostVO(long id,
+            String name,
+            Type type,
+            String privateIpAddress,
+            String privateNetmask,
+            String privateMacAddress,
+            String publicIpAddress,
+            String publicNetmask,
+            String publicMacAddress,
+            String storageIpAddress,
+            String storageNetmask,
+            String storageMacAddress,
+            String guid,
+            Status status,
+            String version,
+            String url,
+            Date disconnectedOn,
+            long dcId,
+            Long podId,
+            long serverId,
+            long ping,
+            Integer cpus,
+            Long speed,
+            Long totalMemory,
+            long dom0MinMemory,
+            String caps) {
         this.id = id;
         this.name = name;
         this.status = status;
@@ -454,28 +456,28 @@ public class HostVO implements Host {
         this.storageUrl = url;
         this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
-    
+
     public void setPodId(Long podId) {
-        
+
         this.podId = podId;
     }
-    
+
     public void setDataCenterId(long dcId) {
         this.dataCenterId = dcId;
     }
-    
+
     public void setVersion(String version) {
         this.version = version;
     }
-    
+
     public void setStorageUrl(String url) {
         this.storageUrl = url;
     }
-    
+
     public void setDisconnectedOn(Date disconnectedOn) {
         this.disconnectedOn = disconnectedOn;
     }
-    
+
     public String getStorageUrl() {
         return storageUrl;
     }
@@ -524,32 +526,32 @@ public class HostVO implements Host {
     public long getLastPinged() {
         return lastPinged;
     }
-    
+
     @Override
     public String getParent() {
         return parent;
     }
-    
+
     @Override
     public long getTotalSize() {
         return totalSize;
     }
-    
+
     @Override
     public String getCapabilities() {
         return caps;
     }
-    
+
     @Override
     public Date getCreated() {
         return created;
     }
-    
+
     @Override
     public Date getRemoved() {
         return removed;
     }
-    
+
     @Override
     public String getVersion() {
         return version;
@@ -558,66 +560,66 @@ public class HostVO implements Host {
     public void setType(Type type) {
         this.type = type;
     }
-    
-	@Override
+
+    @Override
     public long getId() {
-		return id;
-	}
-	
-	@Override
-	public String getName() {
-		return name;
-	}
-	
-	@Override
-	public Status getStatus() {
-		return status;
-	}
-	
-	@Override
-	public long getDataCenterId() {
-		return dataCenterId;
-	}
-	
-	@Override
-	public Long getPodId() {
-		return podId;
-	}
-    
+        return id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public Status getStatus() {
+        return status;
+    }
+
+    @Override
+    public long getDataCenterId() {
+        return dataCenterId;
+    }
+
+    @Override
+    public Long getPodId() {
+        return podId;
+    }
+
     @Override
     public Long getManagementServerId() {
         return managementServerId;
     }
-    
+
     @Override
     public Date getDisconnectedOn() {
         return disconnectedOn;
     }
-    
+
     @Override
     public String getPrivateIpAddress() {
         return privateIpAddress;
     }
-    
+
     @Override
     public String getGuid() {
         return guid;
     }
-    
+
     public void setGuid(String guid) {
-		this.guid = guid;
-	}
-    
+        this.guid = guid;
+    }
+
     @Override
     public Integer getCpus() {
         return cpus;
     }
-    
+
     @Override
     public Long getSpeed() {
         return speed;
     }
-    
+
     @Override
     public Long getTotalMemory() {
         return totalMemory;
@@ -625,17 +627,17 @@ public class HostVO implements Host {
 
     @Override
     public Integer getProxyPort() {
-    	return proxyPort;
+        return proxyPort;
     }
-    
+
     public void setProxyPort(Integer port) {
-    	proxyPort = port;
+        proxyPort = port;
     }
-    
+
     public StoragePoolType getFsType() {
         return fsType;
     }
-    
+
     @Override
     public Type getType() {
         return type;
@@ -645,36 +647,46 @@ public class HostVO implements Host {
     public int hashCode() {
         return NumbersUtil.hash(id);
     }
-    
+
     @Override
-	public boolean equals(Object obj) {
-    	if (obj instanceof HostVO) {
-    		return ((HostVO)obj).getId() == this.getId();
-    	} else {
-    		return false;
-    	}
+    public boolean equals(Object obj) {
+        if (obj instanceof HostVO) {
+            return ((HostVO)obj).getId() == this.getId();
+        } else {
+            return false;
+        }
     }
 
     @Override
     public String toString() {
-    	return new StringBuilder("Host[").append("-").append(id).append("-").append(type).append("]").toString();
+        return new StringBuilder("Host[").append("-").append(id).append("-").append(type).append("]").toString();
     }
 
-	public void setHypervisorType(HypervisorType hypervisorType) {
-		this.hypervisorType = hypervisorType;
-	}
-
-	@Override
-	public HypervisorType getHypervisorType() {
-		return hypervisorType;
-	}
-	
-	@Override
-	public HostAllocationState getHostAllocationState() {
-    	return hostAllocationState;
+    public void setHypervisorType(HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
     }
-    
+
+    @Override
+    public HypervisorType getHypervisorType() {
+        return hypervisorType;
+    }
+
+    @Override
+    public HostAllocationState getHostAllocationState() {
+        return hostAllocationState;
+    }
+
     public void setHostAllocationState(HostAllocationState hostAllocationState) {
-		this.hostAllocationState = hostAllocationState;
+        this.hostAllocationState = hostAllocationState;
+    }
+
+
+    public void setHypervisorVersion(String hypervisorVersion) {
+        this.hypervisorVersion = hypervisorVersion;
+    }
+
+    @Override
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
     }	
 }

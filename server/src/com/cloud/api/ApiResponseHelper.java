@@ -50,6 +50,7 @@ import com.cloud.api.response.ExtractResponse;
 import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.HypervisorCapabilitiesResponse;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.IngressRuleResultObject;
@@ -104,6 +105,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -584,6 +586,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             hostResponse.setMemoryAllocated(mem);
             hostResponse.setMemoryUsed(mem);
             hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
+            hostResponse.setHypervisorVersion(host.getHypervisorVersion());
         } else if (host.getType().toString().equals("Storage")) {
             hostResponse.setDiskSizeTotal(host.getTotalSize());
             hostResponse.setDiskSizeAllocated(0L);
@@ -2418,6 +2421,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setNics(new ArrayList<NicResponse>(nicResponses));
 
         return userVmResponse;
+    }
+    
+    public HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities){
+        HypervisorCapabilitiesResponse hpvCapabilitiesResponse = new HypervisorCapabilitiesResponse();
+        hpvCapabilitiesResponse.setId(hpvCapabilities.getId());
+        hpvCapabilitiesResponse.setHypervisor(hpvCapabilities.getHypervisorType());
+        hpvCapabilitiesResponse.setHypervisorVersion(hpvCapabilities.getHypervisorVersion());
+        hpvCapabilitiesResponse.setIsSecurityGroupEnabled(hpvCapabilities.isSecurityGroupEnabled());
+        hpvCapabilitiesResponse.setMaxGuestsLimit(hpvCapabilities.getMaxGuestsLimit());
+        return hpvCapabilitiesResponse;
     }
 
 }
