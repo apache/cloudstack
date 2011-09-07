@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<ike>
+<policy %delete%>
+<name>%policy-name%</name>
+</policy>
+</ike>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

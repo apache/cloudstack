@@ -1,0 +1,12 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<dynamic-vpn>
+<clients>
+</clients>
+</dynamic-vpn>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

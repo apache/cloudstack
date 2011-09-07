@@ -1,0 +1,11 @@
+<rpc>
+<get-configuration>
+<configuration>
+<access>
+<profile %delete%>
+<name>%access-profile-name%</name>
+</profile>
+</access>
+</configuration>
+</get-configuration>
+</rpc>

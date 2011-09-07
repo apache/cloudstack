@@ -1,0 +1,15 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<zones>
+<security-zone>
+<name>%zone%</name>
+<address-book>
+</address-book>
+</security-zone>
+</zones>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

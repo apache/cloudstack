@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<access>
+<address-assignment>
+<pool %delete%>
+<name>%address-pool-name%</name>
+</pool>
+</address-assignment>
+</access>
+</configuration>
+</get-configuration>
+</rpc>

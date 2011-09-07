@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>        
+<nat>            
+<proxy-arp>           
+%interface-name%               
+</proxy-arp>        
+</nat>    
+</security>
+</configuration>
+</get-configuration>
+</rpc>

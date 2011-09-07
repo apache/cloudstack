@@ -1,0 +1,11 @@
+<rpc>
+<get-configuration>
+<configuration>
+<interfaces>
+<interface>
+<name>%private-interface-name%</name>
+</interface>
+</interfaces>
+</configuration>
+</get-configuration>
+</rpc>

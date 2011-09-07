@@ -1,0 +1,12 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<ike>
+<gateway>
+</gateway>
+</ike>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

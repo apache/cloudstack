@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<dynamic-vpn>
+<clients %delete%>
+<name>%client-name%</name>
+</clients>
+</dynamic-vpn>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

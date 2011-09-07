@@ -1,0 +1,13 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<ike>
+<gateway %delete%>
+<name>%gateway-name%</name>
+</gateway>
+</ike>
+</security>
+</configuration>
+</get-configuration>
+</rpc>

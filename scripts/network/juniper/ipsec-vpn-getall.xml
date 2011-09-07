@@ -1,0 +1,12 @@
+<rpc>
+<get-configuration>
+<configuration>
+<security>
+<ipsec>
+<vpn>
+</vpn>
+</ipsec>
+</security>
+</configuration>
+</get-configuration>
+</rpc>
