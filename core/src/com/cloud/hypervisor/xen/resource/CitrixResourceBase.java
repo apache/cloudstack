@@ -262,6 +262,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _storageNetworkName2;
     protected String _guestNetworkName;
     protected int _wait;
+    protected int _migratewait;
     protected String _instance; //instance name (default is usually "VM")
     static final Random _rand = new Random(System.currentTimeMillis());
 
@@ -2450,9 +2451,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         break;
                     }
                 }
-                Map<String, String> other = new HashMap<String, String>();
-                other.put("live", "true");
-                vm.poolMigrate(conn, dsthost, other);
+                migrateVM(conn, dsthost, vm, vmName);
                 vm.setAffinity(conn, dsthost);
                 state = State.Stopping;
             }
@@ -2978,6 +2977,40 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         } catch (XenAPIException e) {
             String msg = "Unable to start VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }finally {
+            if( task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e1) {
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid +") due to " + e1.toString());
+                }
+            }
+        }
+    }
+    
+    private
+    void migrateVM(Connection conn, Host destHost, VM vm, String vmName) throws XmlRpcException {
+        Task task = null;
+        try {
+            Map<String, String> other = new HashMap<String, String>();
+            other.put("live", "true");
+            task = vm.poolMigrateAsync(conn, destHost, other);
+            try {
+                // poll every 1 seconds 
+                long timeout = (long)(_migratewait) * 1000L;
+                waitForTask(conn, task, 1000, timeout);
+                checkForSuccess(conn, task);
+            } catch (Types.HandleInvalid e) {
+                if (vm.getResidentOn(conn).equals(destHost)) {
+                    task = null;
+                    return;
+                }
+                throw new CloudRuntimeException("migrate VM catch HandleInvalid and VM is not running on dest host");
+            }
+        } catch (XenAPIException e) {
+            String msg = "Unable to migrate VM(" + vmName + ") from host(" + _host.uuid +") due to " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
         }finally {
@@ -4975,6 +5008,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         
         String value = (String) params.get("wait");
         _wait = NumbersUtil.parseInt(value, 600);
+        
+        value = (String) params.get("migratewait");
+        _migratewait = NumbersUtil.parseInt(value, 3600);
 
         if (_pod == null) {
             throw new ConfigurationException("Unable to get the pod");
