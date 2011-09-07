@@ -266,4 +266,10 @@ public class MockAgentManagerImpl implements AgentManager {
         
     }
 
+    @Override
+    public boolean disconnect(long hostId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

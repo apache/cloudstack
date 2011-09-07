@@ -8,6 +8,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.commands.CreateAccountCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteAccountCmd;
@@ -291,11 +292,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 
     }
 
-    @Override
-    public void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
@@ -335,6 +331,12 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     public String getName() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+        
     }
 
 }
