@@ -2531,7 +2531,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         if(keyboard != null && !keyboard.isEmpty())
-            vm.setDetail(VirtualMachine.PARAM_KEY_KEYBOARD, keyboard);
+            vm.setDetail(VmDetailConstants.KEYBOARD, keyboard);
 
         if (isIso) {
             vm.setIsoId(template.getId());
