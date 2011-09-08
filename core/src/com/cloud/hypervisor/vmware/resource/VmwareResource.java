@@ -146,6 +146,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
@@ -178,6 +179,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
@@ -771,7 +773,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-        VirtualDevice nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), mgr.getGuestNicDeviceType(), 
+        // Note: public NIC is plugged inside system VM
+        VirtualDevice nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), VirtualEthernetCardType.Vmxnet3, 
         	networkInfo.second(), vifMacAddress, -1, 1, true, true);
         vmMo.plugDevice(nic);
     }
@@ -1058,7 +1061,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName();
-
+        
         State state = State.Stopped;
         VmwareContext context = getServiceContext();
         try {
@@ -1069,6 +1072,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 _vms.put(vmName, State.Starting);
             }
 
+            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
+            if(s_logger.isDebugEnabled())
+            	s_logger.debug("VM " + vmName + " will be started with NIC device type: " + nicDeviceType);
+            
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VolumeTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
@@ -1274,7 +1281,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
                 
-                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), mgr.getGuestNicDeviceType(), networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
+                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 deviceConfigSpecArray[i].setDevice(nic);
                 deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.add);
@@ -1295,7 +1302,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
-            	keyboardLayout = vmSpec.getDetails().get(VirtualMachine.PARAM_KEY_KEYBOARD);
+            	keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
             vmConfigSpec.setExtraConfig(configureVnc(machineIdOptions, hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout));
 
             if (!vmMo.configureVm(vmConfigSpec)) {

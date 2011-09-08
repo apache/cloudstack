@@ -192,6 +192,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1217,7 +1218,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DomainRouterVO router = profile.getVirtualMachine();
         Map<String, String> details = _vmDetailsDao.findDetails(router.getId());
         router.setDetails(details);
-
         NetworkVO network = _networkDao.findById(router.getNetworkId());
 
         String type = null;
