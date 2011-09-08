@@ -1295,10 +1295,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
 
             // pass boot arguments through machine.id
-            OptionValue[] machineIdOptions = new OptionValue[1];
+            OptionValue[] machineIdOptions = new OptionValue[2];
             machineIdOptions[0] = new OptionValue();
             machineIdOptions[0].setKey("machine.id");
             machineIdOptions[0].setValue(vmSpec.getBootArgs());
+            
+            machineIdOptions[1] = new OptionValue();
+            machineIdOptions[1].setKey("devices.hotplug");
+            machineIdOptions[1].setValue("true");
             
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
