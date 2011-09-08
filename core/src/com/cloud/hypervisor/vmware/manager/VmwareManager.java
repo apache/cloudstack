@@ -45,7 +45,6 @@ public interface VmwareManager {
 	void gcLeftOverVMs(VmwareContext context);
 	
 	Pair<Integer, Integer> getAddiionalVncPortRange();
-	VirtualEthernetCardType getGuestNicDeviceType();
 	
 	int getMaxHostsPerCluster();
 	

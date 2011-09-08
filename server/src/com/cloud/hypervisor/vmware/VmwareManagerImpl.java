@@ -112,7 +112,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _managemetPortGroupName;
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
-    VirtualEthernetCardType _guestNicDeviceType;
     int _maxHostsPerCluster;
     
     String _cpuOverprovisioningFactor = "1";
@@ -245,18 +244,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         
     	s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
-    	value = configDao.getValue(Config.VmwareGuestNicDeviceType.key());
-    	if(value == null || "E1000".equalsIgnoreCase(value))
-    		this._guestNicDeviceType = VirtualEthernetCardType.E1000;
-    	else if("PCNet32".equalsIgnoreCase(value))
-    		this._guestNicDeviceType = VirtualEthernetCardType.PCNet32;
-    	else if("Vmxnet2".equalsIgnoreCase(value))
-    		this._guestNicDeviceType = VirtualEthernetCardType.Vmxnet2;
-    	else if("Vmxnet3".equalsIgnoreCase(value))
-    		this._guestNicDeviceType = VirtualEthernetCardType.Vmxnet3;
-    	else
-    		this._guestNicDeviceType = VirtualEthernetCardType.E1000;
-    	
         value = configDao.getValue("vmware.host.scan.interval");
         _hostScanInterval = NumbersUtil.parseLong(value, DEFAULT_HOST_SCAN_INTERVAL);
         s_logger.info("VmwareManagerImpl config - vmware.host.scan.interval: " + _hostScanInterval);
@@ -830,11 +817,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Override
 	public Pair<Integer, Integer> getAddiionalVncPortRange() {
     	return new Pair<Integer, Integer>(_additionalPortRangeStart, _additionalPortRangeSize);
-    }
-    
-    @Override
-	public VirtualEthernetCardType getGuestNicDeviceType() {
-    	return this._guestNicDeviceType;
     }
     
     @Override
