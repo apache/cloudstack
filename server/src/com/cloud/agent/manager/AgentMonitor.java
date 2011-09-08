@@ -235,9 +235,7 @@ public class AgentMonitor extends Thread implements Listener {
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) {
-        if (host.getType().equals(Host.Type.ExternalFirewall) ||
-                host.getType().equals(Host.Type.ExternalLoadBalancer) ||
-                host.getType().equals(Host.Type.TrafficMonitor) ||
+        if (host.getType().equals(Host.Type.TrafficMonitor) ||
                 host.getType().equals(Host.Type.SecondaryStorage)) {
             return;
         }
