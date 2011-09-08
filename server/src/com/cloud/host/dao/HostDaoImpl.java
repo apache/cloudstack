@@ -133,6 +133,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         MsStatusSearch = createSearchBuilder();
         MsStatusSearch.and("ms", MsStatusSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        MsStatusSearch.and("type", MsStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
         MsStatusSearch.and("statuses", MsStatusSearch.entity().getStatus(), SearchCriteria.Op.NIN);
         MsStatusSearch.done();
 
@@ -995,9 +996,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<HostVO> listByManagementServer(long msId) {
+    public List<HostVO> listRoutingHostsByManagementServer(long msId) {
         SearchCriteria<HostVO> sc = MsStatusSearch.create();
         sc.setParameters("ms", msId);
+        sc.setParameters("type", Type.Routing);
 
         return listBy(sc);
     }
