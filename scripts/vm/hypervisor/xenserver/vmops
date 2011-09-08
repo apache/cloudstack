@@ -889,7 +889,7 @@ def cleanup_rules(session, args):
     instance = 'VM'
  
   try:
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'|sort|uniq" % instance
+    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/' | sed 's/-egress//' |sort|uniq" % instance
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     cleaned = 0
     cleanup = []
@@ -897,9 +897,11 @@ def cleanup_rules(session, args):
         if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-'] ]:
             vm = session.xenapi.VM.get_by_name_label(chain)
             if len(vm) != 1:
-                util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
-                cleanup.append(chain)
-                continue
+                vm = session.xenapi.VM.get_by_name_label(chain + "-untagged")
+                if len(vm) != 1:
+                    util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
+                    cleanup.append(chain)
+                    continue
             vm_rec = session.xenapi.VM.get_record(vm[0])
             state = vm_rec.get('power_state')
             if state != 'Running' and state != 'Paused':
@@ -1053,14 +1055,23 @@ def network_rules(session, args):
                 util.SMlog(" failed to create ipset for rule " + str(tokens))
 
             if protocol == 'all':
-                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                if type == 'egress':
+                    iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'ACCEPT']
+                else:
+                    iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             elif protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                if type == 'egress':
+                    iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'ACCEPT']
+                else:
+                    iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                    if type == 'egress':
+                        iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'ACCEPT']
+                    else:
+                        iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             util.pread2(iptables)
             util.SMlog(iptables)
         

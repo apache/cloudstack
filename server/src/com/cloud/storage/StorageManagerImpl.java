@@ -299,6 +299,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     boolean _storageCleanupEnabled;
     boolean _templateCleanupEnabled = true;
     int _storageCleanupInterval;
+    private int _createVolumeFromSnapshotWait;
+    private int _copyvolumewait;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     protected int _retry = 2;
     protected int _pingInterval = 60; // seconds
@@ -307,7 +309,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private long _maxVolumeSizeInGb;
     private long _serverId;
 
-    private int _snapshotTimeout;
 
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
@@ -634,26 +635,29 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if( snapshot.getSwiftName() != null ) {
             _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
         }
-        CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
-                backedUpSnapshotUuid, snapshot.getName());
 
-        String basicErrMsg = "Failed to create volume from " + snapshot.getName();
+        CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                backedUpSnapshotUuid, snapshot.getName(), _createVolumeFromSnapshotWait);
+
         CreateVolumeFromSnapshotAnswer answer;
         if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
             throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to this snapshot is being used, try it later ");
         }
+        String basicErrMsg = "Failed to create volume from " + snapshot.getName() + " on pool " + pool;
         try {
             answer = (CreateVolumeFromSnapshotAnswer) sendToPool(pool, createVolumeFromSnapshotCommand);
             if (answer != null && answer.getResult()) {
                 vdiUUID = answer.getVdi();
             } else {
-                s_logger.error(basicErrMsg + " due to " + answer.getDetails());
+                s_logger.error(basicErrMsg + " due to " + ((answer == null)?"null":answer.getDetails()));
+                throw new CloudRuntimeException(basicErrMsg);
             }
         } catch (StorageUnavailableException e) {
             s_logger.error(basicErrMsg);
         } finally {
             _snapshotDao.unlockFromLockTable(snapshotId.toString());
         }
+
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
 
@@ -800,11 +804,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (overProvisioningFactorStr != null) {
             _overProvisioningFactor = Float.parseFloat(overProvisioningFactorStr);
         }
-
+        
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
         _hostRetry = NumbersUtil.parseInt(configs.get("host.retry"), 2);
-        _snapshotTimeout = NumbersUtil.parseInt(Config.CmdsWait.key(), 2 * 60 * 60 * 1000);
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
@@ -813,7 +816,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String storageCleanupEnabled = configs.get("storage.cleanup.enabled");
         _storageCleanupEnabled = (storageCleanupEnabled == null) ? true : Boolean.parseBoolean(storageCleanupEnabled);
         
-        String value = configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
+        String value = configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
+        _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
+        
+        value = configDao.getValue(Config.CopyVolumeWait.toString());
+        _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+               
+        value = configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
     	_templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
         
         String time = configs.get("storage.cleanup.interval");
@@ -1533,7 +1542,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
 
         // Copy the volume from the source storage pool to secondary storage
-        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
+        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, _copyvolumewait);
         CopyVolumeAnswer cvAnswer;
         try {
             cvAnswer = (CopyVolumeAnswer) sendToPool(srcPool, cvCmd);
@@ -1549,7 +1558,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         // Copy the volume from secondary storage to the destination storage
         // pool
-        cvCmd = new CopyVolumeCommand(volume.getId(), secondaryStorageVolumePath, destPool, secondaryStorageURL, false);
+        cvCmd = new CopyVolumeCommand(volume.getId(), secondaryStorageVolumePath, destPool, secondaryStorageURL, false, _copyvolumewait);
         try {
             cvAnswer = (CopyVolumeAnswer) sendToPool(destPool, cvCmd);
         } catch (StorageUnavailableException e1) {
@@ -1874,6 +1883,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 + storagePool.getDataCenterId() + ", HostOrPoolId - " + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
 
+
     @Override
     public Pair<Long, Answer[]> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Commands cmds) throws StorageUnavailableException {
         SearchCriteria<Long> sc = UpHostsInPoolSearch.create();
@@ -1903,11 +1913,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 for (Command cmd : cmdArray) {
                     long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
 
-                    if (cmd instanceof BackupSnapshotCommand) {
-                        answers.add(_agentMgr.send(targetHostId, cmd, _snapshotTimeout));
-                    } else {
-                        answers.add(_agentMgr.send(targetHostId, cmd));
-                    }
+                    answers.add(_agentMgr.send(targetHostId, cmd));
                 }
                 return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));
             } catch (AgentUnavailableException e) {

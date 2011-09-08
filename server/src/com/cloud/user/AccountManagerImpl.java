@@ -1069,11 +1069,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
             boolean allTemplatesDeleted = true;
             for (VMTemplateVO template : userTemplates) {
-                try {
-                    allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
-                } catch (Exception e) {
-                    s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
-                    allTemplatesDeleted = false;
+                if (template.getRemoved() == null) {
+                    try {
+                        allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
+                    } catch (Exception e) {
+                        s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
+                        allTemplatesDeleted = false;
+                    }
                 }
             }
 
@@ -1846,12 +1848,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     txn = Transaction.open(Transaction.CLOUD_DB);
 
                     //Cleanup removed accounts
-                    List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts();
+                    List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts(null);
                     s_logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
                     for (AccountVO account : removedAccounts) {
                         s_logger.debug("Cleaning up " + account.getId());
                         try {
-                            cleanupAccount(account, getSystemUser().getId(), getSystemAccount());
+                            if (cleanupAccount(account, getSystemUser().getId(), getSystemAccount())) {
+                                account.setNeedsCleanup(false);
+                                _accountDao.update(account.getId(), account);
+                            }
                         } catch (Exception e) {
                             s_logger.error("Skipping due to error on account " + account.getId(), e);
                         }
@@ -1872,6 +1877,23 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                         }
                     }
                     
+                    //cleanup inactive domains
+                    List<DomainVO> inactiveDomains = _domainDao.findInactiveDomains();
+                    s_logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
+                    for (DomainVO inactiveDomain : inactiveDomains) {
+                        long domainId = inactiveDomain.getId();
+                        try {
+                            List<AccountVO> accountsForCleanupInDomain = _accountDao.findCleanupsForRemovedAccounts(domainId);
+                            if (accountsForCleanupInDomain.isEmpty()) {
+                                s_logger.debug("Removing inactive domain id=" + domainId);
+                                _domainDao.remove(domainId);
+                            } else {
+                                s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need clenaup");
+                            } 
+                        } catch (Exception e) {
+                            s_logger.error("Skipping due to error on domain " + domainId, e);
+                        }
+                    }
                     
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);

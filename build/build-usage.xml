@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 Cloud, Inc. All Rights Reserved -->
+<project name="Cloud Stack Usage Server" default="help" basedir=".">
+  <description>
+      Cloud Stack Usage server build
+  </description>
+  <property name="base.dir" location="${ant.file.Cloud Stack Usage Server}/../../.."/>
+  <property name="oss.build.dir" location="${base.dir}/build"/>
+  <property name="usage.jar" value="cloud-usage.jar" />
+  <dirname property="proprietary.dir" file="${ant.file.Cloud Stack Usage Server}/../"/>
+
+  <import file="${oss.build.dir}/build-cloud.xml" optional="false"/>
+  <property name="usage.dir" location="${base.dir}/usage" />
+  <property name="usage.dist.dir" location="${dist.dir}/usage" />
+
+<!-- ===================== Usage.Jar ===================== -->
+  <path id="usage.classpath">
+    <path refid="deps.classpath" /> 
+    <path refid="dist.classpath" /> 
+  </path>
+  <target name="compile-usage" depends="-init, compile-utils, compile-core, compile-server" description="Compile the usage server">
+    <compile-java jar.name="${usage.jar}" top.dir="${usage.dir}" classpath="usage.classpath" />
+  </target>
+
+  <target name="build-usage" depends="build-all, compile-usage">
+    <mkdir dir="${usage.dist.dir}/bin" />
+    <mkdir dir="${usage.dist.dir}/conf" />
+
+    <copy todir="${usage.dist.dir}/bin">
+      <fileset dir="${usage.dir}/scripts">
+        <include name="usageserver.sh" />
+      </fileset>
+    </copy>
+    <copy overwrite="true" todir="${usage.dist.dir}/lib">
+      <fileset dir="${jar.dir}">
+        <include name="${usage.jar}" />
+      </fileset>
+    </copy>
+  </target>
+
+</project>

@@ -32,8 +32,6 @@ import com.cloud.utils.fsm.StateObject;
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject<VirtualMachine.State> {
 	
-	public static final String PARAM_KEY_KEYBOARD = "keyboard";
-		
     public enum State {
         Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
         Running(false, "VM is running.  host id has the host that it is running on."),

@@ -682,6 +682,7 @@ CREATE TABLE  `cloud`.`host` (
   `url` varchar(255) COMMENT 'iqn for the servers',
   `fs_type` varchar(32),
   `hypervisor_type` varchar(32) COMMENT 'hypervisor type, can be NONE for storage',
+  `hypervisor_version` varchar(32) COMMENT 'hypervisor version',
   `ram` bigint unsigned,
   `resource` varchar(255) DEFAULT NULL COMMENT 'If it is a local resource, this is the class name',
   `version` varchar(40) NOT NULL,
@@ -918,13 +919,14 @@ CREATE TABLE `cloud`.`user_vm` (
   CONSTRAINT `fk_user_vm__id` FOREIGN KEY `fk_user_vm__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- note, uer_vm_details is now used for all VMs (not just for user vms)
 CREATE TABLE `cloud`.`user_vm_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `name` varchar(255) NOT NULL,
   `value` varchar(1024) NOT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `user_vm`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1344,6 +1346,15 @@ CREATE TABLE `cloud`.`guest_os_hypervisor` (
 CREATE TABLE `cloud`.`guest_os_category` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`hypervisor_capabilities` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `hypervisor_type` varchar(32) NOT NULL,
+  `hypervisor_version` varchar(32),
+  `max_guests_limit` bigint unsigned DEFAULT 50,
+  `security_group_enabled` int(1) unsigned DEFAULT 1 COMMENT 'Is security group supported',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 

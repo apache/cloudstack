@@ -44,6 +44,7 @@ public interface ExternalNetworkManager extends Manager {
 		
 		public static final ExternalNetworkDeviceType F5BigIP = new ExternalNetworkDeviceType("F5BigIP");
 		public static final ExternalNetworkDeviceType JuniperSRX = new ExternalNetworkDeviceType("JuniperSRX");
+		public static final ExternalNetworkDeviceType NetscalerMPX = new ExternalNetworkDeviceType("NetscalerMPX");
 		
 		public ExternalNetworkDeviceType(String name) {
 			_name = name;

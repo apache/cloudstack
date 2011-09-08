@@ -36,7 +36,7 @@ public interface Host {
         ExternalLoadBalancer(false),
         PxeServer(false),
         TrafficMonitor(false),
-        
+
         ExternalDhcp(false),
         SecondaryStorageVM(true),
         LocalSecondaryStorage(false);
@@ -44,11 +44,11 @@ public interface Host {
         private Type(boolean virtual) {
             _virtual = virtual;
         }
-        
+
         public boolean isVirtual() {
             return _virtual;
         }
-        
+
         public static String[] toStrings(Host.Type... types) {
             String[] strs = new String[types.length];
             for (int i = 0; i < types.length; i++) {
@@ -57,27 +57,27 @@ public interface Host {
             return strs;
         }
     }
-    
+
     public enum HostAllocationState {
         Disabled,
         Enabled;
     }    
-    
+
     /**
      * @return id of the host.
      */
     long getId();
-    
+
     /**
      * @return name of the machine.
      */
     String getName();
-    
+
     /**
      * @return the type of host.
      */
     Type getType();
-    
+
     /**
      * @return the date the host first registered
      */
@@ -87,32 +87,32 @@ public interface Host {
      * @return current state of this machine.
      */
     Status getStatus();
-    
+
     /**
      * @return the ip address of the host.
      */
     String getPrivateIpAddress();
-    
+
     /**
      * @return the ip address of the host attached to the storage network.
      */
     String getStorageIpAddress();
-    
+
     /**
      * @return the mac address of the host.
      */
     String getGuid();
-    
+
     /**
      * @return total amount of memory.
      */
     Long getTotalMemory();
-    
+
     /**
      * @return # of cores in a machine.  Note two cpus with two cores each returns 4.
      */
     Integer getCpus();
-    
+
     /**
      * @return speed of each cpu in mhz.
      */
@@ -122,32 +122,32 @@ public interface Host {
      * @return the proxy port that is being listened at the agent host
      */
     Integer getProxyPort();
- 
+
     /**
      * @return the pod.
      */
     Long getPodId();
-    
+
     /**
      * @return availability zone.
      */
     long getDataCenterId();
-    
+
     /**
      * @return parent path.  only used for storage server.
      */
     String getParent();
-    
+
     /**
      * @return storage ip address.
      */
     String getStorageIpAddressDeux();
-    
+
     /**
      * @return type of hypervisor
      */
     HypervisorType getHypervisorType();
-    
+
     /**
      * @return disconnection date
      */
@@ -176,27 +176,29 @@ public interface Host {
      *@return removal date
      */
     Date getRemoved();
-    
+
     Long getClusterId();
-    
+
     String getPublicIpAddress();
-    
+
     String getPublicNetmask();
-    
+
     String getPrivateNetmask();
-    
+
     String getStorageNetmask();
-    
+
     String getStorageMacAddress();
-    
+
     String getPublicMacAddress();
-    
+
     String getPrivateMacAddress();
-    
+
     String getStorageNetmaskDeux();
-    
+
     String getStorageMacAddressDeux();
-    
+
     HostAllocationState getHostAllocationState();
-    
+
+    String getHypervisorVersion();
+
 }

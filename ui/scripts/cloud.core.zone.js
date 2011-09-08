@@ -985,6 +985,8 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "SharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
+				} else if(protocol == "ocfs2") {
+					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));			
 				} else if(protocol == "iscsi") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
@@ -1031,6 +1033,12 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = presetupURL(server, path);
+				} 
+				else if (protocol == "ocfs2") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = ocfs2URL(server, path);
 				} 
 				else if (protocol == "SharedMountPoint") {
 					var path = trim($thisDialog.find("#add_pool_path").val());

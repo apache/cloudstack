@@ -225,6 +225,8 @@ setup_common() {
   hostname $NAME
   
   #Nameserver
+  sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
+  sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
   if [ -n "$internalNS1" ]
   then
     echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf

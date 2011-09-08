@@ -28,13 +28,23 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
  * all of the methods that needs to be implemented by the children classes.
  * 
  */
-public abstract class Command {
+public abstract class Command { 
 
     // allow command to carry over hypervisor or other environment related context info
     @LogLevel(Log4jLevel.Trace)
     protected Map<String, String> contextMap = new HashMap<String, String>();
+    private int wait;  //in second
 
     protected Command() {
+        this.wait = 0;
+    }
+
+    public int getWait() {
+        return wait;
+    }
+
+    public void setWait(int wait) {
+        this.wait = wait;
     }
 
     @Override

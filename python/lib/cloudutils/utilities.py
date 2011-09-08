@@ -88,11 +88,9 @@ class Distribution:
 
         if os.path.exists("/etc/fedora-release"):
             self.distro = "Fedora"
-        elif os.path.exists("/etc/centos-release"):
-            self.distro = "CentOS"
         elif os.path.exists("/etc/redhat-release"):
             version = file("/etc/redhat-release").readline()
-            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS release 6") != -1:
+            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1:
                 self.distro = "RHEL6"
             elif version.find("CentOS release") != -1:
                 self.distro = "CentOS"

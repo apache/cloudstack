@@ -46,6 +46,7 @@ import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
@@ -63,8 +64,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Status;
@@ -167,6 +168,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private int _totalRetries;
     private int _pauseInterval;
     private int _deltaSnapshotMax;
+    private int _backupsnapshotwait;
 
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
@@ -345,7 +347,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         VolumeVO volume = null;
         boolean backedUp = false;
         // does the caller have the authority to act on this volume
-        checkAccountPermissions(v.getAccountId(), v.getDomainId(), "volume", volumeId);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, v);
         try {
             if (v != null && _volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
                 /* KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume */
@@ -561,7 +563,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             String vmName = _storageMgr.getVmNameOnVolume(volume);
             StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
             BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
-                    snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName);
+                    snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
             if ( swift != null ) {
                 backupSnapshotCommand.setSwift(toSwiftTO(swift));
@@ -666,34 +668,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
     }
 
-    private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) {
-        Long accountId = null;
-
-        Account account = UserContext.current().getCaller();
-        if (account != null) {
-
-            /*
-             * if (!isAdmin(account.getType())) { if (account.getId() != targetAccountId) { throw new
-             * InvalidParameterValueException("Unable to find a " + targetDesc + " with id " + targetId + " for this account");
-             * } } else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) { throw new
-             * PermissionDeniedException("Unable to perform operation for " + targetDesc + " with id " + targetId +
-             * ", permission denied."); } accountId = account.getId();
-             */
-            _accountMgr.checkAccess(account, _domainDao.findById(targetDomainId));
-        }
-
-        return accountId;
-    }
-
-    private static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_DELETE, eventDescription = "deleting snapshot", async = true)
     public boolean deleteSnapshot(DeleteSnapshotCmd cmd) {
         Long snapshotId = cmd.getId();
+        Account caller = UserContext.current().getCaller();
 
         // Verify parameters
         Snapshot snapshotCheck = _snapshotDao.findByIdIncludingRemoved(snapshotId.longValue());
@@ -701,20 +681,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
-        // If an account was passed in, make sure that it matches the account of the snapshot
-        Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
-        if (snapshotOwner == null) {
-            throw new InvalidParameterValueException("Snapshot id " + snapshotId + " does not have a valid account");
-        }
-        checkAccountPermissions(snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
+       _accountMgr.checkAccess(caller, null, snapshotCheck);
 
-        boolean status = deleteSnapshotInternal(snapshotId);
-        if (!status) {
-            s_logger.warn("Failed to delete snapshot");
-            throw new CloudRuntimeException("Failed to delete snapshot:" + snapshotId);
-        }
-
-        return status;
+        return deleteSnapshotInternal(snapshotId);
     }
 
     @DB
@@ -726,7 +695,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot.getBackupSnapshotId() != null) {
             List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(snapshot.getVolumeId(), snapshot.getBackupSnapshotId());
-            if (snaps != null && snaps.size() > 1) {
+            if (!snaps.isEmpty()) {
                 snapshot.setBackupSnapshotId(null);
                 _snapshotDao.update(snapshot.getId(), snapshot);
             }
@@ -849,16 +818,15 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (volumeId != null) {
             VolumeVO volume = _volsDao.findById(volumeId);
             if (volume != null) {
-                checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+                _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
             }
-
         }
 
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountMgr.isAdmin(account.getType())) {
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Unable to list templates for domain " + domainId + ", permission denied.");
@@ -1059,9 +1027,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         AccountVO owner = _accountDao.findById(volume.getAccountId());
         DomainVO domain = _domainDao.findById(owner.getDomainId());
-
-        // If an account was passed in, make sure that it matches the account of the volume
-        checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
 
         Long instanceId = volume.getInstanceId();
         if (instanceId != null) {
@@ -1143,7 +1110,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
         }
-        checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
         return listPoliciesforVolume(cmd.getVolumeId());
     }
 
@@ -1207,7 +1174,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         if (account != null) {
             long volAcctId = volume.getAccountId();
-            if (isAdmin(account.getType())) {
+            if (_accountMgr.isAdmin(account.getType())) {
                 Account userAccount = _accountDao.findById(Long.valueOf(volAcctId));
                 if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
                     throw new PermissionDeniedException("Unable to list snapshot schedule for volume " + volumeId + ", permission denied.");
@@ -1328,6 +1295,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (configDao == null) {
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
+        
+        String value = configDao.getValue(Config.BackupSnapshotWait.toString());
+        _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         Type.HOURLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         Type.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));
@@ -1385,8 +1355,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
 
-            // If an account was passed in, make sure that it matches the account of the volume
-            checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volume.getId());
+            _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
         }
 
         boolean success = true;

@@ -146,6 +146,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
+import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
@@ -178,6 +179,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
@@ -771,7 +773,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-        VirtualDevice nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), mgr.getGuestNicDeviceType(), 
+        // Note: public NIC is plugged inside system VM
+        VirtualDevice nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), VirtualEthernetCardType.Vmxnet3, 
         	networkInfo.second(), vifMacAddress, -1, 1, true, true);
         vmMo.plugDevice(nic);
     }
@@ -1058,7 +1061,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName();
-
+        
         State state = State.Stopped;
         VmwareContext context = getServiceContext();
         try {
@@ -1069,6 +1072,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 _vms.put(vmName, State.Starting);
             }
 
+            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.valueOf(vmSpec.getDetails().get(VmDetailConstants.NIC_ADAPTER));
+            if(s_logger.isDebugEnabled())
+            	s_logger.debug("VM " + vmName + " will be started with NIC device type: " + nicDeviceType);
+            
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VolumeTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
@@ -1269,14 +1276,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualDevice nic;
-            int nicDeviceNumber = -1;
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
                 
-                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), mgr.getGuestNicDeviceType(), networkInfo.second(), nicTo.getMac(), nicDeviceNumber, i + 1, true, true);
-                nicDeviceNumber = nic.getUnitNumber() + 1;
+                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 deviceConfigSpecArray[i].setDevice(nic);
                 deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.add);
@@ -1290,14 +1295,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
 
             // pass boot arguments through machine.id
-            OptionValue[] machineIdOptions = new OptionValue[1];
+            OptionValue[] machineIdOptions = new OptionValue[2];
             machineIdOptions[0] = new OptionValue();
             machineIdOptions[0].setKey("machine.id");
             machineIdOptions[0].setValue(vmSpec.getBootArgs());
             
+            machineIdOptions[1] = new OptionValue();
+            machineIdOptions[1].setKey("devices.hotplug");
+            machineIdOptions[1].setValue("true");
+            
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
-            	keyboardLayout = vmSpec.getDetails().get(VirtualMachine.PARAM_KEY_KEYBOARD);
+            	keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
             vmConfigSpec.setExtraConfig(configureVnc(machineIdOptions, hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout));
 
             if (!vmMo.configureVm(vmConfigSpec)) {
@@ -3179,7 +3188,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("VM " + vm + " is now missing from host report but we detected that it might be migrated to other host by vCenter");
                         }
-                        _vms.remove(vm);
+                        
+                        if(oldState != State.Starting && oldState != State.Migrating) {
+                            s_logger.debug("VM " + vm + " is now missing from host report and VM is not at starting/migrating state, remove it from host VM-sync map, oldState: " + oldState);
+                        	_vms.remove(vm);
+                        } else {
+                        	s_logger.debug("VM " + vm + " is missing from host report, but we will ignore VM " + vm + " in transition state " + oldState);
+                        }
                         continue;
                     }
 

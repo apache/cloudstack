@@ -274,7 +274,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _pingInterval = NumbersUtil.parseInt(value, 60);
 
         value = configs.get("wait");
-        _wait = NumbersUtil.parseInt(value, 1800) * 1000;
+        _wait = NumbersUtil.parseInt(value, 1800);
 
         value = configs.get("alert.wait");
         _alertWait = NumbersUtil.parseInt(value, 1800);
@@ -797,10 +797,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
         Commands cmds = new Commands(OnError.Stop);
         cmds.addCommand(cmd);
-        send(hostId, cmds, timeout);
+        send(hostId, cmds, cmd.getWait());
         Answer[] answers = cmds.getAnswers();
         if (answers != null && !(answers[0] instanceof UnsupportedAnswer)) {
             return answers[0];
@@ -856,21 +856,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             s_logger.debug("checking if agent (" + hostId + ") is alive");
         }
 
-        try {
-            Request req = new Request(hostId, _nodeId, new CheckHealthCommand(), true);
-            req.setSequence(agent.getNextSequence());
-            Answer[] answers = agent.send(req, 50 * 1000);
-            if (answers != null && answers[0] != null && answers[0].getResult()) {
-                Status status = Status.Up;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
-                }
-                return status;
+        Answer answer = easySend(hostId, new CheckHealthCommand());
+        if (answer != null && answer.getResult()) {
+            Status status = Status.Up;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
             }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug("Agent is unavailable so we move on. Error: " + e.getMessage());
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Timed Out " + e.getMessage());
+            return status;
         }
 
         return _haMgr.investigate(hostId);
@@ -1201,75 +1193,86 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @SuppressWarnings("rawtypes")
     protected boolean loadDirectlyConnectedHost(HostVO host, boolean forRebalance) {
-        String resourceName = host.getResource();
+    	boolean initialized = false;
         ServerResource resource = null;
-        try {
-            Class<?> clazz = Class.forName(resourceName);
-            Constructor constructor = clazz.getConstructor();
-            resource = (ServerResource) constructor.newInstance();
-        } catch (ClassNotFoundException e) {
-            s_logger.warn("Unable to find class " + host.getResource(), e);
-            return false;
-        } catch (InstantiationException e) {
-            s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
-            return false;
-        } catch (IllegalAccessException e) {
-            s_logger.warn("Illegal access " + host.getResource(), e);
-            return false;
-        } catch (SecurityException e) {
-            s_logger.warn("Security error on " + host.getResource(), e);
-            return false;
-        } catch (NoSuchMethodException e) {
-            s_logger.warn("NoSuchMethodException error on " + host.getResource(), e);
-            return false;
-        } catch (IllegalArgumentException e) {
-            s_logger.warn("IllegalArgumentException error on " + host.getResource(), e);
-            return false;
-        } catch (InvocationTargetException e) {
-            s_logger.warn("InvocationTargetException error on " + host.getResource(), e);
-            return false;
-        }
-
-        _hostDao.loadDetails(host);
-
-        HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
-        params.putAll(host.getDetails());
-
-        params.put("guid", host.getGuid());
-        params.put("zone", Long.toString(host.getDataCenterId()));
-        if (host.getPodId() != null) {
-            params.put("pod", Long.toString(host.getPodId()));
-        }
-        if (host.getClusterId() != null) {
-            params.put("cluster", Long.toString(host.getClusterId()));
-            String guid = null;
-            ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-            if (cluster.getGuid() == null) {
-                guid = host.getDetail("pool");
-            } else {
-                guid = cluster.getGuid();
-            }
-            if (guid != null && !guid.isEmpty()) {
-                params.put("pool", guid);
-            }
-        }
-
-        params.put("ipaddress", host.getPrivateIpAddress());
-        params.put("secondary.storage.vm", "false");
-        params.put("max.template.iso.size", _configDao.getValue("max.template.iso.size"));
-
-        try {
-            resource.configure(host.getName(), params);
-        } catch (ConfigurationException e) {
-            e.printStackTrace();
-            s_logger.warn("Unable to configure resource due to ", e);
-            return false;
-        }
-
-        if (!resource.start()) {
-            s_logger.warn("Unable to start the resource");
-            return false;
-        }
+    	try {
+	        String resourceName = host.getResource();
+	        try {
+	            Class<?> clazz = Class.forName(resourceName);
+	            Constructor constructor = clazz.getConstructor();
+	            resource = (ServerResource) constructor.newInstance();
+	        } catch (ClassNotFoundException e) {
+	            s_logger.warn("Unable to find class " + host.getResource(), e);
+	            return false;
+	        } catch (InstantiationException e) {
+	            s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
+	            return false;
+	        } catch (IllegalAccessException e) {
+	            s_logger.warn("Illegal access " + host.getResource(), e);
+	            return false;
+	        } catch (SecurityException e) {
+	            s_logger.warn("Security error on " + host.getResource(), e);
+	            return false;
+	        } catch (NoSuchMethodException e) {
+	            s_logger.warn("NoSuchMethodException error on " + host.getResource(), e);
+	            return false;
+	        } catch (IllegalArgumentException e) {
+	            s_logger.warn("IllegalArgumentException error on " + host.getResource(), e);
+	            return false;
+	        } catch (InvocationTargetException e) {
+	            s_logger.warn("InvocationTargetException error on " + host.getResource(), e);
+	            return false;
+	        }
+	
+	        _hostDao.loadDetails(host);
+	
+	        HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
+	        params.putAll(host.getDetails());
+	
+	        params.put("guid", host.getGuid());
+	        params.put("zone", Long.toString(host.getDataCenterId()));
+	        if (host.getPodId() != null) {
+	            params.put("pod", Long.toString(host.getPodId()));
+	        }
+	        if (host.getClusterId() != null) {
+	            params.put("cluster", Long.toString(host.getClusterId()));
+	            String guid = null;
+	            ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+	            if (cluster.getGuid() == null) {
+	                guid = host.getDetail("pool");
+	            } else {
+	                guid = cluster.getGuid();
+	            }
+	            if (guid != null && !guid.isEmpty()) {
+	                params.put("pool", guid);
+	            }
+	        }
+	
+	        params.put("ipaddress", host.getPrivateIpAddress());
+	        params.put("secondary.storage.vm", "false");
+	        params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
+	        params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
+	
+	        try {
+	            resource.configure(host.getName(), params);
+	        } catch (ConfigurationException e) {
+	            s_logger.warn("Unable to configure resource due to ", e);
+	            return false;
+	        }
+	
+	        if (!resource.start()) {
+	            s_logger.warn("Unable to start the resource");
+	            return false;
+	        }
+        
+	        initialized = true;
+    	} finally {
+    		if(!initialized) {
+                if (host != null) {
+                    _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
+                }
+    		}	
+    	}
 
         if (forRebalance) {
             AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null, true);
@@ -1464,11 +1467,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @Override
     public Answer easySend(final Long hostId, final Command cmd) {
-        return easySend(hostId, cmd, _wait);
-    }
-
-    @Override
-    public Answer easySend(final Long hostId, final Command cmd, int timeout) {
         try {
             Host h = _hostDao.findById(hostId);
             if (h == null || h.getRemoved() != null) {
@@ -1479,7 +1477,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             if (!status.equals(Status.Up) && !status.equals(Status.Connecting)) {
                 return null;
             }
-            final Answer answer = send(hostId, cmd, timeout);
+            final Answer answer = send(hostId, cmd);
             if (answer == null) {
                 s_logger.warn("send returns null answer");
                 return null;
@@ -1504,13 +1502,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
-        return send(hostId, cmd, _wait);
-    }
-
-    @Override
     public Answer[] send(final Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException {
-        return send(hostId, cmds, _wait);
+        int wait = 0;
+        for( Command cmd : cmds ) {
+            if ( cmd.getWait() > wait ) {
+                wait = cmd.getWait();
+            }
+        }
+        if ( wait == 0 ) {
+            wait = _wait;
+        }
+        return send(hostId, cmds, wait);
     }
 
     @Override
@@ -2134,7 +2136,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             host.setSpeed(scc.getSpeed());
             HypervisorType hyType = scc.getHypervisorType();
             host.setHypervisorType(hyType);
-
+            host.setHypervisorVersion(scc.getHypervisorVersion());
         } else if (startup instanceof StartupStorageCommand) {
             final StartupStorageCommand ssc = (StartupStorageCommand) startup;
             host.setParent(ssc.getParent());

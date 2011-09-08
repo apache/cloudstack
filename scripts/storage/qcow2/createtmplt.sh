@@ -101,9 +101,7 @@ create_from_file() {
   local tmpltimg=$2
   local tmpltname=$3
 
-
-  #copy the file to the disk
-  cp $tmpltimg /$tmpltfs/$tmpltname
+  $qemu_img convert -f qcow2 -O qcow2 $tmpltimg /$tmpltfs/$tmpltname >& /dev/null
   
   if [ "$cleanup" == "true" ]
   then

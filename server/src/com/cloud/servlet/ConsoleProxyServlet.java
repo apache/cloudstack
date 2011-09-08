@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -323,6 +324,12 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sb.append("&sid=").append(sid);
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
+		
+		// for console access, we need guest OS type to help implement keyboard
+		long guestOs = vm.getGuestOSId();
+		GuestOSVO guestOsVo = _ms.getGuestOs(guestOs);
+		if(guestOsVo.getCategoryId() == 6)
+			sb.append("&guest=windows");
 		
 		if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose console url: " + sb.toString());

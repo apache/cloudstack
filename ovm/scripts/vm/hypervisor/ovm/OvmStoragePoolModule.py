@@ -2,6 +2,7 @@ from OvmCommonModule import *
 from OVSSiteSR import sp_create, sr_create, sr_do
 from OVSParser import parse_ocfs2_cluster_conf
 from OVSXCluster import clusterm_set_ocfs2_cluster_conf, clusterm_start_o2cb_service
+from OVSSiteRMServer import get_master_ip
 import re
 
 class OvmStoragePoolDecoder(json.JSONDecoder):
@@ -241,6 +242,33 @@ class OvmStoragePool(OvmObject):
             fd = open(ETC_HOSTS, "w")
             fd.write(orignalConf)
             fd.close()
+        
+        def configureHostName(nodes):
+            myIp = successToMap(get_master_ip())['ip']
+            nodeName = None
+            for n in nodes:
+                if myIp == n["ip_address"]:
+                    nodeName = n["name"]
+                    break
+            
+            if nodeName == None: raise Exception("Cannot find node equals to my ip address:%s"%myIp)
+            if not exists(HOSTNAME_FILE):
+                originalConf = ""
+            else:
+                fd = open(HOSTNAME_FILE, "r")
+                originalConf = fd.read()
+                fd.close()
+            
+            pattern = r"HOSTNAME=(.*)"
+            # remove any old hostname
+            originalConf = re.sub(pattern, "", originalConf)
+            # remove extra empty lines
+            originalConf = re.sub(r"\n\s*\n*", "\n", originalConf) + "\n" + "HOSTNAME=%s"%nodeName
+            logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Configure %s:%s\n"%(HOSTNAME_FILE,originalConf))
+            fd = open(HOSTNAME_FILE, "w")
+            fd.write(originalConf)
+            fd.close()
+            doCmd(['hostname', nodeName])
             
         try:
             nodeString = nodeString.strip(";")
@@ -273,10 +301,12 @@ class OvmStoragePool(OvmObject):
             lines.append("\tname        = %s\n" % clusterName)
             lines.append("\n")
             conf = "".join(lines)
+            
+            configureHostName(nodes)
+            configureEtcHosts(nodes)
             clusterm_set_ocfs2_cluster_conf(conf)
             clusterm_start_o2cb_service()
             logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Configure cluster.conf to:\n%s"%conf)
-            configureEtcHosts(nodes)
             rs = SUCC()
             return rs
         

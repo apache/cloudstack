@@ -89,6 +89,8 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IpAddress;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.DiskOffering;
@@ -307,7 +309,7 @@ public interface ManagementService {
      * @return List of capacities
      */
     List<? extends Capacity> listCapacityByType(ListCapacityByTypeCmd cmd);
-    
+
     /**
      * List the permissions on a template. This will return a list of account names that have been granted permission to launch
      * instances from the template.
@@ -508,5 +510,9 @@ public interface ManagementService {
     Pair<List<? extends Host>, List<Long>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize);
 
     String[] listEventTypes();
-    
+
+    List<? extends HypervisorCapabilities> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, Long startIndex, Long pageSizeVal);
+
+    HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled);
+
 }

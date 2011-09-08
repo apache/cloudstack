@@ -629,7 +629,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 				    if(blockItems != null && blockItems.size() > 0) {
 				        for(SyncQueueItemVO item : blockItems) {
 				            if(item.getContentType().equalsIgnoreCase("AsyncJob")) {
-                                completeAsyncJob(item.getContentId(), 2, 0, getResetResultMessage("Job is cancelled as it has been blocking others for too long"));
+                                completeAsyncJob(item.getContentId(), 2, 0, getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
                             }
 				        
 				            // purge the item and resume queue processing
@@ -667,7 +667,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 					Long jobId = item.getContentId();
 					if(jobId != null) {
 						s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);
-						completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, getResetResultMessage("Execution was cancelled because of server shutdown"));
+						completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Execution was cancelled because of server shutdown"));
 					}
 				}
 				_queueMgr.purgeItem(item.getId());
@@ -754,7 +754,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     			List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
     			cleanupPendingJobs(items);
         		_queueMgr.resetQueueProcess(msHost.getId());
-        		_jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getResetResultMessage("job cancelled because of management server restart"));
+        		_jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
     			txn.commit();
     		} catch(Throwable e) {
     			s_logger.warn("Unexpected exception ", e);
@@ -775,7 +775,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
     		cleanupPendingJobs(l);
     		_queueMgr.resetQueueProcess(getMsid());
-    		_jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getResetResultMessage("job cancelled because of management server restart"));
+    		_jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);
     	}
@@ -788,11 +788,15 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
         return true;
     }
     
-    private static String getResetResultMessage(String messageText) {
+    private static ExceptionResponse getResetResultResponse(String errorMessage) {
 		ExceptionResponse resultObject = new ExceptionResponse();
 		resultObject.setErrorCode(BaseCmd.INTERNAL_ERROR);
-		resultObject.setErrorText(messageText);
-    	return ApiSerializerHelper.toSerializedStringOld(resultObject);
+		resultObject.setErrorText(errorMessage);
+    	return resultObject;
+    }
+    
+    private static String getSerializedErrorMessage(String errorMessage) {
+        return ApiSerializerHelper.toSerializedStringOld(getResetResultResponse(errorMessage));
     }
 
     @Override

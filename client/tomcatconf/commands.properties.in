@@ -275,3 +275,6 @@ createFirewallRule=com.cloud.api.commands.CreateFirewallRuleCmd;15
 deleteFirewallRule=com.cloud.api.commands.DeleteFirewallRuleCmd;15
 listFirewallRules=com.cloud.api.commands.ListFirewallRulesCmd;15
 
+#### hypervisor capabilities commands
+updateHypervisorCapabilities=com.cloud.api.commands.UpdateHypervisorCapabilitiesCmd;1
+listHypervisorCapabilities=com.cloud.api.commands.ListHypervisorCapabilitiesCmd;1

@@ -18,15 +18,15 @@
 
 package com.cloud.utils.ssh;
 
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.KeyPair;
-import com.jcraft.jsch.JSch;
-
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.binary.Base64;
+
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.KeyPair;
 
 public class SSHKeysHelper {
 	
@@ -56,6 +56,9 @@ public class SSHKeysHelper {
 	
 	public static String getPublicKeyFingerprint(String publicKey) {
 		String key[] = publicKey.split(" ");
+		if (key.length < 2) {
+		    throw new RuntimeException("Incorrect public key is passed in");
+		}
 		byte[] keyBytes = Base64.decodeBase64(key[1]);
 		
 		MessageDigest md5 = null;

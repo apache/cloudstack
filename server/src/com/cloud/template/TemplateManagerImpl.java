@@ -161,10 +161,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject StorageManager _storageMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject UserVmManager _vmMgr;
-    @Inject ConfigurationDao _configDao;
     @Inject UsageEventDao _usageEventDao;
     @Inject HypervisorGuruManager _hvGuruMgr;
-    @Inject AccountService _accountService;    
+    @Inject AccountService _accountService;
+    int _primaryStorageDownloadWait;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     int _storagePoolMaxWaitSeconds = 3600;
@@ -280,7 +280,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
         
-        if (!template.isExtractable()) {
+        if (!_accountMgr.isRootAdmin(caller.getType()) && !template.isExtractable()) {
             throw new InvalidParameterValueException("Unable to extract template id=" + templateId + " as it's not extractable");
         }
         
@@ -451,7 +451,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
             String url = origUrl + "/" + templateHostRef.getInstallPath();
             PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), 
-            	template.getAccountId(), pool.getId(), pool.getUuid());
+                   template.getAccountId(), pool.getId(), pool.getUuid(), _primaryStorageDownloadWait);
             HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
             assert(secondaryStorageHost != null);
             dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
@@ -466,7 +466,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             	// set 120 min timeout for this command
             	
             	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(
-            		_hvGuruMgr.getGuruProcessedCommandTargetHost(vo.getHostId(), dcmd), dcmd, 120*60*1000);
+                       _hvGuruMgr.getGuruProcessedCommandTargetHost(vo.getHostId(), dcmd), dcmd);
                 if (answer != null && answer.getResult() ) {
             		templateStoragePoolRef.setDownloadPercent(100);
             		templateStoragePoolRef.setDownloadState(Status.DOWNLOADED);
@@ -733,7 +733,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         final Map<String, String> configs = configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
-        
+
+        String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
+        _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+
         HostTemplateStatesSearch = _tmpltHostDao.createSearchBuilder();
         HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         HostTemplateStatesSearch.and("state", HostTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);

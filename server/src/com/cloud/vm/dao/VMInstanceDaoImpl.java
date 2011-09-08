@@ -26,18 +26,15 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.agentlb.HostTransferMapVO;
-import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDaoImpl;
-import com.cloud.org.Managed;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
@@ -65,6 +62,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostUpSearch;
     protected final GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
+    
 
     protected final Attribute _updateTimeAttr;
 
@@ -143,6 +142,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountVirtualRoutersByAccount.and("type", CountVirtualRoutersByAccount.entity().getType(), SearchCriteria.Op.EQ);
         CountVirtualRoutersByAccount.and("state", CountVirtualRoutersByAccount.entity().getState(), SearchCriteria.Op.NIN);        
         CountVirtualRoutersByAccount.done();
+        
+        CountRunningByHost = createSearchBuilder(Long.class);
+        CountRunningByHost.select(null, Func.COUNT, null);
+        CountRunningByHost.and("host", CountRunningByHost.entity().getHostId(), SearchCriteria.Op.EQ);
+        CountRunningByHost.and("state", CountRunningByHost.entity().getState(), SearchCriteria.Op.EQ);
+        CountRunningByHost.done();        
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -303,12 +308,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     	int result = update(vmi, sc);
     	if (result == 0 && s_logger.isDebugEnabled()) {
+
     		VMInstanceVO vo = findByIdIncludingRemoved(vm.getId());
-    		StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-    		str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated()).append("; time=").append(vo.getUpdateTime());
-    		str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated()).append("; time=").append(vo.getUpdateTime());
-    		str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=").append(oldUpdateDate).append("}");
-    		s_logger.debug(str.toString());
+    		
+    		if (vo != null) {
+        		StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+        		str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated()).append("; time=").append(vo.getUpdateTime());
+        		str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated()).append("; time=").append(vo.getUpdateTime());
+        		str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=").append(oldUpdateDate).append("}");
+        		s_logger.debug(str.toString());
+
+    		} else {
+    		    s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+    		}
     	}
     	return result > 0;
     }
@@ -337,4 +349,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("state", State.Migrating);
         return listBy(sc);
     }
+    
+    @Override
+    public Long countRunningByHostId(long hostId){
+        SearchCriteria<Long> sc = CountRunningByHost.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("state", State.Running);
+        return customSearch(sc, null).get(0);
+    }    
 }

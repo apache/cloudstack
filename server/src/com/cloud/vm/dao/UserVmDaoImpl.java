@@ -22,19 +22,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
@@ -67,7 +64,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> AccountHostSearch;
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
-    protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch = null;
+    protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
@@ -107,6 +104,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "where vm_instance.id in (";
     
     protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
+    protected final NicDaoImpl _nicDao = ComponentLocator.inject(NicDaoImpl.class);
     
     protected UserVmDaoImpl() {
         AccountSearch = createSearchBuilder();
@@ -171,6 +169,18 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccount.and("type", CountByAccount.entity().getType(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);        
         CountByAccount.done();
+        
+        
+        SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+        nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
+
+        AccountDataCenterVirtualSearch = createSearchBuilder();
+        AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+        AccountDataCenterVirtualSearch.done();
+       
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -247,18 +257,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId) {
-        if (AccountDataCenterVirtualSearch == null) {
-            NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-            nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
-
-            AccountDataCenterVirtualSearch = createSearchBuilder();
-            AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-            AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
-            AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-            AccountDataCenterVirtualSearch.done();
-        }
 
         SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
         sc.setParameters("account", accountId);

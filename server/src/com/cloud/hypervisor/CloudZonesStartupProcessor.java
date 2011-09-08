@@ -65,8 +65,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.StorageStats;
-import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
@@ -355,7 +353,8 @@ public class CloudZonesStartupProcessor implements StartupCommandProcessor {
         host.setSpeed(scc.getSpeed());
         HypervisorType hyType = scc.getHypervisorType();
         host.setHypervisorType(hyType);
-
+        host.setHypervisorVersion(scc.getHypervisorVersion());
+        
     }
     
 	private boolean checkCIDR(Host.Type type, HostPodVO pod,

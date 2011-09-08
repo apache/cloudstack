@@ -81,6 +81,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.F5BigIpResource;
 import com.cloud.network.resource.JuniperSrxResource;
+import com.cloud.network.resource.NetscalerMPXResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -123,7 +124,8 @@ import com.cloud.vm.dao.NicDao;
 public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 	public enum ExternalNetworkResourceName {
 		JuniperSrx,
-		F5BigIp;
+		F5BigIp,
+		NetscalerMPX;
 	}
 	
 	@Inject AgentManager _agentMgr;
@@ -251,12 +253,15 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
         deviceType = cmd.getType();
         if (deviceType ==null) {
-        	deviceType = ExternalNetworkDeviceType.F5BigIP.getName(); //default it to F5 for now
+        	deviceType = ExternalNetworkDeviceType.NetscalerMPX.getName(); //TODO: default it to NetscalerMPX for now, till UI support Netscaler & F5
         }
 
 		if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.F5BigIP.getName())) {
 	        resource = new F5BigIpResource();
-	        guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.F5BigIp, ipAddress);			
+	        guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.F5BigIp, ipAddress);
+		} else if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.NetscalerMPX.getName())) {
+			resource = new NetscalerMPXResource();
+	        guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.NetscalerMPX, ipAddress);
 		} else {
 			throw new CloudRuntimeException("An unsupported networt device type is added as external load balancer.");
 		}
@@ -284,6 +289,8 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
         if (host != null) {
         	if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.F5BigIP.getName())) {
                 zone.setLoadBalancerProvider(Network.Provider.F5BigIp.getName());
+        	} else if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.NetscalerMPX.getName())) {
+                zone.setLoadBalancerProvider(Network.Provider.NetscalerMPX.getName());
         	}
             _dcDao.update(zone.getId(), zone);
             return host;
@@ -504,7 +511,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
-                String msg = "Unable to apply load balancer rules to the F5 BigIp appliance in zone " + zone.getName() + " due to: " + details + ".";
+                String msg = "Unable to apply load balancer rules to the external load balancer appliance in zone " + zone.getName() + " due to: " + details + ".";
                 s_logger.error(msg);
                 throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
             }

@@ -48,12 +48,11 @@
 	<classpathentry exported="true" kind="lib" path="vmware-vim25.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jnetpcap.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-junit.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-selenium-java-client-driver.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-selenium-server.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-codec-1.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-dbcp-1.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-pool-1.5.6.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-google-gson-1.7.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-httpclient-4.1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-commons-httpclient-3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-netscaler.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

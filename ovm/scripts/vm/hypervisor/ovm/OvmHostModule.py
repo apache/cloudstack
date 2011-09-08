@@ -63,7 +63,9 @@ class OvmHost(OvmObject):
         return vmPath
     
     def _vmNameToPath(self, vmName):
-        return successToMap(xen_get_vm_path(vmName))['path']
+        # the xen_get_vm_path always sucks!!!
+        #return successToMap((vmName))['path']
+        return self._getVmPathFromPrimaryStorage(vmName)
     
     def _getAllDomains(self):
         stdout = timeout_command(["xm", "list"])

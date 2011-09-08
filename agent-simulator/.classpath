@@ -8,17 +8,12 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/server"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/utils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/agent"/>
-	<classpathentry kind="lib" path="/deps/cloud-gson.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/core-premium"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/premium"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/agent-premium"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/console"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/console-proxy"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/console-viewer"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/setup"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/test"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/thirdparty"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ui"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/usage"/>

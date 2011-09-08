@@ -878,6 +878,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                 // if the thread:
                                 // 1) timed out waiting for the host to reconnect
                                 // 2) recipient management server is not active any more
+                                // 3) if the management server doesn't own the host any more
                                 // remove the host from re-balance list and delete from op_host_transfer DB
                                 // no need to do anything with the real attache as we haven't modified it yet
                                 Date cutTime = DateUtil.currentGMTTime();
@@ -886,7 +887,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
                                     continue;
-                                }  
+                                }
+                                
+                                if (attache.forForward()) {
+                                    s_logger.debug("Management server " + _nodeId + " doesn't own host id=" + hostId + " any more, skipping rebalance for the host");
+                                    iterator.remove();
+                                    _hostTransferDao.completeAgentTransfer(hostId);
+                                    continue;
+                                }
                                 
                                 HostTransferMapVO transferMap = _hostTransferDao.findByIdAndCurrentOwnerId(hostId, _nodeId);
                                 
@@ -1019,7 +1027,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 
                 requestToTransfer = forwardAttache.getRequestToTransfer();
             }
-            s_logger.debug("Management server " + _nodeId + " completed agent " + hostId + " rebalance");
+            
+            s_logger.debug("Management server " + _nodeId + " completed agent " + hostId + " rebalance to " + futureOwnerId);
            
         } else {
             failRebalance(hostId);

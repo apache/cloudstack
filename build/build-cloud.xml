@@ -13,6 +13,7 @@
     -->
   <dirname property="base.dir" file="${ant.file.Cloud Stack}/.." />
   <property name="build.dir" location="${base.dir}/build" />
+  <property name="test.classes.dir" location="${test.target.dir}/classes" />
 
   <!-- Import anything that the user wants to set-->
   <!-- Import properties files and environment variables here -->
@@ -62,6 +63,7 @@
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
   <property name="deps.dir" location="${base.dir}/deps" />
+  <property name="tools.jar.dir" location="${base.dir}/tools/tooljars" />
 
   <!-- directories for client compilation-->
   <property name="client.dir" location="${base.dir}/client" />
@@ -145,16 +147,26 @@
   <path id="src.classpath">
   </path>
 
+  <path id="compile.deps.classpath">
+      <fileset dir="${tools.jar.dir}" erroronmissingdir="true">
+          <include name="*.jar" />
+      </fileset>
+  </path>
+
   <path id="deps.classpath">
     <!--filelist files="${deps.classpath}" /-->
     <fileset dir="${deps.dir}" erroronmissingdir="false">
       <include name="*.jar" />
     </fileset>
+    <path refid="compile.deps.classpath" />
   </path>
 
   <path id="dist.classpath">
     <fileset dir="${target.dir}">
       <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${target.dir}/jar">
+        <include name="**/*.jar" />
     </fileset>
   </path>
 

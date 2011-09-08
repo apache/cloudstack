@@ -64,6 +64,7 @@ import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl;
 import com.cloud.keystore.KeystoreDaoImpl;
 import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
@@ -100,8 +101,8 @@ import com.cloud.network.security.SecurityGroupManagerImpl;
 import com.cloud.network.security.dao.EgressRuleDaoImpl;
 import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
-import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupEgressRulesDaoImpl;
+import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
@@ -275,7 +276,9 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ProjectDao", ProjectDaoImpl.class);
         addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
         addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
-
+        info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
+        info.addParameter("cache.size", "100");
+        info.addParameter("cache.time.to.live", "600");
     }
 
     @Override

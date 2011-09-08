@@ -587,6 +587,7 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.save()
             
             self.syscfg.svo.stopService("cloud-agent")
+            bash("sleep 30")
             self.syscfg.svo.enableService("cloud-agent")
             return True
         except:

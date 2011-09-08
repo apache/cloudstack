@@ -23,6 +23,8 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDaoImpl;
@@ -48,7 +50,8 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     protected final SearchBuilder<DomainRouterVO> OutsidePodSearch;
     NetworkDaoImpl _networksDao = ComponentLocator.inject(NetworkDaoImpl.class);
-
+    HostDaoImpl _hostsDao = ComponentLocator.inject(HostDaoImpl.class);
+    
     protected DomainRouterDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterIdToDeployIn(), Op.EQ);
@@ -81,6 +84,9 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchBuilder<NetworkVO> joinStateNetwork = _networksDao.createSearchBuilder();
         joinStateNetwork.and("guestType", joinStateNetwork.entity().getGuestType(), Op.EQ);
         StateNetworkTypeSearch.join("network", joinStateNetwork, joinStateNetwork.entity().getId(), StateNetworkTypeSearch.entity().getNetworkId(), JoinType.INNER);
+        SearchBuilder<HostVO> joinHost = _hostsDao.createSearchBuilder();
+        joinHost.and("mgmtServerId", joinHost.entity().getManagementServerId(), Op.EQ);
+        StateNetworkTypeSearch.join("host", joinHost, joinHost.entity().getId(), StateNetworkTypeSearch.entity().getHostId(), JoinType.INNER);
         StateNetworkTypeSearch.done();
 
         OutsidePodSearch = createSearchBuilder();
@@ -198,10 +204,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType) {
+    public List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType, long mgmtSrvrId) {
         SearchCriteria<DomainRouterVO> sc = StateNetworkTypeSearch.create();
         sc.setParameters("state", state);
         sc.setJoinParameters("network", "guestType", ipType);
+        sc.setJoinParameters("host", "mgmtServerId", mgmtSrvrId);
         return listBy(sc);
     }
 

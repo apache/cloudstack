@@ -38,6 +38,8 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -55,6 +57,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -73,6 +76,8 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject ConfigurationDao _configDao = null;
     @Inject GuestOSDao _guestOSDao = null; 
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
+    @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao = null;
+    @Inject VMInstanceDao _vmInstanceDao = null;  
     float _factor = 1;
     protected String _allocationAlgorithm = "random";
     @Inject CapacityManager _capacityMgr;
@@ -186,6 +191,16 @@ public class FirstFitAllocator implements HostAllocator {
             if(host.getHostAllocationState() != Host.HostAllocationState.Enabled){
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" is in " + host.getHostAllocationState().name() + " state, skipping this and trying other available hosts");
+                }
+                continue;
+            }
+            
+            //find number of guest VMs occupying capacity on this host.
+            Long vmCount = _vmInstanceDao.countRunningByHostId(host.getId());
+            Long maxGuestLimit = getHostMaxGuestLimit(host);
+            if (vmCount.longValue() == maxGuestLimit.longValue()){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + " , skipping this and trying other available hosts");
                 }
                 continue;
             }
@@ -325,6 +340,14 @@ public class FirstFitAllocator implements HostAllocator {
     	long guestOSCategoryId = guestOS.getCategoryId();
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	return guestOSCategory.getName();
+    }
+    
+    protected Long getHostMaxGuestLimit(HostVO host) {
+        HypervisorType hypervisorType = host.getHypervisorType();
+        String hypervisorVersion = host.getHypervisorVersion();
+
+        Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
+        return maxGuestLimit;
     }
     
     @Override

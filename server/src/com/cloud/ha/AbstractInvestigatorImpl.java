@@ -79,7 +79,7 @@ public abstract class AbstractInvestigatorImpl implements Investigator {
 
     protected Status testIpAddress(Long hostId, String testHostIp) {
         try {
-            Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(testHostIp), 30 * 1000);
+            Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(testHostIp));
             if(pingTestAnswer == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("host (" + testHostIp + ") returns null answer");

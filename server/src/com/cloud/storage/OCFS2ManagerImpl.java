@@ -65,7 +65,10 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
         Integer i = 0;
         List<Ternary<Integer, String, String>> lst = new ArrayList<Ternary<Integer, String, String>>();
         for (HostVO h : hosts) {
-            String nodeName = "node_" + h.getPrivateIpAddress().replace(".", "_");
+            /**
+             * Don't show "node" in node name otherwise OVM's utils/config_o2cb.sh will be going crazy
+             */
+            String nodeName = "ovm_" + h.getPrivateIpAddress().replace(".", "_");
             Ternary<Integer, String, String> node = new Ternary<Integer, String, String>(i, h.getPrivateIpAddress(), nodeName);
             lst.add(node);
             i ++;
@@ -103,6 +106,16 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
         }
         
         return clusterName;
+    
+        
+        /**
+         * right now let's use "ocfs2" that is default cluster name of OVM OCFS2 service.
+         * Using another name is fine but requires extra effort to modify OVM's "utils/config_o2cb.sh",
+         * currently it doesn't receive parameter specifying which cluster to start.
+         * And I don't see the benefit of a cluster name rather than "ocfs2"
+         */
+        
+        //return "ocfs2";
     }
     
     @Override
