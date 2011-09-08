@@ -73,7 +73,6 @@ public interface AgentManager extends Manager {
      *            command
      * @return an Answer
      */
-    Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException;
 
     Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException;
 
@@ -244,8 +243,6 @@ public interface AgentManager extends Manager {
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
 
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
-
-    Answer easySend(Long hostId, Command cmd, int timeout);
 
     boolean isHostNativeHAEnabled(long hostId);
 

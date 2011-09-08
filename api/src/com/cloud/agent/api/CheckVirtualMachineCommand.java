@@ -27,6 +27,7 @@ public class CheckVirtualMachineCommand extends Command {
     
     public CheckVirtualMachineCommand(String vmName) {
         this.vmName = vmName;
+        setWait(20);
     }
     
     public String getVmName() {

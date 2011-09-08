@@ -32,15 +32,16 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 	String secondaryStorageUrl;
 	String primaryStorageUrl;
 
-	protected PrimaryStorageDownloadCommand() {
+    protected PrimaryStorageDownloadCommand() {
 	}
 
-    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, long poolId, String poolUuid) {
+    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, long poolId, String poolUuid, int wait) {
         super(name, url, format, accountId);
         this.poolId = poolId;
         this.poolUuid = poolUuid;
+        setWait(wait);
     }
-    
+   
     public String getPoolUuid() {
         return poolUuid;
     }

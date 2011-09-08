@@ -74,6 +74,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -338,7 +339,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected String _zone;
 
     private ConfigurationDao _configDao;
-
+    private int _createprivatetemplatefromvolumewait;
+    private int _createprivatetemplatefromsnapshotwait;
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -1138,6 +1140,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (_instance == null) {
             _instance = "DEFAULT";
         }
+        
+        String value = _configDao.getValue(Config.CreatePrivateTemplateFromVolumeWait.toString());
+        _createprivatetemplatefromvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreatePrivateTemplateFromVolumeWait.getDefaultValue()));
+        
+        value = _configDao.getValue(Config.CreatePrivateTemplateFromSnapshotWait.toString());
+        _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreatePrivateTemplateFromSnapshotWait.getDefaultValue()));
 
         String workers = configs.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 10);
@@ -1532,7 +1540,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
                 }
                 cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
-                        origTemplateInstallPath, templateId, name);
+                        origTemplateInstallPath, templateId, name, _createprivatetemplatefromsnapshotwait);
             } else if (volumeId != null) {
                 VolumeVO volume = _volsDao.findById(volumeId);
                 if (volume == null) {
@@ -1553,7 +1561,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
                 pool = _storagePoolDao.findById(volume.getPoolId());
-                cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName);
+                cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
 
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");

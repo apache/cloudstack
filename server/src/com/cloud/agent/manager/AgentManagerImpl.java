@@ -274,7 +274,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _pingInterval = NumbersUtil.parseInt(value, 60);
 
         value = configs.get("wait");
-        _wait = NumbersUtil.parseInt(value, 1800) * 1000;
+        _wait = NumbersUtil.parseInt(value, 1800);
 
         value = configs.get("alert.wait");
         _alertWait = NumbersUtil.parseInt(value, 1800);
@@ -795,10 +795,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
         Commands cmds = new Commands(OnError.Stop);
         cmds.addCommand(cmd);
-        send(hostId, cmds, timeout);
+        send(hostId, cmds, cmd.getWait());
         Answer[] answers = cmds.getAnswers();
         if (answers != null && !(answers[0] instanceof UnsupportedAnswer)) {
             return answers[0];
@@ -854,7 +854,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             s_logger.debug("checking if agent (" + hostId + ") is alive");
         }
 
-        Answer answer = easySend(hostId, new CheckHealthCommand(), 50 * 1000);
+        Answer answer = easySend(hostId, new CheckHealthCommand());
         if (answer != null && answer.getResult()) {
             Status status = Status.Up;
             if (s_logger.isDebugEnabled()) {
@@ -1465,11 +1465,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @Override
     public Answer easySend(final Long hostId, final Command cmd) {
-        return easySend(hostId, cmd, _wait);
-    }
-
-    @Override
-    public Answer easySend(final Long hostId, final Command cmd, int timeout) {
         try {
             Host h = _hostDao.findById(hostId);
             if (h == null || h.getRemoved() != null) {
@@ -1480,7 +1475,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             if (!status.equals(Status.Up) && !status.equals(Status.Connecting)) {
                 return null;
             }
-            final Answer answer = send(hostId, cmd, timeout);
+            final Answer answer = send(hostId, cmd);
             if (answer == null) {
                 s_logger.warn("send returns null answer");
                 return null;
@@ -1505,13 +1500,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
-        return send(hostId, cmd, _wait);
-    }
-
-    @Override
     public Answer[] send(final Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException {
-        return send(hostId, cmds, _wait);
+        int wait = 0;
+        for( Command cmd : cmds ) {
+            if ( cmd.getWait() > wait ) {
+                wait = cmd.getWait();
+            }
+        }
+        if ( wait == 0 ) {
+            wait = _wait;
+        }
+        return send(hostId, cmds, wait);
     }
 
     @Override

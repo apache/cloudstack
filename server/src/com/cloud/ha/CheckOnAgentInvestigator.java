@@ -51,7 +51,7 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
 	public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
 		CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
 		try {
-			CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd, 10 * 1000);
+			CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);
 			if (!answer.getResult()) {
 				s_logger.debug("Unable to get vm state on " + vm.toString());
 				return null;

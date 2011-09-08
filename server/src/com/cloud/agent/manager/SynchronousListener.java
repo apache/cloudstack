@@ -97,7 +97,7 @@ public class SynchronousListener implements Listener {
         return waitFor(-1);
     }
     
-    public synchronized Answer[] waitFor(int ms) throws InterruptedException {
+    public synchronized Answer[] waitFor(int s) throws InterruptedException {
         if (_disconnected) {
             return null;
         }
@@ -108,9 +108,10 @@ public class SynchronousListener implements Listener {
 
         Profiler profiler = new Profiler();
         profiler.start();
-        if (ms <= 0) {
+        if (s <= 0) {
             wait();
         } else {
+            int ms = s * 1000;
             wait(ms);
         }
         profiler.stop();
