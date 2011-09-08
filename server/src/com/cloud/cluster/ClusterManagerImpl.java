@@ -871,7 +871,6 @@ public class ClusterManagerImpl implements ClusterManager {
             if(!pingManagementNode(mshost)) {
                 s_logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and also not pingable");
                 activePeers.remove(mshost.getId());
-                _mshostDao.invalidateRunSession(mshost.getId(), mshost.getRunid());
                 try {
                     JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
                 } catch(Exception e) {
