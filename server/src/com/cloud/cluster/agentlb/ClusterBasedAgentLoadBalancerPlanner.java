@@ -66,7 +66,7 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
     
     @Override
     public List<HostVO> getHostsToRebalance(long msId, int avLoad) {
-        List<HostVO> allHosts = _hostDao.listByManagementServer(msId);
+        List<HostVO> allHosts = _hostDao.listRoutingHostsByManagementServer(msId);
  
         if (allHosts.size() <= avLoad) {
             s_logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad + "; so it doesn't participate in agent rebalancing process");
@@ -101,6 +101,7 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
         int hostsLeft = directHosts.size();
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
         
+        s_logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() + " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();
@@ -115,6 +116,7 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
                         //get all hosts that are needed from the cluster
                         s_logger.debug("Taking " + hostsLeftToGive + " from cluster " + cluster);
                         for (int i=0; i < hostsLeftToGive; i++) {
+                            s_logger.trace("Taking host id=" + hostsInCluster.get(i) + " from cluster " + cluster);
                             hostsToReturn.add(hostsInCluster.get(i));
                         } 
                        
@@ -130,6 +132,7 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
             }
         }
         
+        s_logger.debug("Management server " + msId + " is ready to give away " + hostsToReturn.size() + " hosts");
         return hostsToReturn;
     }
     
