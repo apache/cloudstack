@@ -64,7 +64,8 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  String prevSnapshotUuid,
                                  String prevBackupUuid,
                                  boolean isVolumeInactive,
-                                 String vmName) 
+                                 String vmName,
+                                 int wait) 
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
         this.snapshotId = snapshotId;
@@ -74,6 +75,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         this.vmName = vmName;
         this.pool = new StorageFilerTO(pool);
         setVolumePath(volumePath);
+        setWait(wait);
     }
     
     public String getPrevSnapshotUuid() {

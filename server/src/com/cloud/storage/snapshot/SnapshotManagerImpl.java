@@ -46,6 +46,7 @@ import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
@@ -167,6 +168,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private int _totalRetries;
     private int _pauseInterval;
     private int _deltaSnapshotMax;
+    private int _backupsnapshotwait;
 
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
@@ -561,7 +563,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             String vmName = _storageMgr.getVmNameOnVolume(volume);
             StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
             BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
-                    snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName);
+                    snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
             if ( swift != null ) {
                 backupSnapshotCommand.setSwift(toSwiftTO(swift));
@@ -1293,6 +1295,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (configDao == null) {
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
+        
+        String value = configDao.getValue(Config.BackupSnapshotWait.toString());
+        _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         Type.HOURLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         Type.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));

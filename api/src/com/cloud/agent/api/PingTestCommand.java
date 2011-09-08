@@ -28,11 +28,13 @@ public class PingTestCommand extends Command {
 
     public PingTestCommand(String computingHostIp) {
         _computingHostIp = computingHostIp;
+        setWait(20);
     }
 
     public PingTestCommand(String routerIp, String privateIp) {
         _routerIp = routerIp;
         _privateIp = privateIp;
+        setWait(20);
     }
 
     public String getComputingHostIp() {

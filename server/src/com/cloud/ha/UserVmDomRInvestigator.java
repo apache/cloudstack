@@ -183,21 +183,16 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         }
         for (Long hostId : otherHosts) {
             try {
-                Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(routerPrivateIp, privateIp), 30 * 1000);
+                Answer pingTestAnswer = _agentMgr.easySend(hostId, new PingTestCommand(routerPrivateIp, privateIp));
                 if (pingTestAnswer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("user vm " + vm.getHostName() + " has been successfully pinged, returning that it is alive");
                     }
                     return Boolean.TRUE;
                 }
-            } catch (AgentUnavailableException e) {
+            } catch (Exception e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Couldn't reach " + e.getResourceId());
-                }
-                continue;
-            } catch (OperationTimedoutException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Operation timed out: " + e.getMessage());
+                    s_logger.debug("Couldn't reach due to" + e.toString());
                 }
                 continue;
             }

@@ -50,9 +50,10 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
                                            Long   accountId,
                                            Long   volumeId,
                                            String backedUpSnapshotUuid,
-                                           String backedUpSnapshotName)
+                                           String backedUpSnapshotName,
+                                           int wait)
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
+        setWait(wait);
     }
-
 }
