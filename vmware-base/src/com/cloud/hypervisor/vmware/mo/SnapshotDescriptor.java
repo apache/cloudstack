@@ -175,22 +175,24 @@ public class SnapshotDescriptor {
 		while(current != null) {
 			id = getSnapshotId(current);
 			String numDisksStr = _properties.getProperty(String.format("snapshot%d.numDisks", id));
-			assert(numDisksStr != null);
-			int numDisks = Integer.parseInt(numDisksStr);
-			DiskInfo[] disks = new DiskInfo[numDisks];
-			for(int i = 0; i < numDisks; i++) {
-				disks[i] = new DiskInfo(
-					_properties.getProperty(String.format("snapshot%d.disk%d.fileName", id, i)),
-					_properties.getProperty(String.format("snapshot%d.disk%d.node", id, i))
-				);			
+			int numDisks = 0;
+			if(numDisksStr != null && !numDisksStr.isEmpty()) {
+				numDisks = Integer.parseInt(numDisksStr);
+				DiskInfo[] disks = new DiskInfo[numDisks];
+				for(int i = 0; i < numDisks; i++) {
+					disks[i] = new DiskInfo(
+						_properties.getProperty(String.format("snapshot%d.disk%d.fileName", id, i)),
+						_properties.getProperty(String.format("snapshot%d.disk%d.node", id, i))
+					);			
+				}
+				
+				SnapshotInfo info = new SnapshotInfo();
+				info.setId(id);
+				info.setNumOfDisks(numDisks);
+				info.setDisks(disks);
+				info.setDisplayName(_properties.getProperty(String.format("snapshot%d.displayName", id)));
+				l.add(info);
 			}
-			
-			SnapshotInfo info = new SnapshotInfo();
-			info.setId(id);
-			info.setNumOfDisks(numDisks);
-			info.setDisks(disks);
-			info.setDisplayName(_properties.getProperty(String.format("snapshot%d.displayName", id)));
-			l.add(info);
 			
 			current = _properties.getProperty(String.format("snapshot%d.parent", id));
 		}
