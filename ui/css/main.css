@@ -366,7 +366,7 @@ a:hover {
 
 #overlay_black{
 	display: block;
-	position: absolute;
+	position: fixed;
 	top: 0%;
 	left: 0%;
 	width: 100%;
