@@ -223,14 +223,22 @@ public class ApiDBUtils {
         return _ms.findVMInstanceById(vmId);
     }
 
-    public static long getMemoryUsagebyHost(Long hostId) {
+    public static long getMemoryOrCpuCapacitybyHost(Long hostId, short capacityType) {
         // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
         // so if this Utils class can have some kind of config rather than a static initializer (maybe from
         // management server instantiation?) then maybe the management server method can be moved entirely
         // into this utils class.
-        return _ms.getMemoryUsagebyHost(hostId);
+        return _ms.getMemoryOrCpuCapacityByHost(hostId,capacityType);
     }
 
+    public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
+        // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
+        // so if this Utils class can have some kind of config rather than a static initializer (maybe from
+        // management server instantiation?) then maybe the management server method can be moved entirely
+        // into this utils class.
+        return _ms.getMemoryOrCpuCapacityByHost(poolId, capacityType);
+    }
+    
     public static Long getPodIdForVlan(long vlanDbId) {
         return _ms.getPodIdForVlan(vlanDbId);
     }

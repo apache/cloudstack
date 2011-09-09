@@ -3325,9 +3325,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long getMemoryUsagebyHost(Long hostId) {
+    public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType) {
 
-        CapacityVO capacity = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
+        CapacityVO capacity = _capacityDao.findByHostIdType(hostId, capacityType);
         return capacity == null ? 0 : capacity.getReservedCapacity() + capacity.getUsedCapacity();
 
     }

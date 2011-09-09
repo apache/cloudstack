@@ -496,7 +496,7 @@ public interface ManagementServer extends ManagementService {
      */
     List<VMTemplateVO> listIsos(Criteria c);
 
-    public long getMemoryUsagebyHost(Long hostId);
+    public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
 
     /**
      * List private templates for which the given account/domain has been granted permission to launch instances

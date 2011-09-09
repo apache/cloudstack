@@ -549,47 +549,35 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
-
-        // calculate cpu allocated by vm
-        if ((host.getCpus() != null) && (host.getSpeed() != null)) {
-            int cpu = 0;
-            String cpuAlloc = null;
-            List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
-            for (UserVmVO vm : instances) {
-                ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
-                cpu += so.getCpu() * so.getSpeed();
-            }
-            cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
-            hostResponse.setCpuAllocated(cpuAlloc);
-
-            String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
-            hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
-        }
-
-        // calculate cpu utilized
-        String cpuUsed = null;
-        HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
-        if (hostStats != null) {
-            float cpuUtil = (float) hostStats.getCpuUtilization();
-            cpuUsed = decimalFormat.format(cpuUtil) + "%";
-            hostResponse.setCpuUsed(cpuUsed);
-            hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
-            hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
-        }
-
-        if (host.getType() == Host.Type.Routing) {
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");        
+        if (host.getType() == Host.Type.Routing) {            
+            //set allocated capacities
+            Long mem = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(),Capacity.CAPACITY_TYPE_MEMORY);
+            Long cpu = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(),Capacity.CAPACITY_TYPE_CPU);
+            
+            hostResponse.setMemoryAllocated(mem); 
             hostResponse.setMemoryTotal(host.getTotalMemory());
-
-            // calculate memory allocated by systemVM and userVm
-            Long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
-            hostResponse.setMemoryAllocated(mem);
-            hostResponse.setMemoryUsed(mem);
             hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
             hostResponse.setHypervisorVersion(host.getHypervisorVersion());
-        } else if (host.getType().toString().equals("Storage")) {
-            hostResponse.setDiskSizeTotal(host.getTotalSize());
-            hostResponse.setDiskSizeAllocated(0L);
+                        
+            String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+            hostResponse.setCpuAllocated(cpuAlloc);
+            String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
+            hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
+            
+            // set CPU/RAM/Network stats
+            String cpuUsed = null;
+            HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
+            if (hostStats != null) {
+                float cpuUtil = (float) hostStats.getCpuUtilization();
+                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                hostResponse.setCpuUsed(cpuUsed);
+                hostResponse.setMemoryUsed( (new Double(hostStats.getUsedMemory())).longValue());
+                hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
+                hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
+                
+            }
+            
         }
 
         if (host.getClusterId() != null) {
