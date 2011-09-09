@@ -129,27 +129,47 @@ function afterLoadTemplateJSP() {
 				if (!isValid) return;		
 				
 				thisDialog.dialog("close");
-										
+					
+				var array1 = [];
 				var name = trim(thisDialog.find("#add_template_name").val());
-				var desc = trim(thisDialog.find("#add_template_display_text").val());
-				var url = trim(thisDialog.find("#add_template_url").val());						
-				var zoneId = thisDialog.find("#add_template_zone").val();												
-				var format = thisDialog.find("#add_template_format").val();					
-				var password = thisDialog.find("#add_template_password").val();		
-				var isPublic = thisDialog.find("#add_template_public").val();	                    	
-				var osType = thisDialog.find("#add_template_os_type").val();
-				var hypervisor = thisDialog.find("#add_template_hypervisor").val();
+				array1.push("&name="+todb(name));
 				
-				var moreCriteria = [];				
+				var desc = trim(thisDialog.find("#add_template_display_text").val());
+				array1.push("&displayText="+todb(desc));
+				
+				var url = trim(thisDialog.find("#add_template_url").val());	
+				array1.push("&url="+todb(url));
+				
+				var zoneId = thisDialog.find("#add_template_zone").val();	
+				array1.push("&zoneid="+zoneId);
+				
+				var format = thisDialog.find("#add_template_format").val();		
+				array1.push("&format="+format);						
+				
+				var isextractable = thisDialog.find("#isextractable").val();		
+				array1.push("&isextractable="+isextractable);				
+				
+				var password = thisDialog.find("#add_template_password").val();		
+				array1.push("&passwordEnabled="+password);
+				
+				var isPublic = thisDialog.find("#add_template_public").val();	
+				array1.push("&ispublic="+isPublic);
+				
+				var osType = thisDialog.find("#add_template_os_type").val();
+				array1.push("&osTypeId="+osType);
+				
+				var hypervisor = thisDialog.find("#add_template_hypervisor").val();
+				array1.push("&hypervisor="+hypervisor);
+											
 				if(thisDialog.find("#add_template_featured_container").css("display")!="none") {				
 				    var isFeatured = thisDialog.find("#add_template_featured").val();						    	
-                    moreCriteria.push("&isfeatured="+isFeatured);
+                    array1.push("&isfeatured="+isFeatured);
                 }					
 				
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 												
 				$.ajax({
-				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+todb(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+""),
+				    data: createURL("command=registerTemplate" + array1.join("")),
 					dataType: "json",
 					success: function(json) {	
 						var items = json.registertemplateresponse.template;				       
@@ -432,6 +452,8 @@ function templateJsonToDetailsTab() {
 	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 
 	else
 	    $thisTab.find("#size").text(""); 
+            
+    setBooleanReadField(jsonObj.isextractable, $thisTab.find("#isextractable"));    
     
     setBooleanReadField(jsonObj.passwordenabled, $thisTab.find("#passwordenabled"));	
     setBooleanEditField(jsonObj.passwordenabled, $thisTab.find("#passwordenabled_edit"));
