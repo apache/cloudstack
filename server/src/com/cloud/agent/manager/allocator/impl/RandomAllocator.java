@@ -21,22 +21,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-import com.cloud.host.HostVO;
-import com.cloud.host.Host.Type;
+
 import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VirtualMachine;
@@ -50,7 +47,13 @@ public class RandomAllocator implements HostAllocator {
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
-			ExcludeList avoid, int returnUpTo) {
+            ExcludeList avoid, int returnUpTo) {
+        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
+    }
+    
+    @Override
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+			ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
 
 		long dcId = plan.getDataCenterId();
 		Long podId = plan.getPodId();

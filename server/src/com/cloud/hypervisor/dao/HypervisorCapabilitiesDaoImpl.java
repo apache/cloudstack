@@ -22,6 +22,9 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeAndVersionSearch;
     protected final GenericSearchBuilder<HypervisorCapabilitiesVO, Long> MaxGuestLimitByHypervisorSearch;
     
+    //we insert a record for each hypervisor type with version 'default' to ensure we dont face errors in case hypervisor version is missing or does not match.
+    private static final String DEFAULT_VERSION = "default";
+    
     protected HypervisorCapabilitiesDaoImpl() {
         HypervisorTypeSearch = createSearchBuilder();
         HypervisorTypeSearch.and("hypervisorType", HypervisorTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
@@ -58,15 +61,27 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     public Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion){
         Long defaultLimit = new Long(50);
         Long result = null;
+        boolean useDefault = false;
         if(hypervisorVersion != null){
             SearchCriteria<Long> sc = MaxGuestLimitByHypervisorSearch.create();
             sc.setParameters("hypervisorType", hypervisorType);
             sc.setParameters("hypervisorVersion", hypervisorVersion);
-            result = customSearch(sc, null).get(0);
+            List<Long> limitList = customSearch(sc, null);
+            if(!limitList.isEmpty()){
+                result = limitList.get(0);
+            }else{
+                useDefault = true;
+            }
         }else{
-            List<HypervisorCapabilitiesVO> capabilities =  listAllByHypervisorType(hypervisorType);
-            if(!capabilities.isEmpty()){
-                result = capabilities.get(0).getMaxGuestsLimit();
+            useDefault = true;
+        }
+        if(useDefault){
+            SearchCriteria<Long> sc = MaxGuestLimitByHypervisorSearch.create();
+            sc.setParameters("hypervisorType", hypervisorType);
+            sc.setParameters("hypervisorVersion", DEFAULT_VERSION);
+            List<Long> limitList = customSearch(sc, null);
+            if(!limitList.isEmpty()){
+                result = limitList.get(0);
             }
         }
         if(result == null){

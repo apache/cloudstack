@@ -36,7 +36,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -48,7 +47,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 
 @Local(value=DeploymentPlanner.class)
 public class BareMetalPlanner implements DeploymentPlanner {
@@ -118,7 +116,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		
 		for (HostVO h : hosts) {
 			if (h.getStatus() == Status.Up) {
-				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor)){
+				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor, true)){
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");
 					DataCenter dc = _dcDao.findById(h.getDataCenterId());
 					Pod pod = _podDao.findById(h.getPodId());

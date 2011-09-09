@@ -4879,6 +4879,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             details.put("product_version", hr.softwareVersion.get("product_version"));
             if( hr.softwareVersion.get("product_version_text_short") != null ) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
+                cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));                
+            }else{
+                cmd.setHypervisorVersion(hr.softwareVersion.get("product_version"));
             }
             if (_privateNetworkName != null) {
             details.put("private.network.device", _privateNetworkName);

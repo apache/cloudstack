@@ -59,6 +59,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
@@ -151,6 +152,8 @@ import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -266,6 +269,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -335,6 +340,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final SSHKeyPairDao _sshKeyPairDao;
     private final LoadBalancerDao _loadbalancerDao;
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    private final Adapters<HostAllocator> _hostAllocators;
     
     private final KeystoreManager _ksMgr;
 
@@ -408,6 +414,11 @@ public class ManagementServerImpl implements ManagementServer {
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
+        }
+        
+        _hostAllocators = locator.getAdapters(HostAllocator.class);
+        if (_hostAllocators == null || !_hostAllocators.isSet()) {
+            s_logger.error("Unable to find HostAllocators");
         }
         
         _templateMgr = locator.getManager(TemplateManager.class);
@@ -1250,7 +1261,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Pair<List<? extends Host>, List<Long>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize) {
+    public Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = UserContext.current().getCaller();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -1302,25 +1313,36 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Other Hosts in this cluster: " + allHostsInCluster);
         }
 
-        int requiredCpu = svcOffering.getCpu() * svcOffering.getSpeed();
-        long requiredRam = svcOffering.getRamSize() * 1024L * 1024L;
-
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Searching for hosts in cluster: " + cluster + " having required CPU: " + requiredCpu + " and RAM:" + requiredRam);
+            s_logger.debug("Calling HostAllocators to search for hosts in cluster: " + cluster + " having enough capacity and suitable for migration");
         }
 
-        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
-        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("CPUOverprovisioningFactor considered: " + cpuOverprovisioningFactor);
-        }
-        List<Long> hostsWithCapacity = _capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, cluster, hostType.name(), cpuOverprovisioningFactor);
+        
+        List<Host> suitableHosts = new ArrayList<Host>();
+        Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
+        UserVmVO vmVO = (UserVmVO)vm;
+        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Hosts having capacity: " + hostsWithCapacity);
+        DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null);
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(srcHostId);
+        while (enHost.hasMoreElements()) {
+            final HostAllocator allocator = enHost.nextElement();
+            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
+            if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                break;
+            }
         }
 
-        return new Pair<List<? extends Host>, List<Long>>(allHostsInCluster, hostsWithCapacity);
+        if(suitableHosts.isEmpty()){
+            s_logger.debug("No suitable hosts found");
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Hosts having capacity and suitable for migration: " + suitableHosts);
+            }
+        }
+
+        return new Pair<List<? extends Host>, List<? extends Host>>(allHostsInCluster, suitableHosts);
     }
 
     private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,

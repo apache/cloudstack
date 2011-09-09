@@ -150,6 +150,9 @@ public class HostResponse extends BaseResponse {
     @SerializedName("hasEnoughCapacity") @Param(description="true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
     private Boolean hasEnoughCapacity;
 
+    @SerializedName("suitableForMigration") @Param(description="true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
+    private Boolean suitableForMigration;
+
     @SerializedName("allocationstate") @Param(description="the allocation state of the host")
     private String allocationState;
 
@@ -485,6 +488,14 @@ public class HostResponse extends BaseResponse {
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
         this.hasEnoughCapacity = hasEnoughCapacity;
     }
+    
+    public Boolean isSuitableForMigration() {
+        return suitableForMigration;
+    }
+
+    public void setSuitableForMigration(Boolean suitableForMigration) {
+        this.suitableForMigration = suitableForMigration;
+    }    
 
     public String getAllocationState() {
         return allocationState;

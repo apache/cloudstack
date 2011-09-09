@@ -82,11 +82,17 @@ public class FirstFitAllocator implements HostAllocator {
     protected String _allocationAlgorithm = "random";
     @Inject CapacityManager _capacityMgr;
     
+    
 	@Override
 	public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
 			ExcludeList avoid, int returnUpTo) {
-
-		long dcId = plan.getDataCenterId();
+	    return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
+	}
+	
+    @Override
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
+	
+	    long dcId = plan.getDataCenterId();
 		Long podId = plan.getPodId();
 		Long clusterId = plan.getClusterId();
 		ServiceOffering offering = vmProfile.getServiceOffering();
@@ -150,10 +156,10 @@ public class FirstFitAllocator implements HostAllocator {
             
         }
 
-        return allocateTo(offering, template, avoid, clusterHosts, returnUpTo);
+        return allocateTo(offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity);
     }
 
-    protected List<Host> allocateTo(ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo) {
+    protected List<Host> allocateTo(ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity) {
         if (_allocationAlgorithm.equals("random")) {
         	// Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
@@ -208,7 +214,7 @@ public class FirstFitAllocator implements HostAllocator {
             boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
     		int cpu_requested = offering.getCpu() * offering.getSpeed();
     		long ram_requested = offering.getRamSize() * 1024L * 1024L;	
-    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, _factor);
+    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, _factor, considerReservedCapacity);
 
             if (numCpusGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
@@ -381,6 +387,5 @@ public class FirstFitAllocator implements HostAllocator {
     public boolean stop() {
         return true;
     }
-
 
 }

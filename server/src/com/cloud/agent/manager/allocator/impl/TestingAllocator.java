@@ -49,7 +49,13 @@ public class TestingAllocator implements HostAllocator {
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
-			ExcludeList avoid, int returnUpTo) {
+            ExcludeList avoid, int returnUpTo) {
+        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
+    }
+    
+    @Override
+    public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
+			ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
     	List<Host> availableHosts = new ArrayList<Host>();
     	Host host = null;    	
         if (type == Host.Type.Routing && _routingHost != null) {

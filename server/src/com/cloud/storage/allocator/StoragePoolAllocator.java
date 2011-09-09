@@ -19,6 +19,7 @@ package com.cloud.storage.allocator;
 
 import java.util.List;
 import java.util.Set;
+
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
@@ -27,7 +28,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Allocator for a disk.  This determines which StoragePool should
@@ -51,4 +51,6 @@ public interface StoragePoolAllocator extends Adapter {
 	* @return List<StoragePool> List of storage pools that are suitable for the VM 
 	**/ 
 	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);	
+	
+	public static int RETURN_UPTO_ALL = -1;
 }

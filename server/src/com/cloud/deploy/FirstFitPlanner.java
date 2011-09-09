@@ -101,7 +101,6 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject(adapter=HostAllocator.class)
     protected Adapters<HostAllocator> _hostAllocators;
 
-    private static int RETURN_UPTO_ALL = -1;
 
     @Override
     public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
@@ -144,7 +143,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             //search for storage under the zone, pod, cluster of the host.
             DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId());
 
-            Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+            Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
             List<Volume> readyAndReusedVolumes = result.second();
 
@@ -179,12 +178,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 s_logger.debug("The last host of this VM cannot be found");
             }else{
                 if (host.getStatus() == Status.Up && host.getHostAllocationState() == Host.HostAllocationState.Enabled) {
-                    if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor)){
+                    if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor, true)){
                         s_logger.debug("The last host of this VM is UP and has enough capacity");
                         s_logger.debug("Now checking for suitable pools under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
                         //search for storage under the zone, pod, cluster of the last host.
                         DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());
-                        Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, RETURN_UPTO_ALL);
+                        Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
                         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                         List<Volume> readyAndReusedVolumes = result.second();
                         //choose the potential pool for this VM for this host
@@ -362,7 +361,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId());
 
             //find suitable hosts under this cluster, need as many hosts as we get.
-            List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, RETURN_UPTO_ALL);
+            List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
             //if found suitable hosts in this cluster, find suitable storage pools for each volume of the VM
             if(suitableHosts != null && !suitableHosts.isEmpty()){
                 if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
@@ -374,7 +373,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
                     Collections.shuffle(suitableHosts);
                 }
-                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, RETURN_UPTO_ALL);
+                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
                 Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                 List<Volume> readyAndReusedVolumes = result.second();
 

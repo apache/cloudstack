@@ -218,7 +218,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected Adapters<DeploymentPlanner> _planners;
 
     @Inject(adapter = HostAllocator.class)
-    protected Adapters<HostAllocator>                                    _hostAllocators;
+    protected Adapters<HostAllocator> _hostAllocators;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -1122,7 +1122,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            throw new VirtualMachineMigrationException("VM is not Running, unable to migrate the vm currently " + vm);
+            throw new VirtualMachineMigrationException("VM is not Running, unable to migrate the vm currently " + vm + " , current state: " + vm.getState().toString());
         }
 
         short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;

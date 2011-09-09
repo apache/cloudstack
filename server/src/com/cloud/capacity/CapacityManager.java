@@ -32,7 +32,15 @@ public interface CapacityManager extends Manager {
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
     
-    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor);
-
+    /**
+     * @param hostId Id of the host to check capacity
+     * @param cpu required CPU
+     * @param ram required RAM
+     * @param checkFromReservedCapacity set to true if ONLY reserved capacity of the host should be looked at
+     * @param cpuOverprovisioningFactor factor to apply to the actual host cpu
+     * @param considerReservedCapacity (default should be true, set to false if host capacity calculation should not look at reserved capacity at all)
+     */
+    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, boolean considerReservedCapacity);
+    
 	void updateCapacityForHost(HostVO host);
 }

@@ -293,7 +293,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     }
 
     @Override
-    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor) {
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, boolean considerReservedCapacity) {
         boolean hasCapacity = false;
 
         if (s_logger.isDebugEnabled()) {
@@ -352,16 +352,27 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                 failureReason = "Host does not have enough reserved CPU available";
             }
         } else {
-            long freeCpu = totalCpu - (reservedCpu + usedCpu);
-            long freeMem = totalMem - (reservedMem + usedMem);
+            
+            long reservedCpuValueToUse = reservedCpu;
+            long reservedMemValueToUse = reservedMem;
+            
+            if(!considerReservedCapacity){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("considerReservedCapacity is" + considerReservedCapacity + " , not considering reserved capacity for calculating free capacity");
+                }
+                reservedCpuValueToUse = 0;
+                reservedMemValueToUse = 0;
+            }
+            long freeCpu = totalCpu - (reservedCpuValueToUse + usedCpu);
+            long freeMem = totalMem - (reservedMemValueToUse + usedMem);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Free CPU: " + freeCpu + " , Requested CPU: " + cpu);
                 s_logger.debug("Free RAM: " + freeMem + " , Requested RAM: " + ram);
             }
             /* alloc from free resource */
-            if ((reservedCpu + usedCpu + cpu <= totalCpu)) {
-                if ((reservedMem + usedMem + ram <= totalMem)) {
+            if ((reservedCpuValueToUse + usedCpu + cpu <= totalCpu)) {
+                if ((reservedMemValueToUse + usedMem + ram <= totalMem)) {
                     hasCapacity = true;
                 } else {
                     failureReason = "Host does not have enough RAM available";
@@ -378,10 +389,10 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
             s_logger.debug("STATS: Can alloc CPU from host: " + hostId + ", used: " + usedCpu + ", reserved: " + reservedCpu + ", actual total: "
                     + actualTotalCpu + ", total with overprovisioning: " + totalCpu + "; requested cpu:" + cpu + ",alloc_from_last_host?:"
-                    + checkFromReservedCapacity);
+                    + checkFromReservedCapacity + " ,considerReservedCapacity?: "+considerReservedCapacity);
 
             s_logger.debug("STATS: Can alloc MEM from host: " + hostId + ", used: " + usedMem + ", reserved: " + reservedMem + ", total: " + totalMem
-                    + "; requested mem: " + ram + ",alloc_from_last_host?:" + checkFromReservedCapacity);
+                    + "; requested mem: " + ram + ",alloc_from_last_host?:" + checkFromReservedCapacity+ " ,considerReservedCapacity?: "+considerReservedCapacity);
         } else {
 
             if (checkFromReservedCapacity) {
@@ -390,7 +401,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
             } else {
                 s_logger.debug("STATS: Failed to alloc resource from host: " + hostId + " reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu
                         + ", requested cpu: " + cpu + ", actual total cpu: " + actualTotalCpu + ", total cpu with overprovisioning: " + totalCpu
-                        + ", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem);
+                        + ", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem+ " ,considerReservedCapacity?: "+considerReservedCapacity);
             }
 
             if (s_logger.isDebugEnabled()) {

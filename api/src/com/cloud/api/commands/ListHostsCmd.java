@@ -127,16 +127,16 @@ public class ListHostsCmd extends BaseListCmd {
     @Override
     public void execute(){
     	List<? extends Host> result = new ArrayList<Host>();
-		List<Long> hostIdsWithCapacity = new ArrayList<Long>();
+    	List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
     	 
     	if(getVirtualMachineId() != null){
             UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
             if (userVm == null) {
                 throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
             }
-            Pair<List<? extends Host>, List<Long>> hostsForMigration = _mgr.listHostsForMigrationOfVM(userVm, this.getStartIndex(), this.getPageSizeVal());
+            Pair<List<? extends Host>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(userVm, this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
-            hostIdsWithCapacity = hostsForMigration.second();
+            hostsWithCapacity = hostsForMigration.second();
     	}else{
     		result = _mgr.searchForServers(this);
     	}
@@ -145,11 +145,11 @@ public class ListHostsCmd extends BaseListCmd {
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         for (Host host : result) {
             HostResponse hostResponse = _responseGenerator.createHostResponse(host);
-            Boolean hasEnoughCapacity = false;
-            if(hostIdsWithCapacity.contains(host.getId())){
-            	hasEnoughCapacity = true;
+            Boolean suitableForMigration = false;
+            if(hostsWithCapacity.contains(host)){
+                suitableForMigration = true;
             }
-            hostResponse.setHasEnoughCapacity(hasEnoughCapacity);
+            hostResponse.setSuitableForMigration(suitableForMigration);
             hostResponse.setObjectName("host");
             hostResponses.add(hostResponse);
         }
