@@ -181,6 +181,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
+import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
@@ -2973,6 +2974,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setHypervisorType(HypervisorType.VMware);
         cmd.setStateChanges(changes);
         cmd.setCluster(_cluster);
+
+        String hostApiVersion = "4.1";
+        try {
+            // take the chance to do left-over dummy VM cleanup from previous run
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            
+            assert(hyperHost instanceof HostMO);
+            
+            AboutInfo aboutInfo = ((HostMO)hyperHost).getHostAboutInfo();
+            hostApiVersion = aboutInfo.getApiVersion();
+            
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                invalidateServiceContext();
+            }
+        }
+        
+        cmd.setVersion(hostApiVersion);
 
         List<StartupStorageCommand> storageCmds = initializeLocalStorage();
         StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];
