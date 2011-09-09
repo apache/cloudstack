@@ -114,6 +114,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
@@ -212,6 +213,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
@@ -331,6 +333,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected SecurityGroupDao _securityGroupDao;
+    @Inject 
+    protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject 
+    protected VMInstanceDao _vmInstanceDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -3275,6 +3281,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         long srcHostId = vm.getHostId();
         Cluster cluster = _clusterDao.findById(destinationHost.getClusterId());
         DeployDestination dest = new DeployDestination(dcVO, pod, cluster, destinationHost);
+        
+        //check max guest vm limit for the destinationHost
+        HypervisorType hypervisorType = destinationHost.getHypervisorType();
+        String hypervisorVersion = destinationHost.getHypervisorVersion();
+        Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);        
+        Long vmCount = _vmInstanceDao.countRunningByHostId(destinationHost.getId());
+        if (vmCount.longValue() == maxGuestLimit.longValue()){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host name: " + destinationHost.getName() + ", hostId: "+ destinationHost.getId() +" already has max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + " , cannot migrate to this host");
+            }
+            throw new VirtualMachineMigrationException("Destination host, hostId: "+ destinationHost.getId() +" already has max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + " , cannot migrate to this host");
+        }
 
         UserVmVO migratedVm = _itMgr.migrate((UserVmVO) vm, srcHostId, dest);
         return migratedVm;
