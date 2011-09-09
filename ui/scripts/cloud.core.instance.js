@@ -1998,6 +1998,10 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		
 		noAvailableActions = false;			    					
 	}
+	else if (jsonObj.state == 'Starting') {	
+		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+	    noAvailableActions = false;	
+	}
 	else if (jsonObj.state == 'Error') {	
 	    buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 	    noAvailableActions = false;	
