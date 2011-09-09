@@ -2962,6 +2962,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public StartupCommand[] initialize() {
+        VmwareContext context = getServiceContext();
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            assert(hyperHost instanceof HostMO);
+            if(!((HostMO)hyperHost).isHyperHostConnected()) {
+            	s_logger.info("Host " + hyperHost.getHyperHostName() + " is not in connected state");
+            	return null;
+            }
+        } catch (Exception e) {
+            String msg = "VmwareResource intialize() failed due to : " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            invalidateServiceContext();
+            return null;
+        }
+    	
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(cmd);
 
