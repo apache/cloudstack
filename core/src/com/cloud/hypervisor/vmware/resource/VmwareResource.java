@@ -2962,7 +2962,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public StartupCommand[] initialize() {
-        VmwareContext context = getServiceContext();
+        String hostApiVersion = "4.1";
+    	VmwareContext context = getServiceContext();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             assert(hyperHost instanceof HostMO);
@@ -2970,6 +2971,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             	s_logger.info("Host " + hyperHost.getHyperHostName() + " is not in connected state");
             	return null;
             }
+            
+            AboutInfo aboutInfo = ((HostMO)hyperHost).getHostAboutInfo();
+            hostApiVersion = aboutInfo.getApiVersion();
+            
         } catch (Exception e) {
             String msg = "VmwareResource intialize() failed due to : " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);
@@ -2989,25 +2994,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setHypervisorType(HypervisorType.VMware);
         cmd.setStateChanges(changes);
         cmd.setCluster(_cluster);
-
-        String hostApiVersion = "4.1";
-        try {
-            // take the chance to do left-over dummy VM cleanup from previous run
-            VmwareContext context = getServiceContext();
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
-            
-            assert(hyperHost instanceof HostMO);
-            
-            AboutInfo aboutInfo = ((HostMO)hyperHost).getHostAboutInfo();
-            hostApiVersion = aboutInfo.getApiVersion();
-            
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-        }
-        
         cmd.setVersion(hostApiVersion);
 
         List<StartupStorageCommand> storageCmds = initializeLocalStorage();
