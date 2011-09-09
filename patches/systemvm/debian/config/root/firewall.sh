@@ -21,6 +21,15 @@
 #
 # @VERSION@
 
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 usage() {
   printf "Usage: %s: (-A|-D)   -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> -s <source cidrs> [-G]   \n" $(basename $0) >&2
 }
@@ -231,7 +240,7 @@ do
   G)    Gflag=1
         ;;
   ?)    usage
-        exit 2
+        unlock_exit 2 $lock $locked
         ;;
   esac
 done
@@ -251,7 +260,7 @@ then
   result=$?
   [ "$result" -ne 0 ] && cat $OUTFILE >&2
   rm -f $OUTFILE
-  exit $result
+  unlock_exit $result $lock $locked
 fi
 
 if [ "$sflag" != "1" ]
@@ -265,16 +274,17 @@ case $protocol  in
                 result=$?
                 [ "$result" -ne 0 ] && cat $OUTFILE >&2
                 rm -f $OUTFILE
-        exit $result
+        unlock_exit $result $lock $locked
         ;;
   "icmp")  
   
         icmp_entry $instanceIp $icmptype $publicIp $op 
-        exit $?
+        unlock_exit $? $lock $locked
         ;;
       *)
         printf "Invalid protocol-- must be tcp, udp or icmp\n" >&2
-        exit 5
+        unlock_exit 5 $lock $locked
         ;;
 esac
 
+unlock_exit 0 $lock $locked

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# IMPORTANT: Ordering of lock:
+# biglock --> rrouter
+
 # getLockFile() parameters
 # $1 lock filename
 # $2 timeout seconds
@@ -42,3 +45,13 @@ releaseLockFile() {
         rm $__LOCKFILE
     fi
 }
+
+# releaseLockFile() parameters
+# $1 exit value
+# $2 lock filename
+# $3 locked(1) or not(0)
+unlock_exit() {
+    releaseLockFile $2 $3
+    exit $1
+}
+

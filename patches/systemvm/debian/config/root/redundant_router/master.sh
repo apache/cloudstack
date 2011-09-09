@@ -1,25 +1,12 @@
 #!/bin/bash
 
-LOCK=/tmp/rrouter.lock
-locked=0
+source /root/func.sh
 
-# Wait the lock
-for i in `seq 1 5`
-do
-    if [ ! -e $LOCK ]
-    then
-        touch $LOCK
-        locked=1
-        break
-    fi
-    sleep 1
-    echo sleep 1
-done
-
-if [ $locked -eq 0 ]
+lock="rrouter"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
 then
-    echo Status: fail to get the lock! >> /root/keepalived.log
-    exit
+    exit 1
 fi
 
 echo To master called >> /root/keepalived.log
@@ -34,7 +21,7 @@ then
     service keepalived stop >> /root/keepalived.log 2>&1
     service conntrackd stop >> /root/keepalived.log 2>&1
     echo Status: FAULT \($last_msg\) >> /root/keepalived.log
-    rm $LOCK
+    releaseLockFile $lock $locked
     exit
 fi
 /root/redundant_router/primary-backup.sh primary >> /root/keepalived.log 2>&1
@@ -46,4 +33,5 @@ then
 fi
 echo Status: MASTER >> /root/keepalived.log
 
-rm $LOCK
+releaseLockFile $lock $locked
+exit 0

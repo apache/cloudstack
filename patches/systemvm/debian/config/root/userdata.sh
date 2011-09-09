@@ -20,10 +20,18 @@
   #
  
 
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
 
 usage() {
   printf "Usage: %s: -v <vm ip> -F <vm data folder> -f <vm data file> -d <data to put in file> \n" $(basename $0) >&2
-  exit 2
+  unlock_exit 2 $lock $locked
 }
 
 set -x
@@ -115,7 +123,7 @@ do
   d)	dataFile="$OPTARG"
   		;;
   ?)    usage
-		exit 1
+                unlock_exit 1 $lock $locked
 		;;
   esac
 done
@@ -129,7 +137,7 @@ then
   
   if [ $? -gt 0 ]
   then
-    exit 1
+    unlock_exit 1 $lock $locked
   fi
   
   copy_vm_data_file $vmIp $folder $file $dataFile
@@ -137,4 +145,4 @@ else
   delete_vm_data_file $vmIp $folder $file
 fi
 
-exit $?
+unlock_exit $? $lock $locked

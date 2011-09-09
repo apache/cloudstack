@@ -20,6 +20,15 @@
 #
 # @VERSION@
 
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 usage() {
   printf "Usage: %s:  -a <public ip address:protocol:startport:endport:sourcecidrs>  \n" $(basename $0) >&2
   printf "sourcecidrs format:  cidr1-cidr2-cidr3-...\n"
@@ -119,7 +128,7 @@ do
 		rules="$OPTARG"
 		;;
   ?)	usage
-		exit 2
+                unlock_exit 2 $lock $locked
 		;;
   esac
 done
@@ -184,5 +193,6 @@ do
    logger -t cloud "$(basename $0): deleting backup for ip: $p"
    fw_remove_backup $p
 done
-exit $success
+
+unlock_exit $success $lock $locked
 

@@ -25,6 +25,14 @@
 #
 #
 # @VERSION@
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 usage() {
   printf "Usage:\n %s -A    -l <public-ip-address>   -c <dev> [-f] \n" $(basename $0) >&2
   printf " %s -D  -l <public-ip-address>  -c <dev> [-f] \n" $(basename $0) >&2
@@ -236,7 +244,7 @@ do
   		ethDev="$OPTARG"
   		;;
   ?)	usage
-		exit 2
+                unlock_exit 2 $lock $locked
 		;;
   esac
 done
@@ -245,14 +253,14 @@ done
 #Either the A flag or the D flag but not both
 if [ "$Aflag$Dflag" != "1" ]
 then
- usage
- exit 2
+    usage
+    unlock_exit 2 $lock $locked
 fi
 
 if [ "$lflag$cflag" != "11" ] 
 then
-   usage
-   exit 2
+    usage
+    unlock_exit 2 $lock $locked
 fi
 
 
@@ -261,14 +269,14 @@ then
   add_nat_entry  $publicIp  &&
   add_vpn_chain_for_ip $publicIp &&
   add_fw_chain_for_ip $publicIp 
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$Aflag" == "1" ]
 then  
   add_an_ip  $publicIp  &&
   add_fw_chain_for_ip $publicIp 
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$fflag" == "1" ] && [ "$Dflag" == "1" ]
@@ -276,14 +284,15 @@ then
   del_nat_entry  $publicIp &&
   del_fw_chain_for_ip $publicIp &&
   del_vpn_chain_for_ip $publicIp
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$Dflag" == "1" ]
 then
   remove_an_ip  $publicIp &&
   del_fw_chain_for_ip $publicIp 
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
-exit 0
+unlock_exit 0 $lock $locked
+

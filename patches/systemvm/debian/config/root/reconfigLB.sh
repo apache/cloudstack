@@ -19,16 +19,6 @@
   # along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #
 
-name="reconfigLB"
-
-source func.sh
-locked=$(getLockFile $name)
-if [ "$locked" != "1" ]
-then
-    logger -t cloud "Fail to get the lock for " $name
-    exit 1
-fi
-
 ret=0
 # save previous state
   mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.old
@@ -52,6 +42,5 @@ ret=0
     ret=1
   fi
 
-releaseLockFile $name $locked
-
 exit $ret
+
