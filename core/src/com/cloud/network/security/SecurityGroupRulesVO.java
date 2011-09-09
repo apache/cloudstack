@@ -35,7 +35,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
-
+    
     @Column(name = "name")
     private String name;
 
@@ -51,6 +51,9 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Column(name = "id", table = "security_ingress_rule", insertable = false, updatable = false)
     private Long ruleId;
 
+    @Column(name = "type", table = "security_ingress_rule", insertable = false, updatable = false)
+    private int type;
+    
     @Column(name = "start_port", table = "security_ingress_rule", insertable = false, updatable = false)
     private int startPort;
 
@@ -87,6 +90,11 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Override
     public long getId() {
         return id;
+    }
+    
+    @Override
+    public int getType() {
+        return type;
     }
 
     @Override

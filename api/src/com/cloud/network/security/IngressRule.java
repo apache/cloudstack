@@ -25,6 +25,8 @@ import com.cloud.async.AsyncInstanceCreateStatus;
  */
 public interface IngressRule {
     long getId();
+    
+    public int getType();
 
     long getSecurityGroupId();
 

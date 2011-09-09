@@ -50,6 +50,6 @@ public interface SecurityGroupService {
     public List<? extends SecurityGroupRules> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
     public List<? extends IngressRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
-    public List<? extends EgressRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
+    public List<? extends IngressRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
 
 }

@@ -1056,12 +1056,12 @@ def network_rules(session, args):
 
             if protocol == 'all':
                 if type == 'egress':
-                    iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'ACCEPT']
+                    iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'DROP']
                 else:
                     iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             elif protocol != 'icmp':
                 if type == 'egress':
-                    iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'ACCEPT']
+                    iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'DROP']
                 else:
                     iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             else:
@@ -1069,7 +1069,7 @@ def network_rules(session, args):
                 if start == "-1":
                     range = "any"
                     if type == 'egress':
-                        iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'ACCEPT']
+                        iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'dst', '-j', 'DROP']
                     else:
                         iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             util.pread2(iptables)
@@ -1077,16 +1077,25 @@ def network_rules(session, args):
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-j', 'ACCEPT']
+                if type == 'egress':
+                    iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-j', 'DROP']
+                else:
+                    iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-j', 'ACCEPT']
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'ACCEPT']
+                    if type == 'egress':
+                        iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'DROP']
+                    else:
+                        iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'ACCEPT']
             util.pread2(iptables)
             util.SMlog(iptables)
             
-    util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
+    if type == 'egress':
+        util.pread2(['iptables', '-A', vmchain, '-j', 'ACCEPT'])
+    else:
+        util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
     if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno) == False:
         return 'false'

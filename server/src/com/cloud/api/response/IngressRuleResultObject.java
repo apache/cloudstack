@@ -32,6 +32,9 @@ public class IngressRuleResultObject {
 
     @Param(name="protocol")
     private String protocol;
+    
+    @Param(name="type")
+    private int type;
 
     @Param(name="securitygroup")
     private String allowedSecurityGroup = null;
@@ -60,6 +63,14 @@ public class IngressRuleResultObject {
 
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
     }
 
     public int getStartPort() {
