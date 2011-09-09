@@ -182,18 +182,21 @@ function initAddIsoDialog() {
 			    $thisDialog.dialog("close");	
 			    
 			    var array1 = [];
-			    var name = trim($thisDialog.find("#add_iso_name").val());
+			    var name = $thisDialog.find("#add_iso_name").val();
 			    array1.push("&name="+todb(name));
 			    
-			    var desc = trim($thisDialog.find("#add_iso_display_text").val());
+			    var desc = $thisDialog.find("#add_iso_display_text").val();
 			    array1.push("&displayText="+todb(desc));
 			    
-			    var url = trim($thisDialog.find("#add_iso_url").val());	
+			    var url = $thisDialog.find("#add_iso_url").val();	
 			    array1.push("&url="+todb(url));
 			    					
 			    var zoneId = $thisDialog.find("#add_iso_zone").val();
 			    array1.push("&zoneId="+zoneId);	
 			    
+			    var isextractable = $thisDialog.find("#isextractable").val();		
+				array1.push("&isextractable="+isextractable);				
+							    
 			    var isPublic = $thisDialog.find("#add_iso_public").val();
 			    array1.push("&isPublic="+isPublic);	
 			    					    
@@ -424,6 +427,8 @@ function isoJsonToDetailsTab() {
 	    $thisTab.find("#size").text("");    
               
     setBooleanReadField(jsonObj.bootable, $thisTab.find("#bootable"));	
+    
+    setBooleanReadField(jsonObj.isextractable, $thisTab.find("#isextractable"));   
     
     setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
     setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));
