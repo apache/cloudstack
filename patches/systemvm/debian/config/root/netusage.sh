@@ -22,6 +22,16 @@
 
 # netusage.sh -- create iptable rules to gather network stats, running within DomR
 #
+
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 usage() {
   printf "Usage: %s -[c|g|r] [-[a|d] <public interface>]\n" $(basename $0)  >&2
 }
@@ -95,7 +105,7 @@ do
         publicIf="$OPTARG"
         ;;
   ?)	usage
-		exit 2
+                unlock_exit 2 $lock $locked
 		;;
   esac
 done
@@ -103,32 +113,32 @@ done
 if [ "$cflag" == "1" ] 
 then
   create_usage_rules  
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$gflag" == "1" ] 
 then
   get_usage 
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$rflag" == "1" ] 
 then
   reset_usage  
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$aflag" == "1" ] 
 then
   add_public_interface $publicIf 
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
 if [ "$dflag" == "1" ] 
 then
   delete_public_interface $publicIf 
-  exit $?
+  unlock_exit $? $lock $locked
 fi
 
-exit 0
+unlock_exit 0 $lock $locked
 

@@ -19,11 +19,19 @@
   # along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #
  
-
 # edithosts.sh -- edit the dhcphosts file on the routing domain
 # $1 : the mac address
 # $2 : the associated ip address
 # $3 : the hostname
+
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
 
 grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 no_redundant=$?
@@ -67,33 +75,6 @@ sed -i  /"$2 "/d /etc/hosts
 sed -i  /"$3"/d /etc/hosts
 echo "$2 $3" >> /etc/hosts
 
-locked=0
-if [ $no_redundant -eq 0 ]
-then
-#for redundant router, grap the lock to prevent racy with keepalived process
-LOCK=/tmp/rrouter.lock
-
-# Wait the lock
-for i in `seq 1 5`
-do
-    if [ ! -e $LOCK ]
-    then
-        touch $LOCK
-        locked=1
-        break
-    fi
-    sleep 1
-    logger -t cloud "edithosts: sleep 1 second wait for the redundant router lock"
-done
-
-if [ $locked -eq 0 ]
-then
-    logger -t cloud "edithosts: fail to get the redundant router lock"
-    logger -t cloud "edithosts: keepalived should able to handle the dnsmasq restart"
-    exit
-fi
-fi
-
 # make dnsmasq re-read files
 pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
@@ -108,10 +89,4 @@ else
   fi
 fi
 
-ret=$?
-if [ $locked -eq 1 ]
-then
-	rm $LOCK
-fi
-
-exit $ret
+unlock_exit $? $lock $locked

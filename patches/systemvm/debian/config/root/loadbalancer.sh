@@ -26,6 +26,15 @@
 #
 # @VERSION@
 
+source /root/func.sh
+
+lock="biglock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 usage() {
   printf "Usage: %s:  -i <domR eth1 ip>  -a <added public ip address ip:port> -d <removed ip:port> -f <load balancer config> -s <stats ip ip:port:cidr>  \n" $(basename $0) >&2
 }
@@ -225,7 +234,7 @@ do
 		statsIp="$OPTARG"
 		;;
   ?)	usage
-		exit 2
+                unlock_exit 2 $lock $locked
 		;;
   esac
 done
@@ -271,7 +280,7 @@ then
   then
      ip_entry $removedIps $addedIps
   fi
-  exit 1
+  unlock_exit 1 $lock $locked
 fi
 
 # iptables entry to ensure that haproxy receives traffic
@@ -295,12 +304,12 @@ then
      ip_entry $removedIps $addedIps
   fi
 
-  exit 1
+  unlock_exit 1 $lock $locked
 else
   # Remove backedup iptable rules
   fw_remove_backup
 fi
  
-exit 0
+unlock_exit 0 $lock $locked
   	
 
