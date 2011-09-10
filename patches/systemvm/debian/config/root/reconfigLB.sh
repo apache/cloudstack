@@ -28,12 +28,12 @@ ret=0
   kill -TTOU $(cat /var/run/haproxy.pid.old)
   sleep 2
   if haproxy -D -p /var/run/haproxy.pid -f /etc/haproxy/haproxy.cfg; then
-    echo "New haproxy instance successfully loaded, stopping previous one."
+    logger -t cloud "New haproxy instance successfully loaded, stopping previous one."
     kill -KILL $(cat /var/run/haproxy.pid.old)
     rm -f /var/run/haproxy.pid.old
     ret=0
   else
-    echo "New instance failed to start, resuming previous one."
+    logger -t cloud "New instance failed to start, resuming previous one."
     kill -TTIN $(cat /var/run/haproxy.pid.old)
     rm -f /var/run/haproxy.pid
     mv /var/run/haproxy.pid.old /var/run/haproxy.pid
