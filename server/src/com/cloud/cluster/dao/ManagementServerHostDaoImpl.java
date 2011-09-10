@@ -167,21 +167,24 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	
 	@Override
     @DB
-	public void increaseAlertCount(long id) {
+	public int increaseAlertCount(long id) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
+        int changedRows = 0;
         try {
             txn.start();
             
-            pstmt = txn.prepareAutoCloseStatement("update mshost set alert_count=alert_count+1 where id=?");
+            pstmt = txn.prepareAutoCloseStatement("update mshost set alert_count=alert_count+1 where id=? and alert_count=0");
             pstmt.setLong(1, id);
             
-            pstmt.executeUpdate();
+            changedRows = pstmt.executeUpdate();
             txn.commit();
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
             txn.rollback();
         }
+        
+        return changedRows;
 	}
 	
 	protected ManagementServerHostDaoImpl() {

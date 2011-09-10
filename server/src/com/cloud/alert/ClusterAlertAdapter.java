@@ -88,30 +88,15 @@ public class ClusterAlertAdapter implements AlertAdapter {
 
         for (ManagementServerHostVO mshost : args.getLeftNodes()) {
             if (mshost.getId() != args.getSelf().longValue()) {
-                GlobalLock lock = GlobalLock.getInternLock("ManagementAlert." + mshost.getId());
-                try {
-                    if (lock.lock(180)) {
-                        try {
-                            ManagementServerHostVO alertHost = _mshostDao.findById(mshost.getId());
-                            if (alertHost.getAlertCount() == 0) {
-                                _mshostDao.increaseAlertCount(mshost.getId());
-
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, send alert");
-                                }
-
-                                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management server node " + mshost.getServiceIP() + " is down", "");
-                            } else {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, but alert has already been set");
-                                }
-                            }
-                        } finally {
-                            lock.unlock();
-                        }
+                if(_mshostDao.increaseAlertCount(mshost.getId()) > 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, send alert");
                     }
-                } finally {
-                    lock.releaseRef();
+                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management server node " + mshost.getServiceIP() + " is down", "");
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, but alert has already been set");
+                    }
                 }
             }
         }
