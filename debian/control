@@ -149,14 +149,6 @@ Description: Cloud.com agent
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
  will participate in your cloud.
 
-Package: cloud-agent-premium
-Architecture: any
-Depends: cloud-agent, libjetty-java
-Description: Cloud.com agent premium
- The Cloud.com agent is in charge of managing shared computing resources in
- a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
- will participate in your cloud.
-
 Package: cloud-system-iso
 Architecture: any
 Description: Cloud.com system iso
