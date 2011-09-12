@@ -419,8 +419,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             // Cleanup jobs to do after the snapshot has been created; decrement resource count
             if (snapshot != null) {
                 postCreateSnapshot(volumeId, snapshot.getId(), policyId, backedUp);
-
-                if (backedUp && (snapshot.getRemoved() == null)) {
+                //Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
+                SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
+                if ((freshSnapshot != null) && backedUp) {
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                             v.getSize());
                     _usageEventDao.persist(usageEvent);
