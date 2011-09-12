@@ -19,7 +19,7 @@ class Provision(cloudstackTestCase):
         pass
 
 
-    def test_createAccounts(self, numberOfAccounts=5):
+    def test_1_createAccounts(self, numberOfAccounts=5):
         '''
         Create a bunch of user accounts
         '''
@@ -41,16 +41,28 @@ class Provision(cloudstackTestCase):
             self.debug("successfully created account: %s, user: %s, id: %s"%(acctResponse.account, acctResponse.username, acctResponse.id))
 
 
-    def deployCmd(self, account):
+    def test_2_createServiceOffering(self):
+        apiClient = self.testClient.getApiClient()
+        createSOcmd=createServiceOffering.createServiceOfferingCmd()
+        createSOcmd.name='Sample SO'
+        createSOcmd.displaytext='Sample SO'
+        createSOcmd.storagetype='shared'
+        createSOcmd.cpunumber=1
+        createSOcmd.cpuspeed=100
+        createSOcmd.memory=128
+        createSOcmd.offerha='false'
+        createSOresponse = apiClient.createServiceOffering(createSOcmd)
+        return createSOresponse.id 
+
+    def deployCmd(self, account, service):
         deployVmCmd = deployVirtualMachine.deployVirtualMachineCmd()
         deployVmCmd.zoneid = 1
         deployVmCmd.hypervisor='Simulator'
         deployVmCmd.account=account
         deployVmCmd.domainid=1
         deployVmCmd.templateid=10
-        deployVmCmd.serviceofferingid=7
+        deployVmCmd.serviceofferingid=service
         return deployVmCmd
-
 
     def listVmsInAccountCmd(self, acct):
         api = self.testClient.getApiClient()
@@ -59,7 +71,6 @@ class Provision(cloudstackTestCase):
         listVmCmd.zoneid = 1
         listVmCmd.domainid = 1
         listVmResponse = api.listVirtualMachines(listVmCmd)
-        self.debug(listVmResponse)
         return listVmResponse
 
 
@@ -70,27 +81,29 @@ class Provision(cloudstackTestCase):
         api.destroyVirtualMachine(destroyVmCmd)
 
 
-    def test_stressDeploy(self):
+    def test_3_stressDeploy(self):
         '''
             Deploy 20 Vms in each account
         '''
+        service_id = self.test_2_createServiceOffering()
         api = self.testClient.getApiClient()
         for acct in range(1, 5):
-            [api.deployVirtualMachine(self.deployCmd('user'+str(acct))) for x in range(0,20)]
+            [api.deployVirtualMachine(self.deployCmd('user'+str(acct), service_id)) for x in range(0,20)]
 
-    def test_stressDestroy(self):
+    def test_4_stressDestroy(self):
         '''
             Cleanup all Vms in every account
         '''
         api = self.testClient.getApiClient()
         for acct in range(1, 6):
             for vm in self.listVmsInAccountCmd('user'+str(acct)):
-                self.destroyVmCmd(vm.id)
+                if vm is not None:
+                    self.destroyVmCmd(vm.id)
 
-    def test_combineStress(self):
+    def test_5_combineStress(self):
         for i in range(0, 5):
-            self.test_stressDestroy()
-            self.test_stressDeploy()
+            self.test_3_stressDeploy()
+            self.test_4_stressDestroy()
 
     def deployN(self,nargs=300,batchsize=0):
         '''
@@ -109,4 +122,3 @@ class Provision(cloudstackTestCase):
                     self.testClient.submitCmdsAndWait(newbatch)
                 except IndexError:
                     break
-
