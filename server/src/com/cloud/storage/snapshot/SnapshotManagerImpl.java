@@ -420,7 +420,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (snapshot != null) {
                 postCreateSnapshot(volumeId, snapshot.getId(), policyId, backedUp);
 
-                if (backedUp) {
+                if (backedUp && (snapshot.getRemoved() == null)) {
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                             v.getSize());
                     _usageEventDao.persist(usageEvent);
@@ -704,8 +704,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Transaction txn = Transaction.currentTxn();
         txn.start();
         _snapshotDao.remove(snapshotId);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
-        _usageEventDao.persist(usageEvent);
+        if (snapshot.getStatus() == Snapshot.Status.BackedUp) {
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
+        	_usageEventDao.persist(usageEvent);
+        }
         _accountMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
         txn.commit();
 
