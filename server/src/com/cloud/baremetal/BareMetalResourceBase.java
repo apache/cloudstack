@@ -75,6 +75,7 @@ public class BareMetalResourceBase implements ServerResource {
     protected Script _getStatusCommand;
     protected Script _powerOnCommand;
     protected Script _powerOffCommand;
+    protected Script _forcePowerOffCommand;
     protected Script _bootOrRebootCommand;
     protected String _vmName;
 
@@ -188,6 +189,13 @@ public class BareMetalResourceBase implements ServerResource {
 		_powerOffCommand.add("password="+_password);
 		_powerOffCommand.add("action=soft");
 		
+        _forcePowerOffCommand = new Script(scriptPath, s_logger);
+        _forcePowerOffCommand.add("power");
+        _forcePowerOffCommand.add("hostname=" + _ip);
+        _forcePowerOffCommand.add("usrname=" + _username);
+        _forcePowerOffCommand.add("password=" + _password);
+        _forcePowerOffCommand.add("action=off");
+
 		_bootOrRebootCommand = new Script(scriptPath, s_logger);
 		_bootOrRebootCommand.add("boot_or_reboot");
 		_bootOrRebootCommand.add("hostname="+_ip);
@@ -341,7 +349,7 @@ public class BareMetalResourceBase implements ServerResource {
 		return new PrepareForMigrationAnswer(cmd);
 	}
 	
-	protected MigrateAnswer execute(MigrateCommand cmd) {
+	protected MigrateAnswer execute(MigrateCommand cmd) {   
 		if (!doScript(_powerOffCommand)) {
 			return new MigrateAnswer(cmd, false, "IPMI power off failed", null);
 		}
@@ -406,11 +414,38 @@ public class BareMetalResourceBase implements ServerResource {
 	}
 	
 	protected StopAnswer execute(final StopCommand cmd) {
-		if (!doScript(_powerOffCommand)) {
-			return new StopAnswer(cmd, "IPMI power off failed");
-		}
-		
-		return new StopAnswer(cmd, "Success", null, Long.valueOf(0), Long.valueOf(0));
+        boolean success = false;
+        int count = 0;
+        Script powerOff = _powerOffCommand;
+        
+        while (count < 10) {
+            if (!doScript(powerOff)) {
+                break;
+            }
+            
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                break;
+            }
+            
+            OutputInterpreter.AllLinesParser interpreter = new OutputInterpreter.AllLinesParser();
+            if (!doScript(_getStatusCommand, interpreter)) {
+                s_logger.warn("Cannot get power status of " + _name + ", assume VM state was not changed");
+                break;
+            }
+            
+            if (!isPowerOn(interpreter.getLines())) {
+                success = true;
+                break;
+            } else {
+                powerOff = _forcePowerOffCommand;
+            }
+                        
+            count++;
+        }
+        		
+		return success ? new StopAnswer(cmd, "Success", null, Long.valueOf(0), Long.valueOf(0)) : new StopAnswer(cmd, "IPMI power off failed");
 	}
 
 	protected StartAnswer execute(StartCommand cmd) {
