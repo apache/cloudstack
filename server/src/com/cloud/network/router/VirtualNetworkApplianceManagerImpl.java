@@ -1849,7 +1849,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getPodIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             
             cmds.addCommand(cmd);

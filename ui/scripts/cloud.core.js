@@ -849,7 +849,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	    $midmenuItem1.find("#first_row").text(g_dictionary["label.adding.failed"]);	
 	    
 	    if(secondRowText != null)
-	        $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));	
+	        $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));	
 	    
 	    $midmenuItem1.find("#close_icon").show().bind("click", function(event) {	        
 	        $midmenuItem1.slideUp("slow", function() {	            
@@ -860,7 +860,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	}
 	
 	if(secondRowText != null) {
-	    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength)); 	 
+	    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength)); 	 
 	}
 }
 
@@ -2037,6 +2037,12 @@ function sanitizeXSS(val) {
 
 var midMenuFirstRowLength = 26;
 var midMenuSecondRowLength = 33;
+function clippedText(text, maxLength) {
+	if(text.length <= maxLength)
+		return text;
+	else
+		return text.substring(0,maxLength-3)+"...";	
+}
 
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)

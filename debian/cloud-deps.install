@@ -2,8 +2,6 @@
 /usr/share/java/cloud-backport-util-concurrent-3.0.jar
 /usr/share/java/cloud-ehcache.jar
 /usr/share/java/cloud-email.jar
-/usr/share/java/jetty-6.1.26.jar
-/usr/share/java/jetty-util-6.1.26.jar
 /usr/share/java/cloud-httpcore-4.0.jar
 /usr/share/java/cloud-log4j.jar
 /usr/share/java/cloud-trilead-ssh2-build213.jar
@@ -12,10 +10,17 @@
 /usr/share/java/cloud-xenserver-5.6.100-1.jar
 /usr/share/java/cloud-xmlrpc-common-3.*.jar
 /usr/share/java/cloud-xmlrpc-client-3.*.jar
-/usr/share/java/cloud-jstl-*.jar
+/usr/share/java/cloud-jstl-1.2.jar
+/usr/share/java/jetty-6.1.26.jar
+/usr/share/java/jetty-util-6.1.26.jar
 /usr/share/java/cloud-axis.jar
 /usr/share/java/cloud-commons-discovery.jar
 /usr/share/java/cloud-wsdl4j.jar
+/usr/share/java/cloud-bcprov-jdk16-1.45.jar
+/usr/share/java/cloud-jsch-0.1.42.jar
+/usr/share/java/cloud-iControl.jar
+/usr/share/java/cloud-manageontap.jar
 /usr/share/java/vmware*.jar
 /usr/share/java/cloud-jnetpcap.jar
 /usr/share/java/cloud-junit.jar
+
