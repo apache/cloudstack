@@ -16,4 +16,6 @@
 /usr/share/java/cloud-axis.jar
 /usr/share/java/cloud-commons-discovery.jar
 /usr/share/java/cloud-wsdl4j.jar
-/usr/share/java/cloud-premium/*.jar
+/usr/share/java/vmware*.jar
+/usr/share/java/cloud-jnetpcap.jar
+/usr/share/java/cloud-junit.jar

@@ -83,16 +83,6 @@ Description: Cloud.com daemonization utility
  process.  The Cloud.com Cloud Stack uses this to start the agent
  as a service.
 
-Package: cloud-premium-deps
-Provides: vmops-premium-deps
-Conflicts: vmops-premium-deps
-Replaces: vmops-premium-deps
-Architecture: any
-Depends: openjdk-6-jre
-Description: Cloud.com premium library dependencies
- This package contains the certified software components required to run
- the premium edition of the Cloud.com Cloud Stack.
-
 Package: cloud-core
 Provides: vmops-core
 Conflicts: vmops-core
@@ -180,15 +170,6 @@ Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${sourc
 Description: Cloud.com console proxy
  The Cloud.com console proxy is the service in charge of granting console
  access into virtual machines managed by the Cloud.com CloudStack.
-
-Package: cloud-premium
-Provides: vmops-premium, cloud-premium-plugin-zynga, cloud-premium-vendor-zynga
-Conflicts: vmops-premium, cloud-premium-plugin-zynga, cloud-premium-vendor-zynga
-Replaces: vmops-premium, cloud-premium-plugin-zynga, cloud-premium-vendor-zynga
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-premium-deps (= ${source:Version})
-Description: Cloud.com premium components
- The Cloud.com premium components expand the range of features on your cloud stack.
 
 Package: cloud-usage
 Provides: vmops-usage
