@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS `cloud`.`mocksecstorage`;
 DROP TABLE IF EXISTS `cloud`.`mockstoragepool`;
 DROP TABLE IF EXISTS `cloud`.`mockvm`;
 DROP TABLE IF EXISTS `cloud`.`mockvolume`;
+DROP TABLE IF EXISTS `cloud`.`mocksecurityrules`;
 
 CREATE TABLE  `cloud`.`mockhost` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -58,7 +59,10 @@ CREATE TABLE `cloud`.`mockvm` (
   `vnc_port` bigint unsigned,
   `memory` bigint unsigned,
   `cpu` bigint unsigned,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_mockvm__host_id`(`host_id`),
+  INDEX `i_mockvm__state`(`state`),
+  INDEX `i_mockvm__type`(`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -70,7 +74,9 @@ CREATE TABLE `cloud`.`mockvolume` (
   `pool_id` bigint unsigned,
   `type` varchar(40),
   `status` varchar(40),
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_mockvolume__pool_id`(`pool_id`),
+  INDEX `i_mockvolume__status`(`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -93,5 +99,7 @@ CREATE TABLE `cloud`.`mocksecurityrules` (
   `hostid` bigint unsigned,
   `seqnum` bigint unsigned,
   `vmname` varchar(255),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`id`),
+  INDEX `i_mocksecurityrules__vmid`(`vmid`),
+  INDEX `i_mocksecurityrules__hostid`(`hostid`)
+) ENGINE=Memory DEFAULT CHARSET=utf8;
