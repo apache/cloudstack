@@ -1585,8 +1585,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             List<IngressRuleResultObject> ingressRules = networkGroup.getIngressRules();
             if ((ingressRules != null) && !ingressRules.isEmpty()) {
                 List<IngressRuleResponse> ingressRulesResponse = new ArrayList<IngressRuleResponse>();
-                List<IngressRuleResponse> egressRulesResponse = new ArrayList<IngressRuleResponse>();
-                
+
                 for (IngressRuleResultObject ingressRule : ingressRules) {
                     IngressRuleResponse ingressData = new IngressRuleResponse();
 
@@ -1607,18 +1606,38 @@ public class ApiResponseHelper implements ResponseGenerator {
                         ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
                     }
 
-                    if (ingressRule.getType() == 1)
-                    {
-                        ingressData.setObjectName("ingressrule");
-                        ingressRulesResponse.add(ingressData);
-                    }
-                    else
-                    {
-                    	ingressData.setObjectName("egressrule");
-                        egressRulesResponse.add(ingressData);
-                    }
+                    ingressData.setObjectName("ingressrule");
+                    ingressRulesResponse.add(ingressData);
                 }
                 netGrpResponse.setIngressRules(ingressRulesResponse);
+            }
+            List<EgressRuleResultObject> egressRules = networkGroup.getEgressRules();
+            if ((egressRules != null) && !egressRules.isEmpty()) {
+                List<EgressRuleResponse> egressRulesResponse = new ArrayList<EgressRuleResponse>();
+
+                for (EgressRuleResultObject egressRule : egressRules) {
+                    EgressRuleResponse egressData = new EgressRuleResponse();
+
+                    egressData.setRuleId(egressRule.getId());
+                    egressData.setProtocol(egressRule.getProtocol());
+                    if ("icmp".equalsIgnoreCase(egressRule.getProtocol())) {
+                        egressData.setIcmpType(egressRule.getStartPort());
+                        egressData.setIcmpCode(egressRule.getEndPort());
+                    } else {
+                        egressData.setStartPort(egressRule.getStartPort());
+                        egressData.setEndPort(egressRule.getEndPort());
+                    }
+
+                    if (egressRule.getAllowedSecurityGroup() != null) {
+                        egressData.setSecurityGroupName(egressRule.getAllowedSecurityGroup());
+                        egressData.setAccountName(egressRule.getAllowedSecGroupAcct());
+                    } else {
+                        egressData.setCidr(egressRule.getAllowedDestinationIpCidr());
+                    }
+
+                    egressData.setObjectName("egressrule");
+                    egressRulesResponse.add(egressData);
+                }
                 netGrpResponse.setEgressRules(egressRulesResponse);
             }
             netGrpResponse.setObjectName("securitygroup");
@@ -1643,6 +1662,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("securitygroup");
         return response;
+
     }
 
     @Override
@@ -2020,7 +2040,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends IngressRule> egressRules) {
+    public SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends EgressRule> egressRules) {
         SecurityGroupResponse response = new SecurityGroupResponse();
         Map<Long, Account> securiytGroupAccounts = new HashMap<Long, Account>();
         Map<Long, SecurityGroup> allowedSecurityGroups = new HashMap<Long, SecurityGroup>();
@@ -2043,9 +2063,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setDomainId(account.getDomainId());
             response.setDomainName(ApiDBUtils.findDomainById(securityGroup.getDomainId()).getName());
 
-            List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
-            for (IngressRule egressRule : egressRules) {
-                IngressRuleResponse egressData = new IngressRuleResponse();
+            List<EgressRuleResponse> responses = new ArrayList<EgressRuleResponse>();
+            for (EgressRule egressRule : egressRules) {
+                EgressRuleResponse egressData = new EgressRuleResponse();
 
                 egressData.setRuleId(egressRule.getId());
                 egressData.setProtocol(egressRule.getProtocol());
@@ -2075,7 +2095,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                     egressData.setAccountName(allowedAccount.getAccountName());
                 } else {
-                    egressData.setCidr(egressRule.getAllowedSourceIpCidr());
+                    egressData.setCidr(egressRule.getAllowedDestinationIpCidr());
                 }
 
                 egressData.setObjectName("egressrule");

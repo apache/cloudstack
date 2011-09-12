@@ -31,8 +31,8 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
 
 @Entity
-@Table(name = ("security_ingress_rule"))
-public class IngressRuleVO implements IngressRule {
+@Table(name = ("security_egress_rule"))
+public class EgressRuleVO implements EgressRule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -54,17 +54,17 @@ public class IngressRuleVO implements IngressRule {
     private Long allowedNetworkId = null;
 
     @Column(name = "allowed_ip_cidr", nullable = true)
-    private String allowedSourceIpCidr = null;
+    private String allowedDestinationIpCidr = null;
 
     @Expose
     @Column(name = "create_status", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
     private AsyncInstanceCreateStatus createStatus;
 
-    public IngressRuleVO() {
+    public EgressRuleVO() {
     }
 
-    public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId) {
+    public EgressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId) {
         this.securityGroupId = securityGroupId;
         this.startPort = fromPort;
         this.endPort = toPort;
@@ -72,12 +72,12 @@ public class IngressRuleVO implements IngressRule {
         this.allowedNetworkId = allowedNetworkId;
     }
 
-    public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
+    public EgressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
         this.securityGroupId = securityGroupId;
         this.startPort = fromPort;
         this.endPort = toPort;
         this.protocol = protocol;
-        this.allowedSourceIpCidr = allowedIpCidr;
+        this.allowedDestinationIpCidr = allowedIpCidr;
     }
 
     @Override
@@ -120,7 +120,7 @@ public class IngressRuleVO implements IngressRule {
     }
 
     @Override
-    public String getAllowedSourceIpCidr() {
-        return allowedSourceIpCidr;
+    public String getAllowedDestinationIpCidr() {
+        return allowedDestinationIpCidr;
     }
 }

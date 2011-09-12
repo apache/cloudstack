@@ -29,8 +29,8 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = ("security_group"))
-@SecondaryTable(name = "security_ingress_rule", join = "left", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
-public class SecurityGroupRulesVO implements SecurityGroupRules {
+@SecondaryTable(name = "security_egress_rule", join = "left", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
+public class SecurityGroupEgressRulesVO implements SecurityGroupRules {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -48,29 +48,29 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Column(name = "account_id")
     private Long accountId;
 
-    @Column(name = "id", table = "security_ingress_rule", insertable = false, updatable = false)
+    @Column(name = "id", table = "security_egress_rule", insertable = false, updatable = false)
     private Long ruleId;
 
-    @Column(name = "start_port", table = "security_ingress_rule", insertable = false, updatable = false)
+    @Column(name = "start_port", table = "security_egress_rule", insertable = false, updatable = false)
     private int startPort;
 
-    @Column(name = "end_port", table = "security_ingress_rule", insertable = false, updatable = false)
+    @Column(name = "end_port", table = "security_egress_rule", insertable = false, updatable = false)
     private int endPort;
 
-    @Column(name = "protocol", table = "security_ingress_rule", insertable = false, updatable = false)
+    @Column(name = "protocol", table = "security_egress_rule", insertable = false, updatable = false)
     private String protocol;
 
-    @Column(name = "allowed_network_id", table = "security_ingress_rule", insertable = false, updatable = false, nullable = true)
+    @Column(name = "allowed_network_id", table = "security_egress_rule", insertable = false, updatable = false, nullable = true)
     private Long allowedNetworkId = null;
 
-    @Column(name = "allowed_ip_cidr", table = "security_ingress_rule", insertable = false, updatable = false, nullable = true)
-    private String allowedSourceIpCidr = null;
+    @Column(name = "allowed_ip_cidr", table = "security_egress_rule", insertable = false, updatable = false, nullable = true)
+    private String allowedDestinationIpCidr = null;
 
-    public SecurityGroupRulesVO() {
+    public SecurityGroupEgressRulesVO() {
     }
 
-    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId,
-            String allowedSourceIpCidr) {
+    public SecurityGroupEgressRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId,
+            String allowedDestinationIpCidr) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -81,7 +81,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
         this.endPort = endPort;
         this.protocol = protocol;
         this.allowedNetworkId = allowedNetworkId;
-        this.allowedSourceIpCidr = allowedSourceIpCidr;
+        this.allowedDestinationIpCidr = allowedDestinationIpCidr;
     }
 
     @Override
@@ -135,7 +135,7 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
     }
 
     @Override
-    public String getAllowedSourceIpCidr() {
-        return allowedSourceIpCidr;
+    public String getAllowedSourceIpCidr() { /* FIXME: need to rename the method name, for this the interface need to change or need create a new interface */
+        return allowedDestinationIpCidr;
     }
 }

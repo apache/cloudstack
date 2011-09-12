@@ -180,7 +180,7 @@ public interface ResponseGenerator {
 
     SecurityGroupResponse createSecurityGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
 
-    SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends IngressRule> egressRules);
+    SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends EgressRule> egressRules);
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 

@@ -108,6 +108,7 @@ DROP TABLE IF EXISTS `cloud`.`ovs_work`;
 DROP TABLE IF EXISTS `cloud`.`remote_access_vpn`;
 DROP TABLE IF EXISTS `cloud`.`resource_count`;
 DROP TABLE IF EXISTS `cloud`.`security_ingress_rule`;
+DROP TABLE IF EXISTS `cloud`.`security_egress_rule`;
 DROP TABLE IF EXISTS `cloud`.`stack_maid`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_work`;
 DROP TABLE IF EXISTS `cloud`.`user_vm_details`;
@@ -1422,7 +1423,6 @@ CREATE TABLE `cloud`.`security_group` (
 CREATE TABLE `cloud`.`security_ingress_rule` (
   `id` bigint unsigned NOT NULL auto_increment,
   `security_group_id` bigint unsigned NOT NULL,
-  `type` bigint unsigned NOT NULL,
   `start_port` varchar(10) default NULL,
   `end_port` varchar(10) default NULL,
   `protocol` varchar(16) NOT NULL default 'TCP',
@@ -1432,6 +1432,17 @@ CREATE TABLE `cloud`.`security_ingress_rule` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`security_egress_rule` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `security_group_id` bigint unsigned NOT NULL,
+  `start_port` varchar(10) default NULL,
+  `end_port` varchar(10) default NULL,
+  `protocol` varchar(16) NOT NULL default 'TCP',
+  `allowed_network_id` bigint unsigned,
+  `allowed_ip_cidr`  varchar(44),
+  `create_status` varchar(32) COMMENT 'rule creation status',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`security_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,

@@ -51,8 +51,8 @@ public class SecurityGroupResponse extends BaseResponse {
     @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = IngressRuleResponse.class)
     private List<IngressRuleResponse> ingressRules;
 
-    @SerializedName("egressrule")  @Param(description="the list of egress rules associated with the security group", responseObject = EgressRuleResponse.class)
-    private List<IngressRuleResponse> egressRules;
+    @SerializedName("egressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = EgressRuleResponse.class)
+    private List<EgressRuleResponse> egressRules;
     
     public Long getId() {
         return id;
@@ -106,7 +106,7 @@ public class SecurityGroupResponse extends BaseResponse {
         return ingressRules;
     }
     
-    public List<IngressRuleResponse> getEgressRules() {
+    public List<EgressRuleResponse> getEgressRules() {
         return egressRules;
     }
 
@@ -114,7 +114,7 @@ public class SecurityGroupResponse extends BaseResponse {
         this.ingressRules = ingressRules;
     }
     
-    public void setEgressRules(List<IngressRuleResponse> egressRules) {
+    public void setEgressRules(List<EgressRuleResponse> egressRules) {
         this.egressRules = egressRules;
     }
 

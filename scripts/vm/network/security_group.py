@@ -578,10 +578,8 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
     
     if ruletype == 'egress':
         vmchain = vm_name + "-egress"
-        action = "DROP"
     else:
         vmchain = vm_name
-        action = "ACCEPT"
    
  
     changes = []
@@ -623,13 +621,13 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
             if protocol == 'all':
                 for ip in ips:
                     if ruletype == 'egress':
-                        execute("iptables -I " + vmchain + " -m state --state NEW -d " + ip + " -j DROP")
+                        execute("iptables -I " + vmchain + " -m state --state NEW -d " + ip + " -j ACCEPT")
                     else:
                         execute("iptables -I " + vmchain + " -m state --state NEW -s " + ip + " -j ACCEPT")
             elif protocol != 'icmp':
                 for ip in ips:
                     if ruletype == 'egress':
-                        execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -d " + ip + " -j DROP")
+                        execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -d " + ip + " -j ACCEPT")
                     else:
                         execute("iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -s " + ip + " -j ACCEPT")
             else:
@@ -638,23 +636,20 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
                     range = "any"
                     for ip in ips:
                         if ruletype == 'egress':
-                            execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -d " + ip + " -j DROP")
+                            execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -d " + ip + " -j ACCEPT")
                         else:
                             execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -s " + ip + " -j ACCEPT")
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
-                execute("iptables -I " + vmchain + " -p " + protocol + " -m " +  protocol + " --dport " + range + " -m state --state NEW -j " + action)
+                execute("iptables -I " + vmchain + " -p " + protocol + " -m " +  protocol + " --dport " + range + " -m state --state NEW -j ACCEPT")
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j "+action)
+                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j ACCEPT")
 
-    if ruletype == 'egress':
-        iptables =  "iptables -A " + vmchain + " -j ACCEPT"       
-    else:
-        iptables =  "iptables -A " + vmchain + " -j DROP"       
+    iptables =  "iptables -A " + vmchain + " -j DROP"       
     execute(iptables)
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno) == False:
         return 'false'

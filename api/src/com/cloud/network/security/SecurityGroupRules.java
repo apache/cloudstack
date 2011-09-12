@@ -39,6 +39,4 @@ public interface SecurityGroupRules {
     Long getAllowedNetworkId();
 
     String getAllowedSourceIpCidr();
-    
-    int getType();
 }
