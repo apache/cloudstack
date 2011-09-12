@@ -178,4 +178,4 @@ class sysConfigServerUbuntu(sysConfigServer):
         super(sysConfigServerUbuntu, self).__init__(glbEnv)
         self.svo = serviceOpsUbuntu()
         self.services = [sudoersConfig(self), 
-                         firewallConfigServer(self)]
+                         ubuntuFirewallConfigServer(self)]
