@@ -1880,6 +1880,25 @@ function validateIp(label, field, errMsgField, isOptional) {
 	return isValid;
 }
 
+function validateNetmask(label, field, errMsgField, isOptional) {  
+    if(validateString(label, field, errMsgField, isOptional) == false)
+        return;
+    var isValid = true;
+    var errMsg = "";
+    var value = field.val();     		    
+    if(value!=null && value.length>0) {
+        myregexp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;	   
+        var isMatch = myregexp.test(value);
+        if(!isMatch) {            
+            errMsg = g_dictionary["label.example"] + ": 255.255.255.0";
+	        isValid = false;		
+	    }
+	}	 	
+	showError(isValid, field, errMsgField, errMsg);	
+	return isValid;
+}
+
+
 function validateCIDR(label, field, errMsgField, isOptional) {  
     if(validateString(label, field, errMsgField, isOptional) == false)
         return;        

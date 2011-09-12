@@ -480,7 +480,7 @@ function initAddPodShortcut() {
 		        var isValid = true;	
 		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));			
 		        isValid &= validateString("Name", $thisDialog.find("#add_pod_name"), $thisDialog.find("#add_pod_name_errormsg"));
-		        isValid &= validateIp("Netmask", $thisDialog.find("#add_pod_netmask"), $thisDialog.find("#add_pod_netmask_errormsg"));	
+		        isValid &= validateNetmask("Netmask", $thisDialog.find("#add_pod_netmask"), $thisDialog.find("#add_pod_netmask_errormsg"));	
 		        isValid &= validateIp("Start IP Range", $thisDialog.find("#add_pod_startip"), $thisDialog.find("#add_pod_startip_errormsg"));  //required
 		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
 		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
@@ -488,7 +488,7 @@ function initAddPodShortcut() {
 		        if($thisDialog.find("#guestip_container").css("display") != "none") {
                     isValid &= validateIp("Guest IP Range", $thisDialog.find("#startguestip"), $thisDialog.find("#startguestip_errormsg"));  //required
 					isValid &= validateIp("Guest IP Range", $thisDialog.find("#endguestip"), $thisDialog.find("#endguestip_errormsg"), true);  //optional
-					isValid &= validateIp("Guest Netmask", $thisDialog.find("#guestnetmask"), $thisDialog.find("#guestnetmask_errormsg"));  //required when creating
+					isValid &= validateNetmask("Guest Netmask", $thisDialog.find("#guestnetmask"), $thisDialog.find("#guestnetmask_errormsg"));  //required when creating
 					isValid &= validateIp("Guest Gateway", $thisDialog.find("#guestgateway"), $thisDialog.find("#guestgateway_errormsg")); 
 				}		        
 		        		        
@@ -1342,7 +1342,7 @@ function addZoneWizardValidatePod($thisWizard) {
     var isValid = true;					
     isValid &= validateString("Name", $thisWizard.find("#add_pod_name"), $thisWizard.find("#add_pod_name_errormsg"));    
     isValid &= validateIp("Gateway", $thisWizard.find("#add_pod_gateway"), $thisWizard.find("#add_pod_gateway_errormsg"));     
-    isValid &= validateIp("Netmask", $thisWizard.find("#add_pod_netmask"), $thisWizard.find("#add_pod_netmask_errormsg"));	
+    isValid &= validateNetmask("Netmask", $thisWizard.find("#add_pod_netmask"), $thisWizard.find("#add_pod_netmask_errormsg"));	
     isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_startip"), $thisWizard.find("#add_pod_startip_errormsg"));  //required
     isValid &= validateIp("Reserved System IP", $thisWizard.find("#add_pod_endip"), $thisWizard.find("#add_pod_endip_errormsg"), true);  //optional    
     return isValid;			
@@ -1356,7 +1356,7 @@ function addZoneWizardValidateDirectVLAN($thisWizard) {
         isValid &= validateNumber("VLAN ID", $createDirectVLAN.find("#vlan_id"), $createDirectVLAN.find("#vlan_id_errormsg"));  //required	 	
     isValid &= validateIp("Guest IP Range", $createDirectVLAN.find("#startguestip"), $createDirectVLAN.find("#startguestip_errormsg"));  //required
     isValid &= validateIp("Guest IP Range", $createDirectVLAN.find("#endguestip"), $createDirectVLAN.find("#endguestip_errormsg"), true);  //optional
-    isValid &= validateIp("Guest Netmask", $createDirectVLAN.find("#guestnetmask"), $createDirectVLAN.find("#guestnetmask_errormsg"));  //required when creating
+    isValid &= validateNetmask("Guest Netmask", $createDirectVLAN.find("#guestnetmask"), $createDirectVLAN.find("#guestnetmask_errormsg"));  //required when creating
     isValid &= validateIp("Guest Gateway", $createDirectVLAN.find("#guestgateway"), $createDirectVLAN.find("#guestgateway_errormsg"));  
    
     return isValid;			
@@ -1375,7 +1375,7 @@ function addZoneWizardValidateVirtualVLAN($thisWizard) {
 	}
 	
 	isValid &= validateIp("Gateway", $createVirtualVlan.find("#add_publicip_vlan_gateway"), $createVirtualVlan.find("#add_publicip_vlan_gateway_errormsg"), false); //required
-	isValid &= validateIp("Netmask", $createVirtualVlan.find("#add_publicip_vlan_netmask"), $createVirtualVlan.find("#add_publicip_vlan_netmask_errormsg"), false); //required
+	isValid &= validateNetmask("Netmask", $createVirtualVlan.find("#add_publicip_vlan_netmask"), $createVirtualVlan.find("#add_publicip_vlan_netmask_errormsg"), false); //required
 	isValid &= validateIp("Start IP Range", $createVirtualVlan.find("#add_publicip_vlan_startip"), $createVirtualVlan.find("#add_publicip_vlan_startip_errormsg"), false); //required
 	isValid &= validateIp("End IP Range", $createVirtualVlan.find("#add_publicip_vlan_endip"), $createVirtualVlan.find("#add_publicip_vlan_endip_errormsg"), true); //optional
 		   
