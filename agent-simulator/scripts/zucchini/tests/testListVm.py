@@ -21,14 +21,15 @@ class ListVmTests(cloudstackTestCase):
 
     def test_listAllVm(self):
         numVms = 0
-        def time_listAllVm():
-            api = self.testClient.getApiClient()
-            listVmCmd = listVirtualMachines.listVirtualMachinesCmd()
-            listVmCmd.account = 'admin'
-            listVmCmd.zoneid = 1
-            listVmCmd.domainid = 1
-            numVms = len(api.listVirtualMachines(listVmCmd))
+        api = self.testClient.getApiClient()
+        listVmCmd = listVirtualMachines.listVirtualMachinesCmd()
+        listVmCmd.account = 'admin'
+        listVmCmd.zoneid = 1
+        listVmCmd.domainid = 1
+        listVmResponse = api.listVirtualMachines(listVmCmd)
+        if listVmResponse is not None:
+            numVms = len()
 
-        t = timeit.Timer(time_listAllVm)
-        l = t.repeat(5, 5)
-        self.debug("Number of VMs: " + str(len(numVms)) + ", time for last 5 listVM calls : " + str(l))
+    t = timeit.Timer(test_listAllVm)
+    l = t.repeat(5, 5)
+    self.debug("Number of VMs: " + str(len(numVms)) + ", time for last 5 listVM calls : " + str(l))
