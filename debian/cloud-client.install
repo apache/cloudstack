@@ -31,8 +31,6 @@
 /var/lib/cloud/management
 /usr/bin/cloud-setup-management
 /usr/bin/cloud-update-xenserver-licenses
-/usr/share/java/cloud-core-extras.jar
-/usr/share/java/cloud-server-extras.jar
 /usr/share/java/cloud-vmware-base.jar
 /etc/cloud/management/commands-ext.properties
 /etc/cloud/management/components-premium.xml
