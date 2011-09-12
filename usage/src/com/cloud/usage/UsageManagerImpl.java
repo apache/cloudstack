@@ -1,21 +1,5 @@
 /**
- *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
- *
- *
- * This software is licensed under the GNU General Public License v3 or later.
- *
- * It is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
+ * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
 *
  *
  */
@@ -114,7 +98,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 	private int m_sanityCheckInterval = 0;
     String m_hostname = null;
     int m_pid = 0;
-    TimeZone m_usageTimezone = null;
+    TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
     private final GlobalLock m_heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
 
 	private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
@@ -168,13 +152,15 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         String execTime = configs.get("usage.stats.job.exec.time");
         String aggregationRange  = configs.get("usage.stats.job.aggregation.range");
         String execTimeZone = configs.get("usage.execution.timezone");
+        String aggreagationTimeZone = configs.get("usage.aggregation.timezone");
         String sanityCheckInterval = configs.get("usage.sanity.check.interval");
         if(sanityCheckInterval != null){
             m_sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
 
-        m_usageTimezone = TimeZone.getTimeZone("GMT");
-
+        m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
+        s_logger.debug("Usage stats aggregation time zone: "+aggreagationTimeZone);
+        
         try {
             if ((execTime == null) || (aggregationRange == null)) {
                 s_logger.error("missing configuration values for usage job, usage.stats.job.exec.time = " + execTime + ", usage.stats.job.aggregation.range = " + aggregationRange);
