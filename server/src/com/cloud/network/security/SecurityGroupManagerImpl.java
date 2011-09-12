@@ -73,7 +73,6 @@ import com.cloud.network.security.dao.EgressRuleDao;
 import com.cloud.network.security.dao.IngressRuleDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupRulesDao;
-import com.cloud.network.security.dao.SecurityGroupEgressRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
@@ -125,8 +124,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     SecurityGroupVMMapDao _securityGroupVMMapDao;
     @Inject
     SecurityGroupRulesDao _securityGroupRulesDao;
-    @Inject
-    SecurityGroupEgressRulesDao _securityGroupEgressRulesDao;
     @Inject
     UserVmDao _userVMDao;
     @Inject
@@ -1302,7 +1299,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     @Override
-    public List<SecurityGroupRules> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public List<SecurityGroupRulesVO> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1341,8 +1338,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             accountId = caller.getId();
         }
 
-        List<SecurityGroupRules> securityRulesList = new ArrayList<SecurityGroupRules>();
-     //   List<SecurityGroupEgressRulesVO> securityEgressRulesList = new ArrayList<SecurityGroupEgressRulesVO>();
+        List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
@@ -1389,14 +1385,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         List<SecurityGroupVO> securityGroups = _securityGroupDao.search(sc, searchFilter);
         for (SecurityGroupVO group : securityGroups) {
             securityRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
-            securityRulesList.addAll(_securityGroupEgressRulesDao.listSecurityEgressRulesByGroupId(group.getId()));
         }
 
         return securityRulesList;
     }
 
-    private List<SecurityGroupRules> listSecurityGroupRulesByVM(long vmId) {
-        List<SecurityGroupRules> results = new ArrayList<SecurityGroupRules>();
+    private List<SecurityGroupRulesVO> listSecurityGroupRulesByVM(long vmId) {
+        List<SecurityGroupRulesVO> results = new ArrayList<SecurityGroupRulesVO>();
         List<SecurityGroupVMMapVO> networkGroupMappings = _securityGroupVMMapDao.listByInstanceId(vmId);
         if (networkGroupMappings != null) {
             for (SecurityGroupVMMapVO networkGroupMapping : networkGroupMappings) {

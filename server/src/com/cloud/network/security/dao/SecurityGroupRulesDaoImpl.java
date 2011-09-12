@@ -34,6 +34,7 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
     private SearchBuilder<SecurityGroupRulesVO> AccountSearch;
     private SearchBuilder<SecurityGroupRulesVO> GroupSearch;
 
+
     protected SecurityGroupRulesDaoImpl() {
         AccountGroupNameSearch = createSearchBuilder();
         AccountGroupNameSearch.and("accountId", AccountGroupNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -74,7 +75,6 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
         sc.setParameters("accountId", accountId);
         return listBy(sc, searchFilter);
     }
-    
     
     @Override
     public List<SecurityGroupRulesVO> listSecurityRulesByGroupId(long groupId) {
