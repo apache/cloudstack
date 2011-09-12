@@ -377,7 +377,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 AccountVO accountVo = _accountDao.findById(account.getAccountId());
                 long accountLimit = findCorrectResourceLimit(accountVo, type);
                 long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
-                if (potentialCount > accountLimit) {
+                if (accountLimit != -1 && potentialCount > accountLimit) {
                     return true;
                 }
 
@@ -394,12 +394,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     DomainVO domain = _domainDao.findById(domainId);
                     domainId = domain.getParent();
                 }
+                return false;
             } finally {
                 m_resourceCountLock.unlock();
             }
         }
 
-        return false;
+        return true;
     }
 
     @Override
