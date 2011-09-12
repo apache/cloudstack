@@ -95,7 +95,7 @@ def vlanIpRangeGenerator():
         yield ('172.'+str(x)+'.'+str(y)+'.129', '172.'+str(x)+'.'+str(y)+'.190', '172.'+str(x)+'.'+str(y)+'.249')
 
 
-def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='localhost', randomize=False):
+def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='localhost', randomize=False, sgenabled=False):
     zs=cloudstackConfiguration()
     numberofpods=numberOfAgents/10
     tagOneHosts = numberOfAgents*5/13
@@ -112,12 +112,13 @@ def describeZucchiniResources(numberOfAgents=1300, dbnode='localhost', mshost='l
     z.internaldns2 = '192.168.110.254'
     z.name = 'Zucchini'
     z.networktype = 'Basic'    
+    z.securitygroupenabled = sgenabled
 
     hosttags=['TAG1' for x in range(tagOneHosts)] + ['TAG2' for x in range(tagTwoHosts)] + ['TAG3' for x in range(tagThreeHosts)]
+    curhost=0
+    curpod=0
     if randomize:
         random.shuffle(hosttags) #randomize the host distribution     
-        curhost=0
-        curpod=0
 
     for podRange,vlanRange in zip(podIpRangeGenerator(), vlanIpRangeGenerator()):
         p = pod()
@@ -193,16 +194,16 @@ if __name__=="__main__":
     #    parser.add_option('-h','--host',dest='host',help='location of management server(s) or load-balancer')
     parser.add_option('-n', '--number-of-agents', action='store', dest='agents', help='number of agents in the deployment')
     parser.add_option('-g', '--enable-security-groups', dest='sgenabled', help='specify if security groups are to be enabled', default=False, action='store_true')
-    parser.add_option('-o', '--output', action='store', default='./zucchiniCfg', dest='output', help='the path where the json config file generated')
+    parser.add_option('-o', '--output', action='store', default='./z.cfg', dest='output', help='the path where the json config file generated')
     parser.add_option('-d', '--dbnode', dest='dbnode', help='hostname/ip of the database node', action='store')
     parser.add_option('-m', '--mshost', dest='mshost', help='hostname/ip of management server', action='store')
     parser.add_option('-r', '--randomize', dest='randomize', help='randomize the distribution of tags (hetergenous clusters)', action='store_true', default=False)
 
     (opts, args) = parser.parse_args()
-    mandatories = ['mshost', 'dbnode', 'agents']
+    mandatories = ['agents']
     for m in mandatories:
         if not opts.__dict__[m]:
-            print "mandatory option missing"
+            print 'mandatory option missing'
 
-   cfg = describeZucchiniResources(int(opts.agents), opts.dbnode, opts.mshost, opts.randomize)
-   generate_setup_config(cfg, opts.output)
+    cfg = describeZucchiniResources(int(opts.agents), opts.dbnode, opts.mshost, opts.randomize, opts.sgenabled)
+    generate_setup_config(cfg, opts.output)
