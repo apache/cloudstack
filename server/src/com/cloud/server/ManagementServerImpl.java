@@ -1260,11 +1260,11 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm " + vm);
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer)) {
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer, cannot migrate this VM.");
+                s_logger.debug(vm + " is not XenServer/VMware, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer only");
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware only");
         }
         ServiceOfferingVO svcOffering = _offeringsDao.findById(vm.getServiceOfferingId());
         if (svcOffering.getUseLocalStorage()) {
