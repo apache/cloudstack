@@ -133,7 +133,7 @@ function initAddIsoDialog() {
 		    
 		    var html = "<option value=''>" + g_dictionary["label.none"] +  "</option>";
 			osTypeDropDownAdd.append(html);			
-			osTypeDropdownEdit.append(html);	
+			//osTypeDropdownEdit.append(html);	//OSType is required for ISO. So, shouldn't provide "none" option when updating ISO.
 		
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {				
