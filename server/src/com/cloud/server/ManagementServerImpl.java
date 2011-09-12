@@ -2282,11 +2282,11 @@ public class ManagementServerImpl implements ManagementServer {
         SearchCriteria<DomainRouterVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<DomainRouterVO> ssc = _routerDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
         }
 
         if (name != null) {
