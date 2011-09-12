@@ -929,7 +929,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             } else if (cmd instanceof CopyVolumeCommand) {
                return execute((CopyVolumeCommand)cmd);
             } else {
-        		s_logger.warn("Unsupported command :"+cmd.toString());
+        		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
@@ -1622,7 +1622,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			cmd.stringifyRules(), vif, brname);
 
     	if (!result) {
-    		s_logger.warn("Failed to program Ingress network rules for vm " + cmd.getVmName());
+    		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
     		return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
     	} else {
     		s_logger.debug("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
@@ -1650,7 +1650,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			cmd.stringifyRules(), vif, brname);
 
     	if (!result) {
-    		s_logger.warn("Failed to program Egress network rules for vm " + cmd.getVmName());
+    		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
     		return new SecurityEgressRuleAnswer(cmd, false, "programming network rules failed");
     	} else {
     		s_logger.debug("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
@@ -3516,7 +3516,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	cmd.add("--vmid", vmId);
     	cmd.add("--vmip", guestIP);
     	/* type of the rule : ingress or egress */
-    	cmd.add("--ruletype", type);
+    	cmd.add("--type", type);
     	cmd.add("--sig", sig);
     	cmd.add("--seq", seq);
     	cmd.add("--vmmac", mac);

@@ -482,8 +482,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((CheckSshCommand)cmd);
         } else if (clazz == SecurityIngressRulesCmd.class) {
             return execute((SecurityIngressRulesCmd) cmd);
-        } else if (clazz == SecurityEgressRulesCmd.class) {
-            return execute((SecurityEgressRulesCmd) cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
         	return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (clazz == OvsSetTagAndFlowCommand.class) {

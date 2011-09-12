@@ -988,10 +988,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Account caller = UserContext.current().getCaller();
         Long id = cmd.getId();
 
-        EgressRuleVO rule = _egressRuleDao.findById(id);
+        IngressRuleVO rule = _ingressRuleDao.findById(id);
         if (rule == null) {
-            s_logger.debug("Unable to find egress rule with id " + id);
-            throw new InvalidParameterValueException("Unable to find egress rule with id " + id);
+            s_logger.debug("Unable to find ingress rule with id " + id);
+            throw new InvalidParameterValueException("Unable to find ingress rule with id " + id);
         }
 
         // Check permissions
@@ -1010,8 +1010,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 return false;
             }
 
-            _egressRuleDao.remove(id);
-            s_logger.debug("revokeSecurityGroupEgress succeeded for ingress rule id: " + id);
+            _ingressRuleDao.remove(id);
+            s_logger.debug("revokeSecurityGroupIngress succeeded for ingress rule id: " + id);
 
             final Set<Long> affectedVms = new HashSet<Long>();
             affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(groupHandle.getId()));
