@@ -461,7 +461,7 @@ function volumeJsonToDetailsTab(){
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
-		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
+		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped" || jsonObj.vmstate == "Destroyed")) {
 			        buildActionLinkForTab("label.action.detach.disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		        }
 	        } else {
