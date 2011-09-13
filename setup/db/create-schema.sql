@@ -1073,7 +1073,9 @@ CREATE TABLE `cloud`.`resource_count` (
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_resource_count__account_id` FOREIGN KEY `fk_resource_count__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_resource_count__domain_id` FOREIGN KEY `fk_resource_count__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  INDEX `i_resource_count__type`(`type`)
+  INDEX `i_resource_count__type`(`type`),
+  UNIQUE `i_resource_count__type_accountId`(`type`, `account_id`),
+  UNIQUE `i_resource_count__type_domaintId`(`type`, `domain_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_host_capacity` (

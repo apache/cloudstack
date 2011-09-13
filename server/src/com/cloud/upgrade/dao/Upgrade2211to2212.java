@@ -19,9 +19,16 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -55,11 +62,78 @@ public class Upgrade2211to2212 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        createResourceCount(conn);
     }
 
     @Override
     public File[] getCleanupScripts() {
         return null;
+    }
+    
+    
+    private void createResourceCount(Connection conn) {
+        s_logger.debug("Creating missing resource_count records as a part of 2.2.11-2.2.12 upgrade");
+        try {
+            
+            //Get all non removed accounts
+            List<Long> accounts = new ArrayList<Long>();
+            PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM account");
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                accounts.add(rs.getLong(1));
+            }
+            rs.close();
+            
+            
+            //get all non removed domains
+            List<Long> domains = new ArrayList<Long>();
+            pstmt = conn.prepareStatement("SELECT id FROM domain");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                domains.add(rs.getLong(1));
+            }           
+            rs.close();
+
+            for (Long accountId : accounts) {  
+                ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
+                for (ResourceType resourceType : resourceTypes) {
+                    pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and account_id=?");
+                    pstmt.setString(1, resourceType.toString());
+                    pstmt.setLong(2, accountId);
+                    rs = pstmt.executeQuery();
+                    if (!rs.next()) {
+                        s_logger.debug("Inserting resource_count record of type " + resourceType + " for account id=" + accountId);
+                        pstmt = conn.prepareStatement("INSERT INTO resource_count (account_id, domain_id, type, count) VALUES (?, null, ?, 0)");
+                        pstmt.setLong(1, accountId);
+                        pstmt.setString(2, resourceType.toString());
+                        pstmt.executeUpdate();
+                    }
+                    rs.close();
+                }
+                pstmt.close();
+            }
+            
+            for (Long domainId : domains) {  
+                ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
+                for (ResourceType resourceType : resourceTypes) {
+                    pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and domain_id=?");
+                    pstmt.setString(1, resourceType.toString());
+                    pstmt.setLong(2, domainId);
+                    rs = pstmt.executeQuery();
+                    if (!rs.next()) {
+                        s_logger.debug("Inserting resource_count record of type " + resourceType + " for domain id=" + domainId);
+                        pstmt = conn.prepareStatement("INSERT INTO resource_count (account_id, domain_id, type, count) VALUES (null, ?, ?, 0)");
+                        pstmt.setLong(1, domainId);
+                        pstmt.setString(2, resourceType.toString());
+                        pstmt.executeUpdate();
+                    }
+                    rs.close();
+                }
+                pstmt.close();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to create default security groups for existing accounts due to", e);
+        }
     }
  
 }

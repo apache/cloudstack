@@ -62,12 +62,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;
@@ -203,12 +197,6 @@ public class MockAgentManagerImpl implements AgentManager {
     public boolean reconnect(long hostId) throws AgentUnavailableException {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public Answer easySend(Long hostId, Command cmd, int timeout) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override

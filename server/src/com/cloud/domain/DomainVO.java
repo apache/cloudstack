@@ -68,6 +68,11 @@ public class DomainVO implements Domain {
     private String networkDomain;
     
     public DomainVO() {}
+    
+    public DomainVO(long id, String name, long owner, Long parentId, String networkDomain) {
+        this(name, owner, parentId, networkDomain);
+        this.id = id;
+    }
 
     public DomainVO(String name, long owner, Long parentId, String networkDomain) {
     	this.parent = parentId;

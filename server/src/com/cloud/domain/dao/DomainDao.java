@@ -19,6 +19,7 @@
 package com.cloud.domain.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.GenericDao;
@@ -31,4 +32,5 @@ public interface DomainDao extends GenericDao<DomainVO, Long> {
 	List<DomainVO> findImmediateChildrenForParent(Long parentId);
 	List<DomainVO> findAllChildren(String path, Long parentId);
 	List<DomainVO> findInactiveDomains();
+    Set<Long> getDomainParentIds(long domainId);
 }

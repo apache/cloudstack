@@ -97,4 +97,9 @@ public class ResourceCountVO implements ResourceCount {
 	public void setCount(long count) {
 		this.count = count;
 	}
+	
+	@Override
+    public String toString() {
+        return new StringBuilder("REsourceCount[").append("-").append(id).append("-").append(type).append("-").append(accountId).append("-").append(domainId).append("]").toString();
+    }
 }

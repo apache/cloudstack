@@ -18,8 +18,11 @@
 
 package com.cloud.configuration.dao;
 
-import com.cloud.configuration.ResourceCountVO;
+import java.util.Set;
+
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceCountVO;
+import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
@@ -55,15 +58,6 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 	 * @param the count of resources in use for the given type and domain
 	 */
 	public void setDomainCount(long domainId, ResourceType type, long count);
-	
-	/**
-	 * Update the count of resources in use for the given account and given resource type
-	 * @param accountId the id of the account to update resource count
-	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
-	 * @param increment whether the change is adding or subtracting from the current count
-	 * @param delta the number of resources being added/released
-	 */
-	public void updateAccountCount(long accountId, ResourceType type, boolean increment, long delta);
 
 	/**
 	 * Update the count of resources in use for the given domain and given resource type
@@ -73,4 +67,17 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 	 * @param delta the number of resources being added/released
 	 */
 	public void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta);
+
+    boolean updateById(long id, boolean increment, long delta);
+
+    ResourceCountVO findByDomainIdAndType(long domainId, ResourceType type);
+
+    ResourceCountVO findByAccountIdAndType(long accountId, ResourceType type);
+    
+    Set<Long> listAllRowsToUpdateForAccount(long accountId, long domainId, ResourceType type);
+    
+    Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type);
+
+    void createResourceCounts(long ownerId, OwnerType ownerType);
+    
 }

@@ -47,7 +47,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
+import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -55,6 +57,8 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.GuestIpType;
@@ -78,7 +82,11 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -101,6 +109,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final NetworkDao _networkDao;
     private final VlanDao _vlanDao;
     private String _domainSuffix;
+    private final ResourceCountDao _resourceCountDao;
+    private final AccountDao _accountDao;
+    private final UserDao _userDao;
+    private final DomainDao _domainDao;
 
 	
 	public ConfigurationServerImpl() {
@@ -114,14 +126,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _dataCenterDao = locator.getDao(DataCenterDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
+        _resourceCountDao = locator.getDao(ResourceCountDao.class);
+        _accountDao = locator.getDao(AccountDao.class);
+        _userDao = locator.getDao(UserDao.class);
+        _domainDao = locator.getDao(DomainDao.class);
 	}
 
 	@Override @DB
     public void persistDefaultValues() throws InternalErrorException {
-		
-		// Create system user and admin user
-		saveUser();
-		
+
 		// Get init
 		String init = _configDao.getValue("init");
 		
@@ -130,6 +143,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		
 		if (init == null || init.equals("false")) {
 			s_logger.debug("ConfigurationServer is saving default values to the database.");
+			
+			 Transaction txn = Transaction.currentTxn();
+		        txn.start();
+			// Create ROOT domain
+	        saveRootDomain();
+	        
+	        // Create system user and admin user
+	        saveUser();
 			
 			// Save default Configuration Table values
 			List<String> categories = Config.getCategories();
@@ -199,11 +220,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	        //Create default networks
 	        createDefaultNetworks();
 	        
-	        //Create userIpAddress ranges
-	        
 	        
 	        //Update existing vlans with networkId
-	        Transaction txn = Transaction.currentTxn();
+	      
 	        
 	        List<VlanVO> vlans = _vlanDao.listAll();
 	        if (vlans != null && !vlans.isEmpty()) {
@@ -218,14 +237,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	                String startIp = range[0];
 	                String endIp = range[1];
 	                
-	                txn.start();
+	                
 	                IPRangeConfig config = new IPRangeConfig();
 	                long startIPLong = NetUtils.ip2Long(startIp);
 	                long endIPLong = NetUtils.ip2Long(endIp);
 	                config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId());
-	                txn.commit();
 	            }
  	        }
+	        
+	        // Set init to true
+            _configDao.update("init", "true");
+	        txn.commit();
 		}
 		
 		// keystore for SSL/TLS connection
@@ -240,8 +262,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		// Update the cloud identifier
 		updateCloudIdentifier();
 		
-		// Set init to true
-		_configDao.update("init", "true");
 	}
 
 	
@@ -273,27 +293,24 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // insert system account
         String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
         Transaction txn = Transaction.currentTxn();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.executeUpdate();
-        } catch (SQLException ex) {
-        }
-        // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) VALUES (1, 'system', '', 1, 'system', 'cloud', now())";
-	    txn = Transaction.currentTxn();
-		try {
-		    PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-		    stmt.executeUpdate();
-		} catch (SQLException ex) {
-		}
-		
-    	// insert admin user
-        long id = 2;
-        String username = "admin";
-        String firstname = "admin";
-        String lastname = "cloud";
-        String password = "password";
+        txn.start();
         
+        //Create system/admin accounts
+        AccountVO systemAccount = new AccountVO(1);
+        systemAccount.setAccountName("system");
+        systemAccount.setType(Account.ACCOUNT_TYPE_ADMIN);;
+        systemAccount.setDomainId(1);
+        systemAccount.setState(Account.State.enabled);
+        _accountDao.persist(systemAccount);
+        
+        AccountVO adminAccount = new AccountVO(1);
+        adminAccount.setAccountName("admin");
+        adminAccount.setType(Account.ACCOUNT_TYPE_ADMIN);;
+        adminAccount.setDomainId(1);
+        adminAccount.setState(Account.State.enabled);
+        _accountDao.persist(adminAccount);
+        
+        //Create system/admin users
         MessageDigest md5 = null;
         try {
             md5 = MessageDigest.getInstance("MD5");
@@ -301,6 +318,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             return;
         }
         
+        String password = "password";
         md5.reset();
         BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
         String pwStr = pwInt.toString(16);
@@ -310,29 +328,36 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             sb.append('0'); // make sure the MD5 password is 32 digits long
         }
         sb.append(pwStr);
-
-        // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
-        txn = Transaction.currentTxn();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.executeUpdate();
-        } catch (SQLException ex) {
-        }
-
-        // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
-                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+        password = sb.toString();
         
-
-        txn = Transaction.currentTxn();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            stmt.executeUpdate();
-        } catch (SQLException ex) {
-        }
+        UserVO systemUser = new UserVO(1);
+        systemUser.setUsername("system");
+        systemUser.setPassword("");
+        systemUser.setAccountId(1);
+        systemUser.setFirstname("system");
+        systemUser.setLastname("system");
+        systemUser.setState(Account.State.enabled);
+        _userDao.persist(systemUser);
         
-
+        
+        UserVO adminUser = new UserVO(2);
+        adminUser.setUsername("admin");
+        adminUser.setPassword(password);
+        adminUser.setAccountId(2);
+        adminUser.setFirstname("admin");
+        adminUser.setLastname("cloud");
+        adminUser.setState(Account.State.enabled);
+        _userDao.persist(adminUser);
+		
+        
+        //create resource counts
+        try {
+            _resourceCountDao.createResourceCounts(1, OwnerType.Account);
+            _resourceCountDao.createResourceCounts(2, OwnerType.Account);
+        } catch (Exception ex) {
+            // if exception happens, it might mean that resource counts are already created by another management server being started in the cluster
+            s_logger.warn("Failed to create initial resource counts for system/admin accounts");
+        }  
 
         try {
             String tableName = "security_group";
@@ -358,7 +383,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
                 }
 
-                txn = Transaction.currentTxn();
                 try {
                     stmt = txn.prepareAutoCloseStatement(insertSql);
                     stmt.executeUpdate();
@@ -369,6 +393,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             rs.close();
         } catch (Exception ex) {
             s_logger.warn("Failed to create default security group for default admin account due to ", ex);
+        } finally {
+            txn.commit();
         }
     }
 
@@ -902,7 +928,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
     }
     
-    
+   
     private void updateVlanWithNetworkId(VlanVO vlan) {
         long zoneId = vlan.getDataCenterId();
         long networkId = 0L;
@@ -938,6 +964,20 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
         }
         return networks.get(0).getId();
+    }
+    
+    @DB
+    public void saveRootDomain() {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        DomainVO domain = new DomainVO(1, "ROOT", 2, null, null);
+        domain.setPath("/");
+        domain.setLevel(0);
+        _domainDao.persist(domain);
+        _resourceCountDao.createResourceCounts(1, OwnerType.Domain);
+        
+       txn.commit();
     }
 
 }

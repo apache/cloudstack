@@ -249,15 +249,6 @@ public interface ManagementService {
     List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd);
 
     /**
-     * create a new domain
-     * 
-     * @param command
-     *            - the create command defining the name to use and the id of the parent domain under which to create the new
-     *            domain.
-     */
-    Domain createDomain(CreateDomainCmd command);
-
-    /**
      * delete a domain with the given domainId
      * 
      * @param cmd

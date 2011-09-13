@@ -64,7 +64,6 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
@@ -2937,59 +2936,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         }
         return _domainDao.search(sc, searchFilter);
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
-    public DomainVO createDomain(CreateDomainCmd cmd) {
-        String name = cmd.getDomainName();
-        Long parentId = cmd.getParentDomainId();
-        Long ownerId = UserContext.current().getCaller().getId();
-        Account caller = UserContext.current().getCaller();
-        String networkDomain = cmd.getNetworkDomain();
-
-        if (ownerId == null) {
-            ownerId = Long.valueOf(1);
-        }
-
-        if (parentId == null) {
-            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
-        }
-
-        DomainVO parentDomain = _domainDao.findById(parentId);
-        if (parentDomain == null) {
-            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
-        }
-        
-        if (parentDomain.getState().equals(Domain.State.Inactive)) {
-            throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
-        }
-        
-        _accountMgr.checkAccess(caller, parentDomain);
-
-        if (networkDomain != null) {
-            if (!NetUtils.verifyDomainName(networkDomain)) {
-                throw new InvalidParameterValueException(
-                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
-            }
-        }
-
-        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, name);
-        sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
-        List<DomainVO> domains = _domainDao.search(sc, null);
-        if ((domains == null) || domains.isEmpty()) {
-            DomainVO domain = new DomainVO(name, ownerId, parentId, networkDomain);
-            try {
-                return _domainDao.create(domain);
-            } catch (IllegalArgumentException ex) {
-                s_logger.warn("Failed to create domain ", ex);
-                throw ex;
-            }
-        } else {
-            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
-        }
     }
 
     @Override

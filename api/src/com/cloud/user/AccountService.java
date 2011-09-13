@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.api.commands.CreateAccountCmd;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
@@ -31,11 +32,11 @@ import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateResourceCountCmd;
+import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
-import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -196,5 +197,7 @@ public interface AccountService {
 	Set<Long> getDomainParentIds(long domainId);
 	
 	Set<Long> getDomainChildrenIds(String parentDomainPath);
+
+    Domain createDomain(CreateDomainCmd cmd);
 
 }

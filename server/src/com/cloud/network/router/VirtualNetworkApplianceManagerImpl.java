@@ -2228,9 +2228,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     disconnectedRouters.add(router);
                 }
 
-                //If rules fail to apply on one domR, no need to proceed with the rest
+                //If ip fails to apply on one domR, no need to proceed with the rest
                 if (!result) {
-                    throw new ResourceUnavailableException("Unable to apply firewall rules on router ", VirtualRouter.class, router.getId());
+                    throw new ResourceUnavailableException("Unable to associate ip addresses on router ", VirtualRouter.class, router.getId());
                 }
 
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
