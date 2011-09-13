@@ -18,3 +18,5 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 
 update `cloud`.`vm_template` set hypervisor_type='XenServer' where unique_name='xs-tools.iso';
 
+ALTER TABLE `cloud`.`host` MODIFY COLUMN  `storage_ip_address` char(40);
+

@@ -661,7 +661,7 @@ CREATE TABLE  `cloud`.`host` (
   `private_ip_address` char(40) NOT NULL,
   `private_netmask` varchar(15),
   `private_mac_address` varchar(17),
-  `storage_ip_address` char(40) NOT NULL,
+  `storage_ip_address` char(40),
   `storage_netmask` varchar(15),
   `storage_mac_address` varchar(17),
   `storage_ip_address_2` char(40),
