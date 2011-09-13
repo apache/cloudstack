@@ -270,19 +270,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _port = NumbersUtil.parseInt(configs.get("port"), 8250);
         final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
 
-        String value = configs.get("ping.interval");
+        String value = configs.get(Config.PingInterval.toString());
         _pingInterval = NumbersUtil.parseInt(value, 60);
 
-        value = configs.get("wait");
+        value = configs.get(Config.Wait.toString());
         _wait = NumbersUtil.parseInt(value, 1800);
 
-        value = configs.get("alert.wait");
+        value = configs.get(Config.AlertWait.toString());
         _alertWait = NumbersUtil.parseInt(value, 1800);
 
-        value = configs.get("update.wait");
+        value = configs.get(Config.UpdateWait.toString());
         _updateWait = NumbersUtil.parseInt(value, 600);
 
-        value = configs.get("ping.timeout");
+        value = configs.get(Config.PingTimeout.toString());
         final float multiplier = value != null ? Float.parseFloat(value) : 2.5f;
         _pingTimeout = (long) (multiplier * _pingInterval);
 
@@ -299,8 +299,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         _nodeId = ManagementServerNode.getManagementServerId();
         s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
         
-
-        _hostDao.markHostsAsDisconnected(_nodeId);
+        long lastPing = (System.currentTimeMillis() >> 10) - _pingTimeout;
+        _hostDao.markHostsAsDisconnected(_nodeId, lastPing);
 
         _monitor = ComponentLocator.inject(AgentMonitor.class, _nodeId, _hostDao, _vmDao, _dcDao, _podDao, this, _alertMgr, _pingTimeout);
         registerForHostEvents(_monitor, true, true, false);

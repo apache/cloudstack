@@ -57,7 +57,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
      * 
      * @param msId management server id.
      */
-    void markHostsAsDisconnected(long msId);
+    void markHostsAsDisconnected(long msId, long lastPing);
 
 	List<HostVO> findLostHosts(long timeout);
 
