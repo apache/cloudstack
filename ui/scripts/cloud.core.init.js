@@ -66,7 +66,7 @@ $(document).ready(function() {
 			$currentTheme.remove();
 			$currentTheme = null;
 		}
-		var name = "Default Theme";
+		var name = g_dictionary["label.theme.default"];
 		if (id != "theme_default") {
 			$currentTheme = $("<link>").appendTo("head").attr({
 				rel: "stylesheet",
@@ -80,7 +80,7 @@ $(document).ready(function() {
 				$currentTheme.remove();
 			}
 			$.cookie("theme", null);
-			name = "Default Theme";
+			name = g_dictionary["label.theme.default"];
 		}
 		$("#theme_button p").text(name);
 		$(this).hide();
