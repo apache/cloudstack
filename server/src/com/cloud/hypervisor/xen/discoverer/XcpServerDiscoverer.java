@@ -170,18 +170,23 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if ( clu.getGuid()== null ) {
             	clu.setGuid(poolUuid);
             } else {
-                if( !clu.getGuid().equals(poolUuid)) {
-                    if (hosts.size() == 1 ) { 
-                        if( !addHostsToPool(conn, hostIp, clusterId)){
-                            String msg = "Unable to add host(" + hostIp + ") to cluster " + clusterId;
+                List<HostVO> clusterHosts = _hostDao.listByCluster(clusterId);
+                if( clusterHosts != null && clusterHosts.size() > 0) {
+                    if (!clu.getGuid().equals(poolUuid)) {
+                        if (hosts.size() == 1) {
+                            if (!addHostsToPool(conn, hostIp, clusterId)) {
+                                String msg = "Unable to add host(" + hostIp + ") to cluster " + clusterId;
+                                s_logger.warn(msg);
+                                throw new DiscoveryException(msg);
+                            }
+                        } else {
+                            String msg = "Host (" + hostIp + ") is already in pool(" + poolUuid + "), can to join pool(" + clu.getGuid() + ")";
                             s_logger.warn(msg);
-                            throw new DiscoveryException(msg);                           
+                            throw new DiscoveryException(msg);
                         }
-                    } else {
-                        String msg = "Host (" + hostIp + ") is already in pool(" + poolUuid +"), can to join pool(" + clu.getGuid() + ")";
-                        s_logger.warn(msg);
-                        throw new DiscoveryException(msg);
                     }
+                } else {
+                    clu.setGuid(poolUuid);
                 }
             }
             // can not use this conn after this point, because this host may join a pool, this conn is retired
