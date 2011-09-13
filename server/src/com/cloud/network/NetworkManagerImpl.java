@@ -2950,28 +2950,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ip.getState() != State.Releasing) {
             txn.start();
 
-            Account owner = _accountMgr.getAccount(ip.getAccountId());
+            // don't decrement resource count for direct ips
+            if (ip.getAssociatedWithNetworkId() != null) {
+                _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+            }
+
+            long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
 
             // Save usage event
-            if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                // don't decrement resource count for direct ips
-                if (ip.getAssociatedWithNetworkId() != null) {
-                    _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+            if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                NetworkVO network = _networksDao.findByIdIncludingRemoved(ip.getSourceNetworkId());
+                String guestType = "";
+                if( (network != null) && (network.getGuestType() != null)){
+                    guestType = network.getGuestType().toString();
                 }
 
-                long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
-
-                if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                    NetworkVO network = _networksDao.findByIdIncludingRemoved(ip.getSourceNetworkId());
-                    String guestType = "";
-                    if( (network != null) && (network.getGuestType() != null)){
-                        guestType = network.getGuestType().toString();
-                    }
-
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat, guestType);
-                    _usageEventDao.persist(usageEvent);
-                }
-
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat, guestType);
+                _usageEventDao.persist(usageEvent);
             }
 
             ip = _ipAddressDao.markAsUnavailable(addrId);

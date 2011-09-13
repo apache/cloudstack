@@ -258,6 +258,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public void incrementResourceCount(long accountId, ResourceType type, Long... delta) {
+        //don't upgrade resource count for system account
+        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
+            s_logger.trace("Not incrementing resource count for system accounts, returning");
+            return;
+        }
         long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
         if (!updateResourceCount(accountId, type, true, numToIncrement)) {
@@ -268,6 +273,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public void decrementResourceCount(long accountId, ResourceType type, Long... delta) {
+        //don't upgrade resource count for system account
+        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
+            s_logger.trace("Not decrementing resource count for system accounts, returning");
+            return;
+        }
         long numToDecrement = (delta.length == 0) ? 1 : delta[0].longValue();
         
         if (!updateResourceCount(accountId, type, false, numToDecrement)) {
