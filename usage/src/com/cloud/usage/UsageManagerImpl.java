@@ -266,7 +266,9 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 	public boolean stop() {
 	    m_heartbeat.cancel(true);
 	    m_scheduledFuture.cancel(true);
-	    m_sanity.cancel(true);
+	    if(m_sanityCheckInterval > 0){
+	    	m_sanity.cancel(true);
+	    }
 		return true;
 	}
 
