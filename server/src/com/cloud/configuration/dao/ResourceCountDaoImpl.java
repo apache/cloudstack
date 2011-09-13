@@ -19,6 +19,7 @@
 package com.cloud.configuration.dao;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -37,26 +38,37 @@ import com.cloud.utils.db.Transaction;
 
 @Local(value={ResourceCountDao.class})
 public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> implements ResourceCountDao {
-	private SearchBuilder<ResourceCountVO> IdTypeSearch;
-	private SearchBuilder<ResourceCountVO> DomainIdTypeSearch;
+	private SearchBuilder<ResourceCountVO> AccountTypeSearch;
+	private SearchBuilder<ResourceCountVO> DomainTypeSearch;
+	
+	private SearchBuilder<ResourceCountVO> AccountSearch;
+    private SearchBuilder<ResourceCountVO> DomainSearch;
 	
 	protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
 
 	public ResourceCountDaoImpl() {
-		IdTypeSearch = createSearchBuilder();
-		IdTypeSearch.and("type", IdTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-	    IdTypeSearch.and("accountId", IdTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-	    IdTypeSearch.done();
+		AccountTypeSearch = createSearchBuilder();
+		AccountTypeSearch.and("type", AccountTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+	    AccountTypeSearch.and("accountId", AccountTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+	    AccountTypeSearch.done();
 
-		DomainIdTypeSearch = createSearchBuilder();
-		DomainIdTypeSearch.and("type", DomainIdTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-		DomainIdTypeSearch.and("domainId", DomainIdTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-		DomainIdTypeSearch.done();
+		DomainTypeSearch = createSearchBuilder();
+		DomainTypeSearch.and("type", DomainTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+		DomainTypeSearch.and("domainId", DomainTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+		DomainTypeSearch.done();
+		
+		AccountSearch = createSearchBuilder();
+		AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.NNULL);
+		AccountSearch.done();
+		
+		DomainSearch = createSearchBuilder();
+		DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.NNULL);
+		DomainSearch.done();
 	}
 
 	@Override
 	public ResourceCountVO findByAccountIdAndType(long accountId, ResourceType type) {
-		SearchCriteria<ResourceCountVO> sc = IdTypeSearch.create();
+		SearchCriteria<ResourceCountVO> sc = AccountTypeSearch.create();
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("type", type);
 
@@ -65,7 +77,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
 	@Override
 	public ResourceCountVO findByDomainIdAndType(long domainId, ResourceType type) {
-		SearchCriteria<ResourceCountVO> sc = DomainIdTypeSearch.create();
+		SearchCriteria<ResourceCountVO> sc = DomainTypeSearch.create();
 		sc.setParameters("domainId", domainId);
 		sc.setParameters("type", type);
 
@@ -166,4 +178,34 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         
         txn.commit();
     }
+	
+	@Override
+	public List<ResourceCountVO> listByDomainId(long domainId) {
+	    SearchCriteria<ResourceCountVO> sc = DomainTypeSearch.create();
+        sc.setParameters("domainId", domainId);
+
+        return listBy(sc);
+	}
+	
+	@Override
+    public List<ResourceCountVO> listByAccountId(long accountId) {
+	    SearchCriteria<ResourceCountVO> sc = AccountTypeSearch.create();
+        sc.setParameters("accountId", accountId);
+
+        return listBy(sc);
+	}
+	
+	@Override
+	public List<ResourceCountVO> listDomainCounts() {
+	    SearchCriteria<ResourceCountVO> sc = DomainSearch.create();
+
+        return listBy(sc);
+	}
+    
+	@Override
+    public List<ResourceCountVO> listAccountCounts() {
+       SearchCriteria<ResourceCountVO> sc = AccountSearch.create();
+       
+       return listBy(sc);
+	}
 }
