@@ -16,5 +16,5 @@ DELETE FROM `cloud`.`configuration` where name='vmware.guest.nic.device.type';
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'agent.lb.enabled', 'true', 'If agent load balancing enabled in cluster setup');
 
-update `cloud`.`vm_template` set hypervisor_type='XenServer' where id=200;
+update `cloud`.`vm_template` set hypervisor_type='XenServer' where unique_name='xs-tools.iso';
 
