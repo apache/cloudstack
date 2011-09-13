@@ -223,6 +223,7 @@ Requires: jpackage-utils
 Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
+Requires: jna
 Group:     System Environment/Libraries
 
 Requires: kvm
