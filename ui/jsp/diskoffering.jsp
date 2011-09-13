@@ -44,8 +44,8 @@ dictionary = {
         <div id="tab_container"> 
 	        <div class="grid_container">
 	        	<div class="grid_header">
-	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-	                <div id="action_link" class="grid_actionbox"><p>Actions</p>
+	            	<div id="grid_header_title" class="grid_header_title"></div>
+	                <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                        	<li><fmt:message key="label.no.actions"/></li>

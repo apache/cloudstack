@@ -1025,7 +1025,7 @@ dictionary = {
         <div class="grid_header_title" id="title">
         </div>
 		<!--
-        <div class="grid_actionbox" id="action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>

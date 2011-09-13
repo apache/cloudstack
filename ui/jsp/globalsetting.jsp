@@ -51,7 +51,7 @@ dictionary = {
 	            		<div class="grid_header_title"><fmt:message key="label.description"/></div>
 	                </div>                
 	                <div class="grid_header_cell" style="width:15%; border:none;">
-	            		<div id="action_link" class="grid_actionbox"><p>Actions</p>
+	            		<div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
 	                                <li><fmt:message key="label.no.actions"/></li>
