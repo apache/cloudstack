@@ -149,12 +149,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Integer getNetworkRate(long networkId, Long vmId) {
         // TODO Auto-generated method stub
         return null;
@@ -498,6 +492,12 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public String getIpInNetworkIncludingRemoved(long vmId, long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, long networkOfferingId) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -18,6 +18,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.ListVMsCmd;
+import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -365,6 +366,12 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
             String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp,
             String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserVm moveVMToUser(MoveUserVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }

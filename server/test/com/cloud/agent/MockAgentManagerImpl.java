@@ -61,11 +61,6 @@ public class MockAgentManagerImpl implements AgentManager {
         return null;
     }
 
-    @Override
-    public Answer send(Long hostId, Command cmd, int timeout) throws AgentUnavailableException, OperationTimedoutException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException {
@@ -205,11 +200,6 @@ public class MockAgentManagerImpl implements AgentManager {
         return false;
     }
 
-    @Override
-    public Answer easySend(Long hostId, Command cmd, int timeout) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public boolean isHostNativeHAEnabled(long hostId) {
