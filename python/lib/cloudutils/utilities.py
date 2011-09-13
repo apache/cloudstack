@@ -155,30 +155,30 @@ class serviceOpsRedhat(serviceOps):
 class serviceOpsUbuntu(serviceOps):
     def isServiceRunning(self, servicename):
         try:
-            o = bash("service " + servicename + " status")
-            if "running" in o.getStdout() or "start" in o.getStdout():
-                return True
-            else:
+            o = bash("sudo /usr/sbin/service " + servicename + " status")
+            if "not running" in o.getStdout():
                 return False
+            else:
+                return True
         except:
             return False
 
     def stopService(self, servicename,force=False):
         if self.isServiceRunning(servicename) or force:
-            return bash("service " + servicename +" stop").isSuccess()
+            return bash("sudo /usr/sbin/service " + servicename +" stop").isSuccess()
 
     def disableService(self, servicename):
         result = self.stopService(servicename)
-        bash("update-rc.d -f " + servicename + " remove")
+        bash("sudo update-rc.d -f " + servicename + " remove")
         return result
     
     def startService(self, servicename,force=False):
         if not self.isServiceRunning(servicename) or force:
-            return bash("service " + servicename + " start").isSuccess()
+            return bash("sudo /usr/sbin/service " + servicename + " start").isSuccess()
 
     def enableService(self, servicename,forcestart=False):
-        bash("update-rc.d -f " + servicename + " remove")
-        bash("update-rc.d -f " + servicename + " defaults")
+        bash("sudo update-rc.d -f " + servicename + " remove")
+        bash("sudo update-rc.d -f " + servicename + " defaults")
         return self.startService(servicename,force=forcestart)
 
     def isKVMEnabled(self):

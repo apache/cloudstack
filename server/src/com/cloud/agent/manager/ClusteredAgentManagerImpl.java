@@ -697,7 +697,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
         for (ManagementServerHostVO vo : nodeList) {
             s_logger.info("Marking hosts as disconnected on Management server" + vo.getMsid());
-            _hostDao.markHostsAsDisconnected(vo.getMsid());
+            long lastPing = (System.currentTimeMillis() >> 10) - _pingTimeout;
+            _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
             s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
             cleanupTransferMap(vo.getMsid());
         }

@@ -225,18 +225,10 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Group:     System Environment/Libraries
 
-%if 0%{?rhel} >= 6
-Requires: cloud-kvm
-%else
 Requires: kvm
-%endif
 
 %if 0%{?fedora} >= 14
 Requires: cloud-qemu-kvm
-Requires: cloud-qemu-img
-%endif
-
-%if 0%{?rhel} >= 6
 Requires: cloud-qemu-img
 %endif
 

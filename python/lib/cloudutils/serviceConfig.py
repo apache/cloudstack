@@ -651,3 +651,26 @@ class firewallConfigServer(firewallConfigBase):
             self.ports = "443 8080 8096 8250 8443 9090".split()
         else:
             self.ports = "8080 8096 8250 9090".split()
+
+class ubuntuFirewallConfigServer(firewallConfigServer):
+    def allowPort(self, port):
+        status = False
+        try:
+            status = bash("iptables-save|grep INPUT|grep -w %s"%port).isSuccess()
+        except:
+            pass
+        
+        if not status: 
+            bash("ufw allow %s/tcp"%port)
+            
+    def config(self):
+        try:
+            for port in self.ports:
+                self.allowPort(port)
+            
+            #FIXME: urgly make /root writable 
+            bash("sudo chmod 0777 /root")
+                
+            return True
+        except:
+            raise
