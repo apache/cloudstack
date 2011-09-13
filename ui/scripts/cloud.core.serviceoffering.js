@@ -274,11 +274,11 @@ function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_system_serviceoffering.png");	
    
     var firstRowText = fromdb(jsonObj.name);
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed);
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 

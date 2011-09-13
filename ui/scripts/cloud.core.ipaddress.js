@@ -802,11 +802,11 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
 	var firstRowText = fromdb(jsonObj.ipaddress);
 	if (jsonObj.issourcenat == true) 
 		firstRowText += "[source nat]";	
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = "owned by: "+fromdb(jsonObj.account);
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 

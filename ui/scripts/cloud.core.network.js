@@ -188,11 +188,11 @@ function publicNetworkToMidmenu(jsonObj, $midmenuItem1) {
     */
     
     var firstRowText = "Public Network";
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = "VLAN: Multiple";
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
@@ -614,7 +614,7 @@ function bindAddIpRangeToPublicNetworkButton() {
 				}
 				
 				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"), false); //required
-				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"), false); //required
+				isValid &= validateNetmask("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"), false); //required
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"), false); //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true); //optional
 				
@@ -1034,11 +1034,11 @@ function directNetworkToMidmenu(jsonObj, $midmenuItem1) {
     */
     
     var firstRowText = fromdb(jsonObj.name);
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = "VLAN : " + fromdb(jsonObj.vlan);
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText);  
 }
 
@@ -1287,7 +1287,7 @@ function bindAddNetworkButton() {
 				isValid &= validateString("Network Name", $thisDialog.find("#add_publicip_vlan_network_name"), $thisDialog.find("#add_publicip_vlan_network_name_errormsg"));
 				isValid &= validateString("Network Description", $thisDialog.find("#add_publicip_vlan_network_desc"), $thisDialog.find("#add_publicip_vlan_network_desc_errormsg"));			
 				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
-				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
+				isValid &= validateNetmask("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
 				isValid &= validateString("Network Domain", $thisDialog.find("#networkdomain"), $thisDialog.find("#networkdomain_errormsg"), true); //optional
@@ -1451,7 +1451,7 @@ function bindAddIpRangeToDirectNetworkButton($midmenuItem1) {
 				if($thisDialog.find("#gateway_container").css("display") != "none")
 				    isValid &= validateIp("Gateway", $thisDialog.find("#gateway"), $thisDialog.find("#gateway_errormsg"), false); //required				    
 				if($thisDialog.find("#netmask_container").css("display") != "none")
-				    isValid &= validateIp("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"), false); //required				    
+				    isValid &= validateNetmask("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"), false); //required				    
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"), false);   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
 				if (!isValid) 

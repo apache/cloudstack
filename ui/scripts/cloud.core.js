@@ -849,7 +849,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	    $midmenuItem1.find("#first_row").text(g_dictionary["label.adding.failed"]);	
 	    
 	    if(secondRowText != null)
-	        $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));	
+	        $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));	
 	    
 	    $midmenuItem1.find("#close_icon").show().bind("click", function(event) {	        
 	        $midmenuItem1.slideUp("slow", function() {	            
@@ -860,7 +860,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	}
 	
 	if(secondRowText != null) {
-	    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength)); 	 
+	    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength)); 	 
 	}
 }
 
@@ -1579,7 +1579,7 @@ function isUser() {
 	return (g_role == 0);
 }
 
-function setDateField(dateValue, dateField, htmlMarkup) {
+function setDateField(dateValue, dateField) {
     if (dateValue != null && dateValue.length > 0) {
 	    var disconnected = new Date();
 	    disconnected.setISO8601(dateValue);	
@@ -1587,11 +1587,9 @@ function setDateField(dateValue, dateField, htmlMarkup) {
 	    if(g_timezoneoffset != null) 
 	        showDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
 	    else 
-	        showDate = disconnected.format("m/d/Y H:i:s");
-	    if(htmlMarkup == null)
-	        dateField.text(showDate);
-	    else
-	        dateField.html(htmlMarkup + showDate);
+	        showDate = disconnected.getTimePlusTimezoneOffset(0);
+	    
+	    dateField.text(showDate);	   
     }
 }
 
@@ -1880,6 +1878,25 @@ function validateIp(label, field, errMsgField, isOptional) {
 	return isValid;
 }
 
+function validateNetmask(label, field, errMsgField, isOptional) {  
+    if(validateString(label, field, errMsgField, isOptional) == false)
+        return;
+    var isValid = true;
+    var errMsg = "";
+    var value = field.val();     		    
+    if(value!=null && value.length>0) {
+        myregexp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;	   
+        var isMatch = myregexp.test(value);
+        if(!isMatch) {            
+            errMsg = g_dictionary["label.example"] + ": 255.255.255.0";
+	        isValid = false;		
+	    }
+	}	 	
+	showError(isValid, field, errMsgField, errMsg);	
+	return isValid;
+}
+
+
 function validateCIDR(label, field, errMsgField, isOptional) {  
     if(validateString(label, field, errMsgField, isOptional) == false)
         return;        
@@ -2018,6 +2035,12 @@ function sanitizeXSS(val) {
 
 var midMenuFirstRowLength = 26;
 var midMenuSecondRowLength = 33;
+function clippedText(text, maxLength) {
+	if(text.length <= maxLength)
+		return text;
+	else
+		return text.substring(0,maxLength-3)+"...";	
+}
 
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)

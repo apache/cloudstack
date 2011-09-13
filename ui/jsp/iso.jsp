@@ -142,8 +142,18 @@ dictionary = {
 	                    <div class="row_celltitles" id="bootable">                      
 	                    </div>
 	                </div>
-	            </div>	            	            
-	            <div class="grid_rows even">
+	            </div>	
+	             <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="extractable"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="isextractable">                        
+	                    </div>	                    
+	                </div>
+	            </div>            	            
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.public"/>:</div>
@@ -158,7 +168,7 @@ dictionary = {
 	                </div>
 	            </div>	 
 	            
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.featured"/>:</div>
@@ -173,7 +183,7 @@ dictionary = {
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.cross.zones"/>:</div>
@@ -183,7 +193,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>
-				<div class="grid_rows odd">
+				<div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.os.type"/>:</div>
@@ -195,7 +205,7 @@ dictionary = {
 	                    </select>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.account"/>:</div>
@@ -205,7 +215,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>
-				<div class="grid_rows odd">
+				<div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.domain"/>:</div>
@@ -215,7 +225,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.created"/>:</div>
@@ -225,7 +235,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>          
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.status"/>:</div>
@@ -235,7 +245,7 @@ dictionary = {
 	                    </div>
 	                </div>
 	            </div>	         
-	            <div class="grid_rows even" id="progressbar_container">
+	            <div class="grid_rows odd" id="progressbar_container">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <fmt:message key="label.download.progress"/>:</div>
@@ -293,7 +303,14 @@ dictionary = {
                     <label><fmt:message key="label.zone"/>:</label>
                     <select class="select" id="add_iso_zone">
                     </select>
-                </li>	
+                </li>	 
+                <li>
+					<label><fmt:message key="extractable"/>:</label>
+					<select class="select" id="isextractable">						
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>
+					</select>
+				</li>                
 				<li>
 					<label for="add_iso_public"><fmt:message key="label.bootable"/>:</label>
 					<select class="select" name="add_iso_bootable" id="add_iso_bootable">

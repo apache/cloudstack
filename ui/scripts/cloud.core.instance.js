@@ -1796,11 +1796,11 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));   
       
     var firstRowText = getVmName(jsonObj.name, jsonObj.displayname);
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));    
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));    
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = fromdb(jsonObj.templatename);
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
     
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);     
@@ -1997,6 +1997,10 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		    buildActionLinkForTab("label.action.create.template", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		noAvailableActions = false;			    					
+	}
+	else if (jsonObj.state == 'Starting') {	
+		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+	    noAvailableActions = false;	
 	}
 	else if (jsonObj.state == 'Error') {	
 	    buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);

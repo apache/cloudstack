@@ -372,11 +372,11 @@ function volumeToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_volume.png");		
    
     var firstRowText = fromdb(jsonObj.name);
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = fromdb(jsonObj.type);
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText);  
 }
 
@@ -461,7 +461,7 @@ function volumeJsonToDetailsTab(){
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
-		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
+		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped" || jsonObj.vmstate == "Destroyed")) {
 			        buildActionLinkForTab("label.action.detach.disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		        }
 	        } else {

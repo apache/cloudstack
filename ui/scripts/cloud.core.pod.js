@@ -936,7 +936,7 @@ function bindAddIpRangeToPodButton($leftmenuItem1) {
 			   				
 				// validate values
 				var isValid = true;	
-				isValid &= validateIp("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"));
+				isValid &= validateNetmask("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"));
 				isValid &= validateIp("Gateway", $thisDialog.find("#guestgateway"), $thisDialog.find("#guestgateway_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#startip"), $thisDialog.find("#startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#endip"), $thisDialog.find("#endip_errormsg"), true);  //optional
@@ -1215,7 +1215,7 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     // validate values
 	var isValid = true;			
 	isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
-	isValid &= validateIp("Netmask", $detailsTab.find("#netmask_edit"), $detailsTab.find("#netmask_edit_errormsg"));	
+	isValid &= validateNetmask("Netmask", $detailsTab.find("#netmask_edit"), $detailsTab.find("#netmask_edit_errormsg"));	
 	isValid &= validateIp("Start IP Range", $detailsTab.find("#startIpRange_edit"), $detailsTab.find("#startIpRange_edit_errormsg"));  //required
 	isValid &= validateIp("End IP Range", $detailsTab.find("#endIpRange_edit"), $detailsTab.find("#endIpRange_edit_errormsg"), true);  //optional
 	isValid &= validateIp("Gateway", $detailsTab.find("#gateway_edit"), $detailsTab.find("#gateway_edit_errormsg"), true);  //optional when editing	

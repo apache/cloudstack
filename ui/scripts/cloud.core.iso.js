@@ -133,7 +133,7 @@ function initAddIsoDialog() {
 		    
 		    var html = "<option value=''>" + g_dictionary["label.none"] +  "</option>";
 			osTypeDropDownAdd.append(html);			
-			osTypeDropdownEdit.append(html);	
+			//osTypeDropdownEdit.append(html);	//OSType is required for ISO. So, shouldn't provide "none" option when updating ISO.
 		
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {				
@@ -182,18 +182,21 @@ function initAddIsoDialog() {
 			    $thisDialog.dialog("close");	
 			    
 			    var array1 = [];
-			    var name = trim($thisDialog.find("#add_iso_name").val());
+			    var name = $thisDialog.find("#add_iso_name").val();
 			    array1.push("&name="+todb(name));
 			    
-			    var desc = trim($thisDialog.find("#add_iso_display_text").val());
+			    var desc = $thisDialog.find("#add_iso_display_text").val();
 			    array1.push("&displayText="+todb(desc));
 			    
-			    var url = trim($thisDialog.find("#add_iso_url").val());	
+			    var url = $thisDialog.find("#add_iso_url").val();	
 			    array1.push("&url="+todb(url));
 			    					
 			    var zoneId = $thisDialog.find("#add_iso_zone").val();
 			    array1.push("&zoneId="+zoneId);	
 			    
+			    var isextractable = $thisDialog.find("#isextractable").val();		
+				array1.push("&isextractable="+isextractable);				
+							    
 			    var isPublic = $thisDialog.find("#add_iso_public").val();
 			    array1.push("&isPublic="+isPublic);	
 			    					    
@@ -305,11 +308,11 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_iso.png");
     
     var firstRowText = fromdb(jsonObj.name);
-    $midmenuItem1.find("#first_row").text(firstRowText.substring(0,midMenuFirstRowLength));     
+    $midmenuItem1.find("#first_row").text(clippedText(firstRowText, midMenuFirstRowLength));     
     $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
     var secondRowText = fromdb(jsonObj.zonename);
-    $midmenuItem1.find("#second_row").text(secondRowText.substring(0,midMenuSecondRowLength));
+    $midmenuItem1.find("#second_row").text(clippedText(secondRowText, midMenuSecondRowLength));
     $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
@@ -424,6 +427,8 @@ function isoJsonToDetailsTab() {
 	    $thisTab.find("#size").text("");    
               
     setBooleanReadField(jsonObj.bootable, $thisTab.find("#bootable"));	
+    
+    setBooleanReadField(jsonObj.isextractable, $thisTab.find("#isextractable"));   
     
     setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
     setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));

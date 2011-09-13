@@ -21,7 +21,13 @@ function afterLoadDashboardJSP() {
     
     if (isAdmin()) {
         var $thisTab = showDashboard("dashboard_admin");
-                        
+              
+        $thisTab.find("#general_alerts").find("#more_icon").unbind("click").bind("click", function(event) {					
+		    $("#leftmenu_events").click();
+            $("#leftmenu_alert").click();
+		    return false;
+		});
+        
 		var sessionExpired = false;
 		var zones = null;
 		var noZones = false;
@@ -201,13 +207,7 @@ function afterLoadDashboardJSP() {
 				}
 			}
 		});
-			
-		$("#general_alerts").find("#more_icon").unbind("click").bind("click", function(event) {		    
-		    $("#leftmenu_events").click();
-            $("#leftmenu_alert").click();
-		    return false;
-		});
-				
+						
 		// Hosts Alerts
 		$.ajax({
 		    data: createURL("command=listHosts&state=Alert"),
