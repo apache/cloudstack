@@ -1579,7 +1579,7 @@ function isUser() {
 	return (g_role == 0);
 }
 
-function setDateField(dateValue, dateField, htmlMarkup) {
+function setDateField(dateValue, dateField) {
     if (dateValue != null && dateValue.length > 0) {
 	    var disconnected = new Date();
 	    disconnected.setISO8601(dateValue);	
@@ -1587,11 +1587,9 @@ function setDateField(dateValue, dateField, htmlMarkup) {
 	    if(g_timezoneoffset != null) 
 	        showDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
 	    else 
-	        showDate = disconnected.format("m/d/Y H:i:s");
-	    if(htmlMarkup == null)
-	        dateField.text(showDate);
-	    else
-	        dateField.html(htmlMarkup + showDate);
+	        showDate = disconnected.getTimePlusTimezoneOffset(0);
+	    
+	    dateField.text(showDate);	   
     }
 }
 
