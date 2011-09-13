@@ -71,7 +71,7 @@ public class ListSSHKeyPairsCmd extends BaseListCmd {
 		List<SSHKeyPairResponse> responses = new ArrayList<SSHKeyPairResponse>();
 		for (SSHKeyPair result : resultList) {
 			SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
-			r.setObjectName("keypair");
+			r.setObjectName("sshkeypair");
 			responses.add(r);
 		}
 		
