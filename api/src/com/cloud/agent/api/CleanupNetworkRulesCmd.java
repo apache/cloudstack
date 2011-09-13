@@ -26,11 +26,17 @@ public class CleanupNetworkRulesCmd extends Command implements CronCommand {
     public boolean executeInSequence() {
         return false;
     }
+    
+    
 
 
     public CleanupNetworkRulesCmd(int intervalSecs) {
         super();
         interval = intervalSecs;
+    }
+    
+    public CleanupNetworkRulesCmd() {
+        
     }
 
 
