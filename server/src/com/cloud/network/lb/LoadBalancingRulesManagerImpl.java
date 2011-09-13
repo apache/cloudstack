@@ -440,11 +440,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             _usageEventDao.persist(usageEvent);
             txn.commit();
             
-            // send firewallRule to the backend
-            if (openFirewall) {
-               success = success &&  _firewallMgr.applyFirewallRules(lb.getSourceIpAddressId(), caller.getCaller());
-            }
-            
             return newRule;
         } catch (Exception e) {
             success = false;

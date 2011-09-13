@@ -146,7 +146,7 @@ public interface ResponseGenerator {
 
     ClusterResponse createClusterResponse(Cluster cluster);
 
-    FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule);
+    FirewallRuleResponse createPortForwardingRuleResponse(PortForwardingRule fwRule);
 
     IpForwardingRuleResponse createIpForwardingRuleResponse(StaticNatRule fwRule);
 

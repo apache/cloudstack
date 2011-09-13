@@ -87,7 +87,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         
         for (PortForwardingRule fwRule : result) {
-            FirewallRuleResponse ruleData = _responseGenerator.createFirewallRuleResponse(fwRule);
+            FirewallRuleResponse ruleData = _responseGenerator.createPortForwardingRuleResponse(fwRule);
             ruleData.setObjectName("portforwardingrule");
             fwResponses.add(ruleData);
         }

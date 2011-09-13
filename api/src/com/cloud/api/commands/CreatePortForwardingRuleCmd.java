@@ -139,7 +139,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
             FirewallRuleResponse fwResponse = new FirewallRuleResponse(); 
             if (rule != null) {
-                fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
+                fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);
                 setResponseObject(fwResponse);
             }
             fwResponse.setResponseName(getCommandName());
