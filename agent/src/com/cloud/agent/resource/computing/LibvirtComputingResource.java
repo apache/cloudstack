@@ -3169,7 +3169,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			guestOSName.startsWith("Red Hat Enterprise Linux 5.4") ||
     			guestOSName.startsWith("Red Hat Enterprise Linux 5.5") ||
     			guestOSName.startsWith("Red Hat Enterprise Linux 6") ||
-    			guestOSName.startsWith("Debian GNU/Linux")    			
+    			guestOSName.startsWith("Debian GNU/Linux") ||
+    			guestOSName.startsWith("Other PV")
     	) {
             return true;
         } else {
