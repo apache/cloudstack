@@ -10,6 +10,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.commands.CreateAccountCmd;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
@@ -221,7 +222,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public long findCorrectResourceLimit(AccountVO account, ResourceType type) {
+    public long findCorrectResourceLimit(long accountId, ResourceType type) {
         // TODO Auto-generated method stub
         return 0;
     }
@@ -337,6 +338,11 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     public void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException {
         // TODO Auto-generated method stub
         
+    }
+    
+    @Override
+    public Domain createDomain(CreateDomainCmd cmd) {
+        return null;
     }
 
 }

@@ -266,7 +266,7 @@ public class ApiDBUtils {
             return -1;
         }
 
-        return _accountMgr.findCorrectResourceLimit(account, type);
+        return _accountMgr.findCorrectResourceLimit(account.getAccountId(), type);
     }
 
     public static AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {

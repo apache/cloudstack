@@ -38,8 +38,10 @@ import org.apache.log4j.Logger;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateAccountCmd;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
@@ -57,6 +59,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -68,7 +71,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -183,8 +185,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     private VirtualMachineManager _itMgr;
     @Inject
-    private UsageEventDao _usageEventDao;
-    @Inject
     private RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject
     private RemoteAccessVpnService _remoteAccessVpnMgr;
@@ -192,10 +192,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private VpnUserDao _vpnUser;
     @Inject
     private DataCenterDao _dcDao;
+    @Inject
+    private AlertManager _alertMgr;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
-
-    private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
+    
+    protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
 
     UserVO _systemUser;
     AccountVO _systemAccount;
@@ -223,6 +225,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         String value = configs.get(Config.AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
+        
+        ResourceCountSearch = _resourceCountDao.createSearchBuilder();
+        ResourceCountSearch.and("id", ResourceCountSearch.entity().getId(), SearchCriteria.Op.IN);
+        ResourceCountSearch.and("accountId", ResourceCountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        ResourceCountSearch.done();
 
         return true;
     }
@@ -252,57 +260,27 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public void incrementResourceCount(long accountId, ResourceType type, Long... delta) {
         long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                _resourceCountDao.updateAccountCount(accountId, type, true, numToIncrement);
-
-                // on a per-domain basis, increment the count
-                // FIXME: can this increment be done on the database side in a custom update statement?
-                Account account = _accountDao.findByIdIncludingRemoved(accountId);
-                Long domainId = account.getDomainId();
-                while (domainId != null) {
-                    _resourceCountDao.updateDomainCount(domainId, type, true, numToIncrement);
-                    DomainVO domain = _domainDao.findById(domainId);
-                    domainId = domain.getParent();
-                }
-            } finally {
-                m_resourceCountLock.unlock();
-            }
+        if (!updateResourceCount(accountId, type, true, numToIncrement)) {
+            //we should fail the operation (resource creation) when failed to update the resource count
+            throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
         }
     }
 
     @Override
     public void decrementResourceCount(long accountId, ResourceType type, Long... delta) {
         long numToDecrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                assert ((_resourceCountDao.getAccountCount(accountId, type) - numToDecrement) >= 0) : "Resource counts can not be negative. Check where we skipped increment.";
-                _resourceCountDao.updateAccountCount(accountId, type, false, numToDecrement);
-
-                // on a per-domain basis, decrement the count
-                // FIXME: can this decrement be done on the database side in a custom update statement?
-                Account account = _accountDao.findByIdIncludingRemoved(accountId); // find all accounts, even removed accounts
-                                                                                   // if this happens to be for an account
-                                                                                   // that's being deleted
-                Long domainId = account.getDomainId();
-                while (domainId != null) {
-                    assert ((_resourceCountDao.getDomainCount(domainId, type) - numToDecrement) >= 0) : "Resource counts can not be negative. Check where we skipped increment.";
-                    _resourceCountDao.updateDomainCount(domainId, type, false, numToDecrement);
-                    DomainVO domain = _domainDao.findByIdIncludingRemoved(domainId);
-                    domainId = domain.getParent();
-                }
-            } finally {
-                m_resourceCountLock.unlock();
-            }
+        
+        if (!updateResourceCount(accountId, type, false, numToDecrement)) {
+            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, "Failed to decrement resource count of type " + type + " for account id=" + accountId, 
+                        "Failed to decrement resource count of type " + type + " for account id=" + accountId + "; use updateResourceCount API to recalculate/fix the problem");
         }
     }
 
     @Override
-    public long findCorrectResourceLimit(AccountVO account, ResourceType type) {
+    public long findCorrectResourceLimit(long accountId, ResourceType type) {
         long max = -1;
 
-        ResourceLimitVO limit = _resourceLimitDao.findByAccountIdAndType(account.getId(), type);
+        ResourceLimitVO limit = _resourceLimitDao.findByAccountIdAndType(accountId, type);
 
         // Check if limit is configured for account
         if (limit != null) {
@@ -361,46 +339,49 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return max;
     }
 
-    @Override
+    @Override @DB
     public boolean resourceLimitExceeded(Account account, ResourceType type, long... count) {
         long numResources = ((count.length == 0) ? 1 : count[0]);
 
         // Don't place any limits on system or admin accounts
-        long accountType = account.getType();
-        if (accountType == Account.ACCOUNT_TYPE_ADMIN || accountType == Account.ACCOUNT_ID_SYSTEM) {
+        if (isAdmin(account.getType())) {
             return false;
         }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        try {
+            //Lock all rows first so nobody else can read it 
+            Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdateForAccount(account.getId(), account.getDomainId(), type);
+            SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
+            sc.setParameters("id", rowIdsToLock.toArray());
+            _resourceCountDao.lockRows(sc, null, true);
 
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                // Check account limits
-                AccountVO accountVo = _accountDao.findById(account.getAccountId());
-                long accountLimit = findCorrectResourceLimit(accountVo, type);
-                long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
-                if (accountLimit != -1 && potentialCount > accountLimit) {
-                    return true;
-                }
-
-                // check all domains in the account's domain hierarchy
-                Long domainId = account.getDomainId();
-                while (domainId != null) {
-                    ResourceLimitVO domainLimit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-                    if (domainLimit != null) {
-                        long domainCount = _resourceCountDao.getDomainCount(domainId, type);
-                        if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                            return true;
-                        }
-                    }
-                    DomainVO domain = _domainDao.findById(domainId);
-                    domainId = domain.getParent();
-                }
-                return false;
-            } finally {
-                m_resourceCountLock.unlock();
+            // Check account limits
+            long accountLimit = findCorrectResourceLimit(account.getId(), type);
+            long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
+            if (potentialCount > accountLimit) {
+                return true;
             }
-        }
 
-        return true;
+            // check all domains in the account's domain hierarchy
+            Long domainId = account.getDomainId();
+            while (domainId != null) {
+                ResourceLimitVO domainLimit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
+                if (domainLimit != null) {
+                    long domainCount = _resourceCountDao.getDomainCount(domainId, type);
+                    if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
+                        return true;
+                    }
+                }
+                DomainVO domain = _domainDao.findById(domainId);
+                domainId = domain.getParent();
+            }
+            
+            return false;
+        } finally {
+            txn.commit();
+        }
     }
 
     @Override
@@ -487,7 +468,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             } else {
                 AccountVO account = _accountDao.findById(accountId);
-                limits.add(new ResourceLimitVO(null, accountId, type, findCorrectResourceLimit(account, type)));
+                limits.add(new ResourceLimitVO(null, accountId, type, findCorrectResourceLimit(account.getId(), type)));
             }
         } else if (domainId != null) {
             if (type == null) {
@@ -745,69 +726,80 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-    @Override
+    @Override @DB
     public long updateAccountResourceCount(long accountId, ResourceType type) {
         Long count=null;
 
-        // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template table 
-        // as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                switch (type) {
-                case user_vm:
-                    count = _userVmDao.countAllocatedVMsForAccount(accountId);
-                    break;
-                case volume:
-                    count = _volumeDao.countAllocatedVolumesForAccount(accountId);
-                    long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
-                    count = count - virtualRouterCount;  // don't count the volumes of virtual router
-                    break;
-                case snapshot:
-                    count = _snapshotDao.countSnapshotsForAccount(accountId);
-                    break;
-                case public_ip:
-                    count = _ipAddressDao.countAllocatedIPsForAccount(accountId);
-                    break;
-                case template:
-                    count = _vmTemplateDao.countTemplatesForAccount(accountId);
-                    break;
-                }
-                _resourceCountDao.setAccountCount(accountId, type, (count == null) ? 0 : count.longValue());
-            } catch (Exception e) {
-                throw new CloudRuntimeException("Failed to update resource count for account with Id" + accountId);
-            } finally {
-                m_resourceCountLock.unlock();
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        try {
+            // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template table 
+            // as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
+            SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
+            sc.setParameters("accountId", accountId);
+            _resourceCountDao.lockRows(sc, null, true);
+            
+            switch (type) {
+            case user_vm:
+                count = _userVmDao.countAllocatedVMsForAccount(accountId);
+                break;
+            case volume:
+                count = _volumeDao.countAllocatedVolumesForAccount(accountId);
+                long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
+                count = count - virtualRouterCount;  // don't count the volumes of virtual router
+                break;
+            case snapshot:
+                count = _snapshotDao.countSnapshotsForAccount(accountId);
+                break;
+            case public_ip:
+                count = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+                break;
+            case template:
+                count = _vmTemplateDao.countTemplatesForAccount(accountId);
+                break;
             }
+            _resourceCountDao.setAccountCount(accountId, type, (count == null) ? 0 : count.longValue());
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to update resource count for account with Id" + accountId);
+        } finally {
+            txn.commit();
         }
 
         return (count==null)?0:count.longValue();
     }
 
-    @Override
+    @Override @DB
     public long updateDomainResourceCount(long domainId, ResourceType type) {
         long count=0;
 
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
-                // for each child domain update the resource count
-                for (DomainVO domainChild : domainChildren) {
-                    long domainCount = updateDomainResourceCount(domainChild.getId(), type);
-                    count = count + domainCount; // add the child domain count to parent domain count
-                }
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        try {
+            //Lock all rows first so nobody else can read it 
+            Set<Long> rowIdsToLock = _resourceCountDao.listRowsToUpdateForDomain(domainId, type);
+            SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
+            sc.setParameters("id", rowIdsToLock.toArray());
+            _resourceCountDao.lockRows(sc, null, true);
+            
+            List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
+            // for each child domain update the resource count
+            for (DomainVO domainChild : domainChildren) {
+                long domainCount = updateDomainResourceCount(domainChild.getId(), type);
+                count = count + domainCount; // add the child domain count to parent domain count
+            }
 
-                List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
-                for (AccountVO account : accounts) {
-                    long accountCount = updateAccountResourceCount(account.getId(), type);
-                    count = count + accountCount; // add account's resource count to parent domain count
-                }
+            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
+            for (AccountVO account : accounts) {
+                long accountCount = updateAccountResourceCount(account.getId(), type);
+                count = count + accountCount; // add account's resource count to parent domain count
+            }
 
-                _resourceCountDao.setDomainCount(domainId, type, count);
-           } catch (Exception e) {
-               throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
-           } finally {
-              m_resourceCountLock.unlock();
-           }
+            _resourceCountDao.setDomainCount(domainId, type, count);
+       } catch (Exception e) {
+           throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
+       } finally {
+          txn.commit();
        }
 
        return count;
@@ -1274,7 +1266,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                         + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
 
+        //Create account itself
         if (accountId == null) {
             if ((userType < Account.ACCOUNT_TYPE_NORMAL) || (userType > Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
                 throw new InvalidParameterValueException("Invalid account type " + userType + " given; unable to create user");
@@ -1330,10 +1326,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
         }
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        //Create resource count records for the account
+        _resourceCountDao.createResourceCounts(accountId, ResourceLimit.OwnerType.Account);
+        
+        //Create a user
         UserVO dbUser = _userDao.persist(user);
+        
+        //Create default security group
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
+        
         txn.commit();
 
         if (!user.getPassword().equals(dbUser.getPassword())) {
@@ -2034,16 +2035,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	
 	@Override
 	public Set<Long> getDomainParentIds(long domainId) {
-	    Set<Long> parentDomains = new HashSet<Long>();
-	    Domain domain = _domainDao.findById(domainId);
-	    parentDomains.add(domain.getId());
-	    
-        while (domain.getParent() != null) {
-            domain = _domainDao.findById(domain.getParent());
-            parentDomains.add(domain.getId());
-        }
-        
-        return parentDomains;
+	   return _domainDao.getDomainParentIds(domainId);
 	}
 	
 	@Override
@@ -2060,4 +2052,94 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	    
 	    return childDomains;
 	}
+	
+	@DB
+	public boolean updateResourceCount(long accountId, ResourceType type, boolean increment, long delta) {
+	    boolean result = true;
+	    try {
+	        Transaction txn = Transaction.currentTxn();
+	        txn.start();
+	        
+	        Set<Long> rowsToLock = _resourceCountDao.listAllRowsToUpdateForAccount(accountId, getAccount(accountId).getDomainId(), type);
+	        
+	        //Lock rows first
+	        SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
+	        sc.setParameters("id", rowsToLock.toArray());
+	        List<ResourceCountVO> rowsToUpdate = _resourceCountDao.lockRows(sc, null, true);    
+	        
+	        for (ResourceCountVO rowToUpdate : rowsToUpdate) {
+	            if (!_resourceCountDao.updateById(rowToUpdate.getId(), increment, delta)) {
+	                s_logger.trace("Unable to update resource count for the row " + rowToUpdate);
+	                result = false;
+	            }
+	        }
+	        
+	        txn.commit();
+	    } catch (Exception ex) {
+	        s_logger.error("Failed to update resource count for account id=" + accountId);
+	        result = false;
+	    }
+	    return result;
+	}
+	
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
+    @DB
+    public Domain createDomain(CreateDomainCmd cmd) {
+        String name = cmd.getDomainName();
+        Long parentId = cmd.getParentDomainId();
+        Long ownerId = UserContext.current().getCaller().getId();
+        Account caller = UserContext.current().getCaller();
+        String networkDomain = cmd.getNetworkDomain();
+
+        if (ownerId == null) {
+            ownerId = Long.valueOf(1);
+        }
+
+        if (parentId == null) {
+            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+        }
+
+        DomainVO parentDomain = _domainDao.findById(parentId);
+        if (parentDomain == null) {
+            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
+        }
+        
+        if (parentDomain.getState().equals(Domain.State.Inactive)) {
+            throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
+        }
+        
+        checkAccess(caller, parentDomain);
+
+        if (networkDomain != null) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        }
+
+        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+        sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
+        List<DomainVO> domains = _domainDao.search(sc, null);
+        if ((domains == null) || domains.isEmpty()) {
+            DomainVO domain = new DomainVO(name, ownerId, parentId, networkDomain);
+            try {
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                
+                domain = _domainDao.create(domain);
+                _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.OwnerType.Domain);
+                
+                txn.commit();
+                return domain;
+            } catch (IllegalArgumentException ex) {
+                s_logger.warn("Failed to create domain ", ex);
+                throw ex;
+            }
+        } else {
+            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
+        }
+    }
 }

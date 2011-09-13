@@ -1068,7 +1068,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         // Verify that max doesn't exceed domain and account snapshot limits
-        long accountLimit = _accountMgr.findCorrectResourceLimit(owner, ResourceType.snapshot);
+        long accountLimit = _accountMgr.findCorrectResourceLimit(owner.getId(), ResourceType.snapshot);
         long domainLimit = _accountMgr.findCorrectResourceLimit(domain, ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
         if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {

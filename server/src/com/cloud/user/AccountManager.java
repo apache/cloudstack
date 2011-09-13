@@ -49,11 +49,11 @@ public interface AccountManager extends AccountService {
 	/**
 	 * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check
 	 * the account's parent domain, and if that limit is also infinite, will return the ROOT domain's limit.
-	 * @param account
+	 * @param accountId
 	 * @param type
 	 * @return resource limit
 	 */
-    public long findCorrectResourceLimit(AccountVO account, ResourceType type);
+    public long findCorrectResourceLimit(long accountId, ResourceType type);
 
     /**
      * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check

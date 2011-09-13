@@ -43,7 +43,8 @@ public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_SSVM = 18;
     public static final short ALERT_TYPE_USAGE_SERVER_RESULT = 19; // Usage job result
     public static final short ALERT_TYPE_STORAGE_DELETE = 20;
-    public static final short ALERT_TYPE_USAGE_SANITY_RESULT = 21;
+    public static final short ALERT_TYPE_UPDATE_RESOURCE_COUNT = 21; // Generated when we fail to update the resource count
+    public static final short ALERT_TYPE_USAGE_SANITY_RESULT = 22;
 
     void clearAlert(short alertType, long dataCenterId, long podId);
 

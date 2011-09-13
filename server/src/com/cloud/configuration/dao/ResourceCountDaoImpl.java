@@ -18,18 +18,29 @@
 
 package com.cloud.configuration.dao;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.ejb.Local;
 
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCountVO;
+import com.cloud.configuration.ResourceLimit;
+import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
 @Local(value={ResourceCountDao.class})
 public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> implements ResourceCountDao {
 	private SearchBuilder<ResourceCountVO> IdTypeSearch;
 	private SearchBuilder<ResourceCountVO> DomainIdTypeSearch;
+	
+	protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
 
 	public ResourceCountDaoImpl() {
 		IdTypeSearch = createSearchBuilder();
@@ -43,11 +54,8 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 		DomainIdTypeSearch.done();
 	}
 
-	private ResourceCountVO findByAccountIdAndType(long accountId, ResourceType type) {
-		if (type == null) {
-			return null;
-		}
-
+	@Override
+	public ResourceCountVO findByAccountIdAndType(long accountId, ResourceType type) {
 		SearchCriteria<ResourceCountVO> sc = IdTypeSearch.create();
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("type", type);
@@ -55,11 +63,8 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 		return findOneIncludingRemovedBy(sc);
 	}
 
-	private ResourceCountVO findByDomainIdAndType(long domainId, ResourceType type) {
-		if (type == null) {
-			return null;
-		}
-
+	@Override
+	public ResourceCountVO findByDomainIdAndType(long domainId, ResourceType type) {
 		SearchCriteria<ResourceCountVO> sc = DomainIdTypeSearch.create();
 		sc.setParameters("domainId", domainId);
 		sc.setParameters("type", type);
@@ -70,59 +75,29 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 	@Override
 	public long getAccountCount(long accountId, ResourceType type) {
 		ResourceCountVO resourceCountVO = findByAccountIdAndType(accountId, type);
-		return (resourceCountVO != null) ? resourceCountVO.getCount() : 0;
+		return resourceCountVO.getCount();
 	}
 
 	@Override
 	public long getDomainCount(long domainId, ResourceType type) {
 		ResourceCountVO resourceCountVO = findByDomainIdAndType(domainId, type);
-		return (resourceCountVO != null) ? resourceCountVO.getCount() : 0;
+		return resourceCountVO.getCount();
 	}
 
 	@Override
 	public void setAccountCount(long accountId, ResourceType type, long count) {
 		ResourceCountVO resourceCountVO = findByAccountIdAndType(accountId, type);
-		if (resourceCountVO == null) {
-			if (count != 0) {
-			    resourceCountVO = new ResourceCountVO(accountId, null, type, count);
-			    persist(resourceCountVO);
-			}
-		} else {
-			if (count != resourceCountVO.getCount()) {
-				resourceCountVO.setCount(count);
-				update(resourceCountVO.getId(), resourceCountVO);
-			}
+		if (count != resourceCountVO.getCount()) {
+			resourceCountVO.setCount(count);
+			update(resourceCountVO.getId(), resourceCountVO);
 		}
 	}
 
 	@Override
 	public void setDomainCount(long domainId, ResourceType type, long count) {
 		ResourceCountVO resourceCountVO = findByDomainIdAndType(domainId, type);
-		if (resourceCountVO == null) {
-			if (count != 0) {
-			    resourceCountVO = new ResourceCountVO(null, domainId, type, count);
-			    persist(resourceCountVO);
-		    }
-		} else {
-			if (count != resourceCountVO.getCount()) {
-				resourceCountVO.setCount(count);
-				update(resourceCountVO.getId(), resourceCountVO);
-			}
-		}
-	}
-
-	@Override
-	public void updateAccountCount(long accountId, ResourceType type, boolean increment, long delta) {
-        delta = increment ? delta : delta * -1;
-
-        ResourceCountVO resourceCountVO = findByAccountIdAndType(accountId, type);
-
-		if (resourceCountVO == null) {
-			resourceCountVO = new ResourceCountVO(accountId, null, type, 0);
-			resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-			persist(resourceCountVO);
-		} else {
-			resourceCountVO.setCount(resourceCountVO.getCount() + delta);
+		if (count != resourceCountVO.getCount()) {
+			resourceCountVO.setCount(count);
 			update(resourceCountVO.getId(), resourceCountVO);
 		}
 	}
@@ -132,13 +107,63 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 		delta = increment ? delta : delta * -1;
 
         ResourceCountVO resourceCountVO = findByDomainIdAndType(domainId, type);
-		if (resourceCountVO == null) {
-			resourceCountVO = new ResourceCountVO(null, domainId, type, 0);
-			resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-			persist(resourceCountVO);
-		} else {
-			resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-			update(resourceCountVO.getId(), resourceCountVO);	
-		}
+		resourceCountVO.setCount(resourceCountVO.getCount() + delta);
+		update(resourceCountVO.getId(), resourceCountVO);	
 	}
+	
+	@Override
+	public boolean updateById(long id, boolean increment, long delta) {
+	    delta = increment ? delta : delta * -1;
+	    
+	    ResourceCountVO resourceCountVO = findById(id);
+	    resourceCountVO.setCount(resourceCountVO.getCount() + delta);
+	    return update(resourceCountVO.getId(), resourceCountVO);
+	}
+	
+	@Override
+	public Set<Long> listAllRowsToUpdateForAccount(long accountId, long domainId, ResourceType type) {
+	    Set<Long> rowIds = new HashSet<Long>();
+	    //Create resource count records if not exist
+        //1) for account
+        ResourceCountVO accountCountRecord = findByAccountIdAndType(accountId, type);
+        rowIds.add(accountCountRecord.getId());
+        
+        //2) for domain(s)
+        rowIds.addAll(listRowsToUpdateForDomain(domainId, type));
+        
+        return rowIds;
+	}
+	
+	@Override
+	public Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type) {
+	    Set<Long> rowIds = new HashSet<Long>();
+	    Set<Long> domainIdsToUpdate = _domainDao.getDomainParentIds(domainId);
+        for (Long domainIdToUpdate : domainIdsToUpdate) {
+            ResourceCountVO domainCountRecord = findByDomainIdAndType(domainIdToUpdate, type);
+            rowIds.add(domainCountRecord.getId());
+        }
+        return rowIds;
+	}
+	
+	@Override @DB
+    public void createResourceCounts(long ownerId, ResourceLimit.OwnerType ownerType){
+        Long accountId = null;
+        Long domainId = null;
+        if (ownerType == ResourceLimit.OwnerType.Account) {
+            accountId = ownerId;
+        } else if (ownerType == ResourceLimit.OwnerType.Domain) {
+            domainId = ownerId;
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
+        for (ResourceType resourceType : resourceTypes) {
+            ResourceCountVO resourceCountVO = new ResourceCountVO(accountId, domainId, resourceType, 0);
+            persist(resourceCountVO);
+        }
+        
+        txn.commit();
+    }
 }

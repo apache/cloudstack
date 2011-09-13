@@ -23,6 +23,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -99,7 +100,17 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 				return validType;
 			}
 		}
-		
 		return null;
+	}
+	
+	@Override
+	public ResourceLimitVO findByOwnerIdAndType(long ownerId, OwnerType ownerType, ResourceCount.ResourceType type) {
+	    if (ownerType == OwnerType.Account) {
+            return findByAccountIdAndType(ownerId, type);
+        } else if (ownerType == OwnerType.Domain) {
+            return findByDomainIdAndType(ownerId, type);
+        } else {
+            return null;
+        }
 	}
 }

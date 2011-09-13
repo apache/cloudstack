@@ -21,7 +21,9 @@ package com.cloud.domain.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -255,5 +257,19 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         SearchCriteria<DomainVO> sc = AllFieldsSearch.create();
         sc.setParameters("state", Domain.State.Inactive);
         return listBy(sc);
+    }
+    
+    @Override
+    public Set<Long> getDomainParentIds(long domainId) {
+        Set<Long> parentDomains = new HashSet<Long>();
+        Domain domain = findById(domainId);
+        parentDomains.add(domain.getId());
+        
+        while (domain.getParent() != null) {
+            domain = findById(domain.getParent());
+            parentDomains.add(domain.getId());
+        }
+        
+        return parentDomains;
     }
 }

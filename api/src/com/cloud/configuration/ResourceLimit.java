@@ -19,6 +19,8 @@
 package com.cloud.configuration;
 
 public interface ResourceLimit {
+    
+    public static enum OwnerType {Account, Domain}
 	
 	public Long getId();
 	

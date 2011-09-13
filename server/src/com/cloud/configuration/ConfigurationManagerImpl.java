@@ -117,7 +117,6 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -2050,7 +2049,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (forVirtualNetwork) {
             if (account != null) {
                 // verify resource limits
-                long ipResourceLimit = _accountMgr.findCorrectResourceLimit((AccountVO) account, ResourceType.public_ip);
+                long ipResourceLimit = _accountMgr.findCorrectResourceLimit(account.getId(), ResourceType.public_ip);
                 long accountIpRange = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);
