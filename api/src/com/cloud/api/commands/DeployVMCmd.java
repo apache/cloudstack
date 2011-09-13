@@ -373,6 +373,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
                 }
             }
+            
+            if (getHypervisor() == HypervisorType.None) {
+                throw new InvalidParameterValueException("Unable to deploy vm with Hypervisor None");
+            }
 
             UserVm vm = null;
             if (getHypervisor() == HypervisorType.BareMetal) {
