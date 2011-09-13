@@ -49,6 +49,11 @@ CREATE TABLE  `cloud_usage`.`cloud_usage` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__domain_id`(`domain_id`);
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__start_date`(`start_date`);
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD INDEX `i_cloud_usage__end_date`(`end_date`);
+
 CREATE TABLE  `cloud_usage`.`usage_vm_instance` (
   `usage_type` int(1) unsigned,
   `zone_id` bigint unsigned NOT NULL,
@@ -61,6 +66,10 @@ CREATE TABLE  `cloud_usage`.`usage_vm_instance` (
   `start_date` DATETIME NOT NULL,
   `end_date` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__start_date`(`start_date`);
+ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__end_date`(`end_date`);
 
 CREATE TABLE  `cloud_usage`.`usage_network` (
   `account_id` bigint unsigned NOT NULL,
@@ -89,6 +98,10 @@ CREATE TABLE  `cloud_usage`.`usage_ip_address` (
   `released` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__assigned`(`assigned`);
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__released`(`released`);
+
 CREATE TABLE  `cloud_usage`.`usage_job` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host` varchar(255),
@@ -105,6 +118,8 @@ CREATE TABLE  `cloud_usage`.`usage_job` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud_usage`.`usage_job` ADD INDEX `i_usage_job__end_millis`(`end_millis`);
+
 CREATE TABLE  `cloud_usage`.`account` (
   `id` bigint unsigned NOT NULL,
   `account_name` varchar(100) COMMENT 'an account name set by the creator of the account, defaults to username for single accounts',
@@ -116,6 +131,8 @@ CREATE TABLE  `cloud_usage`.`account` (
   `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`account` ADD INDEX `i_account__removed`(`removed`);
 
 CREATE TABLE  `cloud_usage`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL,
@@ -145,6 +162,10 @@ CREATE TABLE  `cloud_usage`.`usage_volume` (
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__deleted`(`deleted`);
+
 CREATE TABLE  `cloud_usage`.`usage_storage` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
@@ -156,6 +177,10 @@ CREATE TABLE  `cloud_usage`.`usage_storage` (
   `created` DATETIME NOT NULL,
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__deleted`(`deleted`);
 
 CREATE TABLE  `cloud_usage`.`usage_security_group` (
   `id` bigint unsigned NOT NULL,
@@ -177,6 +202,10 @@ CREATE TABLE  `cloud_usage`.`usage_load_balancer_policy` (
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__deleted`(`deleted`);
+
 CREATE TABLE  `cloud_usage`.`usage_event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` varchar(32) NOT NULL,
@@ -193,6 +222,8 @@ CREATE TABLE  `cloud_usage`.`usage_event` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud_usage`.`usage_event` ADD INDEX `i_usage_event__created`(`created`);
+
 CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
   `id` bigint unsigned NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
@@ -201,6 +232,10 @@ CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
   `created` DATETIME NOT NULL,
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__deleted`(`deleted`);
 
 CREATE TABLE  `cloud_usage`.`usage_network_offering` (
   `zone_id` bigint unsigned NOT NULL,
@@ -212,6 +247,10 @@ CREATE TABLE  `cloud_usage`.`usage_network_offering` (
   `created` DATETIME NOT NULL,
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__deleted`(`deleted`);
 
 CREATE TABLE `cloud`.`netapp_volume` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
