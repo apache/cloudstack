@@ -20,3 +20,6 @@ update `cloud`.`vm_template` set hypervisor_type='XenServer' where unique_name='
 
 ALTER TABLE `cloud`.`host` MODIFY COLUMN  `storage_ip_address` char(40);
 
+ALTER TABLE `cloud`.`resource_count` ADD UNIQUE `i_resource_count__type_accountId`(`type`, `account_id`);
+ALTER TABLE `cloud`.`resource_count` ADD UNIQUE `i_resource_count__type_domaintId`(`type`, `domain_id`);
+
