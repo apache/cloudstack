@@ -10,7 +10,7 @@ failed() {
   echo "Installation failed"
   exit $1
 }
-
+#set -x
 mflag=
 fflag=
 ext="vhd"
@@ -60,18 +60,22 @@ then
   failed 3
 fi
 
+dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
 if [ "$hyper" == "kvm" ]
 then
    ext="qcow2"
-   templateId=3
+   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"KVM\" and removed is null"`)
 elif [ "$hyper" == "xenserver" ]
 then
    ext="vhd"
-   templateId=${templateId:-1}
+   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"XenServer\" and removed is null"`)
 elif [ "$hyper" == "vmware" ]
 then
    ext="ova"
-   templateId=8
+   templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"VMware\" and removed is null"`)
 else
    usage
    failed 2
