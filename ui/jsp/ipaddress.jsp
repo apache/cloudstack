@@ -59,7 +59,7 @@ dictionary = {
 		<div id="tab_container">
 	        <div class="grid_container">
 	        	<div class="grid_header">
-	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
+	            	<div id="grid_header_title" class="grid_header_title" style="font-size:10px"></div>
 	                <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
@@ -234,31 +234,31 @@ dictionary = {
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">	                
 	                <div class="grid_header_cell" style="padding:1px; width: 30%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.cidr.list"/></div>
 	                </div>	
 	                <div class="grid_header_cell" style="padding:1px; width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.protocol"/></div>
 	                </div>	 
 	                <div class="grid_header_cell" style="padding:1px; width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.start.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="padding:1px; width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.end.port"/></div>
 	                </div>	              	                
 	                <div class="grid_header_cell" style="padding:1px; width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="ICMP.type"/></div>
 	                </div>
 	                 <div class="grid_header_cell" style="padding:1px; width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="ICMP.code"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="padding:1px; width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
@@ -313,23 +313,23 @@ dictionary = {
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.start.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.end.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.protocol"/></div>
 	                </div>	                
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.state"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
@@ -374,27 +374,27 @@ dictionary = {
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">	                          
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.public.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.private.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.protocol"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 30%;  border: none;">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.instance"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.state"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
@@ -455,27 +455,27 @@ dictionary = {
 	            <div class="grid_header">	            
 	                          
 	                <div class="grid_header_cell" style="width: 25%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.name"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.public.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.private.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.algorithm"/></div>
 	                </div>	                
 	                <div class="grid_header_cell" style="width: 10%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.state"/></div>
 	                </div>	                
 	                <div class="grid_header_cell" style="width: 15%; ">
-	                    <div class="grid_header_title">
+	                    <div class="grid_header_title" style="font-size:10px">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
@@ -533,7 +533,7 @@ dictionary = {
 			</div>
 			<div class="grid_container">
 	        	<div class="grid_header">
-	            	<div id="grid_header_title" class="grid_header_title">VPN Users</div>
+	            	<div id="grid_header_title" class="grid_header_title" style="font-size:10px">VPN Users</div>
 	                <div class="grid_actionbox" id="vpn_action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="vpn_action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
