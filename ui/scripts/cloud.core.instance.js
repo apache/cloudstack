@@ -103,21 +103,16 @@ function instanceBuildSubMenu2(label, commandString) {
 }
 
 var $doTemplateNo, $doTemplateCustom,$doTemplateExisting, $soTemplate;
-var init = false;
 var $selectedVmWizardTemplate;	
 var osTypeMap = {};
 function afterLoadInstanceJSP() {
 	$("#right_panel_content").data("clearRightPanelFn", vmClearRightPanel);
-	
-	if (!init) {
-		//initialize VM Wizard  
-		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
-		$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
-		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
-		$soTemplate = $("#vm_popup_service_offering_template");		
-		init = true;
-	}
-	
+			
+	$doTemplateNo = $("#vm_popup_disk_offering_template_no");
+	$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
+	$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
+	$soTemplate = $("#vm_popup_service_offering_template");		
+			
 	initVMWizard();
 	bindStartVMButton();    
 	bindStopVMButton(); 
