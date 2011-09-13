@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -37,13 +37,14 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
-public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBalancer */{
+public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements LoadBalancer */{
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
@@ -149,16 +150,48 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCmd  /*implements LoadBa
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {        
         
+        UserContext callerContext = UserContext.current();
+        boolean success = true;
+        LoadBalancer rule = null;
+        try {
+            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+            
+            if (getOpenFirewall()) {
+                success = success && _firewallService.applyFirewallRules(publicIpId, callerContext.getCaller());
+            }
+
+            // State might be different after the rule is applied, so get new object here
+            rule = _entityMgr.findById(LoadBalancer.class, getEntityId());
+            LoadBalancerResponse lbResponse = new LoadBalancerResponse(); 
+            if (rule != null) {
+                lbResponse = _responseGenerator.createLoadBalancerResponse(rule);
+                setResponseObject(lbResponse);
+            }
+            lbResponse.setResponseName(getCommandName());
+        } finally {
+            if (!success || rule == null) {
+                // no need to apply the rule on the backend as it exists in the db only
+                _lbService.deleteLoadBalancerRule(getEntityId(), false);
+                
+                if (getOpenFirewall()) {
+                    _firewallService.revokeRelatedFirewallRule(getEntityId(), true);
+                }
+                
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create load balancer rule");
+            }
+        }
+    }
+    
+    
+    @Override
+    public void create() {
         //cidr list parameter is deprecated
         if (cidrlist != null) {
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
         }
-        
         try {
             LoadBalancer result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
-            LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            this.setEntityId(result.getId());
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());

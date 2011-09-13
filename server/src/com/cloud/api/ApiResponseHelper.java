@@ -981,7 +981,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule) {
+    public FirewallRuleResponse createPortForwardingRuleResponse(PortForwardingRule fwRule) {
         FirewallRuleResponse response = new FirewallRuleResponse();
         response.setId(fwRule.getId());
         response.setPrivateStartPort(Integer.toString(fwRule.getDestinationPortStart()));
