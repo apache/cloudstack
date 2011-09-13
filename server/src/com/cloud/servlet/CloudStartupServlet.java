@@ -18,6 +18,8 @@
 
 package com.cloud.servlet;
 
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
@@ -29,10 +31,6 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.SystemIntegrityChecker;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 
 public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
 	public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());

@@ -18,6 +18,7 @@
 
 package com.cloud.configuration.dao;
 
+import java.util.List;
 import java.util.Set;
 
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -80,4 +81,11 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 
     void createResourceCounts(long ownerId, OwnerType ownerType);
     
+    List<ResourceCountVO> listByDomainId(long domainId);
+    
+    List<ResourceCountVO> listByAccountId(long accountId);
+    
+    List<ResourceCountVO> listDomainCounts();
+    
+    List<ResourceCountVO> listAccountCounts();    
 }

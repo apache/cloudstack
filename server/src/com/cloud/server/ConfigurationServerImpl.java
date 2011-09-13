@@ -33,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -47,6 +48,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
+import com.cloud.configuration.ResourceCount;
+import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -249,6 +253,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             _configDao.update("init", "true");
 	        txn.commit();
 		}
+		
+		updateResourceCount();
 		
 		// keystore for SSL/TLS connection
 		updateSSLKeystore();
@@ -980,4 +986,56 @@ public class ConfigurationServerImpl implements ConfigurationServer {
        txn.commit();
     }
 
+    private void updateResourceCount() {
+        ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
+        List<AccountVO> accounts = _accountDao.listAllIncludingRemoved();
+        List<DomainVO> domains = _domainDao.listAllIncludingRemoved();
+        List<ResourceCountVO> domainResourceCount = _resourceCountDao.listDomainCounts();
+        List<ResourceCountVO> accountResourceCount = _resourceCountDao.listAccountCounts();
+        
+        int resourceCount = resourceTypes.length;
+        
+        if ((domainResourceCount.size() < resourceCount * domains.size())) {
+            s_logger.debug("resource_count table has records missing for some domains...going to insert them");
+            for (DomainVO domain : domains) {
+                List<ResourceCountVO> domainCounts = _resourceCountDao.listByDomainId(domain.getId());
+                List<String> domainCountStr = new ArrayList<String>();
+                for (ResourceCountVO domainCount : domainCounts) {
+                    domainCountStr.add(domainCount.getType().toString());
+                }
+
+                if (domainCountStr.size() < resourceCount) {
+                    for (ResourceType resourceType : resourceTypes) {
+                        if (!domainCountStr.contains(resourceType.toString())) {
+                            ResourceCountVO resourceCountVO = new ResourceCountVO(null, domain.getId(), resourceType, 0);
+                            s_logger.debug("Inserting resource count of type " + resourceType + " for domain id=" + domain.getId());
+                            _resourceCountDao.persist(resourceCountVO);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if ((accountResourceCount.size() < resourceTypes.length * accounts.size())) {
+            s_logger.debug("resource_count table has records missing for some accounts...going to insert them");
+            for (AccountVO account : accounts) {
+                List<ResourceCountVO> accountCounts = _resourceCountDao.listByAccountId(account.getId());
+                List<String> accountCountStr = new ArrayList<String>();
+                for (ResourceCountVO accountCount : accountCounts) {
+                    accountCountStr.add(accountCount.getType().toString());
+                }
+                
+                if (accountCountStr.size() < resourceCount) {
+                    for (ResourceType resourceType : resourceTypes) {
+                        if (!accountCountStr.contains(resourceType.toString())) {
+                            ResourceCountVO resourceCountVO = new ResourceCountVO(account.getId(), null, resourceType, 0);
+                            s_logger.debug("Inserting resource count of type " + resourceType + " for account id=" + account.getId());
+                            _resourceCountDao.persist(resourceCountVO);
+                        }
+                    }
+                }
+            }
+            
+        }
+    }
 }
