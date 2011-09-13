@@ -185,11 +185,11 @@ public class VirtualRoutingResource implements Manager {
             command.add("-r ", rule.getDstIp());
             command.add("-d ", rule.getStringDstPortRange());
             result = command.execute();
-            if (result == null || result.isEmpty()) {
+            if (result == null) {
+                results[i++] = null;
+            } else {
                 results[i++] = "Failed";
                 endResult = false;
-            } else {
-                results[i++] = null;
             }
         }
 
@@ -219,11 +219,11 @@ public class VirtualRoutingResource implements Manager {
             command.add(" -G ") ;
             
             result = command.execute();
-            if (result == null || result.isEmpty()) {
+            if (result == null) {
+                results[i++] = null;
+            } else {
                 results[i++] = "Failed";
                 endResult = false;
-            } else {
-                results[i++] = null;
             }
         }
 
