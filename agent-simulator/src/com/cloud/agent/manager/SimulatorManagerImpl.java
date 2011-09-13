@@ -90,7 +90,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
         try {
             Connection conn = Transaction.getStandaloneConnectionWithException();
             conn.setAutoCommit(true);
-            _concierge = new ConnectionConcierge("AgentMonitor", conn, false);
+            _concierge = new ConnectionConcierge("SimulatorConnection", conn, true);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to get a db connection", e);
         }
@@ -186,7 +186,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
                 return _mockVmMgr.WatchConsoleProxyLoad((WatchConsoleProxyLoadCommand)cmd);
             } else if (cmd instanceof SecurityIngressRulesCmd) {
-                return _mockVmMgr.AddSecurityIngressRules((SecurityIngressRulesCmd)cmd);
+                return _mockVmMgr.AddSecurityIngressRules((SecurityIngressRulesCmd)cmd, hostGuid);
             } else if (cmd instanceof SavePasswordCommand) {
                 return _mockVmMgr.SavePassword((SavePasswordCommand)cmd);
             } else if (cmd instanceof PrimaryStorageDownloadCommand) {

@@ -352,7 +352,7 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd) {
+    public SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, String hostGuid) {
         MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
         if (vm == null) {
             return new SecurityIngressRuleAnswer(cmd, false, "cant' find the vm: " + cmd.getVmName());
@@ -364,8 +364,8 @@ public class MockVmManagerImpl implements MockVmManager {
             rules.setRuleSet(cmd.stringifyRules());
             rules.setSeqNum(cmd.getSeqNum());
             rules.setSignature(cmd.getSignature());
-            rules.setVmId(vm.getId());
-            rules.setHostId(vm.getHostId());
+            rules.setVmId(cmd.getVmId());
+            rules.setHostId(hostGuid);
 
             _mockSecurityDao.persist(rules);
         } else if (update){
@@ -373,7 +373,7 @@ public class MockVmManagerImpl implements MockVmManager {
             rules.setSignature(cmd.getSignature());
             rules.setRuleSet(cmd.stringifyRules());
             rules.setVmId(cmd.getVmId());
-            rules.setHostId(vm.getHostId());
+            rules.setHostId(hostGuid);
             _mockSecurityDao.update(rules.getId(), rules);
         }
         

@@ -23,13 +23,13 @@ public class MockSecurityRulesVO {
     private String signature;
     
     @Column(name="seqnum")
-    private Long seqnum;
+    private Long seqNum;
     
     @Column(name="ruleset")
-    private String ruleset;
+    private String ruleSet;
     
     @Column(name="hostid")
-    private Long hostId;
+    private String hostId;
     
     @Column(name="vmname")
     public String vmName;
@@ -42,11 +42,11 @@ public class MockSecurityRulesVO {
         this.vmName = vmName;
     }
     
-    public Long getHostId() {
+    public String getHostId() {
         return this.hostId;
     }
     
-    public void setHostId(Long hostId) {
+    public void setHostId(String hostId) {
         this.hostId = hostId;
     }
     
@@ -71,18 +71,18 @@ public class MockSecurityRulesVO {
     }
     
     public Long getSeqNum() {
-        return this.seqnum;
+        return this.seqNum;
     }
     
     public void setSeqNum(Long seqNum) {
-        this.seqnum = seqNum;
+        this.seqNum = seqNum;
     }
     
     public String getRuleSet() {
-        return this.ruleset;
+        return this.ruleSet;
     }
     
     public void setRuleSet(String ruleset) {
-        this.ruleset = ruleset;
+        this.ruleSet = ruleset;
     }
 }

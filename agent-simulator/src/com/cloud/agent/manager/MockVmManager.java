@@ -20,6 +20,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
@@ -79,8 +80,8 @@ public interface MockVmManager extends Manager {
     Answer CheckConsoleProxyLoad(CheckConsoleProxyLoadCommand cmd);
     Answer WatchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd);
     
-    Answer AddSecurityIngressRules(SecurityIngressRulesCmd cmd);
     Answer SavePassword(SavePasswordCommand cmd);
     HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
+    SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, String hostGuid);
     
 }
