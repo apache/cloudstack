@@ -410,13 +410,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public void markHostsAsDisconnected(long msId) {
+    public void markHostsAsDisconnected(long msId, long lastPing) {
         SearchCriteria<HostVO> sc = MsStatusSearch.create();
         sc.setParameters("ms", msId);
         sc.setParameters("statuses", Status.ErrorInMaintenance, Status.Maintenance, Status.PrepareForMaintenance);
 
         HostVO host = createForUpdate();
-        host.setLastPinged((System.currentTimeMillis() >> 10) - (10 * 60));
+        host.setLastPinged(lastPing);
         host.setDisconnectedOn(new Date());
         UpdateBuilder ub = getUpdateBuilder(host);
         ub.set(host, "status", Status.Disconnected);
