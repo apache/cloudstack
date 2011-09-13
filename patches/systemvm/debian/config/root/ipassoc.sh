@@ -26,6 +26,8 @@
 #
 # @VERSION@
 
+source /root/func.sh
+
 lock="biglock"
 locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
