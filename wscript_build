@@ -378,6 +378,13 @@ def build_test():
 		bld.install_files('${SYSCONFDIR}/${PACKAGE}/test','conf/*', cwd = start_path)
 	Utils.pprint ("GREEN", "Installed files of test/")
 
+def build_usage_dir ():
+	start_path = bld.path.find_dir ("usage")
+	bld.install_files_filtered("${USAGESYSCONFDIR}","conf/*", cwd = start_path)
+	bld.symlink_as("${USAGESYSCONFDIR}/db.properties", \
+			Utils.subst_vars("${MSCONF}/db.properties",bld.env))
+	Utils.pprint ("GREEN", "Installed files of usage/")
+
 
 
 # Get started to execute here
@@ -402,6 +409,7 @@ build_plugins ()
 build_xml_api_description ()
 build_ovm ()
 build_test()
+build_usage_dir()
 
 # ====================== Magic! =========================================
 bld.use_the_magic()

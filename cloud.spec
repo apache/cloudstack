@@ -595,13 +595,13 @@ fi
 
 %files usage
 %defattr(0644,root,root,0775)
-#%{_javadir}/%{name}-usage.jar
+%{_javadir}/%{name}-usage.jar
 %attr(0755,root,root) %{_initrddir}/%{name}-usage
 %attr(0755,root,root) %{_libexecdir}/usage-runner
-#%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
-#%{_sysconfdir}/%{name}/usage/usage-components.xml
-#%config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
-#%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
+%{_sysconfdir}/%{name}/usage/usage-components.xml
+%config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
+%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
 
 %changelog
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
