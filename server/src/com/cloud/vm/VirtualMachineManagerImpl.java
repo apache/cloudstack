@@ -1579,7 +1579,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         	
         	if(serverState == State.Running) {
                 try {
-	        		if(hostId != vm.getHostId()) {
+                	//
+                	// we had a bug that sometimes VM may be at Running State but host_id is null, we will cover it here.
+                	// means that when CloudStack DB lost of host information, we will heal it with the info reported from host
+                	//
+	        		if(vm.getHostId() == null || hostId != vm.getHostId()) {
 	                    if (s_logger.isDebugEnabled()) {
 	                        s_logger.debug("detected host change when VM " + vm + " is at running state, VM could be live-migrated externally from host " 
 	                        	+ vm.getHostId() + " to host " + hostId);

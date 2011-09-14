@@ -53,7 +53,6 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
-import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.resource.SshHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -284,7 +283,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
     @Override
     public String composeWorkerName() {
-        return "cloud.worker." + _clusterMgr.getManagementNodeId() + "." + _clusterMgr.getCurrentRunId() + "." + UUID.randomUUID().toString();
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     @Override

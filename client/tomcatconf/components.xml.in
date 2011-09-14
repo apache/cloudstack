@@ -73,10 +73,12 @@
             <adapter name="PingInvestigator" class="com.cloud.ha.UserVmDomRInvestigator"/>
             <adapter name="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator"/>
 			<adapter name="ManagementIPSysVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator"/>
+            <adapter name="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator"/>
         </adapters>
         <adapters key="com.cloud.ha.FenceBuilder">
             <adapter name="XenServerFenceBuilder" class="com.cloud.ha.XenServerFencer"/>
             <adapter name="KVMFenceBuilder" class="com.cloud.ha.KVMFencer"/>
+            <adapter name="VmwareFenceBuilder" class="com.cloud.ha.VmwareFencer"/>
         </adapters>
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
