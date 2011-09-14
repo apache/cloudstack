@@ -19,10 +19,13 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -37,6 +40,8 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
     @Inject HostDao _hostDao;
     @Inject ClusterDao _clusterDao;
     @Inject ResourceManager _resourceMgr;
+    @Inject StoragePoolHostDao _poolHostDao;
+    @Inject StoragePoolDao _poolDao;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -106,16 +111,6 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
         }
         
         return clusterName;
-    
-        
-        /**
-         * right now let's use "ocfs2" that is default cluster name of OVM OCFS2 service.
-         * Using another name is fine but requires extra effort to modify OVM's "utils/config_o2cb.sh",
-         * currently it doesn't receive parameter specifying which cluster to start.
-         * And I don't see the benefit of a cluster name rather than "ocfs2"
-         */
-        
-        //return "ocfs2";
     }
     
     @Override
@@ -164,14 +159,30 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
     @Override
     public void processDeletHostEventAfter(HostVO host) {
         String errMsg = String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId());
-        try {
-            if (!prepareNodes(host.getClusterId())) {
-                s_logger.warn(errMsg);
-            }
-        } catch (Exception e) {
-            s_logger.error(errMsg, e);
+        
+        if (host.getHypervisorType() != HypervisorType.Ovm) {
+            return;
         }
         
+        boolean hasOcfs2 = false;
+        List<StoragePoolHostVO> poolRefs = _poolHostDao.listByHostId(host.getId());
+        for (StoragePoolHostVO poolRef : poolRefs) {
+            StoragePoolVO pool = _poolDao.findById(poolRef.getPoolId());
+            if (pool.getPoolType() == StoragePoolType.OCFS2) {
+                hasOcfs2 = true;
+                break;
+            }
+        }
+
+        if (hasOcfs2) {
+            try {
+                if (!prepareNodes(host.getClusterId())) {
+                    s_logger.warn(errMsg);
+                }
+            } catch (Exception e) {
+                s_logger.error(errMsg, e);
+            }
+        }
     }
 
     @Override
