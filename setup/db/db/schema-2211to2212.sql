@@ -14,6 +14,7 @@ ALTER TABLE `cloud`.`user_vm_details` ADD CONSTRAINT `fk_user_vm_details__vm_id`
 
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `is_priority_bumpup` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'if the priority has been bumped up';
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `stop_pending` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'if this router would be stopped after we can connect to it';
 
 DELETE FROM `cloud`.`configuration` where name='vmware.guest.nic.device.type';
 

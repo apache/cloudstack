@@ -64,6 +64,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Enumerated(EnumType.STRING)
     private RedundantState redundantState;
     
+    @Column(name="stop_pending")
+    boolean stopPending;
+    
     @Column(name="role")
     @Enumerated(EnumType.STRING)
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
@@ -80,13 +83,16 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             boolean isRedundantRouter,
             int priority,
             boolean isPriorityBumpUp,
-            RedundantState redundantState, boolean haEnabled) {
+            RedundantState redundantState,
+            boolean haEnabled,
+            boolean stopPending) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
         this.isPriorityBumpUp = isPriorityBumpUp;
+        this.stopPending = stopPending;
     }
     
     public DomainRouterVO(long id,
@@ -102,13 +108,16 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             int priority,
             boolean isPriorityBumpUp,
             RedundantState redundantState,
-            boolean haEnabled, VirtualMachine.Type vmType) {
+            boolean haEnabled,
+            boolean stopPending,
+            VirtualMachine.Type vmType) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
         this.isPriorityBumpUp = isPriorityBumpUp;
+        this.stopPending = stopPending;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -209,4 +218,13 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 	    this.isPriorityBumpUp = isPriorityBumpUp;
 	}
 
+    @Override
+	public boolean isStopPending() {
+	    return this.stopPending;
+ 	}
+
+    @Override
+	public void setStopPending(boolean stopPending) {
+	    this.stopPending = stopPending;
+	}
 }
