@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.rmi.RemoteException;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,8 +33,6 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
-import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
@@ -177,10 +174,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 				vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
 				if(vmMo == null) {
 					dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-					//restrict VM name to 32 chars, (else snapshot descriptor file name will be truncated to 32 chars of vm name)
+					// restrict VM name to 32 chars, (else snapshot descriptor file name will be truncated to 32 chars of vm name)
 					workerVMName = UUID.randomUUID().toString().replaceAll("-", "");
 
-					//attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
+					// attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
 					if (!hyperHost.createBlankVm(workerVMName, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier._otherGuest.toString(), morDs, false)) {
 						String msg = "Unable to create worker VM to execute BackupSnapshotCommand";
 						s_logger.error(msg);
@@ -189,10 +186,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 					vmMo = hyperHost.findVmOnHyperHost(workerVMName);
 					if (vmMo == null) {
 						throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
-						}
+					}
 					workerVm = vmMo;
 
-					//attach volume to worker VM
+					// attach volume to worker VM
 					String datastoreVolumePath = String.format("[%s] %s.vmdk", dsMo.getName(), volumePath);
 					vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
 					snapshotUUID = UUID.randomUUID().toString();
@@ -200,6 +197,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 						throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
 					}
 				}
+			} else {
+                if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + cmd.getSnapshotName(), false, false)) {
+                    throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
+                }
 			}
 
 			snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId,
@@ -226,7 +227,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		} finally {
 			try {
 	            if (workerVm != null) {
-	                //detach volume and destroy worker vm
+	                // detach volume and destroy worker vm
 	            	workerVm.moveAllVmDiskFiles(dsMo, "", false);
 	                workerVm.detachAllDisks();
 	                workerVm.destroy();
