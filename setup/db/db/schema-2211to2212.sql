@@ -12,6 +12,9 @@ INSERT IGNORE INTO configuration VALUES ('Premium', 'DEFAULT', 'management-serve
 ALTER IGNORE TABLE `cloud`.`user_vm_details` DROP FOREIGN KEY `fk_user_vm_details__vm_id`;
 ALTER TABLE `cloud`.`user_vm_details` ADD CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
 
+
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `is_priority_bumpup` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'if the priority has been bumped up';
+
 DELETE FROM `cloud`.`configuration` where name='vmware.guest.nic.device.type';
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'agent.lb.enabled', 'true', 'If agent load balancing enabled in cluster setup');
