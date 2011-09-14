@@ -2225,52 +2225,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String details = "ManageSnapshotCommand operation: " + snapshotOp + " Failed for snapshotId: " + snapshotId;
         String snapshotUUID = null;
 
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
-            if (vmMo == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find the owner VM for ManageSnapshotCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
-                }
-
-                vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
-            }
-
-            if (vmMo == null) {
-                // when no vm instance attached fake as if snapshot is taken, and handle actual taking snapshot as part of BackupSnapshotCommand
-                snapshotUUID = UUID.randomUUID().toString();
-                success = true;
-                details = null;
-            } else {
-                if (cmdSwitch.equals(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-                    snapshotUUID = UUID.randomUUID().toString();
-                    if (!vmMo.createSnapshot(snapshotUUID, "Snapshot taken for " + cmd.getSnapshotName(), false, false)) {
-                        throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
-                    }
-
-                    success = true;
-                    details = null;
-                } else if (cmd.getCommandSwitch().equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
-                    snapshotUUID = cmd.getSnapshotPath();
-
-                    if (!vmMo.removeSnapshot(snapshotUUID, false)) {
-                        throw new Exception("Failed to destroy snapshot: " + cmd.getSnapshotName());
-                    }
-
-                    success = true;
-                    details = null;
-                }                	
-            }
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            details = "ManageSnapshotCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
-            return new ManageSnapshotAnswer(cmd, snapshotId, snapshotUUID, false, details);
-        }
+        // snapshot operation (create or destroy) is handled inside BackupSnapshotCommand(), we just fake
+        // a success return here
+        snapshotUUID = UUID.randomUUID().toString();
+        success = true;
+        details = null;
 
         return new ManageSnapshotAnswer(cmd, snapshotId, snapshotUUID, success, details);
     }
