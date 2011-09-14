@@ -162,7 +162,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             }
             if (cleanup) {
                 /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
-                if (router.getState() != State.Stopped || _routerMgr.stopRouter(router.getId(), false) == null) {
+                if (router.getState() != State.Stopped && _routerMgr.stopRouter(router.getId(), false) == null) {
                     s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
                 }
                 if (_routerMgr.destroyRouter(router.getId()) == null) {
