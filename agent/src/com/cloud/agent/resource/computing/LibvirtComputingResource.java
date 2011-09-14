@@ -1418,12 +1418,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
     	StoragePool sp = null;
-    	StoragePoolInfo spi = null;
     	try {
     		Connect conn = LibvirtConnection.getConnection();
     		sp = _storageResource.getStoragePool(conn, cmd.getStorageId());
-    		spi = sp.getInfo();
-    		return new GetStorageStatsAnswer(cmd, spi.capacity, spi.allocation);
+    		LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, sp);
+    		String mountPoint = spd.getTargetPath();
+    		
+    		Script statsScript = new Script("/bin/bash", s_logger);
+    		statsScript.add("-c");
+    		statsScript.add("stats=$(df --total " + mountPoint + " |grep total|awk '{print $2,$3}');echo $stats");
+            final OutputInterpreter.OneLineParser statsParser = new OutputInterpreter.OneLineParser();
+            String result = statsScript.execute(statsParser);
+            if (result != null) {
+                return new GetStorageStatsAnswer(cmd, result);
+            }
+            String stats = statsParser.getLine();
+            if (stats != null && !stats.isEmpty()) {
+                String sizes[] = stats.trim().split(" ");
+                if (sizes.length != 2) {
+                    return new GetStorageStatsAnswer(cmd, "Failed to parse the result: " + stats); 
+                }
+                return new GetStorageStatsAnswer(cmd, Long.parseLong(sizes[0]) * 1024, Long.parseLong(sizes[1]) * 1024);
+            } else {
+                return new GetStorageStatsAnswer(cmd, "Failed to parse result from df");
+            }
     	} catch (LibvirtException e) {
     		return new GetStorageStatsAnswer(cmd, e.toString());
     	}
