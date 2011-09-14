@@ -187,6 +187,10 @@ public class TemplateLocation {
         return true;
     }
     
+    public void updateVirtualSize(long virtualSize) {
+        _props.setProperty("virtualsize", Long.toString(virtualSize));
+    }
+    
     protected boolean checkFormatValidity(FormatInfo info) {
         return (info.format != null && info.size > 0 && info.virtualSize > 0 && info.filename != null && _storage.exists(_templatePath + info.filename) && _storage.getSize(_templatePath + info.filename) == info.size);
     }

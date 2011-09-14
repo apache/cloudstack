@@ -650,6 +650,19 @@ public class DownloadManagerImpl implements DownloadManager {
             }
 
             TemplateInfo tInfo = loc.getTemplateInfo();
+            
+            if ((tInfo.size == tInfo.physicalSize) && (tInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
+            	try {
+            	    Processor processor = _processors.get("VMDK Processor");
+            	    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+            	    long vSize = vmdkProcessor.getTemplateVirtualSize(path, tInfo.installPath.substring(tInfo.installPath.lastIndexOf(File.separator) + 1));
+                	tInfo.size = vSize;
+                	loc.updateVirtualSize(vSize);
+                	loc.save();
+            	} catch (Exception e) {
+            		s_logger.error("Unable to get the virtual size of the template: " + tInfo.installPath + " due to " + e.getMessage());
+            	}
+            }
 
             result.put(tInfo.templateName, tInfo);
             s_logger.debug("Added template name: " + tInfo.templateName + ", path: " + tmplt);

@@ -76,9 +76,18 @@ public class VmdkProcessor implements Processor {
         info.format = ImageFormat.OVA;
         info.filename = templateName + "." + ImageFormat.OVA.getFileExtension();
         info.size = _storage.getSize(templateFilePath);
+        info.virtualSize = getTemplateVirtualSize(templatePath, info.filename);
 
+        // delete original OVA file
+        // templateFile.delete();
+        return info;
+    }
+
+    public long getTemplateVirtualSize(String templatePath, String templateName) throws InternalErrorException {
         // get the virtual size from the OVF file meta data
     	long virtualSize=0;
+        String templateFileFullPath = templatePath.endsWith(File.separator) ? templatePath : templatePath + File.separator;
+    	templateFileFullPath += templateName.endsWith(ImageFormat.OVA.getFileExtension()) ? templateName : templateName + "." + ImageFormat.OVA.getFileExtension();
         String ovfFileName = getOVFFilePath(templateFileFullPath);
         if(ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath; 
@@ -91,7 +100,7 @@ public class VmdkProcessor implements Processor {
         	Element disk  = (Element) ovfDoc.getElementsByTagName("Disk").item(0);
         	virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
         	String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-        	if (allocationUnits != null) {
+        	if ((virtualSize != 0) && (allocationUnits != null)) {
         		long units = 1;
         		if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
         			units = 1024;
@@ -101,20 +110,17 @@ public class VmdkProcessor implements Processor {
         			units = 1024 * 1024 * 1024;
         		}
         		virtualSize = virtualSize * units;
+        	} else {
+        		throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFileName);
         	}
+        	return virtualSize;
         } catch (Exception e) {
         	String msg = "Unable to parse OVF XML document to get the virtual disk size due to"+e;
         	s_logger.error(msg);
         	throw new InternalErrorException(msg);
         }
-
-        info.virtualSize = virtualSize;
-
-        // delete original OVA file
-        // templateFile.delete();
-        return info;
     }
-
+    
     private String getOVFFilePath(String srcOVAFileName) {
         File file = new File(srcOVAFileName);
         assert(_storage != null);
