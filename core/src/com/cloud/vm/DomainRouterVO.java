@@ -57,6 +57,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="priority")
     int priority;
     
+    @Column(name="is_priority_bumpup")
+    boolean isPriorityBumpUp;
+    
     @Column(name="redundant_state")
     @Enumerated(EnumType.STRING)
     private RedundantState redundantState;
@@ -76,13 +79,14 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long networkId,
             boolean isRedundantRouter,
             int priority,
-            RedundantState redundantState,
-            boolean haEnabled) {
+            boolean isPriorityBumpUp,
+            RedundantState redundantState, boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
+        this.isPriorityBumpUp = isPriorityBumpUp;
     }
     
     public DomainRouterVO(long id,
@@ -96,14 +100,15 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long networkId,
             boolean isRedundantRouter,
             int priority,
+            boolean isPriorityBumpUp,
             RedundantState redundantState,
-            boolean haEnabled,
-            VirtualMachine.Type vmType) {
+            boolean haEnabled, VirtualMachine.Type vmType) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
+        this.isPriorityBumpUp = isPriorityBumpUp;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -195,4 +200,13 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
+    
+	public boolean getIsPriorityBumpUp() {
+	    return this.isPriorityBumpUp;
+ 	}
+
+	public void setIsPriorityBumpUp(boolean isPriorityBumpUp) {
+	    this.isPriorityBumpUp = isPriorityBumpUp;
+	}
+
 }

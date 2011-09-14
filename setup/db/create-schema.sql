@@ -940,6 +940,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `network_id` bigint unsigned NOT NULL COMMENT 'network configuration that this domain router belongs to',
   `is_redundant_router` int(1) unsigned NOT NULL COMMENT 'if in redundant router mode',
   `priority` int(4) unsigned COMMENT 'priority of router in the redundant router mode',
+  `is_priority_bumpup` int(1) unsigned NOT NULL COMMENT 'if the priority has been bumped up',
   `redundant_state` varchar(64) NOT NULL COMMENT 'the state of redundant virtual router',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`),
