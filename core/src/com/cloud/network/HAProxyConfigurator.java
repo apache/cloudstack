@@ -196,7 +196,13 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	private String getBlankLine() {
 		return new String("\t ");
 	}
-
+	private String generateStatsRule(LoadBalancerConfigCommand lbCmd,String ruleName,String statsIp)
+	{
+	    StringBuilder rule  = new StringBuilder("\nlisten ").append(ruleName).append(" ").append(statsIp).append(":").append(lbCmd.lbStatsPort); 
+	    rule.append("\n\tmode http\n\toption httpclose\n\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri).append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ").append(lbCmd.lbStatsAuth);
+	    rule.append("\n");
+        return rule.toString(); 
+	}
 	@Override
 	public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd) {
 		List<String> result = new ArrayList<String>();
@@ -206,24 +212,29 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 		result.addAll(Arrays.asList(defaultsSection));
 		if (!lbCmd.lbStatsVisibility.equals("disabled"))
 		{		
-			if (lbCmd.lbStatsVisibility.equals("guest-network") || lbCmd.lbStatsVisibility.equals("link-local"))
+			 /*new rule : listen admin_page guestip/link-local:8081 */ 
+			if (lbCmd.lbStatsVisibility.equals("global"))
+			{
+				result.add(generateStatsRule(lbCmd,"stats_on_public",lbCmd.lbStatsPublicIP));
+			}else if (lbCmd.lbStatsVisibility.equals("guest-network"))
 			{	 
-				result.add(getBlankLine());
-				
-				StringBuilder rule  = new StringBuilder("listen admin_page ").append(lbCmd.lbStatsIp).append(":").append(lbCmd.lbStatsPort);
-			    /*new rule : listen admin_page guestip:8081 */   
-				result.add(rule.toString());
-			    result.addAll(Arrays.asList(statsSubrule));
+				result.add(generateStatsRule(lbCmd,"stats_on_guest",lbCmd.lbStatsGuestIP));
+			}else if (lbCmd.lbStatsVisibility.equals("link-local"))
+			{
+				result.add(generateStatsRule(lbCmd,"stats_on_private",lbCmd.lbStatsPrivateIP));
+			}else if (lbCmd.lbStatsVisibility.equals("all"))
+			{
+				result.add(generateStatsRule(lbCmd,"stats_on_public",lbCmd.lbStatsPublicIP));
+				result.add(generateStatsRule(lbCmd,"stats_on_guest",lbCmd.lbStatsGuestIP));
+				result.add(generateStatsRule(lbCmd,"stats_on_private",lbCmd.lbStatsPrivateIP));
+			}else
+			{ 
+				/* stats will be available on the default http serving port, no special stats port */
+				StringBuilder subRule  = new StringBuilder("\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri).append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ").append(lbCmd.lbStatsAuth);
+				result.add(subRule.toString());
 			}
-			/* stats sub rule for both guest-network and global */
-			/*	        "\tstats enable",
-	        "\tstats uri     /admin?stats",
-	        "\tstats realm   Haproxy\\ Statistics",
-	        "\tstats auth    admin1:AdMiN123",
-             */	     
-			StringBuilder subRule  = new StringBuilder("\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri).append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ").append(lbCmd.lbStatsAuth);
-			result.add(subRule.toString());
-			
+	     
+
 		}
 		result.add(getBlankLine());
 		
@@ -261,8 +272,22 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 				toRemove.add(lbRuleEntry);
 			}
 		}
-		StringBuilder sb = new StringBuilder(lbCmd.lbStatsIp).append(":").append(lbCmd.lbStatsPort).append(":").append(lbCmd.lbStatsSrcCidrs).append(":,");
+		StringBuilder sb= new StringBuilder("");
+		if (lbCmd.lbStatsVisibility.equals("guest-network"))
+		{
+		    sb = new StringBuilder(lbCmd.lbStatsGuestIP).append(":").append(lbCmd.lbStatsPort).append(":").append(lbCmd.lbStatsSrcCidrs).append(":,");
+		} else if (lbCmd.lbStatsVisibility.equals("link-local"))
+		{
+		    sb = new StringBuilder(lbCmd.lbStatsPrivateIP).append(":").append(lbCmd.lbStatsPort).append(":").append(lbCmd.lbStatsSrcCidrs).append(":,");
+		}else if (lbCmd.lbStatsVisibility.equals("global"))
+		{
+			sb = new StringBuilder(lbCmd.lbStatsPublicIP).append(":").append(lbCmd.lbStatsPort).append(":").append(lbCmd.lbStatsSrcCidrs).append(":,");
+		}else if (lbCmd.lbStatsVisibility.equals("all"))
+		{
+			sb = new StringBuilder("0.0.0.0/0").append(":").append(lbCmd.lbStatsPort).append(":").append(lbCmd.lbStatsSrcCidrs).append(":,");
+		}
 		toStats.add(sb.toString());
+		
 		toRemove.removeAll(toAdd);
 		result[ADD] = toAdd.toArray(new String[toAdd.size()]);
 		result[REMOVE] = toRemove.toArray(new String[toRemove.size()]);

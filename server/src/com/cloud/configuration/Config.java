@@ -65,7 +65,7 @@ public enum Config {
 	BackupSnapshotWait("Storage", StorageManager.class, Integer.class, "backup.snapshot.wait", "10800", "In second, timeout for BackupSnapshotCommand", null),
 
 	// Network
-	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, it can take the following four parameters : global,guest-network,link-local,disabled", null),
+	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default", null),
 	NetworkLBHaproxyStatsUri("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.uri","/admin?stats","Load Balancer(haproxy) uri.",null),
 	NetworkLBHaproxyStatsAuth("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.auth","admin1:AdMiN123","Load Balancer(haproxy) authetication string in the format username:password",null),
 	NetworkLBHaproxyStatsPort("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.port","8081","Load Balancer(haproxy) stats port number.",null),		

@@ -2193,21 +2193,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
             lbs[i++] = lb;
         }
+        String RouterPublicIp = null;
+        
+        if (router instanceof DomainRouterVO) {
+        	DomainRouterVO domr = (DomainRouterVO)router;
+        	RouterPublicIp = domr.getPublicIpAddress();
+        }
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,RouterPublicIp, router.getGuestIpAddress(),router.getPrivateIpAddress());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
-        if (cmd.lbStatsVisibility.equals("guest-network"))
-        {
-            cmd.lbStatsIp = router.getGuestIpAddress();
-        }else
-        {
-            cmd.lbStatsIp = router.getPrivateIpAddress();
-        }
-	 
+    
         
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());

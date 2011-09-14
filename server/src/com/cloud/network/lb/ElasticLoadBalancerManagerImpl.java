@@ -288,7 +288,7 @@ public class ElasticLoadBalancerManagerImpl implements
             lbs[i++] = lb; 
         }
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),elbVm.getGuestIpAddress(),elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,
@@ -299,13 +299,7 @@ public class ElasticLoadBalancerManagerImpl implements
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
-        if (cmd.lbStatsVisibility.equals("guest-network"))
-        {
-            cmd.lbStatsIp = elbVm.getGuestIpAddress();;
-        }else
-        {
-            cmd.lbStatsIp = elbVm.getPrivateIpAddress();
-        }
+   
         cmds.addCommand(cmd);
 
     }

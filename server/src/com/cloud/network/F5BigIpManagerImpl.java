@@ -365,7 +365,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         if (loadBalancersToApply.size() > 0) {
         	int numLoadBalancersForCommand = loadBalancersToApply.size(); 
         	LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-        	LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+        	LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand,null,null,null);
         	long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
         	cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
         	
