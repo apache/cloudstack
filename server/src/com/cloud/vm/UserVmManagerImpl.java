@@ -2910,10 +2910,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
-        if (vm == null) {
+        if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
-        }
+        } 
 
+        if (vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
+            s_logger.trace("Vm id=" + vmId + " is already destroyed");
+            return vm;
+        }
+        
         userId = accountAndUserValidation(vmId, account, userId, vm);
         User caller = _userDao.findById(userId);
 
