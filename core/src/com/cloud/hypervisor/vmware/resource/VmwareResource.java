@@ -2615,6 +2615,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
                         
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
+                        if (getVmState(vmMo) != State.Stopped)
+                        	vmMo.safePowerOff(_shutdown_waitMs);
                         vmMo.tearDownDevices(new Class<?>[] { VirtualDisk.class, VirtualEthernetCard.class });
                         vmMo.destroy();
                         
