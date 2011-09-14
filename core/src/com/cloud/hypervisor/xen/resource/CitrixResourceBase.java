@@ -61,6 +61,7 @@ import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
@@ -500,6 +501,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((CheckRouterCommand)cmd);
         } else if (cmd instanceof SetFirewallRulesCommand) {
             return execute((SetFirewallRulesCommand)cmd);
+        } else if (cmd instanceof BumpUpPriorityCommand) {
+            return execute((BumpUpPriorityCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1212,6 +1215,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
         return new CheckRouterAnswer(cmd, result, true);
+    }
+    
+    private Answer execute(BumpUpPriorityCommand cmd) {
+        Connection conn = getConnection();
+        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "bumpUpPriority", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "BumpUpPriorityCommand failed");
+        }
+        return new Answer(cmd, true, result);
     }
 
     protected MaintainAnswer execute(MaintainCommand cmd) {
