@@ -3939,7 +3939,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
+        sb.and("hostName", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
@@ -3951,10 +3951,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (keyword != null) {
             SearchCriteria<VMInstanceVO> ssc = _vmInstanceDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            sc.addAnd("hostName", SearchCriteria.Op.SC, ssc);
         }
 
         if (id != null) {
@@ -3962,7 +3962,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (name != null) {
-            sc.setParameters("name", name);
+            sc.setParameters("hostName", name);
         }
         if (state != null) {
             sc.setParameters("state", state);
