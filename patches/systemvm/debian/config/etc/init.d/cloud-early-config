@@ -342,6 +342,7 @@ setup_redundant_router() {
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[PRIORITY\]/$ROUTER_PR/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[DELTA\]/2/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[LINK_IF\]/eth0/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[LINK_IP\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[IGNORE_IP1\]/$GUEST_GW/g" /etc/conntrackd/conntrackd.conf

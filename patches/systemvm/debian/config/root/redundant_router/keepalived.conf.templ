@@ -4,37 +4,11 @@ global_defs {
    router_id [ROUTER_ID]
 }
 
-vrrp_sync_group VG_1 {
-   group {
-     inside_network   # name of vrrp_instance (below)
-     outside_network  # One for each moveable IP.
-   }
-
-   # notify scripts and alerts are optional
-   #
-   # filenames of scripts to run on transitions
-   # can be unquoted (if just filename)
-   # or quoted (if has parameters)
-   # to MASTER transition
-   notify_master "/root/redundant_router/master.sh"
-   # to BACKUP transition
-   notify_backup "/root/redundant_router/backup.sh"
-   # FAULT transition
-   notify_fault "/root/redundant_router/fault.sh"
-
-   # for ANY state transition.
-   # "notify" script is called AFTER the
-   # notify_* script(s) and is executed
-   # with 3 arguments provided by keepalived
-   # (ie don't include parameters in the notify line).
-   # arguments
-   # $1 = "GROUP"|"INSTANCE"
-   # $2 = name of group or instance
-   # $3 = target state of transition
-   #     ("MASTER"|"BACKUP"|"FAULT")
-   #notify /root/redundant_router/notify.sh
+vrrp_script check_bumpup {
+    script "/root/redundant_router/check_bumpup.sh"
+    interval 5
+    weight [DELTA]
 }
-
 
 vrrp_instance inside_network {
     state BACKUP
@@ -52,5 +26,33 @@ vrrp_instance inside_network {
         [ROUTER_IP] brd [BOARDCAST] dev eth0
     }
 
-    nopreempt
+    track_script {
+        check_bumpup
+    }
+
+    #nopreempt
+
+    # notify scripts and alerts are optional
+    #
+    # filenames of scripts to run on transitions
+    # can be unquoted (if just filename)
+    # or quoted (if has parameters)
+    # to MASTER transition
+    notify_master "/root/redundant_router/master.sh"
+    # to BACKUP transition
+    notify_backup "/root/redundant_router/backup.sh"
+    # FAULT transition
+    notify_fault "/root/redundant_router/fault.sh"
+ 
+    # for ANY state transition.
+    # "notify" script is called AFTER the
+    # notify_* script(s) and is executed
+    # with 3 arguments provided by keepalived
+    # (ie don't include parameters in the notify line).
+    # arguments
+    # $1 = "GROUP"|"INSTANCE"
+    # $2 = name of group or instance
+    # $3 = target state of transition
+    #     ("MASTER"|"BACKUP"|"FAULT")
+    #notify /root/redundant_router/notify.sh
 }
