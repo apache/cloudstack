@@ -35,8 +35,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
 import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
@@ -202,7 +202,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1804,9 +1803,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
-
-        boolean sendPasswordAndVmData = true;
-        boolean sendDnsDhcpData = true;
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
         
         DataCenter dc = dest.getDataCenter();
@@ -1816,7 +1812,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
         List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
+        
         for (DomainRouterVO router : routers) {
+            
+            boolean sendPasswordAndVmData = true;
+            boolean sendDnsDhcpData = true;
+            
             if (router.getState() != State.Running) {
                 s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is not in Running state");
                 continue;
