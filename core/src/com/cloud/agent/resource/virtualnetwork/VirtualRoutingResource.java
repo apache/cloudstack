@@ -423,16 +423,16 @@ public class VirtualRoutingResource implements Manager {
         return null;
     }
 
-	protected Answer execute(CheckRouterCommand cmd) {
-	    final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+    protected Answer execute(CheckRouterCommand cmd) {
+        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+    
+        final String result = getRouterStatus(routerPrivateIPAddress);
+        if (result == null || result.isEmpty()) {
+            return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
+        }
+        return new CheckRouterAnswer(cmd, result, true);
+    }
 
-	    final String result = getRouterStatus(routerPrivateIPAddress);
-	    if (result == null || result.isEmpty()) {
-	        return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
-	    }
-	    return new CheckRouterAnswer(cmd, result.equals("Status: MASTER"), result);
-	}
-	
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }

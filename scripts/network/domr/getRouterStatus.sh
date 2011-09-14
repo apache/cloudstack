@@ -28,12 +28,5 @@ then
   exit 1
 fi
 
-tmpfile=/tmp/$RANDOM.log
-
-scp -P 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp:/root/keepalived.log $tmpfile
-if [ $? -ne 0 ]
-then
-    exit $?
-fi
-result=`tail $tmpfile -n 1`
-echo $result
+ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/checkrouter.sh"
+exit $?
