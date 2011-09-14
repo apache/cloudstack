@@ -88,7 +88,7 @@ function afterLoadIpJSP() {
 			dataType: "json",
 			success: function(json) {
 				var zones = json.listzonesresponse.zone;				
-				var zoneSelect = $("#dialog_add_load_balancer_and_ip #acquire_zone").empty();	
+				var zoneSelect = $("#dialog_add_load_balancer_and_ip").find("#acquire_zone").empty();	
 				if (zones != null && zones.length > 0) {	
 				    for (var i = 0; i < zones.length; i++) {
 				    	if(zones[i].networktype == "Basic")
@@ -234,7 +234,7 @@ function afterLoadIpJSP() {
 			dataType: "json",
 			success: function(json) {
 				var zones = json.listzonesresponse.zone;				
-				var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
+				var zoneSelect = $("#dialog_acquire_public_ip").find("#acquire_zone").empty();	
 				if (zones != null && zones.length > 0) {	
 				    for (var i = 0; i < zones.length; i++) {
 					    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
