@@ -332,10 +332,13 @@ setup_apache2() {
 }
 
 setup_redundant_router() {
-    rrouter_bin_path="/root/redundant_router"
-    rrouter_log="/root/keepalived.log"
-    rrouter_bin_path_str="\/root\/redundant_router"
-    rrouter_log_str="\/root\/keepalived.log"
+    rrouter_bin_path="/ramdisk/rrouter"
+    rrouter_log="/ramdisk/rrouter/keepalived.log"
+    rrouter_bin_path_str="\/ramdisk\/rrouter"
+    rrouter_log_str="\/ramdisk\/rrouter\/keepalived.log"
+    mkdir -p /ramdisk
+    mount tmpfs /ramdisk -t tmpfs
+    mkdir -p /ramdisk/rrouter
     rm /tmp/rrouter.lock
     ip route delete default
     cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
