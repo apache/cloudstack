@@ -64,8 +64,6 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
      */
     boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
     
-    boolean destroyRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
-    
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
     
     List<DomainRouterVO> getRouters(long accountId, long zoneId);

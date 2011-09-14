@@ -134,6 +134,7 @@ updateLoadBalancerRule=com.cloud.api.commands.UpdateLoadBalancerRuleCmd;15
 startRouter=com.cloud.api.commands.StartRouterCmd;7
 rebootRouter=com.cloud.api.commands.RebootRouterCmd;7
 stopRouter=com.cloud.api.commands.StopRouterCmd;7
+destroyRouter=com.cloud.api.commands.DestroyRouterCmd;7
 changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;7
 listRouters=com.cloud.api.commands.ListRoutersCmd;7
 

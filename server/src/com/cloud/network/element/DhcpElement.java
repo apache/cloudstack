@@ -166,7 +166,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && _routerMgr.destroyRouter(router.getId());
+            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
         }
         return result;
     }
