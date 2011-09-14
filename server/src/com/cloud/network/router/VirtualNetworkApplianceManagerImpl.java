@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +95,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -768,74 +771,156 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
+    protected void updateRoutersRedundantState(List<DomainRouterVO> routers) {
+        boolean updated = false;
+        for (DomainRouterVO router : routers) {
+            updated = false;
+            if (!router.getIsRedundantRouter()) {
+                continue;
+            }
+            RedundantState prevState = router.getRedundantState();
+            if (router.getState() != State.Running) {
+                router.setRedundantState(RedundantState.UNKNOWN);
+                router.setIsPriorityBumpUp(false);
+                updated = true;
+            } else {
+                String privateIP = router.getPrivateIpAddress();
+                HostVO host = _hostDao.findById(router.getHostId());
+                /* Only cover hosts managed by this management server */
+                if (host == null || host.getStatus() != Status.Up ||
+                        host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                    continue;
+                }
+                if (privateIP != null) {
+                    final CheckRouterCommand command = new CheckRouterCommand();
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                    final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
+                    RedundantState state = RedundantState.UNKNOWN;
+                    boolean isBumped = false;
+                    if (answer != null && answer.getResult()) {
+                        state = answer.getState();
+                        isBumped = answer.isBumped();
+                    }
+                    router.setRedundantState(state);
+                    router.setIsPriorityBumpUp(isBumped);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                try {
+                    txn.start();
+                    _routerDao.update(router.getId(), router);
+                    txn.commit();
+                } catch (Exception e) {
+                    txn.rollback();
+                    s_logger.warn("Unable to update router status for account: " + router.getAccountId());
+                } finally {
+                    txn.close();
+                }
+            }
+            RedundantState currState = router.getRedundantState();
+            if (prevState != currState) {
+                String title = "Redundant virtual router " + router.getInstanceName() +
+                " just switch from " + prevState + " to " + currState;
+                String context =  "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " +
+                " just switch from " + prevState + " to " + currState;
+                s_logger.info(context);
+                if (currState == RedundantState.MASTER) {
+                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                            router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                }
+            }
+        }
+    }
+
+    //Ensure router status is update to date before execute this function. The function would try best to recover all routers except MASTER
+    protected void recoverRedundantNetwork(DomainRouterVO masterRouter, DomainRouterVO backupRouter) {
+        UserContext context = UserContext.current();
+        context.setAccountId(1);                            
+        if (masterRouter.getState() == State.Running && backupRouter.getState() == State.Running) {
+            HostVO masterHost = _hostDao.findById(masterRouter.getHostId());
+            HostVO backupHost = _hostDao.findById(backupRouter.getHostId());
+            if (masterHost.getStatus() == Status.Up && backupHost.getStatus() == Status.Up) {
+                String title =  "Reboot " + backupRouter.getInstanceName() + " to ensure redundant virtual routers work";
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(title);
+                }
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                        backupRouter.getDataCenterIdToDeployIn(), backupRouter.getPodIdToDeployIn(), title, title);
+                try {
+                    rebootRouter(backupRouter.getId(), false);
+                } catch (ConcurrentOperationException e) {
+                    s_logger.warn("Fail to reboot " + backupRouter.getInstanceName(), e);
+                } catch (ResourceUnavailableException e) {
+                    s_logger.warn("Fail to reboot " + backupRouter.getInstanceName(), e);
+                } catch (InsufficientCapacityException e) {
+                    s_logger.warn("Fail to reboot " + backupRouter.getInstanceName(), e);
+                }
+            }
+        }
+    }
+
+    private int getRealPriority(DomainRouterVO router) {
+        int priority = router.getPriority();
+        if (router.getIsPriorityBumpUp()) {
+            priority += DEFAULT_DELTA;
+        }
+        return priority;
+    }
+    
     protected class CheckRouterTask implements Runnable {
 
         public CheckRouterTask() {
         }
-
-        private void updateRoutersRedundantState(List<DomainRouterVO> routers) {
-            boolean updated = false;
+        
+        /*
+         * In order to make fail-over works well at any time, we have to ensure:
+         * 1. Backup router's priority = Master's priority - DELTA + 1
+         * 2. Backup router's priority hasn't been bumped up.
+         */
+        private void checkSanity(List<DomainRouterVO> routers) {
+            Set<Long> checkedNetwork = new HashSet<Long>();
             for (DomainRouterVO router : routers) {
-                updated = false;
                 if (!router.getIsRedundantRouter()) {
                     continue;
                 }
-                RedundantState prevState = router.getRedundantState();
-                if (router.getState() != State.Running) {
-                    router.setRedundantState(RedundantState.UNKNOWN);
-                    updated = true;
-                } else {
-                    String privateIP = router.getPrivateIpAddress();
-                    HostVO host = _hostDao.findById(router.getHostId());
-                    /* Only cover hosts managed by this management server */
-                    if (host == null || host.getStatus() != Status.Up ||
-                            host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
-                        continue;
-                    }
-                    if (privateIP != null) {
-                        final CheckRouterCommand command = new CheckRouterCommand();
-                        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-                        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                        final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
-                        boolean isBumped = false;
-                        RedundantState state = RedundantState.UNKNOWN;
-                        if (answer != null && answer.getResult()) {
-                            state = answer.getState();
-                            isBumped = answer.isBumped();
+                long networkId = router.getNetworkId();
+                if (checkedNetwork.contains(networkId)) {
+                    continue;
+                }
+                checkedNetwork.add(networkId);
+                List<DomainRouterVO> checkingRouters = _routerDao.listByNetworkAndRole(networkId, Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+                if (checkingRouters.size() != 2) {
+                    continue;
+                }
+                DomainRouterVO masterRouter = null;
+                DomainRouterVO backupRouter = null;
+                for (DomainRouterVO r : checkingRouters) {
+                    if (r.getRedundantState() == RedundantState.MASTER) {
+                        if (masterRouter == null) {
+                            masterRouter = r;
+                        } else {
+                            //Duplicate master! We give up, until the admin fix duplicate MASTER issue
+                            break;
                         }
-                        router.setRedundantState(state);
-                        router.setIsPriorityBumpUp(isBumped);
-                        updated = true;
+                    } else if (r.getRedundantState() == RedundantState.BACKUP) {
+                        if (backupRouter == null) {
+                            backupRouter = r;
+                        } else {
+                            break;
+                        }
                     }
                 }
-                if (updated) {
-                    Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-                    try {
-                        txn.start();
-                        _routerDao.update(router.getId(), router);
-                        txn.commit();
-                    } catch (Exception e) {
-                        txn.rollback();
-                        s_logger.warn("Unable to update router status for account: " + router.getAccountId());
-                    } finally {
-                        txn.close();
-                    }
-                }
-                RedundantState currState = router.getRedundantState();
-                if (prevState != currState) {
-                    String title = "Redundant virtual router " + router.getInstanceName() +
-                                " just switch from " + prevState + " to " + currState;
-                    String context =  "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " +
-                                " just switch from " + prevState + " to " + currState;
-                    s_logger.info(context);
-                    if (currState == RedundantState.MASTER) {
-                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
-                                router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                if (masterRouter != null && backupRouter != null) {
+                    if (getRealPriority(masterRouter) - DEFAULT_DELTA + 1 != getRealPriority(backupRouter) || backupRouter.getIsPriorityBumpUp()) {
+                        recoverRedundantNetwork(masterRouter, backupRouter);
                     }
                 }
             }
         }
-        
+
         private void checkDuplicateMaster(List <DomainRouterVO> routers) {
             Map<Long, DomainRouterVO> networkRouterMaps = new HashMap<Long, DomainRouterVO>();
             for (DomainRouterVO router : routers) {
@@ -866,6 +951,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
                  * then the update above can get the latest status */
                 checkDuplicateMaster(routers);
+                checkSanity(routers);
             } catch (Exception ex) {
                 s_logger.error("Fail to complete the CheckRouterTask! ", ex);
             }
@@ -874,6 +960,42 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     public static boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN));
+    } 
+    private int DEFAULT_FIRST_PRIORITY = 100;
+    private int DEFAULT_DELTA = 2;
+    
+    protected int getPriority(Network guestNetwork, List<DomainRouterVO> routers) throws InsufficientVirtualNetworkCapcityException {
+        int priority;
+        if (routers.size() == 0) {
+            priority = DEFAULT_FIRST_PRIORITY;
+        } else {
+            int maxPriority = 0;
+            for (DomainRouterVO r : routers) {
+                int p = 0;
+                if (!r.getIsRedundantRouter()) {
+                    throw new CloudRuntimeException("Redundant router is mixed with single router in one network!");
+                }
+                p = r.getPriority();
+                if (r.getIsPriorityBumpUp()) {
+                    p += DEFAULT_DELTA;
+                }
+                //FIXME Assume the maxPriority one should be running or just created.
+                if (p > maxPriority) {
+                    maxPriority = p;
+                }
+            }
+            if (maxPriority < 20) {
+                s_logger.error("Current maximum priority is too low!");
+                throw new InsufficientVirtualNetworkCapcityException("Current maximum priority is too low as " + maxPriority + "!",
+                        guestNetwork.getId());
+            } else if (maxPriority > 200) {
+                s_logger.error("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!");
+                throw new InsufficientVirtualNetworkCapcityException("Too many times fail-over happened! Current maximum priority is too high as "
+                        + maxPriority + "!", guestNetwork.getId());
+            }
+            priority = maxPriority - DEFAULT_DELTA + 1;
+        }
+        return priority;
     }
     
     @DB
@@ -960,7 +1082,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 int priority = 0;
                 if (isRedundant) {
-                    priority = 100 - routers.size() * 20;
+                    priority = getPriority(guestNetwork, routers);
                 }
                 router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
                         owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, false, RedundantState.UNKNOWN, _offering.getOfferHA());
@@ -1250,6 +1372,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
         if (isRedundant) {
             buf.append(" redundant_router=1");
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+            try {
+                int priority = getPriority(network, routers);
+                router.setPriority(priority);
+            } catch (InsufficientVirtualNetworkCapcityException e) {
+                s_logger.error("Failed to get update priority!", e);
+                throw new CloudRuntimeException("Failed to get update priority!");
+            }
         }
         NicProfile controlNic = null;
         String defaultDns1 = null;
