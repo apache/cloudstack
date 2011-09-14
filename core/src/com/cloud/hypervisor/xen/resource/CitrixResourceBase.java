@@ -4551,7 +4551,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return callHostPlugin(conn, "vmopspremium", cmd, params);
     }
 
-    
     protected String setupHeartbeatSr(Connection conn, SR sr, boolean force) throws XenAPIException, XmlRpcException {
         SR.Record srRec = sr.getRecord(conn);
         String srUuid = srRec.uuid;
@@ -4584,7 +4583,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 host.setTags(conn, tags);
             }
         }
-        result = callHostPluginPremium(conn, "setup_heartbeat_file", "host", _host.uuid, "sr", srUuid);
+        result = callHostPluginPremium(conn, "setup_heartbeat_file", "host", _host.uuid, "sr", srUuid, "add", "true");
         if (result == null || !result.split("#")[1].equals("0")) {
             throw new CloudRuntimeException("Unable to setup heartbeat file entry on SR " + srUuid + " due to "
                     + result);
@@ -4595,27 +4594,49 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         Connection conn = getConnection();
         StorageFilerTO pool = cmd.getPool();
-        try {
-            SR sr = getStorageRepository(conn, pool);
-            setupHeartbeatSr(conn, sr, false);
-            long capacity = sr.getPhysicalSize(conn);
-            long available = capacity - sr.getPhysicalUtilisation(conn);
-            if (capacity == -1) {
-                String msg = "Pool capacity is -1! pool: " + pool.getHost() + pool.getPath();
-                s_logger.warn(msg);
+        boolean add = cmd.getAdd();
+        if( add ) {
+            try {
+                SR sr = getStorageRepository(conn, pool);
+                setupHeartbeatSr(conn, sr, false);
+                long capacity = sr.getPhysicalSize(conn);
+                long available = capacity - sr.getPhysicalUtilisation(conn);
+                if (capacity == -1) {
+                    String msg = "Pool capacity is -1! pool: " + pool.getHost() + pool.getPath();
+                    s_logger.warn(msg);
+                    return new Answer(cmd, false, msg);
+                }
+                Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
+                ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
+                return answer;
+            } catch (XenAPIException e) {
+                String msg = "ModifyStoragePoolCommand add XenAPIException:" + e.toString() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
+                s_logger.warn(msg, e);
+                return new Answer(cmd, false, msg);
+            } catch (Exception e) {
+                String msg = "ModifyStoragePoolCommand add XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
+                s_logger.warn(msg, e);
                 return new Answer(cmd, false, msg);
             }
-            Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
-            ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
-            return answer;
-        } catch (XenAPIException e) {
-            String msg = "ModifyStoragePoolCommand XenAPIException:" + e.toString() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        } catch (Exception e) {
-            String msg = "ModifyStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
+        } else {
+            try {
+                SR sr = getStorageRepository(conn, pool);
+                String srUuid = sr.getUuid(conn);
+                String result = callHostPluginPremium(conn, "setup_heartbeat_file", "host", _host.uuid, "sr", srUuid, "add", "false");
+                if (result == null || !result.split("#")[1].equals("0")) {
+                    throw new CloudRuntimeException("Unable to remove heartbeat file entry for SR " + srUuid + " due to "
+                            + result);
+                }
+                return new Answer(cmd, true , "seccuss");
+            } catch (XenAPIException e) {
+                String msg = "ModifyStoragePoolCommand remove XenAPIException:" + e.toString() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
+                s_logger.warn(msg, e);
+                return new Answer(cmd, false, msg);
+            } catch (Exception e) {
+                String msg = "ModifyStoragePoolCommand remove XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
+                s_logger.warn(msg, e);
+                return new Answer(cmd, false, msg);
+            }
         }
 
     }

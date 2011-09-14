@@ -89,7 +89,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
     protected final SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
-    protected final SearchBuilder<HostVO> ClusterSearch;
+    protected final SearchBuilder<HostVO> ClusterStatusSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
     protected final SearchBuilder<HostVO> AvailHypevisorInZone;
 
@@ -177,9 +177,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DcSearch.and("dc", DcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DcSearch.done();
 
-        ClusterSearch = createSearchBuilder();
-        ClusterSearch.and("cluster", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
-        ClusterSearch.done();
+        ClusterStatusSearch = createSearchBuilder();
+        ClusterStatusSearch.and("cluster", ClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterStatusSearch.and("status", ClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        ClusterStatusSearch.done();
 
         ConsoleProxyHostSearch = createSearchBuilder();
         ConsoleProxyHostSearch.and("name", ConsoleProxyHostSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -515,12 +516,24 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> listByCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = ClusterSearch.create();
+        SearchCriteria<HostVO> sc = ClusterStatusSearch.create();
 
         sc.setParameters("cluster", clusterId);
 
         return listBy(sc);
     }
+    
+
+    @Override
+    public List<HostVO> listByClusterStatus(long clusterId, Status status) {
+        SearchCriteria<HostVO> sc = ClusterStatusSearch.create();
+
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", status.toString());
+
+        return listBy(sc);
+    }
+
 
     @Override
     public List<HostVO> listBy(Host.Type type, long dcId) {
