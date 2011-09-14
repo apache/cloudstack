@@ -35,14 +35,20 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
 import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -93,6 +99,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
@@ -206,7 +213,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
-public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru<DomainRouterVO> {
+public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru<DomainRouterVO>, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     String _name;
@@ -627,6 +634,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _systemAcct = _accountService.getSystemAccount();
         
+        _agentMgr.registerForHostEvents(this, true, false, false);
+        
         s_logger.info("DomainRouterManager is configured.");
 
         return true;
@@ -786,12 +795,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } else {
                 String privateIP = router.getPrivateIpAddress();
                 HostVO host = _hostDao.findById(router.getHostId());
-                /* Only cover hosts managed by this management server */
-                if (host == null || host.getStatus() != Status.Up ||
-                        host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                if (host == null || host.getStatus() != Status.Up) {
+                    router.setRedundantState(RedundantState.UNKNOWN);
+                    updated = true;
+                } else if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                    /* Only cover hosts managed by this management server */
                     continue;
-                }
-                if (privateIP != null) {
+                } else if (privateIP != null) {
                     final CheckRouterCommand command = new CheckRouterCommand();
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -961,28 +971,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public static boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN));
     } 
-    private int DEFAULT_FIRST_PRIORITY = 100;
+    private int DEFAULT_PRIORITY = 100;
     private int DEFAULT_DELTA = 2;
     
-    protected int getPriority(Network guestNetwork, List<DomainRouterVO> routers) throws InsufficientVirtualNetworkCapcityException {
+    protected int getUpdatedPriority(Network guestNetwork, List<DomainRouterVO> routers, DomainRouterVO exclude) throws InsufficientVirtualNetworkCapcityException {
         int priority;
         if (routers.size() == 0) {
-            priority = DEFAULT_FIRST_PRIORITY;
+            priority = DEFAULT_PRIORITY;
         } else {
             int maxPriority = 0;
             for (DomainRouterVO r : routers) {
-                int p = 0;
                 if (!r.getIsRedundantRouter()) {
                     throw new CloudRuntimeException("Redundant router is mixed with single router in one network!");
                 }
-                p = r.getPriority();
-                if (r.getIsPriorityBumpUp()) {
-                    p += DEFAULT_DELTA;
-                }
                 //FIXME Assume the maxPriority one should be running or just created.
-                if (p > maxPriority) {
-                    maxPriority = p;
+                if (r.getId() != exclude.getId() && getRealPriority(r) > maxPriority) {
+                    maxPriority = getRealPriority(r);
                 }
+            }
+            if (maxPriority == 0) {
+                return DEFAULT_PRIORITY;
             }
             if (maxPriority < 20) {
                 s_logger.error("Current maximum priority is too low!");
@@ -1080,12 +1088,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (routers.size() >= 5) {
                     s_logger.error("Too much redundant routers!");
                 }
+                // Priority would be recalculated when start up the redundant router
                 int priority = 0;
                 if (isRedundant) {
-                    priority = getPriority(guestNetwork, routers);
+                    priority = DEFAULT_PRIORITY;
                 }
                 router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, false, RedundantState.UNKNOWN, _offering.getOfferHA());
+                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
                 router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
                 // Creating stats entry for router
                 UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
@@ -1270,7 +1279,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
 
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA());
+                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
             routers.add(router);
@@ -1374,7 +1383,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" redundant_router=1");
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             try {
-                int priority = getPriority(network, routers);
+                int priority = getUpdatedPriority(network, routers, router);
                 router.setPriority(priority);
             } catch (InsufficientVirtualNetworkCapcityException e) {
                 s_logger.error("Failed to get update priority!", e);
@@ -1810,6 +1819,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 continue;
             }
             
+            if (router.isStopPending()) {
+                if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
+                    throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
+                            VirtualRouter.class, router.getId());
+                }
+                s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is to be stopped");
+                continue;
+            }
+            
             //for basic zone: 
             //1) send vm data/password information only to the dhcp in the same pod
             //2) send dhcp/dns information to all routers in the cloudstack only when _dnsBasicZoneUpdates is set to "all" value
@@ -1924,7 +1942,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String msg = "Unable to add new VM into network on disconnected router ";
         if (!connectedRouters.isEmpty()) {
             // These disconnected ones are out of sync now, stop them for synchronization
-            stopDisconnectedRouters(disconnectedRouters, true, msg);
+            handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
         } else if (!disconnectedRouters.isEmpty()) {
             for (VirtualRouter router : disconnectedRouters) {
                 if (s_logger.isDebugEnabled()) {
@@ -2301,27 +2319,51 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return true;
     }
     
-    protected void stopDisconnectedRouters(List<? extends VirtualRouter> routers, boolean force, String reason)
+    protected void handleSingleWorkingRedundantRouter(List<? extends VirtualRouter> connectedRouters, List<? extends VirtualRouter> disconnectedRouters, String reason) throws ResourceUnavailableException
     {
-        if (routers.isEmpty()) {
+        if (connectedRouters.isEmpty() || disconnectedRouters.isEmpty()) {
             return;
         }
-        for (VirtualRouter router : routers) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("About to stop the router " + router.getInstanceName() + " due to: " + reason);
-            }
-            String title = "Virtual router " + router.getInstanceName() + " would be stopped, due to " + reason;
-            String context =  "Virtual router (name: " + router.getInstanceName() + ", id: " + router.getId() + ") would be stopped, due to: " + reason;
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
-                    router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
-            if (router.getIsRedundantRouter()) {
-                try {
-                    stopRouter(router.getId(), force);
-                } catch (ConcurrentOperationException e) { 
-                    s_logger.warn("Fail to stop router " + router.getInstanceName(), e);
-                } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Fail to stop router " + router.getInstanceName(), e);
+        if (connectedRouters.size() != 1 || disconnectedRouters.size() != 1) {
+            s_logger.warn("How many redundant routers do we have?? ");
+            return;
+        }
+        if (!connectedRouters.get(0).getIsRedundantRouter()) {
+            throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, connectedRouters.get(0).getDataCenterIdToDeployIn());
+        }
+        if (!disconnectedRouters.get(0).getIsRedundantRouter()) {
+            throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, disconnectedRouters.get(0).getDataCenterIdToDeployIn());
+        }
+        
+        DomainRouterVO connectedRouter = (DomainRouterVO)connectedRouters.get(0);
+        DomainRouterVO disconnectedRouter = (DomainRouterVO)disconnectedRouters.get(0);
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("About to stop the router " + disconnectedRouter.getInstanceName() + " due to: " + reason);
+        }
+        String title = "Virtual router " + disconnectedRouter.getInstanceName() + " would be stopped after connecting back, due to " + reason;
+        String context =  "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getId() + ") would be stopped after connecting back, due to: " + reason;
+        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                disconnectedRouter.getDataCenterIdToDeployIn(), disconnectedRouter.getPodIdToDeployIn(), title, context);
+        disconnectedRouter.setStopPending(true);
+        disconnectedRouter = this.persist((DomainRouterVO)disconnectedRouter);
+        
+        int connRouterPR = getRealPriority((DomainRouterVO)connectedRouter);
+        int disconnRouterPR = getRealPriority((DomainRouterVO)disconnectedRouter);
+        if (connRouterPR < disconnRouterPR) {
+            //connRouterPR < disconnRouterPR, they won't equal at anytime
+            if (!connectedRouter.getIsPriorityBumpUp()) {
+                final BumpUpPriorityCommand command = new BumpUpPriorityCommand();
+                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, connectedRouter.getPrivateIpAddress());
+                command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, connectedRouter.getInstanceName());
+                final Answer answer = _agentMgr.easySend(connectedRouter.getHostId(), command);
+                if (!answer.getResult()) {
+                    s_logger.error("Failed to bump up " + connectedRouter.getInstanceName() + "'s priority! " + answer.getDetails());
                 }
+            } else {
+                String t = "Can't bump up virtual router " + connectedRouter.getInstanceName() + "'s priority due to it's already bumped up!";
+                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                        connectedRouter.getDataCenterIdToDeployIn(), connectedRouter.getPodIdToDeployIn(), t, t);
             }
         }
     }
@@ -2339,6 +2381,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String msg = "Unable to associate ip addresses on disconnected router ";
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
+                
+                if (router.isStopPending()) {
+                    if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
+                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
+                                VirtualRouter.class, router.getId());
+                    }
+                    s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply firewall rules commands to the backend");
+                    continue;
+                }
                 Commands cmds = new Commands(OnError.Continue);
                 // Have to resend all already associated ip addresses
                 createAssociateIPCommands(router, ipAddress, cmds, 0);
@@ -2367,7 +2418,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         if (!connectedRouters.isEmpty()) {
             // These disconnected ones are out of sync now, stop them for synchronization
-            stopDisconnectedRouters(disconnectedRouters, true, msg);
+            handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
         } else if (!disconnectedRouters.isEmpty()) {
             for (VirtualRouter router : disconnectedRouters) {
                 if (s_logger.isDebugEnabled()) {
@@ -2392,6 +2443,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         boolean result = true;
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
+                if (router.isStopPending()) {
+                    if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
+                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
+                                VirtualRouter.class, router.getId());
+                    }
+                    s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply firewall rules commands to the backend");
+                    continue;
+                }
+            
                 if (rules != null && !rules.isEmpty()) {
                     try {
                         if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
@@ -2436,7 +2496,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         if (!connectedRouters.isEmpty()) {
             // These disconnected ones are out of sync now, stop them for synchronization
-            stopDisconnectedRouters(disconnectedRouters, true, msg);
+            handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
         } else if (!disconnectedRouters.isEmpty()) {
             for (VirtualRouter router : disconnectedRouters) {
                 if (s_logger.isDebugEnabled()) {
@@ -2528,6 +2588,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
                 s_logger.debug("Applying " + rules.size() + " static nat in network " + network);
+                
+                if (router.isStopPending()) {
+                    if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
+                        throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
+                                VirtualRouter.class, router.getId());
+                    }
+                    s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply firewall rules commands to the backend");
+                    continue;
+                }
                 try {
                     result = applyStaticNat(router, rules);
                     connectedRouters.add(router);
@@ -2551,7 +2620,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         if (!connectedRouters.isEmpty()) {
             // These disconnected ones are out of sync now, stop them for synchronization
-            stopDisconnectedRouters(disconnectedRouters, true, msg);
+            handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
         } else if (!disconnectedRouters.isEmpty()) {
             for (VirtualRouter router : disconnectedRouters) {
                 if (s_logger.isDebugEnabled()) {
@@ -2590,5 +2659,65 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
+    }
+
+    @Override
+    public int getTimeout() {
+        return -1;
+    }
+
+    @Override
+    public boolean isRecurring() {
+        return false;
+    }
+
+    @Override
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+        return false;
+    }
+
+    @Override
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
+        return false;
+    }
+
+    @Override
+    public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+        UserContext context = UserContext.current();
+        context.setAccountId(1);
+        List<DomainRouterVO> routers = _routerDao.listVirtualByHostId(host.getId());
+        for (DomainRouterVO router : routers) {
+            if (router.isStopPending()) {
+                State state = router.getState();
+                if (state != State.Stopped && state != State.Destroyed) {
+                    try {
+                        stopRouter(router.getId(), false);
+                    } catch (ResourceUnavailableException e) {
+                        s_logger.warn("Fail to stop router " + router.getInstanceName(), e);
+                        throw new ConnectionException(false, "Fail to stop router " + router.getInstanceName());
+                    } catch (ConcurrentOperationException e) {
+                        s_logger.warn("Fail to stop router " + router.getInstanceName(), e);
+                        throw new ConnectionException(false, "Fail to stop router " + router.getInstanceName());
+                    }
+                }
+                router.setStopPending(false);
+                router = _routerDao.persist(router);
+            }
+        }
+    }
+
+    @Override
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
+        return null;
+    }
+
+    @Override
+    public boolean processDisconnect(long agentId, Status state) {
+        return false;
+    }
+
+    @Override
+    public boolean processTimeout(long agentId, long seq) {
+        return false;
     }
 }

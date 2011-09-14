@@ -38,4 +38,6 @@ public interface VirtualRouter extends VirtualMachine {
     }
     RedundantState getRedundantState();
     String getGuestIpAddress();
+    boolean isStopPending();
+    void setStopPending(boolean stopPending);
 }

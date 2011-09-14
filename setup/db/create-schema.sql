@@ -938,6 +938,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `priority` int(4) unsigned COMMENT 'priority of router in the redundant router mode',
   `is_priority_bumpup` int(1) unsigned NOT NULL COMMENT 'if the priority has been bumped up',
   `redundant_state` varchar(64) NOT NULL COMMENT 'the state of redundant virtual router',
+  `stop_pending` int(1) unsigned NOT NULL COMMENT 'if this router would be stopped after we can connect to it',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
