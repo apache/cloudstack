@@ -1,10 +1,13 @@
 /**
- *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
+ * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+*
+ *
  */
 
 package com.cloud.usage;
 
 import java.net.InetAddress;
+import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +39,7 @@ import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.usage.dao.UsageVolumeDao;
+import com.cloud.usage.parser.IPAddressUsageParser;
 import com.cloud.usage.parser.LoadBalancerUsageParser;
 import com.cloud.usage.parser.NetworkOfferingUsageParser;
 import com.cloud.usage.parser.NetworkUsageParser;
@@ -91,6 +95,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 	private String m_name = null;
 	private final Calendar m_jobExecTime = Calendar.getInstance();
 	private int m_aggregationDuration = 0;
+	private int m_sanityCheckInterval = 0;
     String m_hostname = null;
     int m_pid = 0;
     TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
@@ -98,8 +103,10 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 
 	private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
 	private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
+	private final ScheduledExecutorService m_sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
 	private Future m_scheduledFuture = null;
 	private Future m_heartbeat = null;
+	private Future m_sanity = null;
 
 	protected UsageManagerImpl() {
 	}
@@ -146,6 +153,10 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         String aggregationRange  = configs.get("usage.stats.job.aggregation.range");
         String execTimeZone = configs.get("usage.execution.timezone");
         String aggreagationTimeZone = configs.get("usage.aggregation.timezone");
+        String sanityCheckInterval = configs.get("usage.sanity.check.interval");
+        if(sanityCheckInterval != null){
+            m_sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
+        }
 
         m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
         s_logger.debug("Usage stats aggregation time zone: "+aggreagationTimeZone);
@@ -211,6 +222,10 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 		m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
 
         m_heartbeat = m_heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15*1000, /* check database every minute*/60*1000, TimeUnit.MILLISECONDS);
+        
+        if(m_sanityCheckInterval > 0){
+            m_sanity = m_sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, m_sanityCheckInterval, TimeUnit.DAYS);
+        }
 
         Transaction usageTxn = Transaction.open(Transaction.USAGE_DB);
         try {
@@ -237,6 +252,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 	public boolean stop() {
 	    m_heartbeat.cancel(true);
 	    m_scheduledFuture.cancel(true);
+	    m_sanity.cancel(true);
 		return true;
 	}
 
@@ -712,6 +728,13 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             }
         }
         
+        parsed = IPAddressUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("IPAddress usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
+        
         return parsed;
 	}
 
@@ -819,6 +842,15 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                             m_usageInstanceDao.update(usageInstance);
                         }
                     }
+                }
+                
+                sc = m_usageInstanceDao.createSearchCriteria();
+                sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
+                sc.addAnd("endDate", SearchCriteria.Op.NULL);
+                sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
+                usageInstances = m_usageInstanceDao.search(sc, null);
+                if (usageInstances == null || (usageInstances.size() == 0)) {
+                    s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
                 }
                 
                 Long templateId = event.getTemplateId();
@@ -990,6 +1022,22 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         }
 
         if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
+            SearchCriteria<UsageVolumeVO> sc = m_usageVolumeDao.createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageVolumeVO> volumesVOs = m_usageVolumeDao.search(sc, null);
+            if (volumesVOs.size() > 0) {
+                //This is a safeguard to avoid double counting of volumes.
+                s_logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
+            }
+            for (UsageVolumeVO volumesVO : volumesVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
+                }
+                volumesVO.setDeleted(event.getCreateDate());
+                m_usageVolumeDao.update(volumesVO);
+            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
             }
@@ -997,7 +1045,6 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             UsageVolumeVO volumeVO = new UsageVolumeVO(volId, zoneId, event.getAccountId(), acct.getDomainId(), doId, templateId, size, event.getCreateDate(), null);
             m_usageVolumeDao.persist(volumeVO);
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
-        	// at this point it's not a sourceNat IP, so find the usage record with this IP and a null released date, update the released date
         	SearchCriteria<UsageVolumeVO> sc = m_usageVolumeDao.createSearchCriteria();
         	sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
         	sc.addAnd("id", SearchCriteria.Op.EQ, volId);
@@ -1343,6 +1390,22 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             sc.addAnd("jobType", SearchCriteria.Op.EQ, Integer.valueOf(UsageJobVO.JOB_TYPE_SINGLE));
             sc.addAnd("scheduled", SearchCriteria.Op.EQ, Integer.valueOf(0));
             m_usageJobDao.expunge(sc);
+        }
+    }
+    
+    private class SanityCheck implements Runnable {
+        public void run() {
+            UsageSanityChecker usc = new UsageSanityChecker();
+            try {
+                String errors = usc.runSanityCheck();
+                if(errors.length() > 0){
+                   _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USAGE_SANITY_RESULT, 0, new Long(0), "Usage Sanity Check failed", errors);
+                } else {
+                    _alertMgr.clearAlert(AlertManager.ALERT_TYPE_USAGE_SANITY_RESULT, 0, 0);
+                }
+            } catch (SQLException e) {
+                s_logger.error("Error in sanity check", e);
+            }
         }
     }
 }

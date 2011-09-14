@@ -1,5 +1,7 @@
 /**
- *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
+ * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+*
+ *
  */
 
 package com.cloud.usage;

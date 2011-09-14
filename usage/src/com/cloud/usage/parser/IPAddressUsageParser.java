@@ -1,12 +1,16 @@
 /**
- *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
+ * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+*
+ *
  */
 
 package com.cloud.usage.parser;
 
-import java.util.Calendar;
+import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -17,108 +21,145 @@ import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageIPAddressDao;
 import com.cloud.user.AccountVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 
 public class IPAddressUsageParser {
-	public static final Logger s_logger = Logger.getLogger(IPAddressUsageParser.class.getName());
-	
-	private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-	private static UsageIPAddressDao m_usageIPAddressDao = _locator.getDao(UsageIPAddressDao.class);
-	
-	// FIXME:  IP Address stuff will be in the helper table and not really rolled up to usage table since it doesn't make sense to have it that way
-	public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-		s_logger.info("Parsing all ip address usage events");
+    public static final Logger s_logger = Logger.getLogger(IPAddressUsageParser.class.getName());
 
-		// FIXME: endDate should be 23:59:59 of the day in question if it's not after the current date (or null)
-		if ((endDate == null) || endDate.after(new Date())) {
-		    endDate = new Date();
-		}
+    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private static UsageIPAddressDao m_usageIPAddressDao = _locator.getDao(UsageIPAddressDao.class);
 
-        List<UsageIPAddressVO> usageInstances = m_usageIPAddressDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, null, null);
 
-        // IP Addresses are billed monthly.  In the given date range, figure out how many months occur and create a usage record
-        // for each month
-        // FIXME:  as part of this usage record, we might want to say startTime/endTime during the month that the IP was allocated
-        Calendar startCal = Calendar.getInstance();
-        startCal.setTime(startDate);
-        startCal.set(Calendar.DAY_OF_MONTH, 1);
-        startCal.set(Calendar.HOUR_OF_DAY, 0);
-        startCal.set(Calendar.MINUTE, 0);
-        startCal.set(Calendar.SECOND, 0);
-        startCal.set(Calendar.MILLISECOND, 0);
-
-        // set the end date to be the last day of the month
-        Calendar endCal = Calendar.getInstance();
-        endCal.setTime(endDate);
-        endCal.set(Calendar.DAY_OF_MONTH, endCal.getActualMaximum(Calendar.DAY_OF_MONTH));
-
-        int numberOfMonths = 0;
-        while (startCal.before(endCal)) {
-            numberOfMonths++;
-            startCal.roll(Calendar.MONTH, true);
-        }
-
+    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("processing " + numberOfMonths + " month(s) worth of ip address data");
+            s_logger.debug("Parsing IP Address usage for account: " + account.getId());
+        }
+        if ((endDate == null) || endDate.after(new Date())) {
+            endDate = new Date();
         }
 
-        for (UsageIPAddressVO usageInstance : usageInstances) {
-            String ipAddress = usageInstance.getAddress();
-            Date assignedDate = usageInstance.getAssigned();
-            Date releasedDate = usageInstance.getReleased();
+        // - query usage_ip_address table with the following criteria:
+        //     - look for an entry for accountId with start date in the given range
+        //     - look for an entry for accountId with end date in the given range
+        //     - look for an entry for accountId with end date null (currently running vm or owned IP)
+        //     - look for an entry for accountId with start date before given range *and* end date after given range
+        List<UsageIPAddressVO> usageIPAddress = m_usageIPAddressDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
-            // if the IP address is currently owned, bill for up to the current date
-            if (releasedDate == null) {
-                releasedDate = new Date();
+        if(usageIPAddress.isEmpty()){
+            s_logger.debug("No IP Address usage for this period");
+            return true;
+        }
+
+        // This map has both the running time *and* the usage amount.
+        Map<String, Pair<Long, Long>> usageMap = new HashMap<String, Pair<Long, Long>>();
+
+        Map<String, IpInfo> IPMap = new HashMap<String, IpInfo>();
+
+        // loop through all the usage IPs, create a usage record for each
+        for (UsageIPAddressVO usageIp : usageIPAddress) {
+            long IpId = usageIp.getId();
+
+            String key = ""+IpId;
+
+            // store the info in the IP map
+            IPMap.put(key, new IpInfo(usageIp.getZoneId(), IpId, usageIp.getAddress(), usageIp.isSourceNat()));
+
+            Date IpAssignDate = usageIp.getAssigned();
+            Date IpReleaseDeleteDate = usageIp.getReleased();
+
+            if ((IpReleaseDeleteDate == null) || IpReleaseDeleteDate.after(endDate)) {
+                IpReleaseDeleteDate = endDate;
             }
 
-            // reset startCal
-            startCal.setTime(startDate);
-            startCal.set(Calendar.DAY_OF_MONTH, 1);
-            startCal.set(Calendar.HOUR_OF_DAY, 0);
-            startCal.set(Calendar.MINUTE, 0);
-            startCal.set(Calendar.SECOND, 0);
-            startCal.set(Calendar.MILLISECOND, 0);
+            // clip the start date to the beginning of our aggregation range if the vm has been running for a while
+            if (IpAssignDate.before(startDate)) {
+                IpAssignDate = startDate;
+            }
 
-            // TODO: this really needs to be tested well, and might be over-engineered for what we really need, but the
-            //       point is to count each month in which the IP address is owned and bill for that month
-            // we know the number of months, create a usage record for each month
-            // FIXME:  this is supposed to create a usage record per month...first of all, that's super confusing and we need
-            //         to get out of the weekly/monthly/daily business and instead we need to say for a given range whether or
-            //         not the IP address was use.  It's up to our customers to (a) give sensible date ranges for their own
-            //         usage purposes and (b) 
-            for (int i = 0; i < numberOfMonths; i++) {
-                if (assignedDate.before(startCal.getTime())) {
-                    assignedDate = startCal.getTime();
-                }
-                startCal.roll(Calendar.MONTH, true);
-                Date nextMonth = startCal.getTime();
-                startCal.add(Calendar.MILLISECOND, -1);
-                if (releasedDate.before(startCal.getTime())) {
-                    startCal.setTime(releasedDate);
-                }
-                createUsageRecord(assignedDate, startCal.getTime(), account, ipAddress, startDate, endDate);
+            long currentDuration = (IpReleaseDeleteDate.getTime() - IpAssignDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-                // go to the start of the next month for the next iteration
-                startCal.setTime(nextMonth);
+            updateIpUsageData(usageMap, key, usageIp.getId(), currentDuration);
+        }
+
+        for (String ipIdKey : usageMap.keySet()) {
+            Pair<Long, Long> ipTimeInfo = usageMap.get(ipIdKey);
+            long useTime = ipTimeInfo.second().longValue();
+
+            // Only create a usage record if we have a runningTime of bigger than zero.
+            if (useTime > 0L) {
+                IpInfo info = IPMap.get(ipIdKey);
+                createUsageRecord(info.getZoneId(), useTime, startDate, endDate, account, info.getIpId(), info.getIPAddress(), info.isSourceNat());
             }
         }
 
-		return true;
-	}
+        return true;
+    }
 
-	// TODO: ip address usage comes from the usage_ip_address table, not cloud_usage table, so this is largely irrelevant and might be going away
-	private static void createUsageRecord(Date assigned, Date ownedUntil, AccountVO account, String address, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating usage record for account: " + account.getId() + ", ip: " + address + ", assigned date: " + assigned + ", owned until: " + ownedUntil);
+    private static void updateIpUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long ipId, long duration) {
+        Pair<Long, Long> ipUsageInfo = usageDataMap.get(key);
+        if (ipUsageInfo == null) {
+            ipUsageInfo = new Pair<Long, Long>(new Long(ipId), new Long(duration));
+        } else {
+            Long runningTime = ipUsageInfo.second();
+            runningTime = new Long(runningTime.longValue() + duration);
+            ipUsageInfo = new Pair<Long, Long>(ipUsageInfo.first(), runningTime);
         }
+        usageDataMap.put(key, ipUsageInfo);
+    }
+
+    private static void createUsageRecord(long zoneId, long runningTime, Date startDate, Date endDate, AccountVO account, long IpId, String IPAddress, boolean isSourceNat) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Total usage time " + runningTime + "ms");
+        }
+
+        float usage = runningTime / 1000f / 60f / 60f;
+
+        DecimalFormat dFormat = new DecimalFormat("#.######");
+        String usageDisplay = dFormat.format(usage);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating IP usage record with id: " + IpId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " + account.getId());
+        }
+
+        String usageDesc = "IPAddress: "+IPAddress;
 
         // Create the usage record
-        String usageDesc = "usage for ip address '" + address +
-                             "' (assigned on " + assigned + ", owned until " + ownedUntil + ")";
-        UsageVO usageRecord = new UsageVO(Long.valueOf(0), account.getId(), account.getDomainId(), usageDesc, "1 Month", UsageTypes.IP_ADDRESS, Double.valueOf(1),
-                                                null, null, null, null, null, null, startDate, endDate);
+
+        UsageVO usageRecord = new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", 
+                UsageTypes.IP_ADDRESS, new Double(usage), null, null, null, null, IpId, startDate, endDate, (isSourceNat?"SourceNat":""));
         m_usageDao.persist(usageRecord);
     }
+
+    private static class IpInfo {
+        private long zoneId;
+        private long IpId;
+        private String IPAddress;
+        private boolean isSourceNat;
+
+        public IpInfo(long zoneId,long IpId, String IPAddress, boolean isSourceNat) {
+            this.zoneId = zoneId;
+            this.IpId = IpId;
+            this.IPAddress = IPAddress;
+            this.isSourceNat = isSourceNat;
+        }
+
+        public long getZoneId() {
+            return zoneId;
+        }
+
+        public long getIpId() {
+            return IpId;
+        }
+
+        public String getIPAddress() {
+            return IPAddress;
+        }
+
+        public boolean isSourceNat() {
+            return isSourceNat;
+        }
+    }
+
 }
