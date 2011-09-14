@@ -370,7 +370,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             // Check account limits
             long accountLimit = findCorrectResourceLimit(account.getId(), type);
             long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
-            if (potentialCount > accountLimit) {
+            if (accountLimit != -1 && potentialCount > accountLimit) {
                 return true;
             }
 
