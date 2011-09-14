@@ -4563,7 +4563,8 @@ public class ManagementServerImpl implements ManagementServer {
             } else {
                 List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
                 for (ClusterVO cluster : clustersForZone) {
-                    result.add(cluster.getHypervisorType().toString());
+                    if (cluster.getHypervisorType() != HypervisorType.None)
+                        result.add(cluster.getHypervisorType().toString());
                 }
             }
 
