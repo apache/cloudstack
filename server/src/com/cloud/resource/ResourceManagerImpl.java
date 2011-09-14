@@ -180,44 +180,44 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
     
     protected void processResourceEvent(Integer event, Object...params) {
-        synchronized (_lifeCycleListeners) {
-            List<ResourceListener> lst = _lifeCycleListeners.get(event);
-            if (lst == null || lst.size() == 0) {
-                return;
-            }
-            
-            String eventName;
-            for (ResourceListener l : lst) {
-                if (event == ResourceListener.EVENT_DISCOVER_BEFORE) {
-                    l.processDiscoverEventBefore((Long)params[0], (Long)params[1], (Long)params[2], (URI)params[3], (String)params[4], (String)params[5], (List<String>)params[6]);
-                    eventName = "EVENT_DISCOVER_BEFORE";
-                } else if (event == ResourceListener.EVENT_DISCOVER_AFTER) {
-                    l.processDiscoverEventAfter((Map<? extends ServerResource, Map<String, String>>)params[0]);
-                    eventName = "EVENT_DISCOVER_AFTER";
-                } else if (event == ResourceListener.EVENT_DELETE_HOST_BEFORE) {
-                    l.processDeleteHostEventBefore((HostVO)params[0]);
-                    eventName = "EVENT_DELETE_HOST_BEFORE";
-                } else if (event == ResourceListener.EVENT_DELETE_HOST_AFTER) {
-                    l.processDeletHostEventAfter((HostVO)params[0]);
-                    eventName = "EVENT_DELETE_HOST_AFTER";
-                } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) {
-                    l.processCancelMaintenaceEventBefore((Long)params[0]);
-                    eventName = "EVENT_CANCEL_MAINTENANCE_BEFORE";
-                } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) {
-                    l.processCancelMaintenaceEventAfter((Long)params[0]);
-                    eventName = "EVENT_CANCEL_MAINTENANCE_AFTER";
-                } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) {
-                    l.processPrepareMaintenaceEventBefore((Long)params[0]);
-                    eventName = "EVENT_PREPARE_MAINTENANCE_BEFORE";
-                } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) {
-                    l.processPrepareMaintenaceEventAfter((Long)params[0]);
-                    eventName = "EVENT_PREPARE_MAINTENANCE_AFTER";
-                } else {
-                    throw new CloudRuntimeException("Unknown resource event:" + event);
-                }
-                s_logger.debug("Sent resource event " + eventName + " to listener " + l.getClass().getSimpleName());
-            }
+        List<ResourceListener> lst = _lifeCycleListeners.get(event);
+        if (lst == null || lst.size() == 0) {
+            return;
         }
+
+        String eventName;
+        for (ResourceListener l : lst) {
+            if (event == ResourceListener.EVENT_DISCOVER_BEFORE) {
+                l.processDiscoverEventBefore((Long) params[0], (Long) params[1], (Long) params[2], (URI) params[3], (String) params[4], (String) params[5],
+                        (List<String>) params[6]);
+                eventName = "EVENT_DISCOVER_BEFORE";
+            } else if (event == ResourceListener.EVENT_DISCOVER_AFTER) {
+                l.processDiscoverEventAfter((Map<? extends ServerResource, Map<String, String>>) params[0]);
+                eventName = "EVENT_DISCOVER_AFTER";
+            } else if (event == ResourceListener.EVENT_DELETE_HOST_BEFORE) {
+                l.processDeleteHostEventBefore((HostVO) params[0]);
+                eventName = "EVENT_DELETE_HOST_BEFORE";
+            } else if (event == ResourceListener.EVENT_DELETE_HOST_AFTER) {
+                l.processDeletHostEventAfter((HostVO) params[0]);
+                eventName = "EVENT_DELETE_HOST_AFTER";
+            } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE) {
+                l.processCancelMaintenaceEventBefore((Long) params[0]);
+                eventName = "EVENT_CANCEL_MAINTENANCE_BEFORE";
+            } else if (event == ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER) {
+                l.processCancelMaintenaceEventAfter((Long) params[0]);
+                eventName = "EVENT_CANCEL_MAINTENANCE_AFTER";
+            } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE) {
+                l.processPrepareMaintenaceEventBefore((Long) params[0]);
+                eventName = "EVENT_PREPARE_MAINTENANCE_BEFORE";
+            } else if (event == ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER) {
+                l.processPrepareMaintenaceEventAfter((Long) params[0]);
+                eventName = "EVENT_PREPARE_MAINTENANCE_AFTER";
+            } else {
+                throw new CloudRuntimeException("Unknown resource event:" + event);
+            }
+            s_logger.debug("Sent resource event " + eventName + " to listener " + l.getClass().getSimpleName());
+        }
+        
     }
 
     @Override
