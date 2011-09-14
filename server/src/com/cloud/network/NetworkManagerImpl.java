@@ -1213,7 +1213,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // reapply all the firewall/staticNat/lb rules
             s_logger.debug("Applying network rules as a part of network " + network + " implement...");
-            if (!restartNetwork(networkId, false, context.getAccount())) {
+            if (!restartNetwork(networkId, false, true, context.getAccount())) {
                 s_logger.warn("Failed to reapply network rules as a part of network " + network + " implement");
                 throw new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
             }
@@ -2360,7 +2360,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
 
@@ -2383,7 +2383,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
 
         // Restart network - network elements restart is required
-        success = restartNetwork(networkId, true, callerAccount);
+        success = restartNetwork(networkId, true, cleanup, callerAccount);
 
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
@@ -2414,7 +2414,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private boolean restartNetwork(long networkId, boolean restartElements, Account caller) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    private boolean restartNetwork(long networkId, boolean restartElements, boolean cleanup, Account caller) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         boolean success = true;
 
         NetworkVO network = _networksDao.findById(networkId);
@@ -2427,7 +2427,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (NetworkElement element : _networkElements) {
                 // stop and start the network element
                 try {
-                    boolean supported = element.restart(network, context);
+                    boolean supported = element.restart(network, context, cleanup);
                     if (!supported) {
                         s_logger.trace("Network element(s) " + element.getName() + " doesn't support network id" + networkId + " restart");
                     }
@@ -3101,7 +3101,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.info("Restarting network " + network + " as a part of update network call");
 
             try {
-                success = restartNetwork(networkId, true, caller);
+                success = restartNetwork(networkId, true, true, caller);
             } catch (Exception e) {
                 success = false;
             }

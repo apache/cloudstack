@@ -48,6 +48,9 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The id of the network to restart.")
     private Long id;
 
+    @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, required=false, description="If cleanup old network elements")
+    private Boolean cleanup;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -60,6 +63,13 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         } else {
             return network.getId();
         }
+    }
+    
+    public Boolean getCleanup() {
+        if (cleanup != null) {
+            return cleanup;
+        }
+        return true;
     }
 
 
@@ -79,7 +89,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        boolean result = _networkService.restartNetwork(this);
+        boolean result = _networkService.restartNetwork(this, getCleanup());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

@@ -229,7 +229,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
     
     @Override
-    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
 
         s_logger.trace("Cloudzones element doesn't handle network restart for the network " + network);
         return true;
