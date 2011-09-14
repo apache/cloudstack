@@ -333,24 +333,42 @@ setup_apache2() {
 }
 
 setup_redundant_router() {
+    rrouter_bin_path="/root/redundant_router"
+    rrouter_log="/root/keepalived.log"
+    rrouter_bin_path_str="\/root\/redundant_router"
+    rrouter_log_str="\/root\/keepalived.log"
     rm /tmp/rrouter.lock
     ip route delete default
     cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
     cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
-    cp /root/redundant_router/enable_pubip.sh.templ /root/redundant_router/enable_pubip.sh
+    cp /root/redundant_router/enable_pubip.sh.templ $rrouter_bin_path/enable_pubip.sh
+    cp /root/redundant_router/master.sh.templ $rrouter_bin_path/master.sh
+    cp /root/redundant_router/backup.sh.templ $rrouter_bin_path/backup.sh
+    cp /root/redundant_router/fault.sh.templ $rrouter_bin_path/fault.sh
+    cp /root/redundant_router/primary-backup.sh.templ $rrouter_bin_path/primary-backup.sh
     sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[PRIORITY\]/$ROUTER_PR/g" /etc/keepalived/keepalived.conf
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[DELTA\]/2/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[LINK_IF\]/eth0/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[LINK_IP\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[IGNORE_IP1\]/$GUEST_GW/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[IGNORE_IP2\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
     sed -i "s/\[IGNORE_IP3\]/$ETH1_IP/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[ETH2IP\]/$ETH2_IP/g" /root/redundant_router/enable_pubip.sh
-    sed -i "s/\[ETH2MASK\]/$ETH2_MASK/g" /root/redundant_router/enable_pubip.sh
-    sed -i "s/\[GATEWAY\]/$GW/g" /root/redundant_router/enable_pubip.sh
+    sed -i "s/\[ETH2IP\]/$ETH2_IP/g" $rrouter_bin_path/enable_pubip.sh
+    sed -i "s/\[ETH2MASK\]/$ETH2_MASK/g" $rrouter_bin_path/enable_pubip.sh
+    sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/enable_pubip.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/master.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/backup.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/fault.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/master.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/backup.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/fault.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/primary-backup.sh
+    chmod a+x $rrouter_bin_path/*.sh
+
     sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
     grep "sleep 10;" /etc/init.d/keepalived > /dev/null
     if [ $? -ne 0 ]

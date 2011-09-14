@@ -5,7 +5,7 @@ global_defs {
 }
 
 vrrp_script check_bumpup {
-    script "/root/redundant_router/check_bumpup.sh"
+    script "[RROUTER_BIN_PATH]/check_bumpup.sh"
     interval 5
     weight [DELTA]
 }
@@ -38,11 +38,11 @@ vrrp_instance inside_network {
     # can be unquoted (if just filename)
     # or quoted (if has parameters)
     # to MASTER transition
-    notify_master "/root/redundant_router/master.sh"
+    notify_master "[RROUTER_BIN_PATH]/master.sh"
     # to BACKUP transition
-    notify_backup "/root/redundant_router/backup.sh"
+    notify_backup "[RROUTER_BIN_PATH]/backup.sh"
     # FAULT transition
-    notify_fault "/root/redundant_router/fault.sh"
+    notify_fault "[RROUTER_BIN_PATH]/fault.sh"
  
     # for ANY state transition.
     # "notify" script is called AFTER the
@@ -54,5 +54,5 @@ vrrp_instance inside_network {
     # $2 = name of group or instance
     # $3 = target state of transition
     #     ("MASTER"|"BACKUP"|"FAULT")
-    #notify /root/redundant_router/notify.sh
+    #notify [RROUTER_BIN_PATH]/notify.sh
 }
