@@ -569,6 +569,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         List<HostVO> kvmHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
                         for (HostVO host : kvmHosts) {
                             if (host.getGuid().equalsIgnoreCase(guid)) {
+                                if(hostTags != null){
+                                    if(s_logger.isTraceEnabled()){
+                                        s_logger.trace("Adding Host Tags for KVM host, tags:  :"+hostTags);
+                                    }
+                                    _hostTagsDao.persist(host.getId(), hostTags);
+                                }
                                 hosts.add(host);
                                 return hosts;
                             }
