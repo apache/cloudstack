@@ -1,0 +1,17 @@
+#!/bin/bash
+
+source /root/func.sh
+
+lock="rrouter"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
+echo To fault called >> [RROUTER_LOG]
+[RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
+[RROUTER_BIN_PATH]/primary-backup.sh fault >> [RROUTER_LOG] 2>&1
+echo Status: FAULT >> [RROUTER_LOG]
+
+releaseLockFile $lock $locked

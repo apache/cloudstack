@@ -1,0 +1,37 @@
+#!/bin/bash
+
+source /root/func.sh
+
+lock="rrouter"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
+echo To master called >> [RROUTER_LOG]
+[RROUTER_BIN_PATH]/enable_pubip.sh >> [RROUTER_LOG] 2>&1
+ret=$?
+last_msg=`tail -n 1 [RROUTER_LOG]`
+echo Enable public ip returned $ret >> [RROUTER_LOG]
+if [ $ret -ne 0 ]
+then
+    echo Fail to enable public ip! >> [RROUTER_LOG]
+    ifconfig eth2 down
+    service keepalived stop >> [RROUTER_LOG] 2>&1
+    service conntrackd stop >> [RROUTER_LOG] 2>&1
+    echo Status: FAULT \($last_msg\) >> [RROUTER_LOG]
+    releaseLockFile $lock $locked
+    exit
+fi
+[RROUTER_BIN_PATH]/primary-backup.sh primary >> [RROUTER_LOG] 2>&1
+ret=$?
+echo Switch conntrackd mode primary returned $ret >> [RROUTER_LOG]
+if [ $ret -ne 0 ]
+then
+    echo Fail to switch conntrackd mode, but try to continue working >> [RROUTER_LOG]
+fi
+echo Status: MASTER >> [RROUTER_LOG]
+
+releaseLockFile $lock $locked
+exit 0
