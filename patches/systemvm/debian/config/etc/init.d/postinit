@@ -38,7 +38,7 @@ setup_redundant_router() {
   then
       return 1
   fi
-  rrouter_bin_path="/root/redundant_router"
+  rrouter_bin_path="/ramdisk/rrouter"
   eth2mac=`ip link show eth2 | awk '/ether/ {print $2}'`
   sed -i "s/\[ETH2MAC\]/$eth2mac/g" $rrouter_bin_path/enable_pubip.sh
 }
