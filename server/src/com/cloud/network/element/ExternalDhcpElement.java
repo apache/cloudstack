@@ -105,7 +105,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 	}
 
 	@Override
-	public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+	public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
 			InsufficientCapacityException {
 		return true;
 	}

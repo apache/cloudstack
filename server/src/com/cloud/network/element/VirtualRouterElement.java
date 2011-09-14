@@ -135,7 +135,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     }
     
     @Override
-    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (!canHandle(network.getGuestType(), dc)) {
             s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
@@ -159,12 +159,14 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             if (host_id == null || host_id == 0) {
                 host_id = (router.getHostId() != null ? router.getHostId() : router.getLastHostId());
             }
-            /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
-            if (router.getState() != State.Stopped || _routerMgr.stopRouter(router.getId(), false) == null) {
-                s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
-            }
-            if (!_routerMgr.destroyRouter(router.getId())) {
-                s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
+            if (cleanup) {
+                /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
+                if (router.getState() != State.Stopped || _routerMgr.stopRouter(router.getId(), false) == null) {
+                    s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
+                }
+                if (!_routerMgr.destroyRouter(router.getId())) {
+                    s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
+                }
             }
         }
         if (host_id == null || host_id == 0) {

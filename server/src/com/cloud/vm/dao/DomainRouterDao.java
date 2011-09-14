@@ -104,5 +104,4 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     List<DomainRouterVO> listByNetworkAndPodAndRole(long networkId, long podId, Role role);
     
     List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role);
-
 }

@@ -124,7 +124,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
     }
 
     @Override
-    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO restart all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }

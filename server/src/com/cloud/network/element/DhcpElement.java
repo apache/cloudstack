@@ -206,7 +206,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     }
     
     @Override
-    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         DeployDestination dest = new DeployDestination(dc, null, null, null);
         NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());

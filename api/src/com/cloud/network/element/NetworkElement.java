@@ -101,11 +101,12 @@ public interface NetworkElement extends Adapter {
      * The network is being restarted.
      * @param network
      * @param context
+     * @param cleanup If need to clean up old network elements
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * The network is being destroyed.
