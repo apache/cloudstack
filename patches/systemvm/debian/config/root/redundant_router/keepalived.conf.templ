@@ -10,6 +10,11 @@ vrrp_script check_bumpup {
     weight [DELTA]
 }
 
+vrrp_script heartbeat {
+    script "[RROUTER_BIN_PATH]/heartbeat.sh"
+    interval 10
+}
+
 vrrp_instance inside_network {
     state BACKUP
     interface eth0
@@ -28,6 +33,7 @@ vrrp_instance inside_network {
 
     track_script {
         check_bumpup
+        heartbeat
     }
 
     #nopreempt

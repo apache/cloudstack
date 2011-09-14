@@ -348,6 +348,8 @@ setup_redundant_router() {
     cp /root/redundant_router/backup.sh.templ $rrouter_bin_path/backup.sh
     cp /root/redundant_router/fault.sh.templ $rrouter_bin_path/fault.sh
     cp /root/redundant_router/primary-backup.sh.templ $rrouter_bin_path/primary-backup.sh
+    cp /root/redundant_router/heartbeat.sh.templ $rrouter_bin_path/heartbeat.sh
+    cp /root/redundant_router/check_heartbeat.sh.templ $rrouter_bin_path/check_heartbeat.sh
     cp /root/redundant_router/checkrouter.sh.templ /root/checkrouter.sh
     sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
@@ -366,10 +368,13 @@ setup_redundant_router() {
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/master.sh
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/backup.sh
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/fault.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/heartbeat.sh
+    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/check_heartbeat.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/master.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/backup.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/fault.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/primary-backup.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /root/checkrouter.sh
     chmod a+x $rrouter_bin_path/*.sh
 
@@ -378,6 +383,11 @@ setup_redundant_router() {
     if [ $? -ne 0 ]
     then
         sed -i "s/if\ start-stop-daemon\ --start/sleep\ 10;if\ start-stop-daemon\ --start/g" /etc/init.d/keepalived
+    fi
+    crontab -l|grep "check_heartbeat.sh"
+    if [ $? -ne 0 ]
+    then
+        (crontab -l; echo "*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
     fi
 }
 
