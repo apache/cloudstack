@@ -33,6 +33,13 @@ then
     exit 1
 fi
 
+lock_rr="rrouter"
+locked_rr=$(getLockFile $lock_rr)
+if [ "$locked_rr" != "1" ]
+then
+    exit 1
+fi
+
 grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 no_redundant=$?
 
@@ -89,4 +96,6 @@ else
   fi
 fi
 
-unlock_exit $? $lock $locked
+ret=$?
+releaseLockFile $lock_rr $locked_rr
+unlock_exit $ret $lock $locked
