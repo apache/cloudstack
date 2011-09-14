@@ -165,7 +165,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
                 if (router.getState() != State.Stopped || _routerMgr.stopRouter(router.getId(), false) == null) {
                     s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
                 }
-                if (!_routerMgr.destroyRouter(router.getId())) {
+                if (_routerMgr.destroyRouter(router.getId()) == null) {
                     s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
                 }
             }
@@ -361,7 +361,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && _routerMgr.destroyRouter(router.getId());
+            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
         }
         return result;
     }

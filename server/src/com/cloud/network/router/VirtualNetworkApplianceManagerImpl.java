@@ -354,7 +354,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean destroyRouter(final long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
+    public VirtualRouter destroyRouter(final long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         User user = _accountMgr.getActiveUser(context.getCallerUserId());
 
@@ -364,11 +364,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-            return true;
+            return null;
         }
         boolean result = _itMgr.expunge(router, user, _accountMgr.getAccount(router.getAccountId()));
 
-        return result;
+        if (result) {
+            return router;
+        }
+        return null;
     }
 
     @Override
