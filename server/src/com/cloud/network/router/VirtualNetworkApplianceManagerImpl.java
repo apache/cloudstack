@@ -799,17 +799,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
                         RedundantState state = RedundantState.UNKNOWN;
                         if (answer != null && answer.getResult()) {
-                            if (answer.getIsMaster()) {
-                                state = RedundantState.MASTER;
-                            } else {
-                                if (answer.getDetails() != null) {
-                                    if (answer.getDetails().startsWith("Status: BACKUP")) {
-                                        state = RedundantState.BACKUP;
-                                    } else if (answer.getDetails().startsWith("Status: FAULT")) {
-                                        state = RedundantState.FAULT;
-                                    }
-                                }
-                            }
+                            state = answer.getState();
                         }
                         router.setRedundantState(state);
                         updated = true;

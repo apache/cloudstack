@@ -925,7 +925,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.error(msg);
             return new CheckRouterAnswer(cmd, msg);
         }
-        return new CheckRouterAnswer(cmd, result.second().startsWith("Status: MASTER"), result.second());
+        return new CheckRouterAnswer(cmd, result.second(), true);
     }
     
     protected Answer execute(VmDataCommand cmd) {

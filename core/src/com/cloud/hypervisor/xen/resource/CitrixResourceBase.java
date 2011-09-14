@@ -1211,7 +1211,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
-        return new CheckRouterAnswer(cmd, result.equals("Status: MASTER"), result);
+        return new CheckRouterAnswer(cmd, result, true);
     }
 
     protected MaintainAnswer execute(MaintainCommand cmd) {

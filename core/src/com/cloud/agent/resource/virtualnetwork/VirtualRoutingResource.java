@@ -430,7 +430,7 @@ public class VirtualRoutingResource implements Manager {
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
-        return new CheckRouterAnswer(cmd, result.equals("Status: MASTER"), result);
+        return new CheckRouterAnswer(cmd, result, true);
     }
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {

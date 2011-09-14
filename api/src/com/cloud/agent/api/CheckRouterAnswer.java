@@ -17,28 +17,44 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.network.router.VirtualRouter.RedundantState;
+
 public class CheckRouterAnswer extends Answer {
     public static final String ROUTER_NAME = "router.name";
     public static final String ROUTER_IP = "router.ip";
-    boolean isMaster;
+    RedundantState state;
     
     protected CheckRouterAnswer() {
     }
     
-    public CheckRouterAnswer(CheckRouterCommand cmd, boolean isMaster, String details) {
+    public CheckRouterAnswer(CheckRouterCommand cmd, String details, boolean parse) {
         super(cmd, true, details);
-		this.isMaster = isMaster;
-    }
-
-    public CheckRouterAnswer(CheckRouterCommand cmd, String details) {
-        super(cmd, false, details);
-	}
-
-    public boolean getIsMaster() {
-        return isMaster;
+        if (parse) {
+            parseDetails(details);
+        }
 	}
     
-    public void setIsMaster(boolean isMaster) {
-        this.isMaster = isMaster;
+    public CheckRouterAnswer(CheckRouterCommand cmd, String details) {
+        super(cmd, false, details);
     }
+
+    protected void parseDetails(String details) {
+        if (details.startsWith("Status: MASTER")) {
+            state = RedundantState.MASTER;
+        } else if (details.startsWith("Status: BACKUP")) {
+            state = RedundantState.BACKUP;
+        } else if (details.startsWith("Status: FAULT")) {
+            state = RedundantState.FAULT;
+        } else {
+            state = RedundantState.UNKNOWN;
+        }
+    }
+    
+    public void setState(RedundantState state) {
+        this.state = state;
+	}
+    
+    public RedundantState getState() {
+        return state;
+	}
 }
