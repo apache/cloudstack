@@ -2067,10 +2067,31 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
             }
 
-            // set the pool state to prepare for maintenance
-            primaryStorage.setStatus(StoragePoolStatus.PrepareForMaintenance);
-            _storagePoolDao.update(primaryStorageId, primaryStorage);
-
+            
+            List<HostVO> hosts = _hostDao.listByClusterStatus(primaryStorage.getClusterId(), Status.Up);
+            if( hosts == null || hosts.size() == 0 ) {
+                primaryStorage.setStatus(StoragePoolStatus.Maintenance);
+                _storagePoolDao.update(primaryStorageId, primaryStorage);
+                return _storagePoolDao.findById(primaryStorageId);
+            } else {
+                // set the pool state to prepare for maintenance
+                primaryStorage.setStatus(StoragePoolStatus.PrepareForMaintenance);
+                _storagePoolDao.update(primaryStorageId, primaryStorage);
+            }
+            // remove heartbeat
+            for ( HostVO host : hosts ) {
+                ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, primaryStorage);
+                final Answer answer = _agentMgr.easySend(host.getId(), cmd);
+                if (answer == null || !answer.getResult()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("ModifyStoragePool false failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                    }
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("ModifyStoragePool false secceeded");
+                    }
+                }
+            }
             // check to see if other ps exist
             // if they do, then we can migrate over the system vms to them
             // if they dont, then just stop all vms on this one
@@ -2279,6 +2300,24 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             primaryStorage.setStatus(StoragePoolStatus.Up);
             _storagePoolDao.update(primaryStorageId, primaryStorage);
             txn.commit();
+            List<HostVO> hosts = _hostDao.listByClusterStatus(primaryStorage.getClusterId(), Status.Up);
+            if( hosts == null || hosts.size() == 0 ) {
+                return _storagePoolDao.findById(primaryStorageId);
+            } 
+            // add heartbeat
+            for ( HostVO host : hosts ) {
+                ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, primaryStorage);
+                final Answer answer = _agentMgr.easySend(host.getId(), msPoolCmd);
+                if (answer == null || !answer.getResult()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("ModifyStoragePool add failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                    }
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("ModifyStoragePool add secceeded");
+                    }
+                }
+            }
 
             // 2. Get a list of pending work for this queue
             List<StoragePoolWorkVO> pendingWork = _storagePoolWorkDao.listPendingWorkForCancelMaintenanceByPoolId(primaryStorageId);

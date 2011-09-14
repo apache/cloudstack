@@ -89,8 +89,9 @@ def setup_heartbeat_sr(session, args):
 def setup_heartbeat_file(session, args):
     host = args['host']
     sr = args['sr']
+    add = args['add']
     try:
-        cmd = ["bash", "/opt/xensource/bin/setup_heartbeat_file.sh", host, sr]
+        cmd = ["bash", "/opt/xensource/bin/setup_heartbeat_file.sh", host, sr, add]
         txt = util.pread2(cmd)
     except:
         txt = ''
