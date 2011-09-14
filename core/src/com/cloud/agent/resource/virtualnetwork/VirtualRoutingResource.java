@@ -40,6 +40,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.Command;
@@ -91,6 +92,7 @@ public class VirtualRoutingResource implements Manager {
     private String _publicEthIf;
     private String _privateEthIf;
     private String _getRouterStatusPath;
+    private String _bumpUpPriorityPath;
 
 
     private int _timeout;
@@ -125,6 +127,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute ((CheckRouterCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
                 return execute((SetFirewallRulesCommand)cmd);
+            } else if (cmd instanceof BumpUpPriorityCommand) {
+                return execute((BumpUpPriorityCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -431,6 +435,18 @@ public class VirtualRoutingResource implements Manager {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
         return new CheckRouterAnswer(cmd, result, true);
+    }
+
+    protected Answer execute(BumpUpPriorityCommand cmd) {
+        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        final Script command  = new Script(_bumpUpPriorityPath, _timeout, s_logger);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        command.add(routerPrivateIPAddress);
+        String result = command.execute(parser);
+        if (result != null) {
+            return new Answer(cmd, false, "BumpUpPriorityCommand failed: " + result);
+        }
+        return new Answer(cmd, true, null);
     }
 
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
@@ -753,6 +769,11 @@ public class VirtualRoutingResource implements Manager {
             _privateEthIf = "xenbr0";
         }
         _privateEthIf = _privateEthIf.toLowerCase();
+
+        _bumpUpPriorityPath = findScript("bumpUpPriority.sh");
+        if(_bumpUpPriorityPath == null) {
+            throw new ConfigurationException("Unable to find bumpUpPriority.sh");
+        }
 
         return true;
     }

@@ -1125,6 +1125,21 @@ def checkRouter(session, args):
 
     return txt
 
+@echo
+def bumpUpPriority(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/bumpUpPriority.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("bump up priority fail! ")
+        txt = ''
+
+    return txt
+
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
@@ -1138,4 +1153,5 @@ if __name__ == "__main__":
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
                             "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
-                            "cleanup_rules":cleanup_rules, "checkRouter": checkRouter})
+                            "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
+                            "bumpUpPriority":bumpUpPriority })

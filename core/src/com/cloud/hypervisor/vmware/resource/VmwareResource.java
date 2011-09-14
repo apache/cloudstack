@@ -35,6 +35,7 @@ import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
@@ -387,6 +388,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((CheckRouterCommand) cmd);
             } else  if (cmd instanceof SetFirewallRulesCommand) {
             	answer = execute((SetFirewallRulesCommand)cmd);
+            } else if (cmd instanceof BumpUpPriorityCommand) {
+                answer = execute((BumpUpPriorityCommand)cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -929,6 +932,38 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new CheckRouterAnswer(cmd, result.second(), true);
     }
     
+    protected Answer execute(BumpUpPriorityCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource BumpUpPriorityCommand: " + _gson.toJson(cmd));
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/bumpup_priority.sh ");
+        }
+
+        Pair<Boolean, String> result;
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            result = SshHelper.sshExecute(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/root/bumpup_priority.sh ");
+
+            if (!result.first()) {
+                s_logger.error("BumpUpPriority command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
+
+                return new Answer(cmd, false, "BumpUpPriorityCommand failed due to " + result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("BumpUpPriorityCommand on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+            }
+        } catch (Throwable e) {
+            String msg = "BumpUpPriorityCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            return new Answer(cmd, false, msg);
+        }
+        if (result.second() == null || result.second().isEmpty()) {
+            return new Answer(cmd, true, result.second());
+        }
+        return new Answer(cmd, false, result.second());
+    }
+
     protected Answer execute(VmDataCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource VmDataCommand: " + _gson.toJson(cmd));
