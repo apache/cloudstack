@@ -810,7 +810,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
                     RedundantState state = RedundantState.UNKNOWN;
-                    boolean isBumped = false;
+                    boolean isBumped = router.getIsPriorityBumpUp();
                     if (answer != null && answer.getResult()) {
                         state = answer.getState();
                         isBumped = answer.isBumped();
