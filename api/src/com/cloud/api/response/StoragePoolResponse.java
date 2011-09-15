@@ -66,6 +66,9 @@ public class StoragePoolResponse extends BaseResponse {
 
     @SerializedName("disksizeallocated") @Param(description="the host's currently allocated disk size")
     private Long diskSizeAllocated;
+    
+    @SerializedName("disksizeused") @Param(description="the host's currently used disk size")
+    private Long diskSizeUsed;
 
     @SerializedName("tags") @Param(description="the tags for the storage pool")
     private String tags;
@@ -216,7 +219,15 @@ public class StoragePoolResponse extends BaseResponse {
         this.diskSizeAllocated = diskSizeAllocated;
     }
 
-    public String getTags() {
+    public Long getDiskSizeUsed() {
+		return diskSizeUsed;
+	}
+
+	public void setDiskSizeUsed(Long diskSizeUsed) {
+		this.diskSizeUsed = diskSizeUsed;
+	}
+
+	public String getTags() {
         return tags;
     }
 

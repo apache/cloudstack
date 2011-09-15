@@ -578,6 +578,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 
             }
             
+        }else if (host.getType() == Host.Type.SecondaryStorage){        	
+        	StorageStats secStorageStats = ApiDBUtils.getSecondaryStorageStatistics(host.getId());
+        	if (secStorageStats != null){
+        		hostResponse.setDiskSizeTotal(secStorageStats.getCapacityBytes());
+        		hostResponse.setDiskSizeAllocated(secStorageStats.getByteUsed());
+        	}
         }
 
         if (host.getClusterId() != null) {
@@ -938,16 +944,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
         Long capacity = pool.getCapacityBytes();
-        Long available = pool.getAvailableBytes();
-        Long used = capacity - available;
-
-        if (stats != null) {
-            used = stats.getByteUsed();
-            available = capacity - used;
-        }
-
+        long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(),Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
-        poolResponse.setDiskSizeAllocated(used);
+        poolResponse.setDiskSizeAllocated(allocatedSize);
+        
+        if (stats != null) {
+            Long used = stats.getByteUsed();
+            poolResponse.setDiskSizeUsed(used);            
+        }        
 
         if (pool.getClusterId() != null) {
             ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
