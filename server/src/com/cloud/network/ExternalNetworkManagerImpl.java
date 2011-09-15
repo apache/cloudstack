@@ -1072,6 +1072,10 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 						NicVO nic = _nicDao.findById(mapping.getNicId());
 						String loadBalancingIpAddress = nic.getIp4Address();
 						bytesSentAndReceived = answer.ipBytes.get(loadBalancingIpAddress);
+						
+						if (bytesSentAndReceived != null) {
+							bytesSentAndReceived[0] = 0;
+						}
 					}
 				} else {
 					bytesSentAndReceived = answer.ipBytes.get(publicIp);
