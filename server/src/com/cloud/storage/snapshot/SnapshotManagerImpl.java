@@ -269,7 +269,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
         ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, volume.getPath(), srcPool, preSnapshotPath, snapshot.getName(), vmName);
-
+      
         ManageSnapshotAnswer answer = (ManageSnapshotAnswer) sendToPool(volume, cmd);
         // Update the snapshot in the database
         if ((answer != null) && answer.getResult()) {
@@ -408,8 +408,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 } else if (snapshot.getStatus() == Snapshot.Status.BackedUp) {
                     // For empty snapshot we set status to BackedUp in createSnapshotOnPrimary
                     backedUp = true;
+                } else {
+                    snapshot.setStatus(Status.Error);
+                    _snapshotDao.update(snapshot.getId(), snapshot);
+                    throw new CloudRuntimeException("Failed to create snapshot: " + snapshot + " on primary storage");
                 }
                 if (!backedUp) {
+                    snapshot.setStatus(Status.Error);
+                    _snapshotDao.update(snapshot.getId(), snapshot);
                     throw new CloudRuntimeException("Created snapshot: " + snapshot + " on primary but failed to backup on secondary");
                 }
             } else {
@@ -426,8 +432,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                             v.getSize());
                     _usageEventDao.persist(usageEvent);
                 }
-            } else if (snapshot == null || !backedUp) {
-                _accountMgr.decrementResourceCount(owner.getId(), ResourceType.snapshot);
+                if( !backedUp ) {
+
+                    snapshot.setStatus(Status.Error);
+                    _snapshotDao.update(snapshot.getId(), snapshot);
+                } else {
+                    _accountMgr.incrementResourceCount(owner.getId(), ResourceType.snapshot);
+                }
             }
             
             if ( volume != null ) {
@@ -600,10 +611,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 _snapshotDao.update(snapshotId, snapshot);
 
-                if (snapshot.isRecursive()) {
-                    _accountMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
-                }
-
             } else {
                 s_logger.warn("Failed to back up snapshot on secondary storage, deleting the record from the DB");
                 _snapshotDao.remove(snapshotId);
@@ -644,6 +651,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshot = _snapshotDao.findByIdIncludingRemoved(snapshotId);
         // Even if the current snapshot failed, we should schedule the next
         // recurring snapshot for this policy.
+        
         if (snapshot.isRecursive()) {
             postCreateRecurringSnapshotForPolicy(userId, volumeId, snapshotId, policyId);
         }
@@ -1283,10 +1291,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
-
-        if (snapshot != null) {
-            _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
-        }
 
         return snapshot;
     }
