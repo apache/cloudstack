@@ -150,7 +150,7 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements Networ
     }
     
     @Override
-    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         return true;
     }
     
