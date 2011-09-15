@@ -27,12 +27,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
@@ -49,6 +51,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
@@ -79,6 +82,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     @Inject ConfigurationManager _configMgr;
     @Inject HostPodDao _podDao;
     @Inject AccountManager _accountMgr;
+    @Inject HostDao _hostDao;
      
     private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
         DataCenter dc = dest.getDataCenter();
@@ -223,21 +227,31 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
             return true;
         }
         
-        VirtualRouter result = null;
-        boolean ret = true;
+        /* Get the host_id in order to find the cluster */
+        Long host_id = new Long(0);
         for (DomainRouterVO router : routers) {
-            if (router.getState() == State.Stopped) {
-                result = _routerMgr.startRouter(router.getId(), false);
-            } else {
-                result = _routerMgr.rebootRouter(router.getId(), false);
+            if (host_id == null || host_id == 0) {
+                host_id = (router.getHostId() != null ? router.getHostId() : router.getLastHostId());
             }
-            if (result == null) {
-                s_logger.warn("Failed to restart dhcp element " + router + " as a part of netowrk " + network + " restart");
-                ret = false;
+            if (cleanup) {
+                /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
+                if (router.getState() != State.Stopped && _routerMgr.stopRouter(router.getId(), false) == null) {
+                    s_logger.warn("Failed to stop dhcp element " + router + " as a part of network " + network + " restart");
+                }
+                if (_routerMgr.destroyRouter(router.getId()) == null) {
+                    s_logger.warn("Failed to destroy dhcp element " + router + " as a part of network " + network + " restart");
+                }
             }
-          
         }
-        return ret;
+        if (host_id == null || host_id == 0) {
+            throw new ResourceUnavailableException("Fail to locate dhcp element in network " + network.getId(), this.getClass(), 0);
+        }
+        
+        /* The cluster here is only used to determine hypervisor type, not the real deployment */
+        Cluster cluster = _configMgr.getCluster(_hostDao.findById(host_id).getClusterId());
+        Pod pod = _configMgr.getPod(_hostDao.findById(host_id).getPodId());
+        dest = new DeployDestination(dc, pod, cluster, null);
+        return implement(network, offering, dest, context);
     }
     
     @Override
