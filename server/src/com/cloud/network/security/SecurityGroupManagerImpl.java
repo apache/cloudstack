@@ -624,7 +624,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 }
 
                 // Check permissions
-                _accountMgr.checkAccess(caller, null, groupVO);
+                if (domainId != groupVO.getDomainId()) {
+                    throw new PermissionDeniedException("Can't add security group id=" + groupVO.getDomainId() + " as it belongs to different domain");
+                }
 
                 authorizedGroups.add(groupVO);
             }
