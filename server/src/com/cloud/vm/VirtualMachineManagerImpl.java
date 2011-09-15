@@ -600,11 +600,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Trying to deploy VM, vm has dcId: "+vm.getDataCenterIdToDeployIn()+" and podId: "+vm.getPodIdToDeployIn() );
+        }
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null);
         if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("advanceStart: DeploymentPlan is provided, using that plan to deploy");
-            }
+                s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:"+planToDeploy.getDataCenterId() + ", podId: "+ planToDeploy.getPodId() 
+                        + ", clusterId: "+ planToDeploy.getClusterId() + ", hostId: "+ planToDeploy.getHostId()+ ", poolId: "+ planToDeploy.getPoolId());
+            }            
             plan = (DataCenterDeployment)planToDeploy;
         }
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
@@ -702,6 +706,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 try {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("VM is being started in podId: "+vm.getPodIdToDeployIn());
+                    }                    
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         _storageMgr.prepare(vmProfile, dest);
