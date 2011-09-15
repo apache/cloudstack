@@ -55,7 +55,8 @@ public interface Snapshot extends ControlledEntity{
         Creating,
         CreatedOnPrimary,
         BackingUp,
-        BackedUp;
+        BackedUp,
+        Error;
         
         public String toString() {
             return this.name();
