@@ -296,14 +296,14 @@ class cgroupConfig(serviceCfgBase):
                         }\n"
             cfo.add_lines(addConfig)
 
-            self.syscfg.svo.stopService("cgconfig")
+            self.syscfg.svo.stopService("cgconfig", True)
             self.syscfg.svo.enableService("cgconfig",forcestart=True)
 
             cfo = configFileOps("/etc/cgrules.conf", self)
             cfgline = "root:/usr/sbin/libvirtd  cpu virt/\n"
             cfo.add_lines(cfgline)
             
-            self.syscfg.svo.stopService("cgred")
+            self.syscfg.svo.stopService("cgred", True)
             if not self.syscfg.svo.enableService("cgred"):
                 return False
             return True
