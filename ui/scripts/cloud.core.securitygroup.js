@@ -291,7 +291,7 @@ function initAddIngressRuleDialog() {
 	                data: createURL("command=authorizeSecurityGroupIngress"+moreCriteria.join("")),
 			        dataType: "json",
 			        success: function(json) {					            		            				
-			            var jobId = json.authorizesecuritygroupingress.jobid; 						            	                   
+			            var jobId = json.authorizesecuritygroupingressresponse.jobid; 						            	                   
 	                    var timerKey = "ingressRuleJob_"+jobId;	                    					        
 				        $("body").everyTime(
 					        5000,
