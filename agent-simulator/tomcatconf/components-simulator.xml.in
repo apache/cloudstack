@@ -11,15 +11,16 @@
         </adapters>
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="Simulator Agent" class="com.cloud.resource.SimulatorDiscoverer"/>
+            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
+            <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.resource.SimulatorSecondaryDiscoverer"/>
         </adapters>
-        <adapters key="com.cloud.alert.AlertAdapter">
-            <adapter name="ClusterAlert" class="com.cloud.alert.ClusterAlertAdapter"/>
-            <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter"/>
-            <adapter name="SecondaryStorageVmAlert" class="com.cloud.alert.SecondaryStorageVmAlertAdapter"/>
-        </adapters>
+       
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru"/>
+            <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
+            <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
         </adapters>
         <adapters key="com.cloud.agent.StartupCommandProcessor">
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>

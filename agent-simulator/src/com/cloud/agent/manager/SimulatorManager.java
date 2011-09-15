@@ -17,6 +17,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.VirtualMachine.State;
 
 public interface SimulatorManager extends Manager {
 	public static final String Name = "simulator manager";
@@ -48,4 +49,6 @@ public interface SimulatorManager extends Manager {
     
     boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values);
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
+
+    Map<String, State> getVmStates(String hostGuid);
 }

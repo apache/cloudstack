@@ -71,6 +71,7 @@ import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine.State;
 @Local(value = { SimulatorManager.class })
 public class SimulatorManagerImpl implements SimulatorManager {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
@@ -130,23 +131,23 @@ public class SimulatorManagerImpl implements SimulatorManager {
     @DB
     @Override
     public Answer simulate(Command cmd, String hostGuid) {
-        MockHost host = _mockHost.findByGuid(hostGuid);
-        MockConfigurationVO config = _mockConfigDao.findByCommand(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmd.toString());
-        if (config == null) {
-            config = _mockConfigDao.findByGlobal(cmd.toString());
-        }
-        
-        if (config != null) {
-            Map<String, String> configParameters = config.getParameters();
-            if (configParameters.get("enabled").equalsIgnoreCase("false")) {
-                return new Answer(cmd, false, "cmd is disabled");
-            }
-        }
-        
         Transaction txn = Transaction.currentTxn();
         txn.transitToUserManagedConnection(_concierge.conn());
         
         try {
+            MockHost host = _mockHost.findByGuid(hostGuid);
+            MockConfigurationVO config = _mockConfigDao.findByCommand(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmd.toString());
+            if (config == null) {
+                config = _mockConfigDao.findByGlobal(cmd.toString());
+            }
+            
+            if (config != null) {
+                Map<String, String> configParameters = config.getParameters();
+                if (configParameters.get("enabled").equalsIgnoreCase("false")) {
+                    return new Answer(cmd, false, "cmd is disabled");
+                }
+            }
+            
             if (cmd instanceof GetHostStatsCommand) {
                 return _mockAgentMgr.getHostStatistic((GetHostStatsCommand)cmd);
             } else if (cmd instanceof CheckHealthCommand) {
@@ -265,6 +266,18 @@ public class SimulatorManagerImpl implements SimulatorManager {
         config.setValues(values);
         _mockConfigDao.persist(config);
         return true;
+    }
+    
+    @Override
+    @DB
+    public Map<String, State> getVmStates(String hostGuid) {
+        Transaction txn = Transaction.currentTxn();
+        txn.transitToUserManagedConnection(_concierge.conn());
+        try {
+            return _mockVmMgr.getVmStates(hostGuid);
+        } finally {
+            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+        }
     }
 
     @Override
