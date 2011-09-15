@@ -21,6 +21,7 @@ import javax.ejb.Local;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 
@@ -31,11 +32,18 @@ public class VmwareInvestigator extends AdapterBase implements Investigator {
     
     @Override
     public Status isAgentAlive(HostVO agent) {
+    	if(agent.getHypervisorType() == HypervisorType.VMware)
+    		return Status.Disconnected;
+    	
     	return null;
     }
     
     @Override
     public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
+    	if(vm.getHypervisorType() == HypervisorType.VMware)
+    		return true;
+    	
     	return null;
     }
 }
+
