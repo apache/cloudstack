@@ -78,7 +78,7 @@ public class MockVmManagerImpl implements MockVmManager {
 	@Inject MockAgentManager _mockAgentMgr = null;
 	@Inject MockHostDao _mockHostDao = null;
 	@Inject MockSecurityRulesDao _mockSecurityDao = null;
-	private Map<String, List<Ternary<String,Long,Long>>> _securityRules = new ConcurrentHashMap<String, List<Ternary<String, Long, Long>>>();
+	private Map<String, Map<String, Ternary<String,Long,Long>>> _securityRules = new ConcurrentHashMap<String, Map<String, Ternary<String, Long, Long>>>();
 	
 	public MockVmManagerImpl() {
 	}
@@ -357,25 +357,27 @@ public class MockVmManagerImpl implements MockVmManager {
 
     @Override
     public SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, String hostGuid) {
-        logSecurityGroupAction(cmd);
-        List<Ternary<String,Long, Long>> rules = _securityRules.get(hostGuid);
+        
+        Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(hostGuid);
+       
         if (rules == null) {
-            rules = new ArrayList<Ternary<String, Long, Long>>();
-            rules.add(new Ternary<String,Long, Long>(cmd.getVmName(), cmd.getVmId(), cmd.getSeqNum()));
+            logSecurityGroupAction(cmd, null);
+            rules = new ConcurrentHashMap<String, Ternary<String, Long, Long>>();
+            rules.put(cmd.getVmName(), new Ternary<String,Long, Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
             _securityRules.put(hostGuid, rules);
         } else {
-            rules.add(new Ternary<String, Long,Long>(cmd.getVmName(), cmd.getVmId(), cmd.getSeqNum()));
+            logSecurityGroupAction(cmd, rules.get(cmd.getVmName()));
+            rules.put(cmd.getVmName(), new Ternary<String, Long,Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
         }
         
         return new SecurityIngressRuleAnswer(cmd);
     }
     
-    private boolean logSecurityGroupAction(SecurityIngressRulesCmd cmd) {
+    private boolean logSecurityGroupAction(SecurityIngressRulesCmd cmd, Ternary<String,Long, Long> rule) {
         String action = ", do nothing";
         String reason = ", reason=";
-        MockSecurityRulesVO rule = _mockSecurityDao.findByVmId(cmd.getVmId());
-        Long currSeqnum = rule == null? null: rule.getSeqNum();
-        String currSig = rule == null? null: rule.getSignature();
+        Long currSeqnum = rule == null? null: rule.third();
+        String currSig = rule == null? null: rule.first();
         boolean updateSeqnoAndSig = false;
         if (currSeqnum != null) {
             if (cmd.getSeqNum() > currSeqnum) {
@@ -429,12 +431,12 @@ public class MockVmManagerImpl implements MockVmManager {
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
         HashMap<String, Pair<Long, Long>> maps = new HashMap<String, Pair<Long, Long>>();
         
-        List<Ternary<String, Long, Long>> rules = _securityRules.get(hostGuid);
+        Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(hostGuid);
         if (rules == null) {
             return maps;
         }
-        for (Ternary<String, Long, Long> rule : rules) {
-            maps.put(rule.first(), new Pair<Long, Long>(rule.second(), rule.third()));
+        for (Map.Entry<String,Ternary<String, Long, Long>> rule : rules.entrySet()) {
+            maps.put(rule.getKey(), new Pair<Long, Long>(rule.getValue().second(), rule.getValue().third()));
         }
         return maps;
     }
