@@ -691,6 +691,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
 
                 long destHostId = dest.getHost().getId();
+                vm.setPodId(dest.getPod().getId());
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
@@ -714,7 +715,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     cmds.addCommand(new StartCommand(vmTO));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
-                    vm.setPodId(dest.getPod().getId());
 
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
