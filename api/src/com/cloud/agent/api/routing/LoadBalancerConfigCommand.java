@@ -26,18 +26,26 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
     public String lbStatsVisibility = "guest-network";
-    public String lbStatsIp; /* load balancer listen on this ip for stats */
+    public String lbStatsPublicIP; /* load balancer listen on this ips for stats */
+    public String lbStatsPrivateIP; /* load balancer listen on this ips for stats */
+    public String lbStatsGuestIP; /* load balancer listen on this ips for stats */
     public String lbStatsPort = "8081"; /*load balancer listen on this port for stats */
     public String lbStatsSrcCidrs = "0/0" ; /* TODO : currently there is no filtering based on the source ip */
     public String lbStatsAuth = "admin1:AdMiN123";
     public String lbStatsUri = "/admin?stats";  
     
     protected LoadBalancerConfigCommand() {
-        
     }
     
     public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers) {
     	this.loadBalancers = loadBalancers;
+    }
+
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers,String PublicIp,String GuestIp,String PrivateIp) {
+    	this.loadBalancers = loadBalancers;
+    	this.lbStatsPublicIP = PublicIp;
+    	this.lbStatsPrivateIP = PrivateIp;
+    	this.lbStatsGuestIP = GuestIp;
     }
     
    
