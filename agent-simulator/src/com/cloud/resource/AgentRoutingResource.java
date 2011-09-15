@@ -245,9 +245,10 @@ public class AgentRoutingResource extends AgentStorageResource {
         HashMap<String, State> changes = new HashMap<String, State>();
 
         synchronized (_vms) {
-            newStates = getVmMgr().getVmStates(hostGuid);
             oldStates = new HashMap<String, State>(_vms.size());
             oldStates.putAll(_vms);
+            newStates = new HashMap<String, State>(_vms.size());
+            newStates.putAll(_vms);
 
             for (Map.Entry<String, State> entry : newStates.entrySet()) {
                 String vm = entry.getKey();
