@@ -735,14 +735,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	
 	protected String startDomain(Connect conn, String vmName, String domainXML) throws LibvirtException, InternalErrorException{
 		/*No duplicated vm, we will success, or failed*/
-		boolean failed =false;
 		Domain dm = null;
 		try {
-			dm = conn.domainDefineXML(domainXML);
+		    dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
+		    try {
+		        if (dm.getInfo().state != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF)
+		            dm.shutdown();
+		    } catch (LibvirtException e) {
+		       s_logger.debug("Failed to shutdown the VM: " + e.toString()); 
+		    }
+		    try {
+		        dm.undefine();
+		    } catch (LibvirtException e) {
+		        s_logger.debug("Failed to undefine the VM: " + e.toString()); 
+		    }
 		} catch (final LibvirtException e) {
-			/*Duplicated defined vm*/
-			s_logger.warn("Failed to define domain " + vmName + ": " + e.getMessage());
-			failed = true;
 		} finally {
 			try {
 				if (dm != null) {
@@ -753,15 +760,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 		}
 		
-		/*If failed, undefine the vm*/
-		Domain dmOld = null;
 		Domain dmNew = null;
 		try {
-			if (failed) {
-				dmOld = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
-				dmOld.undefine();
 				dmNew = conn.domainDefineXML(domainXML);
-			}
 		} catch (final LibvirtException e) {
 			s_logger.warn("Failed to define domain (second time) " + vmName + ": " + e.getMessage());
 			throw e;
@@ -770,9 +771,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			throw new InternalErrorException(e.toString());
 		} finally {
 			try {
-				if (dmOld != null) {
-                    dmOld.free();
-                }
 				if (dmNew != null) {
                     dmNew.free();
                 }
@@ -787,6 +785,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			dm.create();
 		} catch (LibvirtException e) {
 			s_logger.warn("Failed to start domain: " + vmName + ": " + e.getMessage());
+			dm.undefine();
 			throw e;
 		} finally {
 			try {

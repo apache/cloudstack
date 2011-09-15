@@ -414,6 +414,14 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("group", "\"root\"")
             cfo.save()
             
+            filename = "/etc/sysconfig/libvirt-guests"
+            if os.path.exists(filename):
+                cfo = configFileOps(filename, self)
+                cfo.addEntry("ON_BOOT","ignore")
+                cfo.addEntry("ON_SHUTDOWN", "shutdown")
+                cfo.addEntry("SHUTDOWN_TIMEOUT","10")
+                cfo.save()
+            
             self.syscfg.svo.stopService("libvirtd")
             if not self.syscfg.svo.startService("libvirtd"):
                 return False
