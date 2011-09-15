@@ -2755,6 +2755,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
         UserVmVO vm = profile.getVirtualMachine();
+        
+        Answer[] answersToCmds = cmds.getAnswers();
+        if(answersToCmds == null){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Returning from finalizeStart() since there are no answers to read");
+            }
+            return true;
+        }
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
         String returnedIp = null;
         String originalIp = null;
