@@ -61,6 +61,12 @@ fw_chain_for_ip () {
   sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT> /dev/null
   #ensure that this table is after VPN chain
   sudo iptables -t mangle -I PREROUTING 2 -d $pubIp -j FIREWALL_$pubIp
+  success=$?
+  if [ $success -gt 0 ]
+  then
+  # if VPN chain is not present for various reasons, try to add in to the first slot */
+     sudo iptables -t mangle -I PREROUTING -d $pubIp -j FIREWALL_$pubIp
+  fi
 }
 
 fw_entry_for_public_ip() {
