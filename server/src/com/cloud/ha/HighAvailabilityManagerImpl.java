@@ -68,10 +68,8 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
@@ -269,9 +267,17 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     	if (hostId == null) {
     	    try {
     	        s_logger.debug("Found a vm that is scheduled to be restarted but has no host id: " + vm);
-    	        _itMgr.stateTransitTo(vm, Event.OperationFailed, null);
-    	    } catch (NoTransitionException e) {
-    	    }
+                _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            } catch (ResourceUnavailableException e) {
+                assert false : "How do we hit this when force is true?";
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+            } catch (OperationTimedoutException e) {
+                assert false : "How do we hit this when force is true?";
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+            } catch (ConcurrentOperationException e) {
+                assert false : "How do we hit this when force is true?";
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+            }            
     	    return;
     	}
     	
@@ -300,12 +306,15 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             try {
                 _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             } catch (ResourceUnavailableException e) {
-                // FIXME
+                assert false : "How do we hit this when force is true?";
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             } catch (OperationTimedoutException e) {
-                // FIXME
+                assert false : "How do we hit this when force is true?";
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             } catch (ConcurrentOperationException e) {
-                // FIXME
-            }
+                assert false : "How do we hit this when force is true?";
+                throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+            }        
         }
 
         List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
@@ -454,7 +463,19 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                 work.setStep(Step.Scheduled);
                 _haDao.update(work.getId(), work);
             } else {
-                assert false : "How come that HA step is Investigating and the host is removed?";
+                s_logger.debug("How come that HA step is Investigating and the host is removed? Calling forced Stop on Vm anyways");
+                try {
+                    _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                } catch (ResourceUnavailableException e) {
+                    assert false : "How do we hit this when force is true?";
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                } catch (OperationTimedoutException e) {
+                    assert false : "How do we hit this when force is true?";
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                } catch (ConcurrentOperationException e) {
+                    assert false : "How do we hit this when force is true?";
+                    throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
+                }
             }
         }
 
@@ -594,12 +615,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         s_logger.info("Stopping " + vm);
         try {
             if (work.getWorkType() == WorkType.Stop) {
-                if (vm.getHostId() == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(vm.toString() + " has already been stopped");
-                    }
-                    return null;
-                }
                 if (_itMgr.advanceStop(vm, false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
                     s_logger.info("Successfully stopped " + vm);
                     return null;

@@ -2058,6 +2058,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             boolean doCidrCheck = true;
 
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            if(clusterVO == null){
+                throw new IllegalArgumentException("Cluster with id " + clusterId + " does not exist, cannot add host with this clusterId");                
+            }
             if (clusterVO.getHypervisorType() != scc.getHypervisorType()) {
                 throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + scc.getHypervisorType() + " into cluster: " + clusterId + " whose hypervisor type is: "
                         + clusterVO.getHypervisorType());
