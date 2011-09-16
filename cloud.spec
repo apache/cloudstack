@@ -138,6 +138,7 @@ Summary:   Cloud.com management server
 # If GCJ is present, a setPerformanceSomething method fails to load Catalina
 Conflicts: java-1.5.0-gcj-devel
 Obsoletes: vmops-client < %{version}-%{release}
+Obsoletes: cloud-premium < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-deps = %{version}, %{name}-utils = %{version}, %{name}-server = %{version}
 Requires: %{name}-client-ui = %{version}
@@ -205,6 +206,7 @@ Obsoletes: vmops-agent < %{version}-%{release}
 Obsoletes: vmops-console < %{version}-%{release}
 Obsoletes: cloud-console < %{version}-%{release}
 Obsoletes: cloud-vnet < %{version}-%{release}
+Obsoletes: cloud-premium-agent < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: %{name}-agent-libs = %{version}
