@@ -38,3 +38,11 @@ ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwar
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__deleted`(`deleted`);
+
+ALTER IGNORE TABLE  `cloud_usage`.`usage_vm_instance` ADD UNIQUE (`vm_instance_id`, `usage_type`, `start_date`);
+ALTER IGNORE TABLE  `cloud_usage`.`usage_ip_address` ADD UNIQUE (`id`, `assigned`);
+ALTER IGNORE TABLE  `cloud_usage`.`usage_volume` ADD UNIQUE (`id`, `created`);
+ALTER IGNORE TABLE  `cloud_usage`.`usage_storage` ADD UNIQUE (`id`, `storage_type`, `zone_id`, `created`);
+ALTER TABLE  `cloud_usage`.`usage_load_balancer_policy` ADD PRIMARY KEY (`id`);
+ALTER TABLE  `cloud_usage`.`usage_port_forwarding` ADD PRIMARY KEY (`id`);
+ALTER IGNORE TABLE  `cloud_usage`.`usage_network_offering` ADD UNIQUE (`network_offering_id`, `vm_instance_id`, `created`);
