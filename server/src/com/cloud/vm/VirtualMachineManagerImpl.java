@@ -924,13 +924,33 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             return true;
         }
-
+        //grab outstanding work item if any  
+        ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
+        if(work != null){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found an outstanding work item for this vm "+ vm + " with state:"+vm.getState()+", work id:"+work.getId());
+            }
+        }
         Long hostId = vm.getHostId();
         if (hostId == null) {
+            if(!forced){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("HostId is null but this is not a forced stop, cannot stop vm "+ vm + " with state:"+vm.getState());
+                }                
+                return false;
+            }
             try {
                 stateTransitTo(vm, Event.AgentReportStopped, null, null);
             } catch (NoTransitionException e) {
                 s_logger.warn(e.getMessage());
+            }
+            //mark outstanding work item if any as done 
+            if (work != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Updating work item to Done, id:"+work.getId());
+                }
+                work.setStep(Step.Done);
+                _workDao.update(work.getId(), work);                
             }
             return true;
         }
@@ -946,22 +966,46 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             if (!forced) {
                 throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
             }
-            s_logger.debug("Unable to transition the state but we're moving on because it's forced stop");
-            if (state == State.Starting || state == State.Stopping || state == State.Migrating) {
-                ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
+            boolean doCleanup = false;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to transition the state but we're moving on because it's forced stop");
+            }
+            if (state == State.Starting || state == State.Migrating) {
                 if (work != null) {
-                    if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
-                        try {
-                            return stateTransitTo(vm, Event.AgentReportStopped, null);
-                        } catch (NoTransitionException e) {
-                            s_logger.warn("Unable to cleanup " + vm);
-                            return false;
-                        }
+                    doCleanup = true;
+                }else{
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to cleanup VM: "+ vm+" ,since outstanding work item is not found");
                     }
+                    throw new CloudRuntimeException("Work item not found, We cannot stop " + vm + " when it is in state " + vm.getState());
+                }
+            }else if(state == State.Stopping){
+                doCleanup = true;               
+            }
+            
+            if(doCleanup){
+                if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
+                    try {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Updating work item to Done, id:"+work.getId());
+                        }
+                        return changeState(vm, Event.AgentReportStopped, null, work, Step.Done);
+                    } catch (NoTransitionException e) {
+                        s_logger.warn("Unable to cleanup " + vm);
+                        return false;
+                    }
+                }else{
+                    if (s_logger.isDebugEnabled()) {                    
+                        s_logger.debug("Failed to cleanup VM: "+ vm);
+                    }
+                    throw new CloudRuntimeException("Failed to cleanup " + vm + " , current state " + vm.getState());
                 }
             }
         }
 
+        if(vm.getState() != State.Stopping){
+            throw new CloudRuntimeException("We cannot proceed with stop VM " + vm + " since it is not in 'Stopping' state, current state: " + vm.getState());
+        }
         String routerPrivateIp = null;
         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
             routerPrivateIp = vm.getPrivateIpAddress();
@@ -1017,6 +1061,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         try {
+            if (work != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Updating the outstanding work item to Done, id:"+work.getId());
+                }
+                work.setStep(Step.Done);
+                _workDao.update(work.getId(), work);                
+            }
+            
             return stateTransitTo(vm, Event.OperationSucceeded, null, null);
         } catch (NoTransitionException e) {
             s_logger.warn(e.getMessage());
@@ -1262,14 +1314,18 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             if (vm != null) {
                                 if (work.getType() == State.Starting) {
                                     _haMgr.scheduleRestart(vm, true);
+                                    work.setManagementServerId(_nodeId);
+                                    _workDao.update(work.getId(), work);
                                 } else if (work.getType() == State.Stopping) {
                                     _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.CheckStop);
+                                    work.setManagementServerId(_nodeId);
+                                    _workDao.update(work.getId(), work);
                                 } else if (work.getType() == State.Migrating) {
                                     _haMgr.scheduleMigration(vm);
+                                    work.setStep(Step.Done);
+                                    _workDao.update(work.getId(), work);
                                 }
                             }
-                            work.setStep(Step.Done);
-                            _workDao.update(work.getId(), work);
                         } catch (Exception e) {
                             s_logger.error("Error while handling " + work, e);
                         }
@@ -1693,6 +1749,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         s_logger.debug("VM state is starting on full sync so updating it to running");
         vm = findById(vm.getType(), vm.getId());
+
+        //grab outstanding work item if any  
+        ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());        
+        if(work != null){
+            if (s_logger.isDebugEnabled()) {            
+                s_logger.debug("Found an outstanding work item for this vm "+ vm + " in state:"+vm.getState()+", work id:"+work.getId());
+            }
+        }
+        
         try {
             stateTransitTo(vm, cause, hostId);
         } catch (NoTransitionException e1) {
@@ -1726,6 +1791,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } else {
             s_logger.error("Unable to finalize commands on start for vm: " + vm);
         }
+
+        if (work != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Updating outstanding work item to Done, id:"+work.getId());
+            }
+            work.setStep(Step.Done);
+            _workDao.update(work.getId(), work);                
+        }        
     }
 
     public Commands fullSync(final long hostId, StartupRoutingCommand startup) {

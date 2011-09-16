@@ -132,6 +132,10 @@ public class ItWorkVO {
         return managementServerId;
     }
     
+    public void setManagementServerId(long managementServerId) {
+        this.managementServerId = managementServerId;
+    }
+    
     public State getType() {
         return type;
     }
