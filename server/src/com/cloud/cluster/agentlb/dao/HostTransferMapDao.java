@@ -37,7 +37,7 @@ public interface HostTransferMapDao extends GenericDao<HostTransferMapVO, Long> 
     
     List<HostTransferMapVO> listBy(long futureOwnerId, HostTransferState state);
     
-    boolean isNotActive(long hostId, Date cutTime);
+    HostTransferMapVO findActiveHostTransferMapByHostId(long hostId, Date cutTime);
     
     boolean startAgentTransfer(long hostId);
     

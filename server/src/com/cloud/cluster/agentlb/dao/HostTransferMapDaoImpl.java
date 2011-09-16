@@ -39,7 +39,7 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
 
     protected final SearchBuilder<HostTransferMapVO> AllFieldsSearch;
     protected final SearchBuilder<HostTransferMapVO> IntermediateStateSearch;
-    protected final SearchBuilder<HostTransferMapVO> InactiveSearch;
+    protected final SearchBuilder<HostTransferMapVO> ActiveSearch;
 
     public HostTransferMapDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -55,11 +55,11 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
         IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
         IntermediateStateSearch.done();
         
-        InactiveSearch = createSearchBuilder();
-        InactiveSearch.and("created", InactiveSearch.entity().getCreated(),  SearchCriteria.Op.LTEQ);
-        InactiveSearch.and("id", InactiveSearch.entity().getId(), SearchCriteria.Op.EQ);
-        InactiveSearch.and("state", InactiveSearch.entity().getState(), SearchCriteria.Op.EQ);
-        InactiveSearch.done();
+        ActiveSearch = createSearchBuilder();
+        ActiveSearch.and("created", ActiveSearch.entity().getCreated(),  SearchCriteria.Op.GT);
+        ActiveSearch.and("id", ActiveSearch.entity().getId(), SearchCriteria.Op.EQ);
+        ActiveSearch.and("state", ActiveSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ActiveSearch.done();
         
     }
 
@@ -100,17 +100,14 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
     }
     
     @Override
-    public boolean isNotActive(long hostId, Date cutTime) {
-        SearchCriteria<HostTransferMapVO> sc = InactiveSearch.create();
+    public HostTransferMapVO findActiveHostTransferMapByHostId(long hostId, Date cutTime) {
+        SearchCriteria<HostTransferMapVO> sc = ActiveSearch.create();
         sc.setParameters("id", hostId);
         sc.setParameters("state", HostTransferState.TransferRequested);
         sc.setParameters("created", cutTime);
         
-        if (listBy(sc).isEmpty()) {
-            return false;
-        } else {
-            return true;
-        }
+        return findOneBy(sc);
+        
     }
     
     @Override

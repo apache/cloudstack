@@ -722,9 +722,18 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (event == Event.RequestAgentRebalance) {
             return setToWaitForRebalance(agentId, currentOwnerId, futureOwnerId);
         } else if (event == Event.StartAgentRebalance) {
-            return rebalanceHost(agentId, currentOwnerId, futureOwnerId);
-        } 
-
+            boolean result = false;
+            try {
+                result = rebalanceHost(agentId, currentOwnerId, futureOwnerId);
+            } catch (Exception e) {
+                s_logger.warn("Unable to rebalance host id=" + agentId, e);
+            } finally {
+                if (!result) {
+                    failRebalance(agentId);
+                    return false;
+                }
+            }
+        }
         return true;
     }
     
@@ -883,29 +892,22 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                 // remove the host from re-balance list and delete from op_host_transfer DB
                                 // no need to do anything with the real attache as we haven't modified it yet
                                 Date cutTime = DateUtil.currentGMTTime();
-                                if (_hostTransferDao.isNotActive(hostId, new Date(cutTime.getTime() - rebalanceTimeOut))) {
+                                HostTransferMapVO transferMap = _hostTransferDao.findActiveHostTransferMapByHostId(hostId, new Date(cutTime.getTime() - rebalanceTimeOut));
+
+                                if (transferMap == null) {
                                     s_logger.debug("Timed out waiting for the host id=" + hostId + " to be ready to transfer, skipping rebalance for the host");
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
                                     continue;
                                 }
                                 
-                                if (attache.forForward()) {
+                                if (transferMap.getInitialOwner() != _nodeId || attache.forForward()) {
                                     s_logger.debug("Management server " + _nodeId + " doesn't own host id=" + hostId + " any more, skipping rebalance for the host");
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
                                     continue;
                                 }
-                                
-                                HostTransferMapVO transferMap = _hostTransferDao.findByIdAndCurrentOwnerId(hostId, _nodeId);
-                                
-                                if (transferMap == null) {
-                                    s_logger.debug("Can't transfer host id=" + hostId + "; record for the host no longer exists in op_host_transfer table");
-                                    iterator.remove();
-                                    _hostTransferDao.completeAgentTransfer(hostId);
-                                    continue;
-                                }
-                                
+   
                                 ManagementServerHostVO ms = _mshostDao.findByMsid(transferMap.getFutureOwner());
                                 if (ms != null && ms.getState() != ManagementServerHost.State.Up) {
                                     s_logger.debug("Can't transfer host " + hostId + " as it's future owner is not in UP state: " + ms + ", skipping rebalance for the host");
@@ -996,7 +998,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
     
 
-    protected void finishRebalance(final long hostId, long futureOwnerId, Event event) throws AgentUnavailableException{
+    protected void finishRebalance(final long hostId, long futureOwnerId, Event event){
 
         boolean success = (event == Event.RebalanceCompleted) ? true : false;
         if (s_logger.isDebugEnabled()) {
@@ -1036,10 +1038,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _hostTransferDao.completeAgentTransfer(hostId);
     }
     
-    protected void failRebalance(final long hostId) throws AgentUnavailableException{
-        s_logger.debug("Management server " + _nodeId + " failed to rebalance agent " + hostId);
-        _hostTransferDao.completeAgentTransfer(hostId);
-        reconnect(hostId);
+    protected void failRebalance(final long hostId){
+        try {
+            s_logger.debug("Management server " + _nodeId + " failed to rebalance agent " + hostId);
+            _hostTransferDao.completeAgentTransfer(hostId);
+            reconnect(hostId);
+        } catch (Exception ex) {
+            s_logger.warn("Failed to reconnect host id=" + hostId + " as a part of failed rebalance task cleanup");
+        }
     }
     
     @DB
@@ -1113,14 +1119,19 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         @Override
         public void run() {
+            boolean result = false;
             try {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Rebalancing host id=" + hostId);
                 }
-                rebalanceHost(hostId, currentOwnerId, futureOwnerId);
+                result = rebalanceHost(hostId, currentOwnerId, futureOwnerId);
             } catch (Exception e) {
                 s_logger.warn("Unable to rebalance host id=" + hostId, e);
+                
             } finally {
+                if (!result) {
+                    failRebalance(hostId);
+                }
                 StackMaid.current().exitCleanup();
             }
         }
