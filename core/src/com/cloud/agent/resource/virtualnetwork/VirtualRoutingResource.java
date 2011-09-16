@@ -52,6 +52,7 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
@@ -60,6 +61,7 @@ import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -93,6 +95,7 @@ public class VirtualRoutingResource implements Manager {
     private String _privateEthIf;
     private String _getRouterStatusPath;
     private String _bumpUpPriorityPath;
+    private String _l2tpVpnPath;
 
 
     private int _timeout;
@@ -129,12 +132,55 @@ public class VirtualRoutingResource implements Manager {
                 return execute((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
                 return execute((BumpUpPriorityCommand)cmd);
-            } else {
+            } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
+                return execute((RemoteAccessVpnCfgCommand)cmd);
+            } else if (cmd instanceof VpnUsersCfgCommand) {
+                return execute((VpnUsersCfgCommand)cmd);
+            }
+            else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
         }
+    }
+
+    private Answer execute(VpnUsersCfgCommand cmd) {
+        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
+            Script command = new Script(_l2tpVpnPath, _timeout, s_logger);
+            command.add(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+            if (!userpwd.isAdd()) {
+                command.add("-U ", userpwd.getUsername());
+            } else {
+                command.add("-u ", userpwd.getUsernamePassword());
+            }
+            String result = command.execute();
+            if (result != null) {
+                return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
+            }
+        }
+        
+        return new Answer(cmd);
+    }
+
+    private Answer execute(RemoteAccessVpnCfgCommand cmd) {
+        Script command = new Script(_l2tpVpnPath, _timeout, s_logger);
+        command.add(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        if (cmd.isCreate()) {
+            command.add("-r ", cmd.getIpRange());
+            command.add("-p ", cmd.getPresharedKey());
+            command.add("-s ", cmd.getVpnServerIp());
+            command.add("-l ", cmd.getLocalIp());
+            command.add("-c ");
+        } else {
+            command.add("-d ");
+            command.add("-s ", cmd.getVpnServerIp());
+        }
+        String result = command.execute();
+        if (result != null) {
+            return new Answer(cmd, false, "Configure VPN failed");
+        }
+        return new Answer(cmd);
     }
 
     private Answer execute(SetFirewallRulesCommand cmd) {
@@ -774,6 +820,11 @@ public class VirtualRoutingResource implements Manager {
         _bumpUpPriorityPath = findScript("bumpUpPriority.sh");
         if(_bumpUpPriorityPath == null) {
             throw new ConfigurationException("Unable to find bumpUpPriority.sh");
+        }
+        
+        _l2tpVpnPath = findScript("l2tp_vpn.sh");
+        if (_l2tpVpnPath == null) {
+            throw new ConfigurationException("Unable to find l2tp_vpn.sh");
         }
 
         return true;
