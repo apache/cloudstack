@@ -64,7 +64,8 @@ CREATE TABLE  `cloud_usage`.`usage_vm_instance` (
   `template_id` bigint unsigned NOT NULL,
   `hypervisor_type` varchar(255),
   `start_date` DATETIME NOT NULL,
-  `end_date` DATETIME NULL
+  `end_date` DATETIME NULL,
+  UNIQUE KEY (`vm_instance_id`, `usage_type`, `start_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__account_id`(`account_id`);
@@ -95,7 +96,8 @@ CREATE TABLE  `cloud_usage`.`usage_ip_address` (
   `public_ip_address` varchar(15) NOT NULL,
   `is_source_nat` smallint(1) NOT NULL,
   `assigned` DATETIME NOT NULL,
-  `released` DATETIME NULL
+  `released` DATETIME NULL,
+  UNIQUE KEY (`id`, `assigned`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_ip_address` ADD INDEX `i_usage_ip_address__account_id`(`account_id`);
@@ -159,7 +161,8 @@ CREATE TABLE  `cloud_usage`.`usage_volume` (
   `template_id` bigint unsigned,
   `size` bigint unsigned,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
+  `deleted` DATETIME NULL,
+  UNIQUE KEY (`id`, `created`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_volume` ADD INDEX `i_usage_volume__account_id`(`account_id`);
@@ -175,7 +178,8 @@ CREATE TABLE  `cloud_usage`.`usage_storage` (
   `source_id` bigint unsigned,
   `size` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
+  `deleted` DATETIME NULL,
+  UNIQUE KEY (`id`, `storage_type`, `zone_id`, `created`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__account_id`(`account_id`);
@@ -199,7 +203,8 @@ CREATE TABLE  `cloud_usage`.`usage_load_balancer_policy` (
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
+  `deleted` DATETIME NULL,
+  PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__account_id`(`account_id`);
@@ -230,7 +235,8 @@ CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
+  `deleted` DATETIME NULL,
+  PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__account_id`(`account_id`);
@@ -245,7 +251,8 @@ CREATE TABLE  `cloud_usage`.`usage_network_offering` (
   `network_offering_id` bigint unsigned NOT NULL,
   `is_default` smallint(1) NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
+  `deleted` DATETIME NULL,
+  UNIQUE KEY (`network_offering_id`, `vm_instance_id`, `created`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__account_id`(`account_id`);
