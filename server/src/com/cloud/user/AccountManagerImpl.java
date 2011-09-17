@@ -49,17 +49,17 @@ import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
-import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceCountCmd;
-import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -88,7 +88,6 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
-import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -399,198 +398,161 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return _resourceCountDao.getAccountCount(account.getId(), type);
     }
 
+
     @Override
-    public List<ResourceLimitVO> searchForLimits(Criteria c) {
-        Long id = (Long) c.getCriteria(Criteria.ID);
-        Long domainId = (Long) c.getCriteria(Criteria.DOMAINID);
-        Long accountId = (Long) c.getCriteria(Criteria.ACCOUNTID);
-        ResourceType type = (ResourceType) c.getCriteria(Criteria.TYPE);
+    public List<ResourceLimitVO> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
+       Account caller = UserContext.current().getCaller();
+       List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
+       boolean isAccount = true;
+       
+       Long accountId = null;
+       
+       if (!isAdmin(caller.getType())) {
+           accountId = caller.getId();
+           domainId = null;
+       } else {
+           if (domainId != null) {
+               //verify domain information and permissions
+               Domain domain = _domainDao.findById(domainId);
+               if (domain == null) {
+                   //return empty set
+                   return limits;
+               }
+               
+               checkAccess(caller, domain);
+               
+               if (accountName != null) {
+                   //Verify account information and permissions
+                   Account account = _accountDao.findAccount(accountName, domainId);
+                   if (account == null) {
+                       //return empty set
+                       return limits;
+                   }
+                   
+                   checkAccess(caller, null, account);
+                   
+                   accountId = account.getId();
+                   domainId = null;
+               } 
+           }
+       }
+       
+       // Map resource type
+       ResourceType resourceType = null;
+       if (type != null) {
+           try {
+               resourceType = ResourceType.values()[type];
+           } catch (ArrayIndexOutOfBoundsException e) {
+               throw new InvalidParameterValueException("Please specify a valid resource type.");
+           }
+       }
 
-        // For 2.0, we are just limiting the scope to having an user retrieve
-        // limits for himself and if limits don't exist, use the ROOT domain's limits.
-        // - Will
-        List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
+       //If id is passed in, get the record and return it if permission check has passed
+       if (id != null) {
+           ResourceLimitVO vo = _resourceLimitDao.findById(id);
+           if (vo.getAccountId() != null) {
+               checkAccess(caller, null, _accountDao.findById(vo.getAccountId()));
+               limits.add(vo);
+           } else if (vo.getDomainId() != null) {
+               checkAccess(caller, _domainDao.findById(vo.getDomainId()));
+               limits.add(vo);
+           }
+           
+           return limits;
+       } 
+       
+       
+       //If account is not specified, default it to caller account
+       if (accountId == null) {
+           if (domainId == null) {
+               accountId = caller.getId();
+               isAccount = true;
+           } else {
+               isAccount = false;
+           }
+       } else {
+           isAccount = true;
+       }   
+       
+       SearchBuilder<ResourceLimitVO> sb = _resourceLimitDao.createSearchBuilder();
+       sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+       sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+       sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
 
-        if ((accountId != null) && (domainId != null)) {
-            // if domainId==ROOT_DOMAIN and account belongs to admin
-            // return all records for resource limits (bug 3778)
-
-            if (domainId == DomainVO.ROOT_DOMAIN) {
-                AccountVO account = _accountDao.findById(accountId);
-
-                if ((account != null) && (account.getType() == 1)) {
-                    // account belongs to admin return all limits
-                    limits = _resourceLimitDao.listAll();
-                    return limits;
-                }
-            }
-        }
-
-        if (accountId != null) {
-            SearchBuilder<ResourceLimitVO> sb = _resourceLimitDao.createSearchBuilder();
-            sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-            sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-
-            SearchCriteria<ResourceLimitVO> sc = sb.create();
-
-            if (accountId != null) {
-                sc.setParameters("accountId", accountId);
-            }
-
-            if (type != null) {
-                sc.setParameters("type", type);
-            }
-
-            if (id != null) {
-                sc.setParameters("id", id);
-            }
-
-            // Listing all limits for an account
-            if (type == null) {
-                // List<ResourceLimitVO> userLimits = _resourceLimitDao.search(sc, searchFilter);
-                List<ResourceLimitVO> userLimits = _resourceLimitDao.listByAccountId(accountId);
-                List<ResourceLimitVO> rootLimits = _resourceLimitDao.listByDomainId(DomainVO.ROOT_DOMAIN);
-                ResourceType resourceTypes[] = ResourceType.values();
-
-                for (ResourceType resourceType : resourceTypes) {
-                    boolean found = false;
-                    for (ResourceLimitVO userLimit : userLimits) {
-                        if (userLimit.getType() == resourceType) {
-                            limits.add(userLimit);
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        // Check the ROOT domain
-                        for (ResourceLimitVO rootLimit : rootLimits) {
-                            if (rootLimit.getType() == resourceType) {
-                                limits.add(rootLimit);
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!found) {
-                        limits.add(new ResourceLimitVO(domainId, accountId, resourceType, -1L));
-                    }
-                }
-            } else {
-                AccountVO account = _accountDao.findById(accountId);
-                limits.add(new ResourceLimitVO(null, accountId, type, findCorrectResourceLimit(account.getId(), type)));
-            }
-        } else if (domainId != null) {
-            if (type == null) {
-                ResourceType resourceTypes[] = ResourceType.values();
-                List<ResourceLimitVO> domainLimits = _resourceLimitDao.listByDomainId(domainId);
-                for (ResourceType resourceType : resourceTypes) {
-                    boolean found = false;
-                    for (ResourceLimitVO domainLimit : domainLimits) {
-                        if (domainLimit.getType() == resourceType) {
-                            limits.add(domainLimit);
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        limits.add(new ResourceLimitVO(domainId, null, resourceType, -1L));
-                    }
-                }
-            } else {
-                limits.add(_resourceLimitDao.findByDomainIdAndType(domainId, type));
-            }
-        }
-        return limits;
+       SearchCriteria<ResourceLimitVO> sc = sb.create();
+       Filter filter = new Filter(ResourceLimitVO.class, "id", true, startIndex, pageSizeVal);
+       
+       if (accountId != null) {
+           sc.setParameters("accountId", accountId);
+       } 
+       
+       if (domainId != null) {
+           sc.setParameters("domainId", domainId);
+           sc.setParameters("accountId", null);
+       }
+       
+       if (resourceType != null) {
+           sc.setParameters("type", resourceType);
+       }
+       
+       List<ResourceLimitVO> foundLimits = _resourceLimitDao.search(sc, filter);
+       
+       if (resourceType != null) {
+           if (foundLimits.isEmpty()) {
+               if (isAccount) {
+                   limits.add(new ResourceLimitVO(null, accountId, resourceType, findCorrectResourceLimit(accountId, resourceType)));
+               } else {
+                   limits.add(new ResourceLimitVO(domainId, null, resourceType, findCorrectResourceLimit(_domainDao.findById(domainId), resourceType)));
+               }
+           } else {
+               limits.addAll(foundLimits);
+           }
+       } else {
+           limits.addAll(foundLimits);
+           
+           //see if any limits are missing from the table, and if yes - get it from the config table and add
+           ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
+           if (foundLimits.size() != resourceTypes.length) {
+               List<String> accountLimitStr = new ArrayList<String>();
+               List<String> domainLimitStr = new ArrayList<String>();
+               for (ResourceLimitVO foundLimit : foundLimits) {
+                   if (foundLimit.getAccountId() != null) {
+                       accountLimitStr.add(foundLimit.getType().toString());
+                   } else {
+                       domainLimitStr.add(foundLimit.getType().toString());
+                   }
+               }
+               
+               //get default from config values
+               if (isAccount) {
+                   if (accountLimitStr.size() < resourceTypes.length) {
+                       for (ResourceType rt : resourceTypes) {
+                           if (!accountLimitStr.contains(rt.toString())) {
+                               limits.add(new ResourceLimitVO(null, accountId, rt, findCorrectResourceLimit(accountId, rt)));
+                           }
+                       }
+                   }
+                   
+               } else {
+                   if (domainLimitStr.size() < resourceTypes.length) {
+                       for (ResourceType rt : resourceTypes) {
+                           if (!domainLimitStr.contains(rt.toString())) {
+                               limits.add(new ResourceLimitVO(domainId, null, rt, findCorrectResourceLimit(_domainDao.findById(domainId), rt)));
+                           }
+                       }
+                   }
+               }
+           }
+       }
+       
+       return limits;
     }
 
     @Override
-    public List<ResourceLimitVO> searchForLimits(ListResourceLimitsCmd cmd) {
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
-        Account account = UserContext.current().getCaller();
-
-        if ((account == null) || isAdmin(account.getType())) {
-            if (accountName != null) {
-                // Look up limits for the specified account
-
-                if (domainId == null) {
-                    throw new InvalidParameterValueException("Failed to list limits for account " + accountName + " no domain id specified.");
-                }
-
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
-                }
-
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                if (userAccount == null) {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                }
-
-                if (account != null) {
-                    checkAccess(account, domain);
-                }
-
-                accountId = userAccount.getId();
-                domainId = null;
-            } else if (domainId != null) {
-                // Look up limits for the specified domain
-
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
-                }
-
-                if (account != null) {
-                    checkAccess(account, domain);
-                }
-
-                accountId = null;
-            } else if (account == null) {
-                // Look up limits for the ROOT domain
-                domainId = DomainVO.ROOT_DOMAIN;
-            } else {
-                // Look up limits for the admin's account
-                accountId = account.getId();
-                domainId = null;
-            }
-        } else {
-            // Look up limits for the user's account
-            accountId = account.getId();
-            domainId = null;
-        }
-
-        // Map resource type
-        ResourceType resourceType = null;
-        Integer type = cmd.getResourceType();
-        try {
-            if (type != null) {
-                resourceType = ResourceType.values()[type];
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new InvalidParameterValueException("Invalid resource type " + type + " given.  Please specify a valid resource type.");
-        }
-
-        Criteria c = new Criteria("id", Boolean.FALSE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.DOMAINID, domainId);
-        c.addCriteria(Criteria.ACCOUNTID, accountId);
-        c.addCriteria(Criteria.TYPE, resourceType);
-        return searchForLimits(c);
-    }
-
-    @Override
-    public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) {
-        Account account = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long max = cmd.getMax();
-        Integer type = cmd.getResourceType();
-
-        // Validate input
-        Long accountId = null;
+    public ResourceLimitVO updateResourceLimit(String accountName, Long domainId, int typeId, Long max) {
+        Account caller = UserContext.current().getCaller();
+        Long ownerId = null;
+        OwnerType ownerType = OwnerType.Account;
 
         if (max == null) {
             max = new Long(-1);
@@ -599,140 +561,66 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         // Map resource type
-        ResourceType resourceType;
+        ResourceType resourceType = null;
         try {
-            resourceType = ResourceType.values()[type];
+            resourceType = ResourceType.values()[typeId];
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new InvalidParameterValueException("Please specify a valid resource type.");
         }
-
-        // Either a domainId or an accountId must be passed in, but not both.
-        if ((domainId == null) && (accountName == null)) {
-            throw new InvalidParameterValueException("Either a domainId or domainId/account must be passed in.");
-        }
-
-        if (account != null) {
-            if (domainId != null) {
-                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to update resource limit for " + ((account.getAccountName() == null) ? "" : "account " + account.getAccountName() + " in ") + "domain "
-                            + domainId + ", permission denied");
-                }
-            } else if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                domainId = DomainVO.ROOT_DOMAIN; // for root admin, default to root domain if domain is not specified
+        
+        //check permisions
+        if (domainId != null) {
+            //verify domain information and permissions
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
             }
-
-            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                if ((domainId != null) && (accountName == null) && domainId.equals(account.getDomainId())) {
+            
+            checkAccess(caller, domain);
+            
+            if (accountName != null) {
+                //Verify account information and permissions
+                Account account = _accountDao.findAccount(accountName, domainId);
+                
+                checkAccess(caller, null, account);
+                
+                if (account.getType() == Account.ACCOUNT_ID_SYSTEM) {
+                    throw new InvalidParameterValueException("Can't update system account");
+                }
+                
+                ownerId = account.getId();
+            } else {
+                if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                     // if the admin is trying to update their own domain, disallow...
                     throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
                 }
-
-                // If there is an existing ROOT domain limit, make sure its max isn't being exceeded
-                Criteria c = new Criteria();
-                c.addCriteria(Criteria.DOMAINID, DomainVO.ROOT_DOMAIN);
-                c.addCriteria(Criteria.TYPE, resourceType);
-                List<ResourceLimitVO> currentRootDomainLimits = searchForLimits(c);
-                ResourceLimitVO currentRootDomainLimit = (currentRootDomainLimits.size() == 0) ? null : currentRootDomainLimits.get(0);
-                if (currentRootDomainLimit != null) {
-                    long currentRootDomainMax = currentRootDomainLimits.get(0).getMax();
-                    if ((max == -1 && currentRootDomainMax != -1) || max > currentRootDomainMax) {
-                        throw new InvalidParameterValueException("The current ROOT domain limit for resource type " + resourceType + " is " + currentRootDomainMax + " and cannot be exceeded.");
+                
+                Long parentDomainId = domain.getParent();
+                if (parentDomainId != null) {
+                    DomainVO parentDomain = _domainDao.findById(parentDomainId);
+                    long parentMaximum = findCorrectResourceLimit(parentDomain, resourceType);
+                    if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
+                        throw new InvalidParameterValueException("Domain (id: " + domainId + ") has maximum allowed resource limit " + parentMaximum + " for " + resourceType
+                                + ", please specify a value less that or equal to " + parentMaximum);
                     }
                 }
+                
+                ownerId = domain.getId();
+                ownerType = OwnerType.Domain;
             }
         }
 
-        if (accountName != null) {
-            if (domainId == null) {
-                throw new InvalidParameterValueException("domainId parameter is required if account is specified");
-            }
-            Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-            if (userAccount == null) {
-                throw new InvalidParameterValueException("unable to find account by name " + account.getAccountName() + " in domain with id " + domainId);
-            }
-            accountId = userAccount.getId();
-        }
-
-        if (accountId != null) {
-            domainId = null;
-        }
-
-        // Check if the domain or account exists and is valid
-        if (accountId != null) {
-            AccountVO accountHandle = _accountDao.findById(accountId);
-            if (accountHandle == null) {
-                throw new InvalidParameterValueException("Please specify a valid account ID.");
-            } else if (accountHandle.getRemoved() != null) {
-                throw new InvalidParameterValueException("Please specify an active account.");
-            } else if (accountHandle.getType() == Account.ACCOUNT_TYPE_ADMIN || accountHandle.getType() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Please specify a non-admin account.");
-            }
-
-            DomainVO domain = _domainDao.findById(accountHandle.getDomainId());
-            long parentMaximum = findCorrectResourceLimit(domain, resourceType);
-            if ((parentMaximum >= 0) && ((max.longValue() == -1) || (max.longValue() > parentMaximum))) {
-                throw new InvalidParameterValueException("Account " + account.getAccountName() + "(id: " + accountId + ") has maximum allowed resource limit " + parentMaximum + " for " + type
-                        + ", please specify a value less that or equal to " + parentMaximum);
-            }
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Please specify a valid domain ID.");
-            } else if (domain.getRemoved() != null) {
-                throw new InvalidParameterValueException("Please specify an active domain.");
-            }
-
-            Long parentDomainId = domain.getParent();
-            if (parentDomainId != null) {
-                DomainVO parentDomain = _domainDao.findById(parentDomainId);
-                long parentMaximum = findCorrectResourceLimit(parentDomain, resourceType);
-                if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + domainId + ") has maximum allowed resource limit " + parentMaximum + " for " + type
-                            + ", please specify a value less that or equal to " + parentMaximum);
-                }
-            }
-        }
-
-        // A valid limit type must be passed in
-        if (resourceType == null) {
-            throw new InvalidParameterValueException("A valid limit type must be passed in.");
-        }
-
-        // Check if a limit with the specified domainId/accountId/type combo already exists
-        Filter searchFilter = new Filter(ResourceLimitVO.class, null, false, null, null);
-        SearchCriteria<ResourceLimitVO> sc = _resourceLimitDao.createSearchCriteria();
-
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-
-        if (resourceType != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, resourceType);
-        }
-
-        List<ResourceLimitVO> limits = _resourceLimitDao.search(sc, searchFilter);
-        if (limits.size() == 1) {
-            ResourceLimitVO limit = limits.get(0);
-            // if limit is set to -1, remove the record
-            if (max != null && max.longValue() == -1L) {
-                // this parameter is needed by API as it expects the object to be returned and updates the UI with the object's
-                // new "max" parameter
-                ResourceLimitVO limitToReturn = limit;
-                limitToReturn.setMax(-1L);
-                _resourceLimitDao.remove(limit.getId());
-                return limitToReturn;
-            } else {
-                // Update the existing limit
-                _resourceLimitDao.update(limit.getId(), max);
-                return _resourceLimitDao.findById(limit.getId());
-            }
+        ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(ownerId, ownerType, resourceType);
+        if (limit != null) {
+            // Update the existing limit
+            _resourceLimitDao.update(limit.getId(), max);
+            return _resourceLimitDao.findById(limit.getId());
         } else {
-            // Persist the new Limit
-            return _resourceLimitDao.persist(new ResourceLimitVO(domainId, accountId, resourceType, max));
+            if (ownerType == OwnerType.Account) {
+                return _resourceLimitDao.persist(new ResourceLimitVO(null, ownerId, resourceType, max));
+            } else {
+                return _resourceLimitDao.persist(new ResourceLimitVO(ownerId, null, resourceType, max));
+            }
         }
     }
 

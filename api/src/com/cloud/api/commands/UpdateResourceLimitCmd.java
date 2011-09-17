@@ -107,7 +107,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        ResourceLimit result = _accountService.updateResourceLimit(this);
+        ResourceLimit result = _accountService.updateResourceLimit(accountName, domainId, resourceType, max);
         if (result != null || (result == null && max != null && max.longValue() == -1L)){
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());
