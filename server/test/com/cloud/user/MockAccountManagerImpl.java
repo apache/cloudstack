@@ -18,11 +18,9 @@ import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
-import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceCountCmd;
-import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -102,7 +100,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public ResourceLimit updateResourceLimit(UpdateResourceLimitCmd cmd) {
+    public ResourceLimit updateResourceLimit(String accountName, Long domainId, int typeId, Long max) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -114,7 +112,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public List<? extends ResourceLimit> searchForLimits(ListResourceLimitsCmd cmd) {
+    public List<? extends ResourceLimit> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
         // TODO Auto-generated method stub
         return null;
     }
