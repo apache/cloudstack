@@ -29,11 +29,9 @@ import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
-import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceCountCmd;
-import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -137,12 +135,14 @@ public interface AccountService {
 
     /**
      * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
+     * @param accountName TODO
+     * @param domainId TODO
+     * @param typeId TODO
+     * @param max TODO
      * 
-     * @param cmd
-     *            the command that wraps the domainId, accountId, type, and max parameters
      * @return the updated/created resource limit
      */
-    ResourceLimit updateResourceLimit(UpdateResourceLimitCmd cmd);
+    ResourceLimit updateResourceLimit(String accountName, Long domainId, int typeId, Long max);
 
 
     /**
@@ -156,12 +156,15 @@ public interface AccountService {
     
     /**
      * Search for resource limits for the given id and/or account and/or type and/or domain.
-     * 
-     * @param cmd
-     *            the command wrapping the id, type, account, and domain
+     * @param id TODO
+     * @param accountName TODO
+     * @param domainId TODO
+     * @param type TODO
+     * @param startIndex TODO
+     * @param pageSizeVal TODO
      * @return a list of limits that match the criteria
      */
-    List<? extends ResourceLimit> searchForLimits(ListResourceLimitsCmd cmd);
+    List<? extends ResourceLimit> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal);
 
     Account getSystemAccount();
 

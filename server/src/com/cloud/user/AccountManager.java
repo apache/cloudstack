@@ -109,8 +109,6 @@ public interface AccountManager extends AccountService {
 	 * @return count of resources
 	 */
 	public long getResourceCount(AccountVO account, ResourceType type);
-	
-	List<ResourceLimitVO> searchForLimits(Criteria c);
 
     /**
      * Disables an account by accountId
