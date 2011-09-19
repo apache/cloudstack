@@ -79,6 +79,10 @@ public class MockVMVO implements MockVm{
         return this.state;
     }
     
+    public String getType() {
+    	return this.vmType;
+    }
+    
     public void setState(State state) {
         this.state = state;
     }
@@ -105,6 +109,10 @@ public class MockVMVO implements MockVm{
     
     public void setCpu(int cpu) {
         this.cpu = cpu;
+    }
+    
+    public void setType(String type) {
+    	this.vmType = type;
     }
 
 }
