@@ -58,6 +58,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.simulator.MockVm;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockSecStorageVO;
 import com.cloud.simulator.MockStoragePoolVO;
@@ -76,6 +77,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachine.State;
 
 
 @Local(value = { MockStorageManager.class })
@@ -292,6 +294,12 @@ public class MockStorageManagerImpl implements MockStorageManager {
         MockVolumeVO volume = _mockVolumeDao.findByStoragePathAndType(cmd.getVolume().getPath());
         if (volume != null) {
             _mockVolumeDao.remove(volume.getId());
+        }
+        MockVm vm = _mockVMDao.findByVmName(cmd.getVmName());
+        vm.setState(State.Expunging);
+        if (vm != null ) {
+        	MockVMVO vmVo = _mockVMDao.createForUpdate(vm.getId());
+        	_mockVMDao.update(vm.getId(), vmVo);
         }
         return new Answer(cmd);
     }
