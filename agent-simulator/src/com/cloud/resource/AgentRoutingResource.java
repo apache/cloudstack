@@ -104,7 +104,7 @@ public class AgentRoutingResource extends AgentStorageResource {
         synchronized (_vms) {
             _vms.clear();
         }
-        Map<String, State> changes = sync();
+        Map<String, State> changes = _simMgr.getVmStates(this.hostGuid);
         List<Object> info = getHostInfo();
 
         StartupRoutingCommand cmd = new StartupRoutingCommand((Integer) info.get(0), (Long) info.get(1), (Long) info.get(2), (Long) info.get(4), (String) info.get(3), HypervisorType.Simulator,
