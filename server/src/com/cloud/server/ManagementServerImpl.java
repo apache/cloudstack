@@ -510,6 +510,13 @@ public class ManagementServerImpl implements ManagementServer {
             }
             return null;
         }
+        
+        if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("User " + username + " in domain id=" + domainId + " is disabled/locked (or account is disabled/locked)");
+            }
+            throw new CloudAuthenticationException("User " + username + " in domain id=" + domainId + " is disabled/locked (or account is disabled/locked)");
+        }
 
         return userAccount;
     }
