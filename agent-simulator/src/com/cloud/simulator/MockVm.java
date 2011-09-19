@@ -21,12 +21,13 @@ public interface MockVm {
 	public long getMemory();
 	
 	public int getCpu();
-	
+	public String getType();
 	public int getVncPort();
 	
 	public void setName(String name);
 	public void setMemory(long memory);
 	public void setCpu(int cpu);
+	public void setType(String type);
 	public void setVncPort(int vncPort);
 	public long getId();
 }

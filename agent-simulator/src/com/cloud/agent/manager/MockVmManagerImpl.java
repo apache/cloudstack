@@ -111,6 +111,15 @@ public class MockVmManagerImpl implements MockVmManager {
             vm.setName(vmName);
             vm.setVncPort(vncPort);
             vm.setHostId(host.getId());
+            if(vmName.startsWith("s-")) {
+            	vm.setType("SecondaryStorageVm");
+            } else if (vmName.startsWith("v-")) {
+            	vm.setType("ConsoleProxy");
+            } else if (vmName.startsWith("r-")) {
+            	vm.setType("DomainRouter");
+            } else if (vmName.startsWith("i-")) {
+            	vm.setType("User");
+            }
             vm = _mockVmDao.persist((MockVMVO)vm);
         } else {
             if(vm.getState() == State.Stopped) {
