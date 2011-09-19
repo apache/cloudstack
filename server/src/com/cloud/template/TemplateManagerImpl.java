@@ -841,8 +841,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	
     	//check permissions
-    	_accountMgr.checkAccess(caller, null, iso);
-    	_accountMgr.checkAccess(caller, null, vm);
+    	_accountMgr.checkAccess(caller, null, iso, vm);
     	
         State vmState = vm.getState();
         if (vmState != State.Running && vmState != State.Stopped) {

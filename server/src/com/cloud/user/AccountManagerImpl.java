@@ -97,6 +97,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
@@ -823,8 +824,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         		Account account = ApiDBUtils.findAccountById(entity.getAccountId());
         		domainId = account != null ? account.getDomainId() : -1 ;
         	}
-        	if (entity.getAccountId() != -1 && domainId != -1) {
+        	if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
+                //for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
                     toBeChecked = new ArrayList<ControlledEntity>();
                     domains.put(domainId, toBeChecked);
