@@ -998,6 +998,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.debug("Destroying # of vms (accountId=" + accountId + "): " + vms.size());
             }
 
+            //no need to catch exception at this place as expunging vm should pass in order to perform further cleanup
             for (UserVmVO vm : vms) {
                 if (!_vmMgr.expunge(vm, callerUserId, caller)) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
@@ -1011,7 +1012,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (!volume.getState().equals(Volume.State.Destroy)) {
                     try {
                         _storageMgr.destroyVolume(volume);
-                    } catch (ConcurrentOperationException ex) {
+                    } catch (Exception ex) {
                         s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                         accountCleanupNeeded = true;
                     }
@@ -1069,7 +1070,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             return true;
-        } finally {
+        } catch (Exception ex) {
+            s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
+            accountCleanupNeeded = true;
+            return true;
+        }finally {
             s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
             if (accountCleanupNeeded) {
                 _accountDao.markForCleanup(accountId);
