@@ -17,6 +17,9 @@
  */
 package com.cloud.api.response;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.CommandType;
@@ -54,6 +57,8 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("managedstate") @Param(description="whether this cluster is managed by cloudstack")
     private String managedState;
     
+    @SerializedName("capacity")  @Param(description="", responseObject = CapacityResponse.class)
+    private List<CapacityResponse> capacitites;
    
     public Long getId() {
         return id;
@@ -133,5 +138,13 @@ public class ClusterResponse extends BaseResponse {
 
     public void setManagedState(String managedState) {
         this.managedState = managedState;
-    }     
+    }
+
+	public List<CapacityResponse> getCapacitites() {
+		return capacitites;
+	}
+
+	public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
+		this.capacitites = arrayList;
+	}     
 }

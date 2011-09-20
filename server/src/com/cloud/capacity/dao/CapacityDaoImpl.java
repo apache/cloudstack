@@ -244,6 +244,24 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	    public SummedCapacity() {
 	    }
 	}
+	public List<CapacityVO> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
+
+		SearchCriteria<CapacityVO> sc = _allFieldsSearch.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+        
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        
+       return listBy(sc);
+	}
+	
     @Override
     public boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId) {
         SearchCriteria<CapacityVO> sc = _allFieldsSearch.create();

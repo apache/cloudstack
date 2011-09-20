@@ -964,7 +964,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ClusterResponse createClusterResponse(Cluster cluster) {
+    public ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities) {
         ClusterResponse clusterResponse = new ClusterResponse();
         clusterResponse.setId(cluster.getId());
         clusterResponse.setName(cluster.getName());
@@ -980,6 +980,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
         clusterResponse.setZoneName(zone.getName());
+        if (showCapacities != null && showCapacities){
+        	List<CapacityVO> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,null,cluster.getId()); 
+        	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+        	for (CapacityVO capacity : capacities){
+        		CapacityResponse capacityResponse = new CapacityResponse();   
+        		capacityResponse.setCapacityType(capacity.getCapacityType());
+	        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+	        	capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
+	        	capacityResponses.add(capacityResponse);
+        	}
+        	clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+        }
         clusterResponse.setObjectName("cluster");
         return clusterResponse;
     }

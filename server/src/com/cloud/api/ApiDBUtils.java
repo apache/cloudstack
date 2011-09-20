@@ -26,6 +26,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -136,6 +138,7 @@ public class ApiDBUtils {
     private static AccountDao _accountDao;
     private static AccountVlanMapDao _accountVlanMapDao;
     private static ClusterDao _clusterDao;
+    private static CapacityDao _capacityDao;
     private static DiskOfferingDao _diskOfferingDao;
     private static DomainDao _domainDao;
     private static DomainRouterDao _domainRouterDao;
@@ -182,6 +185,7 @@ public class ApiDBUtils {
         _accountDao = locator.getDao(AccountDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
+        _capacityDao = locator.getDao(CapacityDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _domainRouterDao = locator.getDao(DomainRouterDao.class);
@@ -237,6 +241,15 @@ public class ApiDBUtils {
         // management server instantiation?) then maybe the management server method can be moved entirely
         // into this utils class.
         return _ms.getMemoryOrCpuCapacityByHost(poolId, capacityType);
+    }
+    
+    public static List<CapacityVO> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId){
+    	return _capacityDao.findByClusterPodZone(null,null,clusterId);		 
+    }
+    
+    public static List<CapacityVO> getCapacityByPod(){
+		return null;
+    	
     }
     
     public static Long getPodIdForVlan(long vlanDbId) {

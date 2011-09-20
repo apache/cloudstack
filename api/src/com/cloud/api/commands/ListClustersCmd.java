@@ -66,6 +66,8 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
     private String managedState;
     
+    @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the clusters")
+    private Boolean showCapacities;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,12 +110,16 @@ public class ListClustersCmd extends BaseListCmd {
         this.managedState = managedstate;
     }
 
-    
+
+    public Boolean getShowCapacities() {
+		return showCapacities;
+	}
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }
@@ -124,7 +130,7 @@ public class ListClustersCmd extends BaseListCmd {
         ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (Cluster cluster : result) {
-            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster);
+            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster,showCapacities);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }

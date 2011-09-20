@@ -149,7 +149,7 @@ public interface ResponseGenerator {
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
 
-    ClusterResponse createClusterResponse(Cluster cluster);
+    ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
 
     FirewallRuleResponse createPortForwardingRuleResponse(PortForwardingRule fwRule);
 

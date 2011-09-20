@@ -109,7 +109,7 @@ public class UpdateClusterCmd extends BaseCmd {
         
         Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
         if (result != null) {
-                ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster);
+                ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
                 clusterResponse.setResponseName(getCommandName());
                 this.setResponseObject(clusterResponse);
         } else {
