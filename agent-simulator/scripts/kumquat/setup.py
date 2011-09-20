@@ -78,7 +78,7 @@ def vlanIpRangeGenerator():
 
 def describeKumquatResources(dbnode='localhost', mshost='localhost'):
     zs = cloudstackConfiguration()
-    numberofpods = 15
+    numberofpods = 5
 
     clustersPerPod = 2
     hostsPerCluster = 8
