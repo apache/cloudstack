@@ -244,7 +244,7 @@ public class ApiDBUtils {
     }
     
     public static List<CapacityVO> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId){
-    	return _capacityDao.findByClusterPodZone(null,null,clusterId);		 
+    	return _capacityDao.findByClusterPodZone(zoneId,podId,clusterId);		 
     }
     
     public static List<CapacityVO> getCapacityByPod(){

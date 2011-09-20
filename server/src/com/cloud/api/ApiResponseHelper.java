@@ -756,7 +756,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public PodResponse createPodResponse(Pod pod) {
+    public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
         if (pod.getDescription() != null && pod.getDescription().length() > 0) {
             ipRange = pod.getDescription().split("-");
@@ -774,6 +774,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
+        if (showCapacities != null && showCapacities){
+        	List<CapacityVO> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,pod.getId(),null); 
+        	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+        	for (CapacityVO capacity : capacities){
+        		CapacityResponse capacityResponse = new CapacityResponse();   
+        		capacityResponse.setCapacityType(capacity.getCapacityType());
+	        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+	        	capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
+	        	capacityResponses.add(capacityResponse);
+        	}
+        	podResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+        }
         podResponse.setObjectName("pod");
         return podResponse;
     }

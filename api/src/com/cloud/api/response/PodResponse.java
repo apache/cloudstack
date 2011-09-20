@@ -17,6 +17,8 @@
  */
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -45,9 +47,12 @@ public class PodResponse extends BaseResponse {
     @SerializedName("endip") @Param(description="the ending IP for the Pod")
     private String endIp;
     
-    @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
+    @SerializedName("allocationstate") @Param(description="the allocation state of the Pod")
     private String allocationState;    
 
+    @SerializedName("capacity")  @Param(description="the capacity of the Pod", responseObject = CapacityResponse.class)
+    private List<CapacityResponse> capacitites;
+    
     public Long getId() {
         return id;
     }
@@ -118,5 +123,13 @@ public class PodResponse extends BaseResponse {
     
     public void setAllocationState(String allocationState) {
     	this.allocationState = allocationState;
-    }       
+    }
+
+	public List<CapacityResponse> getCapacitites() {
+		return capacitites;
+	}
+
+	public void setCapacitites(List<CapacityResponse> capacitites) {
+		this.capacitites = capacitites;
+	}       
 }

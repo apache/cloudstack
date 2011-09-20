@@ -139,7 +139,7 @@ public interface ResponseGenerator {
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
 
-    PodResponse createPodResponse(Pod pod);
+    PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 
     ZoneResponse createZoneResponse(DataCenter dataCenter);
 

@@ -53,8 +53,10 @@ public class ListPodsByCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list pods by allocation state")
     private String allocationState;    
-
-
+    
+    @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the pods")
+    private Boolean showCapacities;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,6 +77,10 @@ public class ListPodsByCmd extends BaseListCmd {
     	return allocationState;
     }    
 
+    public Boolean getShowCapacities() {
+		return showCapacities;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -90,7 +96,7 @@ public class ListPodsByCmd extends BaseListCmd {
         ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (Pod pod : result) {
-            PodResponse podResponse = _responseGenerator.createPodResponse(pod);
+            PodResponse podResponse = _responseGenerator.createPodResponse(pod, showCapacities);
             podResponse.setObjectName("pod");
             podResponses.add(podResponse);
         }

@@ -57,7 +57,7 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("managedstate") @Param(description="whether this cluster is managed by cloudstack")
     private String managedState;
     
-    @SerializedName("capacity")  @Param(description="", responseObject = CapacityResponse.class)
+    @SerializedName("capacity")  @Param(description="the capacity of the Cluster", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
    
     public Long getId() {

@@ -111,7 +111,7 @@ public class CreatePodCmd extends BaseCmd {
     public void execute(){
         Pod result = _configService.createPod(this);
         if (result != null) {
-            PodResponse response = _responseGenerator.createPodResponse(result);
+            PodResponse response = _responseGenerator.createPodResponse(result, false);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
