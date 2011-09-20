@@ -104,8 +104,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
-    FirewallRulesDao _rulesDao;
-    @Inject
     LoadBalancerDao _lbDao;
     @Inject
     VlanDao _vlanDao;
@@ -351,7 +349,13 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             }
         }
 
-        _rulesDao.remove(lb.getId());
+        FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(lb.getId());
+        if (relatedRule != null) {
+            s_logger.debug("Not removing the firewall rule id=" + lb.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+        } else {
+            _firewallDao.remove(lb.getId());
+        }
+        
         _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
@@ -431,7 +435,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         try {
             _firewallMgr.detectRulesConflict(newRule, ipAddr);
-            if (!_rulesDao.setStateToAdd(newRule)) {
+            if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
             s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + ipId + ", public port " + srcPortStart + ", private port " + defPortStart + " is added successfully.");
@@ -454,8 +458,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 _firewallDao.remove(_firewallDao.findByRelatedId(newRule.getId()).getId());
                 _lbDao.remove(newRule.getId());
                 txn.commit();
-                
-                _lbDao.remove(newRule.getId());
+
             }
         }
         
@@ -533,7 +536,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId) {
-        List<FirewallRuleVO> rules = _rulesDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.LoadBalancing);
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.LoadBalancing);
         if (rules != null)
             s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {
@@ -548,7 +551,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId) {
-        List<FirewallRuleVO> rules = _rulesDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
+        List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
         if (rules != null)
             s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {

@@ -370,7 +370,12 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         } else {
             for (FirewallRule rule : rules) {
                 if (rule.getState() == FirewallRule.State.Revoke) {
-                    _firewallDao.remove(rule.getId());
+                    FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
+                    if (relatedRule != null) {
+                        s_logger.debug("Not removing the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+                    } else {
+                        _firewallDao.remove(rule.getId());
+                    }
                 } else if (rule.getState() == FirewallRule.State.Add) {
                     FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
                     ruleVO.setState(FirewallRule.State.Active);
