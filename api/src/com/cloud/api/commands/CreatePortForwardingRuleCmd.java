@@ -145,11 +145,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             fwResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                _rulesService.revokePortForwardingRule(getEntityId(), true);
                 
                 if (getOpenFirewall()) {
                     _firewallService.revokeRelatedFirewallRule(getEntityId(), true);
                 }
+                
+                _rulesService.revokePortForwardingRule(getEntityId(), true);
                 
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply port forwarding rule");
             }
