@@ -28,7 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.UserContext;
 
@@ -90,9 +89,10 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Rule Id: "+id);
-        boolean result = _rulesService.revokePortForwardingRule(id, true);
-        result = result && _firewallService.revokeRelatedFirewallRule(id, true);
-        
+        //revoke corresponding firewall rule first
+        boolean result  = _firewallService.revokeRelatedFirewallRule(id, true);
+        result = result &&  _rulesService.revokePortForwardingRule(id, true);
+          
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

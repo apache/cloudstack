@@ -170,13 +170,13 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             lbResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                // no need to apply the rule on the backend as it exists in the db only
-                _lbService.deleteLoadBalancerRule(getEntityId(), false);
                 
                 if (getOpenFirewall()) {
                     _firewallService.revokeRelatedFirewallRule(getEntityId(), true);
                 }
-                
+                // no need to apply the rule on the backend as it exists in the db only
+                _lbService.deleteLoadBalancerRule(getEntityId(), false);
+
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create load balancer rule");
             }
         }
