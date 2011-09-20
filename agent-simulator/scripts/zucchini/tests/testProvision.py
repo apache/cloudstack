@@ -16,7 +16,7 @@ class Provision(cloudstackTestCase):
     '''
 
     solist = {}
-    sgid = 1 
+    sgid = []
 
     def setUp(self):
         pass
@@ -37,21 +37,22 @@ class Provision(cloudstackTestCase):
             csocmd.hosttags = tag
             csocmd.storagetype = 'local'
             csoresponse = self.testClient.getApiClient().createServiceOffering(csocmd)
-            self.debug("Created Service Offering: %s" %tag)
+            self.debug(csoresponse)
             self.solist[tag]=csoresponse.id
 
 
     def test_1_createSecurityGroupAndRules(self):
         apiClient = self.testClient.getApiClient()
         sgCmd=createSecurityGroup.createSecurityGroupCmd()
-        sgCmd.description='default-zzzz'
-        sgCmd.name='default-zzzz'
+        sgCmd.description='default-ps'
+        sgCmd.name='default-ps'
         sgCmd.account='admin'
         sgCmd.domainid='1'
         sgRes = apiClient.createSecurityGroup(sgCmd)
+        self.sgid.append(sgRes.id)
 
         ruleCmd=authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
-        ruleCmd.cidrlist = '172.16.0.0/12'
+        ruleCmd.cidrlist = '172.1.0.0/12'
         ruleCmd.startport = '1'
         ruleCmd.endport = '65535'
         ruleCmd.protocol = 'TCP'
@@ -61,7 +62,7 @@ class Provision(cloudstackTestCase):
         sgIngressresponse=apiClient.authorizeSecurityGroupIngress(ruleCmd)
 
         ruleCmd=authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
-        ruleCmd.cidrlist = '10.0.0.0/8'
+        ruleCmd.cidrlist = '172.1.0.0/12'
         ruleCmd.startport = '22'
         ruleCmd.endport = '22'
         ruleCmd.protocol = 'TCP'
@@ -79,11 +80,11 @@ class Provision(cloudstackTestCase):
         ruleCmd.account='admin'
         ruleCmd.domainid='1'
         sgIngressresponse=apiClient.authorizeSecurityGroupIngress(ruleCmd)
-
-        self.sgid = sgRes.id
-
+        self.debug("Security group created with id: %d"%sgRes.id)
 
 
+
+    @unittest.skip("needs fixing")
     def test_2_DeployVMWithHostTags(self):
         '''
         Deploy 3 virtual machines one with each hosttag
@@ -100,7 +101,7 @@ class Provision(cloudstackTestCase):
             self.debug("Deployed VM :%d in job: %d"%(deployVmResponse[0].id, deployVmResponse[0].jobid))
 
 
-    def deployCmd(self, tag):
+    def deployCmd(self, tag, sgid):
         deployVmCmd = deployVirtualMachine.deployVirtualMachineCmd()
         deployVmCmd.zoneid = 1
         deployVmCmd.hypervisor='Simulator'
@@ -108,8 +109,26 @@ class Provision(cloudstackTestCase):
         deployVmCmd.account='admin'
         deployVmCmd.domainid=1
         deployVmCmd.templateid=10
-        deployVmCmd.securitygroupids=self.sgid
+        deployVmCmd.securitygroupids=sgid
         return deployVmCmd
+
+
+    def listVmsInAccountCmd(self, acct='admin'):
+        api = self.testClient.getApiClient()
+        listVmCmd = listVirtualMachines.listVirtualMachinesCmd()
+        listVmCmd.account = acct
+        listVmCmd.zoneid = 1
+        listVmCmd.domainid = 1
+        listVmResponse = api.listVirtualMachines(listVmCmd)
+        return listVmResponse
+
+
+    def destroyCmd(self, vmid):
+        destroyVmCmd = destroyVirtualMachine.destroyVirtualMachineCmd()
+        destroyVmCmd.zoneid=1
+        destroyVmCmd.id=vmid
+        self.testClient.getApiClient().destroyVirtualMachine(destroyVmCmd)
+
 
     def deployN(self,nargs=300,batchsize=0):
         '''
@@ -122,9 +141,9 @@ class Provision(cloudstackTestCase):
         tag3=nargs-tag1-tag2
 
         cmds = []
-        [cmds.append(self.deployCmd('TAG1')) for i in range(tag1)]
-        [cmds.append(self.deployCmd('TAG2')) for i in range(tag2)]
-        [cmds.append(self.deployCmd('TAG3')) for i in range(tag3)]
+        [cmds.append(self.deployCmd('TAG1', self.sgid[0])) for i in range(tag1)]
+        [cmds.append(self.deployCmd('TAG2', self.sgid[0])) for i in range(tag2)]
+        [cmds.append(self.deployCmd('TAG3', self.sgid[0])) for i in range(tag3)]
         random.shuffle(cmds) #with mix-and-match of Tags
 
         if batchsize == 0:
@@ -137,7 +156,14 @@ class Provision(cloudstackTestCase):
                 except IndexError:
                     break
 
+
     def test_3_bulkDeploy(self):
-        self.deployN(130,0)
-        self.deployN(nargs=9000,batchsize=100)
+        self.deployN(nargs=500,batchsize=100)
+
+
+    def test_4_bulkDestroy(self):
+        api = self.testClient.getApiClient()
+        for vm in self.listVmsInAccountCmd('admin'):
+            if vm is not None:
+                self.destroyCmd(vm.id)
 
