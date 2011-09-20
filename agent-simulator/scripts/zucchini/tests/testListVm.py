@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-'''
-List Virtual Machine tests
-'''
 try:
     import unittest2 as unittest
 except ImportError:
@@ -12,14 +9,19 @@ import random
 from cloudstackAPI import *
 from cloudstackTestCase import *
 
+
 class ListVmTests(cloudstackTestCase):
+    '''
+    List Virtual Machine tests
+    '''
+
     def setUp(self):
         pass
 
     def tearDown(self):
         pass
 
-    def test_listAllVm(self):
+    def listAllVm(self):
         numVms = 0
         api = self.testClient.getApiClient()
         listVmCmd = listVirtualMachines.listVirtualMachinesCmd()
@@ -28,8 +30,9 @@ class ListVmTests(cloudstackTestCase):
         listVmCmd.domainid = 1
         listVmResponse = api.listVirtualMachines(listVmCmd)
         if listVmResponse is not None:
-            numVms = len()
+            numVms = len(listVmResponse)
 
-    t = timeit.Timer(test_listAllVm)
-    l = t.repeat(5, 5)
-    self.debug("Number of VMs: " + str(len(numVms)) + ", time for last 5 listVM calls : " + str(l))
+    @unittest.skip("skipping")
+    def test_timeListVm(self):
+        t = timeit.Timer(self.listAllVm)
+        l = t.repeat(50, 50)
