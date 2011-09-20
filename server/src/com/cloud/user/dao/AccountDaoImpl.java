@@ -228,7 +228,9 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 		AccountVO account = findByIdIncludingRemoved(accountId);
 		if (!account.getNeedsCleanup()) {
 			account.setNeedsCleanup(true);
-        	update(accountId, account);
+        	if (!update(accountId, account)) {
+        	    s_logger.warn("Failed to mark account id=" + accountId + " for cleanup");
+        	}
 		}
 	}
 }
