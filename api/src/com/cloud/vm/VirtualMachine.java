@@ -144,6 +144,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
             if (oldState == State.Stopped && newState == State.Destroyed) {
                 return true;
             }
+            if (oldState == State.Stopped && newState == State.Error) {
+                return true;
+            }
             return false;
         }
     }
