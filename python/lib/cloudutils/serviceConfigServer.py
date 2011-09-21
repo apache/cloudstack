@@ -62,6 +62,9 @@ class cloudManagementConfig(serviceCfgBase):
                 cfo = configFileOps("/etc/cloud/management/tomcat6.conf", self)
                 cfo.add_lines("JAVA_OPTS+=\" -Djavax.net.ssl.trustStore=%s \""%keyPath)
         
+        #distro like sl 6.1 needs this folder, or tomcat6 failed to start
+        bash("mkdir /var/log/cloud-management/")
+
         try:
             self.syscfg.svo.disableService("tomcat6")
         except:
