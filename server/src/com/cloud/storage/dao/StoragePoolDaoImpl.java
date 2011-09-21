@@ -167,6 +167,14 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     	sc.setParameters("status", status);
     	return listBy(sc);
     }
+    
+    @Override
+    public List<StoragePoolVO> listByStatusInZone(long dcId, StoragePoolStatus status){
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+    	sc.setParameters("status", status);
+    	sc.setParameters("datacenterId", dcId);
+    	return listBy(sc);
+    }
 
     @Override
     public StoragePoolVO findPoolByHostPath(long datacenterId, Long podId, String host, String path, String uuid) {
