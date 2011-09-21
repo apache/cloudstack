@@ -85,6 +85,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
@@ -773,9 +774,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
         if (showCapacities != null && showCapacities){
-        	List<CapacityVO> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,pod.getId(),null); 
+        	List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,pod.getId(),null); 
         	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
-        	for (CapacityVO capacity : capacities){
+        	for (SummedCapacity capacity : capacities){
         		CapacityResponse capacityResponse = new CapacityResponse();   
         		capacityResponse.setCapacityType(capacity.getCapacityType());
 	        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
@@ -789,7 +790,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ZoneResponse createZoneResponse(DataCenter dataCenter) {
+    public ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities) {
         Account account = UserContext.current().getCaller();
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getId());
@@ -809,6 +810,19 @@ public class ApiResponseHelper implements ResponseGenerator {
             zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
         }
 
+        if (showCapacities != null && showCapacities){
+        	List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(dataCenter.getId(),null,null); 
+        	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+        	for (SummedCapacity capacity : capacities){
+        		CapacityResponse capacityResponse = new CapacityResponse();   
+        		capacityResponse.setCapacityType(capacity.getCapacityType());
+	        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+	        	capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
+	        	capacityResponses.add(capacityResponse);
+        	}
+        	zoneResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+        }
+        
         zoneResponse.setDomain(dataCenter.getDomain());
         zoneResponse.setDomainId(dataCenter.getDomainId());
         zoneResponse.setType(dataCenter.getNetworkType().toString());
@@ -991,9 +1005,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
         clusterResponse.setZoneName(zone.getName());
         if (showCapacities != null && showCapacities){
-        	List<CapacityVO> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,null,cluster.getId()); 
+        	List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,null,cluster.getId()); 
         	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
-        	for (CapacityVO capacity : capacities){
+        	for (SummedCapacity capacity : capacities){
         		CapacityResponse capacityResponse = new CapacityResponse();   
         		capacityResponse.setCapacityType(capacity.getCapacityType());
 	        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());

@@ -54,7 +54,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
-    protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapactySearch;
+    protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch;
 	private SearchBuilder<CapacityVO> _allFieldsSearch;
 	
 	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
@@ -85,26 +85,26 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<SummedCapacity> findCapacityByType(short capacityType, Long zoneId, Long podId, Long clusterId, Long startIndex, Long pageSize){
     	
-    	SummedCapactySearch = createSearchBuilder(SummedCapacity.class);
-        SummedCapactySearch.select("sumUsed", Func.SUM, SummedCapactySearch.entity().getUsedCapacity());
-        SummedCapactySearch.select("sumTotal", Func.SUM, SummedCapactySearch.entity().getTotalCapacity());
-        SummedCapactySearch.select("clusterId", Func.NATIVE, SummedCapactySearch.entity().getClusterId());
-        SummedCapactySearch.select("podId", Func.NATIVE, SummedCapactySearch.entity().getPodId());
+    	SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+        SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
+        SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());
+        SummedCapacitySearch.select("clusterId", Func.NATIVE, SummedCapacitySearch.entity().getClusterId());
+        SummedCapacitySearch.select("podId", Func.NATIVE, SummedCapacitySearch.entity().getPodId());
         
-        SummedCapactySearch.and("dcId", SummedCapactySearch.entity().getDataCenterId(), Op.EQ);
-        SummedCapactySearch.and("capacityType", SummedCapactySearch.entity().getCapacityType(), Op.EQ);
-        SummedCapactySearch.groupBy(SummedCapactySearch.entity().getClusterId());
+        SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
+        SummedCapacitySearch.and("capacityType", SummedCapacitySearch.entity().getCapacityType(), Op.EQ);
+        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getClusterId());
         
         if (podId != null){
-        	SummedCapactySearch.and("podId", SummedCapactySearch.entity().getPodId(), Op.EQ);
+        	SummedCapacitySearch.and("podId", SummedCapacitySearch.entity().getPodId(), Op.EQ);
         }
         if (clusterId != null){
-        	SummedCapactySearch.and("clusterId", SummedCapactySearch.entity().getClusterId(), Op.EQ);
+        	SummedCapacitySearch.and("clusterId", SummedCapacitySearch.entity().getClusterId(), Op.EQ);
         }
-        SummedCapactySearch.done();
+        SummedCapacitySearch.done();
         
         
-        SearchCriteria<SummedCapacity> sc = SummedCapactySearch.create();
+        SearchCriteria<SummedCapacity> sc = SummedCapacitySearch.create();
         sc.setParameters("dcId", zoneId);
         sc.setParameters("capacityType", capacityType);
         if (podId != null){
@@ -239,27 +239,53 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	public static class SummedCapacity {
 	    public long sumUsed;
 	    public long sumTotal;
+	    public short capacityType;
 	    public long clusterId;
 	    public long podId;
 	    public SummedCapacity() {
 	    }
+		public Short getCapacityType() {				
+			return capacityType;
+		}
+		public Long getUsedCapacity() {
+			return sumUsed;
+		}
+		public Long getTotalCapacity() {
+			return sumTotal;
+		}
 	}
-	public List<CapacityVO> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
+	public List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
 
-		SearchCriteria<CapacityVO> sc = _allFieldsSearch.create();
-        if (zoneId != null) {
-            sc.setParameters("zoneId", zoneId);
-        }
+    	SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+        SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
+        SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());   
+        SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());                                
+        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getCapacityType());
         
-        if (podId != null) {
-            sc.setParameters("podId", podId);
+        if(zoneId != null){
+        	SummedCapacitySearch.and("zoneId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
         }
-        
-        if (clusterId != null) {
-            sc.setParameters("clusterId", clusterId);
+        if (podId != null){
+        	SummedCapacitySearch.and("podId", SummedCapacitySearch.entity().getPodId(), Op.EQ);
         }
+        if (clusterId != null){
+        	SummedCapacitySearch.and("clusterId", SummedCapacitySearch.entity().getClusterId(), Op.EQ);
+        }
+        SummedCapacitySearch.done();
         
-       return listBy(sc);
+        
+        SearchCriteria<SummedCapacity> sc = SummedCapacitySearch.create();
+        if (zoneId != null){
+        	sc.setParameters("zoneId", zoneId);
+        }
+        if (podId != null){
+        	sc.setParameters("podId", podId);
+        }
+        if (clusterId != null){
+        	sc.setParameters("clusterId", clusterId);
+        }
+                
+        return customSearchIncludingRemoved(sc, null);         
 	}
 	
     @Override

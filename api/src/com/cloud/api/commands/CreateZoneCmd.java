@@ -148,7 +148,7 @@ public class CreateZoneCmd extends BaseCmd {
     public void execute(){
         DataCenter result = _configService.createZone(this);
         if (result != null){
-            ZoneResponse response = _responseGenerator.createZoneResponse(result);
+            ZoneResponse response = _responseGenerator.createZoneResponse(result,false);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

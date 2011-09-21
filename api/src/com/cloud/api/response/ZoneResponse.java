@@ -17,6 +17,8 @@
  */
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -76,6 +78,9 @@ public class ZoneResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.DHCP_PROVIDER) @Param(description="the dhcp Provider for the Zone")
     private String dhcpProvider;     
+    
+    @SerializedName("capacity")  @Param(description="the capacity of the Zone", responseObject = CapacityResponse.class)
+    private List<CapacityResponse> capacitites;
 
     public Long getId() {
         return id;
@@ -219,5 +224,13 @@ public class ZoneResponse extends BaseResponse {
  	
  	public void setDhcpProvider(String dhcpProvider) {
  		this.dhcpProvider = dhcpProvider;
- 	}	
+ 	}
+
+	public List<CapacityResponse> getCapacitites() {
+		return capacitites;
+	}
+
+	public void setCapacitites(List<CapacityResponse> capacitites) {
+		this.capacitites = capacitites;
+	}	
 }

@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
@@ -47,6 +48,10 @@ public class ListZonesByCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain associated with the zone")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
+    private Boolean showCapacities;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -63,6 +68,10 @@ public class ListZonesByCmd extends BaseListCmd {
     	return domainId;
     }
 
+    public Boolean getShowCapacities() {
+		return showCapacities;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -78,7 +87,7 @@ public class ListZonesByCmd extends BaseListCmd {
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenter dataCenter : dataCenters) {
-            ZoneResponse zoneResponse = _responseGenerator.createZoneResponse(dataCenter);
+            ZoneResponse zoneResponse = _responseGenerator.createZoneResponse(dataCenter, showCapacities);
             zoneResponse.setObjectName("zone");
             zoneResponses.add(zoneResponse);
         }

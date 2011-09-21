@@ -27,6 +27,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource.ResourceType;
@@ -247,7 +248,7 @@ public class ApiDBUtils {
         return _ms.getMemoryOrCpuCapacityByHost(poolId, capacityType);
     }
     
-    public static List<CapacityVO> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId){
+    public static List<SummedCapacity> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId){
     	return _capacityDao.findByClusterPodZone(zoneId,podId,clusterId);		 
     }
     
