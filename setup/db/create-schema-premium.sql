@@ -1,5 +1,4 @@
 SET foreign_key_checks = 0;
-DROP TABLE IF EXISTS `cloud_usage`.`event`;
 DROP TABLE IF EXISTS `cloud_usage`.`cloud_usage`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vm_instance`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_ip_address`;
@@ -9,23 +8,10 @@ DROP TABLE IF EXISTS `cloud_usage`.`account`;
 DROP TABLE IF EXISTS `cloud_usage`.`user_statistics`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_volume`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_storage`;
-DROP TABLE IF EXISTS `cloud_usage`.`usage_security_group`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_load_balancer_policy`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_port_forwarding`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_network_offering`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_event`;
-
-CREATE TABLE  `cloud_usage`.`event` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `type` varchar(32) NOT NULL,
-  `description` varchar(1024) NOT NULL,
-  `user_id` bigint unsigned NOT NULL,
-  `account_id` bigint unsigned NOT NULL,
-  `created` datetime NOT NULL,
-  `level` varchar(16) NOT NULL,
-  `parameters` varchar(1024) NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud_usage`.`cloud_usage` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -185,17 +171,6 @@ CREATE TABLE  `cloud_usage`.`usage_storage` (
 ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_storage` ADD INDEX `i_usage_storage__deleted`(`deleted`);
-
-CREATE TABLE  `cloud_usage`.`usage_security_group` (
-  `id` bigint unsigned NOT NULL,
-  `zone_id` bigint unsigned NOT NULL,
-  `account_id` bigint unsigned NOT NULL,
-  `domain_id` bigint unsigned NOT NULL,
-  `vm_id` bigint unsigned NOT NULL,
-  `num_rules` bigint unsigned NOT NULL,
-  `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud_usage`.`usage_load_balancer_policy` (
   `id` bigint unsigned NOT NULL,
