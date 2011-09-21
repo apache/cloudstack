@@ -250,11 +250,13 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                         fwRules.add(_rulesDao.findByRelatedId(vpnFwRule.getId()));
                     }
                     
+                    s_logger.debug("Marked " + fwRules.size() + " firewall rules as Revoked as a part of disable remote access vpn");
+                    
                     txn.commit();
                     
                     //now apply vpn rules on the backend
-                    s_logger.debug("Applying " + fwRules.size() + " firewall rules as a part of disable remote access vpn");
-                    success = _firewallMgr.applyFirewallRules(fwRules, false, caller);
+                    s_logger.debug("Reapplying firewall rules for ip id=" + ipId + " as a part of disable remote access vpn");
+                    success = _firewallMgr.applyFirewallRules(ipId, caller);
                 }
                 
                 if (success) {
