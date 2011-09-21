@@ -107,4 +107,6 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
 
     long countPoolsByStatus(StoragePoolStatus... statuses);
 
+	List<StoragePoolVO> listByStatusInZone(long dcId, StoragePoolStatus status);
+
 }
