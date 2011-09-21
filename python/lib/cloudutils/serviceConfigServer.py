@@ -82,6 +82,9 @@ class cloudManagementConfig(serviceCfgBase):
             bash("ln -s /etc/cloud/management/server-nonssl.xml /etc/cloud/management/server.xml")
             bash("ln -s /etc/cloud/management/tomcat6-nonssl.conf /etc/cloud/management/tomcat6.conf")
         
+        #distro like sl 6.1 needs this folder, or tomcat6 failed to start
+        bash("mkdir /var/log/cloud-management/")
+
         try:
             self.syscfg.svo.disableService("tomcat6")
         except:
