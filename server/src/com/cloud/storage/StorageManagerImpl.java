@@ -2095,7 +2095,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             // check to see if other ps exist
             // if they do, then we can migrate over the system vms to them
             // if they dont, then just stop all vms on this one
-            List<StoragePoolVO> upPools = _storagePoolDao.listByStatus(StoragePoolStatus.Up);
+            List<StoragePoolVO> upPools = _storagePoolDao.listByStatusInZone(primaryStorage.getDataCenterId(), StoragePoolStatus.Up);
 
             if (upPools == null || upPools.size() == 0) {
                 restart = false;
@@ -2161,7 +2161,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         if (_vmMgr.advanceStart(consoleProxy, null, user, account) == null) {
                             String errorMsg = "There was an error starting the console proxy id: " + vmInstance.getId() + " on another storage pool, cannot enable primary storage maintenance";
                             s_logger.warn(errorMsg);
-                            throw new CloudRuntimeException(errorMsg);
                         } else {
                             // update work status
                             work.setStartedAfterMaintenance(true);
@@ -2201,7 +2200,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         if (_vmMgr.advanceStart(secStrgVm, null, user, account) == null) {
                             String errorMsg = "There was an error starting the ssvm id: " + vmInstance.getId() + " on another storage pool, cannot enable primary storage maintenance";
                             s_logger.warn(errorMsg);
-                            throw new CloudRuntimeException(errorMsg);
                         } else {
                             // update work status
                             work.setStartedAfterMaintenance(true);
@@ -2227,7 +2225,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         if (_vmMgr.advanceStart(domR, null, user, account) == null) {
                             String errorMsg = "There was an error starting the domain router id: " + vmInstance.getId() + " on another storage pool, cannot enable primary storage maintenance";
                             s_logger.warn(errorMsg);
-                            throw new CloudRuntimeException(errorMsg);
                         } else {
                             // update work status
                             work.setStartedAfterMaintenance(true);
