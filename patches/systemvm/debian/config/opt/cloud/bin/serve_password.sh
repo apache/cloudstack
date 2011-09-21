@@ -74,7 +74,10 @@ then
 	if [ "$password" == "" ]
 	then
 		logger -t cloud "serve_password sent bad_request to $ip."
-		echo "bad_request"
+		# echo "bad_request"
+                # Return "saved_password" for non-existed entry, to make it
+                # work if domR was once destroyed.
+		echo "saved_password"
 	else
 		logger -t cloud "serve_password sent a password to $ip."
 		echo $password
