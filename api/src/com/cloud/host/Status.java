@@ -20,7 +20,9 @@ package com.cloud.host;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine;
+import com.cloud.utils.fsm.StateMachine2;
 
 public enum Status {
     Connecting(true, false, false),
@@ -97,7 +99,11 @@ public enum Status {
         }
     }
     
-    public Status getNextStatus(Event e) {
+    public static StateMachine2<Status, Event, Host> getStateMachine() {
+        return s_fsm;
+    }
+    
+    public Status getNextStatus(Event e) throws NoTransitionException {
         return s_fsm.getNextState(this, e);
     }
 
@@ -118,7 +124,7 @@ public enum Status {
         return strs;
     }
 
-    protected static final StateMachine<Status, Event> s_fsm = new StateMachine<Status, Event>();
+    protected static final StateMachine2<Status, Event, Host> s_fsm = new StateMachine2<Status, Event, Host>();
     static {
         s_fsm.addTransition(null, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Connecting, Event.AgentConnected, Status.Connecting);

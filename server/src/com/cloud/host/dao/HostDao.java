@@ -28,12 +28,13 @@ import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
 /**
  * Data Access Object for server
  *
  */
-public interface HostDao extends GenericDao<HostVO, Long> {
+public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
     List<HostVO> listBy(Host.Type type, Long clusterId, Long podId, long dcId);
 
     long countBy(long clusterId,  Status... statuses);

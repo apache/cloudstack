@@ -688,5 +688,17 @@ public class HostVO implements Host {
     @Override
     public String getHypervisorVersion() {
         return hypervisorVersion;
-    }	
+    }
+
+	@Override
+	public Status getState() {
+		return status;
+	}
+
+	//FIXME: change the upper interface
+	@Override
+	public Long getHostId() {
+		// TODO Auto-generated method stub
+		return null;
+	}	
 }

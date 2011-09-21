@@ -20,12 +20,13 @@ package com.cloud.host;
 import java.util.Date;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.fsm.StateObject;
 
 
 /**
  *  Host represents one particular host server.
  */
-public interface Host {
+public interface Host extends StateObject<Status> {
     public enum Type {
         Storage(false),
         Routing(false),
