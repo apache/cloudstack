@@ -80,11 +80,11 @@ public class CreateUserCmd extends BaseCmd {
         return email;
     }
 
-    public String getFirstname() {
+    public String getFirstName() {
         return firstname;
     }
 
-    public String getLastname() {
+    public String getLastName() {
         return lastname;
     }
 
@@ -96,7 +96,7 @@ public class CreateUserCmd extends BaseCmd {
         return timezone;
     }
 
-    public String getUsername() {
+    public String getUserName() {
         return username;
     }
 
@@ -130,8 +130,8 @@ public class CreateUserCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("UserName: "+getUsername()+", FirstName :"+getFirstname()+", LastName: "+getLastname());
-        User user = _accountService.createUser(this);
+        UserContext.current().setEventDetails("UserName: "+getUserName()+", FirstName :"+getFirstName()+", LastName: "+getLastName());
+        User user = _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId());
         if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

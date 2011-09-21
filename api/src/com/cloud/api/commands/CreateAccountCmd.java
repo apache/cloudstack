@@ -44,8 +44,8 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
-    private Long accountType;
+    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.SHORT, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    private Short accountType;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain.")
     private Long domainId;
@@ -54,19 +54,19 @@ public class CreateAccountCmd extends BaseCmd {
     private String email;
 
     @Parameter(name=ApiConstants.FIRSTNAME, type=CommandType.STRING, required=true, description="firstname")
-    private String firstname;
+    private String firstName;
 
     @Parameter(name=ApiConstants.LASTNAME, type=CommandType.STRING, required=true, description="lastname")
-    private String lastname;
+    private String lastName;
 
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=true, description="Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
     private String password;
 
     @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
-    private String timezone;
+    private String timeZone;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
-    private String username;
+    private String userName;
     
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
     private String networkDomain;
@@ -79,7 +79,7 @@ public class CreateAccountCmd extends BaseCmd {
         return accountName;
     }
 
-    public Long getAccountType() {
+    public Short getAccountType() {
         return accountType;
     }
 
@@ -91,24 +91,24 @@ public class CreateAccountCmd extends BaseCmd {
         return email;
     }
 
-    public String getFirstname() {
-        return firstname;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public String getLastname() {
-        return lastname;
+    public String getLastName() {
+        return lastName;
     }
 
     public String getPassword() {
         return password;
     }
 
-    public String getTimezone() {
-        return timezone;
+    public String getTimeZone() {
+        return timeZone;
     }
 
     public String getUsername() {
-        return username;
+        return userName;
     }
     
     public String getNetworkDomain() {
@@ -133,9 +133,9 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-        UserAccount user = _accountService.createAccount(this);
-        if (user != null) {
-            AccountResponse response = _responseGenerator.createUserAccountResponse(user);
+        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain());
+        if (userAccount != null) {
+            AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

@@ -1491,7 +1491,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     @Override
-    public VMInstanceVO findById(VirtualMachine.Type type, long vmId) {
+    public VMInstanceVO findByIdAndType(VirtualMachine.Type type, long vmId) {
         VirtualMachineGuru<? extends VMInstanceVO> guru = _vmGurus.get(type);
         return guru.findById(vmId);
     }
@@ -1762,7 +1762,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vm);
     	
         s_logger.debug("VM state is starting on full sync so updating it to running");
-        vm = findById(vm.getType(), vm.getId());
+        vm = findByIdAndType(vm.getType(), vm.getId());
 
         //grab outstanding work item if any  
         ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());        
@@ -2068,5 +2068,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         public String getHost() {
             return host;
         }
+    }
+    
+    @Override
+    public VMInstanceVO findById(long vmId) {
+        return _vmDao.findById(vmId);
     }
 }

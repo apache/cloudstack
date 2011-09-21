@@ -85,7 +85,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.disableUser(this);
+        UserAccount user = _accountService.disableUser(getId());
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName()); 

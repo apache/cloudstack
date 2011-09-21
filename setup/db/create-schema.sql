@@ -1041,6 +1041,7 @@ CREATE TABLE  `cloud`.`domain` (
   `removed` datetime COMMENT 'date removed',
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   `network_domain` varchar(255),
+  `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project',
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
   INDEX `i_domain__path`(`path`),
@@ -1667,17 +1668,29 @@ CREATE TABLE  `cloud`.`projects` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) COMMENT 'project name',
   `display_text` varchar(255) COMMENT 'project name',
-  `account_id` bigint unsigned,
-  `domain_id` bigint unsigned,
-  `data_center_id` bigint unsigned,
+  `project_account_id` bigint unsigned NOT NULL,
+  `project_domain_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
   `created` datetime COMMENT 'date created',
-  `removed` datetime COMMENT 'date removed',
-  `cleanup_needed` tinyint(1) NOT NULL default '0',
+  `removed` datetime COMMENT 'date removed',\
+  `state` varchar(255) NOT NULL COMMENT 'state of the project (Active/Inactive/Suspended)',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_projects__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_projects__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_projects__project_account_id` FOREIGN KEY(`project_account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_projects__project_domain_id` FOREIGN KEY(`project_domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_projects__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   INDEX `i_projects__removed`(`removed`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE  `cloud`.`project_account` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL COMMENT'account id',
+  `account_role` varchar(255) COMMENT 'Account role in the project (Owner or Regular)',
+  `project_id` bigint unsigned NOT NULL COMMENT 'project id',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_project_account__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_project_account__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE,
+  UNIQUE (`account_id`, `project_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`elastic_lb_vm_map` (

@@ -71,7 +71,7 @@ public class LockUserCmd extends BaseCmd {
 	
     @Override
     public void execute(){
-        UserAccount user = _accountService.lockUser(this);
+        UserAccount user = _accountService.lockUser(getId());
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

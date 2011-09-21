@@ -59,7 +59,7 @@ import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -117,6 +117,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -199,6 +200,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     Adapters<SecurityChecker> _secChecker;
     @Inject
     CapacityDao _capacityDao;
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -2049,7 +2052,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (forVirtualNetwork) {
             if (account != null) {
                 // verify resource limits
-                long ipResourceLimit = _accountMgr.findCorrectResourceLimit(account.getId(), ResourceType.public_ip);
+                long ipResourceLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(account.getId(), ResourceType.public_ip);
                 long accountIpRange = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);

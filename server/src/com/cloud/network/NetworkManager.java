@@ -217,5 +217,7 @@ public interface NetworkManager extends NetworkService {
     String getIpInNetwork(long vmId, long networkId);
 
     String getIpInNetworkIncludingRemoved(long vmId, long networkId);
+    
+    Long getPodIdForVlan(long vlanDbId);
 
 }

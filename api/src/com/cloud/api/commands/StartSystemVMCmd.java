@@ -104,7 +104,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        VirtualMachine instance = _mgr.startSystemVM(this);
+        VirtualMachine instance = _mgr.startSystemVM(getId());
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);
             response.setResponseName(getCommandName());

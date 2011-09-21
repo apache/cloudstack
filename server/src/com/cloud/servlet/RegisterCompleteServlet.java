@@ -99,8 +99,8 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
 						_accountSvc.markUserRegistered(resourceAdminUser.getId());
 					}
 					
-					Account resourceAdminAccount = _accountSvc.getActiveAccount(resourceAdminUser.getAccountId());
-					Account rsUserAccount = _accountSvc.getActiveAccount(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
+					Account resourceAdminAccount = _accountSvc.getActiveAccountById(resourceAdminUser.getAccountId());
+					Account rsUserAccount = _accountSvc.getActiveAccountByName(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
 					
 					List<UserVO> users =  _userDao.listByAccount(rsUserAccount.getId());
 					User rsUser = users.get(0);

@@ -74,7 +74,7 @@ public class EnableUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.enableUser(this);
+        UserAccount user = _accountService.enableUser(getId());
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());   

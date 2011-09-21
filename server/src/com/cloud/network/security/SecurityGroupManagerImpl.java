@@ -74,7 +74,7 @@ import com.cloud.network.security.dao.VmRulesetLogDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
@@ -144,6 +144,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     NetworkManager _networkMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    DomainManager _domainMgr;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -1031,13 +1033,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         if (_accountMgr.isAdmin(caller.getType())) {
             if (domainId != null) {
-                Domain domain = _accountMgr.getDomain(domainId);
+                Domain domain = _domainMgr.getDomain(domainId);
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
                 }
                 _accountMgr.checkAccess(caller, domain);
                 if (accountName != null) {
-                    Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                    Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                     if (account == null) {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }

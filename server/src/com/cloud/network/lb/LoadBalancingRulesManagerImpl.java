@@ -69,6 +69,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.DomainService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
@@ -131,6 +132,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     NetworkDao _networkDao;
     @Inject
     FirewallRulesDao _firewallDao;
+    @Inject
+    DomainService _domainMgr;
 
     @Override
     @DB
@@ -699,7 +702,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         Long domainId = accountDomainPair.second();
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            Domain domain = _domainMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
 
@@ -764,7 +767,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
             if (accountName != null) {
-                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                 sc.setParameters("accountId", account.getId());
             }
         }

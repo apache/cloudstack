@@ -29,7 +29,7 @@ import com.cloud.uservm.UserVm;
  * UserVmManager contains all of the code to work with user VMs.
  * 
  */
-public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
+public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmService{
 
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**

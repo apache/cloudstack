@@ -27,7 +27,8 @@ public interface Account extends ControlledEntity {
         Normal,
         Admin,
         DomainAdmin,
-        CustomerCare
+        CustomerCare,
+        Project
     }
     
     public enum State {
@@ -41,6 +42,7 @@ public interface Account extends ControlledEntity {
     public static final short ACCOUNT_TYPE_DOMAIN_ADMIN = 2;
     public static final short ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN = 3;
     public static final short ACCOUNT_TYPE_READ_ONLY_ADMIN = 4;
+    public static final short ACCOUNT_TYPE_PROJECT = 5;
 
     public static final String ACCOUNT_STATE_DISABLED = "disabled";
     public static final String ACCOUNT_STATE_ENABLED = "enabled";

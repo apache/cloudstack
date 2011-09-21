@@ -47,7 +47,7 @@ import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -92,6 +92,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -162,6 +163,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     protected ClusterDao _clusterDao;
     @Inject
     private UsageEventDao _usageEventDao;
+    @Inject
+    private ResourceLimitService _resourceLimitMgr;
     @Inject
     private SwiftDao _swiftDao;
     String _name;
@@ -437,7 +440,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     snapshot.setStatus(Status.Error);
                     _snapshotDao.update(snapshot.getId(), snapshot);
                 } else {
-                    _accountMgr.incrementResourceCount(owner.getId(), ResourceType.snapshot);
+                    _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.snapshot);
                 }
             }
             
@@ -720,7 +723,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
         	_usageEventDao.persist(usageEvent);
         }
-        _accountMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+        _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
         txn.commit();
 
         long lastId = snapshotId;
@@ -1004,7 +1007,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             for (SnapshotVO snapshot : snapshots) {
                 if (_snapshotDao.expunge(snapshot.getId())) {
                     if (snapshot.getType() == Type.MANUAL) {
-                        _accountMgr.decrementResourceCount(accountId, ResourceType.snapshot);
+                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
                     }
 
                     // Log event after successful deletion
@@ -1079,8 +1082,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         // Verify that max doesn't exceed domain and account snapshot limits
-        long accountLimit = _accountMgr.findCorrectResourceLimit(owner.getId(), ResourceType.snapshot);
-        long domainLimit = _accountMgr.findCorrectResourceLimit(domain, ResourceType.snapshot);
+        long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner.getId(), ResourceType.snapshot);
+        long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(null, ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
         if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
             throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the domain/account level snapshot limit");
@@ -1267,7 +1270,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         _accountMgr.checkAccess(caller, null, volume);
 
         Account owner = _accountMgr.getAccount(volume.getAccountId());
-        if (_accountMgr.resourceLimitExceeded(owner, ResourceType.snapshot)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.snapshot)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of snapshots for account: " + owner.getAccountName() + " has been exceeded.");
             rae.setResourceType("snapshot");
             throw rae;

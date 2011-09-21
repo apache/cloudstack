@@ -91,7 +91,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Id: "+getId());
-        boolean result = _accountService.deleteUserAccount(this);
+        boolean result = _accountService.deleteUserAccount(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

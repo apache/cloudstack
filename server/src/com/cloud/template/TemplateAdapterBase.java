@@ -13,7 +13,7 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -35,6 +35,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -57,6 +58,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	protected @Inject VMTemplateZoneDao _tmpltZoneDao;
 	protected @Inject UsageEventDao _usageEventDao;
 	protected @Inject HostDao _hostDao;
+	protected @Inject ResourceLimitService _resourceLimitMgr;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -206,7 +208,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         }
         
     	AccountVO account = _accountDao.findById(accountId);
-        if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(account, ResourceType.template)) {
         	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
         	rae.setResourceType("template");
         	throw rae;

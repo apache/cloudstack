@@ -1,9 +1,28 @@
+/**
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
 package com.cloud.projects;
 
 import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -28,11 +47,11 @@ public class ProjectVO implements Project{
     @Column(name="domain_id")
     long domainId;
 
-    @Column(name="account_id")
-    long accountId;
+    @Column(name="project_account_id")
+    long projectAccountId;
     
-    @Column(name="data_center_id")
-    long dataCenterId;
+    @Column(name="project_domain_id")
+    long projectDomainId;
     
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
@@ -40,27 +59,25 @@ public class ProjectVO implements Project{
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
     
-    @Column(name="cleanup_needed")
-    private boolean needsCleanup = false;
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    private State state;
     
     protected ProjectVO(){
     }
     
-    public ProjectVO(String name, String displayText, long dataCenterId, long accountId, long domainId) {
+    public ProjectVO(String name, String displayText, long domainId, long projectAccountId, long projectDomainId) {
         this.name = name;
         this.displayText = displayText;
-        this.accountId = accountId;
+        this.projectAccountId = projectAccountId;
         this.domainId = domainId;
-        this.dataCenterId = dataCenterId;
+        this.projectDomainId = projectDomainId;
+        this.state = State.Inactive;
     }
     
     @Override
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
@@ -77,18 +94,6 @@ public class ProjectVO implements Project{
         return domainId;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
 
     @Override
     public long getId() {
@@ -103,19 +108,6 @@ public class ProjectVO implements Project{
     @Override
     public Date getRemoved() {
         return removed;
-    }
-    
-    @Override
-    public long getDataCenterId() {
-        return dataCenterId;
-    }
-    
-    public void setNeedsCleanup(boolean value) {
-        needsCleanup = value;
-    }
-    
-    public boolean getNeedsCleanup() {
-        return needsCleanup;
     }
 
     @Override
@@ -137,4 +129,29 @@ public class ProjectVO implements Project{
         
         return true;
     }
+
+    @Override
+    public long getProjectAccountId() {
+        return projectAccountId;
+    }
+
+    @Override
+    public long getProjectDomainId() {
+        return projectDomainId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
+    public void setState(State state) {
+        this.state = state;
+    }
+    
 }

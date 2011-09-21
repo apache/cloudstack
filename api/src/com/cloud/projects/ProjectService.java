@@ -2,6 +2,9 @@ package com.cloud.projects;
 
 import java.util.List;
 
+import com.cloud.projects.ProjectAccount.Role;
+import com.cloud.user.Account;
+
 
 public interface ProjectService {
     /**
@@ -9,12 +12,11 @@ public interface ProjectService {
      * 
      * @param name - project name
      * @param displayText - project display text
-     * @param zoneId - id of the zone the project belongs to
      * @param accountName - account name of the project owner
      * @param domainId - domainid of the project owner
      * @return the project if created successfully, null otherwise
      */
-    Project createProject(String name, String displayText, long zoneId, String accountName, Long domainId);
+    Project createProject(String name, String displayText, String accountName, Long domainId);
     
     /**
      * Deletes a project
@@ -32,5 +34,11 @@ public interface ProjectService {
      */
     Project getProject(long id);
     
-    List<? extends Project> listProjects(Long id, String name, String displayText, Long zoneId, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize);
+    List<? extends Project> listProjects(Long id, String name, String displayText, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize);
+
+    ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
+    
+    Account getProjectOwner(long projectId);
+
+    boolean unassignAccountFromProject(long projectId, long accountId);
 }

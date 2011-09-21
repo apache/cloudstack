@@ -260,5 +260,6 @@ public class ApiConstants {
     public static final String TEMPLATE_TAG = "templatetag";
     public static final String HYPERVISOR_VERSION = "hypervisorversion";
     public static final String MAX_GUESTS_LIMIT = "maxguestslimit";
+    public static final String PROJECT_ID = "projectid";
 
 }

@@ -181,7 +181,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     @Override
-    public VMInstanceVO findById(Type type, long vmId) {
+    public VMInstanceVO findByIdAndType(Type type, long vmId) {
         // TODO Auto-generated method stub
         return null;
     }

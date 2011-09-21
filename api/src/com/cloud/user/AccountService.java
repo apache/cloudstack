@@ -17,25 +17,10 @@
  */
 package com.cloud.user;
 
-import java.util.List;
-import java.util.Set;
-
-import com.cloud.api.commands.CreateAccountCmd;
-import com.cloud.api.commands.CreateDomainCmd;
-import com.cloud.api.commands.CreateUserCmd;
-import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
-import com.cloud.api.commands.DisableAccountCmd;
-import com.cloud.api.commands.DisableUserCmd;
-import com.cloud.api.commands.EnableAccountCmd;
-import com.cloud.api.commands.EnableUserCmd;
-import com.cloud.api.commands.LockUserCmd;
+import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceLimit;
-import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
@@ -43,41 +28,45 @@ import com.cloud.utils.Pair;
 public interface AccountService {
 
     /**
-     * Creates a new user, stores the password as is so encrypted passwords are recommended.
+     * Creates a new user and account, stores the password as is so encrypted passwords are recommended.
+     * @param userName TODO
+     * @param password TODO
+     * @param firstName TODO
+     * @param lastName TODO
+     * @param email TODO
+     * @param timezone TODO
+     * @param accountName TODO
+     * @param accountType TODO
+     * @param domainId TODO
+     * @param networkDomain TODO
      * 
-     * @param cmd
-     *            the create command that has the username, email, password, account name, domain, timezone, etc. for creating
-     *            the user.
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createAccount(CreateAccountCmd cmd);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain);
 
     /**
      * Deletes a user by userId
+     * @param accountId - id of the account do delete
      * 
-     * @param cmd
-     *            - the delete command defining the id of the user to be deleted.
      * @return true if delete was successful, false otherwise
      */
-    boolean deleteUserAccount(DeleteAccountCmd cmd);
+    boolean deleteUserAccount(long accountId);
 
     /**
      * Disables a user by userId
      * 
-     * @param cmd
-     *            the command wrapping the userId parameter
+     * @param userId - the userId 
      * @return UserAccount object
      */
-    UserAccount disableUser(DisableUserCmd cmd);
+    UserAccount disableUser(long userId);
 
     /**
      * Enables a user
      * 
-     * @param cmd
-     *            - the command containing userId
+     * @param userId - the userId
      * @return UserAccount object
      */
-    UserAccount enableUser(EnableUserCmd cmd);
+    UserAccount enableUser(long userId);
 
     /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses allocated/etc.
@@ -85,7 +74,7 @@ public interface AccountService {
      * @param userId
      * @return UserAccount object
      */
-    UserAccount lockUser(LockUserCmd cmd);
+    UserAccount lockUser(long userId);
 
     /**
      * Update a user by userId
@@ -97,31 +86,34 @@ public interface AccountService {
 
     /**
      * Disables an account by accountName and domainId
-     * 
+     * @param accountName TODO
+     * @param domainId TODO
      * @param disabled
      *            account if success
      * @return true if disable was successful, false otherwise
      */
-    Account disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
+    Account disableAccount(String accountName, Long domainId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * Enables an account by accountId
      * 
-     * @param cmd
+     * @param accountName
      *            - the enableAccount command defining the accountId to be deleted.
+     * @param domainId TODO
      * @return account object
      */
-    Account enableAccount(EnableAccountCmd cmd);
+    Account enableAccount(String accountName, long domainId);
 
     /**
      * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP addresses
      * allocated/etc.
      * 
-     * @param cmd
+     * @param accountName
      *            - the LockAccount command defining the accountId to be locked.
+     * @param domainId TODO
      * @return account object
      */
-    Account lockAccount(DisableAccountCmd cmd);
+    Account lockAccount(String accountName, Long domainId);
 
     /**
      * Updates an account name
@@ -133,44 +125,11 @@ public interface AccountService {
 
     Account updateAccount(UpdateAccountCmd cmd);
 
-    /**
-     * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
-     * @param accountName TODO
-     * @param domainId TODO
-     * @param typeId TODO
-     * @param max TODO
-     * 
-     * @return the updated/created resource limit
-     */
-    ResourceLimit updateResourceLimit(String accountName, Long domainId, int typeId, Long max);
-
-
-    /**
-     * Updates an existing resource count details for the account/domain
-     * 
-     * @param cmd
-     *            the command that wraps the domainId, accountId, resource type  parameters
-     * @return the updated/created resource counts
-     */
-    List<? extends ResourceCount> updateResourceCount(UpdateResourceCountCmd cmd);
-    
-    /**
-     * Search for resource limits for the given id and/or account and/or type and/or domain.
-     * @param id TODO
-     * @param accountName TODO
-     * @param domainId TODO
-     * @param type TODO
-     * @param startIndex TODO
-     * @param pageSizeVal TODO
-     * @return a list of limits that match the criteria
-     */
-    List<? extends ResourceLimit> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal);
-
     Account getSystemAccount();
 
     User getSystemUser();
 
-    User createUser(CreateUserCmd cmd);
+    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId);
 	boolean deleteUser(DeleteUserCmd deleteUserCmd);
 	
 	boolean isAdmin(short accountType);
@@ -179,9 +138,9 @@ public interface AccountService {
 	
 	Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId);
 	
-	Account getActiveAccount(String accountName, Long domainId);
+	Account getActiveAccountByName(String accountName, Long domainId);
 	
-	Account getActiveAccount(Long accountId);
+	Account getActiveAccountById(Long accountId);
 	
 	Account getAccount(Long accountId);
 	
@@ -189,18 +148,12 @@ public interface AccountService {
 	
 	User getUser(long userId);
 	
-	Domain getDomain(long id);
-	
 	boolean isRootAdmin(short accountType);
 	
 	User getActiveUserByRegistrationToken(String registrationToken);
 	
 	void markUserRegistered(long userId);
 	
-	Set<Long> getDomainParentIds(long domainId);
-	
-	Set<Long> getDomainChildrenIds(String parentDomainPath);
-
-    Domain createDomain(CreateDomainCmd cmd);
+	public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
 }

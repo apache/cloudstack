@@ -19,6 +19,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.TimeZone;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -94,6 +95,17 @@ public class UserVO implements User {
     
     public UserVO(long id) {
         this.id = id;
+    }
+    
+    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone) {
+        this.accountId = accountId;
+        this.username = username;
+        this.password = password;
+        this.firstname = firstName;
+        this.lastname = lastName;
+        this.email = email;
+        this.timezone = timezone;
+        this.state = State.enabled;
     }
 
     @Override

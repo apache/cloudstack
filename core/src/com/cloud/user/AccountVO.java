@@ -63,8 +63,17 @@ public class AccountVO implements Account {
 
 
     public AccountVO() {}
+    
     public AccountVO(long id) {
         this.id = id;
+    }
+    
+    public AccountVO(String accountName, long domainId, String networkDomain, short type) {
+        this.accountName = accountName;
+        this.domainId = domainId;
+        this.networkDomain = networkDomain;
+        this.type = type;
+        this.state = State.enabled;
     }
     
     public void setNeedsCleanup(boolean value) {

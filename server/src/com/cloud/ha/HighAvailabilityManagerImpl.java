@@ -367,7 +367,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         
         long vmId = work.getInstanceId();
 
-        VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
+        VMInstanceVO vm = _itMgr.findByIdAndType(work.getType(), work.getInstanceId());
         if (vm == null) {
             s_logger.info("Unable to find vm: " + vmId);
             return null;
@@ -484,7 +484,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             }
         }
 
-        vm = _itMgr.findById(vm.getType(), vm.getId());
+        vm = _itMgr.findByIdAndType(vm.getType(), vm.getId());
 
         if (!_forceHA && !vm.isHaEnabled()) {
             if (s_logger.isDebugEnabled()) {
@@ -532,7 +532,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             _alertMgr.sendAlert(alertType, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc,
                     "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
         }
-        vm = _itMgr.findById(vm.getType(), vm.getId());
+        vm = _itMgr.findByIdAndType(vm.getType(), vm.getId());
         work.setUpdateTime(vm.getUpdated());
         work.setPreviousState(vm.getState());
         return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
@@ -578,7 +578,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     }
 
     protected Long destroyVM(HaWorkVO work) {
-        final VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
+        final VMInstanceVO vm = _itMgr.findByIdAndType(work.getType(), work.getInstanceId());
         s_logger.info("Destroying " + vm.toString());
         try {
             if (vm.getState() != State.Destroyed) {
@@ -611,7 +611,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     }
 
     protected Long stopVM(final HaWorkVO work) throws ConcurrentOperationException {
-        VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
+        VMInstanceVO vm = _itMgr.findByIdAndType(work.getType(), work.getInstanceId());
         if (vm == null) {
             s_logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
             work.setStep(Step.Done);

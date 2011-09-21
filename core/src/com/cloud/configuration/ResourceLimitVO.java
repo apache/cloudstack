@@ -26,6 +26,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name="resource_limit")
@@ -49,15 +50,23 @@ public class ResourceLimitVO implements ResourceLimit {
 	@Column(name="max")
 	private Long max;
 	
-	public ResourceLimitVO() {}
+    @Transient
+    private ResourceOwnerType ownerType;
+    
+    public ResourceLimitVO() {}
 	
-	public ResourceLimitVO(Long domainId, Long accountId, ResourceCount.ResourceType type, Long max) {
-		this.domainId = domainId;
-		this.accountId = accountId;
+	public ResourceLimitVO(ResourceCount.ResourceType type, Long max, long ownerId, ResourceOwnerType ownerType) {
 		this.type = type;
 		this.max = max;
+		
+		if (ownerType == ResourceOwnerType.Account) {
+            this.accountId = ownerId;
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            this.domainId = ownerId;
+        }
 	}
 	
+	@Override
 	public Long getId() {
 		return id;
 	}
@@ -66,7 +75,8 @@ public class ResourceLimitVO implements ResourceLimit {
 		this.id = id;
 	}
 	
-	public ResourceCount.ResourceType getType() {
+	@Override
+	public ResourceType getType() {
 		return type;
 	}
 	
@@ -78,23 +88,40 @@ public class ResourceLimitVO implements ResourceLimit {
 		return domainId;
 	}
 	
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
-	
 	public Long getAccountId() {
 		return accountId;
 	}
 	
-	public void setAccountId(Long accountId) {
-		this.accountId = accountId;
-	}
-	
+	@Override
 	public Long getMax() {
 		return max;
 	}
 	
+	@Override
 	public void setMax(Long max) {
 		this.max = max;
 	}
+	
+   @Override
+    public long getOwnerId() {
+        if (accountId != null) {
+            return accountId;
+        } 
+        
+        return domainId;
+    }
+   
+   @Override
+   public ResourceOwnerType getResourceOwnerType() {
+       return ownerType;
+   }
+
+   public void setDomainId(Long domainId) {
+       this.domainId = domainId;
+    }
+
+   public void setAccountId(Long accountId) {
+       this.accountId = accountId;
+   }
+
 }

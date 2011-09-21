@@ -52,9 +52,6 @@ public class CreateProjectCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="display text of the project")
     private String displayText;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the zone id of the project")
-    private Long zoneId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -73,10 +70,6 @@ public class CreateProjectCmd extends BaseCmd {
 
     public String getDisplayText() {
         return displayText;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     @Override
@@ -110,8 +103,8 @@ public class CreateProjectCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Project Name: "+ getName() + ", zoneId " + zoneId);
-        Project project = _projectService.createProject(getName(), getDisplayText(), getZoneId(), getAccountName(), getDomainId());
+        UserContext.current().setEventDetails("Project Name: "+ getName());
+        Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
             response.setResponseName(getCommandName());

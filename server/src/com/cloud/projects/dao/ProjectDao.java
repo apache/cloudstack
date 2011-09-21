@@ -5,4 +5,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ProjectDao extends GenericDao<ProjectVO, Long>{
 
+    ProjectVO findByNameAndDomain(String name, long domainId);
 }

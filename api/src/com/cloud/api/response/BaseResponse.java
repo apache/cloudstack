@@ -23,7 +23,7 @@ import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class BaseResponse implements ResponseObject {
+public abstract class BaseResponse implements ResponseObject {
     private transient String responseName;
     private transient String objectName;
     
@@ -73,5 +73,4 @@ public class BaseResponse implements ResponseObject {
     public void setJobStatus(Integer jobStatus) {
     	this.jobStatus = jobStatus;
     }
-   
 }

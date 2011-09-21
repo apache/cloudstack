@@ -86,8 +86,9 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Configuration;
+import com.cloud.configuration.Resource.ResourceOwnerType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -160,7 +161,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -389,20 +389,18 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceLimitResponse createResourceLimitResponse(ResourceLimit limit) {
         ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();
-        if (limit.getDomainId() != null) {
-            resourceLimitResponse.setDomainId(limit.getDomainId());
-            resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(limit.getDomainId()).getName());
-        }
-
-        if (limit.getAccountId() != null) {
-            Account accountTemp = ApiDBUtils.findAccountById(limit.getAccountId());
+        if (limit.getResourceOwnerType() == ResourceOwnerType.Domain) {
+            resourceLimitResponse.setDomainId(limit.getOwnerId());
+            resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(limit.getOwnerId()).getName());
+        } else if (limit.getResourceOwnerType() == ResourceOwnerType.Account) {
+            Account accountTemp = ApiDBUtils.findAccountById(limit.getOwnerId());
             if (accountTemp != null) {
                 resourceLimitResponse.setAccountName(accountTemp.getAccountName());
                 resourceLimitResponse.setDomainId(accountTemp.getDomainId());
                 resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
         }
-        resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().ordinal()).toString());
+        resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().getOrdinal()).toString());
         resourceLimitResponse.setMax(limit.getMax());
         resourceLimitResponse.setObjectName("resourcelimit");
 
@@ -413,19 +411,19 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ResourceCountResponse createResourceCountResponse(ResourceCount resourceCount) {
         ResourceCountResponse resourceCountResponse = new ResourceCountResponse();
 
-        if (resourceCount.getAccountId() != null) {
-            Account accountTemp = ApiDBUtils.findAccountById(resourceCount.getAccountId());
+        if (resourceCount.getResourceOwnerType() == ResourceOwnerType.Account) {
+            Account accountTemp = ApiDBUtils.findAccountById(resourceCount.getOwnerId());
             if (accountTemp != null) {
                 resourceCountResponse.setAccountName(accountTemp.getAccountName());
                 resourceCountResponse.setDomainId(accountTemp.getDomainId());
                 resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
-        } else if (resourceCount.getDomainId() != null) {
-            resourceCountResponse.setDomainId(resourceCount.getDomainId());
-            resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(resourceCount.getDomainId()).getName());
+        } else if (resourceCount.getResourceOwnerType() == ResourceOwnerType.Domain) {
+            resourceCountResponse.setDomainId(resourceCount.getOwnerId());
+            resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(resourceCount.getOwnerId()).getName());
         }
 
-        resourceCountResponse.setResourceType(Integer.valueOf(resourceCount.getType().ordinal()).toString());
+        resourceCountResponse.setResourceType(Integer.valueOf(resourceCount.getType().getOrdinal()).toString());
         resourceCountResponse.setResourceCount(resourceCount.getCount());
         resourceCountResponse.setObjectName("resourcecount");
         return resourceCountResponse;
@@ -2254,14 +2252,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(project.getId());
         response.setName(project.getName());
         response.setDisplaytext(project.getDisplayText());
-        response.setZoneId(project.getDataCenterId());
 
-        Account owner = ApiDBUtils.findAccountById(project.getAccountId());
-        response.setAccountName(owner.getAccountName());
-
-        Domain domain = ApiDBUtils.findDomainById(owner.getDomainId());
+        Domain domain = ApiDBUtils.findDomainById(project.getDomainId());
         response.setDomainId(domain.getId());
         response.setDomain(domain.getName());
+        
+        response.setOwner(ApiDBUtils.getProjectOwner(project.getId()).getAccountName());
 
         response.setObjectName("project");
         return response;

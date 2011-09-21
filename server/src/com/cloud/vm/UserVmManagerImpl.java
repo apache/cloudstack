@@ -77,7 +77,7 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
@@ -178,6 +178,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -337,6 +338,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject 
     protected VMInstanceDao _vmInstanceDao;
+    @Inject
+    protected ResourceLimitService _resourceLimitMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -1076,7 +1079,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // First check that the maximum number of UserVMs for the given accountId will not be exceeded
-        if (_accountMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + account.getAccountName() + " has been exceeded.");
             rae.setResourceType("vm");
             txn.commit();
@@ -1114,9 +1117,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
+        _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
 
-        _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
+        _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
 
         txn.commit();
 
@@ -1394,7 +1397,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         AccountVO ownerAccount = _accountDao.findById(accountId);
-        if (_accountMgr.resourceLimitExceeded(ownerAccount, ResourceType.template)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(ownerAccount, ResourceType.template)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
             rae.setResourceType("template");
             throw rae;
@@ -1442,7 +1445,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VMTemplateVO template = _templateDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            _accountMgr.incrementResourceCount(accountId, ResourceType.template);
+            _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.template);
         }
 
         return template;
@@ -1639,7 +1642,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _templateDao.remove(templateId);
 
                 // decrement resource count
-                _accountMgr.decrementResourceCount(accountId, ResourceType.template);
+                _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
                 txn.commit();
             }
         }
@@ -1688,7 +1691,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 String msg = "Failed to deploy Vm with Id: " + vmId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), msg, msg);
 
-                _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
             }
         }
     }
@@ -2373,7 +2376,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // check if account/domain is with in resource limits to create a new vm
-        if (_accountMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
             UserContext.current().setEventDetails("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
             rae.setResourceType("vm");
@@ -2557,7 +2560,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString());
         _usageEventDao.persist(usageEvent);
 
-        _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
         txn.commit();
         // Assign instance to the group
         try {
@@ -2950,7 +2953,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             if (vmState != State.Error) {
-                _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
             }
 
             return _vmDao.findById(vmId);
@@ -3324,7 +3327,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
-        if (_accountMgr.resourceLimitExceeded(newAccount, ResourceType.user_vm)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(newAccount, ResourceType.user_vm)) {
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + newAccount.getAccountName() + " has been exceeded.");
             rae.setResourceType("vm");
             throw rae;
@@ -3353,7 +3356,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(newAccount, domain);
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
-        VMInstanceVO vmoi = _itMgr.findById(vm.getType(), vm.getId());
+        VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
         VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
 
 
@@ -3417,7 +3420,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     networks.add(new Pair<NetworkVO, NicProfile>(network, null));
                 }
 
-                VMInstanceVO vmi = _itMgr.findById(vm.getType(), vm.getId());
+                VMInstanceVO vmi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
                 VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
                 _networkMgr.allocate(vmProfile, networks);
             }

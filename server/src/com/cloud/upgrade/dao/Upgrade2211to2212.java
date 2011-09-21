@@ -27,8 +27,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -95,8 +95,7 @@ public class Upgrade2211to2212 implements DbUpgrade {
             rs.close();
 
             for (Long accountId : accounts) {  
-                ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
-                for (ResourceType resourceType : resourceTypes) {
+                for (ResourceType resourceType : Resource.ResourceType.values()) {
                     pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and account_id=?");
                     pstmt.setString(1, resourceType.toString());
                     pstmt.setLong(2, accountId);
@@ -114,8 +113,7 @@ public class Upgrade2211to2212 implements DbUpgrade {
             }
             
             for (Long domainId : domains) {  
-                ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
-                for (ResourceType resourceType : resourceTypes) {
+                for (ResourceType resourceType : Resource.ResourceType.values()) {
                     pstmt = conn.prepareStatement("SELECT * FROM resource_count WHERE type=? and domain_id=?");
                     pstmt.setString(1, resourceType.toString());
                     pstmt.setLong(2, domainId);

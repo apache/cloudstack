@@ -48,10 +48,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceOwnerType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
-import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -358,8 +358,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         //create resource counts
         try {
-            _resourceCountDao.createResourceCounts(1, OwnerType.Account);
-            _resourceCountDao.createResourceCounts(2, OwnerType.Account);
+            _resourceCountDao.createResourceCounts(1, ResourceOwnerType.Account);
+            _resourceCountDao.createResourceCounts(2, ResourceOwnerType.Account);
         } catch (Exception ex) {
             // if exception happens, it might mean that resource counts are already created by another management server being started in the cluster
             s_logger.warn("Failed to create initial resource counts for system/admin accounts");
@@ -981,33 +981,48 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         domain.setPath("/");
         domain.setLevel(0);
         _domainDao.persist(domain);
-        _resourceCountDao.createResourceCounts(1, OwnerType.Domain);
+        _resourceCountDao.createResourceCounts(1, ResourceOwnerType.Domain);
         
        txn.commit();
     }
 
     private void updateResourceCount() {
-        ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
+        ResourceType[] resourceTypes = Resource.ResourceType.values();
+        
         List<AccountVO> accounts = _accountDao.listAllIncludingRemoved();
         List<DomainVO> domains = _domainDao.listAllIncludingRemoved();
-        List<ResourceCountVO> domainResourceCount = _resourceCountDao.listDomainCounts();
-        List<ResourceCountVO> accountResourceCount = _resourceCountDao.listAccountCounts();
+        List<ResourceCountVO> domainResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Domain);
+        List<ResourceCountVO> accountResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Account);
         
-        int resourceCount = resourceTypes.length;
+        List<ResourceType> accountSupportedResourceTypes = new ArrayList<ResourceType>();
+        List<ResourceType> domainSupportedResourceTypes = new ArrayList<ResourceType>();
         
-        if ((domainResourceCount.size() < resourceCount * domains.size())) {
+        for (ResourceType resourceType : resourceTypes) {
+            if (resourceType.supportsOwner(ResourceOwnerType.Account)) {
+                accountSupportedResourceTypes.add(resourceType);
+            }
+            if (resourceType.supportsOwner(ResourceOwnerType.Domain)) {
+                domainSupportedResourceTypes.add(resourceType);
+            }
+        }
+        
+        
+        int accountExpectedCount = accountSupportedResourceTypes.size();
+        int domainExpectedCount = domainSupportedResourceTypes.size();
+        
+        if ((domainResourceCount.size() < domainExpectedCount * domains.size())) {
             s_logger.debug("resource_count table has records missing for some domains...going to insert them");
             for (DomainVO domain : domains) {
-                List<ResourceCountVO> domainCounts = _resourceCountDao.listByDomainId(domain.getId());
+                List<ResourceCountVO> domainCounts = _resourceCountDao.listByOwnerId(domain.getId(), ResourceOwnerType.Domain);
                 List<String> domainCountStr = new ArrayList<String>();
                 for (ResourceCountVO domainCount : domainCounts) {
                     domainCountStr.add(domainCount.getType().toString());
                 }
 
-                if (domainCountStr.size() < resourceCount) {
-                    for (ResourceType resourceType : resourceTypes) {
+                if (domainCountStr.size() < domainExpectedCount) {
+                    for (ResourceType resourceType : domainSupportedResourceTypes) {
                         if (!domainCountStr.contains(resourceType.toString())) {
-                            ResourceCountVO resourceCountVO = new ResourceCountVO(null, domain.getId(), resourceType, 0);
+                            ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, domain.getId(), ResourceOwnerType.Domain);
                             s_logger.debug("Inserting resource count of type " + resourceType + " for domain id=" + domain.getId());
                             _resourceCountDao.persist(resourceCountVO);
                         }
@@ -1016,19 +1031,19 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             }
         }
         
-        if ((accountResourceCount.size() < resourceTypes.length * accounts.size())) {
+        if ((accountResourceCount.size() < accountExpectedCount * accounts.size())) {
             s_logger.debug("resource_count table has records missing for some accounts...going to insert them");
             for (AccountVO account : accounts) {
-                List<ResourceCountVO> accountCounts = _resourceCountDao.listByAccountId(account.getId());
+                List<ResourceCountVO> accountCounts = _resourceCountDao.listByOwnerId(account.getId(), ResourceOwnerType.Account);
                 List<String> accountCountStr = new ArrayList<String>();
                 for (ResourceCountVO accountCount : accountCounts) {
                     accountCountStr.add(accountCount.getType().toString());
                 }
                 
-                if (accountCountStr.size() < resourceCount) {
-                    for (ResourceType resourceType : resourceTypes) {
+                if (accountCountStr.size() < accountExpectedCount) {
+                    for (ResourceType resourceType : accountSupportedResourceTypes) {
                         if (!accountCountStr.contains(resourceType.toString())) {
-                            ResourceCountVO resourceCountVO = new ResourceCountVO(account.getId(), null, resourceType, 0);
+                            ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, account.getId(), ResourceOwnerType.Account);
                             s_logger.debug("Inserting resource count of type " + resourceType + " for account id=" + account.getId());
                             _resourceCountDao.persist(resourceCountVO);
                         }

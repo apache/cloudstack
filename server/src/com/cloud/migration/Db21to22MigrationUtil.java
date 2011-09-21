@@ -27,7 +27,8 @@ import java.util.Queue;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -148,7 +149,7 @@ public class Db21to22MigrationUtil {
         SearchBuilder<ResourceCountVO> sb = _resourceCountDao.createSearchBuilder();
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
 
-        for (ResourceType type : ResourceType.values()) {
+        for (ResourceType type : Resource.ResourceType.values()) {
             SearchCriteria<ResourceCountVO> sc = sb.create();
             sc.setParameters("type", type);
 

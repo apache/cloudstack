@@ -52,6 +52,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -98,8 +99,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     DomainDao _domainDao;
     @Inject
     FirewallManager _firewallMgr;
-
-
+    @Inject
+    DomainManager _domainMgr;
 
     @Override
     public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
@@ -543,7 +544,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            Domain domain = _domainMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
 
@@ -575,7 +576,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
             if (accountName != null) {
-                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                 sc.setParameters("accountId", account.getId());
             }
         }
@@ -773,7 +774,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            Domain domain = _domainMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
 
@@ -811,7 +812,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
             if (accountName != null) {
-                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                 sc.setParameters("accountId", account.getId());
             }
         }

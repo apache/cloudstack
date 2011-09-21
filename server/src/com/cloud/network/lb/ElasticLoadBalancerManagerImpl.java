@@ -203,11 +203,11 @@ public class ElasticLoadBalancerManagerImpl implements
     int _elasticLbvmNumCpu;
     
     private Long getPodIdForDirectIp(IPAddressVO ipAddr) {
-        List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ipAddr.getVlanId());
-        if (podVlanMaps.isEmpty()) {
+        PodVlanMapVO podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ipAddr.getVlanId());
+        if (podVlanMaps == null) {
             return null;
         } else {
-            return podVlanMaps.get(0).getPodId();
+            return podVlanMaps.getPodId();
         }
     }
 
@@ -220,7 +220,7 @@ public class ElasticLoadBalancerManagerImpl implements
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(
                 1);
         params.put(VirtualMachineProfile.Param.RestartNetwork, true);
-        Account owner = _accountService.getActiveAccount("system", new Long(1));
+        Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
         s_logger.debug("About to deploy ELB vm ");
 

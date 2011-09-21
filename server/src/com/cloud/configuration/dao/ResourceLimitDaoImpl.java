@@ -18,12 +18,15 @@
 
 package com.cloud.configuration.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceOwnerType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -40,49 +43,24 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 	    IdTypeSearch.and("accountId", IdTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
 	    IdTypeSearch.done();
 	}
-
-	public ResourceLimitVO findByDomainIdAndType(Long domainId, ResourceCount.ResourceType type) {
-		if (domainId == null || type == null)
-			return null;
-		
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
-		sc.setParameters("domainId", domainId);
-		sc.setParameters("type", type);
-		
-		return findOneIncludingRemovedBy(sc);
+	
+	@Override
+	public List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType) {
+	    SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+	    
+	    if (ownerType == ResourceOwnerType.Account) {
+            sc.setParameters("accountId", ownerId);
+            return listBy(sc);
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            sc.setParameters("domainId", ownerId);
+            return listBy(sc);
+        } else {
+            return new ArrayList<ResourceLimitVO>();
+        }
 	}
 	
-	public List<ResourceLimitVO> listByDomainId(Long domainId) {
-		if (domainId == null)
-			return null;
-		
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
-		sc.setParameters("domainId", domainId);
-		
-		return listIncludingRemovedBy(sc);
-	}
 	
-	public ResourceLimitVO findByAccountIdAndType(Long accountId, ResourceCount.ResourceType type) {
-		if (accountId == null || type == null)
-			return null;
-	
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
-		sc.setParameters("accountId", accountId);
-		sc.setParameters("type", type);
-		
-		return findOneIncludingRemovedBy(sc);
-	}
-	
-	public List<ResourceLimitVO> listByAccountId(Long accountId) {
-		if (accountId == null)
-			return null;
-	
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
-		sc.setParameters("accountId", accountId);
-		
-		return listIncludingRemovedBy(sc);
-	}
-	
+	@Override
 	public boolean update(Long id, Long max) {
         ResourceLimitVO limit = findById(id);
         if (max != null)
@@ -92,11 +70,12 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
         return update(id, limit);
     }
 	
+	@Override
 	public ResourceCount.ResourceType getLimitType(String type) {
-		ResourceCount.ResourceType[] validTypes = ResourceCount.ResourceType.values();
+	    ResourceType[] validTypes = Resource.ResourceType.values();
 		
-		for (ResourceCount.ResourceType validType : validTypes) {
-			if (validType.toString().equals(type)) {
+		for (ResourceType validType : validTypes) {
+			if (validType.getName().equals(type)) {
 				return validType;
 			}
 		}
@@ -104,11 +83,16 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 	}
 	
 	@Override
-	public ResourceLimitVO findByOwnerIdAndType(long ownerId, OwnerType ownerType, ResourceCount.ResourceType type) {
-	    if (ownerType == OwnerType.Account) {
-            return findByAccountIdAndType(ownerId, type);
-        } else if (ownerType == OwnerType.Domain) {
-            return findByDomainIdAndType(ownerId, type);
+	public ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type) {
+	    SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+        sc.setParameters("type", type);
+	    
+	    if (ownerType == ResourceOwnerType.Account) {
+	        sc.setParameters("accountId", ownerId);
+	        return findOneBy(sc);
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            sc.setParameters("domainId", ownerId);
+            return findOneBy(sc);
         } else {
             return null;
         }

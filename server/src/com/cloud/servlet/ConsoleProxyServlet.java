@@ -41,13 +41,16 @@ import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import com.cloud.user.User;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -60,6 +63,9 @@ public class ConsoleProxyServlet extends HttpServlet {
 	private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
 	private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
 	
+	private final static AccountManager _accountMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(AccountManager.class);
+	private final static VirtualMachineManager _vmMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(VirtualMachineManager.class);
+	private final static DomainManager _domainMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(DomainManager.class);
 	private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
 	
 	@Override
@@ -71,7 +77,7 @@ public class ConsoleProxyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		
 		try {
-			if(_ms == null) {
+			if(_accountMgr == null || _vmMgr == null || _ms == null) {
 				sendResponse(resp, "Service is not ready");
 				return;
 			}
@@ -156,7 +162,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	}
 	
 	private void handleThumbnailRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-		VMInstanceVO vm = _ms.findVMInstanceById(vmId);
+		VMInstanceVO vm = _vmMgr.findById(vmId);
 		if(vm == null) {
 			s_logger.warn("VM " + vmId + " does not exist, sending blank response for thumbnail request");
 			sendResponse(resp, "");
@@ -207,7 +213,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	}
 	
 	private void handleAccessRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-		VMInstanceVO vm = _ms.findVMInstanceById(vmId);
+		VMInstanceVO vm = _vmMgr.findById(vmId);
 		if(vm == null) {
 			s_logger.warn("VM " + vmId + " does not exist, sending blank response for console access request");
 			sendResponse(resp, "");
@@ -235,7 +241,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		
 		String vmName = vm.getInstanceName();
 		if(vm.getType() == VirtualMachine.Type.User) {
-			UserVmVO userVm = _ms.findUserVMInstanceById(vmId);
+			UserVm userVm = (UserVm)_vmMgr.findByIdAndType(VirtualMachine.Type.User, vmId);
 			String displayName = userVm.getDisplayName();
 			if(displayName != null && !displayName.isEmpty() && !displayName.equals(vmName)) {
 	            vmName += "(" + displayName + ")";
@@ -252,7 +258,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		
 		// TODO authentication channel between console proxy VM and management server needs to be secured, 
 		// the data is now being sent through private network, but this is apparently not enough
-		VMInstanceVO vm = _ms.findVMInstanceById(vmId);
+		VMInstanceVO vm = _vmMgr.findById(vmId);
 		if(vm == null) {
 			s_logger.warn("VM " + vmId + " does not exist, sending failed response for authentication request from console proxy");
 			sendResponse(resp, "failed");
@@ -378,7 +384,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
 
-        VMInstanceVO vm = _ms.findVMInstanceById(vmId);
+        VMInstanceVO vm = _vmMgr.findById(vmId);
         if(vm == null) {
         	s_logger.debug("Console/thumbnail access denied. VM " + vmId + " does not exist in system any more");
         	return false;
@@ -403,7 +409,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         		}
         		
         		if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
-        			if(!_ms.isChildDomain(accountObj.getDomainId(), vm.getDomainId())) {
+        			if(!_domainMgr.isChildDomain(accountObj.getDomainId(), vm.getDomainId())) {
     	        		if(s_logger.isDebugEnabled()) {
     	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
     		        			+ " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
@@ -437,10 +443,10 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
     public boolean verifyUser(Long userId) {
     	// copy from ApiServer.java, a bit ugly here
-    	User user = _ms.findUserById(userId);
+    	User user = _accountMgr.getUser(userId);
     	Account account = null;
     	if (user != null) {
-    	    account = _ms.findAccountById(user.getAccountId());
+    	    account = _accountMgr.getAccount(user.getAccountId());
     	}
 
     	if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) 
@@ -502,7 +508,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             txn.close();
             User user = null;
             // verify there is a user with this api key
-            Pair<User, Account> userAcctPair = _ms.findUserByApiKey(apiKey);
+            Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
                 s_logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;

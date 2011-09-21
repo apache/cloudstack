@@ -67,6 +67,9 @@ public class DomainVO implements Domain {
     @Column(name="network_domain")
     private String networkDomain;
     
+    @Column(name="type")
+    private Domain.Type type = Domain.Type.Normal;
+    
     public DomainVO() {}
     
     public DomainVO(long id, String name, long owner, Long parentId, String networkDomain) {
@@ -82,6 +85,15 @@ public class DomainVO implements Domain {
         this.level = 0;
         this.state = Domain.State.Active;
         this.networkDomain = networkDomain;
+   
+    }
+    
+    public DomainVO(String name, long owner, Long parentId, String networkDomain, Domain.Type type) {
+        this(name, owner, parentId, networkDomain);
+        
+        if (type != null) {
+            this.type = type;
+        }
     }
 
     @Override
@@ -185,6 +197,11 @@ public class DomainVO implements Domain {
 
     public void setNetworkDomain(String domainSuffix) {
         this.networkDomain = domainSuffix;
+    }
+
+    @Override
+    public Domain.Type getType() {
+        return type;
     }
 }
 

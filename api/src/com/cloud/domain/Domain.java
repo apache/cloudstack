@@ -30,6 +30,10 @@ import com.cloud.user.OwnedBy;
  */
 public interface Domain extends OwnedBy {
     public static final long ROOT_DOMAIN = 1L;
+    public enum Type {
+        Normal,
+        Project,
+    }
     
     enum State {Active, Inactive};
     
@@ -60,4 +64,6 @@ public interface Domain extends OwnedBy {
     void setState(State state);
 
     String getNetworkDomain();
+
+    Type getType();
 }

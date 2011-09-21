@@ -50,7 +50,7 @@ import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.AccountVlanMapVO;
@@ -118,6 +118,8 @@ import com.cloud.org.Grouping;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -223,8 +225,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     FirewallManager _firewallMgr;
     @Inject 
     FirewallRulesDao _firewallDao;
-
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
     @Inject DomainRouterDao _routerDao;
+    @Inject DomainManager _domainMgr;
+    
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -353,7 +358,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _usageEventDao.persist(usageEvent);
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
-                _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+                _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
             }
         }
 
@@ -386,7 +391,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null, network.getId());
             if (addrs.size() == 0) {
                 // Check that the maximum number of public IPs for the given accountId will not be exceeded
-                if (_accountMgr.resourceLimitExceeded(owner, ResourceType.public_ip)) {
+                if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.public_ip)) {
                     throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
                 }
 
@@ -455,7 +460,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, , permission denied");
                 }
                 if (accountName != null) {
-                    Account userAccount = _accountMgr.getActiveAccount(accountName, domainId);
+                    Account userAccount = _accountMgr.getActiveAccountByName(accountName, domainId);
                     if (userAccount != null) {
                         account = userAccount;
                     } else {
@@ -521,7 +526,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId) {
-        Account owner = _accountMgr.getActiveAccount(accountName, domainId);
+        Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
         if (owner == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
         }
@@ -539,7 +544,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account caller = UserContext.current().getCaller();
         long userId = UserContext.current().getCallerUserId();
 
-        Account ipOwner = _accountMgr.getActiveAccount(accountName, domainId);
+        Account ipOwner = _accountMgr.getActiveAccountByName(accountName, domainId);
         if (ipOwner == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
         }
@@ -603,7 +608,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // Check that the maximum number of public IPs for the given
             // accountId will not be exceeded
-            if (_accountMgr.resourceLimitExceeded(accountToLock, ResourceType.public_ip)) {
+            if (_resourceLimitMgr.resourceLimitExceeded(accountToLock, ResourceType.public_ip)) {
                 UserContext.current().setEventDetails("Maximum number of public IP addresses for account: " + accountToLock.getAccountName() + " has been exceeded.");
                 ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + accountToLock.getAccountName() + " has been exceeded.");
                 rae.setResourceType("ip");
@@ -1851,7 +1856,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             _accountMgr.checkAccess(caller, domain);
             if (accountName != null) {
-                Account owner = _accountMgr.getActiveAccount(accountName, domainId);
+                Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
                 if (owner == null) {
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
@@ -1970,7 +1975,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Set<Long> allowedDomains = new HashSet<Long>();
         if (_allowSubdomainNetworkAccess) {
-            allowedDomains = _accountMgr.getDomainParentIds(domainId);
+            allowedDomains = _domainMgr.getDomainParentIds(domainId);
         } else {
             allowedDomains.add(domainId);
         }
@@ -1991,7 +1996,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         accountSC.addAnd("isShared", SearchCriteria.Op.EQ, false);
         if (path != null) {
-            Set<Long> allowedDomains = _accountMgr.getDomainChildrenIds(path);
+            Set<Long> allowedDomains = _domainMgr.getDomainChildrenIds(path);
             accountSC.addAnd("domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
         }
 
@@ -2365,7 +2370,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long networkId = cmd.getNetworkId();
 
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
-        Account callerAccount = _accountMgr.getActiveAccount(caller.getAccountId());
+        Account callerAccount = _accountMgr.getActiveAccountById(caller.getAccountId());
 
         // Check if network exists
         NetworkVO network = _networksDao.findById(networkId);
@@ -2677,7 +2682,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @DB
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceUnavailableException {
-        Account owner = _accountMgr.getActiveAccount(accountId);
+        Account owner = _accountMgr.getActiveAccountById(accountId);
         boolean createNetwork = false;
 
         Transaction txn = Transaction.currentTxn();
@@ -2952,7 +2957,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // don't decrement resource count for direct ips
             if (ip.getAssociatedWithNetworkId() != null) {
-                _accountMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
+                _resourceLimitMgr.decrementResourceCount(_ipAddressDao.findById(addrId).getAccountId(), ResourceType.public_ip);
             }
 
             long isSourceNat = (ip.isSourceNat()) ? 1 : 0;
@@ -3001,7 +3006,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         if (_allowSubdomainNetworkAccess) {
-            Set<Long> parentDomains = _accountMgr.getDomainParentIds(domainId);
+            Set<Long> parentDomains = _domainMgr.getDomainParentIds(domainId);
 
             if (parentDomains.contains(domainId)) {
                 return true;
@@ -3268,5 +3273,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         return success;
+    }
+    
+    @Override
+    public Long getPodIdForVlan(long vlanDbId) {
+        PodVlanMapVO podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(vlanDbId);
+        if (podVlanMaps == null) {
+            return null;
+        } else {
+            return podVlanMaps.getPodId();
+        }
     }
 }

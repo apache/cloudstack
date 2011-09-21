@@ -10,28 +10,34 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenter;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project.State;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 @Local(value = { ProjectService.class })
 public class ProjectManagerImpl implements ProjectManager, Manager{
@@ -40,15 +46,19 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     private long _maxProjects;
     
     @Inject
-    private AccountDao _accountDao;
-    @Inject
     private DomainDao _domainDao;
     @Inject
     private ProjectDao _projectDao;
     @Inject
     AccountManager _accountMgr;
     @Inject
+    DomainManager _domainMgr;
+    @Inject
     ConfigurationManager _configMgr;  
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
+    @Inject
+    private ProjectAccountDao _projectAccountDao;
     
     
     @Override
@@ -81,7 +91,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project")
-    public Project createProject(String name, String displayText, long zoneId, String accountName, Long domainId) {
+    @DB
+    public Project createProject(String name, String displayText, String accountName, Long domainId) {
         Account caller = UserContext.current().getCaller();
         Account owner = caller;
         
@@ -94,19 +105,41 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
         }
         
-        DataCenter zone = _configMgr.getZone(zoneId);
-        
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+        //don't allow 2 projects with the same name inside the same domain
+        if (_projectDao.findByNameAndDomain(name, owner.getDomainId()) != null) {
+            throw new InvalidParameterValueException("Project with name " + name + " already exists in domain id=" + owner.getDomainId());
         }
         
-        //TODO - do resource limit check here
+        Domain ownerDomain = _domainDao.findById(owner.getDomainId());
         
-        Project project = _projectDao.persist(new ProjectVO(name, displayText, zoneId, owner.getAccountId(), owner.getDomainId()));
+        //do resource limit check
+        _resourceLimitMgr.resourceLimitExceededForDomain(ownerDomain, ResourceType.project);
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        //Create a domain associated with the project
+        StringBuilder dmnNm = new StringBuilder("PrjDmn-");
+        dmnNm.append(name).append("-").append(owner.getDomainId());
+        
+        Domain projectDomain = _domainMgr.createDomain(dmnNm.toString(), Domain.ROOT_DOMAIN, Account.ACCOUNT_ID_SYSTEM, null, Domain.Type.Project);
+        
+        //Create an account associated with the project
+        StringBuilder acctNm = new StringBuilder("PrjAcct-");
+        acctNm.append(name).append("-").append(owner.getDomainId());
+        
+        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, projectDomain.getId(), null);
+        
+        Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId(), projectDomain.getId()));
+        
+        //TODO - assign owner to the project
+        assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Owner);
         
         if (project != null) {
             UserContext.current().setEventDetails("Project id=" + project.getId());
         }
+        
+        txn.commit();
         
         return project;
     }
@@ -116,27 +149,74 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     public boolean deleteProject (long projectId) {
         Account caller = UserContext.current().getCaller();
         
-        Project project= getProject(projectId);
+        ProjectVO project= getProject(projectId);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
         }
         
-        _accountMgr.checkAccess(caller, null, project);
+        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()));
         
-        //TODO - delete all project resources here
+        //mark project as inactive first, so you can't add resources to it
+        s_logger.debug("Marking project id=" + projectId + " with state " + State.Inactive + " as a part of project delete...");
+        project.setState(State.Inactive);
+        if (_projectDao.update(projectId, project)) {
+            if (!cleanupProject(project)) {
+                s_logger.warn("Failed to cleanup project's id=" + projectId + " resources, not removing the project yet");
+                return false;
+            } else {
+                return _projectDao.remove(projectId);
+            }
+        } else {
+            s_logger.warn("Failed to mark the project id=" + projectId + " with state " + State.Inactive);
+            return false;
+        }  
+    }
+    
+    private boolean cleanupProject(Project project) {
+        boolean result=true;
         
-        return _projectDao.remove(projectId);
-
+        //Unassign all users from the project
+        s_logger.debug("Unassigning all accounts from project " + project + " as a part of project cleanup...");
+        List<? extends ProjectAccount> projectAccounts = _projectAccountDao.listByProjectId(project.getId());
+        for (ProjectAccount projectAccount : projectAccounts) {
+            result = result && unassignAccountFromProject(projectAccount.getProjectId(), projectAccount.getAccountId());
+        }
+        
+        if (result) {
+            s_logger.debug("Accounts are unassign successfully from project " + project + " as a part of project cleanup...");
+        }
+        
+        //Delete project's domain
+        s_logger.debug("Deleting projects " + project + " internal domain id=" + project.getProjectDomainId() + " as a part of project cleanup...");
+        result = result && _domainMgr.deleteDomain(project.getProjectDomainId(), true);
+        
+        return result;
     }
     
     @Override
-    public Project getProject (long projectId) {
+    public boolean unassignAccountFromProject(long projectId, long accountId) {
+        ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
+        if (projectAccount == null) {
+            s_logger.debug("Account id=" + accountId + " is not assigned to project id=" + projectId + " so no need to unassign");
+            return true;
+        }
+        
+        if ( _projectAccountDao.remove(projectAccount.getId())) {
+            return true;
+        } else {
+            s_logger.warn("Failed to unassign account id=" + accountId + " from the project id=" + projectId);
+            return false;
+        }
+    }
+    
+    @Override
+    public ProjectVO getProject (long projectId) {
         return _projectDao.findById(projectId);
     }
     
     @Override
-    public List<? extends Project> listProjects(Long id, String name, String displayText, Long zoneId, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize) {
+    public List<? extends Project> listProjects(Long id, String name, String displayText, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize) {
         Account caller = UserContext.current().getCaller();
         Long accountId = null;
         String path = null;
@@ -154,7 +234,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                 _accountMgr.checkAccess(caller, domain);
 
                 if (accountName != null) {
-                    Account owner = _accountMgr.getActiveAccount(accountName, domainId);
+                    Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
                     if (owner == null) {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
@@ -198,10 +278,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             sc.addAnd("displayText", Op.EQ, displayText);
         }
         
-        if (zoneId != null) {
-            sc.addAnd("dataCenterId", Op.EQ, zoneId);
-        }
-        
         if (accountId != null) {
             sc.addAnd("accountId", Op.EQ, accountId);
         }
@@ -218,7 +294,17 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         return _projectDao.search(sc, searchFilter);
-        
+    }
+    
+    @Override
+    public ProjectAccount assignAccountToProject(Project project, long accountId, ProjectAccount.Role accountRole) {
+        return _projectAccountDao.persist(new ProjectAccountVO(project, accountId, accountRole));
+    }
+    
+    @Override
+    public Account getProjectOwner(long projectId) {
+        long accountId = _projectAccountDao.getProjectOwner(projectId).getAccountId();
+        return _accountMgr.getAccount(accountId);
     }
 
 }

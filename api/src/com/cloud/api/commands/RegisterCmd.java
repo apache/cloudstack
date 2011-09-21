@@ -69,7 +69,7 @@ public class RegisterCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        String[] keys = _mgr.createApiKeyAndSecretKey(this);
+        String[] keys = _accountService.createApiKeyAndSecretKey(this);
         RegisterResponse response = new RegisterResponse();
         response.setApiKey(keys[0]);
         response.setSecretKey(keys[1]);

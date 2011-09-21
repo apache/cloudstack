@@ -18,60 +18,51 @@
 
 package com.cloud.user;
 
+import java.net.URLEncoder;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.CreateAccountCmd;
-import com.cloud.api.commands.CreateDomainCmd;
-import com.cloud.api.commands.CreateUserCmd;
-import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
-import com.cloud.api.commands.DisableAccountCmd;
-import com.cloud.api.commands.DisableUserCmd;
-import com.cloud.api.commands.EnableAccountCmd;
-import com.cloud.api.commands.EnableUserCmd;
-import com.cloud.api.commands.LockUserCmd;
+import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.ResourceLimit.OwnerType;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
-import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -81,13 +72,13 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -110,10 +101,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -138,10 +126,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    private DomainDao _domainDao;
-    @Inject
-    private ResourceLimitDao _resourceLimitDao;
-    @Inject
     private ResourceCountDao _resourceCountDao;
     @Inject
     private UserDao _userDao;
@@ -161,8 +145,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private SecurityGroupDao _securityGroupDao;
     @Inject
     private VMInstanceDao _vmDao;
-    @Inject
-    private IPAddressDao _ipAddressDao;
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -192,12 +174,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private VpnUserDao _vpnUser;
     @Inject
     private DataCenterDao _dcDao;
-    @Inject
-    private AlertManager _alertMgr;
+    @Inject 
+    private DomainManager _domainMgr;
+    private Adapters<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
-    
-    protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
 
     UserVO _systemUser;
     AccountVO _systemAccount;
@@ -226,11 +207,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String value = configs.get(Config.AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
         
-        ResourceCountSearch = _resourceCountDao.createSearchBuilder();
-        ResourceCountSearch.and("id", ResourceCountSearch.entity().getId(), SearchCriteria.Op.IN);
-        ResourceCountSearch.and("accountId", ResourceCountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        ResourceCountSearch.done();
+        _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
+        if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
+            s_logger.error("Unable to find an user authenticator.");
+        }
 
         return true;
     }
@@ -256,513 +236,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return true;
     }
 
-    @Override
-    public void incrementResourceCount(long accountId, ResourceType type, Long... delta) {
-        //don't upgrade resource count for system account
-        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.trace("Not incrementing resource count for system accounts, returning");
-            return;
-        }
-        long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
-        if (!updateResourceCount(accountId, type, true, numToIncrement)) {
-            //we should fail the operation (resource creation) when failed to update the resource count
-            throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
-        }
-    }
-
-    @Override
-    public void decrementResourceCount(long accountId, ResourceType type, Long... delta) {
-        //don't upgrade resource count for system account
-        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.trace("Not decrementing resource count for system accounts, returning");
-            return;
-        }
-        long numToDecrement = (delta.length == 0) ? 1 : delta[0].longValue();
-        
-        if (!updateResourceCount(accountId, type, false, numToDecrement)) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, "Failed to decrement resource count of type " + type + " for account id=" + accountId, 
-                        "Failed to decrement resource count of type " + type + " for account id=" + accountId + "; use updateResourceCount API to recalculate/fix the problem");
-        }
-    }
-
-    @Override
-    public long findCorrectResourceLimit(long accountId, ResourceType type) {
-        long max = -1;
-
-        ResourceLimitVO limit = _resourceLimitDao.findByAccountIdAndType(accountId, type);
-
-        // Check if limit is configured for account
-        if (limit != null) {
-            max = limit.getMax().longValue();
-        } else {
-            // If the account has an no limit set, then return global default account limits
-            try {
-                switch (type) {
-                case public_ip:
-                    max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key()));
-                    break;
-                case snapshot:
-                    max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key()));
-                    break;
-                case template:
-                    max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key()));
-                    break;
-                case user_vm:
-                    max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountUserVms.key()));
-                    break;
-                case volume:
-                    max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVolumes.key()));
-                    break;
-                }
-            } catch (NumberFormatException nfe) {
-                s_logger.error("Invalid value is set for the default account limit.");
-            }
-        }
-
-        return max;
-    }
-
-    @Override
-    public long findCorrectResourceLimit(DomainVO domain, ResourceType type) {
-        long max = -1;
-
-        // Check account
-        ResourceLimitVO limit = _resourceLimitDao.findByDomainIdAndType(domain.getId(), type);
-
-        if (limit != null) {
-            max = limit.getMax().longValue();
-        } else {
-            // check domain hierarchy
-            Long domainId = domain.getParent();
-            while ((domainId != null) && (limit == null)) {
-                limit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-                DomainVO tmpDomain = _domainDao.findById(domainId);
-                domainId = tmpDomain.getParent();
-            }
-
-            if (limit != null) {
-                max = limit.getMax().longValue();
-            }
-        }
-
-        return max;
-    }
-
-    @Override @DB
-    public boolean resourceLimitExceeded(Account account, ResourceType type, long... count) {
-        long numResources = ((count.length == 0) ? 1 : count[0]);
-
-        // Don't place any limits on system or admin accounts
-        if (isAdmin(account.getType())) {
-            return false;
-        }
-        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            //Lock all rows first so nobody else can read it 
-            Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdateForAccount(account.getId(), account.getDomainId(), type);
-            SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
-            sc.setParameters("id", rowIdsToLock.toArray());
-            _resourceCountDao.lockRows(sc, null, true);
-
-            // Check account limits
-            long accountLimit = findCorrectResourceLimit(account.getId(), type);
-            long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
-            if (accountLimit != -1 && potentialCount > accountLimit) {
-                return true;
-            }
-
-            // check all domains in the account's domain hierarchy
-            Long domainId = account.getDomainId();
-            while (domainId != null) {
-                ResourceLimitVO domainLimit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-                if (domainLimit != null) {
-                    long domainCount = _resourceCountDao.getDomainCount(domainId, type);
-                    if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                        return true;
-                    }
-                }
-                DomainVO domain = _domainDao.findById(domainId);
-                domainId = domain.getParent();
-            }
-            
-            return false;
-        } finally {
-            txn.commit();
-        }
-    }
-
-    @Override
-    public long getResourceCount(AccountVO account, ResourceType type) {
-        return _resourceCountDao.getAccountCount(account.getId(), type);
-    }
-
-
-    @Override
-    public List<ResourceLimitVO> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
-       Account caller = UserContext.current().getCaller();
-       List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
-       boolean isAccount = true;
-       
-       Long accountId = null;
-       
-       if (!isAdmin(caller.getType())) {
-           accountId = caller.getId();
-           domainId = null;
-       } else {
-           if (domainId != null) {
-               //verify domain information and permissions
-               Domain domain = _domainDao.findById(domainId);
-               if (domain == null) {
-                   //return empty set
-                   return limits;
-               }
-               
-               checkAccess(caller, domain);
-               
-               if (accountName != null) {
-                   //Verify account information and permissions
-                   Account account = _accountDao.findAccount(accountName, domainId);
-                   if (account == null) {
-                       //return empty set
-                       return limits;
-                   }
-                   
-                   checkAccess(caller, null, account);
-                   
-                   accountId = account.getId();
-                   domainId = null;
-               } 
-           }
-       }
-       
-       // Map resource type
-       ResourceType resourceType = null;
-       if (type != null) {
-           try {
-               resourceType = ResourceType.values()[type];
-           } catch (ArrayIndexOutOfBoundsException e) {
-               throw new InvalidParameterValueException("Please specify a valid resource type.");
-           }
-       }
-
-       //If id is passed in, get the record and return it if permission check has passed
-       if (id != null) {
-           ResourceLimitVO vo = _resourceLimitDao.findById(id);
-           if (vo.getAccountId() != null) {
-               checkAccess(caller, null, _accountDao.findById(vo.getAccountId()));
-               limits.add(vo);
-           } else if (vo.getDomainId() != null) {
-               checkAccess(caller, _domainDao.findById(vo.getDomainId()));
-               limits.add(vo);
-           }
-           
-           return limits;
-       } 
-       
-       
-       //If account is not specified, default it to caller account
-       if (accountId == null) {
-           if (domainId == null) {
-               accountId = caller.getId();
-               isAccount = true;
-           } else {
-               isAccount = false;
-           }
-       } else {
-           isAccount = true;
-       }   
-       
-       SearchBuilder<ResourceLimitVO> sb = _resourceLimitDao.createSearchBuilder();
-       sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-       sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-       sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-
-       SearchCriteria<ResourceLimitVO> sc = sb.create();
-       Filter filter = new Filter(ResourceLimitVO.class, "id", true, startIndex, pageSizeVal);
-       
-       if (accountId != null) {
-           sc.setParameters("accountId", accountId);
-       } 
-       
-       if (domainId != null) {
-           sc.setParameters("domainId", domainId);
-           sc.setParameters("accountId", null);
-       }
-       
-       if (resourceType != null) {
-           sc.setParameters("type", resourceType);
-       }
-       
-       List<ResourceLimitVO> foundLimits = _resourceLimitDao.search(sc, filter);
-       
-       if (resourceType != null) {
-           if (foundLimits.isEmpty()) {
-               if (isAccount) {
-                   limits.add(new ResourceLimitVO(null, accountId, resourceType, findCorrectResourceLimit(accountId, resourceType)));
-               } else {
-                   limits.add(new ResourceLimitVO(domainId, null, resourceType, findCorrectResourceLimit(_domainDao.findById(domainId), resourceType)));
-               }
-           } else {
-               limits.addAll(foundLimits);
-           }
-       } else {
-           limits.addAll(foundLimits);
-           
-           //see if any limits are missing from the table, and if yes - get it from the config table and add
-           ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
-           if (foundLimits.size() != resourceTypes.length) {
-               List<String> accountLimitStr = new ArrayList<String>();
-               List<String> domainLimitStr = new ArrayList<String>();
-               for (ResourceLimitVO foundLimit : foundLimits) {
-                   if (foundLimit.getAccountId() != null) {
-                       accountLimitStr.add(foundLimit.getType().toString());
-                   } else {
-                       domainLimitStr.add(foundLimit.getType().toString());
-                   }
-               }
-               
-               //get default from config values
-               if (isAccount) {
-                   if (accountLimitStr.size() < resourceTypes.length) {
-                       for (ResourceType rt : resourceTypes) {
-                           if (!accountLimitStr.contains(rt.toString())) {
-                               limits.add(new ResourceLimitVO(null, accountId, rt, findCorrectResourceLimit(accountId, rt)));
-                           }
-                       }
-                   }
-                   
-               } else {
-                   if (domainLimitStr.size() < resourceTypes.length) {
-                       for (ResourceType rt : resourceTypes) {
-                           if (!domainLimitStr.contains(rt.toString())) {
-                               limits.add(new ResourceLimitVO(domainId, null, rt, findCorrectResourceLimit(_domainDao.findById(domainId), rt)));
-                           }
-                       }
-                   }
-               }
-           }
-       }
-       
-       return limits;
-    }
-
-    @Override
-    public ResourceLimitVO updateResourceLimit(String accountName, Long domainId, int typeId, Long max) {
-        Account caller = UserContext.current().getCaller();
-        Long ownerId = null;
-        OwnerType ownerType = OwnerType.Account;
-
-        if (max == null) {
-            max = new Long(-1);
-        } else if (max < -1) {
-            throw new InvalidParameterValueException("Please specify either '-1' for an infinite limit, or a limit that is at least '0'.");
-        }
-
-        // Map resource type
-        ResourceType resourceType = null;
-        try {
-            resourceType = ResourceType.values()[typeId];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new InvalidParameterValueException("Please specify a valid resource type.");
-        }
-        
-        //check permisions
-        if (domainId != null) {
-            //verify domain information and permissions
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
-            }
-            
-            checkAccess(caller, domain);
-            
-            if (accountName != null) {
-                //Verify account information and permissions
-                Account account = _accountDao.findAccount(accountName, domainId);
-                
-                checkAccess(caller, null, account);
-                
-                if (account.getType() == Account.ACCOUNT_ID_SYSTEM) {
-                    throw new InvalidParameterValueException("Can't update system account");
-                }
-                
-                ownerId = account.getId();
-            } else {
-                if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                    // if the admin is trying to update their own domain, disallow...
-                    throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
-                }
-                
-                Long parentDomainId = domain.getParent();
-                if (parentDomainId != null) {
-                    DomainVO parentDomain = _domainDao.findById(parentDomainId);
-                    long parentMaximum = findCorrectResourceLimit(parentDomain, resourceType);
-                    if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                        throw new InvalidParameterValueException("Domain (id: " + domainId + ") has maximum allowed resource limit " + parentMaximum + " for " + resourceType
-                                + ", please specify a value less that or equal to " + parentMaximum);
-                    }
-                }
-                
-                ownerId = domain.getId();
-                ownerType = OwnerType.Domain;
-            }
-        }
-
-        ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(ownerId, ownerType, resourceType);
-        if (limit != null) {
-            // Update the existing limit
-            _resourceLimitDao.update(limit.getId(), max);
-            return _resourceLimitDao.findById(limit.getId());
-        } else {
-            if (ownerType == OwnerType.Account) {
-                return _resourceLimitDao.persist(new ResourceLimitVO(null, ownerId, resourceType, max));
-            } else {
-                return _resourceLimitDao.persist(new ResourceLimitVO(ownerId, null, resourceType, max));
-            }
-        }
-    }
-
-    @Override @DB
-    public long updateAccountResourceCount(long accountId, ResourceType type) {
-        Long count=null;
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template table 
-            // as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
-            SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
-            sc.setParameters("accountId", accountId);
-            _resourceCountDao.lockRows(sc, null, true);
-            
-            switch (type) {
-            case user_vm:
-                count = _userVmDao.countAllocatedVMsForAccount(accountId);
-                break;
-            case volume:
-                count = _volumeDao.countAllocatedVolumesForAccount(accountId);
-                long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
-                count = count - virtualRouterCount;  // don't count the volumes of virtual router
-                break;
-            case snapshot:
-                count = _snapshotDao.countSnapshotsForAccount(accountId);
-                break;
-            case public_ip:
-                count = _ipAddressDao.countAllocatedIPsForAccount(accountId);
-                break;
-            case template:
-                count = _vmTemplateDao.countTemplatesForAccount(accountId);
-                break;
-            }
-            _resourceCountDao.setAccountCount(accountId, type, (count == null) ? 0 : count.longValue());
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to update resource count for account with Id" + accountId);
-        } finally {
-            txn.commit();
-        }
-
-        return (count==null)?0:count.longValue();
-    }
-
-    @Override @DB
-    public long updateDomainResourceCount(long domainId, ResourceType type) {
-        long count=0;
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        try {
-            //Lock all rows first so nobody else can read it 
-            Set<Long> rowIdsToLock = _resourceCountDao.listRowsToUpdateForDomain(domainId, type);
-            SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
-            sc.setParameters("id", rowIdsToLock.toArray());
-            _resourceCountDao.lockRows(sc, null, true);
-            
-            List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
-            // for each child domain update the resource count
-            for (DomainVO domainChild : domainChildren) {
-                long domainCount = updateDomainResourceCount(domainChild.getId(), type);
-                count = count + domainCount; // add the child domain count to parent domain count
-            }
-
-            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
-            for (AccountVO account : accounts) {
-                long accountCount = updateAccountResourceCount(account.getId(), type);
-                count = count + accountCount; // add account's resource count to parent domain count
-            }
-
-            _resourceCountDao.setDomainCount(domainId, type, count);
-       } catch (Exception e) {
-           throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
-       } finally {
-          txn.commit();
-       }
-
-       return count;
-    }
-
-    @Override
-    public List<ResourceCountVO> updateResourceCount(UpdateResourceCountCmd cmd) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException{
-        Account callerAccount = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
-        long count=0;
-        List<ResourceCountVO> counts = new ArrayList<ResourceCountVO>();
-        List<ResourceType> resourceTypes = new ArrayList<ResourceType>();
-
-        ResourceType resourceType=null;
-        Integer typeId = cmd.getResourceType();
-
-        if (typeId != null) {
-            try {
-                resourceType = ResourceType.values()[typeId];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                throw new InvalidParameterValueException("Please specify a valid resource type.");
-            }
-        }
-
-        DomainVO domain = _domainDao.findById(domainId);
-        if (domain == null) {
-            throw new InvalidParameterValueException("Please specify a valid domain ID.");
-        }
-        checkAccess(callerAccount, domain);
-
-        if (accountName != null) {
-            Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-            if (userAccount == null) {
-                throw new InvalidParameterValueException("unable to find account by name " + accountName + " in domain with id " + domainId);
-            }
-            accountId = userAccount.getId();
-        }
-
-        try {
-            if (resourceType != null) {
-            	resourceTypes.add(resourceType);
-            } else {
-            	resourceTypes = Arrays.asList(ResourceType.values());
-            }
-
-            for (ResourceType type : resourceTypes) {
-                if (accountId != null) {
-                    count = updateAccountResourceCount(accountId, type);
-                    counts.add(new ResourceCountVO(accountId, domainId, type, count));
-                } else {
-                    count = updateDomainResourceCount(domainId, type);
-                    counts.add(new ResourceCountVO(accountId, domainId, type, count));
-                }
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e.getMessage());
-        }
-
-        return counts;
-    }
-
-    @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
             _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -837,7 +311,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         for (Map.Entry<Long, List<ControlledEntity>> domain : domains.entrySet()) {
             for (SecurityChecker checker : _securityCheckers) {
-                Domain d = _domainDao.findById(domain.getKey());
+                Domain d =  _domainMgr.getDomain(domain.getKey());
                 if (d == null || d.getRemoved() != null) {
                     throw new PermissionDeniedException("Domain is not found.", caller, domain.getValue());
                 }
@@ -1120,48 +594,28 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     // ///////////////////////////////////////////////////
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
     @DB
-    public UserAccount createAccount(CreateAccountCmd cmd) {
-        Long accountId = null;
-        String username = cmd.getUsername();
-        String password = cmd.getPassword();
-        String firstName = cmd.getFirstname();
-        String lastName = cmd.getLastname();
-        Long domainId = cmd.getDomainId();
-        String email = cmd.getEmail();
-        String timezone = cmd.getTimezone();
-        String accountName = cmd.getAccountName();
-        short userType = cmd.getAccountType().shortValue();
-
-        String networkDomain = cmd.getNetworkDomain();
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain) {
         
         if (accountName == null) {
-            accountName = username;
+            accountName = userName;
         }
         if (domainId == null) {
             domainId = DomainVO.ROOT_DOMAIN;
         }
         
-        DomainVO domain = _domainDao.findById(domainId);
-        
+        //Validate domain
+        Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
             throw new InvalidParameterValueException("The domain " + domainId + " does not exist; unable to create account");
-        } 
+        }
         
+        //Check permissions
         checkAccess(UserContext.current().getCaller(), domain);
 
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
-        if (account != null) {
-            throw new InvalidParameterValueException("The specified account: " + account.getAccountName() + " already exists");
-        }
 
-        if (domain.getState().equals(Domain.State.Inactive)) {
-            throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is being deleted");
-        }
-
-        if (!_userAccountDao.validateUsernameInDomain(username, domainId)) {
-            throw new InvalidParameterValueException("The user " + username + " already exists in domain " + domainId);
+        if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+            throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
         }
         
         if (networkDomain != null) {
@@ -1174,140 +628,55 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
-
-        //Create account itself
-        if (accountId == null) {
-            if ((userType < Account.ACCOUNT_TYPE_NORMAL) || (userType > Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
-                throw new InvalidParameterValueException("Invalid account type " + userType + " given; unable to create user");
-            }
-
-            // create a new account for the user
-            AccountVO newAccount = new AccountVO();
-            if (domainId == null) {
-                // root domain is default
-                domainId = DomainVO.ROOT_DOMAIN;
-            }
-
-            if ((domainId != DomainVO.ROOT_DOMAIN) && (userType == Account.ACCOUNT_TYPE_ADMIN)) {
-                throw new InvalidParameterValueException("Invalid account type " + userType + " given for an account in domain " + domainId + "; unable to create user.");
-            }
-
-            newAccount.setAccountName(accountName);
-            newAccount.setDomainId(domainId);
-            newAccount.setType(userType);
-            newAccount.setState(State.enabled);
-            newAccount.setNetworkDomain(networkDomain);
-            newAccount = _accountDao.persist(newAccount);
-            accountId = newAccount.getId();
-        }
-
-        if (userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
-            if (dc == null || dc.size() == 0) {
-                throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
-            }
-        }
-        if (accountId == null) {
-            throw new CloudRuntimeException("Failed to create account for user: " + username + "; unable to create user");
-        }
-
-        UserVO user = new UserVO();
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setState(State.enabled);
-        user.setFirstname(firstName);
-        user.setLastname(lastName);
-        user.setAccountId(accountId.longValue());
-        user.setEmail(email);
-        user.setTimezone(timezone);
         
-        if(userType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
+        //create account
+        Account account = createAccount(accountName, accountType, domainId, networkDomain);
+        long accountId = account.getId();
+
+        //create the first user for the account
+        UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
+        
+        if(accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN){
             //set registration token
-            byte[] bytes = (domainId + accountName + username + System.currentTimeMillis()).getBytes();
+            byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
             String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
             user.setRegistrationToken(registrationToken);
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating user: " + username + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timezone);
-        }
         
-        //Create resource count records for the account
-        _resourceCountDao.createResourceCounts(accountId, ResourceLimit.OwnerType.Account);
-        
-        //Create a user
-        UserVO dbUser = _userDao.persist(user);
-        
-        //Create default security group
-        _networkGroupMgr.createDefaultSecurityGroup(accountId);
         
         txn.commit();
-
-        if (!user.getPassword().equals(dbUser.getPassword())) {
-            throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
-        }
-        return _userAccountDao.findById(dbUser.getId());
-       
+        return _userAccountDao.findById(account.getId());
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
-    public UserVO createUser(CreateUserCmd cmd) {
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        String userName = cmd.getUsername();
-        String password = cmd.getPassword();
-        String firstName = cmd.getFirstname();
-        String lastName = cmd.getLastname();
-        String email = cmd.getEmail();
-        String timeZone = cmd.getTimezone();
-        Long accountId = null;
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId) {
 
         // default domain to ROOT if not specified
         if (domainId == null) {
             domainId = Domain.ROOT_DOMAIN;
         }
-        DomainVO domain = _domainDao.findById(domainId);
+        
+        Domain domain = _domainMgr.getDomain(domainId);
+        if (domain == null)  { 
+            throw new CloudRuntimeException("The domain " + domainId + " does not exist; unable to create user");
+        } else if (domain.getState().equals(Domain.State.Inactive)) {
+            throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
+        }
+        
         checkAccess(UserContext.current().getCaller(), domain);
+        
         Account account = _accountDao.findActiveAccount(accountName, domainId);
-
         if (account == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
-        } else {
-            accountId = account.getAccountId();
-        }
-
-        if (domain == null) {
-            throw new CloudRuntimeException("The domain " + domainId + " does not exist; unable to create user");
-        } else {
-            if (domain.getState().equals(Domain.State.Inactive)) {
-                throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
-            }
-        }
+        } 
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
 
-        UserVO user = new UserVO();
-        user.setUsername(userName);
-        user.setPassword(password);
-        user.setState(State.enabled);
-        user.setFirstname(firstName);
-        user.setLastname(lastName);
-        user.setAccountId(accountId.longValue());
-        user.setEmail(email);
-        user.setTimezone(timeZone);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating user: " + userName + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:" + timeZone);
-        }
+        UserVO user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
 
-        UserVO dbUser = _userDao.persist(user);
-
-        if (!user.getPassword().equals(dbUser.getPassword())) {
-            throw new CloudRuntimeException("The user " + userName + " being creating is using a password that is different than what's in the db");
-        }
-
-        return dbUser;
+        return user;
     }
 
     @Override
@@ -1408,9 +777,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DISABLE, eventDescription = "disabling User", async = true)
-    public UserAccount disableUser(DisableUserCmd cmd) {
-        Long userId = cmd.getId();
-        Account adminAccount = UserContext.current().getCaller();
+    public UserAccount disableUser(long userId) {
+        Account caller = UserContext.current().getCaller();
 
         // Check if user exists in the system
         User user = _userDao.findById(userId);
@@ -1423,10 +791,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
         }
-
-        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-            throw new PermissionDeniedException("Failed to disable user " + userId + ", permission denied.");
-        }
+        
+        checkAccess(caller, null, account);
 
         boolean success = doSetUserStatus(userId, State.disabled);
         if (success) {
@@ -1439,10 +805,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
-    public UserAccount enableUser(EnableUserCmd cmd) {
-        Long userId = cmd.getId();
-        Account adminAccount = UserContext.current().getCaller();
-        boolean success = false;
+    public UserAccount enableUser(long userId) {
+
+        Account caller = UserContext.current().getCaller();
 
         // Check if user exists in the system
         User user = _userDao.findById(userId);
@@ -1456,11 +821,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
         }
 
-        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-            throw new PermissionDeniedException("Failed to enable user " + userId + ", permission denied.");
-        }
+        checkAccess(caller, null, account);
 
-        success = doSetUserStatus(userId, State.enabled);
+        boolean success = doSetUserStatus(userId, State.enabled);
 
         // make sure the account is enabled too
         success = (success && enableAccount(user.getAccountId()));
@@ -1474,35 +837,29 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_LOCK, eventDescription = "locking User")
-    public UserAccount lockUser(LockUserCmd cmd) {
-        boolean success = false;
-
-        Account adminAccount = UserContext.current().getCaller();
-        Long id = cmd.getId();
+    public UserAccount lockUser(long userId) {
+        Account caller = UserContext.current().getCaller();
 
         // Check if user with id exists in the system
-        User user = _userDao.findById(id);
-        if (user == null) {
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find user by id");
-        } else if (user.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find user by id");
-        }
-
+        } 
         // If the user is a System user, return an error. We do not allow this
         Account account = _accountDao.findById(user.getAccountId());
         if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-            throw new PermissionDeniedException("user id : " + id + " is a system user, locking is not allowed");
+            throw new PermissionDeniedException("user id : " + userId + " is a system user, locking is not allowed");
         }
+        
+        checkAccess(caller, null, account);
 
-        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-            throw new PermissionDeniedException("Failed to lock user " + id + ", permission denied.");
-        }
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
+        boolean success = true;
         if (user.getState().equals(State.locked)) {
             // already locked...no-op
-            return _userAccountDao.findById(id);
+            return _userAccountDao.findById(userId);
         } else if (user.getState().equals(State.enabled)) {
             success = doSetUserStatus(user.getId(), State.locked);
 
@@ -1522,58 +879,52 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
             }
+            success = false;
         }
 
         if (success) {
-            return _userAccountDao.findById(id);
+            return _userAccountDao.findById(userId);
         } else {
-            throw new CloudRuntimeException("Unable to lock user " + id);
+            throw new CloudRuntimeException("Unable to lock user " + userId);
         }
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DELETE, eventDescription = "deleting account", async = true)
     // This method deletes the account
-    public boolean deleteUserAccount(DeleteAccountCmd cmd) {
+    public boolean deleteUserAccount(long accountId) {
 
         UserContext ctx = UserContext.current();
         long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
-
-        Long accountId = cmd.getId();
-
+        
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
-        checkAccess(UserContext.current().getCaller(), null, account);
-        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
-        }
-
+        
         if (account == null) {
             throw new InvalidParameterValueException("The specified account does not exist in the system");
         }
-
+        
+        checkAccess(caller, null, account);
+        
         if (account.getRemoved() != null) {
             s_logger.info("The account:" + account.getAccountName() + " is already removed");
             return true;
         }
-
-        if(!deleteAccount(account, callerUserId, caller)){
-            throw new CloudRuntimeException("Unable to delete account " + account.getAccountName() + " in domain " + account.getDomainId());
+        
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
         }
-        return true;
+        
+        return deleteAccount(account, callerUserId, caller);
     }
 
     @Override
-    public AccountVO enableAccount(EnableAccountCmd cmd) {
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        boolean success = false;
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
-
+    public AccountVO enableAccount(String accountName, long domainId) {
+        
         // Check if account exists
+        Account account = _accountDao.findActiveAccount(accountName, domainId);
         if (account == null) {
-            s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
 
@@ -1583,12 +934,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         // Check if user performing the action is allowed to modify this account
-        Account adminAccount = UserContext.current().getCaller();
-        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-            throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
-        }
+        Account caller = UserContext.current().getCaller();
+        checkAccess(caller, null, account);
+        
 
-        success = enableAccount(account.getId());
+        boolean success = enableAccount(account.getId());
         if (success) {
             return _accountDao.findById(account.getId());
         } else {
@@ -1598,20 +948,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "locking account", async = true)
-    public AccountVO lockAccount(DisableAccountCmd cmd) {
-        Account adminAccount = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-
-        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
-            throw new PermissionDeniedException("Failed to lock account " + accountName + " in domain " + domainId + ", permission denied.");
-        }
-
+    public AccountVO lockAccount(String accountName, Long domainId) {
+        Account caller = UserContext.current().getCaller();
+        
         Account account = _accountDao.findActiveAccount(accountName, domainId);
         if (account == null) {
             throw new InvalidParameterValueException("Unable to find active account with name " + accountName + " in domain " + domainId);
         }
-
+        
+        checkAccess(caller, null, account);
+ 
         // don't allow modify system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new InvalidParameterValueException("can not lock system account");
@@ -1626,19 +972,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async = true)
-    public AccountVO disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-
-        Account adminAccount = UserContext.current().getCaller();
-        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
-            throw new PermissionDeniedException("Failed to disable account " + accountName + " in domain " + domainId + ", permission denied.");
-        }
-
+    public AccountVO disableAccount(String accountName, Long domainId) throws ConcurrentOperationException, ResourceUnavailableException {
+        Account caller = UserContext.current().getCaller();
+        
         Account account = _accountDao.findActiveAccount(accountName, domainId);
         if (account == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
+        
+        checkAccess(caller, null, account);
+        
         if (disableAccount(account.getId())) {
             return _accountDao.findById(account.getId());
         } else {
@@ -1669,7 +1012,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Check if user performing the action is allowed to modify this account
         Account adminAccount = UserContext.current().getCaller();
-        if ((adminAccount != null) && (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN) && _domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+        if ((adminAccount != null) && (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN) && _domainMgr.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
             throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
 
@@ -1785,15 +1128,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     }
                     
                     //cleanup inactive domains
-                    List<DomainVO> inactiveDomains = _domainDao.findInactiveDomains();
+                    List<? extends Domain> inactiveDomains = _domainMgr.findInactiveDomains();
                     s_logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
-                    for (DomainVO inactiveDomain : inactiveDomains) {
+                    for (Domain inactiveDomain : inactiveDomains) {
                         long domainId = inactiveDomain.getId();
                         try {
                             List<AccountVO> accountsForCleanupInDomain = _accountDao.findCleanupsForRemovedAccounts(domainId);
                             if (accountsForCleanupInDomain.isEmpty()) {
                                 s_logger.debug("Removing inactive domain id=" + domainId);
-                                _domainDao.remove(domainId);
+                                _domainMgr.removeDomain(domainId);
                             } else {
                                 s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need clenaup");
                             } 
@@ -1825,7 +1168,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if (isAdmin(caller.getType()) && accountName != null && domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
+            Domain domain =  _domainMgr.getDomain(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
             }
@@ -1853,7 +1196,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public Account getActiveAccount(String accountName, Long domainId) {
+    public Account getActiveAccountByName(String accountName, Long domainId) {
         if (accountName == null || domainId == null) {
             throw new InvalidParameterValueException("Both accountName and domainId are required for finding active account in the system");
         } else {
@@ -1862,7 +1205,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public Account getActiveAccount(Long accountId) {
+    public Account getActiveAccountById(Long accountId) {
         if (accountId == null) {
             throw new InvalidParameterValueException("AccountId is required by account search");
         } else {
@@ -1890,17 +1233,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public Domain getDomain(long domainId) {
-        return _domainDao.findById(domainId);
-    }
-
-    @Override
     public Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId) {
         if (isAdmin(caller.getType())) {
             if (domainId == null && accountName != null) {
                 throw new InvalidParameterValueException("accountName and domainId might be specified together");
             } else if (domainId != null) {
-                Domain domain = getDomain(domainId);
+                Domain domain = _domainMgr.getDomain(domainId);
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
                 }
@@ -1908,7 +1246,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 checkAccess(caller, domain);
 
                 if (accountName != null) {
-                    Account owner = getActiveAccount(accountName, domainId);
+                    Account owner = getActiveAccountByName(accountName, domainId);
                     if (owner == null) {
                         throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain id=" + domainId);
                     }
@@ -1937,85 +1275,29 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         userForUpdate.setRegistered(true);
         _userDao.update(Long.valueOf(userId), userForUpdate);		
 	}
-	
-	@Override
-	public Set<Long> getDomainParentIds(long domainId) {
-	   return _domainDao.getDomainParentIds(domainId);
-	}
-	
-	@Override
-	public Set<Long> getDomainChildrenIds(String parentDomainPath) {
-	    Set<Long> childDomains = new HashSet<Long>();
-	    SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-	    sc.addAnd("path", SearchCriteria.Op.LIKE, parentDomainPath + "%");
-	    
-	    List<DomainVO> domains = _domainDao.search(sc, null);
-	    
-	    for (DomainVO domain : domains) {
-	        childDomains.add(domain.getId());
-	    }
-	    
-	    return childDomains;
-	}
-	
-	@DB
-	public boolean updateResourceCount(long accountId, ResourceType type, boolean increment, long delta) {
-	    boolean result = true;
-	    try {
-	        Transaction txn = Transaction.currentTxn();
-	        txn.start();
-	        
-	        Set<Long> rowsToLock = _resourceCountDao.listAllRowsToUpdateForAccount(accountId, getAccount(accountId).getDomainId(), type);
-	        
-	        //Lock rows first
-	        SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
-	        sc.setParameters("id", rowsToLock.toArray());
-	        List<ResourceCountVO> rowsToUpdate = _resourceCountDao.lockRows(sc, null, true);    
-	        
-	        for (ResourceCountVO rowToUpdate : rowsToUpdate) {
-	            if (!_resourceCountDao.updateById(rowToUpdate.getId(), increment, delta)) {
-	                s_logger.trace("Unable to update resource count for the row " + rowToUpdate);
-	                result = false;
-	            }
-	        }
-	        
-	        txn.commit();
-	    } catch (Exception ex) {
-	        s_logger.error("Failed to update resource count for account id=" + accountId);
-	        result = false;
-	    }
-	    return result;
-	}
-	
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
-    @DB
-    public Domain createDomain(CreateDomainCmd cmd) {
-        String name = cmd.getDomainName();
-        Long parentId = cmd.getParentDomainId();
-        Long ownerId = UserContext.current().getCaller().getId();
-        Account caller = UserContext.current().getCaller();
-        String networkDomain = cmd.getNetworkDomain();
-
-        if (ownerId == null) {
-            ownerId = Long.valueOf(1);
-        }
-
-        if (parentId == null) {
-            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
-        }
-
-        DomainVO parentDomain = _domainDao.findById(parentId);
-        if (parentDomain == null) {
-            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
+    
+    @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
+    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain) {
+        //Validate domain
+        Domain domain = _domainMgr.getDomain(domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException("The domain " + domainId + " does not exist; unable to create account");
+        } 
+        
+        if (domain.getState().equals(Domain.State.Inactive)) {
+            throw new CloudRuntimeException("The account cannot be created as domain " + domain.getName() + " is being deleted");
         }
         
-        if (parentDomain.getState().equals(Domain.State.Inactive)) {
-            throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
+        if ((domainId != DomainVO.ROOT_DOMAIN) && (accountType == Account.ACCOUNT_TYPE_ADMIN)) {
+            throw new InvalidParameterValueException("Invalid account type " + accountType + " given for an account in domain " + domainId + "; unable to create user.");
+        }
+
+        //Validate account/user/domain settings
+        if ( _accountDao.findActiveAccount(accountName, domainId) != null) {
+            throw new InvalidParameterValueException("The specified account: " + accountName + " already exists");
         }
         
-        checkAccess(caller, parentDomain);
-
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
@@ -2023,28 +1305,306 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                         + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
-
-        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, name);
-        sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
-        List<DomainVO> domains = _domainDao.search(sc, null);
-        if ((domains == null) || domains.isEmpty()) {
-            DomainVO domain = new DomainVO(name, ownerId, parentId, networkDomain);
-            try {
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
-                
-                domain = _domainDao.create(domain);
-                _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.OwnerType.Domain);
-                
-                txn.commit();
-                return domain;
-            } catch (IllegalArgumentException ex) {
-                s_logger.warn("Failed to create domain ", ex);
-                throw ex;
+        
+        //Verify account type
+        if ((accountType < Account.ACCOUNT_TYPE_NORMAL) || (accountType > Account.ACCOUNT_TYPE_PROJECT)) {
+            throw new InvalidParameterValueException("Invalid account type " + accountType + " given; unable to create user");
+        }
+        
+        if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
+            if (dc.isEmpty()) {
+                throw new InvalidParameterValueException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
             }
+        }
+        
+        //Create the account
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        Account account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType));
+        
+        if (account == null) {
+            throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
+        }
+        
+        Long accountId = account.getId();
+        
+        //Create resource count records for the account
+        _resourceCountDao.createResourceCounts(accountId, ResourceLimit.ResourceOwnerType.Account);
+        
+        //Create default security group
+        _networkGroupMgr.createDefaultSecurityGroup(accountId);
+        
+        
+        txn.commit();
+        
+        return account;
+    }
+    
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
+    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
+        }
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, password, firstName, lastName, email, timezone));
+        
+        return user;
+    }
+    
+    
+    @Override
+    public void logoutUser(Long userId) {
+        UserAccount userAcct = _userAccountDao.findById(userId);
+        if (userAcct != null) {
+            EventUtils.saveEvent(userId, userAcct.getAccountId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+        } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
+    }
+    
+    @Override
+    public UserAccount getUserAccount(String username, Long domainId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Retrieiving user: " + username + " in domain " + domainId);
+        }
+
+        UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+        if (userAccount == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to find user with name " + username + " in domain " + domainId);
+            }
+            return null;
+        }
+
+        return userAccount;
+    }
+    
+    @Override
+    public UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
+        UserAccount user = null;
+        if (password != null) {
+            user = getUserAccount(username, password, domainId);
         } else {
-            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
+            String key = _configDao.getValue("security.singlesignon.key");
+            if (key == null) {
+                // the SSO key is gone, don't authenticate
+                return null;
+            }
+
+            String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
+            if (singleSignOnTolerance == null) {
+                // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be valid),
+                // don't authenticate
+                return null;
+            }
+
+            long tolerance = Long.parseLong(singleSignOnTolerance);
+            String signature = null;
+            long timestamp = 0L;
+            String unsignedRequest = null;
+
+            // - build a request string with sorted params, make sure it's all lowercase
+            // - sign the request, verify the signature is the same
+            List<String> parameterNames = new ArrayList<String>();
+
+            for (Object paramNameObj : requestParameters.keySet()) {
+                parameterNames.add((String) paramNameObj); // put the name in a list that we'll sort later
+            }
+
+            Collections.sort(parameterNames);
+
+            try {
+                for (String paramName : parameterNames) {
+                    // parameters come as name/value pairs in the form String/String[]
+                    String paramValue = ((String[]) requestParameters.get(paramName))[0];
+
+                    if ("signature".equalsIgnoreCase(paramName)) {
+                        signature = paramValue;
+                    } else {
+                        if ("timestamp".equalsIgnoreCase(paramName)) {
+                            String timestampStr = paramValue;
+                            try {
+                                // If the timestamp is in a valid range according to our tolerance, verify the request
+                                // signature, otherwise return null to indicate authentication failure
+                                timestamp = Long.parseLong(timestampStr);
+                                long currentTime = System.currentTimeMillis();
+                                if (Math.abs(currentTime - timestamp) > tolerance) {
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Expired timestamp passed in to login, current time = " + currentTime + ", timestamp = " + timestamp);
+                                    }
+                                    return null;
+                                }
+                            } catch (NumberFormatException nfe) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Invalid timestamp passed in to login: " + timestampStr);
+                                }
+                                return null;
+                            }
+                        }
+
+                        if (unsignedRequest == null) {
+                            unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
+                        } else {
+                            unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
+                        }
+                    }
+                }
+
+                if ((signature == null) || (timestamp == 0L)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
+                    }
+                    return null;
+                }
+
+                unsignedRequest = unsignedRequest.toLowerCase();
+
+                Mac mac = Mac.getInstance("HmacSHA1");
+                SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
+                mac.init(keySpec);
+                mac.update(unsignedRequest.getBytes());
+                byte[] encryptedBytes = mac.doFinal();
+                String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
+                boolean equalSig = signature.equals(computedSignature);
+                if (!equalSig) {
+                    s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                } else {
+                    user = _userAccountDao.getUserAccount(username, domainId);
+                }
+            } catch (Exception ex) {
+                s_logger.error("Exception authenticating user", ex);
+                return null;
+            }
+        }
+
+        if (user != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
+            }
+            EventUtils.saveEvent(user.getId(), user.getAccountId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
+            return user;
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("User: " + username + " in domain " + domainId + " has failed to log in");
+            }
+            return null;
         }
     }
+    
+    private UserAccount getUserAccount(String username, String password, Long domainId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
+        }
+
+        // We only use the first adapter even if multiple have been configured
+        Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration();
+        UserAuthenticator authenticator = en.nextElement();
+        boolean authenticated = authenticator.authenticate(username, password, domainId);
+
+        if (authenticated) {
+            UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+            if (userAccount == null) {
+                s_logger.warn("Unable to find an authenticated user with username " + username + " in domain " + domainId);
+                return null;
+            }
+
+            Domain domain = _domainMgr.getDomain(domainId);
+            String domainName = null;
+            if (domain != null) {
+                domainName = domain.getName();
+            }
+
+            if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
+                }
+                throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
+                // return null;
+            }
+            return userAccount;
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            }
+            return null;
+        }
+    }
+    
+    @Override
+    public Pair<User, Account> findUserByApiKey(String apiKey) {
+        return _accountDao.findUserAccountByApiKey(apiKey);
+    }
+    
+    @Override
+    public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+        Long userId = cmd.getId();
+
+        if (getUser(userId) == null) {
+            throw new InvalidParameterValueException("unable to find user for id : " + userId);
+        }
+
+        // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
+        String[] keys = new String[2];
+        keys[0] = createUserApiKey(userId);
+        keys[1] = createUserSecretKey(userId);
+
+        return keys;
+    }
+
+    private String createUserApiKey(long userId) {
+        try {
+            UserVO updatedUser = _userDao.createForUpdate();
+
+            String encodedKey = null;
+            Pair<User, Account> userAcct = null;
+            int retryLimit = 10;
+            do {
+                // FIXME: what algorithm should we use for API keys?
+                KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
+                SecretKey key = generator.generateKey();
+                encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
+                userAcct = _accountDao.findUserAccountByApiKey(encodedKey);
+                retryLimit--;
+            } while ((userAcct != null) && (retryLimit >= 0));
+
+            if (userAcct != null) {
+                return null;
+            }
+            updatedUser.setApiKey(encodedKey);
+            _userDao.update(userId, updatedUser);
+            return encodedKey;
+        } catch (NoSuchAlgorithmException ex) {
+            s_logger.error("error generating secret key for user id=" + userId, ex);
+        }
+        return null;
+    }
+
+    private String createUserSecretKey(long userId) {
+        try {
+            UserVO updatedUser = _userDao.createForUpdate();
+            String encodedKey = null;
+            int retryLimit = 10;
+            UserVO userBySecretKey = null;
+            do {
+                KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
+                SecretKey key = generator.generateKey();
+                encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
+                userBySecretKey = _userDao.findUserBySecretKey(encodedKey);
+                retryLimit--;
+            } while ((userBySecretKey != null) && (retryLimit >= 0));
+
+            if (userBySecretKey != null) {
+                return null;
+            }
+
+            updatedUser.setSecretKey(encodedKey);
+            _userDao.update(userId, updatedUser);
+            return encodedKey;
+        } catch (NoSuchAlgorithmException ex) {
+            s_logger.error("error generating secret key for user id=" + userId, ex);
+        }
+        return null;
+    }
+    
+  
 }

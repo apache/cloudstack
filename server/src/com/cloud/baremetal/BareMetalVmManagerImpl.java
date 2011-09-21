@@ -41,7 +41,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -247,7 +247,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		}
 
 		// check if account/domain is with in resource limits to create a new vm
-		if (_accountMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
+		if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
 			ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + owner.getAccountName()
 					+ " has been exceeded.");
 			rae.setResourceType("vm");
@@ -384,7 +384,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, cmd.getZoneId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), HypervisorType.BareMetal.toString());
 		_usageEventDao.persist(usageEvent);
 
-		_accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
 
 		// Assign instance to the group
 		try {

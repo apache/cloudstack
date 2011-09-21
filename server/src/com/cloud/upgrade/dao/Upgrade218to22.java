@@ -37,7 +37,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -1477,29 +1477,8 @@ public class Upgrade218to22 implements DbUpgrade {
         upgradeDomainResourceCounts(conn, ResourceType.public_ip);
     }
 
-    private void upgradeDomainResourceCounts(Connection conn, ResourceType type) {
+    private void upgradeDomainResourceCounts(Connection conn, ResourceType resourceType) {
         try {
-
-            String resourceType;
-            switch (type) {
-            case user_vm:
-                resourceType = "user_vm";
-                break;
-            case volume:
-                resourceType = "volume";
-                break;
-            case snapshot:
-                resourceType = "snapshot";
-                break;
-            case template:
-                resourceType = "template";
-                break;
-            case public_ip:
-                resourceType = "public_ip";
-                break;
-            default:
-                resourceType = "user_vm";
-            }
 
             PreparedStatement account_count_pstmt = conn.prepareStatement("SELECT account_id, count from resource_count where type='" + resourceType + "'");
             ResultSet rs_account_count = account_count_pstmt.executeQuery();
@@ -1541,7 +1520,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         update_domain_count_pstmt.close();
                     } else {
                         PreparedStatement update_domain_count_pstmt = conn.prepareStatement("INSERT INTO resource_count (type, count, domain_id) VALUES (?,?,?)");
-                        update_domain_count_pstmt.setString(1, resourceType);
+                        update_domain_count_pstmt.setString(1, resourceType.getName());
                         update_domain_count_pstmt.setLong(2, accountCount);
                         update_domain_count_pstmt.setLong(3, domainId);
                         update_domain_count_pstmt.executeUpdate();

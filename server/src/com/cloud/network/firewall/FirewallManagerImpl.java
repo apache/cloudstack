@@ -59,6 +59,7 @@ import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
@@ -96,6 +97,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     UsageEventDao _usageEventDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    DomainManager _domainMgr;
     
     private boolean _elbEnabled=false;
     
@@ -192,7 +195,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            Domain domain = _domainMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
 
@@ -224,7 +227,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
             if (accountName != null) {
-                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                 sc.setParameters("accountId", account.getId());
             }
         }

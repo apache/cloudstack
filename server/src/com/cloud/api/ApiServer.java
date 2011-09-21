@@ -99,7 +99,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
+import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -123,8 +124,8 @@ public class ApiServer implements HttpRequestHandler {
     public static String jsonContentType = "text/javascript";
     private Properties _apiCommands = null;
     private ApiDispatcher _dispatcher;
-    private ManagementServer _ms = null;
-    private AccountService _accountMgr = null;
+    private AccountManager _accountMgr = null;
+    private DomainManager _domainMgr = null;
     private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
@@ -215,13 +216,13 @@ public class ApiServer implements HttpRequestHandler {
             s_logger.error("Exception loading properties file", ioex);
         }
 
-        _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountService.class);
+        _accountMgr = locator.getManager(AccountManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
+        _domainMgr = locator.getManager(DomainManager.class);
 
         int apiPort = 8096; // default port
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
@@ -531,7 +532,7 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
                 Long accountId = ApiDBUtils.findUserById(userId).getAccountId();
-                Account userAccount = _ms.findAccountById(accountId);
+                Account userAccount = _accountMgr.getAccount(accountId);
                 short accountType = userAccount.getType();
 
                 if (!isCommandAvailable(accountType, commandName)) {
@@ -618,7 +619,7 @@ public class ApiServer implements HttpRequestHandler {
             txn.close();
             User user = null;
             // verify there is a user with this api key
-            Pair<User, Account> userAcctPair = _ms.findUserByApiKey(apiKey);
+            Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
                 s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
@@ -676,7 +677,7 @@ public class ApiServer implements HttpRequestHandler {
             if (domainPath == null || domainPath.trim().length() == 0) {
                 domainId = DomainVO.ROOT_DOMAIN;
             } else {
-                Domain domainObj = _ms.findDomainByPath(domainPath);
+                Domain domainObj = _domainMgr.findDomainByPath(domainPath);
                 if (domainObj != null) {
                     domainId = domainObj.getId();
                 } else { // if an unknown path is passed in, fail the login call
@@ -685,7 +686,7 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        UserAccount userAcct = _ms.authenticateUser(username, password, domainId, requestParameters);
+        UserAccount userAcct = _accountMgr.authenticateUser(username, password, domainId, requestParameters);
         if (userAcct != null) {
             String timezone = userAcct.getTimezone();
             float offsetInHrs = 0f;
@@ -700,7 +701,7 @@ public class ApiServer implements HttpRequestHandler {
                 s_logger.info("Timezone offset from UTC is: " + offsetInHrs);
             }
 
-            Account account = _ms.findAccountById(userAcct.getAccountId());
+            Account account = _accountMgr.getAccount(userAcct.getAccountId());
 
             // set the userId and account object for everyone
             session.setAttribute("userid", userAcct.getId());
@@ -733,15 +734,15 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public void logoutUser(long userId) {
-        _ms.logoutUser(Long.valueOf(userId));
+        _accountMgr.logoutUser(Long.valueOf(userId));
         return;
     }
 
     public boolean verifyUser(Long userId) {
-        User user = _ms.findUserById(userId);
+        User user = _accountMgr.getUser(userId);
         Account account = null;
         if (user != null) {
-            account = _ms.findAccountById(user.getAccountId());
+            account = _accountMgr.getAccount(user.getAccountId());
         }
 
         if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) || !account.getState().equals(Account.State.enabled)) {

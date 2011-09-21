@@ -80,7 +80,7 @@ import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterVO;
@@ -143,6 +143,7 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -284,6 +285,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected VolumeDao _volumeDao;
     @Inject
     protected OCFS2Manager _ocfs2Mgr;
+    @Inject
+    protected ResourceLimitService _resourceLimitMgr;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -1626,7 +1629,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         // check if the volume can be created for the user
         // Check that the resource limit for volumes won't be exceeded
-        if (_accountMgr.resourceLimitExceeded(targetAccount, ResourceType.volume)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(targetAccount, ResourceType.volume)) {
             UserContext.current().setEventDetails("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
             ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
             rae.setResourceType("volume");
@@ -1775,7 +1778,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
         // Increment resource count during allocation; if actual creation fails, decrement it
-        _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
 
         return volume;
     }
@@ -1803,7 +1806,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } finally {
             if (!created) {
                 s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
-                _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             }
         }
     }
@@ -1829,7 +1832,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         if (instanceId == null || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
             // Decrement the resource count for volumes belonging user VM's only
-            _accountMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
+            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             // Log usage event for volumes belonging user VM's only
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
             _usageEventDao.persist(usageEvent);
@@ -2543,7 +2546,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size);
             _usageEventDao.persist(usageEvent);
 
-            _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
         return toDiskProfile(vol, offering);
     }
@@ -2593,7 +2596,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     vol.getSize());
             _usageEventDao.persist(usageEvent);
 
-            _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
         return toDiskProfile(vol, offering);
     }

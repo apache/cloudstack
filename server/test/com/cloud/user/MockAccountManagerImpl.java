@@ -1,37 +1,20 @@
 package com.cloud.user;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.CreateAccountCmd;
-import com.cloud.api.commands.CreateDomainCmd;
-import com.cloud.api.commands.CreateUserCmd;
-import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
-import com.cloud.api.commands.DisableAccountCmd;
-import com.cloud.api.commands.DisableUserCmd;
-import com.cloud.api.commands.EnableAccountCmd;
-import com.cloud.api.commands.EnableUserCmd;
-import com.cloud.api.commands.LockUserCmd;
+import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.Criteria;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
@@ -40,31 +23,31 @@ import com.cloud.utils.component.Manager;
 public class MockAccountManagerImpl implements Manager, AccountManager {
 
     @Override
-    public UserAccount createAccount(CreateAccountCmd cmd) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean deleteUserAccount(DeleteAccountCmd cmd) {
+    public boolean deleteUserAccount(long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public UserAccount disableUser(DisableUserCmd cmd) {
+    public UserAccount disableUser(long userId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount enableUser(EnableUserCmd cmd) {
+    public UserAccount enableUser(long userId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public UserAccount lockUser(LockUserCmd cmd) {
+    public UserAccount lockUser(long userId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -76,43 +59,25 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public Account disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
+    public Account disableAccount(String accountName, Long domainId) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account enableAccount(EnableAccountCmd cmd) {
+    public Account enableAccount(String accountName, long domainId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account lockAccount(DisableAccountCmd cmd) {
+    public Account lockAccount(String accountName, Long domainId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Account updateAccount(UpdateAccountCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ResourceLimit updateResourceLimit(String accountName, Long domainId, int typeId, Long max) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<? extends ResourceCount> updateResourceCount(UpdateResourceCountCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<? extends ResourceLimit> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -154,13 +119,13 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public Account getActiveAccount(String accountName, Long domainId) {
+    public Account getActiveAccountByName(String accountName, Long domainId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account getActiveAccount(Long accountId) {
+    public Account getActiveAccountById(Long accountId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -184,12 +149,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public Domain getDomain(long id) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean isRootAdmin(short accountType) {
         // TODO Auto-generated method stub
         return false;
@@ -205,72 +164,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     public void markUserRegistered(long userId) {
         // TODO Auto-generated method stub
 
-    }
-
-    @Override
-    public Set<Long> getDomainParentIds(long domainId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Set<Long> getDomainChildrenIds(String parentDomainPath) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public long findCorrectResourceLimit(long accountId, ResourceType type) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long findCorrectResourceLimit(DomainVO domain, ResourceType type) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long updateAccountResourceCount(long accountId, ResourceType type) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long updateDomainResourceCount(long domainId, ResourceType type) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public void incrementResourceCount(long accountId, ResourceType type, Long... delta) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void decrementResourceCount(long accountId, ResourceType type, Long... delta) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public boolean resourceLimitExceeded(Account account, ResourceType type, long... count) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public long getResourceCount(AccountVO account, ResourceType type) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public List<ResourceLimitVO> searchForLimits(Criteria c) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -291,7 +184,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 
     }
 
-
     @Override
     public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         // TODO Auto-generated method stub
@@ -299,7 +191,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public UserVO createUser(CreateUserCmd cmd) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -335,11 +227,40 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     @Override
     public void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException {
         // TODO Auto-generated method stub
-        
     }
     
     @Override
-    public Domain createDomain(CreateDomainCmd cmd) {
+    public void logoutUser(Long userId) {
+     // TODO Auto-generated method stub
+    }
+    
+    @Override
+    public UserAccount getUserAccount(String username, Long domainId) {
+        return null;
+    }
+    
+    @Override
+    public UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
+        return null;
+    }
+    
+    @Override
+    public Pair<User, Account> findUserByApiKey(String apiKey) {
+        return null;
+    }
+    
+    @Override
+    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone) {
+        return null;
+    }
+    
+    @Override
+    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain) {
+        return null;
+    }
+    
+    @Override
+    public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         return null;
     }
 

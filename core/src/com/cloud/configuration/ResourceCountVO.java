@@ -26,6 +26,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name="resource_count")
@@ -38,7 +39,7 @@ public class ResourceCountVO implements ResourceCount {
 	
 	@Column(name="type")
 	@Enumerated(EnumType.STRING)
-	private ResourceCount.ResourceType type;
+	private ResourceType type;
 	
 	@Column(name="account_id")
     private Long accountId;
@@ -49,15 +50,24 @@ public class ResourceCountVO implements ResourceCount {
 	@Column(name="count")
 	private long count;
 	
-	public ResourceCountVO() {}
+    @Transient
+    private ResourceOwnerType ownerType;
+    
+    public ResourceCountVO(){}
 	
-	public ResourceCountVO(Long accountId, Long domainId, ResourceCount.ResourceType type, long count) {
-		this.accountId = accountId;
-		this.domainId = domainId;
+	public ResourceCountVO(ResourceType type, long count, long ownerId, ResourceOwnerType ownerType) {  
 		this.type = type;
 		this.count = count;
+		
+		if (ownerType == ResourceOwnerType.Account) {
+		    this.accountId = ownerId;
+		} else if (ownerType == ResourceOwnerType.Domain) {
+		    this.domainId = ownerId;
+		}
+		this.ownerType = ownerType;
 	}
 	
+	@Override
 	public Long getId() {
 		return id;
 	}
@@ -66,40 +76,56 @@ public class ResourceCountVO implements ResourceCount {
 		this.id = id;
 	}
 	
-	public ResourceCount.ResourceType getType() {
+	@Override
+	public ResourceType getType() {
 		return type;
 	}
 	
-	public void setType(ResourceCount.ResourceType type) {
+	public void setType(ResourceType type) {
 		this.type = type;
 	}
-	
-	public Long getAccountId() {
-		return accountId;
-	}
-	
-	public void setAccountId(Long accountId) {
-		this.accountId = accountId;
-	}
 
-	public Long getDomainId() {
-		return domainId;
-	}
-
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
-
+	@Override
 	public long getCount() {
 		return count;
 	}
-	
+	@Override
 	public void setCount(long count) {
 		this.count = count;
 	}
+	
+    public Long getDomainId() {
+        return domainId;
+    }
+    
+    public Long getAccountId() {
+        return accountId;
+    }
 	
 	@Override
     public String toString() {
         return new StringBuilder("REsourceCount[").append("-").append(id).append("-").append(type).append("-").append(accountId).append("-").append(domainId).append("]").toString();
     }
+	
+	@Override
+	public long getOwnerId() {
+	    if (accountId != null) {
+	        return accountId;
+	    } 
+	    
+	    return domainId;
+	}
+	
+	@Override
+	public ResourceOwnerType getResourceOwnerType() {
+	    return ownerType;
+	}
+	
+	public void setDomainId(Long domainId) {
+	    this.domainId = domainId;
+	}
+
+	public void setAccountId(Long accountId) {
+	    this.accountId = accountId;
+	}
 }

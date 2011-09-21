@@ -78,7 +78,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = _accountService.getActiveAccount(getAccountName(), getDomainId());
+        Account account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
         if (account != null) {
             return account.getAccountId();
         }
@@ -96,9 +96,9 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
     	Account result = null;
     	if(lockRequested)
-    		result = _accountService.lockAccount(this);
+    		result = _accountService.lockAccount(getAccountName(), getDomainId());
     	else
-    		result = _accountService.disableAccount(this);
+    		result = _accountService.disableAccount(getAccountName(), getDomainId());
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

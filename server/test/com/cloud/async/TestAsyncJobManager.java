@@ -21,7 +21,6 @@ package com.cloud.async;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import junit.framework.Assert;
 
@@ -34,9 +33,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
-import com.cloud.network.IPAddressVO;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
@@ -50,7 +46,7 @@ public class TestAsyncJobManager extends ComponentTestCase {
     volatile long s_count = 0;
 
 	public void asyncCall() {
-	    ManagementServer mgr = (ManagementServer)ComponentLocator.getComponent("management-server");
+	    AsyncJobManager asyncMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(AsyncJobManager.class);
 
 //		long jobId = mgr.rebootVirtualMachineAsync(1, 1);
         long jobId = 0L;
@@ -59,7 +55,7 @@ public class TestAsyncJobManager extends ComponentTestCase {
 		while(true) {
 			AsyncJobResult result;
 			try {
-				result = mgr.queryAsyncJobResult(jobId);
+				result = asyncMgr.queryAsyncJobResult(jobId);
 			
 				if(result.getJobStatus() != AsyncJobResult.STATUS_IN_PROGRESS) {
 					s_logger.info("Async-call completed, result: " + result.toString());

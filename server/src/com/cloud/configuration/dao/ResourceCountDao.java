@@ -21,71 +21,43 @@ package com.cloud.configuration.dao;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceOwnerType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
-import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
-
 	/**
-	 * Get the count of in use resources for an account by type
-	 * @param accountId the id of the account to get the resource count
-	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
-	 * @return the count of resources in use for the given type and account
-	 */
-	public long getAccountCount(long accountId, ResourceType type);
+     * Get the count of in use resources for a owner by type
+     * @param domainId the id of the domain to get the resource count
+     * @param type the type of resource (e.g. user_vm, public_ip, volume)
+     * @return the count of resources in use for the given type and domain
+     * @param ownertype the type of the owner - can be Account and Domain
+     */
+	long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type);
 
-	/**
-	 * Get the count of in use resources for a domain by type
-	 * @param domainId the id of the domain to get the resource count
-	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
-	 * @return the count of resources in use for the given type and domain
-	 */
-	public long getDomainCount(long domainId, ResourceType type);
-
-	/**
-	 * Set the count of in use resources for an account by type
-	 * @param accountId the id of the account to set the resource count
-	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
-	 * @param the count of resources in use for the given type and account
-	 */
-	public void setAccountCount(long accountId, ResourceType type, long count);
-
-	/**
-	 * Get the count of in use resources for a domain by type
-	 * @param domainId the id of the domain to set the resource count
-	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
-	 * @param the count of resources in use for the given type and domain
-	 */
-	public void setDomainCount(long domainId, ResourceType type, long count);
-
-	/**
-	 * Update the count of resources in use for the given domain and given resource type
-	 * @param domainId the id of the domain to update resource count
-	 * @param type the type of resource (e.g. user_vm, public_ip, volume)
-	 * @param increment whether the change is adding or subtracting from the current count
-	 * @param delta the number of resources being added/released
-	 */
-	public void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta);
+    /**
+     * Get the count of in use resources for a resource by type
+     * @param domainId the id of the domain to set the resource count
+     * @param type the type of resource (e.g. user_vm, public_ip, volume)
+     * @param the count of resources in use for the given type and domain
+     * @param ownertype the type of the owner - can be Account and Domain
+     */
+	void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count);
+	
+	//this api is deprecated as it's used by upgrade code only
+	@Deprecated 
+	void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta);
 
     boolean updateById(long id, boolean increment, long delta);
 
-    ResourceCountVO findByDomainIdAndType(long domainId, ResourceType type);
-
-    ResourceCountVO findByAccountIdAndType(long accountId, ResourceType type);
+    void createResourceCounts(long ownerId, ResourceOwnerType ownerType);
     
-    Set<Long> listAllRowsToUpdateForAccount(long accountId, long domainId, ResourceType type);
+    List<ResourceCountVO> listByOwnerId(long ownerId, ResourceOwnerType ownerType);
     
-    Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type);
-
-    void createResourceCounts(long ownerId, OwnerType ownerType);
+    ResourceCountVO findByOwnerAndType(long ownerId, ResourceOwnerType ownerType, ResourceType type);
     
-    List<ResourceCountVO> listByDomainId(long domainId);
+    List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType);
     
-    List<ResourceCountVO> listByAccountId(long accountId);
-    
-    List<ResourceCountVO> listDomainCounts();
-    
-    List<ResourceCountVO> listAccountCounts();    
+    Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type);
 }

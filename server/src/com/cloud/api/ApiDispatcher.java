@@ -284,6 +284,8 @@ public class ApiDispatcher {
                     case LONG:
                         listParam.add(Long.valueOf(token));
                         break;
+                    case SHORT:
+                        listParam.add(Short.valueOf(token));
                     case STRING:
                         listParam.add(token);
                         break;
@@ -293,6 +295,9 @@ public class ApiDispatcher {
                 break;
             case LONG:
                 field.set(cmdObj, Long.valueOf(paramObj.toString()));
+                break;
+            case SHORT:
+                field.set(cmdObj, Short.valueOf(paramObj.toString()));
                 break;
             case STRING:
                 field.set(cmdObj, paramObj.toString());

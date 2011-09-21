@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -16,19 +15,19 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
@@ -116,7 +115,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 		VMTemplateVO template = persistTemplate(profile);
 		
 		_downloadMonitor.downloadTemplateToStorage(template, profile.getZoneId());
-		_accountMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 		
         return template;
 	}
@@ -214,7 +213,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 					success = false;
 				} else if (_tmpltDao.remove(templateId)) {
 					// Decrement the number of templates
-					_accountMgr.decrementResourceCount(accountId, ResourceType.template);
+				    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
 				}
 
 			} finally {

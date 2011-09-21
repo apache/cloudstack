@@ -18,98 +18,21 @@
 
 package com.cloud.user;
 
-import java.util.List;
+import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.CreateUserCmd;
-import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.Criteria;
+import com.cloud.utils.Pair;
 
 /**
  * AccountManager includes logic that deals with accounts, domains, and users.
  *
  */
 public interface AccountManager extends AccountService {
-
-	/**
-	 * Finds all ISOs that are usable for a user. This includes ISOs usable for the user's account and for all of the account's parent domains.
-	 * @param userId
-	 * @return List of IsoVOs
-	 */
-	// public List<VMTemplateVO> findAllIsosForUser(long userId);
-	
-	/**
-	 * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check
-	 * the account's parent domain, and if that limit is also infinite, will return the ROOT domain's limit.
-	 * @param accountId
-	 * @param type
-	 * @return resource limit
-	 */
-    public long findCorrectResourceLimit(long accountId, ResourceType type);
-
-    /**
-     * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check
-     * up the domain hierarchy
-     * @param account
-     * @param type
-     * @return resource limit
-     */
-    public long findCorrectResourceLimit(DomainVO domain, ResourceType type);
-
-    /**
-	 * Updates the resource count of an account to reflect current usage by account
-	 * @param accountId
-	 * @param type
-	 */
-	public long updateAccountResourceCount(long accountId, ResourceType type);
-
-    /**
-	 * Updates the resource count of the domain to reflect current usage in the domain
-	 * @param domainId
-	 * @param type
-	 */
-	public long updateDomainResourceCount(long domainId, ResourceType type);
-    /**
-	 * Increments the resource count
-	 * @param accountId
-	 * @param type
-	 * @param delta
-	 */
-	public void incrementResourceCount(long accountId, ResourceType type, Long...delta);
-    
-	/**
-	 * Decrements the resource count
-	 * @param accountId
-	 * @param type
-	 * @param delta
-	 */
-    public void decrementResourceCount(long accountId, ResourceType type, Long...delta);
-	
-	/**
-	 * Checks if a limit has been exceeded for an account
-	 * @param account
-	 * @param type
-	 * @param count the number of resources being allocated, count will be added to current allocation and compared against maximum allowed allocation
-	 * @return true if the limit has been exceeded
-	 */
-	public boolean resourceLimitExceeded(Account account, ResourceCount.ResourceType type, long...count);
-	
-	/**
-	 * Gets the count of resources for a resource type and account
-	 * @param account
-	 * @param type
-	 * @return count of resources
-	 */
-	public long getResourceCount(AccountVO account, ResourceType type);
-
     /**
      * Disables an account by accountId
      * @param accountId
@@ -125,9 +48,43 @@ public interface AccountManager extends AccountService {
 
 	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
 
-	@Override
-    UserVO createUser(CreateUserCmd cmd);
-
 	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
+	
+	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain);
+	
+	UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone);
+	
+    /**
+     * Logs out a user
+     * @param userId
+     */
+    void logoutUser(Long userId);
 
+    UserAccount getUserAccount(String username, Long domainId);
+    
+    /**
+     * Authenticates a user when s/he logs in.
+     * 
+     * @param username
+     *            required username for authentication
+     * @param password
+     *            password to use for authentication, can be null for single sign-on case
+     * @param domainId
+     *            id of domain where user with username resides
+     * @param requestParameters
+     *            the request parameters of the login request, which should contain timestamp of when the request signature is
+     *            made, and the signature itself in the single sign-on case
+     * @return a user object, null if the user failed to authenticate
+     */
+    UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
+    
+    /**
+     * Locate a user by their apiKey
+     * 
+     * @param apiKey
+     *            that was created for a particular user
+     * @return the user/account pair if one exact match was found, null otherwise
+     */
+    Pair<User, Account> findUserByApiKey(String apiKey);
+   
 }

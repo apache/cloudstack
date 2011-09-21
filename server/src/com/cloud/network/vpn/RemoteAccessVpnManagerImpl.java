@@ -58,6 +58,7 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
@@ -86,6 +87,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject IPAddressDao _ipAddressDao;
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject AccountManager _accountMgr;
+    @Inject DomainManager _domainMgr;
     @Inject NetworkManager _networkMgr;
     @Inject RulesManager _rulesMgr;
     @Inject DomainDao _domainDao;
@@ -458,7 +460,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            Domain domain = _domainMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
 
@@ -496,7 +498,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
             if (accountName != null) {
-                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                 sc.setParameters("accountId", account.getId());
             }
         }
@@ -519,7 +521,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         Long domainId = accountDomainPair.second();
         
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            Domain domain = _domainMgr.getDomain(caller.getDomainId());
             path = domain.getPath();
         }
 
@@ -564,7 +566,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
             if (accountName != null) {
-                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                 sc.setParameters("accountId", account.getId());
             }
         }

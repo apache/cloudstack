@@ -91,7 +91,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
-        boolean result = _mgr.deleteDomain(this);
+        boolean result = _domainService.deleteDomain(id, cleanup);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

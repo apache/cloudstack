@@ -20,18 +20,15 @@ package com.cloud.configuration.dao;
 
 import java.util.List;
 
+import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
 	
-	public ResourceLimitVO findByDomainIdAndType(Long domainId, ResourceCount.ResourceType type);
-	public ResourceLimitVO findByAccountIdAndType(Long accountId, ResourceCount.ResourceType type);
-	public List<ResourceLimitVO> listByAccountId(Long accountId);
-	public List<ResourceLimitVO> listByDomainId(Long domainId);
-	public boolean update(Long id, Long max);
-	public ResourceCount.ResourceType getLimitType(String type);
-	public ResourceLimitVO findByOwnerIdAndType(long ownerId, OwnerType ownerType, ResourceCount.ResourceType type);
+	List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType);
+	boolean update(Long id, Long max);
+	ResourceCount.ResourceType getLimitType(String type);
+	ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type);
 }

@@ -42,10 +42,10 @@ public class PodVlanMapDaoImpl extends GenericDaoBase<PodVlanMapVO, Long> implem
 	}
 	
 	@Override
-	public List<PodVlanMapVO> listPodVlanMapsByVlan(long vlanDbId) {
+	public PodVlanMapVO listPodVlanMapsByVlan(long vlanDbId) {
 		SearchCriteria<PodVlanMapVO> sc = VlanSearch.create();
     	sc.setParameters("vlanDbId", vlanDbId);
-    	return listIncludingRemovedBy(sc);
+    	return findOneBy(sc);
 	}
 	
 	@Override

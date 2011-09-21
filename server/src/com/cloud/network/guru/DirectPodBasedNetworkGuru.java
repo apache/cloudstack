@@ -135,8 +135,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             // we need to get a new ip address if we try to deploy a vm in a different pod
             IPAddressVO ipVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), oldIp);
             if (ipVO != null) {
-                List<PodVlanMapVO> mapVO = _podVlanDao.listPodVlanMapsByVlan(ipVO.getVlanId());
-                if (mapVO.get(0).getPodId() != dest.getPod().getId()) {
+                PodVlanMapVO mapVO = _podVlanDao.listPodVlanMapsByVlan(ipVO.getVlanId());
+                if (mapVO.getPodId() != dest.getPod().getId()) {
                     //release the old ip here
                     _networkMgr.markIpAsUnavailable(ipVO.getId());
                     _ipAddressDao.unassignIpAddress(ipVO.getId());

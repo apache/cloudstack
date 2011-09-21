@@ -18,31 +18,9 @@
 
 package com.cloud.configuration;
 
-public interface ResourceCount {
-
-	public enum ResourceType {
-		user_vm,
-	    public_ip,
-	    volume,
-	    snapshot,
-	    template
-	}
-	
+public interface ResourceCount extends Resource{
+    
 	public Long getId();
-	
-	public void setId(Long id);
-	
-	public ResourceType getType();
-	
-	public void setType(ResourceType type);
-	
-	public Long getAccountId();
-	
-	public void setAccountId(Long accountId);
-	
-	public Long getDomainId();
-	
-	public void setDomainId(Long domainId);
 	
 	public long getCount();
 	

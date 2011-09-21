@@ -18,25 +18,9 @@
 
 package com.cloud.configuration;
 
-public interface ResourceLimit {
-    
-    public static enum OwnerType {Account, Domain}
+public interface ResourceLimit extends Resource{
 	
 	public Long getId();
-	
-	public void setId(Long id);
-	
-	public ResourceCount.ResourceType getType();
-	
-	public void setType(ResourceCount.ResourceType type);
-	
-	public Long getDomainId();
-	
-	public void setDomainId(Long domainId);
-	
-	public Long getAccountId();
-	
-	public void setAccountId(Long accountId);
 	
 	public Long getMax();
 	

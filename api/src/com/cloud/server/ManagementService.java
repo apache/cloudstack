@@ -25,9 +25,7 @@ import java.util.Set;
 
 import com.cloud.alert.Alert;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
-import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
@@ -64,9 +62,7 @@ import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
-import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterSSHKeyPairCmd;
-import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
@@ -111,7 +107,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
 /**
- * Hopefull this is temporary.
+ * Hopefully this is temporary.
  * 
  */
 public interface ManagementService {
@@ -236,7 +232,7 @@ public interface ManagementService {
 
     VirtualMachine stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    VirtualMachine startSystemVM(StartSystemVMCmd cmd);
+    VirtualMachine startSystemVM(long vmId);
 
     VirtualMachine rebootSystemVM(RebootSystemVmCmd cmd);
 
@@ -250,15 +246,6 @@ public interface ManagementService {
     List<? extends Domain> searchForDomains(ListDomainsCmd c);
 
     List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd);
-
-    /**
-     * delete a domain with the given domainId
-     * 
-     * @param cmd
-     *            the command wrapping the delete parameters - domainId - ownerId - cleanup: whether or not to delete all
-     *            accounts/VMs/sub-domains when deleting the domain
-     */
-    boolean deleteDomain(DeleteDomainCmd cmd);
 
     /**
      * update an existing domain
@@ -370,8 +357,6 @@ public interface ManagementService {
     boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd);
 
     boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd);
-
-    String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
     boolean updateHostPassword(UpdateHostPasswordCmd cmd);
 

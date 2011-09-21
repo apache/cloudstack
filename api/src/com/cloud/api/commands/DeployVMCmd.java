@@ -346,7 +346,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException{
         try {
             //Verify that all objects exist before passing them to the service
-            Account owner = _accountService.getActiveAccount(getAccountName(), getDomainId());
+            Account owner = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
             if (owner == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
             }

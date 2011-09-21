@@ -52,6 +52,8 @@ import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.DomainService;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -68,7 +70,7 @@ public abstract class BaseCmd {
     public static final String RESPONSE_TYPE_JSON = "json";
 
     public enum CommandType {
-        BOOLEAN, DATE, FLOAT, INTEGER, LIST, LONG, OBJECT, MAP, STRING, TZDATE
+        BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE
     }
 
     // FIXME:  Extract these out into a separate file
@@ -120,6 +122,8 @@ public abstract class BaseCmd {
     public static BareMetalVmService _bareMetalVmService;
     public static ProjectService _projectService;
     public static FirewallService _firewallService;
+    public static DomainService _domainService;
+    public static ResourceLimitService _resourceLimitService;
     
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -143,6 +147,8 @@ public abstract class BaseCmd {
         _bareMetalVmService = locator.getManager(BareMetalVmService.class);
         _projectService = locator.getManager(ProjectService.class);
         _firewallService = locator.getManager(FirewallService.class);
+        _domainService = locator.getManager(DomainService.class);
+        _resourceLimitService = locator.getManager(ResourceLimitService.class);
     }
     
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException;

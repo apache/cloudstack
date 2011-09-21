@@ -52,7 +52,7 @@ import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -106,6 +106,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
@@ -164,6 +165,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject UsageEventDao _usageEventDao;
     @Inject HypervisorGuruManager _hvGuruMgr;
     @Inject AccountService _accountService;
+    @Inject ResourceLimitService _resourceLimitMgr;
     int _primaryStorageDownloadWait;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
@@ -523,7 +525,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     		throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, dstZone.getId());
     	}
         AccountVO account = _accountDao.findById(template.getAccountId());
-        if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
+        if (_resourceLimitMgr.resourceLimitExceeded(account, ResourceType.template)) {
         	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
         	rae.setResourceType("template");
         	throw rae;

@@ -23,14 +23,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationService;
-import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -72,6 +71,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.projects.ProjectService;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
@@ -99,8 +99,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
@@ -123,10 +123,10 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmData;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
-    private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
     public static AsyncJobManager _asyncMgr;
     private static SecurityGroupManager _securityGroupMgr;
@@ -168,12 +168,13 @@ public class ApiDBUtils {
     private static ConfigurationDao _configDao;
     private static ConsoleProxyDao _consoleProxyDao;
     private static FirewallRulesCidrsDao _firewallCidrsDao;
+    private static VMInstanceDao _vmDao;
+    private static ResourceLimitService _resourceLimitMgr;
+    private static ProjectService _projectMgr;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountManager.class);
+         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
@@ -214,6 +215,9 @@ public class ApiDBUtils {
         _configDao = locator.getDao(ConfigurationDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
         _firewallCidrsDao = locator.getDao(FirewallRulesCidrsDao.class);
+        _vmDao = locator.getDao(VMInstanceDao.class);
+        _resourceLimitMgr = locator.getManager(ResourceLimitService.class);
+        _projectMgr = locator.getManager(ProjectService.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -224,7 +228,7 @@ public class ApiDBUtils {
     // ///////////////////////////////////////////////////////////
 
     public static VMInstanceVO findVMInstanceById(long vmId) {
-        return _ms.findVMInstanceById(vmId);
+        return _vmDao.findById(vmId);
     }
 
     public static long getMemoryOrCpuCapacitybyHost(Long hostId, short capacityType) {
@@ -253,7 +257,7 @@ public class ApiDBUtils {
     }
     
     public static Long getPodIdForVlan(long vlanDbId) {
-        return _ms.getPodIdForVlan(vlanDbId);
+        return _networkMgr.getPodIdForVlan(vlanDbId);
     }
 
     public static String getVersion() {
@@ -279,7 +283,7 @@ public class ApiDBUtils {
             return -1;
         }
 
-        return _accountMgr.findCorrectResourceLimit(account.getAccountId(), type);
+        return _resourceLimitMgr.findCorrectResourceLimitForAccount(account.getAccountId(), type);
     }
 
     public static AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
@@ -293,7 +297,7 @@ public class ApiDBUtils {
             return -1;
         }
 
-        return _accountMgr.getResourceCount(account, type);
+        return _resourceLimitMgr.getResourceCount(account, type);
     }
 
     public static String getSecurityGroupsNamesForVm(long vmId) {
@@ -621,6 +625,10 @@ public class ApiDBUtils {
     
     public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData){
         return _userVmDao.listVmDetails(vmData);
+    }
+    
+    public static Account getProjectOwner(long projectId) {
+        return _projectMgr.getProjectOwner(projectId);
     }
 
 }

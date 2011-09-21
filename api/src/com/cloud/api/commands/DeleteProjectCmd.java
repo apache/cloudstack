@@ -23,15 +23,12 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
@@ -45,7 +42,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the project to be deleted")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be deleted")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -94,7 +91,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
         if (project == null) {
             throw new InvalidParameterValueException("Project id=" + id + " doesn't exist");
         } else {
-            return _projectService.getProject(id).getAccountId();
+            return _projectService.getProject(id).getProjectAccountId();
         }
     }
 }
