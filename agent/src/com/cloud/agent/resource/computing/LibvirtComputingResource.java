@@ -1215,7 +1215,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		s_logger.debug("Failed to manage snapshot: " + e.toString());
     		return new ManageSnapshotAnswer(cmd, false, "Failed to manage snapshot: " + e.toString());
     	}
-   	 	return new ManageSnapshotAnswer(cmd, cmd.getSnapshotId(), cmd.getVolumePath(), true, null);
+   	 	return new ManageSnapshotAnswer(cmd, cmd.getSnapshotId(), cmd.getVolumePath() + File.separator + snapshotName, true, null);
     }
     
     protected BackupSnapshotAnswer execute(final BackupSnapshotCommand cmd) {
@@ -1224,7 +1224,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          Long volumeId = cmd.getVolumeId();
          String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
          String snapshotName = cmd.getSnapshotName();
-         String snapshotPath = cmd.getSnapshotUuid();
+         String snapshotPath = cmd.getVolumePath();
          String snapshotDestPath = null;
          String vmName = cmd.getVmName();
 
