@@ -34,4 +34,15 @@ public interface ResourceManager {
     public void registerResourceEvent(Integer event, ResourceListener listener);
     
     public void unregisterResourceEvent(ResourceListener listener);
+    
+    /**
+     * 
+     * @param name of adapter
+     * @param adapter
+     * @param hates, a list of names which will be eliminated by this adapter. Especially for the case where 
+     * can be only one adapter responds to an event, e.g. startupCommand
+     */
+    public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter);
+    
+    public void unregisterResourceStateAdapter(String name);
 }

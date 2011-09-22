@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
@@ -76,6 +77,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -120,6 +122,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected Adapters<? extends Discoverer> _discoverers;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
+    
+    protected HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<String, ResourceStateAdapter>();
 
     protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
 
@@ -972,5 +976,60 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     public String getName() {
         return _name;
     }
+
+	@Override
+	public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter) {
+		if (_resourceStateAdapters.get(name) != null) {
+			throw new CloudRuntimeException(name + " has registered");
+		}
+		
+		synchronized (_resourceStateAdapters) {
+			_resourceStateAdapters.put(name, adapter);
+		}
+	}
+
+	@Override
+    public void unregisterResourceStateAdapter(String name) {
+        synchronized (_resourceStateAdapters) {
+            _resourceStateAdapters.remove(name);
+        }   
+    }
+	
+	 private Object dispatchToStateAdapters(ResourceStateAdapter.Event event, boolean singleTaker, Object...args) {
+	        synchronized (_resourceStateAdapters) {
+	            Iterator it = _resourceStateAdapters.entrySet().iterator();
+	            Object result = null;
+	            while (it.hasNext()) {
+	                Map.Entry<String, Pair<ResourceStateAdapter, List<String>>> item = (Map.Entry<String, Pair<ResourceStateAdapter, List<String>>>)it.next();
+	                ResourceStateAdapter adapter = item.getValue().first();
+	                if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
+	                    result = adapter.createHostVO((HostVO)args[0], (StartupCommand[])args[1]);
+	                    if (result != null && singleTaker) {
+	                        break;
+	                    }
+	                } else if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT) {
+	                    result = adapter.createHostVO((HostVO)args[0], (StartupCommand[])args[1], (ServerResource)args[2], (Map<String, String>)args[3], (List<String>)args[4]);
+	                    if (result != null && singleTaker) {
+	                        break;
+	                    }
+	                } else if (event == ResourceStateAdapter.Event.DELETE_HOST) {
+	                    try {
+	                        result = adapter.deleteHost((HostVO) args[0], (Boolean) args[1], (Boolean) args[2]);
+	                        if (result != null) {
+	                            break;
+	                        }
+	                    } catch (UnableDeleteHostException e) {
+	                        s_logger.debug("Adapter " + adapter.getName() + " says unable to delete host", e);
+	                        result = new ResourceStateAdapter.DeleteHostAnswer(false, true);
+	                    }
+	                } else {
+	                    throw new CloudRuntimeException("Unknown resource state event:" + event);
+	                }
+	            }
+	            
+	            return result;
+	        }
+	    }
+	    
 
 }
