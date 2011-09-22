@@ -478,7 +478,9 @@ function templateJsonToDetailsTab() {
     var noAvailableActions = true;
     
     // "Edit Template", "Copy Template", "Create VM"
-	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
+	//if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
+	    || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
 	    //do nothing	
     }
     else {
@@ -493,7 +495,8 @@ function templateJsonToDetailsTab() {
     }
 	
 	// "Download Template"	
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	//if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
 		|| (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
 	    //do nothing	
     }
@@ -503,7 +506,8 @@ function templateJsonToDetailsTab() {
     }
      
     // "Delete Template"	
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	//if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
 		|| (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1) 
 		|| jsonObj.templatetype == "SYSTEM") {
 	    //do nothing	

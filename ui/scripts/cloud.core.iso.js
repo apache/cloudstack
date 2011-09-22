@@ -446,7 +446,8 @@ function isoJsonToDetailsTab() {
     var noAvailableActions = true;
 
     // "Edit ISO", "Copy ISO"
-	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	//if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner 
 	    || (jsonObj.isready == false)
 	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {		
@@ -463,7 +464,8 @@ function isoJsonToDetailsTab() {
 	// "Create VM"
 	// Commenting this out for Beta2 as it does not support the new network.
 	/*
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	//if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner 
 	    || jsonObj.isready == false) 
 	    || (jsonObj.bootable == false)
 	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
@@ -477,7 +479,8 @@ function isoJsonToDetailsTab() {
 	*/
     
 	// "Download ISO"
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	//if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner 
 	    || (jsonObj.isready == false)
 	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
@@ -489,7 +492,8 @@ function isoJsonToDetailsTab() {
 	}    		   
 	
 	// "Delete ISO"
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	//if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner 
 	    || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
 	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
