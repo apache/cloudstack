@@ -2839,8 +2839,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     private boolean cleanupIpResources(long ipId, long userId, Account caller) {
         boolean success = true;
-
         
+        //Revoke all firewall rules for the ip
+        try {
+            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
+            if (!_firewallMgr.revokeFirewallRulesForIp(ipId, userId, caller)) {
+                s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of ip release");
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to revoke all firewall rules for ip id=" + ipId + " as a part of ip release", e);
+            success = false;
+        }
+
         //Revoke all PF/Static nat rules for the ip
         try {
             s_logger.debug("Revoking all " + Purpose.PortForwarding + "/" + Purpose.StaticNat + " rules as a part of public IP id=" + ipId + " release...");
@@ -2871,18 +2882,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
         
-        //Revoke all firewall rules for the ip
-        try {
-            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
-            if (!_firewallMgr.revokeFirewallRulesForIp(ipId, userId, caller)) {
-                s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of ip release");
-                success = false;
-            }
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to revoke all firewall rules for ip id=" + ipId + " as a part of ip release", e);
-            success = false;
-        }
-
         return success;
     }
 

@@ -73,4 +73,6 @@ public interface FirewallManager extends FirewallService{
 
     boolean revokeAllFirewallRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
 
+    boolean revokeFirewallRulesForVm(long vmId);
+
 }

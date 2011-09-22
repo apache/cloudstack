@@ -126,6 +126,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
@@ -329,6 +330,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected SecurityGroupDao _securityGroupDao;
+    @Inject
+    protected FirewallManager _firewallMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -1245,8 +1248,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         //Remove vm from instance group
         removeInstanceFromInstanceGroup(vmId);
+        
+        //cleanup firewall rules
+        if (_firewallMgr.revokeFirewallRulesForVm(vmId)) {
+            s_logger.debug("Firewall rules are removed successfully as a part of vm id=" + vmId + " expunge");
+        } else {
+            success = false;
+            s_logger.warn("Fail to remove firewall rules as a part of vm id=" + vmId + " expunge");
+        }
 
-        // cleanup port forwarding rules
+        //cleanup port forwarding rules
         if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
             s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
         } else {
