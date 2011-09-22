@@ -53,6 +53,8 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -179,7 +181,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         return network;
     }
 
-    @Override
+    @Override @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
     	if (s_logger.isDebugEnabled()) {
             s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
@@ -187,8 +189,14 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     	
         IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null && nic.getReservationStrategy() != ReservationStrategy.Managed) {
+            
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            
             _networkMgr.markIpAsUnavailable(ip.getId());
             _ipAddressDao.unassignIpAddress(ip.getId());
+            
+            txn.commit();
         }
         nic.deallocate();
     }

@@ -51,6 +51,8 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -122,7 +124,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         return nic;
     }
 
-    @Override
+    @Override @DB
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         
@@ -137,9 +139,14 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             if (ipVO != null) {
                 List<PodVlanMapVO> mapVO = _podVlanDao.listPodVlanMapsByVlan(ipVO.getVlanId());
                 if (mapVO.get(0).getPodId() != dest.getPod().getId()) {
+                    Transaction txn = Transaction.currentTxn();
+                    txn.start();
+                    
                     //release the old ip here
                     _networkMgr.markIpAsUnavailable(ipVO.getId());
                     _ipAddressDao.unassignIpAddress(ipVO.getId());
+                    
+                    txn.commit();
                     
                     nic.setIp4Address(null);
                     getNewIp = true;
