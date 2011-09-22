@@ -25,13 +25,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +48,6 @@ import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
-import com.cloud.configuration.ResourceLimit.OwnerType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -88,7 +84,6 @@ import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.PasswordGenerator;
@@ -148,13 +143,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		if (init == null || init.equals("false")) {
 			s_logger.debug("ConfigurationServer is saving default values to the database.");
 			
-			 Transaction txn = Transaction.currentTxn();
-		        txn.start();
-			// Create ROOT domain
-	        saveRootDomain();
-	        
-	        // Create system user and admin user
-	        saveUser();
+			Transaction txn = Transaction.currentTxn();
+			txn.start();
 			
 			// Save default Configuration Table values
 			List<String> categories = Config.getCategories();
@@ -292,117 +282,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			return null;
 		}
 	}
-	
-	
-	@DB
-	protected void saveUser() {
-        // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        //Create system/admin accounts
-        AccountVO systemAccount = new AccountVO(1);
-        systemAccount.setAccountName("system");
-        systemAccount.setType(Account.ACCOUNT_TYPE_ADMIN);;
-        systemAccount.setDomainId(1);
-        systemAccount.setState(Account.State.enabled);
-        _accountDao.persist(systemAccount);
-        
-        AccountVO adminAccount = new AccountVO(1);
-        adminAccount.setAccountName("admin");
-        adminAccount.setType(Account.ACCOUNT_TYPE_ADMIN);;
-        adminAccount.setDomainId(1);
-        adminAccount.setState(Account.State.enabled);
-        _accountDao.persist(adminAccount);
-        
-        //Create system/admin users
-        MessageDigest md5 = null;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            return;
-        }
-        
-        String password = "password";
-        md5.reset();
-        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
-        String pwStr = pwInt.toString(16);
-        int padding = 32 - pwStr.length();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0'); // make sure the MD5 password is 32 digits long
-        }
-        sb.append(pwStr);
-        password = sb.toString();
-        
-        UserVO systemUser = new UserVO(1);
-        systemUser.setUsername("system");
-        systemUser.setPassword("");
-        systemUser.setAccountId(1);
-        systemUser.setFirstname("system");
-        systemUser.setLastname("system");
-        systemUser.setState(Account.State.enabled);
-        _userDao.persist(systemUser);
-        
-        
-        UserVO adminUser = new UserVO(2);
-        adminUser.setUsername("admin");
-        adminUser.setPassword(password);
-        adminUser.setAccountId(2);
-        adminUser.setFirstname("admin");
-        adminUser.setLastname("cloud");
-        adminUser.setState(Account.State.enabled);
-        _userDao.persist(adminUser);
-		
-        
-        //create resource counts
-        try {
-            _resourceCountDao.createResourceCounts(1, OwnerType.Account);
-            _resourceCountDao.createResourceCounts(2, OwnerType.Account);
-        } catch (Exception ex) {
-            // if exception happens, it might mean that resource counts are already created by another management server being started in the cluster
-            s_logger.warn("Failed to create initial resource counts for system/admin accounts");
-        }  
-
-        try {
-            String tableName = "security_group";
-            try {
-                String checkSql = "SELECT * from network_group";
-                PreparedStatement stmt = txn.prepareAutoCloseStatement(checkSql);
-                stmt.executeQuery();
-                tableName = "network_group";
-            } catch (Exception ex) {
-                // if network_groups table exists, create the default security group there
-            }  
-            
-            insertSql = "SELECT * FROM " + tableName + " where account_id=2 and name='default'";
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-            ResultSet rs = stmt.executeQuery();
-            if (!rs.next()) {
-                //save default security group
-                if (tableName.equals("security_group")) {
-                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id) " +
-                    "VALUES ('default', 'Default Security Group', 2, 1)";
-                } else {
-                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id, account_name) " +
-                    "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
-                }
-
-                try {
-                    stmt = txn.prepareAutoCloseStatement(insertSql);
-                    stmt.executeUpdate();
-                } catch (SQLException ex) {
-                    s_logger.warn("Failed to create default security group for default admin account due to ", ex);
-                }
-            }
-            rs.close();
-        } catch (Exception ex) {
-            s_logger.warn("Failed to create default security group for default admin account due to ", ex);
-        } finally {
-            txn.commit();
-        }
-    }
 
 	protected void updateCloudIdentifier() {
 		// Creates and saves a UUID as the cloud identifier
@@ -971,22 +850,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         return networks.get(0).getId();
     }
-    
-    @DB
-    public void saveRootDomain() {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        DomainVO domain = new DomainVO(1, "ROOT", 2, null, null);
-        domain.setPath("/");
-        domain.setLevel(0);
-        _domainDao.persist(domain);
-        _resourceCountDao.createResourceCounts(1, OwnerType.Domain);
-        
-       txn.commit();
-    }
 
-    private void updateResourceCount() {
+    @DB
+    public void updateResourceCount() {
         ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
         List<AccountVO> accounts = _accountDao.listAllIncludingRemoved();
         List<DomainVO> domains = _domainDao.listAllIncludingRemoved();
@@ -998,6 +864,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         if ((domainResourceCount.size() < resourceCount * domains.size())) {
             s_logger.debug("resource_count table has records missing for some domains...going to insert them");
             for (DomainVO domain : domains) {
+                //Lock domain
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                _domainDao.lockRow(domain.getId(), true);
                 List<ResourceCountVO> domainCounts = _resourceCountDao.listByDomainId(domain.getId());
                 List<String> domainCountStr = new ArrayList<String>();
                 for (ResourceCountVO domainCount : domainCounts) {
@@ -1013,12 +883,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         }
                     }
                 }
+                txn.commit();
             }
         }
         
         if ((accountResourceCount.size() < resourceTypes.length * accounts.size())) {
             s_logger.debug("resource_count table has records missing for some accounts...going to insert them");
             for (AccountVO account : accounts) {
+                //lock account
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                _accountDao.lockRow(account.getId(), true);
                 List<ResourceCountVO> accountCounts = _resourceCountDao.listByAccountId(account.getId());
                 List<String> accountCountStr = new ArrayList<String>();
                 for (ResourceCountVO accountCount : accountCounts) {
@@ -1034,8 +909,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         }
                     }
                 }
+                
+                txn.commit();
             }
-            
         }
     }
 }
