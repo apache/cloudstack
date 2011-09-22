@@ -542,7 +542,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ipOwner == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
         }
-
+        
         _accountMgr.checkAccess(caller, null, ipOwner);
 
         DataCenterVO zone = null;
@@ -550,6 +550,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             zone = _dcDao.findById(zoneId);
             if (zone == null) {
                 throw new InvalidParameterValueException("Can't find zone by id " + zoneId);
+            }
+            
+            if (zone.getNetworkType() == NetworkType.Basic) {
+            	throw new InvalidParameterValueException("Can't associate ip in basic zone");
             }
 
             if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
