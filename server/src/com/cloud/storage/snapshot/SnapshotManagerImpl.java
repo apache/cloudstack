@@ -386,6 +386,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                         throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is associated with vm:" + userVm.getInstanceName() + " is in "
                                 + userVm.getState().toString() + " state");
                     }
+                    
+                    if(userVm.getHypervisorType() == HypervisorType.VMware) {
+                    	List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(v.getInstanceId(), Snapshot.Status.Creating,  Snapshot.Status.CreatedOnPrimary,  Snapshot.Status.BackingUp);
+                    	if(activeSnapshots.size() > 1)
+                            throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                    }
                 }
             }
 
@@ -439,6 +445,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 } else {
                     _accountMgr.incrementResourceCount(owner.getId(), ResourceType.snapshot);
                 }
+            } else {
+            	snapshot = _snapshotDao.findById(snapshotId);
+                snapshot.setStatus(Status.Error);
+                _snapshotDao.update(snapshotId, snapshot);
             }
             
             if ( volume != null ) {

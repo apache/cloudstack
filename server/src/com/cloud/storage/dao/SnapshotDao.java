@@ -20,6 +20,7 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.utils.db.Filter;
@@ -40,4 +41,5 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
     List<SnapshotVO> listByHostId(Filter filter, long hostId);
     List<SnapshotVO> listByHostId(long hostId);
     public Long countSnapshotsForAccount(long accountId);
+	List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status);
 }

@@ -11,7 +11,7 @@
    <!-- A regular appender FIXME implement code that will close/reopen logs on SIGHUP by logrotate FIXME make the paths configurable using the build system -->
 <!--   <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
+      <param name="Threshold" value="TRACE"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
         <param name="FileNamePattern" value="@MSLOG@.%d{yyyy-MM-dd}.gz"/>
         <param name="ActiveFileName" value="@MSLOG@"/>
@@ -24,7 +24,7 @@
   <!-- 
    <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
+      <param name="Threshold" value="TRACE"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
         <param name="FileNamePattern" value="@APISERVERLOG@.%d{yyyy-MM-dd}.gz"/>
         <param name="ActiveFileName" value="@APISERVERLOG@"/>
@@ -55,7 +55,7 @@
 
    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
       <param name="Target" value="System.out"/>
-      <param name="Threshold" value="DEBUG"/>
+      <param name="Threshold" value="TRACE"/>
       <layout class="org.apache.log4j.PatternLayout">
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
       </layout>
@@ -66,7 +66,7 @@
    <!-- ================ -->
 
    <category name="com.cloud">
-     <priority value="DEBUG"/>
+     <priority value="TRACE"/>
    </category>
    
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->

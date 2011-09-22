@@ -208,8 +208,26 @@ public class SearchCriteria<K> {
         return _selects == null || _selects.size() == 0;
     }
     
+    protected JoinBuilder<SearchCriteria<?>> findJoin(Map<String, JoinBuilder<SearchCriteria<?>>> jbmap, String joinName) {
+    	JoinBuilder<SearchCriteria<?>> jb = jbmap.get(joinName);
+    	if (jb != null) {
+    		return jb;
+    	}
+    	
+    	for (JoinBuilder<SearchCriteria<?>> j2 : _joins.values()) {
+    		SearchCriteria<?> sc = j2.getT();
+    		jb = findJoin(sc._joins, joinName);
+    		if (jb != null) {
+    			return jb;
+    		}
+    	}
+    	
+    	assert (false) : "Unable to find a join by the name " + joinName;
+    	return null;
+    }
+    
     public void setJoinParameters(String joinName, String conditionName, Object... params) {
-    	JoinBuilder<SearchCriteria<?>> join = _joins.get(joinName);
+    	JoinBuilder<SearchCriteria<?>> join = findJoin(_joins, joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
         join.getT().setParameters(conditionName, params);
 
