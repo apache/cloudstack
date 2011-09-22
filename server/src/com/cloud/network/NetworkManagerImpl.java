@@ -1478,6 +1478,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+    	if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Cleaning network for vm: " + vm.getId());
+        }
+    	
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             nic.setState(Nic.State.Deallocating);

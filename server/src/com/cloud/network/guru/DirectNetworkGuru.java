@@ -212,6 +212,10 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    	if (s_logger.isDebugEnabled()) {
+            s_logger.debug("direct network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
+        }
+    	
         IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null) {
             Transaction txn = Transaction.currentTxn();
