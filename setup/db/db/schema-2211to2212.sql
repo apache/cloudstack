@@ -29,7 +29,9 @@ ALTER TABLE `cloud`.`resource_count` ADD UNIQUE `i_resource_count__type_domaintI
 
 UPDATE configuration set description='Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default' WHERE name='network.loadbalancer.haproxy.stats.visibility' ;
 
-UPDATE nics SET strategy="Managed" WHERE (ip4_address, network_id) IN (SELECT public_ip_address, source_network_id FROM user_ip_address WHERE source_nat=1);
+UPDATE nics SET strategy="Managed" WHERE (ip4_address, network_id) IN (SELECT public_ip_address, source_network_id FROM user_ip_address WHERE source_nat=1) AND vm_type="DomainRouter";
+
+UPDATE nics SET strategy="Created" WHERE strategy="Managed" AND vm_type!="DomainRouter";
 
 CREATE TABLE IF NOT EXISTS `cloud`.`inline_load_balancer_nic_map` (
   `id` bigint unsigned NOT NULL auto_increment,
