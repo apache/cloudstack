@@ -20,7 +20,10 @@ package com.cloud.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -407,6 +410,7 @@ public class DatabaseConfig {
             
             // Save default values for configuration fields
             saveVMTemplate();
+            saveRootDomain();
             saveDefaultConfiguations();
             
             txn.commit();
@@ -435,6 +439,8 @@ public class DatabaseConfig {
             saveServiceOffering();
         } else if ("diskOffering".equals(_currentObjectName)) {
             saveDiskOffering();
+        } else if ("user".equals(_currentObjectName)) {
+            saveUser();
         } else if ("configuration".equals(_currentObjectName)) {
             saveConfiguration();
         } else if ("storagePool".equals(_currentObjectName)) {
@@ -959,6 +965,80 @@ public class DatabaseConfig {
 */
     }
 
+    @DB
+    protected void saveUser() {
+        // insert system account
+        String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating system account", ex);
+        }
+
+        // insert system user
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) VALUES (1, 'system', '', 1, 'system', 'cloud', now())";
+	    txn = Transaction.currentTxn();
+		try {
+		    PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+		    stmt.executeUpdate();
+		} catch (SQLException ex) {
+		    s_logger.error("error creating system user", ex);
+		}
+		
+    	// insert admin user
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        String username = _currentObjectParams.get("username");
+        String firstname = _currentObjectParams.get("firstname");
+        String lastname = _currentObjectParams.get("lastname");
+        String password = _currentObjectParams.get("password");
+        String email = _currentObjectParams.get("email");
+        
+        if (email == null || email.equals("")) {
+            printError("An email address for each user is required.");
+        }
+        
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("error saving user", e);
+            return;
+        }
+        md5.reset();
+        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
+        String pwStr = pwInt.toString(16);
+        int padding = 32 - pwStr.length();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < padding; i++) {
+            sb.append('0'); // make sure the MD5 password is 32 digits long
+        }
+        sb.append(pwStr);
+
+        // create an account for the admin user first
+        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating account", ex);
+        }
+
+        // now insert the user
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " +
+                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
+
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating user", ex);
+        }
+    }
+
     private void saveDefaultConfiguations() {
         for (String name : s_defaultConfigurationValues.keySet()) {
             String value = s_defaultConfigurationValues.get(name);
@@ -1044,6 +1124,42 @@ public class DatabaseConfig {
     	}
     	
     	return true;
+    }
+
+    @DB
+    protected void saveRootDomain() {
+        String insertSql = "insert into `cloud`.`domain` (id, name, parent, owner, path, level) values (1, 'ROOT', NULL, 2, '/', 0)";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating ROOT domain", ex);
+        }
+        
+        /*
+        String updateSql = "update account set domain_id = 1 where id = 2";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareStatement(updateSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error updating admin user", ex);
+        } finally {
+        	txn.close();
+        }
+
+        updateSql = "update account set domain_id = 1 where id = 1";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareStatement(updateSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error updating system user", ex);
+        } finally {
+        	txn.close();
+        }
+        */
     }
 
     class DbConfigXMLHandler extends DefaultHandler {
