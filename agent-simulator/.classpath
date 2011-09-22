@@ -17,7 +17,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ui"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/usage"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/vmopsClient"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/client"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/vmware-base"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
