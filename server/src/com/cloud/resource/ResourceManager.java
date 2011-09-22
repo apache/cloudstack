@@ -20,8 +20,10 @@ package com.cloud.resource;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 
 /**
  * ResourceManager manages how physical resources are organized within the
@@ -54,4 +56,6 @@ public interface ResourceManager {
 	        String allocationState, boolean forRebalance);
 	
 	public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
+	
+	public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
 }

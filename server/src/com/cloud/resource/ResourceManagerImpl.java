@@ -1247,5 +1247,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         return createHostAndAgent(resource, hostDetails, true, null, null, false);
     }
+    
+    @Override
+    public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds) {
+        return createHostVO(cmds, null, null, null, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED);
+    }
 	    
 }

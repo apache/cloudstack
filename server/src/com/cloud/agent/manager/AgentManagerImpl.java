@@ -472,32 +472,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return pcs;
     }
 
-    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance)
-    throws ConnectionException {
-        
-        if (startup == null) {
-            return null;
-        }
-        HostVO server = createHost(startup, resource, details, old, hostTags, allocationState);
-        if (server == null) {
-            return null;
-        }
-
-        long id = server.getId();
-
-        AgentAttache attache = createAttache(id, server, resource);
-        StartupAnswer[] answers = new StartupAnswer[startup.length];
-        for (int i = 0; i < answers.length; i++) {
-            answers[i] = new StartupAnswer(startup[i], attache.getId(), _pingInterval);
-        }
-
-        attache.process(answers);
-
-        attache = notifyMonitorsOfConnection(attache, startup, forRebalance);
-
-        return attache;
-    }
-
     @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
@@ -1863,51 +1837,39 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return result;
     }
 
-    public AgentAttache handleConnect(final Link link,
-            final StartupCommand[] startup) throws IllegalArgumentException,
-            ConnectionException {
-        HostVO server = null;
-        boolean handled = notifyCreatorsOfConnection(startup);
-        if (!handled) {
-            server = createHost(startup, null, null, false, null, null);
-        } else {
-            server = _hostDao.findByGuid(startup[0].getGuid());
+    protected AgentAttache createAttacheForConnect(HostVO host, StartupCommand[] cmds, Link link) throws ConnectionException {
+        s_logger.debug("create ConnectedAgentAttache for " + host.getId());
+        AgentAttache attache = new ConnectedAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
+        link.attach(attache);
+        
+        AgentAttache old = null;
+        synchronized (_agents) {
+            old = _agents.put(host.getId(), attache);
         }
-
-        if (server == null) {
-            return null;
+        if (old != null) {
+            old.disconnect(Status.Removed);
         }
-        long id = server.getId();
-
-        AgentAttache attache = createAttache(id, server, link);
-
-        attache = notifyMonitorsOfConnection(attache, startup, false);
+        
+        attache = notifyMonitorsOfConnection(attache, cmds, false);
 
         return attache;
     }
-
+    
+    //TODO: handle mycloud specific
+    private AgentAttache handleConnectedAgent(final Link link, final StartupCommand[] startup) throws ConnectionException {
+        AgentAttache attache = null;
+        HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
+        if (host != null) {
+            attache = createAttacheForConnect(host, startup, link);
+        }
+        return attache;
+    }
+       
     protected AgentAttache createAttache(long id, HostVO server, Link link) {
         s_logger.debug("create ConnectedAgentAttache for " + id);
         final AgentAttache attache = new ConnectedAgentAttache(this, id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
                 || server.getStatus() == Status.PrepareForMaintenance);
         link.attach(attache);
-        AgentAttache old = null;
-        synchronized (_agents) {
-            old = _agents.put(id, attache);
-        }
-        if (old != null) {
-            old.disconnect(Status.Removed);
-        }
-        return attache;
-    }
-
-    protected AgentAttache createAttache(long id, HostVO server, ServerResource resource) {
-        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
-            return new DummyAttache(this, id, false);
-        }
-        s_logger.debug("create DirectAgentAttache for " + id);
-        final DirectAgentAttache attache = new DirectAgentAttache(this, id, resource, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
-                || server.getStatus() == Status.PrepareForMaintenance, this);
         AgentAttache old = null;
         synchronized (_agents) {
             old = _agents.put(id, attache);
@@ -2206,7 +2168,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     for (int i = 0; i < cmds.length; i++) {
                         startups[i] = (StartupCommand) cmds[i];
                     }
-                    attache = handleConnect(link, startups);
+                    attache = handleConnectedAgent(link, startups);
                 } catch (final IllegalArgumentException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
                             + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
