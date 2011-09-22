@@ -141,7 +141,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host host = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
+        Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
         if (host != null) {
             zone.setLoadBalancerProvider(Network.Provider.F5BigIp.getName());
             _dcDao.update(zone.getId(), zone);

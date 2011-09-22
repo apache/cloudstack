@@ -38,6 +38,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -130,6 +131,10 @@ public class HostVO implements Host {
     @Column(name="allocation_state", nullable=false)
     @Enumerated(value=EnumType.STRING)
     private HostAllocationState hostAllocationState;
+    
+    @Column(name="resource_state", nullable=false)
+    @Enumerated(value=EnumType.STRING)
+    private ResourceState resourceState;
 
     @Column(name="hypervisor_version")
     private String hypervisorVersion;
@@ -700,5 +705,16 @@ public class HostVO implements Host {
 	public Long getHostId() {
 		// TODO Auto-generated method stub
 		return null;
-	}	
+	}
+	
+    @Override
+    public ResourceState getResourceState() {
+        return resourceState;
+    }
+    
+    @Override
+    public boolean isInMaintenanceStates() {
+        return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
+                || getResourceState() == ResourceState.PrepareForMaintenace);
+    }	
 }

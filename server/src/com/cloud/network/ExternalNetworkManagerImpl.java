@@ -93,6 +93,7 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
@@ -147,6 +148,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     @Inject VpnUserDao _vpnUsersDao;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject AccountManager _accountMgr;
+	@Inject ResourceManager _resourceMgr;
 
 	ScheduledExecutorService _executor;
 	int _externalNetworkStatsInterval;
@@ -285,7 +287,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host host = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
+        Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
         if (host != null) {
         	if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.F5BigIP.getName())) {
                 zone.setLoadBalancerProvider(Network.Provider.F5BigIp.getName());
@@ -630,7 +632,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host externalFirewall = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
+        Host externalFirewall = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
         if (externalFirewall != null) {
             zone.setFirewallProvider(Network.Provider.JuniperSRX.getName());                      
             zone.setUserDataProvider(Network.Provider.DhcpServer.getName());

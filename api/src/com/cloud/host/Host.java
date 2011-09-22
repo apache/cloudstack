@@ -20,6 +20,7 @@ package com.cloud.host;
 import java.util.Date;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
 
 
@@ -202,4 +203,7 @@ public interface Host extends StateObject<Status> {
 
     String getHypervisorVersion();
 
+    boolean isInMaintenanceStates();
+    
+    ResourceState getResourceState(); 
 }

@@ -34,6 +34,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.resource.AgentRoutingResource;
 import com.cloud.resource.AgentStorageResource;
+import com.cloud.resource.ResourceManager;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
@@ -56,6 +57,7 @@ public class MockAgentManagerImpl implements MockAgentManager {
     @Inject SimulatorManager _simulatorMgr = null;
     @Inject AgentManager _agentMgr = null;
     @Inject MockStorageManager _storageMgr = null;
+	@Inject ResourceManager _resourceMgr;
     private SecureRandom random;
     private Map<String, AgentResourceBase> _resources = new ConcurrentHashMap<String, AgentResourceBase>();
     private ThreadPoolExecutor _executor;
@@ -270,7 +272,7 @@ public class MockAgentManagerImpl implements MockAgentManager {
                 }
                 Map<String, String> details = new HashMap<String, String>();
                 
-                _agentMgr.addHost(this.dcId, storageResource, Type.SecondaryStorageVM, details);
+                _resourceMgr.addHost(this.dcId, storageResource, Type.SecondaryStorageVM, details);
                 _resources.put(this.guid, storageResource);
             }
             

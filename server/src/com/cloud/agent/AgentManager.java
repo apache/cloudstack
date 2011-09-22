@@ -23,6 +23,7 @@ import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
@@ -30,6 +31,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -53,6 +55,12 @@ public interface AgentManager extends Manager {
         Continue, Stop
     }
 
+    public enum TapAgentsAction {
+        Add,
+        Del,
+        Contains,
+    }
+    
     /**
      * easy send method that returns null if there's any errors. It handles all exceptions.
      * 
@@ -188,17 +196,6 @@ public interface AgentManager extends Manager {
     List<PodCluster> listByPod(long podId);
 
     /**
-     * Adds a new host
-     * 
-     * @param zoneId
-     * @param resource
-     * @param hostType
-     * @param hostDetails
-     * @return new Host
-     */
-    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
-
-    /**
      * Deletes a host
      * 
      * @param hostId
@@ -250,8 +247,6 @@ public interface AgentManager extends Manager {
 
     void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers);
 
-    AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance) throws IllegalArgumentException;
-
     boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
 
     long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener);
@@ -261,5 +256,11 @@ public interface AgentManager extends Manager {
     HostVO getSSAgent(HostVO ssHost);
 
     void updateStatus(HostVO host, Event event);
-
+    
+    /* working as a lock while agent is being loaded */
+    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
+    
+    public AgentAttache createAttacheForDirectConnect(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
+    
+    public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
 }

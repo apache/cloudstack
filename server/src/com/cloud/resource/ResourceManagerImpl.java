@@ -33,8 +33,10 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.TapAgentsAction;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
+import com.cloud.agent.transport.Request;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -58,6 +60,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.HostAllocationState;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -85,6 +88,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 @Local({ ResourceManager.class, ResourceService.class })
 public class ResourceManagerImpl implements ResourceManager, ResourceService, Manager {
@@ -364,9 +368,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         break;
                     }
 
-                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, null, null, false);
-                    if (attache != null) {
-                        hosts.add(_hostDao.findById(attache.getId()));
+                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, null, null, false);
+                    if (host != null) {
+                        hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
                 }
@@ -585,9 +589,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                         return null;
                     }
-                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, hostTags, allocationState, false);
-                    if (attache != null) {
-                        hosts.add(_hostDao.findById(attache.getId()));
+                    
+                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, allocationState, false);
+                    if (host != null) {
+                        hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
 
@@ -1030,6 +1035,217 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	            return result;
 	        }
 	    }
-	    
 
+	private boolean checkCIDR(HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {
+		if (serverPrivateIP == null) {
+			return true;
+		}
+		// Get the CIDR address and CIDR size
+		String cidrAddress = pod.getCidrAddress();
+		long cidrSize = pod.getCidrSize();
+
+		// If the server's private IP address is not in the same subnet as the
+		// pod's CIDR, return false
+		String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
+		String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
+		if (!cidrSubnet.equals(serverSubnet)) {
+			return false;
+		}
+
+		// If the server's private netmask is less inclusive than the pod's CIDR
+		// netmask, return false
+		String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
+		long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
+		long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
+		if (serverNetmaskNumeric > cidrNetmaskNumeric) {
+			return false;
+		}
+		return true;
+	}
+	 
+	protected HostVO createHostVO(StartupCommand[] cmds, ServerResource resource, Map<String, String> details, List<String> hostTags,
+	        ResourceStateAdapter.Event stateEvent) {
+		StartupCommand startup = cmds[0];
+		HostVO host = _hostDao.findByGuid(startup.getGuid());
+		if (host == null) {
+			host = _hostDao.findByGuid(startup.getGuidWithoutResource());
+		}
+		if (host == null) {
+			host = new HostVO(startup.getGuid());
+			host.setResource(resource.getClass().getName());
+			host = _hostDao.persist(host);
+		}
+		// TODO: we don't allow to set ResourceState here?
+
+		String dataCenter = startup.getDataCenter();
+		String pod = startup.getPod();
+		String cluster = startup.getCluster();
+
+		if (pod != null && dataCenter != null && pod.equalsIgnoreCase("default") && dataCenter.equalsIgnoreCase("default")) {
+			List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
+			for (HostPodVO hpv : pods) {
+				if (checkCIDR(hpv, startup.getPrivateIpAddress(), startup.getPrivateNetmask())) {
+					pod = hpv.getName();
+					dataCenter = _dcDao.findById(hpv.getDataCenterId()).getName();
+					break;
+				}
+			}
+		}
+
+		long dcId = -1;
+		DataCenterVO dc = _dcDao.findByName(dataCenter);
+		if (dc == null) {
+			try {
+				dcId = Long.parseLong(dataCenter);
+				dc = _dcDao.findById(dcId);
+			} catch (final NumberFormatException e) {
+			}
+		}
+		if (dc == null) {
+			throw new IllegalArgumentException("Host " + startup.getPrivateIpAddress() + " sent incorrect data center: " + dataCenter);
+		}
+		dcId = dc.getId();
+
+		HostPodVO p = _podDao.findByName(pod, dcId);
+		if (p == null) {
+			try {
+				final long podId = Long.parseLong(pod);
+				p = _podDao.findById(podId);
+			} catch (final NumberFormatException e) {
+			}
+		}
+		/*
+		 * ResourceStateAdapter is responsible for throwing Exception if Pod is
+		 * null and non-null is required. for example, XcpServerDiscoever.
+		 * Others, like PxeServer, ExternalFireware don't require Pod
+		 */
+		Long podId = (p == null ? null : p.getId());
+
+		Long clusterId = null;
+		if (cluster != null) {
+			try {
+				clusterId = Long.valueOf(cluster);
+			} catch (NumberFormatException e) {
+				ClusterVO c = _clusterDao.findBy(cluster, podId);
+				if (c == null) {
+					c = new ClusterVO(dcId, podId, cluster);
+					c = _clusterDao.persist(c);
+				}
+				clusterId = c.getId();
+			}
+		}
+
+		host.setDataCenterId(dc.getId());
+		host.setPodId(podId);
+		host.setClusterId(clusterId);
+		host.setPrivateIpAddress(startup.getPrivateIpAddress());
+		host.setPrivateNetmask(startup.getPrivateNetmask());
+		host.setPrivateMacAddress(startup.getPrivateMacAddress());
+		host.setPublicIpAddress(startup.getPublicIpAddress());
+		host.setPublicMacAddress(startup.getPublicMacAddress());
+		host.setPublicNetmask(startup.getPublicNetmask());
+		host.setStorageIpAddress(startup.getStorageIpAddress());
+		host.setStorageMacAddress(startup.getStorageMacAddress());
+		host.setStorageNetmask(startup.getStorageNetmask());
+		host.setVersion(startup.getVersion());
+		host.setName(startup.getName());
+		host.setManagementServerId(_nodeId);
+		host.setStorageUrl(startup.getIqn());
+		host.setLastPinged(System.currentTimeMillis() >> 10);
+		host.setHostTags(hostTags);
+		host.setDetails(details);
+		if (startup.getStorageIpAddressDeux() != null) {
+			host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
+			host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());
+			host.setStorageNetmaskDeux(startup.getStorageNetmaskDeux());
+		}
+
+		host = (HostVO) dispatchToStateAdapters(stateEvent, true, host, cmds, resource, details, hostTags);
+		_hostDao.update(host.getId(), host);
+		/* Agent goes to Connecting status */
+		_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
+		return host;
+	}
+	 
+	private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState,
+	        boolean forRebalance) {
+		HostVO host = null;
+		AgentAttache attache = null;
+		StartupCommand[] cmds = null;
+
+		try {
+			cmds = resource.initialize();
+			if (cmds == null) {
+				s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
+				return null;
+			}
+
+			if (s_logger.isDebugEnabled()) {
+				new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
+			}
+
+			if (old) {
+				StartupCommand firstCmd = cmds[0];
+				host = _hostDao.findByGuid(firstCmd.getGuid());
+				if (host == null) {
+					host = _hostDao.findByGuid(firstCmd.getGuidWithoutResource());
+				}
+				if (host != null && host.getRemoved() == null) {
+					s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
+					return null;
+				}
+			}
+
+			host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
+			if (host != null) {
+				attache = _agentMgr.createAttacheForDirectConnect(host, cmds, resource, forRebalance);
+				/* reload myself from database */
+				host = _hostDao.findById(host.getId());
+			}
+		} catch (Exception e) {
+			s_logger.warn("Unable to connect due to ", e);
+		} finally {
+			if (attache == null) {
+				if (cmds != null) {
+					resource.disconnected();
+				}
+
+				if (host != null) {
+					/* Change agent status to Alert */
+					_agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+				}
+			}
+		}
+
+		return host;
+	}
+	 
+	@Override
+	public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
+	        String allocationState, boolean forRebalance) {
+		_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Add);
+		Host host = createHostAndAgent(resource, details, old, hostTags, allocationState, forRebalance);
+		_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Del);
+		return host;
+	}
+	
+    @Override
+    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
+        // Check if the zone exists in the system
+        if (_dcDao.findById(zoneId) == null) {
+            throw new InvalidParameterValueException("Can't find zone with id " + zoneId);
+        }
+
+        Map<String, String> details = hostDetails;
+        String guid = details.get("guid");
+        List<HostVO> currentHosts = _hostDao.listBy(hostType, zoneId);
+        for (HostVO currentHost : currentHosts) {
+            if (currentHost.getGuid().equals(guid)) {
+                return currentHost;
+            }
+        }
+
+        return createHostAndAgent(resource, hostDetails, true, null, null, false);
+    }
+	    
 }

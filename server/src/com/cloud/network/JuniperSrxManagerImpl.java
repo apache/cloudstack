@@ -43,6 +43,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -78,6 +79,8 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
     ConfigurationManager _configMgr;
     @Inject
     AccountManager _accountMgr;
+	@Inject
+	ResourceManager _resourceMgr;
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(JuniperSrxManagerImpl.class);
 
@@ -184,7 +187,7 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host externalFirewall = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
+        Host externalFirewall = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
         if (externalFirewall != null) {
             zone.setFirewallProvider(Network.Provider.JuniperSRX.getName());                      
             zone.setUserDataProvider(Network.Provider.DhcpServer.getName());

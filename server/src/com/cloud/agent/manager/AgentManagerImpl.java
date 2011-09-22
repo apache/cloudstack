@@ -117,6 +117,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
@@ -147,6 +149,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nio.HandlerFactory;
@@ -255,6 +259,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected AgentMonitor _monitor = null;
 
     protected ExecutorService _executor;
+    
+    protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
+    
+    @Inject ResourceManager _resourceMgr;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -1275,12 +1283,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     	}
 
         if (forRebalance) {
-            AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null, true);
-            if (attache == null) {
-                return false;
-            } else {
-                return true;
-            }
+            Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, null, true);
+            return (h == null ? false : true);
         } else {
             _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
             return true;
@@ -1288,69 +1292,32 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance) throws IllegalArgumentException {
-        HostVO host = null;
-        if (id != null) {
-            synchronized (_loadingAgents) {
-                s_logger.debug("Adding to loading agents " + id);
-                _loadingAgents.add(id);
-            }
+    public AgentAttache createAttacheForDirectConnect(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance)
+            throws ConnectionException {
+        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
+            return new DummyAttache(this, host.getId(), false);
         }
-        AgentAttache attache = null;
-        StartupCommand[] cmds = null;
-        try {
-            if (id != null) {
-                host = _hostDao.findById(id);
-                if (!_hostDao.directConnect(host, _nodeId)) {
-                    s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
-                    return null;
-                }
-            }
-
-            cmds = resource.initialize();
-            if (cmds == null) {
-                s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
-                return null;
-            }
-
-            if (host != null) {
-                if (!_hostDao.directConnect(host, _nodeId)) {
-                    host = _hostDao.findById(id);
-                    s_logger.info("MS " + host.getManagementServerId() + " is loading " + host + " after it has been initialized.");
-                    return null;
-                }
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
-            }
-            try {
-                attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState, forRebalance);
-            } catch (IllegalArgumentException ex) {
-                s_logger.warn("Unable to connect due to ", ex);
-                throw ex;
-            } catch (Exception e) {
-                s_logger.warn("Unable to connect due to ", e);
-            }
-
-        } finally {
-            if (id != null) {
-                synchronized (_loadingAgents) {
-                    _loadingAgents.remove(id);
-                }
-            }
-            if (attache == null) {
-                if (cmds != null) {
-                    resource.disconnected();
-                }
-                if (host != null) {
-                    _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
-                }
-            }
+        
+        s_logger.debug("create DirectAgentAttache for " + host.getId());
+        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), resource, host.isInMaintenanceStates(), this);
+        
+        AgentAttache old = null;
+        synchronized (_agents) {
+            old = _agents.put(host.getId(), attache);
         }
-        return attache;
+        if (old != null) {
+            old.disconnect(Status.Removed);
+        }
+
+        StartupAnswer[] answers = new StartupAnswer[cmds.length];
+        for (int i = 0; i < answers.length; i++) {
+            answers[i] = new StartupAnswer(cmds[i], attache.getId(), _pingInterval);
+        }
+        attache.process(answers);
+
+        return notifyMonitorsOfConnection(attache, cmds, forRebalance);
     }
-
+    
     @Override
     public boolean stop() {
         if (_monitor != null) {
@@ -1756,26 +1723,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 throw new IllegalArgumentException("The public ip address of the server (" + serverPublicIP + ") is already in use in zone: " + dc.getName());
             }
         }
-    }
-
-    @Override
-    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
-        // Check if the zone exists in the system
-        if (_dcDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException("Can't find zone with id " + zoneId);
-        }
-
-        Map<String, String> details = hostDetails;
-        String guid = details.get("guid");
-        List<HostVO> currentHosts = _hostDao.listBy(hostType, zoneId);
-        for (HostVO currentHost : currentHosts) {
-            if (currentHost.getGuid().equals(guid)) {
-                return currentHost;
-            }
-        }
-
-        AgentAttache attache = simulateStart(null, resource, hostDetails, true, null, null, false);
-        return _hostDao.findById(attache.getId());
     }
 
     public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
@@ -2207,7 +2154,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
-                simulateStart(id, resource, details, false, null, null, false);
+                
+                _resourceMgr.createHostAndAgent(id, resource, details, false, null, null, false);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
@@ -2445,6 +2393,62 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     protected AgentManagerImpl() {
+    }
+
+	@Override
+    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
+        synchronized (_loadingAgents) {
+            if (action == TapAgentsAction.Add) {
+                _loadingAgents.add(hostId);
+            } else if (action == TapAgentsAction.Del) {
+                _loadingAgents.remove(hostId);
+            } else if (action == TapAgentsAction.Contains) {
+                return _loadingAgents.contains(hostId);
+            } else {
+                throw new CloudRuntimeException("Unkonwn TapAgentsAction " + action);
+            }
+        }  
+        return true;
+    }
+
+    private boolean isAgentEventAllowedByResourceState(HostVO host, Status.Event event) {
+        ResourceState state = host.getResourceState();
+        boolean allow = true;
+        if (state == ResourceState.Enabled) {
+           
+        } else if (state == ResourceState.Disabled) {
+            if (event == Status.Event.AgentConnected) {
+               allow = false;
+            }
+        } else if (state == ResourceState.Unmanaged) {
+            if (event == Status.Event.AgentConnected) {
+                allow = false;
+            }
+        } else if (state == ResourceState.PrepareForMaintenace) {
+            
+        } else if (state == ResourceState.Maintenance) {
+            
+        } else {
+            throw new CloudRuntimeException("Unknown resource state " + state);
+        }
+        
+        return allow;
+     }
+    
+    @Override
+    public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId) {
+        if (!isAgentEventAllowedByResourceState(host, e)) {
+            s_logger.debug(String.format("Cannot proceed agent event %1$s because it is not allowed by current resource state %2$s fort host %3$s", e, host.getResourceState(), host.getId()));
+            return false;
+        }
+        
+        host.setManagementServerId(msId);
+        try {
+            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+        } catch (NoTransitionException e1) {
+            s_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId);
+            throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId + "," + e1.getMessage());
+        }
     }
 
 }

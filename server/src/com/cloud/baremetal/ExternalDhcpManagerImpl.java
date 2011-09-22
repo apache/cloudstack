@@ -59,6 +59,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -81,6 +82,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 	@Inject AgentManager _agentMgr;
 	@Inject HostPodDao _podDao;
 	@Inject UserVmDao _userVmDao;
+	@Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -159,7 +161,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			throw new CloudRuntimeException(e.getMessage());
 		}
 		
-		Host dhcpServer = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalDhcp, params);
+		Host dhcpServer = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalDhcp, params);
 		if (dhcpServer == null) {
 			throw new CloudRuntimeException("Cannot add external Dhcp server as a host");
 		}

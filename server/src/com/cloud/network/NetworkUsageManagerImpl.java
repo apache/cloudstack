@@ -66,6 +66,7 @@ import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.resource.TrafficSentinelResource;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.api.response.TrafficMonitorResponse;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
@@ -104,6 +105,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
     @Inject HostDetailsDao _detailsDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkDao _networksDao = null;
+	@Inject ResourceManager _resourceMgr;
     ScheduledExecutorService _executor;
     int _networkStatsInterval;
     protected SearchBuilder<IPAddressVO> AllocatedIpSearch;
@@ -161,7 +163,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         hostDetails.put("url", cmd.getUrl());
         hostDetails.put("last_collection", ""+System.currentTimeMillis());
 
-        Host trafficMonitor = _agentMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
+        Host trafficMonitor = _resourceMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
         return trafficMonitor;
     }
 
