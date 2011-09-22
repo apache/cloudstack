@@ -664,7 +664,7 @@ public class NetappManagerImpl implements NetappManager
 
     		if(selectedVol == null)
     		{
-    			throw new ResourceAllocationException("Could not find a suitable volume to create lun on");
+    			throw new ServerException("Could not find a suitable volume to create lun on");
     		}
 
     		if(s_logger.isDebugEnabled())

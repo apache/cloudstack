@@ -1079,12 +1079,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // First check that the maximum number of UserVMs for the given accountId will not be exceeded
-        if (_resourceLimitMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + account.getAccountName() + " has been exceeded.");
-            rae.setResourceType("vm");
-            txn.commit();
-            throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.user_vm);
 
         _haMgr.cancelDestroy(vm, vm.getHostId());
 
@@ -1397,11 +1392,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         AccountVO ownerAccount = _accountDao.findById(accountId);
-        if (_resourceLimitMgr.resourceLimitExceeded(ownerAccount, ResourceType.template)) {
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-            rae.setResourceType("template");
-            throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(ownerAccount, ResourceType.template);
 
         if (!isAdmin || featured == null) {
             featured = Boolean.FALSE;
@@ -2376,12 +2367,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // check if account/domain is with in resource limits to create a new vm
-        if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
-            UserContext.current().setEventDetails("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
-            rae.setResourceType("vm");
-            throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
 
         //verify security group ids
         if (securityGroupIdList != null) {
@@ -3327,11 +3313,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
-        if (_resourceLimitMgr.resourceLimitExceeded(newAccount, ResourceType.user_vm)) {
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + newAccount.getAccountName() + " has been exceeded.");
-            rae.setResourceType("vm");
-            throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
 
         //get the VM
         UserVmVO vm = _vmDao.findById(cmd.getVmId());

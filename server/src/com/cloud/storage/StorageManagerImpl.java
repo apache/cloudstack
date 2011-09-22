@@ -1627,14 +1627,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             targetAccount = account;
         }
 
-        // check if the volume can be created for the user
         // Check that the resource limit for volumes won't be exceeded
-        if (_resourceLimitMgr.resourceLimitExceeded(targetAccount, ResourceType.volume)) {
-            UserContext.current().setEventDetails("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
-            rae.setResourceType("volume");
-            throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(targetAccount, ResourceType.volume);
 
         Long zoneId = null;
         Long diskOfferingId = null;

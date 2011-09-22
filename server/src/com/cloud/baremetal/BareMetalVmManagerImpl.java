@@ -247,12 +247,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		}
 
 		// check if account/domain is with in resource limits to create a new vm
-		if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.user_vm)) {
-			ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + owner.getAccountName()
-					+ " has been exceeded.");
-			rae.setResourceType("vm");
-			throw rae;
-		}
+		_resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
 		
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(cmd.getServiceOfferingId());
         if (offering == null || offering.getRemoved() != null) {

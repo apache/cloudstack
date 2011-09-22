@@ -208,11 +208,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         }
         
     	AccountVO account = _accountDao.findById(accountId);
-        if (_resourceLimitMgr.resourceLimitExceeded(account, ResourceType.template)) {
-        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-        	rae.setResourceType("template");
-        	throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
         
         if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
         	throw new IllegalArgumentException("Only admins can create templates in all zones");

@@ -390,11 +390,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             IPAddressVO sourceNat = null;
             List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null, network.getId());
             if (addrs.size() == 0) {
+                
                 // Check that the maximum number of public IPs for the given accountId will not be exceeded
-                if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.public_ip)) {
+                try {
+                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip); 
+                } catch (ResourceAllocationException ex) {
+                    s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
                     throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
                 }
-
+               
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("assigning a new ip address in " + dcId + " to " + owner);
                 }
@@ -608,12 +612,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // Check that the maximum number of public IPs for the given
             // accountId will not be exceeded
-            if (_resourceLimitMgr.resourceLimitExceeded(accountToLock, ResourceType.public_ip)) {
-                UserContext.current().setEventDetails("Maximum number of public IP addresses for account: " + accountToLock.getAccountName() + " has been exceeded.");
-                ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + accountToLock.getAccountName() + " has been exceeded.");
-                rae.setResourceType("ip");
-                throw rae;
-            }
+            _resourceLimitMgr.checkResourceLimit(accountToLock, ResourceType.public_ip);
 
             boolean isSourceNat = false;
 
@@ -1202,10 +1201,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (ips.isEmpty()) {
                     s_logger.debug("Creating a source nat ip for " + network);
                     Account owner = _accountMgr.getAccount(network.getAccountId());
-                    PublicIp sourceNatIp = assignSourceNatIpAddress(owner, network, context.getCaller().getId());
-                    if (sourceNatIp == null) {
-                        throw new InsufficientAddressCapacityException("Unable to assign source nat ip address to the network " + network, DataCenter.class, network.getDataCenterId());
-                    }
+                    PublicIp sourceNatIp = assignSourceNatIpAddress(owner, network, context.getCaller().getId()); 
                 }
             }
 

@@ -525,11 +525,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     		throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, dstZone.getId());
     	}
         AccountVO account = _accountDao.findById(template.getAccountId());
-        if (_resourceLimitMgr.resourceLimitExceeded(account, ResourceType.template)) {
-        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-        	rae.setResourceType("template");
-        	throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
                
         // Event details        
         String copyEventType;

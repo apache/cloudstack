@@ -22,6 +22,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -68,6 +70,7 @@ public class DomainVO implements Domain {
     private String networkDomain;
     
     @Column(name="type")
+    @Enumerated(value=EnumType.STRING)
     private Domain.Type type = Domain.Type.Normal;
     
     public DomainVO() {}

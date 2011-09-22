@@ -34,9 +34,6 @@
 package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -44,7 +41,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -52,11 +48,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementServerExt;
 import com.cloud.server.ManagementService;
-import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
 import com.cloud.server.api.response.netapp.CreateLunCmdResponse;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 
 @Implementation(description="Create a LUN from a pool", responseObject = CreateLunCmdResponse.class)

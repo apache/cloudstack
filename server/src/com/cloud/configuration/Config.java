@@ -270,7 +270,6 @@ public enum Config {
 	DefaultMaxAccountTemplates("Account Defaults", ManagementServer.class, Long.class, "max.account.templates", "20", "The default maximum number of templates that can be deployed for an account", null),
 	DefaultMaxAccountSnapshots("Account Defaults", ManagementServer.class, Long.class, "max.account.snapshots", "20", "The default maximum number of snapshots that can be created for an account", null),
 	DefaultMaxAccountVolumes("Account Defaults", ManagementServer.class, Long.class, "max.account.volumes", "20", "The default maximum number of volumes that can be created for an account", null),
-	DefaultMaxAccountProjects("Account Defaults", ManagementServer.class, Long.class, "max.account.projects", "20", "The default maximum number of projects that can be created for an account", null),
 	DirectAgentLoadSize("Advanced", ManagementServer.class, Integer.class, "direct.agent.load.size", "16", "The number of direct agents to load each time", null),
 	
 	AgentLbEnable("Advanced", ClusterManager.class, Boolean.class, "agent.lb.enabled", "true", "If agent load balancing enabled in cluster setup", null),
@@ -282,7 +281,13 @@ public enum Config {
 	ClusterMessageTimeOutSeconds("Advanced", ManagementServer.class, Integer.class, "cluster.message.timeout.seconds", "300", "Time (in seconds) to wait before a inter-management server message post times out.", null),
 	AgentLoadThreshold("Advanced", ManagementServer.class, Float.class, "agent.load.threshold", "0.7", "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening", null),
 	
-	JavaScriptDefaultContentType("Advanced", ManagementServer.class, String.class, "json.content.type", "text/javascript", "Http response content type for .js files (default is text/javascript)", null);
+	JavaScriptDefaultContentType("Advanced", ManagementServer.class, String.class, "json.content.type", "text/javascript", "Http response content type for .js files (default is text/javascript)", null),
+	
+	DefaultMaxProjectUserVms("Project Defaults", ManagementServer.class, Long.class, "max.project.user.vms", "20", "The default maximum number of user VMs that can be deployed for a project", null),
+    DefaultMaxProjectPublicIPs("Project Defaults", ManagementServer.class, Long.class, "max.project.public.ips", "20", "The default maximum number of public IPs that can be consumed by a project", null),
+    DefaultMaxProjectTemplates("Project Defaults", ManagementServer.class, Long.class, "max.project.templates", "20", "The default maximum number of templates that can be deployed for a project", null),
+    DefaultMaxProjectSnapshots("Project Defaults", ManagementServer.class, Long.class, "max.project.snapshots", "20", "The default maximum number of snapshots that can be created for a project", null),
+    DefaultMaxProjectVolumes("Project Defaults", ManagementServer.class, Long.class, "max.project.volumes", "20", "The default maximum number of volumes that can be created for a project", null);
 
 	private final String _category;
 	private final Class<?> _componentClass;
@@ -306,6 +311,7 @@ public enum Config {
     	_configs.put("Developer", new ArrayList<Config>());
     	_configs.put("Hidden", new ArrayList<Config>());
     	_configs.put("Account Defaults", new ArrayList<Config>());
+    	_configs.put("Project Defaults", new ArrayList<Config>());
     	
     	// Add values into HashMap
         for (Config c : Config.values()) {

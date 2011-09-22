@@ -2,6 +2,7 @@ package com.cloud.projects;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
 
@@ -15,8 +16,9 @@ public interface ProjectService {
      * @param accountName - account name of the project owner
      * @param domainId - domainid of the project owner
      * @return the project if created successfully, null otherwise
+     * @throws ResourceAllocationException 
      */
-    Project createProject(String name, String displayText, String accountName, Long domainId);
+    Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException;
     
     /**
      * Deletes a project

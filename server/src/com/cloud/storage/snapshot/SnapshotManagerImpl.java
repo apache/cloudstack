@@ -1082,7 +1082,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         // Verify that max doesn't exceed domain and account snapshot limits
-        long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner.getId(), ResourceType.snapshot);
+        long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot);
         long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(null, ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
         if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
@@ -1270,11 +1270,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         _accountMgr.checkAccess(caller, null, volume);
 
         Account owner = _accountMgr.getAccount(volume.getAccountId());
-        if (_resourceLimitMgr.resourceLimitExceeded(owner, ResourceType.snapshot)) {
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of snapshots for account: " + owner.getAccountName() + " has been exceeded.");
-            rae.setResourceType("snapshot");
-            throw rae;
-        }
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
 
         // Determine the name for this snapshot
         // Snapshot Name: VMInstancename + volumeName + timeString

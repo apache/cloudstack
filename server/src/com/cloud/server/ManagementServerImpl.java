@@ -1407,6 +1407,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
+        sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
 
         if ((domainId != null) && isRecursive) {
             // do a domain LIKE match for the admin case if isRecursive is true
@@ -1462,6 +1463,9 @@ public class ManagementServerImpl implements ManagementServer {
         if (isCleanupRequired != null) {
             sc.setParameters("needsCleanup", isCleanupRequired);
         }
+        
+        //don't return account of type project to the end user
+        sc.setParameters("typeNEQ", 5);
 
         return _accountDao.search(sc, searchFilter);
     }
@@ -2168,6 +2172,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.NEQ);
 
         SearchCriteria<DomainVO> sc = sb.create();
 
@@ -2192,6 +2197,9 @@ public class ManagementServerImpl implements ManagementServer {
         if (path != null) {
             sc.setParameters("path", "%" + path + "%");
         }
+        
+        //don't list project domains to the user
+        sc.setParameters("type", Domain.Type.Project);
 
         return _domainDao.search(sc, searchFilter);
     }
@@ -2252,8 +2260,12 @@ public class ManagementServerImpl implements ManagementServer {
         if (path != null) {
             sc.addAnd("path", SearchCriteria.Op.NEQ, path);
             sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
-
         }
+        
+        //don't list domain of type Project
+        sc.addAnd("type", SearchCriteria.Op.NEQ, Domain.Type.Project);
+        
+        
         return _domainDao.search(sc, searchFilter);
     }
 

@@ -8,10 +8,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -19,6 +17,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
@@ -27,8 +26,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -39,11 +36,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-@Local(value = { ProjectService.class })
+@Local(value = { ProjectService.class, ProjectManager.class })
 public class ProjectManagerImpl implements ProjectManager, Manager{
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
     private String _name;
-    private long _maxProjects;
     
     @Inject
     private DomainDao _domainDao;
@@ -65,12 +61,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
-
-        String value = configs.get(Config.DefaultMaxAccountProjects.key());
-        _maxProjects = NumbersUtil.parseLong(value, 20);
         return true;
     }
     
@@ -92,7 +82,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project")
     @DB
-    public Project createProject(String name, String displayText, String accountName, Long domainId) {
+    public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException{
         Account caller = UserContext.current().getCaller();
         Account owner = caller;
         
@@ -113,7 +103,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Domain ownerDomain = _domainDao.findById(owner.getDomainId());
         
         //do resource limit check
-        _resourceLimitMgr.resourceLimitExceededForDomain(ownerDomain, ResourceType.project);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.project);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -132,12 +122,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId(), projectDomain.getId()));
         
-        //TODO - assign owner to the project
+        //assign owner to the project
         assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Owner);
         
         if (project != null) {
             UserContext.current().setEventDetails("Project id=" + project.getId());
         }
+        
+        //Increment resource count for the Owner's domain
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.project);
         
         txn.commit();
         
@@ -146,6 +139,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true)
+    @DB
     public boolean deleteProject (long projectId) {
         Account caller = UserContext.current().getCaller();
         
@@ -158,9 +152,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()));
         
         //mark project as inactive first, so you can't add resources to it
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         s_logger.debug("Marking project id=" + projectId + " with state " + State.Inactive + " as a part of project delete...");
         project.setState(State.Inactive);
-        if (_projectDao.update(projectId, project)) {
+        boolean updateResult = _projectDao.update(projectId, project);
+        _resourceLimitMgr.decrementResourceCount(project.getProjectAccountId(), ResourceType.project);
+        txn.commit();
+        
+        if (updateResult) {
             if (!cleanupProject(project)) {
                 s_logger.warn("Failed to cleanup project's id=" + projectId + " resources, not removing the project yet");
                 return false;
@@ -305,6 +305,16 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     public Account getProjectOwner(long projectId) {
         long accountId = _projectAccountDao.getProjectOwner(projectId).getAccountId();
         return _accountMgr.getAccount(accountId);
+    }
+    
+    @Override
+    public ProjectVO findByProjectDomainId(long projectDomainId) {
+        return _projectDao.findByProjectDomainId(projectDomainId);
+    }
+    
+    @Override
+    public ProjectVO findByProjectAccountId(long projectAccountId) {
+        return _projectDao.findByProjectAccountId(projectAccountId);
     }
 
 }

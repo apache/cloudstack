@@ -645,7 +645,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         
         txn.commit();
-        return _userAccountDao.findById(account.getId());
+        return _userAccountDao.findById(user.getId());
     }
 
     @Override

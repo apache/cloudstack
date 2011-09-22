@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -102,7 +103,7 @@ public class CreateProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
+    public void execute() throws ResourceAllocationException{
         UserContext.current().setEventDetails("Project Name: "+ getName());
         Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
         if (project != null) {

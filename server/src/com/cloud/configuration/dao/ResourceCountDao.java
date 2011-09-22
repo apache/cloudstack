@@ -60,4 +60,6 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
     List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType);
     
     Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type);
+
+    Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type);
 }

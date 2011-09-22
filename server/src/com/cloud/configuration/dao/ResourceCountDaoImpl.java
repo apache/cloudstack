@@ -119,12 +119,15 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 	    return update(resourceCountVO.getId(), resourceCountVO);
 	}
 	
-	private Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type) {
+	@Override
+	public Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type) {
 	    Set<Long> rowIds = new HashSet<Long>();
 	    Set<Long> domainIdsToUpdate = _domainDao.getDomainParentIds(domainId);
         for (Long domainIdToUpdate : domainIdsToUpdate) {
             ResourceCountVO domainCountRecord = findByOwnerAndType(domainIdToUpdate, ResourceOwnerType.Domain, type);
-            rowIds.add(domainCountRecord.getId());
+            if (domainCountRecord != null) {
+                rowIds.add(domainCountRecord.getId());
+            }
         }
         return rowIds;
 	}
@@ -136,7 +139,10 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 	    if (ownerType == ResourceOwnerType.Account) {
 	        //get records for account
 	        ResourceCountVO accountCountRecord = findByOwnerAndType(ownerId, ResourceOwnerType.Account, type);
-	        rowIds.add(accountCountRecord.getId());
+	        if (accountCountRecord != null) {
+	            rowIds.add(accountCountRecord.getId());
+	        }
+	        
 	        //get records for account's domain and all its parent domains
 	        rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(),type));
 	    } else if (ownerType == ResourceOwnerType.Domain) {

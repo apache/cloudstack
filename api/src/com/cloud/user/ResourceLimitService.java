@@ -25,6 +25,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.Domain;
+import com.cloud.exception.ResourceAllocationException;
 
 public interface ResourceLimitService {
     
@@ -62,11 +63,11 @@ public interface ResourceLimitService {
     /**
      * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check
      * the account's parent domain, and if that limit is also infinite, will return the ROOT domain's limit.
-     * @param accountId
+     * @param account
      * @param type
      * @return resource limit
      */
-    public long findCorrectResourceLimitForAccount(long accountId, ResourceType type);
+    public long findCorrectResourceLimitForAccount(Account account, ResourceType type);
 
     /**
      * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check
@@ -98,9 +99,9 @@ public interface ResourceLimitService {
      * @param account
      * @param type
      * @param count the number of resources being allocated, count will be added to current allocation and compared against maximum allowed allocation
-     * @return true if the limit has been exceeded
+     * @throws ResourceAllocationException 
      */
-    public boolean resourceLimitExceeded(Account account, ResourceCount.ResourceType type, long...count);
+    public void checkResourceLimit(Account account, ResourceCount.ResourceType type, long...count) throws ResourceAllocationException;
     
     /**
      * Gets the count of resources for a resource type and account
@@ -109,7 +110,5 @@ public interface ResourceLimitService {
      * @return count of resources
      */
     public long getResourceCount(Account account, ResourceType type);
-
-    boolean resourceLimitExceededForDomain(Domain domain, ResourceType type, long... count);
 
 }

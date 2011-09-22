@@ -2052,7 +2052,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (forVirtualNetwork) {
             if (account != null) {
                 // verify resource limits
-                long ipResourceLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(account.getId(), ResourceType.public_ip);
+                long ipResourceLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(account, ResourceType.public_ip);
                 long accountIpRange = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);
