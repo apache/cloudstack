@@ -156,8 +156,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         if (nic.getIp4Address() == null) {
             nic.setStrategy(ReservationStrategy.Start);
-        } else {
+        } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter){
             nic.setStrategy(ReservationStrategy.Managed);
+        } else {
+            nic.setStrategy(ReservationStrategy.Create);
         }
 
         return nic;
