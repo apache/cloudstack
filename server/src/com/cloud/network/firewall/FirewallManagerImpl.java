@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -57,6 +58,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
@@ -72,6 +75,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = { FirewallService.class, FirewallManager.class })
 public class FirewallManagerImpl implements FirewallService, FirewallManager, Manager{
@@ -96,6 +101,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     UsageEventDao _usageEventDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    PortForwardingRulesDao _pfRulesDao;
+    @Inject
+    UserVmDao _vmDao;
     
     private boolean _elbEnabled=false;
     
@@ -364,6 +373,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     
     @Override
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
+        boolean success = true;
         if (!_networkMgr.applyRules(rules, continueOnError)) {
             s_logger.warn("Rules are not completely applied");
             return false;
@@ -372,7 +382,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                 if (rule.getState() == FirewallRule.State.Revoke) {
                     FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
                     if (relatedRule != null) {
-                        s_logger.debug("Not removing the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+                        s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+                        success = false;
                     } else {
                         _firewallDao.remove(rule.getId());
                     }
@@ -382,8 +393,9 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                     _firewallDao.update(ruleVO.getId(), ruleVO);
                 }
             }
-            return true;
         }
+        
+        return success;
     }
     
     @Override
@@ -574,4 +586,61 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         
     }
     
+    
+    @Override
+    public boolean revokeFirewallRulesForVm(long vmId) {
+        boolean success = true;
+        UserVmVO vm = _vmDao.findByIdIncludingRemoved(vmId);
+        if (vm == null) {
+            return false;
+        }
+
+        List<PortForwardingRuleVO> pfRules = _pfRulesDao.listByVm(vmId);
+        List<FirewallRuleVO> staticNatRules = _firewallDao.listStaticNatByVmId(vm.getId());
+        List<FirewallRuleVO> firewallRules = new ArrayList<FirewallRuleVO>();
+        
+        //Make a list of firewall rules to reprogram
+        for (PortForwardingRuleVO pfRule : pfRules) {
+            FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(pfRule.getId());
+            if (relatedRule != null) {
+                firewallRules.add(relatedRule);
+            }
+        }
+        
+        for (FirewallRuleVO staticNatRule : staticNatRules) {
+            FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(staticNatRule.getId());
+            if (relatedRule != null) {
+                firewallRules.add(relatedRule);
+            }
+        }
+        
+        
+        Set<Long> ipsToReprogram = new HashSet<Long>();
+
+        if (firewallRules.isEmpty()) {
+            s_logger.debug("No firewall rules are found for vm id=" + vmId);
+            return true;
+        } else {
+            s_logger.debug("Found " + firewallRules.size() + " to cleanup for vm id=" + vmId);
+        }
+
+        for (FirewallRuleVO rule : firewallRules) {
+            // Mark firewall rules as Revoked, but don't revoke it yet (apply=false)
+            revokeFirewallRule(rule.getId(), false, _accountMgr.getSystemAccount(), Account.ACCOUNT_ID_SYSTEM);
+            ipsToReprogram.add(rule.getSourceIpAddressId());
+        }
+
+        // apply rules for all ip addresses
+        for (Long ipId : ipsToReprogram) {
+            s_logger.debug("Applying firewall rules for ip address id=" + ipId + " as a part of vm expunge");
+            try {
+                success = success && applyFirewallRules(ipId,_accountMgr.getSystemAccount());
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
+                success = false;
+            }
+        }
+
+        return success;
+    }
 }

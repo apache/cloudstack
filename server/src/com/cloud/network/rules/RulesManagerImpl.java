@@ -478,7 +478,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return success;
     }
-
+    
     @Override
     public boolean revokeStaticNatRulesForVm(long vmId) {
         boolean success = true;

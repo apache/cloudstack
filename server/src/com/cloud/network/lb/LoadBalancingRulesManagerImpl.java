@@ -307,6 +307,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
         Transaction txn = Transaction.currentTxn();
         boolean generateUsageEvent = false;
+        boolean success = true;
 
         txn.start();
         if (lb.getState() == FirewallRule.State.Staged) {
@@ -351,14 +352,18 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(lb.getId());
         if (relatedRule != null) {
-            s_logger.debug("Not removing the firewall rule id=" + lb.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+            s_logger.warn("Unable to remove firewall rule id=" + lb.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+            success = false;
         } else {
             _firewallDao.remove(lb.getId());
         }
         
         _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
-        s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
-        return true;
+        if (success) {
+            s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
+        }
+        
+        return success;
     }
 
     @Override @DB
