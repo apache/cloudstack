@@ -190,12 +190,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
         // TODO Auto-generated method stub
         return 0;
@@ -217,12 +211,6 @@ public class MockAgentManagerImpl implements AgentManager {
     public void updateStatus(HostVO host, Event event) {
         // TODO Auto-generated method stub
         
-    }
-
-    @Override
-    public boolean disconnect(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
     }
 
 	@Override

@@ -311,33 +311,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return super.reconnect(hostId);
     }
 
-    @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
-        if (upasscmd.getClusterId() == null) {
-            // update agent attache password
-            try {
-                Boolean result = _clusterMgr.propagateAgentEvent(upasscmd.getHostId(), Event.UpdatePassword);
-                if (result != null) {
-                    return result;
-                }
-            } catch (AgentUnavailableException e) {
-            }
-        } else {
-            // get agents for the cluster
-            List<HostVO> hosts = _hostDao.listByCluster(upasscmd.getClusterId());
-            for (HostVO h : hosts) {
-                try {
-                    Boolean result = _clusterMgr.propagateAgentEvent(h.getId(), Event.UpdatePassword);
-                    if (result != null) {
-                        return result;
-                    }
-                } catch (AgentUnavailableException e) {
-                }
-            }
-        }
-        return super.updateHostPassword(upasscmd);
-    }
-
     public void notifyNodesInCluster(AgentAttache attache) {
         s_logger.debug("Notifying other nodes of to disconnect");
         Command[] cmds = new Command[] { new ChangeAgentCommand(attache.getId(), Event.AgentDisconnected) };

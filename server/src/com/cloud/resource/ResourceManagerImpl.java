@@ -38,8 +38,10 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.transport.Request;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -69,6 +71,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
@@ -171,6 +174,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected StoragePoolDao                 _storagePoolDao;
     @Inject
     protected CapacityDao                    _capacityDao;
+    @Inject
+    protected HostDetailsDao                 _detailsDao;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
@@ -273,11 +278,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             s_logger.debug("Sent resource event " + eventName + " to listener " + l.getClass().getSimpleName());
         }
         
-    }
-
-    @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
-        return _agentMgr.updateHostPassword(cmd);
     }
 
     @Override
@@ -1692,6 +1692,54 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         return doUmanageHost(hostId);
+    }
+    
+    private boolean doUpdateHostPassword(long hostId) {
+        AgentAttache attache = _agentMgr.findAttache(hostId);
+        if (attache == null) {
+            return false;
+        }
+        
+        DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
+        String username = nv.getValue();
+        nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
+        String password = nv.getValue();
+        UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
+        attache.updatePassword(cmd);
+        return true;
+    }
+    
+    @Override
+    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
+        if (cmd.getClusterId() == null) {
+            // update agent attache password
+            try {
+                Boolean result = _clusterMgr.propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+                if (result != null) {
+                    return result;
+                }
+            } catch (AgentUnavailableException e) {
+            }
+            
+            return doUpdateHostPassword(cmd.getHostId());
+        } else {
+            // get agents for the cluster
+            List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
+            for (HostVO h : hosts) {
+                try {
+                    /*FIXME: this is a buggy logic, check with alex. Shouldn't return if propagation return non null*/
+                    Boolean result = _clusterMgr.propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
+                    if (result != null) {
+                        return result;
+                    }
+                    
+                    doUpdateHostPassword(cmd.getHostId());
+                } catch (AgentUnavailableException e) {
+                }
+            }
+            
+            return true;
+        }
     }
 	    
 }
