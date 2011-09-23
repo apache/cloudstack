@@ -163,7 +163,7 @@ class serviceOpsUbuntu(serviceOps):
         except:
             return False
 
-    def stopService(self, servicename,force=False):
+    def stopService(self, servicename,force=True):
         if self.isServiceRunning(servicename) or force:
             return bash("sudo /usr/sbin/service " + servicename +" stop").isSuccess()
 
@@ -172,11 +172,11 @@ class serviceOpsUbuntu(serviceOps):
         bash("sudo update-rc.d -f " + servicename + " remove")
         return result
     
-    def startService(self, servicename,force=False):
+    def startService(self, servicename,force=True):
         if not self.isServiceRunning(servicename) or force:
             return bash("sudo /usr/sbin/service " + servicename + " start").isSuccess()
 
-    def enableService(self, servicename,forcestart=False):
+    def enableService(self, servicename,forcestart=True):
         bash("sudo update-rc.d -f " + servicename + " remove")
         bash("sudo update-rc.d -f " + servicename + " defaults")
         return self.startService(servicename,force=forcestart)
