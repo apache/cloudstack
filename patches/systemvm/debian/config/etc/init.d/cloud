@@ -72,6 +72,11 @@ get_pids() {
 
 start() {
    local pid=$(get_pids)
+   if [ "$pid" != "" ]; then
+       echo "cloud.com sevice is already running, PID = $pid"
+       return 0
+   fi
+
    echo -n "Starting cloud.com service (type=$TYPE) "
    if [ -f $CLOUD_COM_HOME/systemvm/run.sh ];
    then
@@ -86,6 +91,7 @@ start() {
      _failure
    fi
    echo
+   echo 'start' > $CLOUD_COM_HOME/systemvm/user_request
 }
 
 stop() {
@@ -97,6 +103,7 @@ stop() {
   done
   _success
   echo
+  echo 'stop' > $CLOUD_COM_HOME/systemvm/user_request
 }
 
 status() {
