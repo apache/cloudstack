@@ -31,9 +31,14 @@ do
   if [ $ex -eq 0 ] || [ $ex -eq 1 ] || [ $ex -eq 66 ] || [ $ex -gt 128 ]; then
       # permanent errors
       sleep 160
-  elif [ $ex -eq 143 ]; then
-      # service cloud stop causes exit with 143
-      exit $ex
+  fi
+
+  # user stop agent by service cloud stop
+  grep 'stop' /usr/local/cloud/systemvm/user_request &>/dev/null
+  if [ $? -eq 0 ]; then
+      timestamp=$(date)
+      echo "$timestamp User stops cloud.com service" >> /var/log/cloud.log
+      exit 0
   fi
   sleep 20
 done
