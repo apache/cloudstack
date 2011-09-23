@@ -741,12 +741,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
     
     @Override
-    public boolean disconnect(final long hostId) {
-        disconnect(hostId, Event.PrepareUnmanaged, false);
-        return true;
-    }
-
-    @Override
     public void updateStatus(HostVO host, Status.Event event) {
         _hostDao.updateStatus(host, event, _nodeId);
     }

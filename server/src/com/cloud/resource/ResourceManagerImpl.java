@@ -890,7 +890,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     
                     for( HostVO host : hosts ) {
                         if ( host.getStatus().equals(Status.Up )) {
-                            _agentMgr.disconnect(host.getId());
+                        	umanageHost(host.getId());
                         }
                     }
                     int retry = 10;
@@ -1671,6 +1671,27 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         } else {
             throw new CloudRuntimeException("Received an resource event we are not handling now, " + event);
         }
+    }
+    
+    private boolean doUmanageHost(long hostId) {
+        _agentMgr.disconnect(hostId, Status.Event.AgentDisconnected);
+        return true;
+    }
+    
+    
+    @Override
+    public boolean umanageHost(long hostId) {
+        try {
+            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.Unmanaged);
+
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        
+        return doUmanageHost(hostId);
     }
 	    
 }

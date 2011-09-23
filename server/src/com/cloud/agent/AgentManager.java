@@ -164,15 +164,6 @@ public interface AgentManager extends Manager {
      * @return hosts currently connected.
      */
     Set<Long> getConnectedHosts();
-
-    /**
-     * Obtains statistics for a host; vCPU utilisation, memory utilisation, and network utilisation
-     * 
-     * @param hostId
-     * @return HostStat
-     */
-    
-    boolean disconnect(long hostId);
     
     HostStats getHostStatistics(long hostId);
 
