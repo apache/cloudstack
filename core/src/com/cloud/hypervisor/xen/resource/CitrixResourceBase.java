@@ -89,6 +89,8 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
@@ -509,6 +511,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((BumpUpPriorityCommand)cmd);
         } else if (cmd instanceof ClusterSyncCommand) {
             return execute((ClusterSyncCommand)cmd);
+        } else if (cmd instanceof GetDomRVersionCmd) {
+            return execute((GetDomRVersionCmd)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1226,6 +1230,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
         return new CheckRouterAnswer(cmd, result, true);
+    }
+    
+    private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
+        Connection conn = getConnection();
+        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "getDomRVersion", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
+        }
+        String[] lines = result.split("&");
+        if (lines.length != 2) {
+            return new GetDomRVersionAnswer(cmd, result);
+        }
+        return new GetDomRVersionAnswer(cmd, result, lines[0], lines[1]);
     }
     
     private Answer execute(BumpUpPriorityCommand cmd) {

@@ -28,5 +28,5 @@ then
   exit 1
 fi
 
-ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/checkrouter.sh"
+ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/opt/cloud/bin/get_template_version.sh"
 exit $?

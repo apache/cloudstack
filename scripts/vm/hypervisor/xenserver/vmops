@@ -1140,6 +1140,20 @@ def bumpUpPriority(session, args):
 
     return txt
 
+@echo
+def getDomRVersion(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/getDomRVersion.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+    except:
+        util.SMlog("  get domR version fail! ")
+        txt = '' 
+
+    return txt
+
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
@@ -1154,4 +1168,4 @@ if __name__ == "__main__":
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
                             "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
                             "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
-                            "bumpUpPriority":bumpUpPriority })
+                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion })

@@ -47,3 +47,4 @@ cloud-clean-vlan.sh=..,0755,/opt/xensource/bin
 cloud-prepare-upgrade.sh=..,0755,/opt/xensource/bin
 getRouterStatus.sh=../../../../network/domr/,0755,/opt/xensource/bin
 bumpUpPriority.sh=../../../../network/domr/,0755,/opt/xensource/bin
+getDomRVersion.sh=../../../../network/domr/,0755,/opt/xensource/bin

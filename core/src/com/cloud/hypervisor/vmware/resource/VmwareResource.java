@@ -54,6 +54,8 @@ import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -393,6 +395,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             	answer = execute((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
                 answer = execute((BumpUpPriorityCommand)cmd);
+            } else if (cmd instanceof GetDomRVersionCmd) {
+                answer = execute((GetDomRVersionCmd)cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -933,6 +937,39 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new CheckRouterAnswer(cmd, msg);
         }
         return new CheckRouterAnswer(cmd, result.second(), true);
+    }
+    
+    protected Answer execute(GetDomRVersionCmd cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Executing resource GetDomRVersionCmd: " + _gson.toJson(cmd));
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/get_template_version.sh ");
+        }
+
+        Pair<Boolean, String> result;
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            result = SshHelper.sshExecute(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/get_template_version.sh ");
+
+            if (!result.first()) {
+                s_logger.error("GetDomRVersionCmd on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
+
+                return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed due to " + result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("GetDomRVersionCmd on domain router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+            }
+        } catch (Throwable e) {
+            String msg = "GetDomRVersionCmd failed due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg);
+            return new GetDomRVersionAnswer(cmd, msg);
+        }
+        String[] lines = result.second().split("&");
+        if (lines.length != 2) {
+            return new GetDomRVersionAnswer(cmd, result.second());
+        }
+        return new GetDomRVersionAnswer(cmd, result.second(), lines[0], lines[1]);
     }
     
     protected Answer execute(BumpUpPriorityCommand cmd) {

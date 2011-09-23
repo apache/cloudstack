@@ -44,6 +44,8 @@ import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
@@ -96,6 +98,7 @@ public class VirtualRoutingResource implements Manager {
     private String _getRouterStatusPath;
     private String _bumpUpPriorityPath;
     private String _l2tpVpnPath;
+    private String _getDomRVersionPath;
 
 
     private int _timeout;
@@ -136,6 +139,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute((RemoteAccessVpnCfgCommand)cmd);
             } else if (cmd instanceof VpnUsersCfgCommand) {
                 return execute((VpnUsersCfgCommand)cmd);
+            } else if (cmd instanceof GetDomRVersionCmd) {
+                return execute((GetDomRVersionCmd)cmd);
             }
             else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -495,6 +500,31 @@ public class VirtualRoutingResource implements Manager {
         return new Answer(cmd, true, null);
     }
 
+    protected String getDomRVersion(String routerIP) {
+        final Script command  = new Script(_getDomRVersionPath, _timeout, s_logger);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        command.add(routerIP);
+        String result = command.execute(parser);
+        if (result == null) {
+            return parser.getLine();
+        }
+        return null;
+    }
+
+    protected Answer execute(GetDomRVersionCmd cmd) {
+        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+    
+        final String result = getDomRVersion(routerPrivateIPAddress);
+        if (result == null || result.isEmpty()) {
+            return new GetDomRVersionAnswer(cmd, "GetDomRVersionCmd failed");
+        }
+        String[] lines = result.split("&");
+        if (lines.length != 2) {
+            return new GetDomRVersionAnswer(cmd, result);
+        }
+        return new GetDomRVersionAnswer(cmd, result, lines[0], lines[1]);
+    }
+
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
@@ -826,6 +856,11 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find l2tp_vpn.sh");
         }
 
+        _getDomRVersionPath = findScript("getDomRVersion.sh");
+        if(_getDomRVersionPath == null) {
+            throw new ConfigurationException("Unable to find getRouterStatus.sh");
+        }
+        
         return true;
     }
 
