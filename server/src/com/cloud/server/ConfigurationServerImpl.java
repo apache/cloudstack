@@ -25,10 +25,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,7 +88,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -96,10 +98,10 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 public class ConfigurationServerImpl implements ConfigurationServer {
-	public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
-	
-	private final ConfigurationDao _configDao;
-	private final DataCenterDao _zoneDao;
+    public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
+    
+    private final ConfigurationDao _configDao;
+    private final DataCenterDao _zoneDao;
     private final HostPodDao _podDao;
     private final DiskOfferingDao _diskOfferingDao;
     private final ServiceOfferingDao _serviceOfferingDao;
@@ -108,15 +110,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final NetworkDao _networkDao;
     private final VlanDao _vlanDao;
     private String _domainSuffix;
-    private final ResourceCountDao _resourceCountDao;
-    private final AccountDao _accountDao;
-    private final UserDao _userDao;
     private final DomainDao _domainDao;
+    private final AccountDao _accountDao;
+    private final ResourceCountDao _resourceCountDao;
 
-	
-	public ConfigurationServerImpl() {
-		ComponentLocator locator = ComponentLocator.getLocator(Name);
-		_configDao = locator.getDao(ConfigurationDao.class);
+    
+    public ConfigurationServerImpl() {
+        ComponentLocator locator = ComponentLocator.getLocator(Name);
+        _configDao = locator.getDao(ConfigurationDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _podDao = locator.getDao(HostPodDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
@@ -125,172 +126,278 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _dataCenterDao = locator.getDao(DataCenterDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
-        _resourceCountDao = locator.getDao(ResourceCountDao.class);
-        _accountDao = locator.getDao(AccountDao.class);
-        _userDao = locator.getDao(UserDao.class);
         _domainDao = locator.getDao(DomainDao.class);
-	}
+        _accountDao = locator.getDao(AccountDao.class);
+        _resourceCountDao = locator.getDao(ResourceCountDao.class);
+        
+    }
 
-	@Override @DB
+    @Override @DB
     public void persistDefaultValues() throws InternalErrorException {
+        
+        // Create system user and admin user
+        saveUser();
+        
+        // Get init
+        String init = _configDao.getValue("init");
+        
+        // Get domain suffix - needed for network creation
+        _domainSuffix = _configDao.getValue("guest.domain.suffix");
+        
+        if (init == null || init.equals("false")) {
+            s_logger.debug("ConfigurationServer is saving default values to the database.");
+            
+            // Save default Configuration Table values
+            List<String> categories = Config.getCategories();
+            for (String category : categories) {
+                // If this is not a premium environment, don't insert premium configuration values
+                if (!_configDao.isPremium() && category.equals("Premium")) {
+                    continue;
+                }
+                
+                List<Config> configs = Config.getConfigs(category);
+                for (Config c : configs) {
+                    String name = c.key();
+                    
+                    //if the config value already present in the db, don't insert it again
+                    if (_configDao.findByName(name) != null) { 
+                        continue;
+                    } 
+                    
+                    String instance = "DEFAULT";
+                    String component = c.getComponent();
+                    String value = c.getDefaultValue();
+                    String description = c.getDescription();
+                    ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
+                    _configDao.persist(configVO);
+                }
+            }
+            
+            _configDao.update("secondary.storage.vm", "true");
+            s_logger.debug("ConfigurationServer made secondary storage vm required.");
 
-		// Get init
-		String init = _configDao.getValue("init");
-		
-		// Get domain suffix - needed for network creation
-		_domainSuffix = _configDao.getValue("guest.domain.suffix");
-		
-		if (init == null || init.equals("false")) {
-			s_logger.debug("ConfigurationServer is saving default values to the database.");
-			
-			Transaction txn = Transaction.currentTxn();
-			txn.start();
-			
-			// Save default Configuration Table values
-			List<String> categories = Config.getCategories();
-			for (String category : categories) {
-				// If this is not a premium environment, don't insert premium configuration values
-				if (!_configDao.isPremium() && category.equals("Premium")) {
-					continue;
-				}
-				
-				List<Config> configs = Config.getConfigs(category);
-				for (Config c : configs) {
-					String name = c.key();
-					
-					//if the config value already present in the db, don't insert it again
-					if (_configDao.findByName(name) != null) { 
-					    continue;
-					} 
-					
-					String instance = "DEFAULT";
-					String component = c.getComponent();
-					String value = c.getDefaultValue();
-					String description = c.getDescription();
-					ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
-					_configDao.persist(configVO);
-				}
-			}
-			
-			_configDao.update("secondary.storage.vm", "true");
-			s_logger.debug("ConfigurationServer made secondary storage vm required.");
+            _configDao.update("secstorage.encrypt.copy", "true");
+            s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
 
-			_configDao.update("secstorage.encrypt.copy", "true");
-			s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
+            _configDao.update("secstorage.secure.copy.cert", "realhostip");
+            s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");          
 
-			_configDao.update("secstorage.secure.copy.cert", "realhostip");
-			s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");          
+            
+            // Save default service offerings
+            createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, null);            
+            createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, null);
+            // Save default disk offerings
+            createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
+            createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
+            createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
+            
+            // Save the mount parent to the configuration table
+            String mountParent = getMountParent();
+            if (mountParent != null) {
+                _configDao.update("mount.parent", mountParent);
+                s_logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
+            } else {
+                s_logger.debug("ConfigurationServer could not detect mount.parent.");
+            }
 
-			
-			// Save default service offerings
-			createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, null);			
-			createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, null);
-			// Save default disk offerings
-			createdefaultDiskOffering(null, "Small", "Small Disk, 5 GB", 5, null);
-			createdefaultDiskOffering(null, "Medium", "Medium Disk, 20 GB", 20, null);
-			createdefaultDiskOffering(null, "Large", "Large Disk, 100 GB", 100, null);
-			
-			// Save the mount parent to the configuration table
-			String mountParent = getMountParent();
-			if (mountParent != null) {
-			    _configDao.update("mount.parent", mountParent);
-				s_logger.debug("ConfigurationServer saved \"" + mountParent + "\" as mount.parent.");
-			} else {
-				s_logger.debug("ConfigurationServer could not detect mount.parent.");
-			}
+            String hostIpAdr = NetUtils.getDefaultHostIp();
+            if (hostIpAdr != null) {
+                _configDao.update("host", hostIpAdr);
+                s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
+            }
 
-			String hostIpAdr = NetUtils.getDefaultHostIp();
-			if (hostIpAdr != null) {
-			    _configDao.update("host", hostIpAdr);
-				s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
-			}
+            // generate a single sign-on key
+            updateSSOKey();
+            
+            //Create default network offerings
+            createDefaultNetworkOfferings();
+            
+            //Create default networks
+            createDefaultNetworks();
+            
+            //Create userIpAddress ranges
+            
+            
+            //Update existing vlans with networkId
+            Transaction txn = Transaction.currentTxn();
+            
+            List<VlanVO> vlans = _vlanDao.listAll();
+            if (vlans != null && !vlans.isEmpty()) {
+                for (VlanVO vlan : vlans) {
+                    if (vlan.getNetworkId().longValue() == 0) {
+                        updateVlanWithNetworkId(vlan);
+                    }
+                    
+                    //Create vlan user_ip_address range
+                    String ipPange = vlan.getIpRange();
+                    String[] range = ipPange.split("-");
+                    String startIp = range[0];
+                    String endIp = range[1];
+                    
+                    txn.start();
+                    IPRangeConfig config = new IPRangeConfig();
+                    long startIPLong = NetUtils.ip2Long(startIp);
+                    long endIPLong = NetUtils.ip2Long(endIp);
+                    config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId());
+                    txn.commit();
+                }
+            }
+        }
+        //Update resource count if needed
+        updateResourceCount();
+        
+        // keystore for SSL/TLS connection
+        updateSSLKeystore();
 
-	        // generate a single sign-on key
-	        updateSSOKey();
-	        
-	        //Create default network offerings
-	        createDefaultNetworkOfferings();
-	        
-	        //Create default networks
-	        createDefaultNetworks();
-	        
-	        
-	        //Update existing vlans with networkId
-	      
-	        
-	        List<VlanVO> vlans = _vlanDao.listAll();
-	        if (vlans != null && !vlans.isEmpty()) {
-	            for (VlanVO vlan : vlans) {
-	                if (vlan.getNetworkId().longValue() == 0) {
-	                    updateVlanWithNetworkId(vlan);
-	                }
-	                
-	                //Create vlan user_ip_address range
-	                String ipPange = vlan.getIpRange();
-	                String[] range = ipPange.split("-");
-	                String startIp = range[0];
-	                String endIp = range[1];
-	                
-	                
-	                IPRangeConfig config = new IPRangeConfig();
-	                long startIPLong = NetUtils.ip2Long(startIp);
-	                long endIPLong = NetUtils.ip2Long(endIp);
-	                config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId());
-	            }
- 	        }
-	        
-	        // Set init to true
-            _configDao.update("init", "true");
-	        txn.commit();
-		}
-		
-		updateResourceCount();
-		
-		// keystore for SSL/TLS connection
-		updateSSLKeystore();
+        // store the public and private keys in the database
+        updateKeyPairs();
 
-		// store the public and private keys in the database
-		updateKeyPairs();
+        // generate a random password used to authenticate zone-to-zone copy
+        generateSecStorageVmCopyPassword();
 
-		// generate a random password used to authenticate zone-to-zone copy
-		generateSecStorageVmCopyPassword();
+        // Update the cloud identifier
+        updateCloudIdentifier();
+        
+        // Set init to true
+        _configDao.update("init", "true");
+    }
 
-		// Update the cloud identifier
-		updateCloudIdentifier();
-		
-	}
+    
+    private String getMountParent() {
+        return getEnvironmentProperty("mount.parent");
+    }
+    
+    private String getEnvironmentProperty(String name) {
+        try {
+            final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
+            
+            if (propsFile == null) {
+                return null;
+            } else {
+                final FileInputStream finputstream = new FileInputStream(propsFile);
+                final Properties props = new Properties();
+                props.load(finputstream);
+                finputstream.close();
+                return props.getProperty("mount.parent");
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+    
+    
+    @DB
+    protected void saveUser() {
+        // insert system account
+        String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
+        // insert system user
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) VALUES (1, 'system', '', 1, 'system', 'cloud', now())";
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
+        
+        // insert admin user
+        long id = 2;
+        String username = "admin";
+        String firstname = "admin";
+        String lastname = "cloud";
+        String password = "password";
+        
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            return;
+        }
+        
+        md5.reset();
+        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
+        String pwStr = pwInt.toString(16);
+        int padding = 32 - pwStr.length();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < padding; i++) {
+            sb.append('0'); // make sure the MD5 password is 32 digits long
+        }
+        sb.append(pwStr);
 
-	
-	private String getMountParent() {
-		return getEnvironmentProperty("mount.parent");
-	}
-	
-	private String getEnvironmentProperty(String name) {
-		try {
-			final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
-			
-			if (propsFile == null) {
-				return null;
-			} else {
-				final FileInputStream finputstream = new FileInputStream(propsFile);
-				final Properties props = new Properties();
-				props.load(finputstream);
-				finputstream.close();
-				return props.getProperty("mount.parent");
-			}
-		} catch (IOException e) {
-			return null;
-		}
-	}
+        // create an account for the admin user first
+        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
 
-	protected void updateCloudIdentifier() {
-		// Creates and saves a UUID as the cloud identifier
-		String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
-		if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
-			String uuid = UUID.randomUUID().toString();
-			_configDao.update("cloud.identifier", uuid);
-		}
-	}
+        // now insert the user
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
+                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+        
+
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        }
+        
+
+
+        try {
+            String tableName = "security_group";
+            try {
+                String checkSql = "SELECT * from network_group";
+                PreparedStatement stmt = txn.prepareAutoCloseStatement(checkSql);
+                stmt.executeQuery();
+                tableName = "network_group";
+            } catch (Exception ex) {
+                // if network_groups table exists, create the default security group there
+            }  
+            
+            insertSql = "SELECT * FROM " + tableName + " where account_id=2 and name='default'";
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            ResultSet rs = stmt.executeQuery();
+            if (!rs.next()) {
+                //save default security group
+                if (tableName.equals("security_group")) {
+                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id) " +
+                    "VALUES ('default', 'Default Security Group', 2, 1)";
+                } else {
+                    insertSql = "INSERT INTO " + tableName +" (name, description, account_id, domain_id, account_name) " +
+                    "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
+                }
+
+                txn = Transaction.currentTxn();
+                try {
+                    stmt = txn.prepareAutoCloseStatement(insertSql);
+                    stmt.executeUpdate();
+                } catch (SQLException ex) {
+                    s_logger.warn("Failed to create default security group for default admin account due to ", ex);
+                }
+            }
+            rs.close();
+        } catch (Exception ex) {
+            s_logger.warn("Failed to create default security group for default admin account due to ", ex);
+        }
+    }
+
+    protected void updateCloudIdentifier() {
+        // Creates and saves a UUID as the cloud identifier
+        String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
+        if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
+            String uuid = UUID.randomUUID().toString();
+            _configDao.update("cloud.identifier", uuid);
+        }
+    }
 
     private String getBase64Keystore(String keystorePath) throws IOException {
         byte[] storeBytes = new byte[4094];
@@ -363,7 +470,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         script.add("-dname", dname);
         String result = script.execute();
         if (result != null) {
-        	throw new IOException("Fail to generate certificate!");
+            throw new IOException("Fail to generate certificate!");
         }
     }
 
@@ -410,7 +517,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     script.add(keystorePath);
                     String result = script.execute();
                     if (result != null) {
-                    	throw new IOException();
+                        throw new IOException();
                     }
                 } catch (Exception e) {
                     throw new IOException("Fail to create keystore file!", e);
@@ -459,7 +566,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             byte[] arr2 = new byte[4094]; // configuration table column value size
             try {
                 new DataInputStream(new FileInputStream(pubkeyfile)).readFully(arr2);
-            } catch (EOFException e) {			    
+            } catch (EOFException e) {              
             } catch (Exception e) {
                 s_logger.warn("Cannot read the public key file",e);
                 throw new CloudRuntimeException("Cannot read the public key file");
@@ -571,31 +678,31 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
     }
 
-	@DB
-	protected void generateSecStorageVmCopyPassword() {
-		String already = _configDao.getValue("secstorage.copy.password");
-		
-		if (already == null) {
-		
-			s_logger.info("Need to store secondary storage vm copy password in the database");
-			String password = PasswordGenerator.generateRandomPassword(12);
+    @DB
+    protected void generateSecStorageVmCopyPassword() {
+        String already = _configDao.getValue("secstorage.copy.password");
+        
+        if (already == null) {
+        
+            s_logger.info("Need to store secondary storage vm copy password in the database");
+            String password = PasswordGenerator.generateRandomPassword(12);
 
-			String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-			"VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + password + "','Password used to authenticate zone-to-zone template copy requests')";
+            String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
+            "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + password + "','Password used to authenticate zone-to-zone template copy requests')";
 
-			Transaction txn = Transaction.currentTxn();
-			try {
-				PreparedStatement stmt1 = txn.prepareAutoCloseStatement(insertSql1);
-				stmt1.executeUpdate();
-				s_logger.debug("secondary storage vm copy password inserted into database");
-			} catch (SQLException ex) {
-				s_logger.warn("Failed to insert secondary storage vm copy password",ex);
-			}
-	    
-		}
-	}
+            Transaction txn = Transaction.currentTxn();
+            try {
+                PreparedStatement stmt1 = txn.prepareAutoCloseStatement(insertSql1);
+                stmt1.executeUpdate();
+                s_logger.debug("secondary storage vm copy password inserted into database");
+            } catch (SQLException ex) {
+                s_logger.warn("Failed to insert secondary storage vm copy password",ex);
+            }
+        
+        }
+    }
 
-	private void updateSSOKey() {
+    private void updateSSOKey() {
         try {
             String encodedKey = null;
 
@@ -608,7 +715,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (NoSuchAlgorithmException ex) {
             s_logger.error("error generating sso key", ex);
         }
-	}
+    }
 
     @DB
     protected HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InternalErrorException {
@@ -813,7 +920,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
     }
     
-   
+    
     private void updateVlanWithNetworkId(VlanVO vlan) {
         long zoneId = vlan.getDataCenterId();
         long networkId = 0L;
@@ -850,7 +957,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         return networks.get(0).getId();
     }
-
+    
+    
     @DB
     public void updateResourceCount() {
         ResourceType[] resourceTypes = ResourceCount.ResourceType.values();
@@ -914,4 +1022,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             }
         }
     }
+    
+
 }
