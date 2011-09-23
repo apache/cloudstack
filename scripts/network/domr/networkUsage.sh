@@ -81,6 +81,7 @@ get_usage () {
   local dRIp=$1
    ssh -q -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -L NETWORK_STATS -n -v -x | awk '\$1 ~ /^[0-9]+\$/ { printf \"%s:\", \$2}';
+     if [ -f /root/removedVifs ] ; then iptables -Z NETWORK_STATS ; fi;
      /root/clearUsageRules.sh > /dev/null;
      "
   if [ $? -gt 0  -a $? -ne 2 ]
