@@ -29,6 +29,8 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState.Event;
+import com.cloud.utils.fsm.NoTransitionException;
 
 /**
  * ResourceManager manages how physical resources are organized within the
@@ -71,4 +73,6 @@ public interface ResourceManager {
 	public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException;
 	
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
+
+	boolean updateResourceState(Host host, Event event, long msId) throws NoTransitionException;
 }

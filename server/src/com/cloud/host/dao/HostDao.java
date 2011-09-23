@@ -27,6 +27,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
@@ -179,5 +180,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByInAllStatus(Type type, Long clusterId, Long podId, long dcId);
 
-    List<HostVO> listByClusterStatus(long clusterId, Status status);    
+    List<HostVO> listByClusterStatus(long clusterId, Status status);
+    
+    boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
 }

@@ -45,6 +45,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Managed;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
@@ -1082,5 +1083,34 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 	        
 	        return result > 0;
 	}
+	
+    @Override
+    public boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo) {
+        HostVO host = (HostVO)vo;
+        SearchBuilder<HostVO> sb = createSearchBuilder();
+        sb.and("resource_state", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.done();
+        
+        SearchCriteria<HostVO> sc = sb.create();
+
+        sc.setParameters("status", oldState);
+        sc.setParameters("id", host.getId());
+        
+        UpdateBuilder ub = getUpdateBuilder(host);
+        ub.set(host, _statusAttr, newState);
+        int result = update(ub, sc, null);
+        assert result <= 1 : "How can this update " + result + " rows? ";
+        
+        if (s_logger.isDebugEnabled() && result == 0) {
+            HostVO ho = findById(host.getId());
+            assert ho != null : "How how how? : " + host.getId();
+
+            StringBuilder str = new StringBuilder("Unable to update resource state for event:").append(event.toString());
+            /*TODO: add defbug info*/
+        }
+        
+        return result > 0;
+    }
 
 }

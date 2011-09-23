@@ -34,6 +34,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
+import com.cloud.agent.api.MaintainAnswer;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.AgentAttache;
@@ -66,6 +68,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
 import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
@@ -106,6 +109,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
@@ -967,6 +971,68 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @Override
+    public boolean updateResourceState(Host host, ResourceState.Event event, long msId) throws NoTransitionException {
+        ResourceState currentState = host.getResourceState();
+        ResourceState nextState = currentState.getNextState(event);
+        if (nextState == null) {
+            throw new NoTransitionException("No next resource state found for current state =" + currentState + " event =" + event);
+        }
+        
+        /*TODO: adding debug trace*/
+        return _hostDao.updateResourceState(currentState, event, nextState, host);
+    }
+    
+    private boolean doMaintain(final long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        MaintainAnswer answer = (MaintainAnswer) _agentMgr.easySend(hostId, new MaintainCommand());
+        if (answer == null || !answer.getResult()) {
+            s_logger.warn("Unable to put host in maintainance mode: " + hostId);
+            return false;
+        }
+        
+        try {
+            updateResourceState(host, ResourceState.Event.AdminAskMaintenace, _nodeId);
+        } catch (NoTransitionException e) {
+            String err = "Cannot transimit resource state of host " + host.getId() + " to " + ResourceState.Maintenance;
+            s_logger.debug(err, e);
+            throw new CloudRuntimeException(err + e.getMessage());
+        }
+        
+        _agentMgr.pullAgentToMaintenance(hostId);
+        
+        /*TODO: move below to listener */
+        if (host.getType() == Host.Type.Routing) {
+
+            final List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+            if (vms.size() == 0) {
+                return true;
+            }
+
+            List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());
+
+            for (final VMInstanceVO vm : vms) {
+                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate()) {
+                    // for the last host in this cluster, stop all the VMs
+                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                } else {
+                    _haMgr.scheduleMigration(vm);
+                }
+            }
+        }
+
+        return true;
+    }
+    
+    private boolean maintain(final long hostId) throws AgentUnavailableException {
+        Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
+        if (result != null) {
+            return result;
+        }
+        
+        return doMaintain(hostId);
+    }
+    
+    @Override
     public Host maintain(PrepareForMaintenanceCmd cmd) {
         Long hostId = cmd.getId();
         HostVO host = _hostDao.findById(hostId);
@@ -986,7 +1052,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         try {
             processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, hostId);
-            if (_agentMgr.maintain(hostId)) {
+            if (maintain(hostId)) {
                 processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
                 return _hostDao.findById(hostId);
             } else {
