@@ -166,17 +166,6 @@ public interface AgentManager extends Manager {
     Set<Long> getConnectedHosts();
 
     /**
-     * Disconnect the agent.
-     * 
-     * @param hostId
-     *            host to disconnect.
-     * @param reason
-     *            the reason why we're disconnecting.
-     * 
-     */
-    void disconnect(long hostId, Status.Event event, boolean investigate);
-
-    /**
      * Obtains statistics for a host; vCPU utilisation, memory utilisation, and network utilisation
      * 
      * @param hostId
@@ -205,25 +194,7 @@ public interface AgentManager extends Manager {
      */
     Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
 
-    /**
-     * Put the agent in maintenance mode.
-     * 
-     * @param hostId
-     *            id of the host to put in maintenance mode.
-     * @return true if it was able to put the agent into maintenance mode. false if not.
-     */
-    boolean maintain(long hostId) throws AgentUnavailableException;
-
     boolean maintenanceFailed(long hostId);
-
-    /**
-     * Cancel the maintenance mode.
-     * 
-     * @param hostId
-     *            host id
-     * @return true if it's done. false if not.
-     */
-    boolean cancelMaintenance(long hostId);
 
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
 

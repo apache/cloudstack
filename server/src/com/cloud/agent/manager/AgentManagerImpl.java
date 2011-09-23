@@ -739,31 +739,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             removed.disconnect(nextState);
         }
     }
-
-    @Override
-    public void disconnect(final long hostId, final Status.Event event, final boolean investigate) {
-        AgentAttache attache = findAttache(hostId);
-
-        if (attache != null) {
-            disconnect(attache, event, investigate);
-        } else {
-            synchronized (_loadingAgents) {
-                if (_loadingAgents.contains(hostId)) {
-                    s_logger.info("Host " + hostId + " is being loaded so no disconnects needed.");
-                    return;
-                }
-            }
-
-            HostVO host = _hostDao.findById(hostId);
-            if (host != null && host.getRemoved() == null) {
-                if (event != null && event.equals(Event.Remove)) {
-                    host.setGuid(null);
-                    host.setClusterId(null);
-                }
-                _hostDao.updateStatus(host, event, _nodeId);
-            }
-        }
-    }
     
     @Override
     public boolean disconnect(final long hostId) {
@@ -1298,32 +1273,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public boolean cancelMaintenance(final long hostId) {
-
-        HostVO host;
-        host = _hostDao.findById(hostId);
-        if (host == null || host.getRemoved() != null) {
-            s_logger.warn("Unable to find host " + hostId);
-            return true;
-        }
-
-        if (host.getStatus() != Status.PrepareForMaintenance && host.getStatus() != Status.Maintenance && host.getStatus() != Status.ErrorInMaintenance) {
-            return true;
-        }
-
-        _haMgr.cancelScheduledMigrations(host);
-        List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
-        for (VMInstanceVO vm : vms) {
-            if (vm.getHostId() != null && vm.getHostId() == hostId) {
-                s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm);
-                return false;
-            }
-        }
-        disconnect(hostId, Event.ResetRequested, false);
-        return true;
-    }
-
-    @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
         if (event == Event.MaintenanceRequested) {
             return maintain(hostId);
@@ -1361,66 +1310,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
         return false;
     }
-
-    @Override
-    public boolean maintain(final long hostId) throws AgentUnavailableException {
-        HostVO host = _hostDao.findById(hostId);
-        Status state;
-
-        MaintainAnswer answer = (MaintainAnswer) easySend(hostId, new MaintainCommand());
-        if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to put host in maintainance mode: " + hostId);
-            return false;
-        }
-
-        // Let's put this guy in maintenance state
-        do {
-            host = _hostDao.findById(hostId);
-            if (host == null) {
-                s_logger.debug("Unable to find host " + hostId);
-                return false;
-            }
-            state = host.getStatus();
-            if (state == Status.Disconnected || state == Status.Updating) {
-                s_logger.debug("Unable to put host " + hostId + " in matinenance mode because it is currently in " + state);
-                throw new AgentUnavailableException("Agent is in " + state + " state.  Please wait for it to become Alert state try again.", hostId);
-            }
-        } while (!_hostDao.updateStatus(host, Event.MaintenanceRequested, _nodeId));
-
-        AgentAttache attache = findAttache(hostId);
-        if (attache != null) {
-            attache.setMaintenanceMode(true);
-        }
-
-        if (attache != null) {
-            // Now cancel all of the commands except for the active one.
-            attache.cancelAllCommands(Status.PrepareForMaintenance, false);
-        }
-
-        final Host.Type type = host.getType();
-
-        if (type == Host.Type.Routing) {
-
-            final List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
-            if (vms.size() == 0) {
-                return true;
-            }
-
-            List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());
-            List<Long> upHosts = _hostDao.listBy( host.getDataCenterId(), host.getPodId(), host.getClusterId(), Host.Type.Routing, Status.Up);
-            for (final VMInstanceVO vm : vms) {
-                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate() || upHosts == null || upHosts.size() == 0) {
-                    // for the last valid host in this cluster, stop all the VMs
-                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
-                } else {
-                    _haMgr.scheduleMigration(vm);
-                }
-            }
-        }
-
-        return true;
-    }
-
 
     public boolean checkCIDR(Host.Type type, HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {
         if (serverPrivateIP == null) {

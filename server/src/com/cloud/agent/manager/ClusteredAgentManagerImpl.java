@@ -207,21 +207,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public boolean cancelMaintenance(final long hostId) {
-        try {
-            Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.ResetRequested);
-
-            if (result != null) {
-                return result;
-            }
-        } catch (AgentUnavailableException e) {
-            return false;
-        }
-
-        return super.cancelMaintenance(hostId);
-    }
-
-    @Override
     public boolean disconnect(final long hostId) {
         try {
             Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.PrepareUnmanaged);
@@ -328,16 +313,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         } else {
             return super.executeUserRequest(hostId, event);
         }
-    }
-
-    @Override
-    public boolean maintain(final long hostId) throws AgentUnavailableException {
-        Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.MaintenanceRequested);
-        if (result != null) {
-            return result;
-        }
-
-        return super.maintain(hostId);
     }
 
     @Override

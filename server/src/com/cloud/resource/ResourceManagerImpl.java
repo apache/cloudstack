@@ -946,7 +946,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
 
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, hostId);
-        boolean success = _agentMgr.cancelMaintenance(hostId);
+        boolean success = cancelMaintenance(hostId);
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
         if (!success) {
             throw new CloudRuntimeException("Internal error cancelling maintenance.");
@@ -1612,6 +1612,47 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		}
 	}
 	
+    private boolean doCancelMaintenance(long hostId) {
+        HostVO host;
+        host = _hostDao.findById(hostId);
+        if (host == null || host.getRemoved() != null) {
+            s_logger.warn("Unable to find host " + hostId);
+            return true;
+        }
+        
+        /*TODO: think twice about returning true or throwing out exception, I really prefer to exception that always exposes bugs */
+        if (host.getResourceState() != ResourceState.PrepareForMaintenace && host.getResourceState() != ResourceState.Maintenance && host.getResourceState() != ResourceState.ErrorInMaintenance) {
+            throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
+        }
+        
+        /*TODO: move to listener */
+        _haMgr.cancelScheduledMigrations(host);
+        List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
+        for (VMInstanceVO vm : vms) {
+            if (vm.getHostId() != null && vm.getHostId() == hostId) {
+                s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm);
+                return false;
+            }
+        }
+        
+        _agentMgr.disconnect(hostId, Status.Event.ResetRequested);
+        return true;
+    }
+    
+    private boolean cancelMaintenance(long hostId) {
+        try {
+            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
+
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        
+        return doCancelMaintenance(hostId);
+    }
+    
     @Override
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
         if (event == ResourceState.Event.AdminAskMaintenace) {
