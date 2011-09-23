@@ -14,6 +14,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.DiscoveryException;
@@ -24,16 +26,20 @@ import com.cloud.ovm.object.Connection;
 import com.cloud.ovm.object.OvmHost;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 @Local(value=Discoverer.class)
-public class OvmDiscoverer extends DiscovererBase implements Discoverer {
+public class OvmDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
 	private static final Logger s_logger = Logger.getLogger(OvmDiscoverer.class);
 	
 	@Inject ClusterDao _clusterDao;
+	@Inject ResourceManager _resourceMgr;
 	
 	protected OvmDiscoverer() {
 		
@@ -162,5 +168,33 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer {
 	public HypervisorType getHypervisorType() {
 		return HypervisorType.Ovm;
 	}
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+		StartupCommand firstCmd = startup[0];
+        if (!(firstCmd instanceof StartupRoutingCommand)) {
+            return null;
+        }
+        
+        StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+        if (ssCmd.getHypervisorType() != HypervisorType.Ovm) {
+            return null;
+        }
+        
+        return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Ovm, details, hostTags);
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
 
 }

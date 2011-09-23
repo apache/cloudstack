@@ -37,6 +37,9 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalFirewallCommand;
+import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -94,7 +97,9 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
@@ -122,7 +127,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Local(value = {ExternalNetworkManager.class})
-public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
+public class ExternalNetworkManagerImpl implements ExternalNetworkManager, ResourceStateAdapter {
 	public enum ExternalNetworkResourceName {
 		JuniperSrx,
 		F5BigIp,
@@ -1287,4 +1292,30 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             }
 		}
 	}
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+	public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+	        List<String> hostTags) {
+		if (startup[0] instanceof StartupExternalFirewallCommand) {
+			host.setType(Host.Type.ExternalFirewall);
+			return host;
+		} else if (startup[0] instanceof StartupExternalLoadBalancerCommand) {
+			host.setType(Host.Type.ExternalLoadBalancer);
+			return host;
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
 }

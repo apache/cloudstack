@@ -30,18 +30,23 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -51,7 +56,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.script.Script;
@@ -62,7 +70,7 @@ import com.trilead.ssh2.Session;
 
 @Local(value=Discoverer.class)
 public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
-		Listener {
+		Listener, ResourceStateAdapter {
 	 private static final Logger s_logger = Logger.getLogger(KvmServerDiscoverer.class);
 	 private String _setupAgentPath;
 	 private ConfigurationDao _configDao;
@@ -73,6 +81,8 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 private String _kvmGuestNic;
 	 @Inject HostDao _hostDao = null;
 	 @Inject ClusterDao _clusterDao;
+	 @Inject ResourceManager _resourceMgr;
+	 @Inject AgentManager _agentMgr;
 	 
 	@Override
 	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
@@ -288,6 +298,61 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
     		return true;
     	
     	return Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisor);
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+		StartupCommand firstCmd = cmd[0];
+		if (!(firstCmd instanceof StartupRoutingCommand)) {
+			return null;
+		}
+
+		StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+		if (ssCmd.getHypervisorType() != HypervisorType.KVM) {
+			return null;
+		}
+
+		/* KVM requires host are the same in cluster */
+		ClusterVO clusterVO = _clusterDao.findById(host.getClusterId());
+		List<HostVO> hostsInCluster = _hostDao.listByCluster(clusterVO.getId());
+		if (!hostsInCluster.isEmpty()) {
+			HostVO oneHost = hostsInCluster.get(0);
+			_hostDao.loadDetails(oneHost);
+			String hostOsInCluster = oneHost.getDetail("Host.OS");
+			String hostOs = ssCmd.getHostDetails().get("Host.OS");
+			if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
+				throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster,"
+				        + "in which there are " + hostOsInCluster + " hosts added");
+			}
+		}
+
+		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.KVM, null, null);
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        if (host.getType() != Host.Type.Routing || host.getHypervisorType() != HypervisorType.KVM) {
+            return null;
+        }
+        
+        _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
+        try {
+            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null);
+            _agentMgr.send(host.getId(), cmd);
+        } catch (AgentUnavailableException e) {
+            s_logger.warn("Sending ShutdownCommand failed: ", e);
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Sending ShutdownCommand failed: ", e);
+        }
+        
+        return new DeleteHostAnswer(true);
     }
     
 }

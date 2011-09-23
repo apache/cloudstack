@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.commands.AddClusterCmd;
@@ -49,15 +50,18 @@ import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
@@ -69,11 +73,16 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.network.IPAddressVO;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
@@ -88,7 +97,12 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local({ ResourceManager.class, ResourceService.class })
 public class ResourceManagerImpl implements ResourceManager, ResourceService, Manager {
@@ -121,7 +135,19 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HostTagsDao                    _hostTagsDao;    
     @Inject
     protected GuestOSCategoryDao             _guestOSCategoryDao;
-
+    @Inject
+    protected DataCenterIpAddressDao         _privateIPAddressDao;
+    @Inject
+    protected IPAddressDao                   _publicIPAddressDao;
+    @Inject
+    protected VirtualMachineManager          _vmMgr; 
+    @Inject
+    protected VMInstanceDao                  _vmDao;  
+    @Inject
+    protected HighAvailabilityManager        _haMgr;
+    @Inject 
+    protected StorageService                 _storageSvr;
+    
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
 
@@ -1008,12 +1034,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	                Map.Entry<String, Pair<ResourceStateAdapter, List<String>>> item = (Map.Entry<String, Pair<ResourceStateAdapter, List<String>>>)it.next();
 	                ResourceStateAdapter adapter = item.getValue().first();
 	                if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
-	                    result = adapter.createHostVO((HostVO)args[0], (StartupCommand[])args[1]);
+	                    result = adapter.createHostVOForConnectedAgent((HostVO)args[0], (StartupCommand[])args[1]);
 	                    if (result != null && singleTaker) {
 	                        break;
 	                    }
 	                } else if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT) {
-	                    result = adapter.createHostVO((HostVO)args[0], (StartupCommand[])args[1], (ServerResource)args[2], (Map<String, String>)args[3], (List<String>)args[4]);
+	                    result = adapter.createHostVOForDirectConnectAgent((HostVO)args[0], (StartupCommand[])args[1], (ServerResource)args[2], (Map<String, String>)args[3], (List<String>)args[4]);
 	                    if (result != null && singleTaker) {
 	                        break;
 	                    }
@@ -1035,6 +1061,38 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	            return result;
 	        }
 	    }
+
+	@Override
+	public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) throws IllegalArgumentException {
+		if (serverPrivateIP == null) {
+			return;
+		}
+		// Get the CIDR address and CIDR size
+		String cidrAddress = pod.getCidrAddress();
+		long cidrSize = pod.getCidrSize();
+
+		// If the server's private IP address is not in the same subnet as the
+		// pod's CIDR, return false
+		String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
+		String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
+		if (!cidrSubnet.equals(serverSubnet)) {
+			s_logger.warn("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName()
+			        + " and zone: " + dc.getName());
+			throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: "
+			        + pod.getName() + " and zone: " + dc.getName());
+		}
+
+		// If the server's private netmask is less inclusive than the pod's CIDR
+		// netmask, return false
+		String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
+		long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
+		long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
+		if (serverNetmaskNumeric > cidrNetmaskNumeric) {
+			throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: "
+			        + pod.getName() + " and zone: " + dc.getName());
+		}
+
+	}
 
 	private boolean checkCIDR(HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {
 		if (serverPrivateIP == null) {
@@ -1252,5 +1310,151 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds) {
         return createHostVO(cmds, null, null, null, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED);
     }
+    
+    private void checkIPConflicts(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask, String serverPublicIP, String serverPublicNetmask) {
+        // If the server's private IP is the same as is public IP, this host has
+        // a host-only private network. Don't check for conflicts with the
+        // private IP address table.
+        if (serverPrivateIP != serverPublicIP) {
+            if (!_privateIPAddressDao.mark(dc.getId(), pod.getId(), serverPrivateIP)) {
+                // If the server's private IP address is already in the
+                // database, return false
+                List<DataCenterIpAddressVO> existingPrivateIPs = _privateIPAddressDao.listByPodIdDcIdIpAddress(pod.getId(), dc.getId(), serverPrivateIP);
+
+                assert existingPrivateIPs.size() <= 1 : " How can we get more than one ip address with " + serverPrivateIP;
+                if (existingPrivateIPs.size() > 1) {
+                    throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
+                }
+                if (existingPrivateIPs.size() == 1) {
+                    DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
+                    if (vo.getInstanceId() != null) {
+                        throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
+                    }
+                }
+            }
+        }
+
+        if (serverPublicIP != null && !_publicIPAddressDao.mark(dc.getId(), new Ip(serverPublicIP))) {
+            // If the server's public IP address is already in the database,
+            // return false
+            List<IPAddressVO> existingPublicIPs = _publicIPAddressDao.listByDcIdIpAddress(dc.getId(), serverPublicIP);
+            if (existingPublicIPs.size() > 0) {
+                throw new IllegalArgumentException("The public ip address of the server (" + serverPublicIP + ") is already in use in zone: " + dc.getName());
+            }
+        }
+    }
+    
+    @Override
+    public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags) {
+        if (host.getPodId() == null) {
+            s_logger.error("Host " + ssCmd.getPrivateIpAddress() + " sent incorrect pod, pod id is null");
+            throw new IllegalArgumentException("Host " + ssCmd.getPrivateIpAddress() + " sent incorrect pod, pod id is null");
+        }
+
+        ClusterVO clusterVO = _clusterDao.findById(host.getClusterId());
+        if (clusterVO.getHypervisorType() != hyType) {
+            throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + hyType + " into cluster: " + clusterVO.getId() + " whose hypervisor type is: "
+                    + clusterVO.getHypervisorType());
+        }
+        
+        final Map<String, String> hostDetails = ssCmd.getHostDetails();
+        if (hostDetails != null) {
+            if (details != null) {
+                details.putAll(hostDetails);
+            } else {
+                details = hostDetails;
+            }
+        }
+        
+        HostPodVO pod = _podDao.findById(host.getPodId());
+        DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
+        checkIPConflicts(pod, dc, ssCmd.getPrivateIpAddress(), ssCmd.getPublicIpAddress(), ssCmd.getPublicIpAddress(), ssCmd.getPublicNetmask());
+        host.setType(com.cloud.host.Host.Type.Routing);
+        host.setDetails(details);
+        host.setCaps(ssCmd.getCapabilities());
+        host.setCpus(ssCmd.getCpus());
+        host.setTotalMemory(ssCmd.getMemory());
+        host.setSpeed(ssCmd.getSpeed());
+        host.setHypervisorType(hyType);        
+        return host;
+    }
+    
+	@Override
+	public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException {
+		if (host.getType() != Host.Type.Routing) {
+			throw new CloudRuntimeException("Non-Routing host gets in deleteRoutingHost, id is " + host.getId());
+		}
+
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Deleting Host: " + host.getId() + " Guid:" + host.getGuid());
+		}
+
+		User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+		if (forceDestroyStorage) {
+			// put local storage into mainenance mode, will set all the VMs on
+			// this local storage into stopped state
+			StoragePool storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
+			if (storagePool != null) {
+				if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
+					try {
+						storagePool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
+						if (storagePool == null) {
+							s_logger.debug("Failed to set primary storage into maintenance mode");
+							throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");
+						}
+					} catch (Exception e) {
+						s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+						throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+					}
+				}
+
+				List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
+				for (VMInstanceVO vm : vmsOnLocalStorage) {
+					try {
+						if (!_vmMgr.destroy(vm, caller, _accountMgr.getAccount(vm.getAccountId()))) {
+							String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+							s_logger.warn(errorMsg);
+							throw new UnableDeleteHostException(errorMsg);
+						}
+					} catch (Exception e) {
+						String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+						s_logger.debug(errorMsg, e);
+						throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
+					}
+				}
+			}
+		} else {
+			// Check if there are vms running/starting/stopping on this host
+			List<VMInstanceVO> vms = _vmDao.listByHostId(host.getId());
+			if (!vms.isEmpty()) {
+				if (isForced) {
+					// Stop HA disabled vms and HA enabled vms in Stopping state
+					// Restart HA enabled vms
+					for (VMInstanceVO vm : vms) {
+						if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
+							s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + host.getId());
+							try {
+								if (!_vmMgr.advanceStop(vm, true, caller, _accountMgr.getAccount(vm.getAccountId()))) {
+									String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+									s_logger.warn(errorMsg);
+									throw new UnableDeleteHostException(errorMsg);
+								}
+							} catch (Exception e) {
+								String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+								s_logger.debug(errorMsg, e);
+								throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
+							}
+						} else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
+							s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + host.getId());
+							_haMgr.scheduleRestart(vm, false);
+						}
+					}
+				} else {
+					throw new UnableDeleteHostException("Unable to delete the host as there are vms in " + vms.get(0).getState()
+					        + " state using this host and isForced=false specified");
+				}
+			}
+		}
+	}
 	    
 }

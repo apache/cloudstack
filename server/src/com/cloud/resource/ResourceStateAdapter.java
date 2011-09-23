@@ -39,9 +39,9 @@ public interface ResourceStateAdapter extends Adapter {
         }
     }
     
-    public HostVO createHostVO(HostVO host, StartupCommand[] cmd);
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd);
     
-    public HostVO createHostVO(HostVO host, final StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags);
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, final StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags);
     
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException;
 }

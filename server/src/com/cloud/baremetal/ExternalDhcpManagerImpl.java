@@ -39,6 +39,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalDhcpCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.baremetal.ExternalDhcpEntryListener.DhcpEntryState;
@@ -60,7 +61,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -74,7 +77,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = {ExternalDhcpManager.class})
-public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
+public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDhcpManagerImpl.class);
 	protected String _name;
 	@Inject DataCenterDao _dcDao;
@@ -237,4 +240,27 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			throw new ResourceUnavailableException(errMsg + e.getMessage(), DataCenter.class, zoneId);
 		}
 	}
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+        if (!(startup[0] instanceof StartupExternalDhcpCommand)) {
+            return null;
+        }
+        
+        host.setType(Host.Type.ExternalDhcp);
+        return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
 }

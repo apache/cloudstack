@@ -21,9 +21,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 /**
  * ResourceManager manages how physical resources are organized within the
@@ -58,4 +62,10 @@ public interface ResourceManager {
 	public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 	
 	public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
+	
+	public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask);
+	
+	public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags);
+	
+	public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException;
 }

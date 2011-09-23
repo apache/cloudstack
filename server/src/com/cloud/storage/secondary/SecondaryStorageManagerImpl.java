@@ -18,6 +18,7 @@
 package com.cloud.storage.secondary;
 
 import java.util.ArrayList;
+
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -69,6 +72,9 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.resource.ResourceStateAdapter;
+import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
@@ -79,6 +85,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -110,6 +117,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.storage.Storage;
 
 //
 // Possible secondary storage vm state transition cases
@@ -130,7 +138,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long> {
+public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -1180,4 +1188,62 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public void onScanEnd() {
     }
 
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+		StartupCommand firstCmd = startup[0];
+		if (!(firstCmd instanceof StartupSecondaryStorageCommand) && !(firstCmd instanceof StartupSecondaryStorageCommand)) {
+			return null;
+		}
+
+		com.cloud.host.Host.Type type = null;
+		if (firstCmd instanceof StartupSecondaryStorageCommand) {
+			type = com.cloud.host.Host.Type.SecondaryStorageVM;
+		} else if (firstCmd instanceof StartupSecondaryStorageCommand) {
+			StartupStorageCommand ssCmd = ((StartupStorageCommand) firstCmd);
+			if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
+				type = ssCmd.getHostType();
+			} else {
+				if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
+					type = Host.Type.SecondaryStorage;
+					if (resource != null && resource instanceof DummySecondaryStorageResource) {
+						host.setResource(null);
+					}
+				} else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
+					type = Host.Type.LocalSecondaryStorage;
+				} else {
+					type = Host.Type.Storage;
+				}
+
+				final Map<String, String> hostDetails = ssCmd.getHostDetails();
+				if (hostDetails != null) {
+					if (details != null) {
+						details.putAll(hostDetails);
+					} else {
+						details = hostDetails;
+					}
+				}
+
+				host.setDetails(details);
+			}
+		}
+
+		host.setType(type);
+		return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        if (host.getType() == Host.Type.SecondaryStorage) {
+            deleteHost(host.getId());
+            return new DeleteHostAnswer(false);
+        }
+        return null;
+    }
 }

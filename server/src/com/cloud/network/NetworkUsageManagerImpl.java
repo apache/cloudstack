@@ -67,6 +67,9 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.resource.TrafficSentinelResource;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
+import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.server.api.response.TrafficMonitorResponse;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
@@ -88,7 +91,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
 @Local(value = {NetworkUsageManager.class})
-public class NetworkUsageManagerImpl implements NetworkUsageManager {
+public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceStateAdapter {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
@@ -499,6 +502,29 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         }
         
 
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+        if (!(startup[0] instanceof StartupTrafficMonitorCommand)) {
+            return null;
+        }
+        
+        host.setType(Host.Type.TrafficMonitor);
+        return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
     }
 
 }
