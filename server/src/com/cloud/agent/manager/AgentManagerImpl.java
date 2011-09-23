@@ -1515,20 +1515,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return attache;
     }
        
-    @Override
-    public boolean maintenanceFailed(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Cant not find host " + hostId);
-            }
-            return false;
-        } else {
-            return _hostDao.updateStatus(host, Event.UnableToMigrate, _nodeId);
-        }
-    }
-
-
     protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {
         s_logger.debug("updateHost() called");
 

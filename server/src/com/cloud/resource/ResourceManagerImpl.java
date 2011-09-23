@@ -1734,5 +1734,23 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             
             return true;
         }
-    }	    
+    }
+    
+    @Override
+    public boolean maintenanceFailed(long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cant not find host " + hostId);
+            }
+            return false;
+        } else {
+            try {
+                return updateResourceState(host, ResourceState.Event.UnableToMigrate, _nodeId);
+            } catch (NoTransitionException e) {
+                s_logger.debug("No next resource state for host " + host.getId() + " while current state is " + host.getResourceState() + " with event " + ResourceState.Event.UnableToMigrate, e);
+                return false;
+            }
+        }
+    }
 }

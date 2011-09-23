@@ -185,8 +185,6 @@ public interface AgentManager extends Manager {
      */
     Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
 
-    boolean maintenanceFailed(long hostId);
-
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
 
     boolean isHostNativeHAEnabled(long hostId);

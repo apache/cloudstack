@@ -154,19 +154,13 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public boolean maintenanceFailed(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean reconnect(long hostId) throws AgentUnavailableException {
+    public boolean reconnect(long hostId) {
         // TODO Auto-generated method stub
         return false;
     }

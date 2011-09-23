@@ -77,4 +77,6 @@ public interface ResourceManager {
 	boolean updateResourceState(Host host, Event event, long msId) throws NoTransitionException;
 
 	boolean umanageHost(long hostId);
+
+	boolean maintenanceFailed(long hostId);
 }
