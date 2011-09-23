@@ -222,12 +222,16 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return newRule;
         } catch (Exception e) {
             
-            txn.start();
-            //no need to apply the rule as it wasn't programmed on the backend yet
-            _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-            _forwardingDao.remove(newRule.getId());
-            
-            txn.commit();
+           
+            if (newRule != null) {
+                
+                txn.start();
+                //no need to apply the rule as it wasn't programmed on the backend yet
+                _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
+                _forwardingDao.remove(newRule.getId());
+                
+                txn.commit();
+            }
             
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
@@ -288,12 +292,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return staticNatRule;
         } catch (Exception e) {
             
-            txn.start();
-            //no need to apply the rule as it wasn't programmed on the backend yet
-            _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-            _forwardingDao.remove(newRule.getId()); 
-            txn.commit();
-            
+            if (newRule != null) {
+                txn.start();
+                //no need to apply the rule as it wasn't programmed on the backend yet
+                _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
+                _forwardingDao.remove(newRule.getId()); 
+                txn.commit();
+            }
+           
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
