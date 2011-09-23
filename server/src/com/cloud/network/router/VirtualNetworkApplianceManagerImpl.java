@@ -807,6 +807,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     final CheckRouterCommand command = new CheckRouterCommand();
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                    command.setWait(60);
                     final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
                     RedundantState state = RedundantState.UNKNOWN;
                     boolean isBumped = router.getIsPriorityBumpUp();
