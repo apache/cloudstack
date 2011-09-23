@@ -47,6 +47,10 @@ import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
@@ -81,9 +85,13 @@ import com.cloud.org.Managed;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -95,6 +103,7 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -150,6 +159,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
+    @Inject
+    protected ClusterManager                 _clusterMgr;
+    @Inject
+    protected StoragePoolHostDao             _storagePoolHostDao;
+    @Inject
+    protected StoragePoolDao                 _storagePoolDao;
+    @Inject
+    protected CapacityDao                    _capacityDao;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
@@ -641,8 +658,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         return _hostDao.findById(hostId);
     }
 
-    @Override
-    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy) {
+    @DB
+    private boolean doDeleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
@@ -651,16 +668,88 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
         
-        processResourceEvent(ResourceListener.EVENT_DELETE_HOST_BEFORE, host);
-        boolean res = false;
-        if (Host.Type.SecondaryStorage.equals(host.getType())) {
-            _secondaryStorageMgr.deleteHost(hostId);
-            res = true;
-        } else {
-            res = _agentMgr.deleteHost(hostId, isForced, forceDestroy, caller);
+        /*
+         * TODO: check current agent status and updateAgentStatus to removed. If it was already removed, that means
+         * someone is deleting host concurrently, return. And consider the situation of CloudStack shutdown during delete.
+         * A global lock?
+         * 
+         */
+        AgentAttache attache = _agentMgr.findAttache(hostId);
+        // Get storage pool host mappings here because they can be removed as a part of handleDisconnect later
+        //TODO: find out the bad boy, what's a buggy logic!
+        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
+        
+        ResourceStateAdapter.DeleteHostAnswer answer = (ResourceStateAdapter.DeleteHostAnswer) dispatchToStateAdapters(ResourceStateAdapter.Event.DELETE_HOST, false, host, new Boolean(isForced), new Boolean(isForceDeleteStorage));
+        if (answer.getIsException()) {
+            return false;
         }
-        processResourceEvent(ResourceListener.EVENT_DELETE_HOST_AFTER, host);
-        return res;
+        
+        if (!answer.getIsContinue()) {
+            return true;
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
+        _agentMgr.disconnect(hostId, Status.Event.Remove);
+
+        // delete host details
+        _hostDetailsDao.deleteDetails(hostId);
+
+        host.setGuid(null);
+        Long clusterId = host.getClusterId();
+        host.setClusterId(null);
+        _hostDao.update(host.getId(), host);
+
+        _hostDao.remove(hostId);
+        if (clusterId != null) {
+            List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+            if (hosts.size() == 0) {
+                ClusterVO cluster = _clusterDao.findById(clusterId);
+                cluster.setGuid(null);
+                _clusterDao.update(clusterId, cluster);
+            }
+        }
+
+        // Delete the associated entries in host ref table
+        _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
+
+        // For pool ids you got, delete local storage host entries in pool table where
+        for (StoragePoolHostVO pool : pools) {
+            Long poolId = pool.getPoolId();
+            StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
+            if (storagePool.isLocal() && isForceDeleteStorage) {
+                storagePool.setUuid(null);
+                storagePool.setClusterId(null);
+                _storagePoolDao.update(poolId, storagePool);
+                _storagePoolDao.remove(poolId);
+                s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
+            }
+        }
+
+        // delete the op_host_capacity entry
+        Object[] capacityTypes = { Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY };
+        SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
+        hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
+        hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
+        _capacityDao.remove(hostCapacitySC);
+        txn.commit();
+        return true;
+    }
+    
+    @Override
+    public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
+        try {
+            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        
+        return doDeleteHost(hostId, isForced, isForceDeleteStorage);
     }
 
     @Override
@@ -1256,7 +1345,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 			host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
 			if (host != null) {
-				attache = _agentMgr.createAttacheForDirectConnect(host, cmds, resource, forRebalance);
+				attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
 				/* reload myself from database */
 				host = _hostDao.findById(host.getId());
 			}
@@ -1456,5 +1545,25 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			}
 		}
 	}
+	
+    @Override
+    public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
+        if (event == ResourceState.Event.AdminAskMaintenace) {
+            return doMaintain(hostId);
+        } else if (event == ResourceState.Event.AdminAskReconnect) {
+            return doReconncetHost(hostId);
+        } else if (event == ResourceState.Event.AdminCancelMaintenance) {
+            return doCancelMaintenance(hostId);
+        } else if (event == ResourceState.Event.DeleteHost) {
+            /*TODO: Ask alex why we assume the last two parameters are false*/
+            return doDeleteHost(hostId, false, false);
+        } else if (event == ResourceState.Event.Unmanaged) {
+            return doUmanageHost(hostId);
+        } else if (event == ResourceState.Event.UpdatePassword) {
+            return doUpdateHostPassword(hostId);
+        } else {
+            throw new CloudRuntimeException("Received an resource event we are not handling now, " + event);
+        }
+    }
 	    
 }

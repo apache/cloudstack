@@ -49,6 +49,7 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PropagateResourceEventCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -59,6 +60,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -99,6 +102,8 @@ public class ClusterManagerImpl implements ClusterManager {
     private AgentManager _agentMgr;
     @Inject
     private ClusteredAgentRebalanceService _rebalanceService;
+    @Inject
+    private ResourceManager _resourceMgr;
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-Heartbeat"));
     private final ExecutorService _notificationExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("Cluster-Notification"));
@@ -1228,5 +1233,35 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
     public  boolean isAgentRebalanceEnabled() {
         return _agentLBEnabled;
+    }
+    
+    @Override
+    public Boolean propagateResourceEvent(long agentId, ResourceState.Event event) throws AgentUnavailableException {
+        final String msPeer = getPeerName(agentId);
+        if (msPeer == null) {
+            return null;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Propagating agent change request event:" + event.toString() + " to agent:" + agentId);
+        }
+        Command[] cmds = new Command[1];
+        cmds[0] = new PropagateResourceEventCommand(agentId, event);
+
+        Answer[] answers = execute(msPeer, agentId, cmds, true);
+        if (answers == null) {
+            throw new AgentUnavailableException(agentId);
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Result for agent change is " + answers[0].getResult());
+        }
+
+        return answers[0].getResult();
+    }
+    
+    @Override
+    public boolean executeResourceUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
+        return _resourceMgr.executeUserRequest(hostId, event);
     }
 }

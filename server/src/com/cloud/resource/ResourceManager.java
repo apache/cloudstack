@@ -24,6 +24,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -68,4 +69,6 @@ public interface ResourceManager {
 	public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags);
 	
 	public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException;
+	
+    public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
 }

@@ -196,18 +196,6 @@ public interface AgentManager extends Manager {
     List<PodCluster> listByPod(long podId);
 
     /**
-     * Deletes a host
-     * 
-     * @param hostId
-     * @param isForced
-     *            TODO
-     * @param caller
-     *            TODO
-     * @param true if deleted, false otherwise
-     */
-    boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller);
-
-    /**
      * Find a pod based on the user id, template, and data center.
      * 
      * @param template
@@ -260,7 +248,13 @@ public interface AgentManager extends Manager {
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
     
-    public AgentAttache createAttacheForDirectConnect(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
+    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
     
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
+    
+    public AgentAttache findAttache(long hostId);
+    
+    void disconnect(long hostId, Status.Event event);
+    
+    public boolean disconnectAgent(HostVO host, Status.Event e, long msId);
 }

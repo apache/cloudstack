@@ -24,6 +24,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Status.Event;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.Manager;
 
 public interface ClusterManager extends Manager {
@@ -40,6 +41,8 @@ public interface ClusterManager extends Manager {
     public long sendToAgent(Long hostId, Command[] cmds, boolean stopOnError, Listener listener) throws AgentUnavailableException;
     public boolean executeAgentUserRequest(long agentId, Event event) throws AgentUnavailableException;
     public Boolean propagateAgentEvent(long agentId, Event event) throws AgentUnavailableException;
+    public Boolean propagateResourceEvent(long agentId, ResourceState.Event event) throws AgentUnavailableException;
+    public boolean executeResourceUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
 	
 	public int getHeartbeatThreshold();
 	

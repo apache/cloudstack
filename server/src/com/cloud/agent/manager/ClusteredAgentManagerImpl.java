@@ -250,15 +250,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected AgentAttache createAttache(long id, HostVO server, Link link) {
-        s_logger.debug("create ClusteredAgentAttache for " + id);
-        final AgentAttache attache = new ClusteredAgentAttache(this, id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
-                || server.getStatus() == Status.PrepareForMaintenance);
+    protected AgentAttache createAttacheForConnect(HostVO host, Link link) {
+        s_logger.debug("create ClusteredAgentAttache for " + host.getId());
+        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
         link.attach(attache);
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.get(id);
-            _agents.put(id, attache);
+            old = _agents.get(host.getId());
+            _agents.put(host.getId(), attache);
         }
         if (old != null) {
             old.disconnect(Status.Removed);
@@ -267,17 +266,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected AgentAttache createAttache(long id, HostVO server, ServerResource resource) {
+    protected AgentAttache createAttacheForDirectConnect(HostVO host, ServerResource resource) {
         if (resource instanceof DummySecondaryStorageResource) {
-            return new DummyAttache(this, id, false);
+            return new DummyAttache(this, host.getId(), false);
         }
-        s_logger.debug("create ClusteredDirectAgentAttache for " + id);
-        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, id, _nodeId, resource, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
-                || server.getStatus() == Status.PrepareForMaintenance, this);
+        s_logger.debug("create ClusteredDirectAgentAttache for " + host.getId());
+        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), _nodeId, resource, host.isInMaintenanceStates(), this);
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.get(id);
-            _agents.put(id, attache);
+            old = _agents.get(host.getId());
+            _agents.put(host.getId(), attache);
         }
         if (old != null) {
             old.disconnect(Status.Removed);
@@ -286,23 +284,33 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected boolean handleDisconnect(AgentAttache attache, Status.Event event, boolean investigate) {
-        return handleDisconnect(attache, event, investigate, true);
+    protected boolean handleDisconnect(AgentAttache attache, Status.Event event) {
+        return handleDisconnect(attache, event, false, true);
     }
-
+    
+    @Override
+    protected boolean handleDisconnectWithInvestigation(AgentAttache attache, Status.Event event) {
+        return handleDisconnect(attache, event, true, true);
+    }
+    
     protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast) {
         if (agent == null) {
             return true;
         }
 
-        if (super.handleDisconnect(agent, event, investigate)) {
-            if (broadcast) {
-                notifyNodesInCluster(agent);
-            }
-            return true;
+        boolean res;
+        if (!investigate) {
+            res = super.handleDisconnect(agent, event);
         } else {
-            return false;
+            res = super.handleDisconnectWithInvestigation(agent, event);
         }
+
+		if (res && broadcast) {
+			notifyNodesInCluster(agent);
+			return true;
+		} else {
+			return false;
+		}
     }
 
     @Override
@@ -340,21 +348,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         return super.reconnect(hostId);
-    }
-
-    @Override
-    @DB
-    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller) {
-        try {
-            Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.Remove);
-            if (result != null) {
-                return result;
-            }
-        } catch (AgentUnavailableException e) {
-            return false;
-        }
-
-        return super.deleteHost(hostId, isForced, forceDestroy, caller);
     }
 
     @Override
