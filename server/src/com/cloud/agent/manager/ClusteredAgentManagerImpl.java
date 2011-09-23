@@ -255,7 +255,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    protected boolean handleDisconnect(AgentAttache attache, Status.Event event) {
+    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event) {
         return handleDisconnect(attache, event, false, true);
     }
     
@@ -265,19 +265,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
     
     protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast) {
-        if (agent == null) {
-            return true;
-        }
-
         boolean res;
         if (!investigate) {
-            res = super.handleDisconnect(agent, event);
+            res = super.handleDisconnectWithoutInvestigation(agent, event);
         } else {
             res = super.handleDisconnectWithInvestigation(agent, event);
         }
 
-		if (res && broadcast) {
-			notifyNodesInCluster(agent);
+		if (res) {
+			if (broadcast) {
+				notifyNodesInCluster(agent);
+			}
 			return true;
 		} else {
 			return false;
@@ -302,12 +300,18 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public boolean reconnect(final long hostId) throws AgentUnavailableException {
-        Boolean result = _clusterMgr.propagateAgentEvent(hostId, Event.ShutdownRequested);
-        if (result != null) {
-            return result;
+    public boolean reconnect(final long hostId) {
+        Boolean result;
+        try {
+	        result = _clusterMgr.propagateAgentEvent(hostId, Event.ShutdownRequested);
+	        if (result != null) {
+	            return result;
+	        }
+        } catch (AgentUnavailableException e) {
+	        s_logger.debug("cannot propagate agent reconnect because agent is not available", e);
+	        return false;
         }
-
+        
         return super.reconnect(hostId);
     }
 

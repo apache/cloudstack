@@ -46,7 +46,7 @@ public interface ResourceService {
 
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 
-    Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
+    Host reconnectHost(ReconnectHostCmd cmd);
 
     /**
      * We will automatically create a cloud.com cluster to attach to the external cluster and return a hyper host to perform

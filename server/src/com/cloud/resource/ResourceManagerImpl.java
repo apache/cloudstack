@@ -955,7 +955,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @Override
-    public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
+    public Host reconnectHost(ReconnectHostCmd cmd) {
         Long hostId = cmd.getId();
 
         HostVO host = _hostDao.findById(hostId);
@@ -963,11 +963,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
 
-        boolean result = _agentMgr.reconnect(hostId);
-        if (result) {
-            return host;
-        }
-        throw new CloudRuntimeException("Failed to reconnect host with id " + hostId.toString() + ", internal error.");
+        return (_agentMgr.reconnect(hostId) ? host : null);
     }
 
     @Override
@@ -1657,8 +1653,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
         if (event == ResourceState.Event.AdminAskMaintenace) {
             return doMaintain(hostId);
-        } else if (event == ResourceState.Event.AdminAskReconnect) {
-            return doReconncetHost(hostId);
         } else if (event == ResourceState.Event.AdminCancelMaintenance) {
             return doCancelMaintenance(hostId);
         } else if (event == ResourceState.Event.DeleteHost) {
@@ -1740,6 +1734,5 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             
             return true;
         }
-    }
-	    
+    }	    
 }

@@ -189,8 +189,6 @@ public interface AgentManager extends Manager {
 
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
 
-    public boolean reconnect(final long hostId) throws AgentUnavailableException;
-
     boolean isHostNativeHAEnabled(long hostId);
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
@@ -219,4 +217,6 @@ public interface AgentManager extends Manager {
     public boolean disconnectAgent(HostVO host, Status.Event e, long msId);
     
     public void pullAgentToMaintenance(long hostId);
+
+	boolean reconnect(long hostId);
 }

@@ -718,9 +718,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public void updateStatus(HostVO host, Status.Event event) {
         _hostDao.updateStatus(host, event, _nodeId);
     }
-    public void disconnect(AgentAttache attache, final Status.Event event, final boolean investigate) {
-        _executor.submit(new DisconnectTask(attache, event, investigate));
-    }
 
     protected AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd, boolean forRebalance) throws ConnectionException {
         long hostId = attache.getId();
@@ -737,19 +734,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
                             s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnect(attache, Event.AgentDisconnected);
+                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
                             throw ce;
                         } else {
                             s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnect(attache, Event.ShutdownRequested);
+                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                        handleDisconnect(attache, Event.HypervisorVersionChanged);
+                    	handleDisconnectWithoutInvestigation(attache, Event.HypervisorVersionChanged);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnect(attache, Event.AgentDisconnected);
+                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
@@ -763,7 +760,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             // this is tricky part for secondary storage
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
-            handleDisconnect(attache, Event.AgentDisconnected);
+        	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
         }
 
         _hostDao.updateStatus(host, Event.Ready, _nodeId);
@@ -1010,7 +1007,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return _name;
     }
    
-    protected boolean handleDisconnect(AgentAttache attache, Status.Event event) {
+    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event) {
         long hostId = attache.getId();
 
         s_logger.info("Host " + hostId + " is disconnecting with event " + event);
@@ -1128,7 +1125,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
         
-        handleDisconnect(attache, event);
+        handleDisconnectWithoutInvestigation(attache, event);
         /*TODO: call HA manager in monitors
          *         host = _hostDao.findById(host.getId());
         if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
@@ -1155,7 +1152,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (_investigate == true) {
                     handleDisconnectWithInvestigation(_attache, _event);
                 } else {
-                    handleDisconnect(_attache, _event);
+                	handleDisconnectWithoutInvestigation(_attache, _event);
                 }
             } catch (final Exception e) {
                 s_logger.error("Exception caught while handling disconnect: ", e);
@@ -1216,7 +1213,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public boolean reconnect(final long hostId) throws AgentUnavailableException {
+    public boolean reconnect(final long hostId) {
         HostVO host;
 
         host = _hostDao.findById(hostId);
@@ -1236,45 +1233,24 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return false;
         }
 
-        disconnect(attache, Event.ShutdownRequested, false);
+        disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
         return true;
     }
 
     @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
-        if (event == Event.MaintenanceRequested) {
-            return maintain(hostId);
-        } else if (event == Event.ResetRequested) {
-            return cancelMaintenance(hostId);
-        } else if (event == Event.PrepareUnmanaged) {
-            return disconnect(hostId);
-        } else if (event == Event.Remove) {
-            User caller = _accountMgr.getActiveUser(User.UID_SYSTEM);
-            return deleteHost(hostId, false, false, caller);
-        } else if (event == Event.AgentDisconnected) {
+         if (event == Event.AgentDisconnected) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Received agent disconnect event for host " + hostId);
             }
             AgentAttache attache = null;
             attache = findAttache(hostId);
             if (attache != null) {
-                handleDisconnect(attache, Event.AgentDisconnected, false);
+            	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
             }
             return true;
         } else if (event == Event.ShutdownRequested) {
             return reconnect(hostId);
-        }
-        else if (event == Event.UpdatePassword) {
-            AgentAttache attache = findAttache(hostId);
-            if (attache != null) {
-                DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
-                String username = nv.getValue();
-                nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
-                String password = nv.getValue();
-                UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
-                attache.updatePassword(cmd);
-                return true;
-            }
         }
         return false;
     }
@@ -1900,9 +1876,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         final String reason = shutdown.getReason();
                         s_logger.info("Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " + shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
-                            disconnect(attache, Event.UpdateNeeded, false);
+                            disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
                         } else if (reason.equals(ShutdownCommand.Requested)) {
-                            disconnect(attache, Event.ShutdownRequested, false);
+                            disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                         }
                         return;
                     } else if (cmd instanceof AgentControlCommand) {
@@ -1999,7 +1975,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     final Link link = task.getLink();
                     final AgentAttache attache = (AgentAttache) link.attachment();
                     if (attache != null) {
-                        disconnect(attache, Event.AgentDisconnected, true);
+                        disconnectWithInvestigation(attache, Event.AgentDisconnected);
                     } else {
                         s_logger.info("Connection from " + link.getIpAddress() + " closed but no cleanup was done.");
                         link.close();

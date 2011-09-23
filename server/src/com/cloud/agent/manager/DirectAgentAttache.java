@@ -143,7 +143,7 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     if (cmd == null) {
                         s_logger.warn("Unable to get current status on " + _id);
-                        _mgr.disconnect(DirectAgentAttache.this, Event.AgentDisconnected, true);
+                        _mgr.disconnectWithInvestigation(DirectAgentAttache.this, Event.AgentDisconnected);
                         return;
                     }
                     if (s_logger.isDebugEnabled()) {

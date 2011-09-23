@@ -107,7 +107,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reconnect host");
             }
-        } catch (AgentUnavailableException ex) {
+        } catch (Exception ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
