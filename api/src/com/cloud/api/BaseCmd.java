@@ -44,6 +44,7 @@ import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
@@ -573,5 +574,33 @@ public abstract class BaseCmd {
     
     public Map<String, String> getFullUrlParams() {
     	return this.fullUrlParams;
+    }
+    
+    public Long getAccountId(String accountName, String projectName, Long domainId) {
+        if (accountName != null) {
+            if (domainId == null) {
+                throw new InvalidParameterValueException("Account must be specified with domainId parameter");
+            }
+            Account account = _accountService.getActiveAccountByName(accountName, domainId);
+            if (account != null) {
+                return account.getId();
+            } else {
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
+            }
+        }
+        
+        if (projectName != null) {
+            if (domainId == null) {
+                throw new InvalidParameterValueException("Project must be specified with domainId parameter");
+            }
+            Project project = _projectService.findByNameAndDomainId(projectName, domainId);
+            if (project != null) {
+                return project.getProjectAccountId();
+            } else {
+                throw new InvalidParameterValueException("Unable to find project by name " + project + " in domain id=" + domainId);
+            }
+        }
+        
+        return null;
     }
 }

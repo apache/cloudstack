@@ -17,10 +17,12 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class ResourceLimitResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class ResourceLimitResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName("account") @Param(description="the account of the resource limit")
     private String accountName;
 
@@ -35,41 +37,32 @@ public class ResourceLimitResponse extends BaseResponse {
 
     @SerializedName("max") @Param(description="the maximum number of the resource. A -1 means the resource currently has no limit.")
     private Long max;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource limit")
+    private String projectName;
 
-    public String getAccountName() {
-        return accountName;
-    }
-
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
-
-    public Long getDomainId() {
-        return domainId;
+    
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
+    @Override
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
+    
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-
-    public String getResourceType() {
-        return resourceType;
-    }
-
+    
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
-    }
-
-    public Long getMax() {
-        return max;
     }
 
     public void setMax(Long max) {

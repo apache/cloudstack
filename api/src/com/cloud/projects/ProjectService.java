@@ -43,4 +43,10 @@ public interface ProjectService {
     Account getProjectOwner(long projectId);
 
     boolean unassignAccountFromProject(long projectId, long accountId);
+    
+    Project findByProjectDomainId(long projectDomainId);
+    
+    Project findByProjectAccountId(long projectAccountId);
+    
+    Project findByNameAndDomainId(String name, long domainId);
 }

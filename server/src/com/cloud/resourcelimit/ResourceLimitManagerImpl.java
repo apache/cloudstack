@@ -306,12 +306,10 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     }
     
     @Override
-    public List<ResourceLimitVO> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
+    public List<ResourceLimitVO> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
        Account caller = UserContext.current().getCaller();
        List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
        boolean isAccount = true;
-       
-       Long accountId = null;
        
        if (!_accountMgr.isAdmin(caller.getType())) {
            accountId = caller.getId();
@@ -327,17 +325,15 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
                
                _accountMgr.checkAccess(caller, domain);
                
-               if (accountName != null) {
+               if (accountId != null) {
                    //Verify account information and permissions
-                   Account account = _accountDao.findAccount(accountName, domainId);
+                   Account account = _accountDao.findById(accountId);
                    if (account == null) {
                        //return empty set
                        return limits;
                    }
                    
                    _accountMgr.checkAccess(caller, null, account);
-                   
-                   accountId = account.getId();
                    domainId = null;
                } 
            }
@@ -455,7 +451,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     }
     
     @Override
-    public ResourceLimitVO updateResourceLimit(Long ownerId, ResourceOwnerType ownerType, Integer typeId, Long max) {
+    public ResourceLimitVO updateResourceLimit(Long accountId, Long domainId, Integer typeId, Long max) {
         Account caller = UserContext.current().getCaller();
 
         if (max == null) {
@@ -477,29 +473,40 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             }
         }
         
-        if (ownerType == ResourceOwnerType.Domain) {
-            Domain domain = _entityMgr.findById(Domain.class, ownerId);
+        ResourceOwnerType ownerType = null;
+        Long ownerId = null;
+        
+        if (accountId != null) {
+            Account account = _entityMgr.findById(Account.class, accountId);
+            if (account.getType() == Account.ACCOUNT_ID_SYSTEM) {
+                throw new InvalidParameterValueException("Can't update system account");
+            }
+            
+            _accountMgr.checkAccess(caller, null, account);
+            ownerType = ResourceOwnerType.Account;
+            ownerId = accountId;
+        } else if (domainId != null) {
+            Domain domain = _entityMgr.findById(Domain.class, domainId);
             _accountMgr.checkAccess(caller, domain);
-            if ((caller.getDomainId() == ownerId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...
-                throw new PermissionDeniedException("Unable to update resource limit for domain " + ownerId + ", permission denied");
+                throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
             }
             Long parentDomainId = domain.getParent();
             if (parentDomainId != null) {
                 DomainVO parentDomain = _domainDao.findById(parentDomainId);
                 long parentMaximum = findCorrectResourceLimitForDomain(parentDomain, resourceType);
                 if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + ownerId + ") has maximum allowed resource limit " + parentMaximum + " for " + resourceType
+                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + parentDomain.getId() + ") has maximum allowed resource limit " + parentMaximum + " for " + resourceType
                             + ", please specify a value less that or equal to " + parentMaximum);
                 }
             }
-        } else if (ownerType == ResourceOwnerType.Account) {
-            Account account = _entityMgr.findById(Account.class, ownerId);
-            if (account.getType() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Can't update system account");
-            }
-            
-            _accountMgr.checkAccess(caller, null, account);
+            ownerType = ResourceOwnerType.Domain;
+            ownerId = domainId;
+        } 
+        
+        if (ownerId == null) {
+            throw new InvalidParameterValueException("AccountId or domainId have to be specified in order to update resource limit");
         }
 
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(ownerId, ownerType, resourceType);

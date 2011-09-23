@@ -49,9 +49,6 @@ public class ResourceLimitVO implements ResourceLimit {
 	
 	@Column(name="max")
 	private Long max;
-	
-    @Transient
-    private ResourceOwnerType ownerType;
     
     public ResourceLimitVO() {}
 	
@@ -113,7 +110,11 @@ public class ResourceLimitVO implements ResourceLimit {
    
    @Override
    public ResourceOwnerType getResourceOwnerType() {
-       return ownerType;
+       if (accountId != null) {
+           return ResourceOwnerType.Account;
+       } else {
+           return ResourceOwnerType.Domain;
+       }
    }
 
    public void setDomainId(Long domainId) {

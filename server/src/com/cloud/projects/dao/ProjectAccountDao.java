@@ -10,4 +10,7 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long>{
     List<ProjectAccountVO> listByProjectId(long projectId);
     ProjectAccountVO findByProjectIdAccountId(long projectId, long accountId);
     
+    boolean canAccessAccount(long accountId, long projectAccountId);
+    
+    boolean canAccessDomain(long accountId, long projectDomainId);
 }

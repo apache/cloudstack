@@ -26,11 +26,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ResourceLimitResponse;
-import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 @Implementation(description="Updates resource limits for an account or domain.", responseObject=ResourceLimitResponse.class)
 public class UpdateResourceLimitCmd extends BaseCmd {
@@ -49,8 +46,8 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Update resource limits for all accounts in specified domain. If used with the account parameter, updates resource limits for a specified account in specified domain.")
     private Long domainId;
     
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Update resource limits for project")
-    private Long projectId;
+    @Parameter(name=ApiConstants.PROJECT, type=CommandType.STRING, description="Update resource limits for project")
+    private String projectName;
 
     @Parameter(name=ApiConstants.MAX, type=CommandType.LONG, description="	Maximum resource limit.")
     private Long max;
@@ -65,49 +62,13 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public Pair<Long, ResourceOwnerType> getOwner() {
-        
-        Long ownerId = null;
-        ResourceOwnerType resourceOwnerType = null;
-        if (domainId != null) {
-            
-            if (_domainService.getDomain(domainId) == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
-            }
-            
-            if (accountName != null) {
-                Account account = _accountService.getActiveAccountByName(accountName, domainId);
-                if (account != null) {
-                    ownerId = account.getId();
-                    resourceOwnerType = ResourceOwnerType.Account;
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
-                }
-            } else {
-                ownerId = domainId;
-                resourceOwnerType = ResourceOwnerType.Domain;
-            } 
-        } else if (projectId != null){
-            if (_projectService.getProject(projectId) == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            
-            //TODO - get domainId associated with the project
-            ownerId = projectId;
-            resourceOwnerType = ResourceOwnerType.Domain;
-            
-        }
-        
-        if (ownerId == null) {
-            throw new InvalidParameterValueException("Please specify projectId or domainId or domainId/accountName");
-        }
-        
-        return new Pair<Long, ResourceOwnerType>(ownerId, resourceOwnerType);
-    }
-
+    
     public Long getMax() {
         return max;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     public Integer getResourceType() {
@@ -125,12 +86,17 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        return getOwner().first();
+        Long accountId = getAccountId(accountName, projectName, domainId);
+        if (accountId != null) {
+            return accountId;
+        }
+        
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
     public void execute(){
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(getOwner().first(), getOwner().second(), resourceType, max);
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(getAccountId(accountName, projectName, domainId), getDomainId(), resourceType, max);
         if (result != null || (result == null && max != null && max.longValue() == -1L)){
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

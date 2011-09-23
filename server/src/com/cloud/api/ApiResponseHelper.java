@@ -31,6 +31,7 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
@@ -39,6 +40,7 @@ import com.cloud.api.response.CapabilityResponse;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.api.response.ControlledEntityResponse;
 import com.cloud.api.response.CreateCmdResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
@@ -390,16 +392,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceLimitResponse createResourceLimitResponse(ResourceLimit limit) {
         ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();
-        if (limit.getResourceOwnerType() == ResourceOwnerType.Domain) {
-            resourceLimitResponse.setDomainId(limit.getOwnerId());
-            resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(limit.getOwnerId()).getName());
+        if (limit.getResourceOwnerType() == ResourceOwnerType.Domain) {  
+            populateDomain(resourceLimitResponse, limit.getOwnerId());
         } else if (limit.getResourceOwnerType() == ResourceOwnerType.Account) {
             Account accountTemp = ApiDBUtils.findAccountById(limit.getOwnerId());
-            if (accountTemp != null) {
-                resourceLimitResponse.setAccountName(accountTemp.getAccountName());
-                resourceLimitResponse.setDomainId(accountTemp.getDomainId());
-                resourceLimitResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-            }
+            populateAccount(resourceLimitResponse, limit.getOwnerId());
+            populateDomain(resourceLimitResponse, accountTemp.getDomainId());
         }
         resourceLimitResponse.setResourceType(Integer.valueOf(limit.getType().getOrdinal()).toString());
         resourceLimitResponse.setMax(limit.getMax());
@@ -2430,5 +2428,39 @@ public class ApiResponseHelper implements ResponseGenerator {
         hpvCapabilitiesResponse.setMaxGuestsLimit(hpvCapabilities.getMaxGuestsLimit());
         return hpvCapabilitiesResponse;
     }
-
+    
+    private void populateOwner(ControlledEntityResponse response, ControlledEntity object) {
+        Account account = ApiDBUtils.findAccountById(object.getAccountId());
+        
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            //find the project
+            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
+     
+        Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
+        response.setDomainId(domain.getId());
+        response.setDomainName(domain.getName());
+    }
+    
+    private void populateAccount(ControlledEntityResponse response, long accountId) {
+        Account account = ApiDBUtils.findAccountById(accountId);
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            //find the project
+            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
+    }
+    
+    private void populateDomain(ControlledEntityResponse response, long domainId) {
+        Domain domain = ApiDBUtils.findDomainById(domainId);
+        response.setDomainId(domain.getId());
+        response.setDomainName(domain.getName());
+    }
+    
+    
 }

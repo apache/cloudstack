@@ -43,6 +43,9 @@ public class ListResourceLimitsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Lists resource limits by account. Must be used with the domainId parameter.")
     private String accountName;
+    
+    @Parameter(name=ApiConstants.PROJECT, type=CommandType.STRING, description="Lists resource limits by project. Must be used with the domainId parameter.")
+    private String projectName;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists resource limits by domain ID. If used with the account parameter, lists resource limits for a specified account in a specified domain.")
     private Long domainId;
@@ -88,7 +91,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends ResourceLimit> result = _resourceLimitService.searchForLimits(id, accountName, domainId, resourceType, this.getStartIndex(), this.getPageSizeVal());
+        List<? extends ResourceLimit> result = _resourceLimitService.searchForLimits(id, getAccountId(accountName, projectName, domainId), domainId, resourceType, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimit limit : result) {

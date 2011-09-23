@@ -36,7 +36,7 @@ public interface Project extends PartOf{
 
     String getName();
     
-    public long getProjectAccountId();
+    long getProjectAccountId();
 
     long getProjectDomainId();
 

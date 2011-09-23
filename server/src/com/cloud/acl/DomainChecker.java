@@ -27,6 +27,8 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -42,23 +44,38 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject DomainDao _domainDao;
     @Inject AccountDao _accountDao;
     @Inject LaunchPermissionDao _launchPermissionDao;
+    @Inject ProjectManager _projectMgr;
     
     protected DomainChecker() {
         super();
     }
     
     @Override
-    public boolean checkAccess(Account account, Domain domain) throws PermissionDeniedException {
-        if (account.getState() != Account.State.enabled) {
-            throw new PermissionDeniedException(account + " is disabled.");
+    public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
+        if (caller.getState() != Account.State.enabled) {
+            throw new PermissionDeniedException(caller + " is disabled.");
+        }
+        long domainId = domain.getId();
+        
+        if (domain.getType() == Domain.Type.Project) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (!_projectMgr.canAccessDomain(caller, domainId)){
+                    throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
+                }
+                return true;
+            } else {
+                //need to check the domain the project belongs to
+                Project project = _projectMgr.findByProjectDomainId(domainId);
+                domainId = project.getProjectDomainId();
+            }
         }
         
-        if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            if (account.getDomainId() != domain.getId()) {
-                throw new PermissionDeniedException(account + " does not have permission to operate within " + domain);
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (caller.getDomainId() != domainId) {
+                throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
             }
-        } else if (!_domainDao.isChildDomain(account.getDomainId(), domain.getId())) {
-            throw new PermissionDeniedException(account + " does not have permission to operate within " + domain);
+        } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+            throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
         }
         
         return true;
@@ -103,9 +120,17 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return true;
         } else {
             if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                if (caller.getId() != entity.getAccountId()) {
-                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
-                }
+                Account account = _accountDao.findById(entity.getAccountId());
+                
+                if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    if (!_projectMgr.canAccessAccount(caller, account.getId())){
+                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                    }
+                } else {
+                    if (caller.getId() != entity.getAccountId()) {
+                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                    }
+                }  
             }
         }
         

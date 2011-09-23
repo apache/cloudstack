@@ -43,6 +43,12 @@ public class ProjectAccountVO implements ProjectAccount{
     @Column(name="account_role")
     @Enumerated(value=EnumType.STRING)
     private Role accountRole = Role.Regular;
+    
+    @Column(name="project_account_id")
+    long projectAccountId;
+    
+    @Column(name="project_domain_id")
+    long projectDomainId;
 
     
     protected ProjectAccountVO(){
@@ -52,6 +58,8 @@ public class ProjectAccountVO implements ProjectAccount{
        this.accountId = accountId;
        this.accountRole = accountRole;
        this.projectId = project.getId();
+       this.projectAccountId = project.getProjectAccountId();
+       this.projectDomainId = project.getProjectDomainId();
     }
 
     @Override
@@ -74,6 +82,13 @@ public class ProjectAccountVO implements ProjectAccount{
         return accountRole;
     }
     
-    
-   
+    @Override
+    public long getProjectAccountId() {
+        return projectAccountId;
+    }
+
+    @Override
+    public long getProjectDomainId() {
+        return projectDomainId;
+    }
 }

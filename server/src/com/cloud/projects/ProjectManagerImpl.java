@@ -316,5 +316,20 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     public ProjectVO findByProjectAccountId(long projectAccountId) {
         return _projectDao.findByProjectAccountId(projectAccountId);
     }
+    
+    @Override
+    public Project findByNameAndDomainId(String name, long domainId) {
+        return _projectDao.findByNameAndDomain(name, domainId);
+    }
+    
+    @Override
+    public boolean canAccessAccount(Account caller, long accountId) {
+        return _projectAccountDao.canAccessAccount(caller.getId(), accountId);
+    }
+    
+    @Override
+    public boolean canAccessDomain(Account caller, long domainId) {
+        return _projectAccountDao.canAccessDomain(caller.getId(), domainId);
+    }
 
 }

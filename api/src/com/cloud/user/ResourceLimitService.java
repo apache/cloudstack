@@ -20,7 +20,6 @@ package com.cloud.user;
 import java.util.List;
 
 import com.cloud.api.commands.UpdateResourceCountCmd;
-import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -31,15 +30,14 @@ public interface ResourceLimitService {
     
     /**
      * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
-     * 
-     * @param ownerId
-     *            the command that wraps the domainId, accountId, type, and max parameters
-     * @param ownerType TODO
+     * @param accountId TODO
+     * @param domainId TODO
      * @param resourceType TODO
      * @param max TODO
+     * 
      * @return the updated/created resource limit
      */
-    ResourceLimit updateResourceLimit(Long ownerId, ResourceOwnerType ownerType, Integer resourceType, Long max);
+    ResourceLimit updateResourceLimit(Long accountId, Long domainId, Integer resourceType, Long max);
 
     /**
      * Updates an existing resource count details for the account/domain
@@ -53,12 +51,12 @@ public interface ResourceLimitService {
     /**
      * Search for resource limits for the given id and/or account and/or type and/or domain.
      * @param id TODO
-     * @param accountName TODO
+     * @param accountId TODO
      * @param domainId TODO
      * @param type TODO
      * @return a list of limits that match the criteria
      */
-    public List<? extends ResourceLimit> searchForLimits(Long id, String accountName, Long domainId, Integer type, Long startIndex, Long pageSizeVal);
+    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal);
     
     /**
      * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check

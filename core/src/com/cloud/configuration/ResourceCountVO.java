@@ -28,6 +28,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.configuration.Resource.ResourceOwnerType;
+
 @Entity
 @Table(name="resource_count")
 public class ResourceCountVO implements ResourceCount {
@@ -50,8 +52,6 @@ public class ResourceCountVO implements ResourceCount {
 	@Column(name="count")
 	private long count;
 	
-    @Transient
-    private ResourceOwnerType ownerType;
     
     public ResourceCountVO(){}
 	
@@ -64,7 +64,6 @@ public class ResourceCountVO implements ResourceCount {
 		} else if (ownerType == ResourceOwnerType.Domain) {
 		    this.domainId = ownerId;
 		}
-		this.ownerType = ownerType;
 	}
 	
 	@Override
@@ -118,7 +117,11 @@ public class ResourceCountVO implements ResourceCount {
 	
 	@Override
 	public ResourceOwnerType getResourceOwnerType() {
-	    return ownerType;
+	    if (accountId != null) {
+	        return ResourceOwnerType.Account;
+	    } else {
+	        return ResourceOwnerType.Domain;
+	    }
 	}
 	
 	public void setDomainId(Long domainId) {

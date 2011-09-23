@@ -72,6 +72,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
@@ -630,5 +631,17 @@ public class ApiDBUtils {
     
     public static Account getProjectOwner(long projectId) {
         return _projectMgr.getProjectOwner(projectId);
+    }
+    
+    public static Project findProjectByProjectDomainId(long projectDomainId) {
+        return _projectMgr.findByProjectDomainId(projectDomainId);
+    } 
+    
+    public static Project findProjectByProjectAccountId(long projectAccountId) {
+        return _projectMgr.findByProjectAccountId(projectAccountId);
+    }
+    
+    public static Project findProjectById(long projectId) {
+        return _projectMgr.getProject(projectId);
     }
 }

@@ -43,12 +43,12 @@ public interface SecurityChecker extends Adapter {
     /**
      * Checks if the account owns the object.
      * 
-     * @param account account to check against.
+     * @param caller account to check against.
      * @param object object that the account is trying to access.
      * @return true if access allowed.  false if this adapter cannot authenticate ownership.
      * @throws PermissionDeniedException if this adapter is suppose to authenticate ownership and the check failed.
      */
-    boolean checkAccess(Account account, Domain domain) throws PermissionDeniedException;
+    boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException;
     
     /**
      * Checks if the user belongs to an account that owns the object.
