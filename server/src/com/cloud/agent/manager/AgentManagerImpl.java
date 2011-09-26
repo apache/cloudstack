@@ -1250,99 +1250,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return false;
     }
 
-    public boolean checkCIDR(Host.Type type, HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {
-        if (serverPrivateIP == null) {
-            return true;
-        }
-        // Get the CIDR address and CIDR size
-        String cidrAddress = pod.getCidrAddress();
-        long cidrSize = pod.getCidrSize();
-
-        // If the server's private IP address is not in the same subnet as the
-        // pod's CIDR, return false
-        String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
-        String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
-        if (!cidrSubnet.equals(serverSubnet)) {
-            return false;
-        }
-
-        // If the server's private netmask is less inclusive than the pod's CIDR
-        // netmask, return false
-        String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
-        long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
-        long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
-        if (serverNetmaskNumeric > cidrNetmaskNumeric) {
-            return false;
-        }
-        return true;
-    }
-
-    protected void checkCIDR(Host.Type type, HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) throws IllegalArgumentException {
-        // Skip this check for Storage Agents and Console Proxies
-        if (type == Host.Type.Storage || type == Host.Type.ConsoleProxy) {
-            return;
-        }
-
-        if (serverPrivateIP == null) {
-            return;
-        }
-        // Get the CIDR address and CIDR size
-        String cidrAddress = pod.getCidrAddress();
-        long cidrSize = pod.getCidrSize();
-
-        // If the server's private IP address is not in the same subnet as the
-        // pod's CIDR, return false
-        String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
-        String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
-        if (!cidrSubnet.equals(serverSubnet)) {
-            s_logger.warn("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " + dc.getName());
-            throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " + dc.getName());
-        }
-
-        // If the server's private netmask is less inclusive than the pod's CIDR
-        // netmask, return false
-        String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
-        long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
-        long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
-        if (serverNetmaskNumeric > cidrNetmaskNumeric) {
-            throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " + dc.getName());
-        }
-
-    }
-
-    public void checkIPConflicts(Host.Type type, HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask, String serverPublicIP, String serverPublicNetmask) {
-        // If the server's private IP is the same as is public IP, this host has
-        // a host-only private network. Don't check for conflicts with the
-        // private IP address table.
-        if (serverPrivateIP != serverPublicIP) {
-            if (!_privateIPAddressDao.mark(dc.getId(), pod.getId(), serverPrivateIP)) {
-                // If the server's private IP address is already in the
-                // database, return false
-                List<DataCenterIpAddressVO> existingPrivateIPs = _privateIPAddressDao.listByPodIdDcIdIpAddress(pod.getId(), dc.getId(), serverPrivateIP);
-
-                assert existingPrivateIPs.size() <= 1 : " How can we get more than one ip address with " + serverPrivateIP;
-                if (existingPrivateIPs.size() > 1) {
-                    throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
-                }
-                if (existingPrivateIPs.size() == 1) {
-                    DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
-                    if (vo.getInstanceId() != null) {
-                        throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
-                    }
-                }
-            }
-        }
-
-        if (serverPublicIP != null && !_publicIPAddressDao.mark(dc.getId(), new Ip(serverPublicIP))) {
-            // If the server's public IP address is already in the database,
-            // return false
-            List<IPAddressVO> existingPublicIPs = _publicIPAddressDao.listByDcIdIpAddress(dc.getId(), serverPublicIP);
-            if (existingPublicIPs.size() > 0) {
-                throw new IllegalArgumentException("The public ip address of the server (" + serverPublicIP + ") is already in use in zone: " + dc.getName());
-            }
-        }
-    }
-
     protected AgentAttache createAttacheForConnect(HostVO host, Link link) throws ConnectionException {
         s_logger.debug("create ConnectedAgentAttache for " + host.getId());
         AgentAttache attache = new ConnectedAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
@@ -1692,7 +1599,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             if (event == Status.Event.AgentConnected) {
                 allow = false;
             }
-        } else if (state == ResourceState.PrepareForMaintenace) {
+        } else if (state == ResourceState.PrepareForMaintenance) {
             
         } else if (state == ResourceState.Maintenance) {
             

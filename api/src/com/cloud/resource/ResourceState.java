@@ -14,16 +14,13 @@ public enum ResourceState {
     Maintenance;
     
     public enum Event {
-        InternalCreating("Resource is creating"),
-        AdminEnable("Admin enables"),
-        AdminDisable("Admin disables"),
-        ClusterUnmanage("Cluster is unmanaged"),
-        ClusterManage("Cluster is managed"),
+        InternalCreated("Resource is created"),
+        Enable("Admin enables"),
+        Disable("Admin disables"),
         AdminAskMaintenace("Admin asks to enter maintenance"),
         AdminCancelMaintenance("Admin asks to cancel maintenance"),
         InternalEnterMaintenance("Resource enters maintenance"),
         Unmanaged("Admin turns a host into umanaged state"),
-        AdminAskReconnect("Admin triggers a reconnect"),
         UpdatePassword("Admin updates password of host"),
         UnableToMigrate("Management server migrates VM failed"),
         DeleteHost("Admin delete a host");
@@ -61,18 +58,24 @@ public enum ResourceState {
     
     protected static final StateMachine<ResourceState, Event> s_fsm = new StateMachine<ResourceState, Event>();
     static {
-        s_fsm.addTransition(null, Event.InternalCreating, ResourceState.Enabled);
-        s_fsm.addTransition(ResourceState.Enabled, Event.AdminEnable, ResourceState.Enabled);
-        s_fsm.addTransition(ResourceState.Enabled, Event.AdminDisable, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.Enabled, Event.ClusterUnmanage, ResourceState.Unmanaged);
-        s_fsm.addTransition(ResourceState.Enabled, Event.AdminAskMaintenace, ResourceState.PrepareForMaintenace);
-        s_fsm.addTransition(ResourceState.Disabled, Event.AdminEnable, ResourceState.Enabled);
-        s_fsm.addTransition(ResourceState.Disabled, Event.AdminDisable, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.Disabled, Event.ClusterUnmanage, ResourceState.Unmanaged);
-        s_fsm.addTransition(ResourceState.Unmanaged, Event.ClusterUnmanage, ResourceState.Unmanaged);
-        s_fsm.addTransition(ResourceState.Unmanaged, Event.ClusterManage, ResourceState.Disabled);
-        s_fsm.addTransition(ResourceState.PrepareForMaintenace, Event.InternalEnterMaintenance, ResourceState.Maintenance);
-        s_fsm.addTransition(ResourceState.PrepareForMaintenace, Event.AdminCancelMaintenance, ResourceState.Enabled);
+        s_fsm.addTransition(null, Event.InternalCreated, ResourceState.Enabled);
+        s_fsm.addTransition(ResourceState.Enabled, Event.Enable, ResourceState.Enabled);
+        s_fsm.addTransition(ResourceState.Enabled, Event.Disable, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.Enabled, Event.Unmanaged, ResourceState.Unmanaged);
+        s_fsm.addTransition(ResourceState.Enabled, Event.AdminAskMaintenace, ResourceState.PrepareForMaintenance);
+        s_fsm.addTransition(ResourceState.Disabled, Event.Enable, ResourceState.Enabled);
+        s_fsm.addTransition(ResourceState.Disabled, Event.Disable, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.Disabled, Event.Unmanaged, ResourceState.Unmanaged);
+        s_fsm.addTransition(ResourceState.Unmanaged, Event.Unmanaged, ResourceState.Unmanaged);
+        s_fsm.addTransition(ResourceState.PrepareForMaintenance, Event.InternalEnterMaintenance, ResourceState.Maintenance);
+        s_fsm.addTransition(ResourceState.PrepareForMaintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
+        s_fsm.addTransition(ResourceState.PrepareForMaintenance, Event.Unmanaged, ResourceState.Unmanaged);
         s_fsm.addTransition(ResourceState.Maintenance, Event.AdminCancelMaintenance, ResourceState.Enabled);
+        s_fsm.addTransition(ResourceState.Maintenance, Event.DeleteHost, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.Maintenance, Event.Unmanaged, ResourceState.Unmanaged);
+        s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.Unmanaged, ResourceState.Unmanaged);
+        s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.Disable, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.DeleteHost, ResourceState.Disabled);
+        s_fsm.addTransition(ResourceState.ErrorInMaintenance, Event.InternalEnterMaintenance, ResourceState.Maintenance);
     }
 }

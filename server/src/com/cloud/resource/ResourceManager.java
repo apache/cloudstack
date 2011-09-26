@@ -79,4 +79,8 @@ public interface ResourceManager {
 	boolean umanageHost(long hostId);
 
 	boolean maintenanceFailed(long hostId);
+	
+	public boolean maintain(final long hostId) throws AgentUnavailableException;
+	
+    public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
 }

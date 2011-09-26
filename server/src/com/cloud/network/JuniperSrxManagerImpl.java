@@ -225,8 +225,8 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
             throw new InvalidParameterValueException("Could not find an external firewall with ID: " + hostId);
         }
 
-        try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
+		try {
+			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
                 DataCenterVO zone = _dcDao.findById(externalFirewall.getDataCenterId());
                 zone.setFirewallProvider(Network.Provider.VirtualRouter.getName()); 
                 zone.setUserDataProvider(Network.Provider.VirtualRouter.getName());

@@ -161,7 +161,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
         }
 
         try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
+            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
                 DataCenterVO zone = _dcDao.findById(externalLoadBalancer.getDataCenterId());
                 
                 if (zone.getNetworkType().equals(NetworkType.Advanced)) {

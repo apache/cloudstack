@@ -715,6 +715,6 @@ public class HostVO implements Host {
     @Override
     public boolean isInMaintenanceStates() {
         return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
-                || getResourceState() == ResourceState.PrepareForMaintenace);
+                || getResourceState() == ResourceState.PrepareForMaintenance);
     }	
 }

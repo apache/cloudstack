@@ -316,7 +316,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
         }
 
         try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
+            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
                 DataCenterVO zone = _dcDao.findById(externalLoadBalancer.getDataCenterId());
                 
                 if (zone.getNetworkType().equals(NetworkType.Advanced)) {
@@ -676,7 +676,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
         }
 
         try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
+            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
                 DataCenterVO zone = _dcDao.findById(externalFirewall.getDataCenterId());
                 zone.setFirewallProvider(Network.Provider.VirtualRouter.getName()); 
                 zone.setUserDataProvider(Network.Provider.VirtualRouter.getName());

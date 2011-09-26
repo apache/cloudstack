@@ -183,9 +183,9 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);
         }
 
-        try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
-                return true;
+		try {
+			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
+				return true;
             } else {
                 return false;
             }

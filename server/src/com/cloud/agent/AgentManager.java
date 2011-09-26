@@ -198,8 +198,6 @@ public interface AgentManager extends Manager {
     Answer sendToSecStorage(HostVO ssHost, Command cmd);
 
     HostVO getSSAgent(HostVO ssHost);
-
-    void updateStatus(HostVO host, Event event);
     
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);

@@ -88,6 +88,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.resource.ResourceState.Event;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -716,6 +717,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
+		try {
+			updateResourceState(host, ResourceState.Event.DeleteHost, _nodeId);
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+		}
+        
         // Delete the associated entries in host ref table
         _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
 
@@ -1019,7 +1026,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         return true;
     }
     
-    private boolean maintain(final long hostId) throws AgentUnavailableException {
+    public boolean maintain(final long hostId) throws AgentUnavailableException {
         Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
         if (result != null) {
             return result;
@@ -1373,6 +1380,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		_hostDao.update(host.getId(), host);
 		/* Agent goes to Connecting status */
 		_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
+		try {
+			updateResourceState(host, ResourceState.Event.InternalCreated, _nodeId);
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+		}
+		
 		return host;
 	}
 	 
@@ -1422,6 +1435,17 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 				if (host != null) {
 					/* Change agent status to Alert */
 					_agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+				    try {
+	                    updateResourceState(host, ResourceState.Event.Disable, _nodeId);
+                    } catch (NoTransitionException e) {
+	                    s_logger.debug("Cannot transmit host " + host.getId() +  "to Disabled state", e);
+                    }
+				}
+			} else {
+				try {
+					updateResourceState(host, ResourceState.Event.InternalCreated, _nodeId);
+				} catch (NoTransitionException e) {
+					s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
 				}
 			}
 		}
@@ -1617,7 +1641,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         /*TODO: think twice about returning true or throwing out exception, I really prefer to exception that always exposes bugs */
-        if (host.getResourceState() != ResourceState.PrepareForMaintenace && host.getResourceState() != ResourceState.Maintenance && host.getResourceState() != ResourceState.ErrorInMaintenance) {
+        if (host.getResourceState() != ResourceState.PrepareForMaintenance && host.getResourceState() != ResourceState.Maintenance && host.getResourceState() != ResourceState.ErrorInMaintenance) {
             throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
         }
         
@@ -1631,8 +1655,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
         
-        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.ResetRequested);
-        return true;
+		try {
+			updateResourceState(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
+			_agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.ResetRequested);
+			return true;
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+			return false;
+		}        
     }
     
     private boolean cancelMaintenance(long hostId) {
@@ -1668,8 +1698,20 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
     
     private boolean doUmanageHost(long hostId) {
-        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.AgentDisconnected);
-        return true;
+    	try {
+    		HostVO host = _hostDao.findById(hostId);
+    		if (host == null) {
+    			s_logger.debug("Cannot find host " + hostId + ", assuming it has been deleted, skip umanage");
+    			return true;
+    		}
+    		
+			updateResourceState(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
+			 _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.AgentDisconnected);
+			return true;
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + hostId + "to Enabled state", e);
+			return false;
+		}        
     }
     
     

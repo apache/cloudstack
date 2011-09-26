@@ -175,4 +175,16 @@ public class DummyClusterManagerImpl implements ClusterManager {
     public  boolean isAgentRebalanceEnabled() {
         return false;
     }
+
+	@Override
+    public Boolean propagateResourceEvent(long agentId, com.cloud.resource.ResourceState.Event event) throws AgentUnavailableException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public boolean executeResourceUserRequest(long hostId, com.cloud.resource.ResourceState.Event event) throws AgentUnavailableException {
+	    // TODO Auto-generated method stub
+	    return false;
+    }
 }

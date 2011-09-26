@@ -141,7 +141,7 @@ public class AgentMonitor extends Thread implements Listener {
                     _agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
                 }
 
-                List<HostVO> hosts = _hostDao.listByResourceState(ResourceState.PrepareForMaintenace, ResourceState.ErrorInMaintenance);
+                List<HostVO> hosts = _hostDao.listByResourceState(ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 for (HostVO host : hosts) {
                     long hostId = host.getId();
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());

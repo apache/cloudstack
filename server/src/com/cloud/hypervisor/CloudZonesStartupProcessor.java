@@ -134,6 +134,7 @@ public class CloudZonesStartupProcessor implements StartupCommandProcessor {
     }
     
     protected boolean processHostStartup(StartupRoutingCommand startup) throws ConnectionException{
+    	/*
         boolean found = false;
         Type type = Host.Type.Routing;
         final Map<String, String> hostDetails = startup.getHostDetails();
@@ -170,6 +171,7 @@ public class CloudZonesStartupProcessor implements StartupCommandProcessor {
             s_logger.info("Old " + server.getType().toString()
                     + " host reconnected w/ id =" + server.getId());
         }
+        */
         return true;
    
         
@@ -396,6 +398,7 @@ public class CloudZonesStartupProcessor implements StartupCommandProcessor {
 	
 	
 	protected boolean processStorageStartup(StartupStorageCommand startup) throws ConnectionException{
+		/*
 	    if (startup.getResourceType() != Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
             return false;
         }
@@ -435,6 +438,7 @@ public class CloudZonesStartupProcessor implements StartupCommandProcessor {
             s_logger.info("Old " + server.getType().toString()
                     + " host reconnected w/ id =" + server.getId());
         }
+        */
         return true;
    
         
