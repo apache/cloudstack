@@ -7,6 +7,8 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.vmware.vim25.HostFirewallDefaultPolicy;
+import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.ManagedObjectReference;
 
 public class HostFirewallSystemMO extends BaseMO {
@@ -18,6 +20,14 @@ public class HostFirewallSystemMO extends BaseMO {
 	
 	public HostFirewallSystemMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
+	}
+	
+	public HostFirewallInfo getFirewallInfo() throws Exception {
+		return (HostFirewallInfo)_context.getServiceUtil().getDynamicProperty(_mor, "firewallInfo");
+	}
+	
+	public void updateDefaultPolicy(HostFirewallDefaultPolicy policy) throws Exception {
+		_context.getService().updateDefaultPolicy(_mor, policy);
 	}
 	
 	public void enableRuleset(String rulesetName) throws Exception {
