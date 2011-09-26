@@ -143,6 +143,7 @@ import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
@@ -187,6 +188,8 @@ import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.HostFirewallInfo;
+import com.vmware.vim25.HostFirewallRuleset;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
@@ -3790,6 +3793,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (_serviceContext == null) {
             try {
                 _serviceContext = VmwareContextFactory.create(_vCenterAddress, _username, _password);
+                VmwareHypervisorHost hyperHost = getHyperHost(_serviceContext, cmd);
+                assert(hyperHost instanceof HostMO);
+                
+                HostFirewallSystemMO firewallMo = ((HostMO)hyperHost).getHostFirewallSystemMO();
+                boolean bRefresh = false;
+                if(firewallMo != null) {
+                	HostFirewallInfo firewallInfo = firewallMo.getFirewallInfo();
+                	if(firewallInfo != null) {
+                		for(HostFirewallRuleset rule : firewallInfo.getRuleset()) {
+                			if("vncServer".equalsIgnoreCase(rule.getKey())) {
+                				bRefresh = true;
+                				firewallMo.enableRuleset("vncServer");
+                			} else if("gdbserver".equalsIgnoreCase(rule.getKey())) {
+                				bRefresh = true;
+                				firewallMo.enableRuleset("gdbserver");
+                			}
+                		}
+                	}
+                	
+                	if(bRefresh)
+                		firewallMo.refreshFirewall();
+                }
             } catch (Exception e) {
                 s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);
                 throw new CloudRuntimeException("Unable to connect to vSphere server: " + _vCenterAddress);
@@ -3810,7 +3835,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     @Override
     public VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd) {
         if (_morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
-            return new HostMO(context, _morHyperHost);
+        	return new HostMO(context, _morHyperHost);
         }
         return new ClusterMO(context, _morHyperHost);
     }

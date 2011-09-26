@@ -75,6 +75,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
 import com.vmware.apputils.vim25.ServiceUtil;
+import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
@@ -301,8 +302,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 HostMO hostMo = new HostMO(serviceContext, hosts[0]);
                 HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
                 if(firewallMo != null) {
-                    firewallMo.enableRuleset("vncServer");
-                    firewallMo.refreshFirewall();
+            		if(hostMo.getHostType() == VmwareHostType.ESX) {
+	                    firewallMo.enableRuleset("vncServer");
+	                    firewallMo.refreshFirewall();
+            		}
                 }
 
                 // prepare at least one network on the vswitch to enable OVF importing
@@ -332,8 +335,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                     HostMO hostMo = new HostMO(serviceContext, morHost);
                     HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
                     if(firewallMo != null) {
-                        firewallMo.enableRuleset("vncServer");
-                        firewallMo.refreshFirewall();
+                		if(hostMo.getHostType() == VmwareHostType.ESX) {
+	                        firewallMo.enableRuleset("vncServer");
+	                        firewallMo.refreshFirewall();
+                		}
                     }
 
                     String managementPortGroupName = hostMo.getPortGroupNameByNicType(HostVirtualNicType.management);
@@ -354,8 +359,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
                 if(firewallMo != null) {
-                    firewallMo.enableRuleset("vncServer");
-                    firewallMo.refreshFirewall();
+            		if(hostMo.getHostType() == VmwareHostType.ESX) {
+	                    firewallMo.enableRuleset("vncServer");
+	                    firewallMo.refreshFirewall();
+            		}
                 }
 
                 String managementPortGroupName = hostMo.getPortGroupNameByNicType(HostVirtualNicType.management);
