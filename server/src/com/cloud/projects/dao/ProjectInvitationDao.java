@@ -19,18 +19,12 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
-import com.cloud.projects.ProjectAccountVO;
+import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long>{
-    ProjectAccountVO getProjectOwner(long projectId);
-    List<ProjectAccountVO> listByProjectId(long projectId);
-    ProjectAccountVO findByProjectIdAccountId(long projectId, long accountId);
-    
-    boolean canAccessAccount(long accountId, long projectAccountId);
-    
-    boolean canAccessDomain(long accountId, long projectDomainId);
-   
-    boolean canModifyProjectAccount(long accountId, long projectAccountId);
-    boolean canModifyProjectDomain(long accountId, long projectDomainId);
+public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Long>{
+    ProjectInvitationVO findPendingByAccountIdProjectId(long accountId, long projectId);
+    List<ProjectInvitationVO> listExpiredInvitations();
+    boolean expirePendingInvitations(long timeOut);
+    boolean isActive(long id, long timeout);
 }

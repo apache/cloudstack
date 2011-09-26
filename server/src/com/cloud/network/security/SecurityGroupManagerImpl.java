@@ -1037,7 +1037,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
                 }
-                _accountMgr.checkAccess(caller, domain);
+                _accountMgr.checkAccess(caller, domain, null);
                 if (accountName != null) {
                     Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
                     if (account == null) {

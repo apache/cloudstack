@@ -198,7 +198,7 @@ public class ApiDispatcher {
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName() + " due to missing parameter " + parameterAnnotation.name());
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + " due to missing parameter " + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -210,18 +210,18 @@ public class ApiDispatcher {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter "
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + " due to invalid value " + paramObj + " for parameter "
                         + parameterAnnotation.name());
             } catch (ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName());
+                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8));
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName() + ", please pass dates in the format mentioned in the api documentation");
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + ", please pass dates in the format mentioned in the api documentation");
             } catch (CloudRuntimeException cloudEx) {
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName());
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8));
             }
         }
     }

@@ -107,8 +107,9 @@ import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.projects.ProjectManagerImpl;
-import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
+import com.cloud.projects.dao.ProjectDaoImpl;
+import com.cloud.projects.dao.ProjectInvitationDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
@@ -276,6 +277,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
         addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
         addDao("ProjectsAccountDao", ProjectAccountDaoImpl.class);
+        addDao("ProjectInvitationDao", ProjectInvitationDaoImpl.class);
         info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
         info.addParameter("cache.size", "100");
         info.addParameter("cache.time.to.live", "600");

@@ -21,37 +21,34 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a project", responseObject=SuccessResponse.class)
-public class DeleteProjectCmd extends BaseAsyncCmd {
+@Implementation(description="Deletes account from the project", responseObject=SuccessResponse.class)
+public class DeleteAccountFromProjectCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
 
-    private static final String s_name = "deleteprojectresponse";
+    private static final String s_name = "deleteaccountfromprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be deleted")
-    private Long id;
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, required=true, description="id of the project to remove the account from")
+    private Long projectId;
+    
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="name of the account to be removed from the project")
+    private String accountName;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
 
-    public Long geId() {
-        return id;
-    }
+    
 
     @Override
     public String getCommandName() {
@@ -62,27 +59,25 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Project Id: " + id);
-        boolean result = _projectService.deleteProject(id);
+        boolean result = _projectService.deleteAccountFromProject(projectId, accountName);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete project");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete account from the project");
         }
     }
     
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_PROJECT_DELETE;
-    }
-    
-    @Override
-    public String getEventDescription() {
-        return  "Deleting project: " + id;
-    }
     
     @Override
     public long getEntityOwnerId() {

@@ -1,3 +1,20 @@
+/**
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
 package com.cloud.projects.dao;
 
 import java.util.List;
@@ -15,9 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={ProjectAccountDao.class})
 public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long> implements ProjectAccountDao {
     private static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class);
-    
     protected final SearchBuilder<ProjectAccountVO> AllFieldsSearch;
-    
     
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -80,5 +95,32 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
             return false;
         }
     }
+
+    @Override
+    public boolean canModifyProjectAccount(long accountId, long projectAccountId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("projectAccountId", projectAccountId);
+        sc.setParameters("role", ProjectAccount.Role.Owner);
+        
+        if (findOneBy(sc) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
     
+    @Override
+    public boolean canModifyProjectDomain(long accountId, long projectDomainId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("projectDomainId", projectDomainId);
+        sc.setParameters("role", ProjectAccount.Role.Owner);
+        
+        if (findOneBy(sc) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

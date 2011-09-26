@@ -15,78 +15,68 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a project", responseObject=SuccessResponse.class)
-public class DeleteProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
-
-    private static final String s_name = "deleteprojectresponse";
+@Implementation(description="Makes account to join the project", responseObject=SuccessResponse.class)
+public class JoinProjectCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(JoinProjectCmd.class.getName());
+    private static final String s_name = "joinprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.PROJECT_ID, required=true, type=CommandType.LONG, description="list by project id")
+    private Long projectId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be deleted")
-    private Long id;
-
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list invitations for specified account; this parameter has to be specified with domainId")
+    private String accountName;
+    
+   
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-
-    public Long geId() {
-        return id;
+    public Long getProjectId() {
+        return projectId;
     }
 
+    public String getAccountName() {
+        return accountName;
+    }
+    
     @Override
     public String getCommandName() {
         return s_name;
     }
-
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public void execute(){
-        UserContext.current().setEventDetails("Project Id: " + id);
-        boolean result = _projectService.deleteProject(id);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete project");
-        }
-    }
-    
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_PROJECT_DELETE;
-    }
-    
-    @Override
-    public String getEventDescription() {
-        return  "Deleting project: " + id;
-    }
     
     @Override
     public long getEntityOwnerId() {
         //TODO - return project entity ownerId
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+ 
+
+    @Override
+    public void execute(){
+        boolean result = _projectService.joinProject(projectId, accountName);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to join the project");
+        }
     }
 }

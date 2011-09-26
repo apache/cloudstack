@@ -259,9 +259,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
+    public void checkAccess(Account caller, Domain domain, AccessType accessType) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(caller, domain)) {
+            if (checker.checkAccess(caller, domain, accessType)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
                 }
@@ -316,7 +316,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     throw new PermissionDeniedException("Domain is not found.", caller, domain.getValue());
                 }
                 try {
-                    checker.checkAccess(caller, d);
+                    checker.checkAccess(caller, d, accessType);
                 } catch (PermissionDeniedException e) {
                     e.addDetails(caller, domain.getValue());
                     throw e;
@@ -611,7 +611,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         
         //Check permissions
-        checkAccess(UserContext.current().getCaller(), domain);
+        checkAccess(UserContext.current().getCaller(), domain, null);
 
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
@@ -663,7 +663,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
         }
         
-        checkAccess(UserContext.current().getCaller(), domain);
+        checkAccess(UserContext.current().getCaller(), domain, null);
         
         Account account = _accountDao.findActiveAccount(accountName, domainId);
         if (account == null) {
@@ -1177,7 +1177,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (owner == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
             }
-            checkAccess(caller, domain);
+            checkAccess(caller, domain, null);
 
             return owner;
         } else if (!isAdmin(caller.getType()) && accountName != null && domainId != null) {
@@ -1243,7 +1243,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
                 }
 
-                checkAccess(caller, domain);
+                checkAccess(caller, domain, null);
 
                 if (accountName != null) {
                     Account owner = getActiveAccountByName(accountName, domainId);

@@ -135,7 +135,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
         }
         
-        _accountMgr.checkAccess(caller, parentDomain);
+        _accountMgr.checkAccess(caller, parentDomain, null);
 
        
         return createDomain(name, parentId, caller.getId(), networkDomain, null);
@@ -213,7 +213,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             throw new PermissionDeniedException("Can't delete ROOT domain");
         }
         
-        _accountMgr.checkAccess(caller, domain);
+        _accountMgr.checkAccess(caller, domain, null);
         
         //mark domain as inactive
         s_logger.debug("Marking domain id=" + domainId + " as " + Domain.State.Inactive + " before actually deleting it");

@@ -1562,7 +1562,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find domain by id " + cmd.getDomainId());
                 }
-                _accountMgr.checkAccess(caller, domain);
+                _accountMgr.checkAccess(caller, domain, null);
                 isDomainSpecific = true;
             }
         }
@@ -1858,7 +1858,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist in the system");
             }
 
-            _accountMgr.checkAccess(caller, domain);
+            _accountMgr.checkAccess(caller, domain, null);
             if (accountName != null) {
                 Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
                 if (owner == null) {

@@ -18,59 +18,45 @@
 
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ListResponse;
+import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectResponse;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a project", responseObject=ProjectResponse.class)
-public class CreateProjectCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateProjectCmd.class.getName());
+@Implementation(description="Lists project's accounts", responseObject=ProjectResponse.class)
+public class ListProjectAccountsCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListProjectAccountsCmd.class.getName());
 
-    private static final String s_name = "createprojectresponse";
+    private static final String s_name = "listprojectaccountsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, required=true, description="id of the project")
+    private Long projectId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the project")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list accounts of the project by account name")
     private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a project")
-    private Long domainId;
-
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the project")
-    private String name;
-
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="display text of the project")
-    private String displayText;
-
+   
+    @Parameter(name=ApiConstants.ROLE, type=CommandType.STRING, description="list accounts of the project by role")
+    private String role;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getAccountName() {
         return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDisplayText() {
-        return displayText;
     }
 
     @Override
@@ -80,7 +66,8 @@ public class CreateProjectCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        //TODO - return project entity ownerId
+       //TODO - return project entity ownerId
+
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
  
@@ -90,15 +77,17 @@ public class CreateProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceAllocationException{
-        UserContext.current().setEventDetails("Project Name: "+ getName());
-        Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
-        if (project != null) {
-            ProjectResponse response = _responseGenerator.createProjectResponse(project);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
+    public void execute(){
+        List<? extends ProjectAccount> projectAccounts = _projectService.listProjectAccounts(projectId, accountName, role, this.getStartIndex(), this.getPageSizeVal());
+        ListResponse<ProjectAccountResponse> response = new ListResponse<ProjectAccountResponse>();
+        List<ProjectAccountResponse> projectResponses = new ArrayList<ProjectAccountResponse>();
+        for (ProjectAccount projectAccount : projectAccounts) {
+            ProjectAccountResponse projectAccountResponse = _responseGenerator.createProjectAccountResponse(projectAccount);
+            projectResponses.add(projectAccountResponse);
         }
+        response.setResponses(projectResponses);
+        response.setResponseName(getCommandName());
+        
+        this.setResponseObject(response);
     }
 }

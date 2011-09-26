@@ -262,5 +262,8 @@ public class ApiConstants {
     public static final String MAX_GUESTS_LIMIT = "maxguestslimit";
     public static final String PROJECT_ID = "projectid";
     public static final String PROJECT = "project";
+    public static final String ROLE = "role";
+    public static final String USER = "user";
+    public static final String ACTIVE_ONLY = "activeonly";
 
 }

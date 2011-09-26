@@ -287,7 +287,10 @@ public enum Config {
     DefaultMaxProjectPublicIPs("Project Defaults", ManagementServer.class, Long.class, "max.project.public.ips", "20", "The default maximum number of public IPs that can be consumed by a project", null),
     DefaultMaxProjectTemplates("Project Defaults", ManagementServer.class, Long.class, "max.project.templates", "20", "The default maximum number of templates that can be deployed for a project", null),
     DefaultMaxProjectSnapshots("Project Defaults", ManagementServer.class, Long.class, "max.project.snapshots", "20", "The default maximum number of snapshots that can be created for a project", null),
-    DefaultMaxProjectVolumes("Project Defaults", ManagementServer.class, Long.class, "max.project.volumes", "20", "The default maximum number of volumes that can be created for a project", null);
+    DefaultMaxProjectVolumes("Project Defaults", ManagementServer.class, Long.class, "max.project.volumes", "20", "The default maximum number of volumes that can be created for a project", null),
+	
+    ProjectInviteRequired("Project Defaults", ManagementServer.class, Boolean.class, "project.invite.required", "false", "If invitation confirmation is required when add account to project. Default value is false", null),
+    ProjectInvitationExpirationTime("Project Defaults", ManagementServer.class, Long.class, "project.invite.timeout", "86400", "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", null);
 
 	private final String _category;
 	private final Class<?> _componentClass;

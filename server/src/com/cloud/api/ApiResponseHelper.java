@@ -63,6 +63,8 @@ import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.ProjectAccountResponse;
+import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
@@ -132,6 +134,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.Criteria;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -177,27 +181,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
 
-    @Override
-    public UserResponse createUserResponse(UserAccount user) {
-        UserResponse userResponse = new UserResponse();
-        userResponse.setAccountName(user.getAccountName());
-        userResponse.setAccountType(user.getType());
-        userResponse.setCreated(user.getCreated());
-        userResponse.setDomainId(user.getDomainId());
-        userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setFirstname(user.getFirstname());
-        userResponse.setId(user.getId());
-        userResponse.setLastname(user.getLastname());
-        userResponse.setState(user.getState());
-        userResponse.setTimezone(user.getTimezone());
-        userResponse.setUsername(user.getUsername());
-        userResponse.setApiKey(user.getApiKey());
-        userResponse.setSecretKey(user.getSecretKey());
-        userResponse.setObjectName("user");
-
-        return userResponse;
-    }
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -330,27 +313,35 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
         List<UserResponse> userResponseList = new ArrayList<UserResponse>();
         for (UserVO user : usersForAccount) {
-            UserResponse userResponse = new UserResponse();
-            userResponse.setAccountName(account.getAccountName());
-            userResponse.setAccountType(account.getType());
-            userResponse.setApiKey(user.getApiKey());
-            userResponse.setCreated(user.getCreated());
-            userResponse.setDomainId(account.getDomainId());
-            userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-            userResponse.setEmail(user.getEmail());
-            userResponse.setFirstname(user.getFirstname());
-            userResponse.setId(user.getId());
-            userResponse.setSecretKey(user.getSecretKey());
-            userResponse.setLastname(user.getLastname());
-            userResponse.setState(user.getState().toString());
-            userResponse.setTimezone(user.getTimezone());
-            userResponse.setUsername(user.getUsername());
-
+            UserResponse userResponse = createUserResponse(user);
             userResponseList.add(userResponse);
         }
 
         accountResponse.setUsers(userResponseList);
         return accountResponse;
+    }
+    
+    
+    @Override
+    public UserResponse createUserResponse(UserAccount user) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setAccountName(user.getAccountName());
+        userResponse.setAccountType(user.getType());
+        userResponse.setCreated(user.getCreated());
+        userResponse.setDomainId(user.getDomainId());
+        userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setFirstname(user.getFirstname());
+        userResponse.setId(user.getId());
+        userResponse.setLastname(user.getLastname());
+        userResponse.setState(user.getState());
+        userResponse.setTimezone(user.getTimezone());
+        userResponse.setUsername(user.getUsername());
+        userResponse.setApiKey(user.getApiKey());
+        userResponse.setSecretKey(user.getSecretKey());
+        userResponse.setObjectName("user");
+
+        return userResponse;
     }
 
     @Override
@@ -2462,5 +2453,48 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainName(domain.getName());
     }
     
+    @Override 
+    public ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount) {
+        Account account = ApiDBUtils.findAccountById(projectAccount.getAccountId());
+        ProjectAccountResponse projectAccountResponse = new ProjectAccountResponse();
+       
+        long projectId = projectAccount.getProjectId();
+        projectAccountResponse.setProjectId(projectId);
+        projectAccountResponse.setProjectName(ApiDBUtils.findProjectById(projectId).getName());
+        
+        projectAccountResponse.setId(account.getId());
+        projectAccountResponse.setAccountName(account.getAccountName());
+        projectAccountResponse.setAccountType(account.getType());
+        projectAccountResponse.setRole(projectAccount.getAccountRole().toString());
+        populateDomain(projectAccountResponse, account.getDomainId());
+        
+        // add all the users for an account as part of the response obj
+        List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
+        List<UserResponse> userResponseList = new ArrayList<UserResponse>();
+        for (UserVO user : usersForAccount) {
+            UserResponse userResponse = createUserResponse(user);
+            userResponseList.add(userResponse);
+        }
+
+        projectAccountResponse.setUsers(userResponseList);
+        projectAccountResponse.setObjectName("projectaccount");
+        
+        return projectAccountResponse; 
+    }
+    
+    @Override
+    public ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite) {
+        ProjectInvitationResponse response = new ProjectInvitationResponse();
+        response.setProjectId(invite.getProjectId());
+        response.setProjectName(ApiDBUtils.findProjectById(invite.getProjectId()).getName());
+        response.setInvitationState(invite.getState().toString());
+        
+        Account account = ApiDBUtils.findAccountById(invite.getAccountId());
+        response.setAccountName(account.getAccountName());
+        populateDomain(response, account.getDomainId());
+        
+        response.setObjectName("projectinvitation");
+        return response;
+    }
     
 }

@@ -9,8 +9,6 @@ public interface ProjectAccount {
     long getProjectId();
     
     Role getAccountRole();
-
-    long getId();
     
     long getProjectAccountId();
 

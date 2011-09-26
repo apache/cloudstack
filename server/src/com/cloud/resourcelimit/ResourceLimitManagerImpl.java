@@ -323,7 +323,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
                    return limits;
                }
                
-               _accountMgr.checkAccess(caller, domain);
+               _accountMgr.checkAccess(caller, domain, null);
                
                if (accountId != null) {
                    //Verify account information and permissions
@@ -356,7 +356,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
                _accountMgr.checkAccess(caller, null, _accountDao.findById(vo.getAccountId()));
                limits.add(vo);
            } else if (vo.getDomainId() != null) {
-               _accountMgr.checkAccess(caller, _domainDao.findById(vo.getDomainId()));
+               _accountMgr.checkAccess(caller, _domainDao.findById(vo.getDomainId()), null);
                limits.add(vo);
            }
            
@@ -487,7 +487,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             ownerId = accountId;
         } else if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
-            _accountMgr.checkAccess(caller, domain);
+            _accountMgr.checkAccess(caller, domain, null);
             if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...
                 throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
@@ -547,7 +547,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
         if (domain == null) {
             throw new InvalidParameterValueException("Please specify a valid domain ID.");
         }
-        _accountMgr.checkAccess(callerAccount, domain);
+        _accountMgr.checkAccess(callerAccount, domain, null);
 
         if (accountName != null) {
             Account userAccount = _accountMgr.getActiveAccountByName(accountName, domainId);

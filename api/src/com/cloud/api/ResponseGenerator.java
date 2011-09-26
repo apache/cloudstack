@@ -44,6 +44,8 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.ProjectAccountResponse;
+import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
@@ -92,6 +94,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -221,5 +225,9 @@ public interface ResponseGenerator {
     FirewallResponse createFirewallResponse(FirewallRule fwRule);
 
     HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities);
+    
+    ProjectAccountResponse createProjectAccountResponse(ProjectAccount projectAccount);
+
+    ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
 
 }

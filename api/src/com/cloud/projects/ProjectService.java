@@ -49,4 +49,16 @@ public interface ProjectService {
     Project findByProjectAccountId(long projectAccountId);
     
     Project findByNameAndDomainId(String name, long domainId);
+    
+    Project updateProject(long id, String displayText, String newOwnerName);
+    
+    boolean addAccountToProject(long projectId, String accountName);
+
+    boolean deleteAccountFromProject(long projectId, String accountName);
+    
+    List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
+    
+    List<? extends ProjectInvitation> listProjectInvitations(Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal);
+    
+    boolean joinProject(long projectId, String accountName);
 }

@@ -17,6 +17,8 @@
  */
 package com.cloud.projects;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -25,6 +27,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="project_account")
@@ -49,6 +53,9 @@ public class ProjectAccountVO implements ProjectAccount{
     
     @Column(name="project_domain_id")
     long projectDomainId;
+    
+    @Column(name=GenericDao.CREATED_COLUMN)
+    private Date created;
 
     
     protected ProjectAccountVO(){
@@ -62,7 +69,6 @@ public class ProjectAccountVO implements ProjectAccount{
        this.projectDomainId = project.getProjectDomainId();
     }
 
-    @Override
     public long getId() {
         return id;
     }
@@ -90,5 +96,9 @@ public class ProjectAccountVO implements ProjectAccount{
     @Override
     public long getProjectDomainId() {
         return projectDomainId;
+    }
+
+    public void setAccountRole(Role accountRole) {
+        this.accountRole = accountRole;
     }
 }

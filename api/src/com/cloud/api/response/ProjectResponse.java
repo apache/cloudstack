@@ -25,13 +25,13 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ProjectResponse extends BaseResponse{
     
-    @SerializedName("id") @Param(description="the id of the project")
+    @SerializedName(ApiConstants.ID) @Param(description="the id of the project")
     private Long id;
     
-    @SerializedName("name") @Param(description="the name of the project")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the project")
     private String name;
     
-    @SerializedName("displaytext") @Param(description="the displaytext of the project")
+    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the displaytext of the project")
     private String displaytext;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
