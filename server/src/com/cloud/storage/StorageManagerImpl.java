@@ -357,7 +357,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<StoragePoolVO> pools = _storagePoolDao.listAll();
 
         // if no pools or 1 pool which is in maintenance
-        if (pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(Status.Maintenance))) {
+        if (pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(StoragePoolStatus.Maintenance))) {
             return false;
         } else {
             return true;

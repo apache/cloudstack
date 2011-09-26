@@ -696,7 +696,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         txn.start();
 
         _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
-        _agentMgr.disconnect(hostId, Status.Event.Remove);
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
 
         // delete host details
         _hostDetailsDao.deleteDetails(hostId);
@@ -1038,7 +1038,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
 
-        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance) > 0) {
+        if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance) > 0) {
             throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
         }
 
@@ -1631,7 +1631,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
         
-        _agentMgr.disconnect(hostId, Status.Event.ResetRequested);
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.ResetRequested);
         return true;
     }
     
@@ -1668,7 +1668,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
     
     private boolean doUmanageHost(long hostId) {
-        _agentMgr.disconnect(hostId, Status.Event.AgentDisconnected);
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.AgentDisconnected);
         return true;
     }
     

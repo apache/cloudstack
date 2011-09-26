@@ -102,6 +102,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     
     @Inject(adapter = AgentLoadBalancerPlanner.class)
     protected Adapters<AgentLoadBalancerPlanner> _lbPlanners;
+    
+    @Inject
+    protected AgentManager _agentMgr;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -1018,7 +1021,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         
         s_logger.debug("Updating host id=" + hostId + " with the status " + Status.Rebalancing);
         host.setManagementServerId(null);
-        _hostDao.updateStatus(host, Event.StartAgentRebalance, _nodeId);
+        _agentMgr.agentStatusTransitTo(host, Event.StartAgentRebalance, _nodeId);
         _hostTransferDao.startAgentTransfer(hostId);
         txn.commit();
         

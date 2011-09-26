@@ -28,6 +28,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -82,7 +83,7 @@ public class SecondaryStorageListener implements Listener {
             if(s_logger.isInfoEnabled()) {
                 s_logger.info("Received a host startup notification " + cmd);
             }
-            _agentMgr.updateStatus(agent, Event.Ready);
+            _agentMgr.agentStatusTransitTo(agent, Event.Ready, ManagementServerNode.getManagementServerId());
             _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
             _ssVmMgr.generateSetupCommand(agent.getId());
             _ssVmMgr.generateFirewallConfiguration(agent.getId());

@@ -38,11 +38,12 @@ import com.cloud.utils.fsm.StateDao;
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
     List<HostVO> listBy(Host.Type type, Long clusterId, Long podId, long dcId);
 
-    long countBy(long clusterId,  Status... statuses);
+    long countBy(long clusterId,  ResourceState... states);
 
     List<HostVO> listByDataCenter(long dcId);
 	List<HostVO> listByHostPod(long podId);
 	List<HostVO> listByStatus(Status... status);
+	List<HostVO> listByResourceState(ResourceState...states);
 	List<HostVO> listBy(Host.Type type, long dcId);
 	List<HostVO> listAllBy(Host.Type type, long dcId);
 	HostVO findSecondaryStorageHost(long dcId);
@@ -71,21 +72,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 	List<HostVO> findDirectlyConnectedHosts();
 
     List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
-	/**
-	 * Mark the host as disconnected if it is in one of these states.
-	 * The management server id is set to null.
-	 * The lastPinged timestamp is set to current.
-	 * The state is set to the state passed in.
-	 * The disconnectedOn timestamp is set to current.
-	 *
-	 * @param host host to be marked
-	 * @param state state to be set to.
-	 * @param ifStates only if it is one of these states.
-	 * @return true if it's updated; false if not.
-	 */
-	boolean disconnect(HostVO host, Event event, long msId);
-
-	boolean connect(HostVO host, long msId);
 
 	HostVO findByStorageIpAddressInDataCenter(long dcId, String privateIpAddress);
     HostVO findByPrivateIpAddressInDataCenter(long dcId, String privateIpAddress);
@@ -110,16 +96,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 	 * @return
 	 */
 	List<HostVO> listByType(Type type);
-
-	/**
-	 * update the host and changes the status depending on the Event and
-	 * the current status.  If the status changed between
-	 * @param host host object to change
-	 * @param event event that happened.
-	 * @param management server who's making this update
-	 * @return true if updated; false if not.
-	 */
-	boolean updateStatus(HostVO host, Event event, long msId);
 
     List<RunningHostCountInfo> getRunningHostCounts(Date cutTime);
 
@@ -153,8 +129,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     long countRoutingHostsByDataCenter(long dcId);
 
     List<HostVO> listSecondaryStorageHosts(long dataCenterId);
-
-    boolean directConnect(HostVO host, long msId);
     
     List<HostVO> listDirectHostsBy(long msId, Status status);
     

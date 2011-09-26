@@ -9,7 +9,7 @@ public enum ResourceState {
     Enabled,
     Disabled,
     Unmanaged,
-    PrepareForMaintenace,
+    PrepareForMaintenance,
     ErrorInMaintenance,
     Maintenance;
     

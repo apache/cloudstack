@@ -210,7 +210,9 @@ public interface AgentManager extends Manager {
     
     public AgentAttache findAttache(long hostId);
     
-    void disconnect(long hostId, Status.Event event);
+    void disconnectWithoutInvestigation(long hostId, Status.Event event);
+    
+    void disconnectWithInvestigation(long hostId, Status.Event event);
     
     public boolean disconnectAgent(HostVO host, Status.Event e, long msId);
     

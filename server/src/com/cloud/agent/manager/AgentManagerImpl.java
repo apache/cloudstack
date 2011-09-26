@@ -714,11 +714,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
     
-    @Override
-    public void updateStatus(HostVO host, Status.Event event) {
-        _hostDao.updateStatus(host, event, _nodeId);
-    }
-
     protected AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd, boolean forRebalance) throws ConnectionException {
         long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
@@ -763,7 +758,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
         }
 
-        _hostDao.updateStatus(host, Event.Ready, _nodeId);
+        agentStatusTransitTo(host, Event.Ready, _nodeId);
         attache.ready();
         return attache;
     }
@@ -882,7 +877,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     	} finally {
     		if(!initialized) {
                 if (host != null) {
-                    _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
+                    agentStatusTransitTo(host, Event.AgentDisconnected, _nodeId);
                 }
     		}	
     	}
@@ -934,7 +929,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         s_logger.debug("Cant not find host " + agent.getId());
                     }
                 } else {
-                    _hostDao.updateStatus(host, Event.ManagementServerDown, _nodeId);
+                    agentStatusTransitTo(host, Event.ManagementServerDown, _nodeId);
                 }
             }
         }
@@ -1736,11 +1731,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return agentStatusTransitTo(host, e, msId);
     }
     
-    public void disconnectWithoutInvestigation(AgentAttache attache, final Status.Event event) {
+    protected void disconnectWithoutInvestigation(AgentAttache attache, final Status.Event event) {
         _executor.submit(new DisconnectTask(attache, event, false));
     }
     
-    public void disconnectWithInvestigation(AgentAttache attache, final Status.Event event) {
+    protected void disconnectWithInvestigation(AgentAttache attache, final Status.Event event) {
         _executor.submit(new DisconnectTask(attache, event, true));
     }
     
@@ -1768,7 +1763,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
     
     @Override
-    public void disconnect(final long hostId, final Status.Event event) {
+    public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
+        disconnectInternal(hostId, event, true);
+    }
+    
+    @Override
+    public void disconnectWithoutInvestigation(final long hostId, final Status.Event event) {
         disconnectInternal(hostId, event, false);
     }
 

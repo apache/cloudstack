@@ -42,6 +42,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
@@ -63,6 +65,9 @@ public class AgentMonitor extends Thread implements Listener {
     private ConnectionConcierge _concierge;
     @Inject
     ClusterDao _clusterDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    
     // private ConnectionConcierge _concierge;
     private Map<Long, Long> _pingMap;
 
@@ -133,10 +138,10 @@ public class AgentMonitor extends Thread implements Listener {
 
                 List<Long> behindAgents = findAgentsBehindOnPing();
                 for (Long agentId : behindAgents) {
-                    _agentMgr.disconnect(agentId, Event.PingTimeout, true);
+                    _agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
                 }
 
-                List<HostVO> hosts = _hostDao.listByStatus(Status.PrepareForMaintenance, Status.ErrorInMaintenance);
+                List<HostVO> hosts = _hostDao.listByResourceState(ResourceState.PrepareForMaintenace, ResourceState.ErrorInMaintenance);
                 for (HostVO host : hosts) {
                     long hostId = host.getId();
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
@@ -148,7 +153,7 @@ public class AgentMonitor extends Thread implements Listener {
                         List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
                         if (vos.isEmpty() && vosMigrating.isEmpty()) {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
-                            _hostDao.updateStatus(host, Event.PreparationComplete, _msId);
+                            _resourceMgr.updateResourceState(host, ResourceState.Event.InternalEnterMaintenance, _msId);   
                         }
                     }
                 }
@@ -227,7 +232,7 @@ public class AgentMonitor extends Thread implements Listener {
                     s_logger.info("Asking agent mgr to investgate why host " + host.getId() +
                             " is behind on ping. last ping time: " + host.getLastPinged());
                 }
-                _agentMgr.disconnect(host.getId(), Event.PingTimeout, true);
+                _agentMgr.disconnectWithInvestigation(host.getId(), Event.PingTimeout);
             }
         }
 

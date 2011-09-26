@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
@@ -78,6 +79,8 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     protected VMTemplateDao _vmTemplateDao = null;
     @Inject
     protected ConfigurationDao _configDao = null;
+    @Inject
+    protected AgentManager _agentMgr = null;
     
     protected SecondaryStorageDiscoverer() {
     }
@@ -290,7 +293,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 	public void postDiscovery(List<HostVO> hosts, long msId) {
 		if (_useServiceVM) {
 			for (HostVO h: hosts) {
-				_hostDao.disconnect(h, Event.AgentDisconnected, msId);
+				_agentMgr.agentStatusTransitTo(h, Event.AgentDisconnected, msId);
 			}
 		}
 		for (HostVO h: hosts) {
