@@ -168,6 +168,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
 		if (_externalNetworkStatsInterval > 0){
 			_executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));		
 		}
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
     	return true;
     }
 	
@@ -181,6 +182,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
 
 	@Override
     public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
     	return true;
     }
 

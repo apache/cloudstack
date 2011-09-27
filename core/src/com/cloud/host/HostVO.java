@@ -361,7 +361,7 @@ public class HostVO implements Host {
 
     public HostVO(String guid) {
         this.guid = guid;
-        this.status = Status.Up;
+        this.status = Status.Creating;
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
         this.hostAllocationState = Host.HostAllocationState.Enabled;
@@ -710,6 +710,10 @@ public class HostVO implements Host {
     @Override
     public ResourceState getResourceState() {
         return resourceState;
+    }
+    
+    public void setResourceState(ResourceState state) {
+    	resourceState = state;
     }
     
     @Override

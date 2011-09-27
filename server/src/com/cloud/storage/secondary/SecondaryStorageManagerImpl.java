@@ -72,6 +72,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -197,6 +198,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     protected CapacityDao                         _capacityDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
+    @Inject 
+    protected ResourceManager _resourceMgr;
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
@@ -738,6 +741,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public boolean stop() {
         _loadScanner.stop();
         _allocLock.releaseRef();
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
@@ -813,6 +817,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Secondary storage vm Manager is configured.");
         }
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 

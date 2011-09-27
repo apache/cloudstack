@@ -699,6 +699,7 @@ CREATE TABLE  `cloud`.`host` (
   `created` datetime COMMENT 'date the host first signed on',
   `removed` datetime COMMENT 'date removed if not null',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this host enabled for allocation for new resources',
+  `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   INDEX `i_host__removed`(`removed`),
   INDEX `i_host__last_ping`(`last_ping`),

@@ -89,6 +89,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
 
@@ -99,6 +100,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 
 	@Override
 	public boolean stop() {
+		_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
 		return true;
 	}
 

@@ -230,8 +230,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         
         createVmwareToolsIso();
 
-		if(s_logger.isInfoEnabled())
+		if(s_logger.isInfoEnabled()) {
 			s_logger.info("VmwareServerDiscoverer has been successfully configured");
+		}
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
     
@@ -279,6 +281,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
 	    // TODO Auto-generated method stub
 	    return null;
+    }
+	
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
     }
 }
 

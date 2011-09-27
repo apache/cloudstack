@@ -226,6 +226,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         
         _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
         _agentMgr.registerForHostEvents(new DirectNetworkStatsListener( _networkStatsInterval), true, false, false);
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
@@ -236,6 +237,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
     @Override
     public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 

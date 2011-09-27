@@ -456,6 +456,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         _agentMgr.registerForHostEvents(this, true, false, true);
         
         createXsToolsISO();
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
     
@@ -651,5 +652,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
 	    // TODO Auto-generated method stub
 	    return null;
-    }    
+    }
+	
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
 }

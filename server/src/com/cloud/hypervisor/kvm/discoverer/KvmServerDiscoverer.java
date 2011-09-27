@@ -274,6 +274,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		if (_hostIp == null) {
 			throw new ConfigurationException("Can't get host IP");
 		}
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
 	
@@ -354,5 +355,12 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
         
         return new DeleteHostAnswer(true);
     }
+	
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
+    
     
 }

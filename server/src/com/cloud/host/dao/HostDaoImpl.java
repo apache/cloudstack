@@ -925,62 +925,70 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
 	@Override
-	public boolean updateState(Status oldStatus, Event event,
-			Status newStatus, Host vo, Long id) {
-		 HostVO host = (HostVO)vo;
-	        long oldPingTime = host.getLastPinged();
+	public boolean updateState(Status oldStatus, Event event, Status newStatus, Host vo, Long id) {
+		HostVO host = (HostVO) vo;
+		long oldPingTime = host.getLastPinged();
 
-	        SearchBuilder<HostVO> sb = createSearchBuilder();
-	        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
-	        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-	        if (newStatus.checkManagementServer()) {
-	            sb.and("ping", sb.entity().getLastPinged(), SearchCriteria.Op.EQ);
-	            sb.and().op("nullmsid", sb.entity().getManagementServerId(), SearchCriteria.Op.NULL);
-	            sb.or("msid", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-	            sb.closeParen();
-	        }
-	        sb.done();
+		SearchBuilder<HostVO> sb = createSearchBuilder();
+		sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+		sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+		if (newStatus.checkManagementServer()) {
+			sb.and("ping", sb.entity().getLastPinged(), SearchCriteria.Op.EQ);
+			sb.and().op("nullmsid", sb.entity().getManagementServerId(), SearchCriteria.Op.NULL);
+			sb.or("msid", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+			sb.closeParen();
+		}
+		sb.done();
 
-	        SearchCriteria<HostVO> sc = sb.create();
+		SearchCriteria<HostVO> sc = sb.create();
 
-	        sc.setParameters("status", oldStatus);
-	        sc.setParameters("id", host.getId());
-	        if (newStatus.checkManagementServer()) {
-	            sc.setParameters("ping", oldPingTime);
-	            sc.setParameters("msid", host.getManagementServerId());
-	        }
+		sc.setParameters("status", oldStatus);
+		sc.setParameters("id", host.getId());
+		if (newStatus.checkManagementServer()) {
+			sc.setParameters("ping", oldPingTime);
+			sc.setParameters("msid", host.getManagementServerId());
+		}
 
-	        UpdateBuilder ub = getUpdateBuilder(host);
-	        ub.set(host, _statusAttr, newStatus);
-	        if (newStatus.updateManagementServer()) {
-	            if (newStatus.lostConnection()) {
-	                ub.set(host, _msIdAttr, null);
-	            } else {
-	                ub.set(host, _msIdAttr, host.getManagementServerId());
-	            }
-	            if (event.equals(Event.Ping) || event.equals(Event.AgentConnected)) {
-	                ub.set(host, _pingTimeAttr, System.currentTimeMillis() >> 10);
-	            }
-	        }
-	        if (event.equals(Event.ManagementServerDown)) {
-	            ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (10 * 60)));
-	        }
-	        int result = update(ub, sc, null);
-	        assert result <= 1 : "How can this update " + result + " rows? ";
+		UpdateBuilder ub = getUpdateBuilder(host);
+		ub.set(host, _statusAttr, newStatus);
+		if (newStatus.updateManagementServer()) {
+			if (newStatus.lostConnection()) {
+				ub.set(host, _msIdAttr, null);
+			} else {
+				ub.set(host, _msIdAttr, host.getManagementServerId());
+			}
+			if (event.equals(Event.Ping) || event.equals(Event.AgentConnected)) {
+				ub.set(host, _pingTimeAttr, System.currentTimeMillis() >> 10);
+			}
+		}
+		if (event.equals(Event.ManagementServerDown)) {
+			ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (10 * 60)));
+		}
+		int result = update(ub, sc, null);
+		assert result <= 1 : "How can this update " + result + " rows? ";
 
-	        if (s_logger.isDebugEnabled() && result == 0) {
-	            HostVO ho = findById(host.getId());
-	            assert ho != null : "How how how? : " + host.getId();
+		if (s_logger.isDebugEnabled() && result == 0) {
+			HostVO ho = findById(host.getId());
+			assert ho != null : "How how how? : " + host.getId();
 
-	            StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
-	            str.append(". New=[status=").append(newStatus.toString()).append(":msid=").append(newStatus.lostConnection() ? "null" : host.getManagementServerId()).append(":lastpinged=").append(host.getLastPinged())
-	                    .append("]");
-	            str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(host.getManagementServerId()).append(":lastpinged=").append(oldPingTime).append("]");
-	            str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=").append(vo.getLastPinged()).append("]");
-	            s_logger.debug(str.toString());
-	        }
-	        
-	        return result > 0;
+			StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
+			str.append(". New=[status=").append(newStatus.toString()).append(":msid=")
+			        .append(newStatus.lostConnection() ? "null" : host.getManagementServerId()).append(":lastpinged=").append(host.getLastPinged()).append("]");
+			str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(host.getManagementServerId()).append(":lastpinged=")
+			        .append(oldPingTime).append("]");
+			str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=")
+			        .append(vo.getLastPinged()).append("]");
+			s_logger.debug(str.toString());
+		}
+		
+		StringBuilder msg = new StringBuilder("Agent status update: [");
+		msg.append("hostId = " + host.getId());
+		msg.append("; old status = " + oldStatus);
+		msg.append("; event = " + event);
+		msg.append("; new status = " + newStatus + "]");
+		s_logger.debug(msg.toString());
+		
+		return result > 0;
 	}
 	
     @Override
@@ -1009,6 +1017,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             /*TODO: add defbug info*/
         }
         
+		StringBuilder msg = new StringBuilder("Resource state update: [");
+		msg.append("hostId = " + host.getId());
+		msg.append("; old state = " + oldState);
+		msg.append("; event = " + event);
+		msg.append("; new status = " + newState + "]");
+		s_logger.debug(msg.toString());
+		
         return result > 0;
     }
 

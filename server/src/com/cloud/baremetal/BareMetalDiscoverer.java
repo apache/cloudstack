@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -44,6 +45,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -61,7 +63,20 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 	@Inject protected HostDao _hostDao;
 	@Inject DataCenterDao _dcDao;
     @Inject VMInstanceDao _vmDao = null;
+    @Inject ResourceManager _resourceMgr;
 	
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+    	return super.configure(name, params);
+    }
+    
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
+    
 	@Override
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
 			throws DiscoveryException {

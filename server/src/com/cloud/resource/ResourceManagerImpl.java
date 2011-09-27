@@ -981,7 +981,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new NoTransitionException("No next resource state found for current state =" + currentState + " event =" + event);
         }
         
-        /*TODO: adding debug trace*/
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
     
@@ -1184,41 +1183,46 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }   
     }
 	
-	 private Object dispatchToStateAdapters(ResourceStateAdapter.Event event, boolean singleTaker, Object...args) {
-	        synchronized (_resourceStateAdapters) {
-	            Iterator it = _resourceStateAdapters.entrySet().iterator();
-	            Object result = null;
-	            while (it.hasNext()) {
-	                Map.Entry<String, Pair<ResourceStateAdapter, List<String>>> item = (Map.Entry<String, Pair<ResourceStateAdapter, List<String>>>)it.next();
-	                ResourceStateAdapter adapter = item.getValue().first();
-	                if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
-	                    result = adapter.createHostVOForConnectedAgent((HostVO)args[0], (StartupCommand[])args[1]);
-	                    if (result != null && singleTaker) {
-	                        break;
-	                    }
-	                } else if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT) {
-	                    result = adapter.createHostVOForDirectConnectAgent((HostVO)args[0], (StartupCommand[])args[1], (ServerResource)args[2], (Map<String, String>)args[3], (List<String>)args[4]);
-	                    if (result != null && singleTaker) {
-	                        break;
-	                    }
-	                } else if (event == ResourceStateAdapter.Event.DELETE_HOST) {
-	                    try {
-	                        result = adapter.deleteHost((HostVO) args[0], (Boolean) args[1], (Boolean) args[2]);
-	                        if (result != null) {
-	                            break;
-	                        }
-	                    } catch (UnableDeleteHostException e) {
-	                        s_logger.debug("Adapter " + adapter.getName() + " says unable to delete host", e);
-	                        result = new ResourceStateAdapter.DeleteHostAnswer(false, true);
-	                    }
-	                } else {
-	                    throw new CloudRuntimeException("Unknown resource state event:" + event);
-	                }
-	            }
-	            
-	            return result;
-	        }
-	    }
+	private Object dispatchToStateAdapters(ResourceStateAdapter.Event event, boolean singleTaker, Object... args) {
+		synchronized (_resourceStateAdapters) {
+			Iterator it = _resourceStateAdapters.entrySet().iterator();
+			Object result = null;
+			while (it.hasNext()) {
+				Map.Entry<String, Pair<ResourceStateAdapter, List<String>>> item = (Map.Entry<String, Pair<ResourceStateAdapter, List<String>>>) it.next();
+				ResourceStateAdapter adapter = item.getValue().first();
+				
+				String msg = new String("Dispatching resource state event " + event + " to " + item.getKey());
+				s_logger.debug(msg);
+				
+				if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
+					result = adapter.createHostVOForConnectedAgent((HostVO) args[0], (StartupCommand[]) args[1]);
+					if (result != null && singleTaker) {
+						break;
+					}
+				} else if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT) {
+					result = adapter.createHostVOForDirectConnectAgent((HostVO) args[0], (StartupCommand[]) args[1], (ServerResource) args[2],
+					        (Map<String, String>) args[3], (List<String>) args[4]);
+					if (result != null && singleTaker) {
+						break;
+					}
+				} else if (event == ResourceStateAdapter.Event.DELETE_HOST) {
+					try {
+						result = adapter.deleteHost((HostVO) args[0], (Boolean) args[1], (Boolean) args[2]);
+						if (result != null) {
+							break;
+						}
+					} catch (UnableDeleteHostException e) {
+						s_logger.debug("Adapter " + adapter.getName() + " says unable to delete host", e);
+						result = new ResourceStateAdapter.DeleteHostAnswer(false, true);
+					}
+				} else {
+					throw new CloudRuntimeException("Unknown resource state event:" + event);
+				}
+			}
+
+			return result;
+		}
+	}
 
 	@Override
 	public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) throws IllegalArgumentException {
@@ -1283,13 +1287,13 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	        ResourceStateAdapter.Event stateEvent) {
 		StartupCommand startup = cmds[0];
 		HostVO host = _hostDao.findByGuid(startup.getGuid());
+		boolean isNew = false;
 		if (host == null) {
 			host = _hostDao.findByGuid(startup.getGuidWithoutResource());
 		}
 		if (host == null) {
 			host = new HostVO(startup.getGuid());
-			host.setResource(resource.getClass().getName());
-			host = _hostDao.persist(host);
+			isNew = true;
 		}
 		// TODO: we don't allow to set ResourceState here?
 
@@ -1375,9 +1379,19 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());
 			host.setStorageNetmaskDeux(startup.getStorageNetmaskDeux());
 		}
+		if (resource != null) {
+			/* null when agent is connected agent */
+			host.setResource(resource.getClass().getName());
+		}
 
 		host = (HostVO) dispatchToStateAdapters(stateEvent, true, host, cmds, resource, details, hostTags);
-		_hostDao.update(host.getId(), host);
+		assert host != null : "No resource state adapter response";
+		
+		if (isNew) {
+			_hostDao.persist(host);
+		} else {
+			_hostDao.update(host.getId(), host);
+		}
 		/* Agent goes to Connecting status */
 		_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
 		try {

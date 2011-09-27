@@ -36,6 +36,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -56,13 +57,14 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
 	@Inject ExternalDhcpManager exDhcpMgr;
-	
+	@Inject ResourceManager _resourceMgr;
 	@Inject(adapter=PxeServerService.class)
 	protected Adapters<PxeServerService> _services;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
 
@@ -73,6 +75,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 
 	@Override
 	public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
 		return true;
 	}
 

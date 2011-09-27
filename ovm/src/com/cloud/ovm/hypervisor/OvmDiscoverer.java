@@ -45,6 +45,18 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
 		
 	}
 	
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+    	return super.configure(name, params);
+    }
+    
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
+	
 	@Override
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
 			Long podId, Long clusterId, URI url, String username,

@@ -88,6 +88,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -202,6 +203,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     StoragePoolDao _storagePoolDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
+    @Inject
+    ResourceManager _resourceMgr;
 
     private ConsoleProxyListener _listener;
 
@@ -1003,6 +1006,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         this._loadScanner.stop();
         _allocProxyLock.releaseRef();
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
@@ -1270,6 +1274,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         _loadScanner = new SystemVmLoadScanner<Long>(this);
         _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Console Proxy Manager is configured.");
