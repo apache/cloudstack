@@ -4050,7 +4050,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         fullSync(cmd, conn);
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
-        cmd.setPoolSync(true);
+        cmd.setPoolSync(false);
 
         StartupStorageCommand sscmd = initializeLocalSR(conn);
         if (sscmd != null) {
