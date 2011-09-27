@@ -5,7 +5,6 @@
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/core"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/utils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/server"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/premium"/>
 	<classpathentry kind="src" path="/api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry kind="output" path="bin"/>
