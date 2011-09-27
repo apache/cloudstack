@@ -944,6 +944,8 @@ CREATE TABLE `cloud`.`domain_router` (
   `redundant_state` varchar(64) NOT NULL COMMENT 'the state of redundant virtual router',
   `stop_pending` int(1) unsigned NOT NULL COMMENT 'if this router would be stopped after we can connect to it',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
+  `template_version` varchar(100) COMMENT 'template version',
+  `scripts_version` varchar(100) COMMENT 'scripts version',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';

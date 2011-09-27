@@ -125,6 +125,12 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName("redundantstate") @Param(description="the state of redundant virtual router")
     private String redundantState;
     
+    @SerializedName("templateversion") @Param(description="the version of template")
+    private String templateVersion;
+    
+    @SerializedName("scriptsversion") @Param(description="the version of scripts")
+    private String scriptsVersion;
+    
     @Override
     public Long getObjectId() {
     	return getId();
@@ -392,5 +398,21 @@ public class DomainRouterResponse extends BaseResponse {
 
     public void setIsRedundantRouter(boolean isRedundantRouter) {
         this.isRedundantRouter = isRedundantRouter;
+    }
+    
+    public String getTemplateVersion() {
+        return this.templateVersion;
+    }
+    
+    public void setTemplateVersion(String templateVersion) {
+        this.templateVersion = templateVersion;
+    }
+    
+    public String getScriptsVersion() {
+        return this.scriptsVersion;
+    }
+    
+    public void setScriptsVersion(String scriptsVersion) {
+        this.scriptsVersion = scriptsVersion;
     }
 }

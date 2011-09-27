@@ -71,6 +71,12 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Enumerated(EnumType.STRING)
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
     
+    @Column(name="template_version")
+    private String templateVersion;
+    
+    @Column(name="scripts_version")
+    private String scriptsVersion;
+    
     public DomainRouterVO(long id,
             long serviceOfferingId,
             String name,
@@ -227,4 +233,20 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 	public void setStopPending(boolean stopPending) {
 	    this.stopPending = stopPending;
 	}
+    
+    public String getTemplateVersion() {
+        return this.templateVersion;
+    }
+    
+    public void setTemplateVersion(String templateVersion) {
+        this.templateVersion = templateVersion;
+    }
+    
+    public String getScriptsVersion() {
+        return this.scriptsVersion;
+    }
+    
+    public void setScriptsVersion(String scriptsVersion) {
+        this.scriptsVersion = scriptsVersion;
+    }
 }
