@@ -1195,51 +1195,60 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
-	    // TODO Auto-generated method stub
-	    return null;
+		/* Called when Secondary Storage VM connected */
+		StartupCommand firstCmd = cmd[0];
+	    if (!(firstCmd instanceof StartupSecondaryStorageCommand)) {
+	    	return null;
+	    }
+	    
+		host.setType( com.cloud.host.Host.Type.SecondaryStorageVM);
+		return host;	
     }
 
 	@Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
             List<String> hostTags) {
+		/* Called when add secondary storage on UI */
 		StartupCommand firstCmd = startup[0];
-		if (!(firstCmd instanceof StartupSecondaryStorageCommand) && !(firstCmd instanceof StartupSecondaryStorageCommand)) {
+		if (!(firstCmd instanceof StartupStorageCommand)) {
 			return null;
 		}
 
 		com.cloud.host.Host.Type type = null;
-		if (firstCmd instanceof StartupSecondaryStorageCommand) {
-			type = com.cloud.host.Host.Type.SecondaryStorageVM;
-		} else if (firstCmd instanceof StartupSecondaryStorageCommand) {
-			StartupStorageCommand ssCmd = ((StartupStorageCommand) firstCmd);
-			if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
-				type = ssCmd.getHostType();
+		StartupStorageCommand ssCmd = ((StartupStorageCommand) firstCmd);
+		if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
+			type = ssCmd.getHostType();
+		} else {
+			if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
+				type = Host.Type.SecondaryStorage;
+				if (resource != null && resource instanceof DummySecondaryStorageResource) {
+					host.setResource(null);
+				}
+			} else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
+				type = Host.Type.LocalSecondaryStorage;
 			} else {
-				if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-					type = Host.Type.SecondaryStorage;
-					if (resource != null && resource instanceof DummySecondaryStorageResource) {
-						host.setResource(null);
-					}
-				} else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
-					type = Host.Type.LocalSecondaryStorage;
+				type = Host.Type.Storage;
+			}
+
+			final Map<String, String> hostDetails = ssCmd.getHostDetails();
+			if (hostDetails != null) {
+				if (details != null) {
+					details.putAll(hostDetails);
 				} else {
-					type = Host.Type.Storage;
+					details = hostDetails;
 				}
+			}
 
-				final Map<String, String> hostDetails = ssCmd.getHostDetails();
-				if (hostDetails != null) {
-					if (details != null) {
-						details.putAll(hostDetails);
-					} else {
-						details = hostDetails;
-					}
-				}
-
-				host.setDetails(details);
+			host.setDetails(details);
+			host.setParent(ssCmd.getParent());
+			host.setTotalSize(ssCmd.getTotalSize());
+			host.setHypervisorType(HypervisorType.None);
+			host.setType(type);
+			if (ssCmd.getNfsShare() != null) {
+				host.setStorageUrl(ssCmd.getNfsShare());
 			}
 		}
-
-		host.setType(type);
+		
 		return host;
     }
 

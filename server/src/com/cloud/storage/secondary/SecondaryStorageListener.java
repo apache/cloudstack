@@ -83,7 +83,6 @@ public class SecondaryStorageListener implements Listener {
             if(s_logger.isInfoEnabled()) {
                 s_logger.info("Received a host startup notification " + cmd);
             }
-            _agentMgr.agentStatusTransitTo(agent, Event.Ready, ManagementServerNode.getManagementServerId());
             _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
             _ssVmMgr.generateSetupCommand(agent.getId());
             _ssVmMgr.generateFirewallConfiguration(agent.getId());
