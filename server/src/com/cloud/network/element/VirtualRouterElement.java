@@ -53,6 +53,7 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.uservm.UserVm;
@@ -100,7 +101,6 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
         if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
             return false;
         }
@@ -117,13 +117,14 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network.getGuestType(), dest.getDataCenter())) {
-            boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            boolean isRedundant = offering.getRedundantRouter();
             List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), isRedundant);
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
