@@ -76,7 +76,7 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ROUTER_STOP;
+        return EventTypes.EVENT_ROUTER_DESTROY;
     }
 
     @Override
