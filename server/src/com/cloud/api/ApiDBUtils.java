@@ -648,4 +648,8 @@ public class ApiDBUtils {
     public static Project findProjectById(long projectId) {
         return _projectMgr.getProject(projectId);
     }
+    
+    public static long getProjectOwnwerId(long projectId) {
+        return _projectMgr.getProjectOwner(projectId).getId();
+    }
 }

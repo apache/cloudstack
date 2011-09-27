@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
@@ -80,8 +81,17 @@ public class CreateProjectCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        //TODO - return project entity ownerId
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        Account caller = UserContext.current().getCaller();
+        
+        if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {
+            throw new InvalidParameterValueException("Account name and domain id must be specified together");
+        }
+        
+        if (accountName != null) {
+            return _accountService.finalizeOwner(caller, accountName, domainId).getId();
+        }
+        
+        return caller.getId();
     }
  
 

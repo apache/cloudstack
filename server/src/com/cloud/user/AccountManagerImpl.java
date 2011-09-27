@@ -595,6 +595,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
     public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain) {
         
         if (accountName == null) {
@@ -1277,7 +1278,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	}
     
     @Override @DB
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
     public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain) {
         //Validate domain
         Domain domain = _domainMgr.getDomain(domainId);

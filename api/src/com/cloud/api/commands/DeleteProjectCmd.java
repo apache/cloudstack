@@ -28,7 +28,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a project", responseObject=SuccessResponse.class)
@@ -86,7 +87,13 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     
     @Override
     public long getEntityOwnerId() {
-        //TODO - return project entity ownerId
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        Project project= _projectService.getProject(id);
+        //verify input parameters
+        if (project == null) {
+            throw new InvalidParameterValueException("Unable to find project by id " + id);
+        } 
+        
+        return _projectService.getProjectOwner(id).getId(); 
     }
+    
 }

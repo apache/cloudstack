@@ -138,8 +138,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             throw new InvalidParameterValueException("Project with name " + name + " already exists in domain id=" + owner.getDomainId());
         }
         
-        Domain ownerDomain = _domainDao.findById(owner.getDomainId());
-        
         //do resource limit check
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.project);
         
@@ -227,7 +225,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         //Delete project's domain
         s_logger.debug("Deleting projects " + project + " internal domain id=" + project.getProjectDomainId() + " as a part of project cleanup...");
-        result = result && _domainMgr.deleteDomain(project.getProjectDomainId(), true);
+        result = result && _domainMgr.deleteDomain(_domainDao.findById(project.getProjectDomainId()), true);
         
         return result;
     }
@@ -335,6 +333,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_ADD, eventDescription = "adding account to project")
     public ProjectAccount assignAccountToProject(Project project, long accountId, ProjectAccount.Role accountRole) {
         return _projectAccountDao.persist(new ProjectAccountVO(project, accountId, accountRole));
     }
@@ -386,6 +385,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project")
     public Project updateProject(long projectId, String displayText, String newOwnerName) {
         Account caller = UserContext.current().getCaller();
         
@@ -486,6 +486,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_REMOVE, eventDescription = "removing account from project")
     public boolean deleteAccountFromProject(long projectId, String accountName) {
         Account caller = UserContext.current().getCaller();
         

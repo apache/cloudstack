@@ -26,7 +26,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.user.Account;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.projects.Project;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes account from the project", responseObject=SuccessResponse.class)
 public class DeleteAccountFromProjectCmd extends BaseCmd {
@@ -69,6 +71,7 @@ public class DeleteAccountFromProjectCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
         boolean result = _projectService.deleteAccountFromProject(projectId, accountName);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -81,7 +84,12 @@ public class DeleteAccountFromProjectCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        //TODO - return project entity ownerId
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        Project project= _projectService.getProject(projectId);
+        //verify input parameters
+        if (project == null) {
+            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+        } 
+        
+        return _projectService.getProjectOwner(projectId).getId(); 
     }
 }

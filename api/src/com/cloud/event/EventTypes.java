@@ -205,6 +205,8 @@ public class EventTypes {
 	
 	//Projects
 	public static final String EVENT_PROJECT_CREATE = "PROJECT.CREATE";
+	public static final String EVENT_PROJECT_UPDATE = "PROJECT.UPDATE";
 	public static final String EVENT_PROJECT_DELETE = "PROJECT.DELETE";
-	
+	public static final String EVENT_PROJECT_ACCOUNT_ADD = "PROJECT.ACCOUNT.ADD";
+	public static final String EVENT_PROJECT_ACCOUNT_REMOVE = "PROJECT.ACCOUNT.REMOVE";
 }

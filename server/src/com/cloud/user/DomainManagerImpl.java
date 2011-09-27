@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
+import com.cloud.domain.Domain.Type;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -118,7 +119,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
     }
     
     @Override
-    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
     public Domain createDomain(String name, Long parentId, String networkDomain) {
         Account caller = UserContext.current().getCaller();
 
@@ -143,9 +144,8 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
     }
     
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, Domain.Type domainType) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, Type domainType) {
         //Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -154,6 +154,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
                         + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
+     
         
         //verify domainType
         if (domainType != null && !(domainType == Domain.Type.Project || domainType == Domain.Type.Normal)) {
@@ -179,6 +180,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         
         return domain;
     }
+    
     
     @Override
     public DomainVO findDomainByPath(String domainPath) {
@@ -215,23 +217,28 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         
         _accountMgr.checkAccess(caller, domain, null);
         
+       return deleteDomain(domain, cleanup);
+    }
+    
+    @Override
+    public boolean deleteDomain(DomainVO domain, Boolean cleanup) {
         //mark domain as inactive
-        s_logger.debug("Marking domain id=" + domainId + " as " + Domain.State.Inactive + " before actually deleting it");
+        s_logger.debug("Marking domain id=" + domain.getId() + " as " + Domain.State.Inactive + " before actually deleting it");
         domain.setState(Domain.State.Inactive);
-        _domainDao.update(domainId, domain);
+        _domainDao.update(domain.getId(), domain);
 
         try {
             long ownerId = domain.getAccountId();
             if ((cleanup != null) && cleanup.booleanValue()) {
-                if (!cleanupDomain(domainId, ownerId)) {
-                    s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").");
+                if (!cleanupDomain(domain.getId(), ownerId)) {
+                    s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
                     return false;
                 }
             } else { 
-                List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domainId);
+                List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domain.getId());
                 if (accountsForCleanup.isEmpty()) {
-                    if (!_domainDao.remove(domainId)) {
-                        s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domainId
+                    if (!_domainDao.remove(domain.getId())) {
+                        s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domain.getId()
                                 + "); please make sure all users and sub domains have been removed from the domain before deleting");
                         return false;
                     } 
@@ -241,10 +248,10 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
                 }
             }
             
-            cleanupDomainOfferings(domainId);
+            cleanupDomainOfferings(domain.getId());
             return true;
         } catch (Exception ex) {
-            s_logger.error("Exception deleting domain with id " + domainId, ex);
+            s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
             return false;
         }
     }

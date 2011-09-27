@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Makes account to join the project", responseObject=SuccessResponse.class)
 public class JoinProjectCmd extends BaseCmd {
@@ -71,6 +72,7 @@ public class JoinProjectCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
         boolean result = _projectService.joinProject(projectId, accountName);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
