@@ -27,7 +27,6 @@ public class XenServerPoolVms {
     }
     
     public void clear(String clusterId){
-        s_logger.debug("Clearing vm stated for cluster=" + clusterId);
         HashMap<String, Pair<String, State>> _vms= getClusterVmState(clusterId);
         synchronized (_vms) {
             _vms.clear();
@@ -35,14 +34,12 @@ public class XenServerPoolVms {
     }
     
     public State getState(String clusterId, String name){
-        s_logger.debug("Getting state for vmname=" + name + ", for clusterid=" + clusterId + ", " + this);
         HashMap<String, Pair<String, State>> vms = getClusterVmState(clusterId);
         Pair<String, State> pv = vms.get(name);
         return pv.second();
     }
 
     public void put(String clusterId, String hostUuid, String name, State state){
-        s_logger.debug("Adding hostUuid=" + hostUuid + ", vm=" + name + ", state=" + state + ", " + this);
         HashMap<String, Pair<String, State>> vms= getClusterVmState(clusterId);
         synchronized (vms) {
             vms.put(name, new Pair<String, State>(hostUuid, state));
@@ -75,7 +72,7 @@ public class XenServerPoolVms {
     
     @Override
     public String toString(){
-        StringBuilder sbuf = new StringBuilder("PoolVms");
+        StringBuilder sbuf = new StringBuilder("PoolVms=");
         for (HashMap<String/* vm name */, Pair<String/* host uuid */, State/* vm state */>>  clusterVM: _cluster_vms.values()){
             for (String vmname: clusterVM.keySet()){
                 sbuf.append(vmname).append("-").append(clusterVM.get(vmname).second()).append(",");
