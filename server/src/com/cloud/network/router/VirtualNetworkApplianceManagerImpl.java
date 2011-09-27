@@ -1554,6 +1554,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 
+        // Network usage command to create iptables rules
+        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
+        
         // restart network if restartNetwork = false is not specified in profile parameters
         boolean restartNetwork = true;
         if (profile.getParameter(Param.RestartNetwork) != null && (Boolean) profile.getParameter(Param.RestartNetwork) == false) {
@@ -1668,8 +1671,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         // Resend user data
         s_logger.debug("Reapplying vm data (userData and metaData) entries as a part of domR " + router + " start...");
         createVmDataCommands(router, cmds);
-        // Network usage command to create iptables rules
-        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
 
         return true;
     }
