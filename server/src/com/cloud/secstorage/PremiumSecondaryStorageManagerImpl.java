@@ -68,7 +68,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 
 		HostSearch.done();
 		ActiveCommandSearch.done();
-		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
     	return true;
     }
     

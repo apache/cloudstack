@@ -1188,8 +1188,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			Iterator it = _resourceStateAdapters.entrySet().iterator();
 			Object result = null;
 			while (it.hasNext()) {
-				Map.Entry<String, Pair<ResourceStateAdapter, List<String>>> item = (Map.Entry<String, Pair<ResourceStateAdapter, List<String>>>) it.next();
-				ResourceStateAdapter adapter = item.getValue().first();
+				Map.Entry<String, ResourceStateAdapter> item = (Map.Entry<String, ResourceStateAdapter>) it.next();
+				ResourceStateAdapter adapter = item.getValue();
 				
 				String msg = new String("Dispatching resource state event " + event + " to " + item.getKey());
 				s_logger.debug(msg);
@@ -1388,16 +1388,23 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		assert host != null : "No resource state adapter response";
 		
 		if (isNew) {
-			_hostDao.persist(host);
+			host = _hostDao.persist(host);
 		} else {
 			_hostDao.update(host.getId(), host);
 		}
-		/* Agent goes to Connecting status */
-		_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
+
 		try {
+			/* Agent goes to Connecting status */
+			_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
 			updateResourceState(host, ResourceState.Event.InternalCreated, _nodeId);
-		} catch (NoTransitionException e) {
-			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+		} catch (Exception e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + " to Creating state", e);
+			_agentMgr.agentStatusTransitTo(host, Status.Event.Error, _nodeId);
+			try {
+	            updateResourceState(host, ResourceState.Event.Error, _nodeId);
+            } catch (NoTransitionException e1) {
+            	s_logger.debug("Cannot transmit host " + host.getId() + "to Error state", e);
+            }
 		}
 		
 		return host;
@@ -1450,16 +1457,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 					/* Change agent status to Alert */
 					_agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
 				    try {
-	                    updateResourceState(host, ResourceState.Event.Disable, _nodeId);
+	                    updateResourceState(host, ResourceState.Event.Error, _nodeId);
                     } catch (NoTransitionException e) {
 	                    s_logger.debug("Cannot transmit host " + host.getId() +  "to Disabled state", e);
                     }
-				}
-			} else {
-				try {
-					updateResourceState(host, ResourceState.Event.InternalCreated, _nodeId);
-				} catch (NoTransitionException e) {
-					s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
 				}
 			}
 		}

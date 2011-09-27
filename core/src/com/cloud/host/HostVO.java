@@ -365,6 +365,7 @@ public class HostVO implements Host {
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
         this.hostAllocationState = Host.HostAllocationState.Enabled;
+        this.resourceState = ResourceState.Creating;
     }
 
     protected HostVO() {

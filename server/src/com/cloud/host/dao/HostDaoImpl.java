@@ -108,6 +108,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> RoutingSearch;
 
     protected final Attribute _statusAttr;
+    protected final Attribute _resourceStateAttr;
     protected final Attribute _msIdAttr;
     protected final Attribute _pingTimeAttr;
 
@@ -301,6 +302,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
         _pingTimeAttr = _allAttributes.get("lastPinged");
+        _resourceStateAttr = _allAttributes.get("resourceState");
 
         assert (_statusAttr != null && _msIdAttr != null && _pingTimeAttr != null) : "Couldn't find one of these attributes";
     }
@@ -1001,11 +1003,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         
         SearchCriteria<HostVO> sc = sb.create();
 
-        sc.setParameters("status", oldState);
+        sc.setParameters("resource_state", oldState);
         sc.setParameters("id", host.getId());
         
         UpdateBuilder ub = getUpdateBuilder(host);
-        ub.set(host, _statusAttr, newState);
+        ub.set(host, _resourceStateAttr, newState);
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
         

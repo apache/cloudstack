@@ -1603,7 +1603,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             
         } else if (state == ResourceState.Maintenance) {
             
-        } else {
+        } else if (state == ResourceState.Creating) {
+        }else {
             throw new CloudRuntimeException("Unknown resource state " + state);
         }
         
