@@ -61,6 +61,6 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     
 	@Override
     public boolean trackVmHostChange() {
-    	return true;
+        return false;
     }
 }
