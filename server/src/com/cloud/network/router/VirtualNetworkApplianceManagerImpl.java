@@ -1381,7 +1381,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" template=domP type=" + type+rpFilter);
         buf.append(" name=").append(profile.getHostName());
 
-        boolean isRedundant = _configDao.getValue("network.redundantrouter").equals("true");
+        boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
