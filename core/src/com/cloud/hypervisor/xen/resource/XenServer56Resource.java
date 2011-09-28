@@ -225,7 +225,6 @@ public class XenServer56Resource extends CitrixResourceBase {
                 vm.powerStateReset(conn);
                 vm.destroy(conn);
             }
-            XenServerConnectionPool.PoolSyncDB(conn);
             return new FenceAnswer(cmd);
         } catch (XmlRpcException e) {
             s_logger.warn("Unable to fence", e);
