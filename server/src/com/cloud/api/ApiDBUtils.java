@@ -253,6 +253,10 @@ public class ApiDBUtils {
     	return _capacityDao.findByClusterPodZone(zoneId,podId,clusterId);		 
     }
     
+    public static List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId){
+    	return _capacityDao.findNonSharedStorageForClusterPodZone(zoneId,podId,clusterId);		 
+    }
+    
     public static List<CapacityVO> getCapacityByPod(){
 		return null;
     	

@@ -32,4 +32,5 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 			Long clusterId, Long startIndex, Long pageSize);
 	boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId);
 	List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId);
+	List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId,Long podId, Long clusterId);
 }

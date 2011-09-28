@@ -995,12 +995,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setZoneName(zone.getName());
         if (showCapacities != null && showCapacities){
         	List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null,null,cluster.getId()); 
-        	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+        	Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();    		
+        	float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
+    		
         	for (SummedCapacity capacity : capacities){
         		CapacityResponse capacityResponse = new CapacityResponse();   
         		capacityResponse.setCapacityType(capacity.getCapacityType());
 	        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
-	        	capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
+	        	
+	        	if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU){
+	        		capacityResponse.setCapacityTotal(new Long((long)(capacity.getTotalCapacity()*cpuOverprovisioningFactor)));
+	        	}else if(capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED){
+	        		List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, null, cluster.getId());
+	        		capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
+	        		capacityResponse.setCapacityUsed(capacity.getUsedCapacity() - c.get(0).getUsedCapacity());
+	        	}else{
+	        		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
+	        	}
+	        	
 	        	capacityResponses.add(capacityResponse);
         	}
         	clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));

@@ -28,12 +28,22 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
+import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.StoragePoolDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
@@ -56,6 +66,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
     protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch;
 	private SearchBuilder<CapacityVO> _allFieldsSearch;
+    protected final StoragePoolDaoImpl _storagePoolDao = ComponentLocator.inject(StoragePoolDaoImpl.class);
 	
 	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
 			"AND (a.total_capacity * ? - a.used_capacity) >= ? and a.capacity_type = 1) " +
@@ -275,6 +286,48 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         
         
         SearchCriteria<SummedCapacity> sc = SummedCapacitySearch.create();
+        if (zoneId != null){
+        	sc.setParameters("zoneId", zoneId);
+        }
+        if (podId != null){
+        	sc.setParameters("podId", podId);
+        }
+        if (clusterId != null){
+        	sc.setParameters("clusterId", clusterId);
+        }
+                
+        return customSearchIncludingRemoved(sc, null);         
+	}
+	
+	@Override
+	public List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId){
+
+    	SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+        SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
+        SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());   
+        SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());
+        SummedCapacitySearch.and("capacityType", SummedCapacitySearch.entity().getCapacityType(), Op.EQ);
+    	
+    	SearchBuilder<StoragePoolVO>  nonSharedStorage = _storagePoolDao.createSearchBuilder();
+    	nonSharedStorage.and("poolTypes", nonSharedStorage.entity().getPoolType(), SearchCriteria.Op.IN);
+    	SummedCapacitySearch.join("nonSharedStorage", nonSharedStorage, nonSharedStorage.entity().getId(), SummedCapacitySearch.entity().getHostOrPoolId(), JoinType.INNER);
+    	nonSharedStorage.done();        
+    	
+        if(zoneId != null){
+        	SummedCapacitySearch.and("zoneId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
+        }
+        if (podId != null){
+        	SummedCapacitySearch.and("podId", SummedCapacitySearch.entity().getPodId(), Op.EQ);
+        }
+        if (clusterId != null){
+        	SummedCapacitySearch.and("clusterId", SummedCapacitySearch.entity().getClusterId(), Op.EQ);
+        }
+        SummedCapacitySearch.done();
+        
+        
+        SearchCriteria<SummedCapacity> sc = SummedCapacitySearch.create();
+        sc.setJoinParameters("nonSharedStorage", "poolTypes", Storage.getNonSharedStoragePoolTypes().toArray());
+        sc.setParameters("capacityType", Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
         if (zoneId != null){
         	sc.setParameters("zoneId", zoneId);
         }

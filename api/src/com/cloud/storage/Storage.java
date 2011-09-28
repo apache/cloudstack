@@ -17,6 +17,9 @@
  */
 package com.cloud.storage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Storage {
     public static enum ImageFormat {
         QCOW2(true, true, false),
@@ -109,6 +112,16 @@ public class Storage {
         public boolean isShared() {
             return shared;
         }
+    }
+    public static List<StoragePoolType> getNonSharedStoragePoolTypes(){
+    	List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<StoragePoolType>();
+    	for(StoragePoolType storagePoolType : StoragePoolType.values()){
+    		if (!storagePoolType.isShared()){
+    			nonSharedStoragePoolTypes.add(storagePoolType);
+    		}
+    	}
+		return nonSharedStoragePoolTypes;
+    	
     }
 
     public static enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE, LOCAL_SECONDARY_STORAGE}
