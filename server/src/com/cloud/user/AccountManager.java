@@ -86,5 +86,7 @@ public interface AccountManager extends AccountService {
      * @return the user/account pair if one exact match was found, null otherwise
      */
     Pair<User, Account> findUserByApiKey(String apiKey);
+
+    boolean lockAccount(long accountId);
    
 }

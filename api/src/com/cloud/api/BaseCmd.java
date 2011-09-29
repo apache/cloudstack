@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -581,8 +582,14 @@ public abstract class BaseCmd {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
             }
+            
+            Domain domain = _domainService.getDomain(domainId);
+            if (domain == null || domain.getType() == Domain.Type.Project) {
+                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
+            }
+            
             Account account = _accountService.getActiveAccountByName(accountName, domainId);
-            if (account != null) {
+            if (account != null && account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
                 return account.getId();
             } else {
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
@@ -599,6 +606,6 @@ public abstract class BaseCmd {
             }
         }
         
-        return UserContext.current().getCaller().getId();
+        return null;
     }
 }

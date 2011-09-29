@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.configuration.Config;
@@ -482,12 +483,23 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
                 throw new InvalidParameterValueException("Can't update system account");
             }
             
-            _accountMgr.checkAccess(caller, null, account);
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                _accountMgr.checkAccess(caller, AccessType.ModifyProject, account); 
+            } else {
+                _accountMgr.checkAccess(caller, null, account);
+            }
+            
             ownerType = ResourceOwnerType.Account;
             ownerId = accountId;
         } else if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
-            _accountMgr.checkAccess(caller, domain, null);
+            
+            if (domain.getType() == Domain.Type.Project) {
+                _accountMgr.checkAccess(caller, domain, AccessType.ModifyProject);
+            } else {
+                _accountMgr.checkAccess(caller, domain, null);
+            }
+            
             if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...
                 throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");

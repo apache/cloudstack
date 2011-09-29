@@ -263,5 +263,10 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         return null;
     }
+    
+    @Override
+    public boolean lockAccount(long accountId) {
+        return true;
+    }
 
 }

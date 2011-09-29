@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Updates resource limits for an account or domain.", responseObject=ResourceLimitResponse.class)
 public class UpdateResourceLimitCmd extends BaseCmd {
@@ -86,12 +86,17 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        return getAccountId(accountName, domainId, projectId);
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
+        }
+        
+        return accountId;
     }
 
     @Override
     public void execute(){
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(getEntityOwnerId(), getDomainId(), resourceType, max);
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(getAccountId(accountName, domainId, projectId), getDomainId(), resourceType, max);
         if (result != null || (result == null && max != null && max.longValue() == -1L)){
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

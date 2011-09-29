@@ -128,7 +128,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         }
 
         DomainVO parentDomain = _domainDao.findById(parentId);
-        if (parentDomain == null) {
+        if (parentDomain == null || parentDomain.getType() == Domain.Type.Project) {
             throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
         }
         
@@ -209,7 +209,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         
         DomainVO domain = _domainDao.findById(domainId);
         
-        if (domain == null) {
+        if (domain == null || domain.getType() == Domain.Type.Project) {
             throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
         } else if (domainId == DomainVO.ROOT_DOMAIN) {
             throw new PermissionDeniedException("Can't delete ROOT domain");

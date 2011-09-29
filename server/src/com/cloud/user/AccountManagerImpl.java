@@ -367,7 +367,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return success;
     }
 
-    private boolean lockAccountInternal(long accountId) {
+    @Override
+    public boolean lockAccount(long accountId) {
         boolean success = false;
         Account account = _accountDao.findById(accountId);
         if (account != null) {
@@ -667,7 +668,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         checkAccess(UserContext.current().getCaller(), domain, null);
         
         Account account = _accountDao.findActiveAccount(accountName, domainId);
-        if (account == null) {
+        if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
         } 
 
@@ -706,6 +707,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // If the account is an admin type, return an error. We do not allow this
         Account account = _accountDao.findById(user.getAccountId());
+        
+        //don't allow updating project account
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("unable to find user by id");
+        }
 
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
@@ -783,13 +789,19 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Check if user exists in the system
         User user = _userDao.findById(userId);
-        if ((user == null) || (user.getRemoved() != null)) {
+        if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
-
-        // If the user is a System user, return an error
+        
         Account account = _accountDao.findById(user.getAccountId());
-        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        
+        //don't allow disabling user belonging to project's account
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        
+        // If the user is a System user, return an error
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
         }
         
@@ -804,7 +816,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-    @Override
+    @Override @DB
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
     public UserAccount enableUser(long userId) {
 
@@ -812,22 +824,32 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Check if user exists in the system
         User user = _userDao.findById(userId);
-        if ((user == null) || (user.getRemoved() != null)) {
+        if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
-
-        // If the user is a System user, return an error
+        
         Account account = _accountDao.findById(user.getAccountId());
-        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        
+        // If the user is a System user, return an error
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
         }
 
         checkAccess(caller, null, account);
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         boolean success = doSetUserStatus(userId, State.enabled);
 
         // make sure the account is enabled too
-        success = (success && enableAccount(user.getAccountId()));
+        success = success && enableAccount(user.getAccountId());
+        
+        txn.commit();
 
         if (success) {
             return _userAccountDao.findById(userId);
@@ -846,14 +868,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find user by id");
         } 
-        // If the user is a System user, return an error. We do not allow this
+        
         Account account = _accountDao.findById(user.getAccountId());
-        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        
+        //don't allow to lock user of the account of type Project
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Unable to find user by id");
+        }
+        
+        // If the user is a System user, return an error. We do not allow this
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new PermissionDeniedException("user id : " + userId + " is a system user, locking is not allowed");
         }
         
         checkAccess(caller, null, account);
-
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
@@ -874,7 +902,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             if (lockAccount) {
-                success = (success && lockAccountInternal(user.getAccountId()));
+                success = (success && lockAccount(user.getAccountId()));
             }
         } else {
             if (s_logger.isInfoEnabled()) {
@@ -902,16 +930,17 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
         
-        if (account == null) {
-            throw new InvalidParameterValueException("The specified account does not exist in the system");
-        }
-        
-        checkAccess(caller, null, account);
-        
         if (account.getRemoved() != null) {
             s_logger.info("The account:" + account.getAccountName() + " is already removed");
             return true;
         }
+        
+        // don't allow removing Project account
+        if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("The specified account does not exist in the system");
+        }
+        
+        checkAccess(caller, null, account);
         
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
@@ -925,7 +954,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         // Check if account exists
         Account account = _accountDao.findActiveAccount(accountName, domainId);
-        if (account == null) {
+        if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
 
@@ -937,7 +966,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Check if user performing the action is allowed to modify this account
         Account caller = UserContext.current().getCaller();
         checkAccess(caller, null, account);
-        
 
         boolean success = enableAccount(account.getId());
         if (success) {
@@ -953,7 +981,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Account caller = UserContext.current().getCaller();
         
         Account account = _accountDao.findActiveAccount(accountName, domainId);
-        if (account == null) {
+        if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find active account with name " + accountName + " in domain " + domainId);
         }
         
@@ -964,7 +992,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("can not lock system account");
         }
 
-        if (lockAccountInternal(account.getId())) {
+        if (lockAccount(account.getId())) {
             return _accountDao.findById(account.getId());
         } else {
             throw new CloudRuntimeException("Unable to lock account " + accountName + " in domain " + domainId);
@@ -977,7 +1005,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Account caller = UserContext.current().getCaller();
         
         Account account = _accountDao.findActiveAccount(accountName, domainId);
-        if (account == null) {
+        if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
         
@@ -1001,7 +1029,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Account account = _accountDao.findAccount(accountName, domainId);
 
         // Check if account exists
-        if (account == null) {
+        if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
@@ -1012,10 +1040,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         // Check if user performing the action is allowed to modify this account
-        Account adminAccount = UserContext.current().getCaller();
-        if ((adminAccount != null) && (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN) && _domainMgr.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-            throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
-        }
+        checkAccess(UserContext.current().getCaller(), _domainMgr.getDomain(account.getDomainId()), null);
 
         // check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findAccount(newAccountName, domainId);
@@ -1063,11 +1088,19 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (user == null) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
         }
+        
+        Account account = _accountDao.findById(user.getAccountId());
+        
+        //don't allow to delete the user from the account of type Project
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
+        }
 
-        if ((user != null) && (user.getAccountId() == Account.ACCOUNT_ID_SYSTEM)) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
-        checkAccess(UserContext.current().getCaller(), null, _accountDao.findById(user.getAccountId()));
+        
+        checkAccess(UserContext.current().getCaller(), null, account);
         return _userDao.remove(id);
     }
 

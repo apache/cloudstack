@@ -128,7 +128,6 @@ public class CreateAccountCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
     
     @Override
     public void execute(){

@@ -586,15 +586,18 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         if (domainId != null) {
-            if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list users.");
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null || domain.getType() == Domain.Type.Project) {
+                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
             }
+            
+            _accountMgr.checkAccess(caller, domain, null);
         } else {
             // default domainId to the admin's domain
-            domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            domainId = caller.getDomainId();
         }
 
         Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2283,7 +2286,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         // check if domain exists in the system
         DomainVO domain = _domainDao.findById(domainId);
-        if (domain == null) {
+        if (domain == null || domain.getType() == Domain.Type.Project) {
             throw new InvalidParameterValueException("Unable to find domain " + domainId);
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name

@@ -274,7 +274,12 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return getAccountId(accountName, domainId, projectId);
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
+        }
+        
+        return accountId;
     }
 
     @Override

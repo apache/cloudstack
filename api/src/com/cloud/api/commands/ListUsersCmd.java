@@ -103,7 +103,6 @@ public class ListUsersCmd extends BaseListCmd {
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
         for (UserAccount user : result) {
             UserResponse userResponse = _responseGenerator.createUserResponse(user);
-            userResponse.setObjectName("user");
             userResponses.add(userResponse);
         }
         response.setResponses(userResponses);
