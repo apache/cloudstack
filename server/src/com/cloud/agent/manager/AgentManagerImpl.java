@@ -827,6 +827,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             throw new AgentUnavailableException(-1);
         }
 
+        if (timeout <= 0) {
+            timeout = _wait;
+        }
         assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!";
 
         Command[] cmds = commands.toCommands();
@@ -1508,9 +1511,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             if ( cmd.getWait() > wait ) {
                 wait = cmd.getWait();
             }
-        }
-        if ( wait == 0 ) {
-            wait = _wait;
         }
         return send(hostId, cmds, wait);
     }
