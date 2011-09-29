@@ -46,8 +46,8 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Update resource limits for all accounts in specified domain. If used with the account parameter, updates resource limits for a specified account in specified domain.")
     private Long domainId;
     
-    @Parameter(name=ApiConstants.PROJECT, type=CommandType.STRING, description="Update resource limits for project")
-    private String projectName;
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Update resource limits for project")
+    private Long projectId;
 
     @Parameter(name=ApiConstants.MAX, type=CommandType.LONG, description="	Maximum resource limit.")
     private Long max;
@@ -86,17 +86,12 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Long accountId = getAccountId(accountName, projectName, domainId);
-        if (accountId != null) {
-            return accountId;
-        }
-        
-        return Account.ACCOUNT_ID_SYSTEM;
+        return getAccountId(accountName, domainId, projectId);
     }
 
     @Override
     public void execute(){
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(getAccountId(accountName, projectName, domainId), getDomainId(), resourceType, max);
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(getEntityOwnerId(), getDomainId(), resourceType, max);
         if (result != null || (result == null && max != null && max.longValue() == -1L)){
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

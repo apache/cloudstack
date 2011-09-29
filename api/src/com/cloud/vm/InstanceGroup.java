@@ -19,10 +19,9 @@ package com.cloud.vm;
 
 import java.util.Date;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
+import com.cloud.acl.ControlledEntity;
 
-public interface InstanceGroup extends OwnedBy, PartOf {
+public interface InstanceGroup extends ControlledEntity {
     long getId();
     String getName();
     Date getCreated();

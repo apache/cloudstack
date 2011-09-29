@@ -718,4 +718,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         return result;
     }
+    
+    @Override
+    public List<Long> listPermittedProjectAccounts(long accountId) {
+        return _projectAccountDao.listPermittedAccountIds(accountId);
+    }
 }

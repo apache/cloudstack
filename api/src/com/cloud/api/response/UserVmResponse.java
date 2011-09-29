@@ -24,7 +24,8 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class UserVmResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
     private Long id;
 
@@ -39,6 +40,12 @@ public class UserVmResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
+    private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
     private Long domainId;
@@ -148,335 +155,182 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
     
-    public String getHypervisor() {
-		return hypervisor;
-	}
 
 	public void setHypervisor(String hypervisor) {
 		this.hypervisor = hypervisor;
 	}
-
-	public Long getObjectId() {
-    	return getId();
-    }
     
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public Long getId() {
+        return id;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
     }
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
     public void setAccountName(String accountName) {
         this.accountName = accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public Date getCreated() {
-        return created;
     }
 
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    public String getState() {
-        return state;
-    }
-
     public void setState(String state) {
         this.state = state;
-    }
-
-    public Boolean getHaEnable() {
-        return haEnable;
     }
 
     public void setHaEnable(Boolean haEnable) {
         this.haEnable = haEnable;
     }
 
-    public Long getGroupId() {
-        return groupId;
-    }
-
     public void setGroupId(Long groupId) {
         this.groupId = groupId;
-    }
-
-    public String getGroup() {
-        return group;
     }
 
     public void setGroup(String group) {
         this.group = group;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
-
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
-    }
-
-    public String getZoneName() {
-        return zoneName;
     }
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public Long getHostId() {
-        return hostId;
-    }
-
     public void setHostId(Long hostId) {
         this.hostId = hostId;
-    }
-
-    public String getHostName() {
-        return hostName;
     }
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
 
-    public Long getTemplateId() {
-        return templateId;
-    }
-
     public void setTemplateId(Long templateId) {
         this.templateId = templateId;
-    }
-
-    public String getTemplateName() {
-        return templateName;
     }
 
     public void setTemplateName(String templateName) {
         this.templateName = templateName;
     }
 
-    public String getTemplateDisplayText() {
-        return templateDisplayText;
-    }
-
     public void setTemplateDisplayText(String templateDisplayText) {
         this.templateDisplayText = templateDisplayText;
-    }
-
-    public Boolean getPasswordEnabled() {
-        return passwordEnabled;
     }
 
     public void setPasswordEnabled(Boolean passwordEnabled) {
         this.passwordEnabled = passwordEnabled;
     }
 
-    public Long getIsoId() {
-        return isoId;
-    }
-
     public void setIsoId(Long isoId) {
         this.isoId = isoId;
-    }
-
-    public String getIsoName() {
-        return isoName;
     }
 
     public void setIsoName(String isoName) {
         this.isoName = isoName;
     }
 
-    public String getIsoDisplayText() {
-        return isoDisplayText;
-    }
-
     public void setIsoDisplayText(String isoDisplayText) {
         this.isoDisplayText = isoDisplayText;
-    }
-
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
 
-    public String getServiceOfferingName() {
-        return serviceOfferingName;
-    }
-
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
-    }
-
-    public Integer getCpuNumber() {
-        return cpuNumber;
     }
 
     public void setCpuNumber(Integer cpuNumber) {
         this.cpuNumber = cpuNumber;
     }
 
-    public Integer getCpuSpeed() {
-        return cpuSpeed;
-    }
-
     public void setCpuSpeed(Integer cpuSpeed) {
         this.cpuSpeed = cpuSpeed;
-    }
-
-    public Integer getMemory() {
-        return memory;
     }
 
     public void setMemory(Integer memory) {
         this.memory = memory;
     }
 
-    public String getCpuUsed() {
-        return cpuUsed;
-    }
-
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
-    }
-
-    public Long getNetworkKbsRead() {
-        return networkKbsRead;
     }
 
     public void setNetworkKbsRead(Long networkKbsRead) {
         this.networkKbsRead = networkKbsRead;
     }
 
-    public Long getNetworkKbsWrite() {
-        return networkKbsWrite;
-    }
-
     public void setNetworkKbsWrite(Long networkKbsWrite) {
         this.networkKbsWrite = networkKbsWrite;
-    }
-
-    public Long getGuestOsId() {
-        return guestOsId;
     }
 
     public void setGuestOsId(Long guestOsId) {
         this.guestOsId = guestOsId;
     }
 
-    public Long getRootDeviceId() {
-        return rootDeviceId;
-    }
-
     public void setRootDeviceId(Long rootDeviceId) {
         this.rootDeviceId = rootDeviceId;
-    }
-
-    public String getRootDeviceType() {
-        return rootDeviceType;
     }
 
     public void setRootDeviceType(String rootDeviceType) {
         this.rootDeviceType = rootDeviceType;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Long getJobId() {
-        return jobId;
     }
 
     public void setJobId(Long jobId) {
         this.jobId = jobId;
     }
 
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
-    }
-
-    public Boolean getForVirtualNetwork() {
-        return forVirtualNetwork;
     }
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
 
-    public List<NicResponse> getNics() {
-        return nics;
-    }
-
     public void setNics(List<NicResponse> nics) {
         this.nics = nics;
-    }
-    
-    public List<SecurityGroupResponse> getSecurityGroupList() {
-        return securityGroupList;
     }
 
     public void setSecurityGroupList(List<SecurityGroupResponse> securityGroups) {
         this.securityGroupList = securityGroups;
+    }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+    
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

@@ -124,6 +124,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.KEYBOARD, type=CommandType.STRING, description="an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
     
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
+    private Long projectId;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -271,19 +274,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account by name " + getAccountName() + " in domain " + getDomainId());
-                }
-            }
-        }
-        
-        return account.getId();
+        return getAccountId(accountName, domainId, projectId);
     }
 
     @Override
@@ -346,10 +337,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException{
         try {
             //Verify that all objects exist before passing them to the service
-            Account owner = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
-            if (owner == null) {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-            }
+            Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
             DataCenter zone = _configService.getZone(zoneId);
             if (zone == null) {

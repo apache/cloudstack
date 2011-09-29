@@ -17,6 +17,7 @@
  */
 package com.cloud.projects.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -122,5 +123,20 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public List<Long> listPermittedAccountIds(long accountId) {
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        
+        List<ProjectAccountVO> records = listBy(sc);
+        
+        for (ProjectAccountVO record : records) {
+            permittedAccounts.add(record.getProjectAccountId());
+        }
+        
+        return permittedAccounts;
     }
 }

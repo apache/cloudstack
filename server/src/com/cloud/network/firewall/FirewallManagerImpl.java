@@ -104,6 +104,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     ConfigurationDao _configDao;
     @Inject
     DomainManager _domainMgr;
+    @Inject
     PortForwardingRulesDao _pfRulesDao;
     @Inject
     UserVmDao _vmDao;

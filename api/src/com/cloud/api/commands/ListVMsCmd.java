@@ -25,6 +25,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
@@ -81,6 +82,9 @@ public class ListVMsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
     private Long storageId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list vms by project")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -144,6 +148,10 @@ public class ListVMsCmd extends BaseListCmd {
     
     public Long getStorageId() {
         return storageId;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////

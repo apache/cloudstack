@@ -30,7 +30,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
@@ -77,7 +76,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
     private static final int VM_DETAILS_BATCH_SIZE=100;
     private static final String VM_DETAILS = "select vm_instance.id, " +
-    		"account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
+    		"account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
     		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
     		"vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
     		"vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
@@ -419,6 +418,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         if (!userVmData.isInitialized()){
         
             //account.account_name, account.type, domain.name,  instance_group.id, instance_group.name,"
+            userVmData.setAccountId(rs.getLong("account.id"));
             userVmData.setAccountName(rs.getString("account.account_name"));
             userVmData.setDomainName(rs.getString("domain.name"));
             

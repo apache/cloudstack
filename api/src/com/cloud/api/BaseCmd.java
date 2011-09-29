@@ -576,7 +576,7 @@ public abstract class BaseCmd {
     	return this.fullUrlParams;
     }
     
-    public Long getAccountId(String accountName, String projectName, Long domainId) {
+    public Long getAccountId(String accountName, Long domainId, Long projectId) {
         if (accountName != null) {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
@@ -589,18 +589,16 @@ public abstract class BaseCmd {
             }
         }
         
-        if (projectName != null) {
-            if (domainId == null) {
-                throw new InvalidParameterValueException("Project must be specified with domainId parameter");
-            }
-            Project project = _projectService.findByNameAndDomainId(projectName, domainId);
+        if (projectId != null) {
+            
+            Project project = _projectService.getProject(projectId);
             if (project != null) {
                 return project.getProjectAccountId();
             } else {
-                throw new InvalidParameterValueException("Unable to find project by name " + project + " in domain id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
             }
         }
         
-        return null;
+        return UserContext.current().getCaller().getId();
     }
 }

@@ -142,6 +142,8 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -343,6 +345,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected ResourceLimitService _resourceLimitMgr;
     @Inject
     protected FirewallManager _firewallMgr;
+    @Inject
+    protected ProjectManager _projectMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -368,8 +372,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_RESETPASSWORD, eventDescription = "resetting Vm password", async = true)
     public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException {
-        Account account = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = UserContext.current().getCaller();
         Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
 
@@ -388,7 +391,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
         }
 
-        userId = accountAndUserValidation(vmId, account, userId, userVm);
+        _accountMgr.checkAccess(caller, null, userVm);
 
         boolean result = resetVMPasswordInternal(cmd, password);
 
@@ -557,18 +560,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // If the account is not an admin, check that the volume and the virtual machine are owned by the account that was
         // passed in
         _accountMgr.checkAccess(account, null, volume);
-        /*
-         * if (account != null) { if (!isAdmin(account.getType())) { if (account.getId() != volume.getAccountId()) { throw new
-         * PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName()
-         * + ". Permission denied."); }
-         * 
-         * if (account.getId() != vm.getAccountId()) { throw new PermissionDeniedException("Unable to find VM with ID: " + vmId
-         * + " for account: " + account.getAccountName() + ". Permission denied"); } } else { if
-         * (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId()) ||
-         * !_domainDao.isChildDomain(account.getDomainId(), vm.getDomainId())) { throw new
-         * PermissionDeniedException("Unable to attach volume " + volumeId + " to virtual machine instance " + vmId +
-         * ". Permission denied."); } } }
-         */
 
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
@@ -750,13 +741,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // If the account is not an admin, check that the volume is owned by the account that was passed in
         _accountMgr.checkAccess(account, null, volume);
-        /*
-         * if (!isAdmin) { if (account.getId() != volume.getAccountId()) { throw new
-         * InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " +
-         * account.getAccountName()); } } else if (account != null) { if (!_domainDao.isChildDomain(account.getDomainId(),
-         * volume.getDomainId())) { throw new PermissionDeniedException("Unable to detach volume with ID: " + volumeId +
-         * ", permission denied."); } }
-         */
 
         // Check that the volume is a data volume
         if (volume.getVolumeType() != Volume.Type.DATADISK) {
@@ -902,8 +886,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) {
         Long virtualMachineId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account account = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(virtualMachineId);
@@ -911,7 +894,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + virtualMachineId);
         }
 
-        userId = accountAndUserValidation(virtualMachineId, account, userId, vmInstance);
+        _accountMgr.checkAccess(caller, null, vmInstance);
 
         // Check that the specified service offering ID is valid
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
@@ -977,22 +960,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return _vmDao.findById(vmInstance.getId());
     }
 
-    private Long accountAndUserValidation(Long virtualMachineId, Account account, Long userId, UserVmVO vmInstance) {
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
-                throw new InvalidParameterValueException("Unable to find a virtual machine with id " + virtualMachineId + " for this account");
-            } else if (!_domainDao.isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
-                throw new InvalidParameterValueException("Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
-            }
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-        return userId;
-    }
-
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws CloudRuntimeException {
         HashMap<Long, VmStatsEntry> vmStatsById = new HashMap<Long, VmStatsEntry>();
@@ -1033,12 +1000,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
 
         Long vmId = cmd.getId();
-        Account accountHandle = UserContext.current().getCaller();
-
-        // if account is removed, return error
-        if (accountHandle != null && accountHandle.getRemoved() != null) {
-            throw new InvalidParameterValueException("The account " + accountHandle.getId() + " is removed");
-        }
+        Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId.longValue());
@@ -1046,11 +1008,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
-
-        if ((accountHandle != null) && !_domainDao.isChildDomain(accountHandle.getDomainId(), vm.getDomainId())) {
-            // the domain in which the VM lives is not in the admin's domain tree
-            throw new InvalidParameterValueException("Unable to recover virtual machine with id " + vmId + ", invalid id given.");
-        }
+        
+        //check permissions
+        _accountMgr.checkAccess(caller, null, vm);
 
         if (vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
@@ -1300,12 +1260,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws ResourceAllocationException {
         Long userId = UserContext.current().getCallerUserId();
-        if (userId == null) {
-            userId = User.UID_SYSTEM;
-        }
 
-        Account account = UserContext.current().getCaller();
-        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        Account caller = UserContext.current().getCaller();
+        boolean isAdmin = ((caller == null) || isAdmin(caller.getType()));
 
         VMTemplateVO privateTemplate = null;
 
@@ -1321,7 +1278,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         if(cmd.getTemplateTag() != null){
-            if(!_accountService.isRootAdmin(account.getType())){
+            if(!_accountService.isRootAdmin(caller.getType())){
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
             }
         }
@@ -1361,6 +1318,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (volume == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find volume " + volumeId);
             }
+            //check permissions
+            _accountMgr.checkAccess(caller, null, volume);
+            
             // If private template is created from Volume, check that the volume will not be active when the private template is
             // created
             if (!_storageMgr.volumeInactive(volume)) {
@@ -1378,6 +1338,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
+            
+            //check permissions
+            _accountMgr.checkAccess(caller, null, snapshot);
 
             if (snapshot.getStatus() != Snapshot.Status.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
@@ -1387,14 +1350,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             accountId = snapshot.getAccountId();
             hyperType = snapshot.getHypervisorType();
             volume = _volsDao.findById(snapshot.getVolumeId());
-        }
-
-        if (!isAdmin) {
-            if (account.getId() != accountId) {
-                throw new PermissionDeniedException("Unable to create a template permission denied.");
-            }
-        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-            throw new PermissionDeniedException("Unable to create a template permission denied.");
         }
 
         VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, accountId);
@@ -1747,8 +1702,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Boolean ha = cmd.getHaEnable();
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
-        Account account = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
         String userData = cmd.getUserData();
 
         // Input validation
@@ -1766,7 +1719,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Can't enable ha for the vm as it's created from the Service offering having HA disabled");
         }
 
-        userId = accountAndUserValidation(id, account, userId, vmInstance);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, vmInstance);
 
         if (displayName == null) {
             displayName = vmInstance.getDisplayName();
@@ -1832,8 +1785,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
-        Account account = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
+        Account caller = UserContext.current().getCaller();
         Long vmId = cmd.getId();
 
         // Verify input parameters
@@ -1842,9 +1794,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        userId = accountAndUserValidation(vmId, account, userId, vmInstance);
+        _accountMgr.checkAccess(caller, null, vmInstance);
 
-        return rebootVirtualMachine(userId, vmId);
+        return rebootVirtualMachine(UserContext.current().getCallerUserId(), vmId);
     }
 
     @Override
@@ -1856,41 +1808,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @DB
     public InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        Long accountId = null;
         String groupName = cmd.getGroupName();
-
-        if (account == null) {
-            account = _accountDao.findById(1L);
-        }
-
-        if (account != null) {
-            if (isAdmin(account.getType())) {
-                if ((domainId != null) && (accountName != null)) {
-                    if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                        throw new PermissionDeniedException("Unable to create vm group in domain " + domainId + ", permission denied.");
-                    }
-
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create vm group " + groupName + ", unable to find account " + accountName + " in domain " + domainId);
-                    }
-                } else {
-                    // the admin must be creating the vm group
-                    accountId = account.getId();
-                }
-            } else {
-                accountId = account.getId();
-            }
-        }
-
-        if (accountId == null) {
-            throw new InvalidParameterValueException("Failed to create vm group " + groupName + ", unable to find account for which to create a group.");
-        }
+        
+        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+        long accountId = owner.getId();
 
         // Check if name is already in use by this account
         boolean isNameInUse = _vmGroupDao.isNameInUse(accountId, groupName);
@@ -1903,7 +1827,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @DB
-    private InstanceGroupVO createVmGroup(String groupName, long accountId) {
+    protected InstanceGroupVO createVmGroup(String groupName, long accountId) {
         Account account = null;
         final Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1929,7 +1853,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public boolean deleteVmGroup(DeleteVMGroupCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long groupId = cmd.getId();
 
         // Verify input parameters
@@ -1937,15 +1861,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if ((group == null) || (group.getRemoved() != null)) {
             throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
         }
-
-        if (account != null) {
-            Account tempAccount = _accountDao.findById(group.getAccountId());
-            if (!isAdmin(account.getType()) && (account.getId() != group.getAccountId())) {
-                throw new PermissionDeniedException("unable to find a group with id " + groupId);
-            } else if (!_domainDao.isChildDomain(account.getDomainId(), tempAccount.getDomainId())) {
-                throw new PermissionDeniedException("Invalid group id (" + groupId + ") given, unable to update the group.");
-            }
-        }
+        
+        _accountMgr.checkAccess(caller, null, group);
 
         return deleteVmGroup(groupId);
     }
@@ -2031,7 +1948,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 return null;
             }
         } catch (Exception e) {
-            s_logger.warn("Error trying to get group for a vm: " + e);
+            s_logger.warn("Error trying to get group for a vm: ", e);
             return null;
         }
     }
@@ -2046,7 +1963,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _groupVMMapDao.expunge(sc);
             }
         } catch (Exception e) {
-            s_logger.warn("Error trying to remove vm from group: " + e);
+            s_logger.warn("Error trying to remove vm from group: ", e);
         }
     }
 
@@ -2837,7 +2754,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_STOP, eventDescription = "stopping Vm", async = true)
     public UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException {
-
         // Input validation
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -2852,7 +2768,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        userId = accountAndUserValidation(vmId, caller, userId, vm);
+        _accountMgr.checkAccess(caller, null, vm);
         UserVO user = _userDao.findById(userId);
 
         try {
@@ -2877,12 +2793,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // Input validation
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
 
         // if account is removed, return error
-        if (account != null && account.getRemoved() != null) {
-            throw new PermissionDeniedException("The account " + account.getId() + " is removed");
+        if (caller != null && caller.getRemoved() != null) {
+            throw new PermissionDeniedException("The account " + caller.getId() + " is removed");
         }
 
         UserVmVO vm = _vmDao.findById(vmId);
@@ -2890,7 +2806,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        userId = accountAndUserValidation(vmId, account, userId, vm);
+        _accountMgr.checkAccess(caller, null, vm);
         UserVO user = _userDao.findById(userId);
 
         //check if vm is security group enabled
@@ -2908,12 +2824,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        return _itMgr.start(vm, null, user, account);
+        return _itMgr.start(vm, null, user, caller);
     }
 
     @Override
     public UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
 
         // Verify input parameters
@@ -2927,14 +2843,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return vm;
         }
         
-        userId = accountAndUserValidation(vmId, account, userId, vm);
-        User caller = _userDao.findById(userId);
+        _accountMgr.checkAccess(caller, null, vm);
+        User userCaller = _userDao.findById(userId);
 
         boolean status;
         State vmState = vm.getState();
 
         try {
-            status = _itMgr.destroy(vm, caller, account);
+            status = _itMgr.destroy(vm, userCaller, caller);
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to destroy " + vm, e);
         }
@@ -2966,8 +2882,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String accountName = cmd.getAccountName();
         Boolean isRecursive = cmd.isRecursive();
         String hypervisor = cmd.getHypervisor();
-        Long accountId = null;
+        List<Long> permittedAccounts = new ArrayList<Long>();
         String path = null;
+        Long projectId = cmd.getProjectId();
 
         if (isRecursive != null && isRecursive && domainId == null) {
             throw new InvalidParameterValueException("Please enter a parent domain id for listing vms recursively");
@@ -2987,11 +2904,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (_accountMgr.isAdmin(caller.getType())) {
             isAdmin = true;
             if (accountName != null && domainId != null) {
-                caller = _accountDao.findActiveAccount(accountName, domainId);
-                if (caller == null) {
+                Account account = _accountDao.findActiveAccount(accountName, domainId);
+                if (account == null) {
                     throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
-                accountId = caller.getId();
+                permittedAccounts.add(caller.getId());
             }
 
             if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -3005,7 +2922,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (domainId != null && domainId.longValue() != caller.getDomainId()) {
                 throw new PermissionDeniedException("Caller is not authorised to see domain id=" + domainId + " entries");
             }
-            accountId = caller.getId();
+            permittedAccounts.add(caller.getId());
         }
 
         if (isRecursive != null && isRecursive && isAdmin) {
@@ -3015,6 +2932,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 domainId = null;
             }
         }
+        
+        //set project information
+        if (projectId != null) {
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else {
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
 
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
@@ -3047,8 +2978,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             c.addCriteria(Criteria.STORAGE_ID, cmd.getStorageId());
         }
 
-        if (accountId != null) {
-            c.addCriteria(Criteria.ACCOUNTID, new Object[] { accountId });
+        if (!permittedAccounts.isEmpty()) {
+            c.addCriteria(Criteria.ACCOUNTID, permittedAccounts.toArray());
         }
         c.addCriteria(Criteria.ISADMIN, isAdmin);
 

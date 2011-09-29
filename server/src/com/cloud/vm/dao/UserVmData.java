@@ -17,18 +17,12 @@
  */
 package com.cloud.vm.dao;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.api.ApiConstants;
 import com.cloud.api.response.IngressRuleResponse;
-import com.cloud.api.response.NicResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class UserVmData {
     private Long id;
@@ -72,6 +66,7 @@ public class UserVmData {
     private Integer jobStatus;
     private Set<NicData> nics;
     private String hypervisor;
+    private long accountId;
     
     private boolean initialized;
     
@@ -673,6 +668,13 @@ public class UserVmData {
     public String toString(){
         return "id=" + id + ", name=" + name;
     }
-    
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
 }
 

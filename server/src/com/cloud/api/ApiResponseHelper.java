@@ -2369,9 +2369,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setName(userVmData.getName());
         userVmResponse.setDisplayName(userVmData.getDisplayName());
         userVmResponse.setIpAddress(userVmData.getIpAddress());
-        userVmResponse.setAccountName(userVmData.getAccountName());
-        userVmResponse.setDomainId(userVmData.getDomainId());
-        userVmResponse.setDomainName(userVmData.getDomainName());
+
+        populateAccount(userVmResponse, userVmData.getAccountId());
+        populateDomain(userVmResponse, userVmData.getDomainId());
+        
         userVmResponse.setCreated(userVmData.getCreated());
         userVmResponse.setState(userVmData.getState());
         userVmResponse.setHaEnable(userVmData.getHaEnable());
@@ -2458,6 +2459,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            response.setProjectId(project.getId());
             response.setProjectName(project.getName());
         } else {
             response.setAccountName(account.getAccountName());
@@ -2473,6 +2475,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            response.setProjectId(project.getId());
             response.setProjectName(project.getName());
         } else {
             response.setAccountName(account.getAccountName());
@@ -2481,8 +2484,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     private void populateDomain(ControlledEntityResponse response, long domainId) {
         Domain domain = ApiDBUtils.findDomainById(domainId);
+        
+        if (domain.getType() == Domain.Type.Project) {
+            Project project = ApiDBUtils.findProjectByProjectDomainId(domainId);
+            domain = ApiDBUtils.findDomainById(project.getDomainId());
+        }
+        
         response.setDomainId(domain.getId());
         response.setDomainName(domain.getName());
+        
     }
     
     @Override 
