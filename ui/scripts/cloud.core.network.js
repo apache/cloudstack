@@ -939,6 +939,9 @@ function bindAddLoadBalancerButton() {
 				var password = $thisDialog.find("#password").val();
 				array1.push("&password=" + todb(password));
 				
+				var isInline = $thisDialog.find("#mode").val();
+				array1.push("&inline=" + isInline);
+								
 				//*** construct URL (begin)	***	
 				var url = [];
 				
