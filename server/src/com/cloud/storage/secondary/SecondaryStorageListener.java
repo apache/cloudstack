@@ -72,7 +72,6 @@ public class SecondaryStorageListener implements Listener {
 
     @Override
     public void processConnect(HostVO agent, StartupCommand cmd, boolean forRebalance) {
-        
         if ((cmd instanceof StartupStorageCommand) ) {
             StartupStorageCommand scmd = (StartupStorageCommand)cmd;
             if (scmd.getResourceType() ==  Storage.StorageResourceType.SECONDARY_STORAGE ) {
@@ -90,8 +89,6 @@ public class SecondaryStorageListener implements Listener {
             return;
         } 
         return;
-
-
     }
     
     @Override

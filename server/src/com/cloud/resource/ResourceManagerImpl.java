@@ -718,7 +718,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
 
 		try {
-			updateResourceState(host, ResourceState.Event.DeleteHost, _nodeId);
+			resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
 		} catch (NoTransitionException e) {
 			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
 		}
@@ -974,7 +974,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @Override
-    public boolean updateResourceState(Host host, ResourceState.Event event, long msId) throws NoTransitionException {
+    public boolean resourceStateTransitTo(Host host, ResourceState.Event event, long msId) throws NoTransitionException {
         ResourceState currentState = host.getResourceState();
         ResourceState nextState = currentState.getNextState(event);
         if (nextState == null) {
@@ -993,7 +993,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
         try {
-            updateResourceState(host, ResourceState.Event.AdminAskMaintenace, _nodeId);
+        	resourceStateTransitTo(host, ResourceState.Event.AdminAskMaintenace, _nodeId);
         } catch (NoTransitionException e) {
             String err = "Cannot transimit resource state of host " + host.getId() + " to " + ResourceState.Maintenance;
             s_logger.debug(err, e);
@@ -1396,12 +1396,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		try {
 			/* Agent goes to Connecting status */
 			_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
-			updateResourceState(host, ResourceState.Event.InternalCreated, _nodeId);
+			resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
 		} catch (Exception e) {
 			s_logger.debug("Cannot transmit host " + host.getId() + " to Creating state", e);
 			_agentMgr.agentStatusTransitTo(host, Status.Event.Error, _nodeId);
 			try {
-	            updateResourceState(host, ResourceState.Event.Error, _nodeId);
+				resourceStateTransitTo(host, ResourceState.Event.Error, _nodeId);
             } catch (NoTransitionException e1) {
             	s_logger.debug("Cannot transmit host " + host.getId() + "to Error state", e);
             }
@@ -1457,7 +1457,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 					/* Change agent status to Alert */
 					_agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
 				    try {
-	                    updateResourceState(host, ResourceState.Event.Error, _nodeId);
+				    	resourceStateTransitTo(host, ResourceState.Event.Error, _nodeId);
                     } catch (NoTransitionException e) {
 	                    s_logger.debug("Cannot transmit host " + host.getId() +  "to Disabled state", e);
                     }
@@ -1671,7 +1671,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         
 		try {
-			updateResourceState(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
+			resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
 			_agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.ResetRequested);
 			return true;
 		} catch (NoTransitionException e) {
@@ -1720,7 +1720,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     			return true;
     		}
     		
-			updateResourceState(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
+    		resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
 			 _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.AgentDisconnected);
 			return true;
 		} catch (NoTransitionException e) {
@@ -1803,7 +1803,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             return false;
         } else {
             try {
-                return updateResourceState(host, ResourceState.Event.UnableToMigrate, _nodeId);
+                return resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
             } catch (NoTransitionException e) {
                 s_logger.debug("No next resource state for host " + host.getId() + " while current state is " + host.getResourceState() + " with event " + ResourceState.Event.UnableToMigrate, e);
                 return false;

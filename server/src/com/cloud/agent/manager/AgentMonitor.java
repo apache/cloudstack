@@ -153,7 +153,7 @@ public class AgentMonitor extends Thread implements Listener {
                         List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
                         if (vos.isEmpty() && vosMigrating.isEmpty()) {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
-                            _resourceMgr.updateResourceState(host, ResourceState.Event.InternalEnterMaintenance, _msId);   
+                            _resourceMgr.resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _msId);   
                         }
                     }
                 }

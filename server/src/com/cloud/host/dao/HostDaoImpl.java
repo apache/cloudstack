@@ -132,6 +132,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypePodDcStatusSearch.and("dc", entity.getDataCenterId(), SearchCriteria.Op.EQ);
         TypePodDcStatusSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
         TypePodDcStatusSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
+        TypePodDcStatusSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
         TypePodDcStatusSearch.done();
 
         MsStatusSearch = createSearchBuilder();
@@ -155,6 +156,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("type", TypeDcStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("dc", TypeDcStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
 
         IdStatusSearch = createSearchBuilder();
@@ -223,6 +225,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DirectlyConnectedSearch.and("resource", DirectlyConnectedSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         DirectlyConnectedSearch.and("ms", DirectlyConnectedSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         DirectlyConnectedSearch.and("statuses", DirectlyConnectedSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        DirectlyConnectedSearch.and("resourceState", DirectlyConnectedSearch.entity().getResource(), SearchCriteria.Op.NOTIN);
         DirectlyConnectedSearch.done();
 
         UnmanagedDirectConnectSearch = createSearchBuilder();
@@ -375,6 +378,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public List<HostVO> findDirectlyConnectedHosts() {
         SearchCriteria<HostVO> sc = DirectlyConnectedSearch.create();
+        sc.setParameters("resourceState", ResourceState.Disabled);
         return search(sc, null);
     }
 
@@ -384,7 +388,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         txn.start();       
     	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
     	sc.setParameters("lastPinged", lastPingSecondsAfter);
-        sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance);
+        sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.Disabled);
         sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
         List<HostVO> hosts = lockRows(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit), true);
         
@@ -422,7 +426,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public void markHostsAsDisconnected(long msId, long lastPing) {
         SearchCriteria<HostVO> sc = MsStatusSearch.create();
         sc.setParameters("ms", msId);
-        sc.setParameters("resourceState", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance);
 
         HostVO host = createForUpdate();
         host.setLastPinged(lastPing);
@@ -457,6 +460,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         sc.setParameters("dc", dcId);
         sc.setParameters("status", Status.Up.toString());
+        sc.setParameters("resourceState", ResourceState.Enabled.toString());
 
         return listBy(sc);
     }
@@ -505,6 +509,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("dc", entity.getDataCenterId(), SearchCriteria.Op.EQ);
         hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
         hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
+        hostSearch.and("resourceState", entity.getState(), SearchCriteria.Op.EQ);
         hostSearch.join("hostTagSearch", hostTagSearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
 
         SearchCriteria<HostVO> sc = hostSearch.create();
@@ -518,6 +523,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         sc.setParameters("dc", dcId);
         sc.setParameters("status", Status.Up.toString());
+        sc.setParameters("resourceState", ResourceState.Enabled.toString());
 
         return listBy(sc);
     }
@@ -549,6 +555,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", type.toString());
         sc.setParameters("dc", dcId);
         sc.setParameters("status", Status.Up.toString());
+        sc.setParameters("resourceState", ResourceState.Enabled.toString());
 
         return listBy(sc);
     }
@@ -864,6 +871,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return customSearch(sc, null);
     }
 
+    /*TODO: this is used by mycloud, check if it needs resource state Enabled */
     @Override
     public long countRoutingHostsByDataCenter(long dcId) {
         SearchCriteria<Long> sc = CountRoutingByDc.create();

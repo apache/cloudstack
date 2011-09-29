@@ -74,7 +74,7 @@ public interface ResourceManager {
 	
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
 
-	boolean updateResourceState(Host host, Event event, long msId) throws NoTransitionException;
+	boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException;
 
 	boolean umanageHost(long hostId);
 
