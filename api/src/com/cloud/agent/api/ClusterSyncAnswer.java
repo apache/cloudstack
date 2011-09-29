@@ -31,6 +31,8 @@ public class ClusterSyncAnswer extends Answer {
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
     
+    public ClusterSyncAnswer() {
+    }
     
     public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates, int type){
         _clusterId = clusterId;

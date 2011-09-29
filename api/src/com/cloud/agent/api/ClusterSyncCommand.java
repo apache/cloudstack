@@ -28,6 +28,8 @@ public class ClusterSyncCommand extends Command implements CronCommand {
 
     long _clusterId;
     
+    public ClusterSyncCommand() {
+    }
     
     public ClusterSyncCommand(int interval, int skipSteps, long clusterId){
         _interval = interval;
