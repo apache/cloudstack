@@ -539,7 +539,7 @@ $(document).ready(function() {
 		
 	// Default AJAX Setup
 	$.ajaxSetup({
-		url: "/client/api",
+		url: clientApiUrl,
 		dataType: "json",
 		cache: false,
 		error: function(XMLHttpResponse) {

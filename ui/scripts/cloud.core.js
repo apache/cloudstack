@@ -950,7 +950,7 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
     $viewConsoleContainer.append($viewConsoleTemplate.show());       
 	if (jsonObj.state == 'Running') {	
 	    //console proxy thumbnail
-	    var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";		
+	    var imgUrl = clientConsoleUrl + "?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";		
 		$viewConsoleTemplate.data("imgUrl", imgUrl);
 		
 		$viewConsoleContainer.bind("mouseover", function(event) {	    
@@ -963,7 +963,7 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 		});	 
 						
 		//console proxy popup
-		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
+		$viewConsoleTemplate.data("proxyUrl", (clientConsoleUrl + "?cmd=access&vm=" + jsonObj.id)).data("vmId",jsonObj.id).click(function(event) {				
 			var proxyUrl = $(this).data("proxyUrl");				
 			//proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
 			var viewer = window.open(proxyUrl, $(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
