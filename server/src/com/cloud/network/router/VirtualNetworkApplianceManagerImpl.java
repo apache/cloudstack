@@ -1075,7 +1075,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 NicProfile gatewayNic = new NicProfile();
                 if (isRedundant) {
                     gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
-                    gatewayNic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(guestNetwork.getId()));
                 } else {
                     gatewayNic.setIp4Address(guestNetwork.getGateway());
                 }
@@ -1094,13 +1093,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (routers.size() >= 5) {
                     s_logger.error("Too much redundant routers!");
                 }
-                // Priority would be recalculated when start up the redundant router
-                int priority = 0;
-                if (isRedundant) {
-                    priority = DEFAULT_PRIORITY;
-                }
                 router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, priority, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
+                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
                 router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
                 // Creating stats entry for router
                 UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
