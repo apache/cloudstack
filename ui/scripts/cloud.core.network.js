@@ -985,7 +985,19 @@ function bindAddLoadBalancerButton() {
 				    }  		
 				    url.push("numretries="+numretries); 	
 				}		
-				  				
+				
+				var isInline = $thisDialog.find("#mode").val();				
+				if(isInline != null && isInline.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("inline="+isInline); 
+				}
+								
 				array1.push("&url="+todb(url.join("")));		
 				//*** construct URL (end)	***					
 								

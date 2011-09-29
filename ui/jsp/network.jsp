@@ -1122,7 +1122,7 @@ dictionary = {
                 <div id="password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>  
-            
+             
             <li>
                 <label>
                     <fmt:message key="label.public.interface"/>:</label>
@@ -1143,7 +1143,15 @@ dictionary = {
                 <input class="text" type="text" id="numretries" />
                 <div id="numretries_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>      
+            </li>  
+            <li>
+				<label>
+				    <fmt:message key="mode"/>:</label>
+				<select class="select" id="mode">						
+					<option value="false"><fmt:message key="side.by.side"/></option>
+					<option value="true"><fmt:message key="inline"/></option>
+				</select>
+			</li>       
         </ol>
         </form>
     </div>
