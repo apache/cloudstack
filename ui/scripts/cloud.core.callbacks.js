@@ -46,11 +46,14 @@ automatically log you in.
 Below is a sample login attempt
 */
 
+var clientApiUrl = "/client/api";
+var clientConsoleUrl   = "/client/console";
+
 $(document).ready(function() {
 	
 	var url = $.urlParam("loginUrl");
 	if (url != undefined && url != null && url.length > 0) {
-		url = unescape("/client/api?"+url);
+		url = unescape(clientApiUrl+"?"+url);
 		$.ajax({
 			url: url,
 			dataType: "json",
