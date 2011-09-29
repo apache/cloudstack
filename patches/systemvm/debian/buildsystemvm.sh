@@ -413,6 +413,8 @@ services() {
   mkdir -p ./usr/share/cloud
   mkdir -p ./usr/local/cloud
   mkdir -p ./root/.ssh
+  #Fix haproxy directory issue
+  mkdir -p ./var/lib/haproxy
   
   /bin/cp -r ${scriptdir}/config/* ./
   chroot . chkconfig xl2tpd off
