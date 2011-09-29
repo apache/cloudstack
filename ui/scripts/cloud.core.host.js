@@ -226,7 +226,7 @@ function hostBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
     	buildActionLinkForTab("label.action.edit.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 		buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
 	    buildActionLinkForTab("label.action.force.reconnect", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	    
-	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   //temp
+	    //buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   //temp
 	    noAvailableActions = false;
 	} 
 	else if(jsonObj.state == 'Down') {
@@ -616,7 +616,9 @@ var hostActionMap = {
                 hostClearRightPanel();
             }                         
         }
-    },    
+    }
+    /*
+    ,    
     "label.action.update.OS.preference": {              
         isAsyncJob: false,        
         dialogBeforeActionFn: doUpdateOSPreference,
@@ -625,7 +627,8 @@ var hostActionMap = {
             var item = json.updatehostresponse.host;
             hostToMidmenu(item, $midmenuItem1);              
         }
-    }          
+    } 
+    */         
 } 
 
 function doEditHost($actionLink, $detailsTab, $midmenuItem1) {  
@@ -664,6 +667,8 @@ function doEditHost2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $
 	var osCategoryId = $detailsTab.find("#os_dropdown").val();
     if (osCategoryId != null && osCategoryId.length > 0)
 	    array1.push("&osCategoryId="+osCategoryId);
+    else //OS is none
+    	array1.push("&osCategoryId=0");
 
 	$.ajax({
 	    data: createURL("command=updateHost"+array1.join("")),
@@ -753,6 +758,7 @@ function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){
     }).dialog("open");     
 } 
 
+/*
 function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
@@ -763,8 +769,8 @@ function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){
             $thisDialog.dialog("close");
 	        var osId = $thisDialog.find("#host_os").val();
 	        var osName =$thisDialog.find("#host_os option:selected").text();	        
-	        if (osId == null || osId.length == 0)
-	            return;	        
+	        if (osId == null || osId.length == 0) //OS is none
+	            osId =0;    	    
 	      
 	        var id = jsonObj.id;    		    
             var apiCommand = "command=updateHost&id="+id+"&osCategoryId="+osId;
@@ -775,4 +781,4 @@ function doUpdateOSPreference($actionLink, $detailsTab, $midmenuItem1){
         }
     }).dialog("open");     
 } 
-
+*/
