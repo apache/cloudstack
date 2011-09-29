@@ -1752,24 +1752,28 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         boolean result = true;
         for (VirtualRouter router : routers) {
-            if (router.getState() != State.Running) {
-                s_logger.warn("Failed to delete remote access VPN: domR is not in right state " + router.getState());
+            if (router.getState() == State.Running) {
+                Commands cmds = new Commands(OnError.Continue);
+                IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
+
+                RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+                removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+
+                DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+                removeVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+                
+                cmds.addCommand(removeVpnCmd);
+
+                result = result && sendCommandsToRouter(router, cmds);
+            } else if (router.getState() == State.Stopped) {
+                s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
+                continue;
+            } else {
+                s_logger.warn("Failed to delete remote access VPN: domR " + router + " is not in right state " + router.getState());
                 throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
             }
-            Commands cmds = new Commands(OnError.Continue);
-            IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
-
-            RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
-            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
-            removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-            removeVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-            
-            cmds.addCommand(removeVpnCmd);
-
-            result = result && sendCommandsToRouter(router, cmds);
         }
         
         return result;
