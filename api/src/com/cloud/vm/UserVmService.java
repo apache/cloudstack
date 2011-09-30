@@ -358,11 +358,11 @@ public interface UserVmService {
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds. Only Root
      * Admin can migrate a VM.
      * 
-     * @param UserVm
-     *            vm The VM to migrate
+     * @param Long vmId
+     *            vmId of The VM to migrate
      * @param Host
      *            destinationHost to migrate the VM
-     * @return UserVm migrated VM
+     * @return VirtualMachine migrated VM
      * @throws ManagementServerException
      *             in case we get error finding the VM or host or access errors or other internal errors.
      * @throws ConcurrentOperationException
@@ -372,5 +372,6 @@ public interface UserVmService {
      * @throws VirtualMachineMigrationException
      *             if the VM to be migrated is not in Running state
      */
-    UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+
 }

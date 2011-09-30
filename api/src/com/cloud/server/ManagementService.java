@@ -25,7 +25,6 @@ import java.util.Set;
 
 import com.cloud.alert.Alert;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
@@ -101,7 +100,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserAccount;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
@@ -483,11 +481,12 @@ public interface ManagementService {
      * List hosts for migrating the given VM. The API returns list of all hosts in the VM's cluster minus the current host and
      * also a list of hostIds that seem to have enough CPU and RAM capacity to host this VM.
      * 
-     * @param UserVm
-     *            vm The VM to migrate
+     * @param Long vmId
+     *            Id of The VM to migrate
      * @return Pair<List<? extends Host>, List<Long>> List of all Hosts in VM's cluster and list of HostIds with enough capacity
      */
-    Pair<List<? extends Host>, List<Long>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize);
+    Pair<List<? extends Host>, List<Long>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
+
 
     String[] listEventTypes();
     

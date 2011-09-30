@@ -51,6 +51,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.api.response.TemplateResponse;
@@ -210,5 +211,7 @@ public interface ResponseGenerator {
 	List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
 	
     FirewallResponse createFirewallResponse(FirewallRule fwRule);
+
+    SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
 
 }

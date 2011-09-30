@@ -30,9 +30,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
 @Implementation(description="Lists hosts.", responseObject=HostResponse.class)
@@ -130,11 +128,7 @@ public class ListHostsCmd extends BaseListCmd {
 		List<Long> hostIdsWithCapacity = new ArrayList<Long>();
     	 
     	if(getVirtualMachineId() != null){
-            UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
-            if (userVm == null) {
-                throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
-            }
-            Pair<List<? extends Host>, List<Long>> hostsForMigration = _mgr.listHostsForMigrationOfVM(userVm, this.getStartIndex(), this.getPageSizeVal());
+            Pair<List<? extends Host>, List<Long>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
             hostIdsWithCapacity = hostsForMigration.second();
     	}else{
