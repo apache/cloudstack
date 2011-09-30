@@ -49,7 +49,15 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
 
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +
+    																		 "* CAPACITY_TYPE_MEMORY = 0" +
+    																		 "* CAPACITY_TYPE_CPU = 1" +
+    																		 "* CAPACITY_TYPE_STORAGE = 2" +
+    																		 "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" +
+    																		 "* CAPACITY_TYPE_PUBLIC_IP = 4" +
+    																		 "* CAPACITY_TYPE_PRIVATE_IP = 5" +
+    																		 "* CAPACITY_TYPE_SECONDARY_STORAGE = 6")
+
     private Integer type;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
