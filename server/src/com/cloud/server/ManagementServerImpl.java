@@ -212,7 +212,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -950,7 +949,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(UserVm vm, Long startIndex, Long pageSize) {
+    public Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = UserContext.current().getCaller();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -959,6 +958,11 @@ public class ManagementServerImpl implements ManagementServer {
             }
             throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
+        
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+        }        
         // business logic
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
@@ -1009,8 +1013,8 @@ public class ManagementServerImpl implements ManagementServer {
         
         List<Host> suitableHosts = new ArrayList<Host>();
         Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
-        UserVmVO vmVO = (UserVmVO)vm;
-        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO);
+
+        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
 
         DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null);
         ExcludeList excludes = new ExcludeList();

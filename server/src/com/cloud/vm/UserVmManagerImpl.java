@@ -3187,7 +3187,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
-    public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
         Account caller = UserContext.current().getCaller();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -3195,6 +3195,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
             throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+        }
+        
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
         }
         // business logic
         if (vm.getState() != State.Running) {
@@ -3237,7 +3242,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new VirtualMachineMigrationException("Destination host, hostId: "+ destinationHost.getId() +" already has max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + " , cannot migrate to this host");
         }
 
-        UserVmVO migratedVm = _itMgr.migrate((UserVmVO) vm, srcHostId, dest);
+        VMInstanceVO migratedVm = _itMgr.migrate(vm, srcHostId, dest);
         return migratedVm;
     }
 

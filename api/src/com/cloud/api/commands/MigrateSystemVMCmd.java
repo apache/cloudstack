@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -25,7 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,14 +35,13 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@Implementation(description="Attempts Migration of a user virtual machine to the host specified.", responseObject=UserVmResponse.class)
-public class MigrateVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
+@Implementation(description="Attempts Migration of a system virtual machine to the host specified.", responseObject=SystemVmInstanceResponse.class)
+public class MigrateSystemVMCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(MigrateSystemVMCmd.class.getName());
 
-    private static final String s_name = "migratevirtualmachineresponse";
+    private static final String s_name = "migratesystemvmresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,9 +78,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     
     @Override
     public long getEntityOwnerId() {
-        UserVm userVm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
-        if (userVm != null) {
-            return userVm.getAccountId();
+        Account account = UserContext.current().getCaller();
+        if (account != null) {
+            return account.getId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
@@ -99,10 +98,6 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
-        if (userVm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
-        }
         
         Host destinationHost = _resourceService.getHost(getHostId());
         if (destinationHost == null) {
@@ -110,13 +105,15 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         }
         try{
         	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+        	//FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
         	VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
 	        if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
+	            // return the generic system VM instance response
+	            SystemVmInstanceResponse response = _responseGenerator.createSystemVmInstanceResponse(migratedVm);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
 	        } else {
-	            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate vm");
+	            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate the system vm");
 	        }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);

@@ -76,6 +76,7 @@ import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.api.response.TemplateResponse;
@@ -2539,4 +2540,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
+    @Override
+    public SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine vm){
+        SystemVmInstanceResponse vmResponse = new SystemVmInstanceResponse();
+        vmResponse.setId(vm.getId());
+        vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
+        vmResponse.setName(vm.getHostName());
+        if (vm.getHostId() != null) {
+            vmResponse.setHostId(vm.getHostId());
+        }
+        if (vm.getState() != null) {
+            vmResponse.setState(vm.getState().toString());
+        }
+        if (vm.getType() == Type.DomainRouter) {
+            VirtualRouter router = (VirtualRouter)vm;
+            if(router.getRole() != null){
+                vmResponse.setRole(router.getRole().toString());
+            }
+        }
+        return vmResponse;
+    }
 }
