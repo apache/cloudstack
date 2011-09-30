@@ -21,13 +21,12 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.domain.Domain;
-import com.cloud.domain.Domain.Type;
 import com.cloud.domain.DomainVO;
 
 public interface DomainManager extends DomainService{
     Set<Long> getDomainChildrenIds(String parentDomainPath);
 
-    Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, Type domainType);
+    Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain);
     
     /**
      * find the domain by its path

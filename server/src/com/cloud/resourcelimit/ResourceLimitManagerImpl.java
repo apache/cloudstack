@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -493,12 +492,8 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             ownerId = accountId;
         } else if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
-            
-            if (domain.getType() == Domain.Type.Project) {
-                _accountMgr.checkAccess(caller, domain, AccessType.ModifyProject);
-            } else {
-                _accountMgr.checkAccess(caller, domain, null);
-            }
+           
+            _accountMgr.checkAccess(caller, domain, null);
             
             if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...
@@ -532,17 +527,13 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     }
 
     @Override
-    public List<ResourceCountVO> recalculateResourceCount(UpdateResourceCountCmd cmd) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException{
+    public List<ResourceCountVO> recalculateResourceCount(Long accountId, Long domainId, Integer typeId) throws InvalidParameterValueException, CloudRuntimeException, PermissionDeniedException{
         Account callerAccount = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
         long count=0;
         List<ResourceCountVO> counts = new ArrayList<ResourceCountVO>();
         List<ResourceType> resourceTypes = new ArrayList<ResourceType>();
 
         ResourceType resourceType = null;
-        Integer typeId = cmd.getResourceType();
 
         if (typeId != null) {
             for (ResourceType type : resourceTypes) {
@@ -560,15 +551,6 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             throw new InvalidParameterValueException("Please specify a valid domain ID.");
         }
         _accountMgr.checkAccess(callerAccount, domain, null);
-
-        if (accountName != null) {
-            Account userAccount = _accountMgr.getActiveAccountByName(accountName, domainId);
-            if (userAccount == null) {
-                throw new InvalidParameterValueException("unable to find account by name " + accountName + " in domain with id " + domainId);
-            }
-            accountId = userAccount.getId();
-        }
-
         
         if (resourceType != null) {
             resourceTypes.add(resourceType);

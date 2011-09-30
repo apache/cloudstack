@@ -35,7 +35,6 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
@@ -56,7 +55,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.BareMetalVmService;
@@ -192,124 +190,6 @@ public abstract class BaseCmd {
             formattedString = _outputFormat.format(date);
         }
         return formattedString;
-    }
-
-    protected Account getValidOwner(String accountName, Long domainId) {
-        Account owner = null;
-        if (accountName != null) {
-            owner = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-        } else {
-            owner = UserContext.current().getCaller();
-        }
-        if (owner == null) {
-            throw new InvalidParameterValueException("Invalid value for owner specified: " + accountName);
-        }
-        if (owner.getState() == Account.State.disabled || owner.getState() == Account.State.locked) {
-            throw new PermissionDeniedException("Account disabled.");
-        }
-        return owner;
-    }
-    
-    public Map<String, Object> validateParams(Map<String, String> params, boolean decode) {
-//        List<Pair<Enum, Boolean>> properties = getProperties();
-
-        // step 1 - all parameter names passed in will be converted to lowercase
-        Map<String, Object> processedParams = lowercaseParams(params, decode);
-        return processedParams;
-
-        /*
-        // step 2 - make sure all required params exist, and all existing params adhere to the appropriate data type
-        Map<String, Object> validatedParams = new HashMap<String, Object>();
-        for (Pair<Enum, Boolean> propertyPair : properties) {
-            Properties prop = (Properties)propertyPair.first();
-            Object param = processedParams.get(prop.getName());
-            // possible validation errors are
-            //       - NULL (not specified)
-            //       - MALFORMED
-            if (param != null) {
-                short propertyType = prop.getDataType();
-                String decodedParam = null;
-                if ((propertyType != TYPE_OBJECT) && (propertyType != TYPE_OBJECT_MAP)) {
-                    decodedParam = (String)param;
-                    if (decode) {
-                        try {
-                            decodedParam = URLDecoder.decode((String)param, "UTF-8");
-                        } catch (UnsupportedEncodingException usex) {
-                            s_logger.warn(prop.getName() + " could not be decoded, value = " + param);
-                            throw new ServerApiException(PARAM_ERROR, prop.getName() + " could not be decoded");
-                        }
-                    }
-                }
-
-                switch (propertyType) {
-                case TYPE_INT:
-                    try {
-                        validatedParams.put(prop.getName(), Integer.valueOf(Integer.parseInt(decodedParam)));
-                    } catch (NumberFormatException ex) {
-                        s_logger.warn(prop.getName() + " (type is int) is malformed, value = " + decodedParam);
-                        throw new ServerApiException(MALFORMED_PARAMETER_ERROR, prop.getName() + " is malformed");
-                    }
-                    break;
-                case TYPE_LONG:
-                    try {
-                        validatedParams.put(prop.getName(), Long.valueOf(Long.parseLong(decodedParam)));
-                    } catch (NumberFormatException ex) {
-                        s_logger.warn(prop.getName() + " (type is long) is malformed, value = " + decodedParam);
-                        throw new ServerApiException(MALFORMED_PARAMETER_ERROR, prop.getName() + " is malformed");
-                    }
-                    break;
-                case TYPE_DATE:
-                    try {
-                        synchronized(_format) { // SimpleDataFormat is not thread safe, synchronize on it to avoid parse errors
-                            validatedParams.put(prop.getName(), _format.parse(decodedParam));
-                        }
-                    } catch (ParseException ex) {
-                        s_logger.warn(prop.getName() + " (type is date) is malformed, value = " + decodedParam);
-                        throw new ServerApiException(MALFORMED_PARAMETER_ERROR, prop.getName() + " uses an unsupported date format");
-                    }
-                    break;
-                case TYPE_TZDATE:
-                    try {
-                        validatedParams.put(prop.getName(), DateUtil.parseTZDateString(decodedParam));
-                    } catch (ParseException ex) {
-                        s_logger.warn(prop.getName() + " (type is date) is malformed, value = " + decodedParam);
-                        throw new ServerApiException(MALFORMED_PARAMETER_ERROR, prop.getName() + " uses an unsupported date format");
-                    }
-                    break;
-                case TYPE_FLOAT:
-                    try {
-                        validatedParams.put(prop.getName(), Float.valueOf(Float.parseFloat(decodedParam)));
-                    } catch (NumberFormatException ex) {
-                        s_logger.warn(prop.getName() + " (type is float) is malformed, value = " + decodedParam);
-                        throw new ServerApiException(MALFORMED_PARAMETER_ERROR, prop.getName() + " is malformed");
-                    }
-                    break;
-                case TYPE_BOOLEAN:
-                	validatedParams.put(prop.getName(), Boolean.valueOf(Boolean.parseBoolean(decodedParam)));
-                	break;
-                case TYPE_STRING:
-                    validatedParams.put(prop.getName(), decodedParam);
-                    break;
-                default:
-                    validatedParams.put(prop.getName(), param);
-                    break;
-                }
-            } else if (propertyPair.second().booleanValue() == true) {
-                s_logger.warn("missing parameter, " + prop.getTagName() + " is not specified");
-                throw new ServerApiException(MALFORMED_PARAMETER_ERROR, prop.getTagName() + " is not specified");
-            }
-        }
-
-        return validatedParams;
-        */
-    }
-    
-    private Map<String, Object> lowercaseParams(Map<String, String> params, boolean decode) {
-        Map<String, Object> lowercaseParams = new HashMap<String, Object>();
-        for (String key : params.keySet()) {
-            lowercaseParams.put(key.toLowerCase(), params.get(key));
-        }
-        return lowercaseParams;
     }
 
     // FIXME:  move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
@@ -584,7 +464,7 @@ public abstract class BaseCmd {
             }
             
             Domain domain = _domainService.getDomain(domainId);
-            if (domain == null || domain.getType() == Domain.Type.Project) {
+            if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
             }
             

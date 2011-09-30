@@ -39,14 +39,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.api.commands.AttachIsoCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
-import com.cloud.api.commands.PrepareTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
@@ -240,13 +237,15 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
     
     @Override
-    public VirtualMachineTemplate prepareTemplate(PrepareTemplateCmd cmd) {
+    public VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) {
     	
-    	VMTemplateVO vmTemplate = _tmpltDao.findById(cmd.getTemplateId());
+    	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
     	if(vmTemplate == null)
-    		throw new InvalidParameterValueException("Unable to find template " + cmd.getTemplateId());
+    		throw new InvalidParameterValueException("Unable to find template id=" + templateId);
     	
-    	prepareTemplateInAllStoragePools(vmTemplate, cmd.getZoneId());
+    	_accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.ModifyEntry, vmTemplate);
+    	
+    	prepareTemplateInAllStoragePools(vmTemplate, zoneId);
     	return vmTemplate;
     }
 
@@ -785,13 +784,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
 	@Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
-	public boolean detachIso(DetachIsoCmd cmd)  {
+	public boolean detachIso(long vmId)  {
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
-        Long vmId = cmd.getVirtualMachineId();
         
         // Verify input parameters
-        UserVmVO vmInstanceCheck = _userVmDao.findById(vmId.longValue());
+        UserVmVO vmInstanceCheck = _userVmDao.findById(vmId);
         if (vmInstanceCheck == null) {
             throw new InvalidParameterValueException ("Unable to find a virtual machine with id " + vmId);
         }
@@ -819,11 +817,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
-	public boolean attachIso(AttachIsoCmd cmd) {
+	public boolean attachIso(long isoId, long vmId) {
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
-        Long vmId = cmd.getVirtualMachineId();
-        Long isoId = cmd.getId();
         
     	// Verify input parameters
     	UserVmVO vm = _userVmDao.findById(vmId);

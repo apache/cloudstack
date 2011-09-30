@@ -21,7 +21,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class FirewallRuleResponse extends BaseResponse {
+public class FirewallRuleResponse extends BaseResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
     private Long id;
 
@@ -55,7 +55,7 @@ public class FirewallRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
     
-    @SerializedName("state") @Param(description="the state of the rule")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")

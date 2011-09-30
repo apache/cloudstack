@@ -18,7 +18,11 @@
 
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -29,8 +33,6 @@ import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import java.util.ArrayList;
-import java.util.List;
 
 
 @Implementation(description="Recalculate and update resource count for an account or domain.", responseObject=ResourceCountResponse.class)
@@ -57,6 +59,9 @@ public class UpdateResourceCountCmd extends BaseCmd {
     																					"3 - Snapshot. Number of snapshots a user can create." +
     																					"4 - Template. Number of templates that a user can register/create.")
     private Integer resourceType;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Update resource limits for project")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -104,7 +109,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	List<? extends ResourceCount> result = _resourceLimitService.recalculateResourceCount(this);
+    	List<? extends ResourceCount> result = _resourceLimitService.recalculateResourceCount(getAccountId(accountName, domainId, projectId), getDomainId(), getResourceType());
 
         if ((result != null) && (result.size()>0)){
             ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();

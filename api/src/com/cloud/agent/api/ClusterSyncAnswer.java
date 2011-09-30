@@ -18,7 +18,6 @@
 package com.cloud.agent.api;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;

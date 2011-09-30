@@ -23,13 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
 
-public class SecurityGroupResultObject {
+public class SecurityGroupResultObject implements ControlledEntity{
     @Param(name = "id")
     private Long id;
 
@@ -40,10 +41,10 @@ public class SecurityGroupResultObject {
     private String description;
 
     @Param(name = "domainid")
-    private Long domainId;
+    private long domainId;
 
     @Param(name = "accountid")
-    private Long accountId;
+    private long accountId;
 
     @Param(name = "accountname")
     private String accountName = null;
@@ -54,7 +55,7 @@ public class SecurityGroupResultObject {
     public SecurityGroupResultObject() {
     }
 
-    public SecurityGroupResultObject(Long id, String name, String description, Long domainId, Long accountId, String accountName, List<IngressRuleResultObject> ingressRules) {
+    public SecurityGroupResultObject(Long id, String name, String description, long domainId, long accountId, String accountName, List<IngressRuleResultObject> ingressRules) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -88,7 +89,7 @@ public class SecurityGroupResultObject {
         this.description = description;
     }
 
-    public Long getDomainId() {
+    public long getDomainId() {
         return domainId;
     }
 
@@ -96,7 +97,7 @@ public class SecurityGroupResultObject {
         this.domainId = domainId;
     }
 
-    public Long getAccountId() {
+    public long getAccountId() {
         return accountId;
     }
 

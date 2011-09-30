@@ -191,8 +191,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         Long id = cmd.getId();
         String path = null;
 
-        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
-        String accountName = accountDomainPair.first();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        List<Long> permittedAccounts = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
 
         if (ipId != null) {
@@ -212,7 +212,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
 
@@ -235,10 +235,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            if (accountName != null) {
-                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                sc.setParameters("accountId", account.getId());
-            }
+        }
+        
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
 
         sc.setParameters("purpose", Purpose.Firewall);
@@ -448,7 +448,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         _accountMgr.checkAccess(caller, null, rule);
-        
         
         revokeRule(rule, caller, userId, false);
 

@@ -23,29 +23,36 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class SecurityGroupResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the security group")
+@SuppressWarnings("unused")
+public class SecurityGroupResponse extends BaseResponse implements ControlledEntityResponse{
+    @SerializedName(ApiConstants.ID) @Param(description="the ID of the security group")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the security group")
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the security group")
     private String name;
 
-    @SerializedName("description") @Param(description="the description of the security group")
+    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the description of the security group")
     private String description;
 
-    @SerializedName("account") @Param(description="the account owning the security group")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the security group")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
+    private String projectName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the security group")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the security group")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the security group")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the security group")
     private String domainName;
     
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private Long jobId;
 
-    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
+    @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
 
     @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = IngressRuleResponse.class)
@@ -53,61 +60,33 @@ public class SecurityGroupResponse extends BaseResponse {
 
     @SerializedName("egressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = EgressRuleResponse.class)
     private List<EgressRuleResponse> egressRules;
-    
-    public Long getId() {
-        return id;
-    }
 
     public void setId(Long id) {
         this.id = id;
     }
-
-    public String getName() {
-        return name;
+    
+    public Long getId() {
+        return id;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getAccountName() {
-        return accountName;
     }
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public List<IngressRuleResponse> getIngressRules() {
-        return ingressRules;
-    }
-    
-    public List<EgressRuleResponse> getEgressRules() {
-        return egressRules;
     }
 
     public void setIngressRules(List<IngressRuleResponse> ingressRules) {
@@ -166,5 +145,15 @@ public class SecurityGroupResponse extends BaseResponse {
         } else if (!id.equals(other.id))
             return false;
         return true;
+    }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

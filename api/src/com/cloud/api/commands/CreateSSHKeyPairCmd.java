@@ -25,7 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SSHKeyPairResponse;
-import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserContext;
 
@@ -48,6 +47,9 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="an optional project for the ssh key")
+    private Long projectId;
 	
     
     /////////////////////////////////////////////////////
@@ -66,20 +68,22 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
         return domainId;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
 	
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
 	/////////////////////////////////////////////////////
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-
-        if (account != null) {
-            return account.getId();
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
         }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
-    }
+        
+        return accountId;
+    }   
 
 	@Override
 	public void execute() {

@@ -71,6 +71,9 @@ public class ListVolumesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all volumes from the parent specified by the domain id till leaves.")
     private Boolean recursive;
     
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
+    private Long projectId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -113,6 +116,10 @@ public class ListVolumesCmd extends BaseListCmd {
 
     public Boolean isRecursive() {
         return recursive;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
     
     /////////////////////////////////////////////////////

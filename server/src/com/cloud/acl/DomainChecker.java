@@ -53,29 +53,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     }
     
     @Override
-    public boolean checkAccess(Account caller, Domain domain, AccessType accessType) throws PermissionDeniedException {
+    public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         if (caller.getState() != Account.State.enabled) {
             throw new PermissionDeniedException(caller + " is disabled.");
         }
         long domainId = domain.getId();
-        
-        if (domain.getType() == Domain.Type.Project) {
-            
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                if (accessType != null && accessType == AccessType.ModifyProject) {
-                    if (!_projectMgr.canModifyProjectDomain(caller, domainId)) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
-                    }
-                } else if (!_projectMgr.canAccessDomain(caller, domainId)){
-                    throw new PermissionDeniedException(caller + " does not have permission to operate within " + domain);
-                }
-                return true;
-            }
-            
-            //need to check the domain the project belongs to
-            Project project = _projectMgr.findByProjectDomainId(domainId);
-            domainId = project.getDomainId();
-        }
         
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             if (caller.getDomainId() != domainId) {
@@ -94,7 +76,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             throw new PermissionDeniedException(user + " is no longer active.");
         }
         Account account = _accountDao.findById(user.getAccountId());
-        return checkAccess(account, domain, null);
+        return checkAccess(account, domain);
     }
 
     @Override
@@ -135,7 +117,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                         if (!_projectMgr.canModifyProjectAccount(caller, account.getId())) {
                             throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
                         }
-                    } else if (!_projectMgr.canAccessAccount(caller, account.getId())){
+                    } else if (!_projectMgr.canAccessProjectAccount(caller, account.getId())){
                         throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
                     }
                 } else {

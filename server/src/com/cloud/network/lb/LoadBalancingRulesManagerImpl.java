@@ -611,11 +611,19 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
+        Account caller = UserContext.current().getCaller();
         Long lbRuleId = cmd.getId();
         String name = cmd.getLoadBalancerName();
         String description = cmd.getDescription();
         String algorithm = cmd.getAlgorithm();
         LoadBalancerVO lb = _lbDao.findById(lbRuleId);
+        
+        if (lb == null) {
+            throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
+        }
+        
+        //check permissions
+        _accountMgr.checkAccess(caller, null, lb);
 
         if (name != null) {
             lb.setName(name);
@@ -703,8 +711,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         Long zoneId = cmd.getZoneId();
         String path = null;
 
-        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
-        String accountName = accountDomainPair.first();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        List<Long> permittedAccounts = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
 
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -723,7 +731,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
 
         if (instanceId != null) {
@@ -772,10 +780,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            if (accountName != null) {
-                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                sc.setParameters("accountId", account.getId());
-            }
+        }
+        
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
 
         if (path != null) {

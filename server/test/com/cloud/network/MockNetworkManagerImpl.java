@@ -8,7 +8,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.dc.Vlan;
@@ -47,7 +46,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkService {
 
     @Override
-    public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId) {
+    public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -71,7 +70,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) {
+    public boolean disassociateIpAddress(long ipAddressId) {
         // TODO Auto-generated method stub
         return false;
     }

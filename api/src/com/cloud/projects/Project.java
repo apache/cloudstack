@@ -38,8 +38,6 @@ public interface Project extends PartOf{
     
     long getProjectAccountId();
 
-    long getProjectDomainId();
-
     State getState();
 
     void setState(State state);

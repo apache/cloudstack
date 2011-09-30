@@ -42,7 +42,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
@@ -65,7 +64,9 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The network this ip address should be associated to.")
     private Long networkId;
-
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -96,7 +97,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         
         DataCenter zone = _configService.getZone(getZoneId());
         if (zone.getNetworkType() == NetworkType.Advanced) {
-            List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
+            List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
             if (networks.size() == 0) {
                 String domain = _domainService.getDomain(getDomainId()).getName();
                 throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
@@ -116,8 +117,12 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
-        return _accountService.finalizeOwner(caller, accountName, domainId).getAccountId();
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
+        }
+        
+        return accountId;
     }
 
     @Override

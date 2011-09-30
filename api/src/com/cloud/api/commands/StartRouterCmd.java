@@ -102,7 +102,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Router Id: "+getId());
-        VirtualRouter result = _routerService.startRouter(this);
+        VirtualRouter result = _routerService.startRouter(id);
         if (result != null){
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
             routerResponse.setResponseName(getCommandName());

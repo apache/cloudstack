@@ -34,14 +34,12 @@ CREATE TABLE  `cloud`.`projects` (
   `name` varchar(255) COMMENT 'project name',
   `display_text` varchar(255) COMMENT 'project name',
   `project_account_id` bigint unsigned NOT NULL,
-  `project_domain_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
   `created` datetime COMMENT 'date created',
-  `removed` datetime COMMENT 'date removed',\
+  `removed` datetime COMMENT 'date removed',
   `state` varchar(255) NOT NULL COMMENT 'state of the project (Active/Inactive/Suspended)',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_projects__project_account_id` FOREIGN KEY(`project_account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_projects__project_domain_id` FOREIGN KEY(`project_domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_projects__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   INDEX `i_projects__removed`(`removed`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -53,12 +51,11 @@ CREATE TABLE  `cloud`.`project_account` (
   `account_role` varchar(255) NOT NULL DEFAULT 'Regular' COMMENT 'Account role in the project (Owner or Regular)',
   `project_id` bigint unsigned NOT NULL COMMENT 'project id',
   `project_account_id` bigint unsigned NOT NULL,
-  `project_domain_id` bigint unsigned NOT NULL,
+  `created` datetime COMMENT 'date created',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_project_account__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_project_account__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_project_account__project_account_id` FOREIGN KEY(`project_account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_project_account__project_domain_id` FOREIGN KEY(`project_domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   UNIQUE (`account_id`, `project_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -70,7 +67,7 @@ CREATE TABLE  `cloud`.`project_invitations` (
   `domain_id` bigint unsigned COMMENT 'domain id',
   `email` varchar(255) COMMENT 'email',
   `token` varchar(255) COMMENT 'token',
-  `state` varchar(255) unsigned NOT NULL DEFAULT 'Pending' COMMENT 'the state of the invitation',
+  `state` varchar(255) NOT NULL DEFAULT 'Pending' COMMENT 'the state of the invitation',
   `created` datetime COMMENT 'date created',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_project_invitations__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
@@ -78,7 +75,6 @@ CREATE TABLE  `cloud`.`project_invitations` (
   CONSTRAINT `fk_project_invitations__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE domain ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project';
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.user.vms', '20', 'The default maximum number of user VMs that can be deployed for a project');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.public.ips', '20', 'The default maximum number of public IPs that can be consumed by a project');

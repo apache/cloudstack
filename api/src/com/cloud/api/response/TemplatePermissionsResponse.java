@@ -19,51 +19,45 @@ package com.cloud.api.response;
 
 import java.util.List;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class TemplatePermissionsResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the template ID")
+    @SerializedName(ApiConstants.ID) @Param(description="the template ID")
     private Long id;
 
-    @SerializedName("ispublic") @Param(description="true if this template is a public template, false otherwise")
+    @SerializedName(ApiConstants.IS_PUBLIC) @Param(description="true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
-    @SerializedName("domainid") @Param(description="the ID of the domain to which the template belongs")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
     private Long domainId;
 
-    @SerializedName("account") @Param(description="the list of accounts the template is available for")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the list of accounts the template is available for")
     private List<String> accountNames;
-
-    public Long getId() {
-        return id;
-    }
+    
+    @SerializedName(ApiConstants.PROJECT_IDS) @Param(description="the list of projects the template is available for")
+    private List<Long> projectIds;
+    
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Boolean getPublicTemplate() {
-        return publicTemplate;
     }
 
     public void setPublicTemplate(Boolean publicTemplate) {
         this.publicTemplate = publicTemplate;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public List<String> getAccountNames() {
-        return accountNames;
-    }
-
     public void setAccountNames(List<String> accountNames) {
         this.accountNames = accountNames;
+    }
+
+    public void setProjectIds(List<Long> projectIds) {
+        this.projectIds = projectIds;
     }
 }

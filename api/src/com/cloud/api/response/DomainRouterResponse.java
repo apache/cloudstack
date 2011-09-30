@@ -24,7 +24,8 @@ import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;
 
-public class DomainRouterResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class DomainRouterResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
     private Long id;
  
@@ -94,8 +95,7 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName("guestnetworkid") @Param(description="the ID of the corresponding guest network")
     private Long guestNetworkId;
 
-
-    @SerializedName("templateid") @Param(description="the template ID for the router")
+    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the template ID for the router")
     private Long templateId;
 
     @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the router was created")
@@ -106,6 +106,12 @@ public class DomainRouterResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the router")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID associated with the router")
     private Long domainId;
@@ -144,262 +150,137 @@ public class DomainRouterResponse extends BaseResponse {
         this.id = id;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
-
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
-    }
-
-    public String getZoneName() {
-        return zoneName;
     }
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public String getDns1() {
-        return dns1;
-    }
-
     public void setDns1(String dns1) {
         this.dns1 = dns1;
-    }
-
-    public String getDns2() {
-        return dns2;
     }
 
     public void setDns2(String dns2) {
         this.dns2 = dns2;
     }
 
-    public String getNetworkDomain() {
-        return networkDomain;
-    }
-
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
-    }
-
-    public String getGateway() {
-        return gateway;
     }
 
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Long getPodId() {
-        return podId;
     }
 
     public void setPodId(Long podId) {
         this.podId = podId;
     }
 
-    public Long getHostId() {
-        return hostId;
-    }
-
     public void setHostId(Long hostId) {
         this.hostId = hostId;
-    }
-
-    public String getHostName() {
-        return hostName;
     }
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
 
-    public String getPublicIp() {
-        return publicIp;
-    }
-
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
-    }
-
-    public String getPublicMacAddress() {
-        return publicMacAddress;
     }
 
     public void setPublicMacAddress(String publicMacAddress) {
         this.publicMacAddress = publicMacAddress;
     }
 
-    public String getPublicNetmask() {
-        return publicNetmask;
-    }
-
     public void setPublicNetmask(String publicNetmask) {
         this.publicNetmask = publicNetmask;
-    }
-
-    public String getGuestIpAddress() {
-        return guestIpAddress;
     }
 
     public void setGuestIpAddress(String guestIpAddress) {
         this.guestIpAddress = guestIpAddress;
     }
 
-    public String getGuestMacAddress() {
-        return guestMacAddress;
-    }
-
     public void setGuestMacAddress(String guestMacAddress) {
         this.guestMacAddress = guestMacAddress;
-    }
-
-    public String getGuestNetmask() {
-        return guestNetmask;
     }
 
     public void setGuestNetmask(String guestNetmask) {
         this.guestNetmask = guestNetmask;
     }
 
-    public Long getTemplateId() {
-        return templateId;
-    }
-
     public void setTemplateId(Long templateId) {
         this.templateId = templateId;
-    }
-
-    public Date getCreated() {
-        return created;
     }
 
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    public State getState() {
-        return state;
-    }
-
     public void setState(State state) {
         this.state = state;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
+    @Override
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-    
-    public Long getPublicNetworkId() {
-        return publicNetworkId;
     }
 
     public void setPublicNetworkId(Long publicNetworkId) {
         this.publicNetworkId = publicNetworkId;
     }
 
-    public Long getGuestNetworkId() {
-        return guestNetworkId;
-    }
-
     public void setGuestNetworkId(Long guestNetworkId) {
         this.guestNetworkId = guestNetworkId;
-    }
-
-    public String getLinkLocalIp() {
-        return linkLocalIp;
     }
 
     public void setLinkLocalIp(String linkLocalIp) {
         this.linkLocalIp = linkLocalIp;
     }
-
-    public String getLinkLocalMacAddress() {
-        return linkLocalMacAddress;
-    }
-
+    
     public void setLinkLocalMacAddress(String linkLocalMacAddress) {
         this.linkLocalMacAddress = linkLocalMacAddress;
-    }
-
-    public String getLinkLocalNetmask() {
-        return linkLocalNetmask;
     }
 
     public void setLinkLocalNetmask(String linkLocalNetmask) {
         this.linkLocalNetmask = linkLocalNetmask;
     }
 
-    public Long getLinkLocalNetworkId() {
-        return linkLocalNetworkId;
-    }
-
     public void setLinkLocalNetworkId(Long linkLocalNetworkId) {
         this.linkLocalNetworkId = linkLocalNetworkId;
-    }
-    
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
 
-    public String getServiceOfferingName() {
-        return serviceOfferingName;
-    }
-
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
-    }
-    
-    public String getRedundantState() {
-        return redundantState;
     }
 
     public void setRedundantState(String redundantState) {
         this.redundantState = redundantState;
     }
-    
-    public boolean getIsRedundantRouter() {
-        return isRedundantRouter;
-    }
 
     public void setIsRedundantRouter(boolean isRedundantRouter) {
         this.isRedundantRouter = isRedundantRouter;
     }
-    
+
     public String getTemplateVersion() {
         return this.templateVersion;
     }
@@ -414,5 +295,14 @@ public class DomainRouterResponse extends BaseResponse {
     
     public void setScriptsVersion(String scriptsVersion) {
         this.scriptsVersion = scriptsVersion;
+    }
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

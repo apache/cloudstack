@@ -62,7 +62,6 @@ import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
-import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
@@ -171,6 +170,8 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -218,6 +219,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -307,6 +309,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final LoadBalancerDao _loadbalancerDao;
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private final Adapters<HostAllocator> _hostAllocators;
+    @Inject ProjectManager _projectMgr;
     
     private final KeystoreManager _ksMgr;
 
@@ -590,7 +593,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
-            if (domain == null || domain.getType() == Domain.Type.Project) {
+            if (domain == null) {
                 throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
             }
             
@@ -1256,52 +1259,87 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
-        Long accountId = null;
-        Account account = UserContext.current().getCaller();
+        List<Account> permittedAccounts = new ArrayList<Account>();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
+        Long projectId = cmd.getProjectId();
+        
         if (accountName != null && domainId != null) {
-            accountId = _accountMgr.finalizeOwner(account, accountName, domainId).getAccountId();
+            permittedAccounts.add(_accountMgr.finalizeOwner(caller, accountName, domainId, null));
+        } 
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(_accountMgr.getAccount(project.getProjectAccountId()));
         } else {
-            accountId = account.getId();
-        }
+            List<Long> permittedAccountIds = _projectMgr.listPermittedProjectAccounts(caller.getId());
+            for (Long permittedAccountId : permittedAccountIds) {
+                permittedAccounts.add(_accountMgr.getAccount(permittedAccountId));
+            }
+        } 
 
         // It is account specific if account is admin type and domainId and accountName are not null
-        boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (accountName != null) && (domainId != null);
+        boolean isAccountSpecific = (isAdmin(caller.getType())) && (accountName != null) && (domainId != null);
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                isAccountSpecific, true, cmd.listInReadyState());
+        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific,
+                true, cmd.listInReadyState(), permittedAccounts, caller);
     }
 
     @Override
     public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
-        Long accountId = null;
-        Account account = UserContext.current().getCaller();
+        List<Account> permittedAccounts = new ArrayList<Account>();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
+        Long projectId = cmd.getProjectId();
+        
         if (accountName != null && domainId != null) {
-            accountId = _accountMgr.finalizeOwner(account, accountName, domainId).getAccountId();
+            permittedAccounts.add(_accountMgr.finalizeOwner(caller, accountName, domainId, null));
         } else {
-            accountId = account.getId();
+            permittedAccounts.add(caller);
         }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(_accountMgr.getAccount(project.getProjectAccountId()));
+        } else {
+            List<Long> permittedAccountIds = _projectMgr.listPermittedProjectAccounts(caller.getId());
+            for (Long permittedAccountId : permittedAccountIds) {
+                permittedAccounts.add(_accountMgr.getAccount(permittedAccountId));
+            }
+        } 
 
         // It is account specific if account is admin type and domainId and accountName are not null
-        boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (accountName != null) && (domainId != null);
+        boolean isAccountSpecific = (caller == null || isAdmin(caller.getType())) && (accountName != null) && (domainId != null);
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                isAccountSpecific, showDomr, cmd.listInReadyState());
+        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific,
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller);
     }
 
-    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Long pageSize,
-            Long startIndex, Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady) {
-
+    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize, Long startIndex,
+            Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller) {
         
-
-        Account caller = UserContext.current().getCaller();
         VMTemplateVO template = null;
         if (templateId != null) {
             template = _templateDao.findById(templateId);
@@ -1318,11 +1356,9 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        Account account = null;
         DomainVO domain = null;
-        if (accountId != null) {
-            account = _accountDao.findById(accountId);
-            domain = _domainDao.findById(account.getDomainId());
+        if (!permittedAccounts.isEmpty()) {
+            domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
         } else {
             domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
         }
@@ -1333,7 +1369,7 @@ public class ManagementServerImpl implements ManagementServer {
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
 
         if (template == null) {
-            templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, account, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr);
+            templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller);
         } else {
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -1676,27 +1712,10 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) {
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
-        Account account = UserContext.current().getCaller();
-
-        // validate domainId before proceeding
-        if (domainId != null) {
-            if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list routers");
-            }
-            if (accountName != null) {
-                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                }
-            }
-        } else {
-            domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-        }
+        Account caller = UserContext.current().getCaller();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        List<Long> permittedAccounts = accountDomainPair.first();
+        Long domainId = accountDomainPair.second();
 
         Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1718,7 +1737,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null)) {
+        if ((permittedAccounts.isEmpty()) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -1754,8 +1773,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("id", id);
         }
 
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
@@ -1783,38 +1802,54 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        Long accountId = null;
+        List<Long> permittedAccounts = new ArrayList<Long>();
         boolean isAdmin = false;
         Boolean isRecursive = cmd.isRecursive();
+        Long projectId = cmd.getProjectId();
 
         if (isRecursive == null) {
             isRecursive = false;
         }
 
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((caller == null) || isAdmin(caller.getType())) {
             isAdmin = true;
             if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list volumes.");
                 }
                 if (accountName != null) {
                     Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                     if (userAccount != null) {
-                        accountId = userAccount.getId();
+                        permittedAccounts.add(userAccount.getId());
                     } else {
                         throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
                     }
                 }
             } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                domainId = ((caller == null) ? DomainVO.ROOT_DOMAIN : caller.getDomainId());
                 isRecursive = true;
             }
         } else {
-            accountId = account.getId();
+            permittedAccounts.add(caller.getId());
         }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
 
         Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1840,7 +1875,6 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
         sb.and("instanceId", sb.entity().getInstanceId(), SearchCriteria.Op.EQ);
@@ -1854,12 +1888,12 @@ public class ManagementServerImpl implements ManagementServer {
         diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.NEQ);
         sb.join("diskOfferingSearch", diskOfferingSearch, sb.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
 
-        if (((accountId == null) && (domainId != null) && isRecursive)) {
+        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        } else if ((accountId == null) && (domainId != null) && !isRecursive) {
+        } else if ((permittedAccounts.isEmpty()) && (domainId != null) && !isRecursive) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1889,8 +1923,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("id", id);
         }
 
-        if (accountId != null) {
-            sc.setParameters("accountIdEQ", accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountIdIN", permittedAccounts.toArray());
             sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
@@ -1929,7 +1963,9 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Object keyword = cmd.getKeyword();
-        Long accountId = null;
+        Long projectId = cmd.getProjectId();
+        
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (isAdmin(caller.getType())) {
             // validate domainId before proceeding
@@ -1943,7 +1979,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (accountName != null) {
                     Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                     if (userAccount != null) {
-                        accountId = userAccount.getId();
+                        permittedAccounts.add(userAccount.getId());
                     } else {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
@@ -1952,13 +1988,28 @@ public class ManagementServerImpl implements ManagementServer {
                 domainId = caller.getDomainId();
             }
         } else {
-            accountId = caller.getId();
+            permittedAccounts.add(caller.getId());
         }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
 
-        if (accountId == null && keyword != null) {
+        if (permittedAccounts.isEmpty() && keyword != null) {
             Account userAccount = _accountDao.findActiveAccount((String) keyword, domainId);
             if (userAccount != null) {
-                accountId = userAccount.getId();
+                permittedAccounts.add(userAccount.getId());
             }
         }
 
@@ -1977,13 +2028,13 @@ public class ManagementServerImpl implements ManagementServer {
         Object ipId = cmd.getId();
 
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
-        sb.and("accountIdEQ", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountIdIN", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.IN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null)) {
+        if ((permittedAccounts.isEmpty()) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -2009,8 +2060,8 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
-        if (accountId != null) {
-            sc.setParameters("accountIdEQ", accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountIdIN", permittedAccounts.toArray());
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
@@ -2179,7 +2230,6 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.NEQ);
 
         SearchCriteria<DomainVO> sc = sb.create();
 
@@ -2204,9 +2254,6 @@ public class ManagementServerImpl implements ManagementServer {
         if (path != null) {
             sc.setParameters("path", "%" + path + "%");
         }
-        
-        //don't list project domains to the user
-        sc.setParameters("type", Domain.Type.Project);
 
         return _domainDao.search(sc, searchFilter);
     }
@@ -2268,11 +2315,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("path", SearchCriteria.Op.NEQ, path);
             sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
         }
-        
-        //don't list domain of type Project
-        sc.addAnd("type", SearchCriteria.Op.NEQ, Domain.Type.Project);
-        
-        
+         
         return _domainDao.search(sc, searchFilter);
     }
 
@@ -2286,7 +2329,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         // check if domain exists in the system
         DomainVO domain = _domainDao.findById(domainId);
-        if (domain == null || domain.getType() == Domain.Type.Project) {
+        if (domain == null) {
             throw new InvalidParameterValueException("Unable to find domain " + domainId);
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name
@@ -2479,7 +2522,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long id = cmd.getId();
         Account caller = UserContext.current().getCaller();
         List<String> accountNames = cmd.getAccountNames();
-        Long userId = UserContext.current().getCallerUserId();
+        List<Long> projectIds = cmd.getProjectIds();
         Boolean isFeatured = cmd.isFeatured();
         Boolean isPublic = cmd.isPublic();
         Boolean isExtractable = cmd.isExtractable();
@@ -2504,13 +2547,25 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Please provide a valid iso");
             }
         }
+        
+        //Can only assign pro
+        
+        //convert projectIds to accountNames
+        if (projectIds != null) {
+            for (Long projectId : projectIds) {
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                accountNames.add(_accountMgr.getAccount(project.getProjectAccountId()).getAccountName());
+            }
+        }
 
         _accountMgr.checkAccess(caller, AccessType.ModifyEntry, template);
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
 
         // If the template is removed throw an error.
         if (template.getRemoved() != null) {
@@ -2528,17 +2583,11 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
 
-        // // package up the accountNames as a list
-        // List<String> accountNameList = new ArrayList<String>();
         if (accountNames != null) {
             if ((operation == null) || (!operation.equalsIgnoreCase("add") && !operation.equalsIgnoreCase("remove") && !operation.equalsIgnoreCase("reset"))) {
                 throw new InvalidParameterValueException("Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions."
                         + "  Given operation is: '" + operation + "'");
             }
-            // StringTokenizer st = new StringTokenizer(accountNames, ",");
-            // while (st.hasMoreTokens()) {
-            // accountNameList.add(st.nextToken());
-            // }
         }
 
         Long accountId = template.getAccountId();
@@ -2566,8 +2615,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         _templateDao.update(template.getId(), updatedTemplate);
 
-        Long domainId;
-        domainId = caller.getDomainId();
+        Long domainId = caller.getDomainId();
         if ("add".equalsIgnoreCase(operation)) {
             txn.start();
             for (String accountName : accountNames) {
@@ -3184,8 +3232,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) {
-        Long userId = cmd.getUserId();
+    public ArrayList<String> getCloudIdentifierResponse(long userId) {
         Account caller = UserContext.current().getCaller();
 
         // verify that user exists
@@ -3288,6 +3335,9 @@ public class ManagementServerImpl implements ManagementServer {
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find volume with id " + volumeId);
         }
+        
+        //perform permission check
+        _accountMgr.checkAccess(account, null, volume);
 
         if (_dcDao.findById(zoneId) == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
@@ -3316,8 +3366,7 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
-
-        _accountMgr.checkAccess(account, null, volume);
+        
         // If mode is upload perform extra checks on url and also see if there is an ongoing upload on the same.
         if (extractMode == Upload.Mode.FTP_UPLOAD) {
             URI uri = new URI(url);
@@ -3428,14 +3477,12 @@ public class ManagementServerImpl implements ManagementServer {
     	}else{
     		return null;
     	}
-    	
     }
-    
     
     
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long groupId = cmd.getId();
         String groupName = cmd.getGroupName();
 
@@ -3445,56 +3492,65 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
         }
 
-        if (account != null) {
-            Account tempAccount = _accountDao.findById(group.getAccountId());
-            if (!isAdmin(account.getType()) && (account.getId() != group.getAccountId())) {
-                throw new InvalidParameterValueException("unable to find a group with id " + groupId + " for this account");
-            } else if (!_domainDao.isChildDomain(account.getDomainId(), tempAccount.getDomainId())) {
-                throw new InvalidParameterValueException("Invalid group id (" + groupId + ") given, unable to update the group.");
-            }
-        }
+        _accountMgr.checkAccess(caller, null, group);
 
         // Check if name is already in use by this account (exclude this group)
         boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
 
         if (isNameInUse && !group.getName().equals(groupName)) {
-            throw new InvalidParameterValueException("Unable to update vm group, a group with name " + groupName + " already exisits for account");
+            throw new InvalidParameterValueException("Unable to update vm group, a group with name " + groupName + " already exists for account");
         }
 
         if (groupName != null) {
             _vmGroupDao.updateVmGroup(groupId, groupName);
         }
-        InstanceGroupVO vmGroup = _vmGroupDao.findById(groupId);
-        return vmGroup;
+
+        return _vmGroupDao.findById(groupId);
     }
 
     @Override
     public List<InstanceGroupVO> searchForVmGroups(ListVMGroupsCmd cmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
+        Long projectId = cmd.getProjectId();
+        List<Long> permittedAccounts = new ArrayList<Long>(); 
+        
+        if ((caller == null) || isAdmin(caller.getType())) {
             if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                     throw new InvalidParameterValueException("Invalid domain id (" + domainId + ") given, unable to list vm groups.");
                 }
 
                 if (accountName != null) {
-                    account = _accountDao.findActiveAccount(accountName, domainId);
-                    if (account == null) {
+                    caller = _accountDao.findActiveAccount(accountName, domainId);
+                    if (caller == null) {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
-                    accountId = account.getId();
+                    permittedAccounts.add(caller.getId());
                 }
             } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                domainId = ((caller == null) ? DomainVO.ROOT_DOMAIN : caller.getDomainId());
             }
         } else {
-            accountName = account.getAccountName();
-            accountId = account.getId();
-            domainId = account.getDomainId();
+            permittedAccounts.add(caller.getId());
+            domainId = caller.getDomainId();
         }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
 
         Filter searchFilter = new Filter(InstanceGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -3505,9 +3561,9 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<InstanceGroupVO> sb = _vmGroupDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
 
-        if ((accountId == null) && (domainId != null)) {
+        if ((permittedAccounts.isEmpty()) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -3528,8 +3584,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("name", "%" + name + "%");
         }
 
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             if (domain != null) {
@@ -3624,8 +3680,9 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
 
-        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {
@@ -3647,7 +3704,9 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
-        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+        Long projectId = cmd.getProjectId();
+        
+        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
@@ -3662,16 +3721,20 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         String name = cmd.getName();
         String fingerPrint = cmd.getFingerprint();
-        Long accountId = null;
+        List<Long> permittedAccounts = new ArrayList<Long>();
         Long domainId = null;
         String path = null;
 
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            accountId = caller.getId();
+            permittedAccounts.add(caller.getId());
             domainId = caller.getDomainId();
         } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             path = domain.getPath();
+        }
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
         }
 
         SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
@@ -3690,8 +3753,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
-        if (accountId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
         }
 
         if (domainId != null) {
@@ -3713,7 +3776,7 @@ public class ManagementServerImpl implements ManagementServer {
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
         Account caller = UserContext.current().getCaller();
         
-        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
+        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {

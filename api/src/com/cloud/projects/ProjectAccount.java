@@ -11,6 +11,4 @@ public interface ProjectAccount {
     Role getAccountRole();
     
     long getProjectAccountId();
-
-    long getProjectDomainId();
 }

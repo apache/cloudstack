@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.vm.InstanceGroup;
@@ -51,6 +52,9 @@ public class ListVMGroupsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list instance group belonging to the specified project")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -70,6 +74,10 @@ public class ListVMGroupsCmd extends BaseListCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////

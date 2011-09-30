@@ -495,7 +495,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long vmId = command.getVirtualMachineId();
         Long volumeId = command.getId();
         Long deviceId = command.getDeviceId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
 
         // Check that the volume ID is valid
         VolumeVO volume = _volsDao.findById(volumeId);
@@ -559,7 +559,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // If the account is not an admin, check that the volume and the virtual machine are owned by the account that was
         // passed in
-        _accountMgr.checkAccess(account, null, volume);
+        _accountMgr.checkAccess(caller, null, volume);
 
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
@@ -711,7 +711,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) || (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null))
                 || (cmmd.getId() == null && (cmmd.getDeviceId() == null || cmmd.getVirtualMachineId() == null))) {
             throw new InvalidParameterValueException("Please provide either a volume id, or a tuple(device id, instance id)");
@@ -739,8 +739,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
         }
 
-        // If the account is not an admin, check that the volume is owned by the account that was passed in
-        _accountMgr.checkAccess(account, null, volume);
+        // Permissions check
+        _accountMgr.checkAccess(caller, null, volume);
 
         // Check that the volume is a data volume
         if (volume.getVolumeType() != Volume.Type.DATADISK) {
@@ -1812,8 +1812,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String groupName = cmd.getGroupName();
+        Long projectId = cmd.getProjectId();
         
-        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+        Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         long accountId = owner.getId();
 
         // Check if name is already in use by this account
@@ -2935,11 +2936,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         //set project information
         if (projectId != null) {
+            permittedAccounts.clear();
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id " + projectId);
             }
-            if (!_projectMgr.canAccessAccount(caller, project.getProjectAccountId())) {
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
                 throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
             }
             permittedAccounts.add(project.getProjectAccountId());
@@ -3255,8 +3257,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //VV 1: verify the two users
         Account oldAccount = UserContext.current().getCaller();
         Account newAccount = _accountService.getAccount(cmd.getAccountId());
-        if (newAccount == null) {
+        if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + newAccount + " in domain " + oldAccount.getDomainId());
+        }
+        
+        //don't allow to move the vm from the project
+        if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Vm id=" + cmd.getVmId() + " belongs to the project and can't be moved");
         }
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
@@ -3353,7 +3360,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmi);
                 _networkMgr.allocate(vmProfile, networks);
             }
-
         }
 
         return vm;

@@ -44,7 +44,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.capacity.dao.CapacityDao;
@@ -115,6 +114,8 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -229,6 +230,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     ResourceLimitService _resourceLimitMgr;
     @Inject DomainRouterDao _routerDao;
     @Inject DomainManager _domainMgr;
+    @Inject ProjectManager _projectMgr;
     
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -529,11 +531,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId) {
-        Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
-        if (owner == null) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
-        }
+    public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner) {
 
         return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
     }
@@ -1400,11 +1398,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) {
-
+    public boolean disassociateIpAddress(long ipAddressId) {
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
-        Long ipAddressId = cmd.getIpAddressId();
 
         // Verify input parameters
         IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
@@ -1417,6 +1413,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return true;
         }
 
+        //verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, ipVO);
         }
@@ -1569,7 +1566,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Account owner = null;
         if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
+            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         } else {
             owner = caller;
         }
@@ -1837,7 +1834,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean isSystem = cmd.getIsSystem();
         Boolean isShared = cmd.getIsShared();
         Boolean isDefault = cmd.isDefault();
-        Long accountId = null;
+        Long projectId = cmd.getProjectId();
+        List<Long> permittedAccounts = new ArrayList<Long>();
         String path = null;
         Long sharedNetworkDomainId = null;
 
@@ -1866,13 +1864,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 
                 _accountMgr.checkAccess(caller, null, owner);
-                accountId = owner.getId();
+                permittedAccounts.add(owner.getId());
             }
         }
         
         if (!_accountMgr.isAdmin(caller.getType())) {
-            accountId = caller.getId();
+            permittedAccounts.add(caller.getId());
         }
+        
+      //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
         
         path = _domainDao.findById(caller.getDomainId()).getPath();
 
@@ -1923,8 +1936,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             //if user requested only domain specific networks, don't return account/zone wide networks
-            if (accountId != null || (domainId == null && accountName == null)) {
-                networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, accountId, path));
+            if (!permittedAccounts.isEmpty() || (domainId == null && accountName == null && projectId == null)) {
+                networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path, permittedAccounts));
             }
 
             return networksToReturn;
@@ -1988,14 +2001,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networksDao.search(sc, searchFilter);
     }
 
-    private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, Long accountId, String path) {
+    private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, List<Long> permittedAccounts) {
 
         SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
 
         //account level networks
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
-        if (accountId != null) {
-            accountSC.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        if (!permittedAccounts.isEmpty()) {
+            accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts);
         }
 
         accountSC.addAnd("isShared", SearchCriteria.Op.EQ, false);
@@ -2050,13 +2063,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
         // Perform permission check
-        if (!_accountMgr.isAdmin(caller.getType())) {
-            if (network.getAccountId() != caller.getId()) {
-                throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not own network id=" + networkId + ", permission denied");
-            }
-        } else {
-            _accountMgr.checkAccess(caller, null, owner);
-        }
+        _accountMgr.checkAccess(caller, null, network);
 
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
@@ -2694,7 +2701,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
 
         if (network == null) {
-            List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(owner.getAccountName(), owner.getDomainId(), zoneId);
+            List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(zoneId, owner);
             if (networks.size() == 0) {
                 createNetwork = true;
             } else {
@@ -2987,8 +2994,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
-
-
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
         if (!network.getIsShared()) {

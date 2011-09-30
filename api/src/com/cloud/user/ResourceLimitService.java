@@ -19,7 +19,6 @@ package com.cloud.user;
 
 import java.util.List;
 
-import com.cloud.api.commands.UpdateResourceCountCmd;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -41,12 +40,12 @@ public interface ResourceLimitService {
 
     /**
      * Updates an existing resource count details for the account/domain
-     * 
-     * @param cmd
-     *            the command that wraps the domainId, accountId, resource type  parameters
+     * @param accountId TODO
+     * @param domainId TODO
+     * @param typeId TODO
      * @return the updated/created resource counts
      */
-    List<? extends ResourceCount> recalculateResourceCount(UpdateResourceCountCmd cmd);
+    List<? extends ResourceCount> recalculateResourceCount(Long accountId, Long domainId, Integer typeId);
     
     /**
      * Search for resource limits for the given id and/or account and/or type and/or domain.

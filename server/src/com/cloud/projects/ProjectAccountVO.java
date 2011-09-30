@@ -51,9 +51,6 @@ public class ProjectAccountVO implements ProjectAccount{
     @Column(name="project_account_id")
     long projectAccountId;
     
-    @Column(name="project_domain_id")
-    long projectDomainId;
-    
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -66,7 +63,6 @@ public class ProjectAccountVO implements ProjectAccount{
        this.accountRole = accountRole;
        this.projectId = project.getId();
        this.projectAccountId = project.getProjectAccountId();
-       this.projectDomainId = project.getProjectDomainId();
     }
 
     public long getId() {
@@ -91,11 +87,6 @@ public class ProjectAccountVO implements ProjectAccount{
     @Override
     public long getProjectAccountId() {
         return projectAccountId;
-    }
-
-    @Override
-    public long getProjectDomainId() {
-        return projectDomainId;
     }
 
     public void setAccountRole(Role accountRole) {

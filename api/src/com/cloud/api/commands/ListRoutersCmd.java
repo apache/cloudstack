@@ -68,6 +68,9 @@ public class ListRoutersCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -107,6 +110,10 @@ public class ListRoutersCmd extends BaseListCmd {
     
     public Long getNetworkId() {
         return networkId;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////

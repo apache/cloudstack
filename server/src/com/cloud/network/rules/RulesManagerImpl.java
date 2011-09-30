@@ -145,7 +145,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (rule.getAccountId() != userVm.getAccountId()) {
-            throw new InvalidParameterValueException("Rule id=" + rule.getId() + " and vm id=" + userVm.getId() + " belong to different accounts");
+            throw new InvalidParameterValueException("New rule " + rule + " and vm id=" + userVm.getId() + " belong to different accounts");
         }
     }
 
@@ -537,8 +537,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long id = cmd.getId();
         String path = null;
 
-        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
-        String accountName = accountDomainPair.first();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        List<Long> permittedAccounts = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
 
         if (ipId != null) {
@@ -558,7 +558,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         SearchBuilder<PortForwardingRuleVO> sb = _forwardingDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
 
@@ -581,10 +581,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            if (accountName != null) {
-                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                sc.setParameters("accountId", account.getId());
-            }
+        }
+        
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
 
         sc.setParameters("purpose", Purpose.PortForwarding);
@@ -763,12 +763,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId) {
+    public List<? extends FirewallRule> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId) {
         Account caller = UserContext.current().getCaller();
         String path = null;
 
-        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, accountName, domainId);
-        accountName = accountDomainPair.first();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, accountName, domainId, projectId);
+        List<Long> permittedAccounts = accountDomainPair.first();
         domainId = accountDomainPair.second();
 
         if (ipId != null) {
@@ -787,7 +787,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, start, size);
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("id", sb.entity().getId(), Op.EQ);
@@ -817,10 +817,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            if (accountName != null) {
-                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                sc.setParameters("accountId", account.getId());
-            }
+        }
+        
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
 
         sc.setParameters("purpose", Purpose.StaticNat);

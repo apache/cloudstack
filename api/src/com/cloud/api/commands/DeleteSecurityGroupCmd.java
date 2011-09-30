@@ -10,7 +10,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes security group", responseObject=SuccessResponse.class)
@@ -27,6 +26,9 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the security group")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="the project of the security group")
+    private Long projectId;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="The ID of the security group. Mutually exclusive with name parameter")
     private Long id;
@@ -45,6 +47,10 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
     public Long getId() {
@@ -79,19 +85,12 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
-                }
-            }
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
         }
         
-        return account.getId();
+        return accountId;
     }
 	
     @Override

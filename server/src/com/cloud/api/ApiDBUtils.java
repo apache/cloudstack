@@ -637,10 +637,6 @@ public class ApiDBUtils {
         return _projectMgr.getProjectOwner(projectId);
     }
     
-    public static Project findProjectByProjectDomainId(long projectDomainId) {
-        return _projectMgr.findByProjectDomainId(projectDomainId);
-    } 
-    
     public static Project findProjectByProjectAccountId(long projectAccountId) {
         return _projectMgr.findByProjectAccountId(projectAccountId);
     }

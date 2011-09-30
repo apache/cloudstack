@@ -35,8 +35,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
 import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
@@ -72,7 +72,6 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.dao.CapacityDao;
@@ -107,7 +106,6 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
@@ -368,6 +366,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (router == null) {
             return null;
         }
+        
+        _accountMgr.checkAccess(context.getCaller(), null, router);
+        
         boolean result = _itMgr.expunge(router, user, _accountMgr.getAccount(router.getAccountId()));
 
         if (result) {
@@ -381,16 +382,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
 
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router with id " + routerId);
         }
 
-        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new PermissionDeniedException("Invalid domain router id (" + routerId + ") given, unable to stop router.");
-        }
+        _accountMgr.checkAccess(caller, null, router);
 
         if (router.getServiceOfferingId() == serviceOfferingId) {
             s_logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
@@ -561,9 +560,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find domain router with id " + routerId + ".");
         }
 
-        if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), router.getDomainId())) {
-            throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
-        }
+        _accountMgr.checkAccess(caller, null, router);
 
         // Can reboot domain router only in Running state
         if (router == null || router.getState() != State.Running) {
@@ -2051,21 +2048,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "starting router Vm", async = true)
-    public VirtualRouter startRouter(StartRouterCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
-        return startRouter(cmd.getId(), true);
+    public VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
+        return startRouter(id, true);
     }
     
     @Override
     public VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        Account account = UserContext.current().getCaller();
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        Account caller = UserContext.current().getCaller();
+        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
-        _accountMgr.checkAccess(account, null, router);
+        _accountMgr.checkAccess(caller, null, router);
 
         Account owner = _accountMgr.getAccount(router.getAccountId());
 
@@ -2077,7 +2074,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
 
-        ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
 
         List<NicVO> nics = _nicDao.listByVmId(routerId);
 
@@ -2095,7 +2092,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         } else {
             params.put(Param.RestartNetwork, false);
         }
-        return startVirtualRouter(router, user, account, params);
+        return startVirtualRouter(router, user, caller, params);
     }
 
     private void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {

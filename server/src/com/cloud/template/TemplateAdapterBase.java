@@ -34,7 +34,6 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
@@ -93,15 +92,13 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
             String accountName, Long domainId, String chksum, Boolean bootable) throws ResourceAllocationException {
 	    return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId, hypervisorType,
-	            accountName, domainId, chksum, bootable, null);
+	            chksum, bootable, null, null);
 	}
 	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-			String accountName, Long domainId, String chksum, Boolean bootable, String templateTag) throws ResourceAllocationException {
-		Account ctxAccount = UserContext.current().getCaller();
-		Account resourceAccount = null;
-		Long accountId = null;
+			String chksum, Boolean bootable, String templateTag, Account templateOwner) throws ResourceAllocationException {
+		//Long accountId = null;
 		// parameters verification
 		
 		if (isPublic == null) {
@@ -138,40 +135,8 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         if (isExtractable == null) {
             isExtractable = Boolean.FALSE;
         }
-		if ((accountName == null) ^ (domainId == null)) {// XOR - Both have to be passed or don't pass any of them
-			throw new InvalidParameterValueException("Please specify both account and domainId or dont specify any of them");
-		}
 
-		// This complex logic is just for figuring out the template owning
-		// account because a user can register templates on other account's
-		// behalf.
-		if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
-			if (domainId != null) {
-				if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
-					throw new PermissionDeniedException("Failed to register template, invalid domain id (" + domainId + ") given.");
-				}
-				if (accountName != null) {
-					resourceAccount = _accountDao.findActiveAccount(accountName, domainId);
-					if (resourceAccount == null) {
-						throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-					}
-					accountId = resourceAccount.getId();
-				}
-			} else {
-				accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
-			}
-		} else {
-			accountId = ctxAccount.getId();
-		}
-
-		if (null == accountId && null == accountName && null == domainId && null == ctxAccount) {
-			accountId = 1L;
-		}
-		if (null == accountId) {
-			throw new InvalidParameterValueException("No valid account specified for registering template.");
-		}
-
-		boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
+		boolean isAdmin = _accountDao.findById(templateOwner.getId()).getType() == Account.ACCOUNT_TYPE_ADMIN;
 
 		if (!isAdmin && zoneId == null) {
 			throw new InvalidParameterValueException("Please specify a valid zone Id.");
@@ -207,10 +172,9 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
             throw new IllegalArgumentException("Unable to find user with id " + userId);
         }
         
-    	AccountVO account = _accountDao.findById(accountId);
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
         
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
+        if (templateOwner.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
         	throw new IllegalArgumentException("Only admins can create templates in all zones");
         }
         
@@ -236,21 +200,31 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         UserContext.current().setEventDetails("Id: " +id+ " name: " + name);
 		return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
-				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, accountName, domainId, accountId, chksum, bootable, templateTag);
+				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag);
 	}
 	
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
+	    //check if the caller can operate with the template owner
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        _accountMgr.checkAccess(caller, null, owner);
+	    
 		return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
 				cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
 				cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()),
-				cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), true, cmd.getTemplateTag());
+				cmd.getChecksum(), true, cmd.getTemplateTag(), owner);
 	}
 
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
+	    //check if the caller can operate with the template owner
+	    Account caller = UserContext.current().getCaller();
+	    Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+	    _accountMgr.checkAccess(caller, null, owner);
+	   
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), HypervisorType.None, cmd.getAccountName(), cmd.getDomainId(), cmd.getChecksum(), cmd.isBootable(), null);
+					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner);
 	}
 	
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {

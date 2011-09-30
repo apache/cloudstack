@@ -262,7 +262,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                 }
                 
                 if (success) {
-                   
                     try {
                         txn.start();
                         _remoteAccessVpnDao.remove(ipId);
@@ -278,7 +277,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                         s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
                     }
                 }
-                
             }
         }
     }
@@ -456,8 +454,8 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         String path = null;
         
         //Verify account information
-        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
-        String accountName = accountDomainPair.first();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), null);
+        List<Long> permittedAccounts = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
         
         
@@ -473,7 +471,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         SearchBuilder<VpnUserVO> sb = _vpnUsersDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
@@ -499,10 +497,10 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            if (accountName != null) {
-                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                sc.setParameters("accountId", account.getId());
-            }
+        }
+        
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
         
         if (path != null) {
@@ -518,8 +516,8 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         Account caller = UserContext.current().getCaller();
         String path = null;
         
-        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
-        String accountName = accountDomainPair.first();
+        Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        List<Long> permittedAccounts = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
         
         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
@@ -546,7 +544,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         Filter filter = new Filter(RemoteAccessVpnVO.class, "serverAddressId", false, cmd.getStartIndex(), cmd.getPageSizeVal()); 
         SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
         sb.and("serverAddressId", sb.entity().getServerAddressId(), Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), Op.IN);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("state", sb.entity().getState(), Op.EQ);
         
@@ -567,10 +565,10 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            if (accountName != null) {
-                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
-                sc.setParameters("accountId", account.getId());
-            }
+        }
+        
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
         
         if (path != null) {

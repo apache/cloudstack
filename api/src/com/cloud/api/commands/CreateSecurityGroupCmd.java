@@ -24,6 +24,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
@@ -50,6 +51,9 @@ public class CreateSecurityGroupCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the security group")
     private String securityGroupName;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
+    private Long projectId;
 
 
     /////////////////////////////////////////////////////
@@ -70,6 +74,10 @@ public class CreateSecurityGroupCmd extends BaseCmd {
 
     public String getSecurityGroupName() {
         return securityGroupName;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
 

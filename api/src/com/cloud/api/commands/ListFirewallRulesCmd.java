@@ -50,6 +50,9 @@ public class ListFirewallRulesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists firewall rules for the specified account in this domain.")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,6 +72,10 @@ public class ListFirewallRulesCmd extends BaseListCmd {
     
     public Long getId() {
         return id;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////

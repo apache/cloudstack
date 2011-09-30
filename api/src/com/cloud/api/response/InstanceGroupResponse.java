@@ -24,7 +24,8 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class InstanceGroupResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class InstanceGroupResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the instance group")
     private Long id;
 
@@ -36,6 +37,12 @@ public class InstanceGroupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the instance group")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
+    private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the instance group")
     private Long domainId;
@@ -43,51 +50,40 @@ public class InstanceGroupResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the instance group")
     private String domainName;
 
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public Date getCreated() {
-        return created;
-    }
-
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
+    @Override
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

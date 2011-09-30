@@ -19,14 +19,11 @@ package com.cloud.template;
 
 import java.net.URISyntaxException;
 
-import com.cloud.api.commands.AttachIsoCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
-import com.cloud.api.commands.PrepareTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
@@ -41,11 +38,11 @@ public interface TemplateService {
 
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
     
-    VirtualMachineTemplate prepareTemplate(PrepareTemplateCmd cmd) ;
+    VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) ;
 
-    boolean detachIso(DetachIsoCmd cmd);
+    boolean detachIso(long vmId);
 
-    boolean attachIso(AttachIsoCmd cmd);
+    boolean attachIso(long isoId, long vmId);
 
     /**
      * Deletes a template

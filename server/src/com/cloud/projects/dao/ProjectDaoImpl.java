@@ -23,7 +23,6 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("projectDomainId", AllFieldsSearch.entity().getProjectDomainId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getProjectAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
         
@@ -67,14 +66,6 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         SearchCriteria<Long> sc = CountByDomain.create();
         sc.setParameters("domainId", domainId);
         return customSearch(sc, null).get(0);       
-    }
-    
-    @Override
-    public ProjectVO findByProjectDomainId(long projectDomainId) {
-        SearchCriteria<ProjectVO> sc = AllFieldsSearch.create();
-        sc.setParameters("projectDomainId", projectDomainId);
-        
-        return findOneBy(sc);
     }
     
     @Override

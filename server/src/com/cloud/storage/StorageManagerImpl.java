@@ -70,7 +70,6 @@ import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
@@ -1603,34 +1602,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException {
         // FIXME: some of the scheduled event stuff might be missing here...
-        Account account = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Account targetAccount = null;
-        if ((account == null) || isAdmin(account.getType())) {
-            // Admin API call
-            if ((domainId != null) && (accountName != null)) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to create volume in domain " + domainId + ", permission denied.");
-                }
-
-                targetAccount = _accountDao.findActiveAccount(accountName, domainId);
-            } else {
-                targetAccount = account;
-            }
-
-            // If the account is null, this means that the accountName and domainId passed in were invalid
-            if (targetAccount == null) {
-                throw new InvalidParameterValueException("Unable to find account with name: " + accountName + " and domain ID: " + domainId);
-            }
-        } else {
-            targetAccount = account;
-        }
-
+        Account caller = UserContext.current().getCaller();
+        
+        long ownerId = cmd.getEntityOwnerId();
+        
+        //permission check
+        _accountMgr.checkAccess(caller, null, _accountMgr.getActiveAccountById(ownerId));
+        
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(targetAccount, ResourceType.volume);
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume);
 
-        Long zoneId = null;
+        Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
         Long size = null;
 
@@ -1640,10 +1622,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         if (cmd.getSnapshotId() == null) {// create a new volume
-            zoneId = cmd.getZoneId();
-            if ((zoneId == null)) {
-                throw new InvalidParameterValueException("Missing parameter, zoneid must be specified.");
-            }
 
             diskOfferingId = cmd.getDiskOfferingId();
             size = cmd.getSize();
@@ -1674,7 +1652,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if (diskOffering.getDomainId() == null) {
                 // do nothing as offering is public
             } else {
-                _configMgr.checkDiskOfferingAccess(account, diskOffering);
+                _configMgr.checkDiskOfferingAccess(caller, diskOffering);
             }
 
             if (diskOffering.getDiskSize() > 0) {
@@ -1698,16 +1676,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             diskOfferingId = (cmd.getDiskOfferingId() != null) ? cmd.getDiskOfferingId() : snapshotCheck.getDiskOfferingId();
             zoneId = snapshotCheck.getDataCenterId();
             size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
-            if (account != null) {
-                if (isAdmin(account.getType())) {
-                    Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
-                    if (!_domainDao.isChildDomain(account.getDomainId(), snapshotOwner.getDomainId())) {
-                        throw new PermissionDeniedException("Unable to create volume from snapshot with id " + snapshotId + ", permission denied.");
-                    }
-                } else if (account.getId() != snapshotCheck.getAccountId()) {
-                    throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId + " for this account");
-                }
-            }
+            
+            //check snapshot permissions
+            _accountMgr.checkAccess(caller, null, snapshotCheck);
         }
 
         // Verify that zone exists
@@ -1717,7 +1688,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         // Check if zone is disabled
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getType())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -1752,13 +1723,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setPoolId(null);
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
-        volume.setAccountId(targetAccount.getId());
-        volume.setDomainId(((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId()));
+        volume.setAccountId(ownerId);
+        volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
         volume.setDiskOfferingId(diskOfferingId);
         volume.setSize(size);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
-        volume.setDomainId((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
+        volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
         if (cmd.getSnapshotId() == null) {
             volume.setState(Volume.State.Allocated);
         } else {
@@ -1767,12 +1738,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume = _volsDao.persist(volume);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
         _usageEventDao.persist(usageEvent);
-        txn.commit();
         
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
         // Increment resource count during allocation; if actual creation fails, decrement it
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
+        
+        txn.commit();
 
         return volume;
     }
@@ -2430,44 +2402,19 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
-    public boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException {
-        Account account = UserContext.current().getCaller();
-        Long volumeId = cmd.getId();
-
-        boolean isAdmin;
-        if (account == null) {
-            // Admin API call
-            isAdmin = true;
-        } else {
-            // User API call
-            isAdmin = isAdmin(account.getType());
-        }
-
+    public boolean deleteVolume(long volumeId) throws ConcurrentOperationException {
+        Account caller = UserContext.current().getCaller();
+        
         // Check that the volume ID is valid
         VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to aquire volume with ID: " + volumeId);
         }
+        
+        //permission check
+        _accountMgr.checkAccess(caller, null, volume);
 
         try {
-
-        	// If the account is not an admin, check that the volume is owned by the account that was passed in
-        	if (!isAdmin) {
-        		if (account.getId() != volume.getAccountId()) {
-        			throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-        		}
-        	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-        		throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
-        	}
-
-        	// If the account is not an admin, check that the volume is owned by the account that was passed in
-        	if (!isAdmin) {
-        		if (account.getId() != volume.getAccountId()) {
-        			throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-        		}
-        	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-        		throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
-        	}
 
         	// Check that the volume is stored on shared storage
         	// NOTE: We used to ensure the volume is on shared storage before deleting. However, this seems like an unnecessary

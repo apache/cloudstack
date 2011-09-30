@@ -25,7 +25,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.InstanceGroupResponse;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.InstanceGroup;
 
@@ -47,6 +46,9 @@ public class CreateVMGroupCmd extends BaseCmd{
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the instance group")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="The project of the instance group")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -63,6 +65,10 @@ public class CreateVMGroupCmd extends BaseCmd{
     public Long getDomainId() {
         return domainId;
     }
+    
+    public Long getProjectId() {
+        return projectId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -75,21 +81,12 @@ public class CreateVMGroupCmd extends BaseCmd{
     
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
         }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        return accountId;
     }
     
     @Override

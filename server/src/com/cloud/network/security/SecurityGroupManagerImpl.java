@@ -71,6 +71,8 @@ import com.cloud.network.security.dao.SecurityGroupRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -146,6 +148,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     AccountManager _accountMgr;
     @Inject
     DomainManager _domainMgr;
+    @Inject
+    ProjectManager _projectMgr;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -750,7 +754,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         String name = cmd.getSecurityGroupName();
         Account caller = UserContext.current().getCaller();
-        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId());
+        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
         if (_securityGroupDao.isNameInUse(owner.getId(), owner.getDomainId(), cmd.getSecurityGroupName())) {
             throw new InvalidParameterValueException("Unable to create security group, a group with name " + name + " already exisits.");
@@ -1019,8 +1023,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         String accountName = cmd.getAccountName();
         Long instanceId = cmd.getVirtualMachineId();
         String securityGroup = cmd.getSecurityGroupName();
+        Long projectId = cmd.getProjectId();
         Long id = cmd.getId();
-        Long accountId = null;
+        List<Long> permittedAccounts = new ArrayList<Long>();
 
         if (instanceId != null) {
             UserVmVO userVM = _userVMDao.findById(instanceId);
@@ -1044,13 +1049,28 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
                     _accountMgr.checkAccess(caller, null, account);
-                    accountId = account.getId();
+                    permittedAccounts.add(account.getId());
                 }
             }
         } else {
             // regular user can see only his own security groups
-            accountId = caller.getId();
+            permittedAccounts.add(caller.getId());
         }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
 
         List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1058,12 +1078,12 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
 
         // only do a recursive domain search if the search is not limited by account or instance
-        if ((accountId == null) && (instanceId == null) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+        if (permittedAccounts.isEmpty() && instanceId == null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -1079,12 +1099,12 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             sc.setParameters("name", securityGroup);
         }
 
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         }
 
         // only do a recursive domain search if the search is not limited by account or instance
-        if ((accountId == null) && (instanceId == null) && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+        if (permittedAccounts.isEmpty() && instanceId == null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }

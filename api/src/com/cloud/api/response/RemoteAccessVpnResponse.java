@@ -21,7 +21,8 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class RemoteAccessVpnResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
     
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
     private Long publicIpId;
@@ -35,40 +36,30 @@ public class RemoteAccessVpnResponse extends BaseResponse {
     @SerializedName("presharedkey") @Param(description="the ipsec preshared key")
     private String presharedKey;
 
-    @SerializedName("account") @Param(description="the account of the remote access vpn")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the remote access vpn")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
+    private String projectName;
 
-    @SerializedName("domainid") @Param(description="the domain id of the account of the remote access vpn")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the account of the remote access vpn")
 	private long domainId;
 
-    @SerializedName("domainname") @Param(description="the domain name of the account of the remote access vpn")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
 	private String domainName;
     
-    @SerializedName("state") @Param(description="the state of the rule")
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
-    
-	public String getAccountName() {
-		return accountName;
-	}
-
-	public String getPublicIp() {
-		return publicIp;
-	}
 
 	public void setPublicIp(String publicIp) {
 		this.publicIp = publicIp;
 	}
 
-	public String getIpRange() {
-		return ipRange;
-	}
-
 	public void setIpRange(String ipRange) {
 		this.ipRange = ipRange;
-	}
-
-	public String getPresharedKey() {
-		return presharedKey;
 	}
 
 	public void setPresharedKey(String presharedKey) {
@@ -77,40 +68,32 @@ public class RemoteAccessVpnResponse extends BaseResponse {
 
 	public void setAccountName(String accountName) {
 		this.accountName = accountName;
-		
 	}
 
-	public void setDomainId(long domainId) {
+	public void setDomainId(Long domainId) {
 		this.domainId = domainId;
-		
 	}
 
 	public void setDomainName(String name) {
 		this.domainName = name;		
 	}
 
-	public long getDomainId() {
-		return domainId;
-	}
-
-	public String getDomainName() {
-		return domainName;
-	}
-
-    public String getState() {
-        return state;
-    }
-
     public void setState(String state) {
         this.state = state;
     }
 
-    public Long getPublicIpId() {
-        return publicIpId;
-    }
-
     public void setPublicIpId(Long publicIpId) {
         this.publicIpId = publicIpId;
+    }
+
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
     
 }

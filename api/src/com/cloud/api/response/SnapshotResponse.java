@@ -24,32 +24,39 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
 
-public class SnapshotResponse extends BaseResponse {
-    @SerializedName("id")
+@SuppressWarnings("unused")
+public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
     private Long id;
 
-    @SerializedName("account")
+    @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the snapshot")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the snapshot's account")
     private Long domainId;
-
-    @SerializedName("domain")
+    
+    @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the snapshot")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the snapshot")
+    private String projectName;
 
-    @SerializedName("snapshottype")
+    @SerializedName(ApiConstants.SNAPSHOT_TYPE)
     @Param(description = "the type of the snapshot")
     private String snapshotType;
 
-    @SerializedName("volumeid")
+    @SerializedName(ApiConstants.VOLUME_ID)
     @Param(description = "ID of the disk volume")
     private Long volumeId;
 
-    @SerializedName("volumename")
+    @SerializedName(ApiConstants.VOLUME_NAME)
     @Param(description = "name of the disk volume")
     private String volumeName;
 
@@ -57,23 +64,23 @@ public class SnapshotResponse extends BaseResponse {
     @Param(description = "type of the disk volume")
     private String volumeType;
 
-    @SerializedName("created")
+    @SerializedName(ApiConstants.CREATED)
     @Param(description = "	the date the snapshot was created")
     private Date created;
 
-    @SerializedName("name")
+    @SerializedName(ApiConstants.NAME)
     @Param(description = "name of the snapshot")
     private String name;
 
-    @SerializedName("jobid")
+    @SerializedName(ApiConstants.JOB_ID)
     @Param(description = "the job ID associated with the snapshot. This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName(ApiConstants.JOB_STATUS)
     @Param(description = "the job status associated with the snapshot.  This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
-    @SerializedName("intervaltype")
+    @SerializedName(ApiConstants.INTERVAL_TYPE)
     @Param(description = "valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
 
@@ -85,8 +92,8 @@ public class SnapshotResponse extends BaseResponse {
     public Long getObjectId() {
         return getId();
     }
-
-    public Long getId() {
+   
+    private Long getId() {
         return id;
     }
 
@@ -110,56 +117,28 @@ public class SnapshotResponse extends BaseResponse {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public String getSnapshotType() {
-        return snapshotType;
     }
 
     public void setSnapshotType(String snapshotType) {
         this.snapshotType = snapshotType;
     }
 
-    public Long getVolumeId() {
-        return volumeId;
-    }
-
     public void setVolumeId(Long volumeId) {
         this.volumeId = volumeId;
-    }
-
-    public String getVolumeName() {
-        return volumeName;
     }
 
     public void setVolumeName(String volumeName) {
         this.volumeName = volumeName;
     }
 
-    public String getVolumeType() {
-        return volumeType;
-    }
-
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
     }
 
-    public Date getCreated() {
-        return created;
-    }
-
     public void setCreated(Date created) {
         this.created = created;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setName(String name) {
@@ -186,19 +165,21 @@ public class SnapshotResponse extends BaseResponse {
         this.jobStatus = jobStatus;
     }
 
-    public String getIntervalType() {
-        return intervalType;
-    }
-
     public void setIntervalType(String intervalType) {
         this.intervalType = intervalType;
     }
 
-    public Snapshot.Status getState() {
-        return state;
-    }
-
     public void setState(Snapshot.Status state) {
         this.state = state;
+    }
+
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

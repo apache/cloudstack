@@ -25,6 +25,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.async.AsyncJob;
@@ -55,6 +56,9 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list the security group by the id provided")
     private Long id;
     
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list security groups by project")
+    private Long projectId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -77,6 +81,10 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
     
     public Long getId(){
     	return id;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////

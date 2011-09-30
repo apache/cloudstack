@@ -1,4 +1,5 @@
 /**
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -79,7 +80,7 @@ public class DeleteVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ConcurrentOperationException {
         UserContext.current().setEventDetails("Volume Id: "+getId());
-        boolean result = _storageService.deleteVolume(this);
+        boolean result = _storageService.deleteVolume(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

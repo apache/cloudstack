@@ -26,8 +26,6 @@ public interface ProjectDao extends GenericDao<ProjectVO, Long>{
 
     Long countProjectsForDomain(long domainId);
     
-    ProjectVO findByProjectDomainId(long projectDomainId);
-    
     ProjectVO findByProjectAccountId(long projectAccountId);
 
 }

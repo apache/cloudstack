@@ -49,7 +49,7 @@ public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.END_PORT) @Param(description="the end port of the rule")
     private Integer endPort;
     
-    @SerializedName("state") @Param(description="state of the ip forwarding rule")
+    @SerializedName(ApiConstants.STATE) @Param(description="state of the ip forwarding rule")
     private String state;
     
     public Long getId() {

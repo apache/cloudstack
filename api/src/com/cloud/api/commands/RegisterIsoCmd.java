@@ -26,6 +26,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.exception.InvalidParameterValueException;
@@ -79,6 +80,9 @@ public class RegisterIsoCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this ISO")
     private String checksum;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Register iso for the project")
+    private Long projectId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -141,22 +145,15 @@ public class RegisterIsoCmd extends BaseCmd {
         return s_name;
     }
 	
-	@Override
-	public long getEntityOwnerId() {
-	    Account account = UserContext.current().getCaller();
-        if (isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account by name " + getAccountName() + " in domain " + getDomainId());
-                }
-            }
+    @Override
+    public long getEntityOwnerId() {
+        Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
         }
         
-        return account.getId();
-	  }	
+        return accountId;
+    }	
 	
     @Override
     public void execute() throws ResourceAllocationException{

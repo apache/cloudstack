@@ -23,7 +23,8 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class VolumeResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class VolumeResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the disk volume")
     private Long id;
@@ -32,7 +33,7 @@ public class VolumeResponse extends BaseResponse {
     @Param(description = "shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName(ApiConstants.JOB_STATUS)
     @Param(description = "shows the current pending asynchronous job status")
     private Integer jobStatus;
 
@@ -87,6 +88,12 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the disk volume")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
+    private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the disk volume")
@@ -189,219 +196,121 @@ public class VolumeResponse extends BaseResponse {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
     }
-
-    public String getZoneName() {
-        return zoneName;
-    }
-
+    
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
-    }
-
-    public String getVolumeType() {
-        return volumeType;
     }
 
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
     }
 
-    public Long getDeviceId() {
-        return deviceId;
-    }
-
     public void setDeviceId(Long deviceId) {
         this.deviceId = deviceId;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
     }
 
     public void setVirtualMachineId(Long virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
     }
 
-    public String getVirtualMachineName() {
-        return virtualMachineName;
-    }
-
     public void setVirtualMachineName(String virtualMachineName) {
         this.virtualMachineName = virtualMachineName;
-    }
-
-    public String getVirtualMachineDisplayName() {
-        return virtualMachineDisplayName;
     }
 
     public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
         this.virtualMachineDisplayName = virtualMachineDisplayName;
     }
 
-    public String getVirtualMachineState() {
-        return virtualMachineState;
-    }
-
     public void setVirtualMachineState(String virtualMachineState) {
         this.virtualMachineState = virtualMachineState;
-    }
-
-    public Long getSize() {
-        return size;
     }
 
     public void setSize(Long size) {
         this.size = size;
     }
 
-    public Date getCreated() {
-        return created;
-    }
-
     public void setCreated(Date created) {
         this.created = created;
-    }
-
-    public String getAccountName() {
-        return accountName;
     }
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
+    
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public String getStorageType() {
-        return storageType;
     }
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
     }
 
-    public String getHypervisor() {
-        return hypervisor;
-    }
-
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
-    }
-
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
     }
 
     public void setDiskOfferingId(Long diskOfferingId) {
         this.diskOfferingId = diskOfferingId;
     }
 
-    public String getDiskOfferingName() {
-        return diskOfferingName;
-    }
-
     public void setDiskOfferingName(String diskOfferingName) {
         this.diskOfferingName = diskOfferingName;
-    }
-
-    public String getDiskOfferingDisplayText() {
-        return diskOfferingDisplayText;
     }
 
     public void setDiskOfferingDisplayText(String diskOfferingDisplayText) {
         this.diskOfferingDisplayText = diskOfferingDisplayText;
     }
 
-    public String getStoragePoolName() {
-        return storagePoolName;
-    }
-
     public void setStoragePoolName(String storagePoolName) {
         this.storagePoolName = storagePoolName;
-    }
-
-    public Long getSnapshotId() {
-        return snapshotId;
     }
 
     public void setSnapshotId(Long snapshotId) {
         this.snapshotId = snapshotId;
     }
 
-    public Date getAttached() {
-        return attached;
-    }
-
     public void setAttached(Date attached) {
         this.attached = attached;
-    }
-
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }
 
-    public String getServiceOfferingName() {
-        return serviceOfferingName;
-    }
-
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
-    }
-
-    public String getServiceOfferingDisplayText() {
-        return serviceOfferingDisplayText;
     }
 
     public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
         this.serviceOfferingDisplayText = serviceOfferingDisplayText;
     }
 
-    public Boolean getExtractable() {
-        return extractable;
-    }
-
     public void setExtractable(Boolean extractable) {
         this.extractable = extractable;
-    }
-
-    public String getState() {
-        return state;
     }
 
     public void setState(String state) {
         this.state = state;
     }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }   
 }

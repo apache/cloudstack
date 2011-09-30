@@ -29,7 +29,6 @@ import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
-import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
@@ -351,7 +350,7 @@ public interface ManagementService {
      *            -- id for the user
      * @return -- ArrayList of <CloudId+Signature>
      */
-    ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd);
+    ArrayList<String> getCloudIdentifierResponse(long userId);
 
     boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd);
 

@@ -130,7 +130,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         if (accountName != null) {
-            owner = _accountMgr.finalizeOwner(caller, accountName, domainId);
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, null);
         }
         
         //don't allow 2 projects with the same name inside the same domain
@@ -144,19 +144,13 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        //Create a domain associated with the project
-        StringBuilder dmnNm = new StringBuilder("PrjDmn-");
-        dmnNm.append(name).append("-").append(owner.getDomainId());
-        
-        Domain projectDomain = _domainMgr.createDomain(dmnNm.toString(), Domain.ROOT_DOMAIN, Account.ACCOUNT_ID_SYSTEM, null, Domain.Type.Project);
-        
         //Create an account associated with the project
         StringBuilder acctNm = new StringBuilder("PrjAcct-");
         acctNm.append(name).append("-").append(owner.getDomainId());
         
-        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, projectDomain.getId(), null);
+        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, domainId, null);
         
-        Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId(), projectDomain.getId()));
+        Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId()));
         
         //assign owner to the project
         assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Owner);
@@ -197,7 +191,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         txn.commit();
         
         if (updateResult) {
-            if (!cleanupProject(project)) {
+            if (!cleanupProject(project, null, null)) {
                 s_logger.warn("Failed to cleanup project's id=" + projectId + " resources, not removing the project yet");
                 return false;
             } else {
@@ -209,7 +203,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }  
     }
     
-    private boolean cleanupProject(Project project) {
+    private boolean cleanupProject(Project project, AccountVO caller, Long callerUserId) {
         boolean result=true;
         
         //Unassign all users from the project
@@ -223,9 +217,11 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             s_logger.debug("Accounts are unassign successfully from project " + project + " as a part of project cleanup...");
         }
         
-        //Delete project's domain
-        s_logger.debug("Deleting projects " + project + " internal domain id=" + project.getProjectDomainId() + " as a part of project cleanup...");
-        result = result && _domainMgr.deleteDomain(_domainDao.findById(project.getProjectDomainId()), true);
+        //Delete project's account
+        AccountVO account = _accountDao.findById(project.getProjectAccountId());
+        s_logger.debug("Deleting projects " + project + " internal account id=" + account.getId() + " as a part of project cleanup...");
+        
+        result = result && _accountMgr.deleteAccount(account, callerUserId, caller);
         
         return result;
     }
@@ -351,11 +347,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public ProjectVO findByProjectDomainId(long projectDomainId) {
-        return _projectDao.findByProjectDomainId(projectDomainId);
-    }
-    
-    @Override
     public ProjectVO findByProjectAccountId(long projectAccountId) {
         return _projectDao.findByProjectAccountId(projectAccountId);
     }
@@ -366,22 +357,29 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    public boolean canAccessAccount(Account caller, long accountId) {
-        return _projectAccountDao.canAccessAccount(caller.getId(), accountId);
-    }
-    
-    @Override
-    public boolean canAccessDomain(Account caller, long domainId) {
-        return _projectAccountDao.canAccessDomain(caller.getId(), domainId);
+    public boolean canAccessProjectAccount(Account caller, long accountId) {
+        //ROOT admin always can access the project
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            return true;
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Account owner = _accountMgr.getAccount(accountId);
+            _accountMgr.checkAccess(caller, _domainDao.findById(owner.getDomainId()), null);
+            return true;
+        }
+        
+        return _projectAccountDao.canAccessProjectAccount(caller.getId(), accountId);
     }
     
     public boolean canModifyProjectAccount(Account caller, long accountId) {
+        //ROOT admin always can access the project
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            return true;
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Account owner = _accountMgr.getAccount(accountId);
+            _accountMgr.checkAccess(caller, _domainDao.findById(owner.getDomainId()), null);
+            return true;
+        }
         return _projectAccountDao.canModifyProjectAccount(caller.getId(), accountId);
-    }
-    
-    @Override
-    public boolean canModifyProjectDomain(Account caller, long domainId) {
-        return _projectAccountDao.canModifyProjectDomain(caller.getId(), domainId);
     }
     
     @Override @DB
@@ -397,7 +395,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
        
         //verify permissions
-        _accountMgr.checkAccess(caller, _domainDao.findById(project.getProjectDomainId()), AccessType.ModifyProject);
+        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()), AccessType.ModifyProject);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -457,7 +455,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         //verify permissions
-        _accountMgr.checkAccess(caller, _domainDao.findById(project.getProjectDomainId()), AccessType.ModifyProject);
+        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()), AccessType.ModifyProject);
         
         //Check if the account already added to the project
         ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
@@ -504,7 +502,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         //verify permissions
-        _accountMgr.checkAccess(caller, _domainDao.findById(project.getProjectDomainId()), AccessType.ModifyProject);
+        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()), AccessType.ModifyProject);
         
         //Check if the account exists in the project
         ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
@@ -533,7 +531,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         //verify permissions
-        _accountMgr.checkAccess(caller, _domainDao.findById(project.getProjectDomainId()), null);
+        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()), null);
         
         Filter searchFilter = new Filter(ProjectAccountVO.class, "id", false, startIndex, pageSizeVal);
         SearchBuilder<ProjectAccountVO> sb = _projectAccountDao.createSearchBuilder();
@@ -678,7 +676,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             }
             
             //verify permissions
-            _accountMgr.checkAccess(caller, _domainDao.findById(project.getProjectDomainId()), AccessType.ModifyProject);
+            _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()), AccessType.ModifyProject);
             accountId = account.getId();
         } else {
             accountId = caller.getId();

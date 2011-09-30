@@ -99,7 +99,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
         List<String> accountNames = _mgr.listTemplatePermissions(this);
         
         Account account = UserContext.current().getCaller();
-        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        boolean isAdmin = (isAdmin(account.getType()));
 
         TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(accountNames, id, isAdmin);
         response.setResponseName(getCommandName());

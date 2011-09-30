@@ -464,13 +464,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     public SnapshotResponse createSnapshotResponse(Snapshot snapshot) {
         SnapshotResponse snapshotResponse = new SnapshotResponse();
         snapshotResponse.setId(snapshot.getId());
-
-        Account acct = ApiDBUtils.findAccountById(Long.valueOf(snapshot.getAccountId()));
-        if (acct != null) {
-            snapshotResponse.setAccountName(acct.getAccountName());
-            snapshotResponse.setDomainId(acct.getDomainId());
-            snapshotResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-        }
+        
+        populateOwner(snapshotResponse, snapshot);
 
         VolumeVO volume = findVolumeById(snapshot.getVolumeId());
         String snapshotTypeStr = snapshot.getType().name();
@@ -660,12 +655,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setSourceNat(ipAddress.isSourceNat());
 
         // get account information
-        Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAllocatedToAccountId());
-        if (accountTemp != null) {
-            ipResponse.setAccountName(accountTemp.getAccountName());
-            ipResponse.setDomainId(accountTemp.getDomainId());
-            ipResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
+        populateOwner(ipResponse, ipAddress);
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddress.isOneToOneNat());
@@ -730,14 +720,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             stateToSet = "Deleting";
         }
         lbResponse.setState(stateToSet);
-
-        Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
-        if (accountTemp != null) {
-            lbResponse.setAccountName(accountTemp.getAccountName());
-            lbResponse.setDomainId(accountTemp.getDomainId());
-            lbResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
-
+        populateOwner(lbResponse, loadBalancer);
         lbResponse.setZoneId(publicIp.getDataCenterId());
 
         lbResponse.setObjectName("loadbalancer");
@@ -878,12 +861,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
 
-        Account accountTemp = ApiDBUtils.findAccountById(volume.getAccountId());
-        if (accountTemp != null) {
-            volResponse.setAccountName(accountTemp.getAccountName());
-            volResponse.setDomainId(accountTemp.getDomainId());
-            volResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
+        populateOwner(volResponse, volume);
 
         String storageType;
         try {
@@ -941,13 +919,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         groupResponse.setId(group.getId());
         groupResponse.setName(group.getName());
         groupResponse.setCreated(group.getCreated());
+        
+        populateOwner(groupResponse, group);
 
-        Account accountTemp = ApiDBUtils.findAccountById(group.getAccountId());
-        if (accountTemp != null) {
-            groupResponse.setAccountName(accountTemp.getAccountName());
-            groupResponse.setDomainId(accountTemp.getDomainId());
-            groupResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
         groupResponse.setObjectName("instancegroup");
         return groupResponse;
     }
@@ -977,7 +951,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        Long capacity = pool.getCapacityBytes();
         long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(),Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
@@ -1180,12 +1153,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         routerResponse.setServiceOfferingId(offering.getId());
         routerResponse.setServiceOfferingName(offering.getName());
 
-        Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
-        if (accountTemp != null) {
-            routerResponse.setAccountName(accountTemp.getAccountName());
-            routerResponse.setDomainId(accountTemp.getDomainId());
-            routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
+        populateOwner(routerResponse, router);
 
         List<NicProfile> nicProfiles = ApiDBUtils.getNics(router);
         for (NicProfile singleNicProfile : nicProfiles) {
@@ -1328,12 +1296,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         vpnResponse.setId(vpnUser.getId());
         vpnResponse.setUserName(vpnUser.getUsername());
 
-        Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
-        if (accountTemp != null) {
-            vpnResponse.setAccountName(accountTemp.getAccountName());
-            vpnResponse.setDomainId(accountTemp.getDomainId());
-            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
+        populateOwner(vpnResponse, vpnUser);
 
         vpnResponse.setObjectName("vpnuser");
         return vpnResponse;
@@ -1348,11 +1311,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
         vpnResponse.setDomainId(vpn.getDomainId());
 
-        Account accountTemp = ApiDBUtils.findAccountById(vpn.getAccountId());
-        if (accountTemp != null) {
-            vpnResponse.setAccountName(accountTemp.getAccountName());
-            vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
+        populateOwner(vpnResponse, vpn);
+        
         vpnResponse.setState(vpn.getState().toString());
         vpnResponse.setObjectName("remoteaccessvpn");
 
@@ -1379,11 +1339,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // add account ID and name
         Account owner = ApiDBUtils.findAccountById(result.getAccountId());
-        if (owner != null) {
-            response.setAccount(owner.getAccountName());
-            response.setDomainId(owner.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-        }
+        populateAccount(response, owner.getId());
+        populateDomain(response, owner.getDomainId());
+        
         response.setObjectName("iso");
         return response;
     }
@@ -1444,15 +1402,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setOsTypeName("");
         }
 
-        // add account ID and name
-        Account owner = ApiDBUtils.findAccountById(template.getAccountId());
-        if (owner != null) {
-            templateResponse.setAccount(owner.getAccountName());
-            templateResponse.setDomainId(owner.getDomainId());
-            templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-        }
-
-
+        Account account = ApiDBUtils.findAccountByIdIncludingRemoved(template.getAccountId());
+        populateAccount(templateResponse, account.getId());
+        populateDomain(templateResponse, account.getDomainId());
 
         DataCenterVO datacenter = ApiDBUtils.findZoneById(zoneId);
 
@@ -1460,14 +1412,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setZoneId(zoneId);
         templateResponse.setZoneName(datacenter.getName());
 
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         boolean isAdmin = false;
-        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
         }
 
         // If the user is an Admin, add the template download status
-        if (isAdmin || account.getId() == template.getAccountId()) {
+        if (isAdmin || caller.getId() == template.getAccountId()) {
             // add download status
             if (templateHostRef.getDownloadState() != Status.DOWNLOADED) {
                 String templateStatus = "Processing";
@@ -1525,7 +1477,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setPasswordEnabled(false);
             Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
             if (owner != null) {
-                isoResponse.setAccount(owner.getAccountName());
+                isoResponse.setAccountName(owner.getAccountName());
                 isoResponse.setDomainId(owner.getDomainId());
                 isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
             }
@@ -1581,7 +1533,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         // add account ID and name
         Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
         if (owner != null) {
-            isoResponse.setAccount(owner.getAccountName());
+            isoResponse.setAccountName(owner.getAccountName());
             isoResponse.setDomainId(owner.getDomainId());
             // TODO: implement
             isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
@@ -1641,6 +1593,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             netGrpResponse.setName(networkGroup.getName());
             netGrpResponse.setDescription(networkGroup.getDescription());
             netGrpResponse.setAccountName(networkGroup.getAccountName());
+            
+            populateOwner(netGrpResponse, networkGroup);
+            
             netGrpResponse.setDomainId(networkGroup.getDomainId());
             netGrpResponse.setDomainName(ApiDBUtils.findDomainById(networkGroup.getDomainId()).getName());
 
@@ -1960,9 +1915,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin) {
         Long templateOwnerDomain = null;
         VirtualMachineTemplate template = ApiDBUtils.findTemplateById(id);
+        Account templateOwner = ApiDBUtils.findAccountById(template.getAccountId());
         if (isAdmin) {
             // FIXME: we have just template id and need to get template owner from that
-            Account templateOwner = ApiDBUtils.findAccountById(template.getAccountId());
             if (templateOwner != null) {
                 templateOwnerDomain = templateOwner.getDomainId();
             }
@@ -1974,8 +1929,29 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (isAdmin && (templateOwnerDomain != null)) {
             response.setDomainId(templateOwnerDomain);
         }
-
-        response.setAccountNames(accountNames);
+        
+        //Set accounts
+        List<Long> projectIds = new ArrayList<Long>();
+        List<String> regularAccounts = new ArrayList<String>();
+        for (String accountName : accountNames) {
+            Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
+            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+                regularAccounts.add(accountName);
+            } else {
+                //convert account to projectIds
+                Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                projectIds.add(project.getId());
+            }
+        }
+        
+        if (!projectIds.isEmpty()) {
+            response.setProjectIds(projectIds);
+        }
+        
+        if (!regularAccounts.isEmpty()) {
+            response.setAccountNames(regularAccounts);
+        }
+        
         response.setObjectName("templatepermission");
         return response;
     }
@@ -2252,20 +2228,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         response.setServices(serviceResponses);
-
-        Account account = ApiDBUtils.findAccountById(network.getAccountId());
-        if (account != null && !network.getIsShared()) {
-            response.setAccountName(account.getAccountName());
-            Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
-            response.setDomainId(domain.getId());
-            response.setDomain(domain.getName());
-        }
+        
+        populateOwner(response, network);
 
         Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
         if (dedicatedDomainId != null) {
             Domain domain = ApiDBUtils.findDomainById(dedicatedDomainId);
             response.setDomainId(dedicatedDomainId);
-            response.setDomain(domain.getName());
+            response.setDomainName(domain.getName());
         }
 
         response.setObjectName("network");
@@ -2485,11 +2455,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     private void populateDomain(ControlledEntityResponse response, long domainId) {
         Domain domain = ApiDBUtils.findDomainById(domainId);
-        
-        if (domain.getType() == Domain.Type.Project) {
-            Project project = ApiDBUtils.findProjectByProjectDomainId(domainId);
-            domain = ApiDBUtils.findDomainById(project.getDomainId());
-        }
         
         response.setDomainId(domain.getId());
         response.setDomainName(domain.getName());

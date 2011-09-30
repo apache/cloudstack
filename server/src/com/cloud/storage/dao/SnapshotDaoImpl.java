@@ -26,9 +26,8 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.host.dao.HostDetailsDaoImpl;
-import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
@@ -270,7 +269,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
 	public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status) {
     	SearchCriteria<SnapshotVO> sc = this.InstanceIdSearch.create();
-    	sc.setParameters("status", status);
+    	
+    	if (status != null) {
+    	    sc.setParameters("status", status.toString());
+    	}
+    	
     	sc.setJoinParameters("instanceSnapshots", "state", Volume.State.Ready);
     	sc.setJoinParameters("instanceVolumes", "instanceId", instanceId);
         return listBy(sc, null);

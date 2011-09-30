@@ -23,7 +23,6 @@ import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.exception.ConcurrentOperationException;
@@ -67,7 +66,7 @@ public interface StorageService {
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
-    boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException;
+    boolean deleteVolume(long volumeId) throws ConcurrentOperationException;
 
     /**
      * Delete the storage pool

@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,8 +34,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a l2tp/ipsec remote access vpn", responseObject=RemoteAccessVpnResponse.class)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
@@ -53,10 +50,12 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Parameter(name="iprange", type=CommandType.STRING, required=false, description="the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
     private String ipRange;
     
-    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the VPN. Must be used with domainId.")
+    @Deprecated
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the VPN. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
+    @Deprecated
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
     private Long domainId;
     
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
@@ -106,21 +105,13 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-		Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
-        }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+	    IpAddress ip = _networkService.getIp(publicIpId);
+	    
+	    if (ip == null) {
+	        throw new InvalidParameterValueException("Unable to find ip address by id=" + publicIpId);
+	    }
+	    
+	    return ip.getAccountId();
     }
 
 	@Override

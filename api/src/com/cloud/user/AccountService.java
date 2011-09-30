@@ -17,6 +17,8 @@
  */
 package com.cloud.user;
 
+import java.util.List;
+
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
@@ -134,9 +136,9 @@ public interface AccountService {
 	
 	boolean isAdmin(short accountType);
 	
-	Account finalizeOwner(Account caller, String accountName, Long domainId);
+	Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 	
-	Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId);
+	Pair<List<Long>,Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId, Long projectId);
 	
 	Account getActiveAccountByName(String accountName, Long domainId);
 	

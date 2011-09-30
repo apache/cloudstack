@@ -45,7 +45,7 @@ public class CreateProjectCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the project")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a project")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="domain ID of the account owning a project")
     private Long domainId;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the project")
@@ -88,7 +88,7 @@ public class CreateProjectCmd extends BaseCmd {
         }
         
         if (accountName != null) {
-            return _accountService.finalizeOwner(caller, accountName, domainId).getId();
+            return _accountService.finalizeOwner(caller, accountName, domainId, null).getId();
         }
         
         return caller.getId();

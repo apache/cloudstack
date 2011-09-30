@@ -41,7 +41,6 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         AllFieldsSearch.and("projectId", AllFieldsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getProjectAccountId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("projectDomainId", AllFieldsSearch.entity().getProjectDomainId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
     
@@ -72,23 +71,10 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
     
     @Override
-    public boolean canAccessAccount(long accountId, long projectAccountId) {
+    public boolean canAccessProjectAccount(long accountId, long projectAccountId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("projectAccountId", projectAccountId);
-        
-        if (findOneBy(sc) != null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
-    @Override
-    public boolean canAccessDomain(long accountId, long projectDomainId) {
-        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
-        sc.setParameters("accountId", accountId);
-        sc.setParameters("projectDomainId", projectDomainId);
         
         if (findOneBy(sc) != null) {
             return true;
@@ -102,20 +88,6 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("projectAccountId", projectAccountId);
-        sc.setParameters("role", ProjectAccount.Role.Owner);
-        
-        if (findOneBy(sc) != null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
-    @Override
-    public boolean canModifyProjectDomain(long accountId, long projectDomainId) {
-        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
-        sc.setParameters("accountId", accountId);
-        sc.setParameters("projectDomainId", projectDomainId);
         sc.setParameters("role", ProjectAccount.Role.Owner);
         
         if (findOneBy(sc) != null) {

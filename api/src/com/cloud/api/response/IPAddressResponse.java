@@ -23,17 +23,18 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class IPAddressResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="public IP address id")
+@SuppressWarnings("unused")
+public class IPAddressResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID) @Param(description="public IP address id")
     private Long id;
     
-    @SerializedName("ipaddress") @Param(description="public IP address")
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="public IP address")
     private String ipAddress;
 
     @SerializedName("allocated") @Param(description="date the public IP address was acquired")
     private Date allocated;
 
-    @SerializedName("zoneid") @Param(description="the ID of the zone the public IP address belongs to")
+    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone the public IP address belongs to")
     private Long zoneId;
 
     @SerializedName("zonename") @Param(description="the name of the zone the public IP address belongs to")
@@ -42,19 +43,25 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("issourcenat") @Param(description="true if the IP address is a source nat address, false otherwise")
     private Boolean sourceNat;
 
-    @SerializedName("account") @Param(description="the account the public IP address is associated with")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account the public IP address is associated with")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    private String projectName;
 
-    @SerializedName("domainid") @Param(description="the domain ID the public IP address is associated with")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID the public IP address is associated with")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain the public IP address is associated with")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the public IP address is associated with")
     private String domainName;
 
-    @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the IP address")
+    @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK) @Param(description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @SerializedName("vlanid") @Param(description="the ID of the VLAN associated with the IP address")
+    @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address")
     private Long vlanId;
 
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
@@ -63,7 +70,7 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
     
-    @SerializedName("virtualmachineid") @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
     private Long virtualMachineId;
     
     @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
@@ -75,7 +82,7 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("associatednetworkid") @Param(description="the ID of the Network associated with the IP address")
     private Long associatedNetworkId;
     
-    @SerializedName("networkid") @Param(description="the ID of the Network where ip belongs to")
+    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
     private Long networkId;
     
     @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
@@ -84,139 +91,71 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private Long jobId;
 
-    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
+    @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
-    
-    public String getIpAddress() {
-        return ipAddress;
-    }
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
-    public Date getAllocated() {
-        return allocated;
-    }
-
     public void setAllocated(Date allocated) {
         this.allocated = allocated;
     }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
+    
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
-    }
-
-    public String getZoneName() {
-        return zoneName;
     }
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public Boolean getSourceNat() {
-        return sourceNat;
-    }
-
     public void setSourceNat(Boolean sourceNat) {
         this.sourceNat = sourceNat;
-    }
-
-    public String getAccountName() {
-        return accountName;
     }
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
+    
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public Boolean getForVirtualNetwork() {
-        return forVirtualNetwork;
     }
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
 
-    public Long getVlanId() {
-        return vlanId;
-    }
-
     public void setVlanId(Long vlanId) {
         this.vlanId = vlanId;
-    }
-
-    public String getVlanName() {
-        return vlanName;
     }
 
     public void setVlanName(String vlanName) {
         this.vlanName = vlanName;
     }
 
-	public Boolean getStaticNat() {
-		return staticNat;
-	}
-
 	public void setStaticNat(Boolean staticNat) {
 		this.staticNat = staticNat;
 	}
 
-    public Long getAssociatedNetworkId() {
-        return associatedNetworkId;
-    }
-
     public void setAssociatedNetworkId(Long networkId) {
         this.associatedNetworkId = networkId;
-    }
-
-    public Long getNetworkId() {
-        return networkId;
     }
 
     public void setNetworkId(Long networkId) {
         this.networkId = networkId;
     }
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
-    }
-
     public void setVirtualMachineId(Long virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
     }
 
-    public String getVirtualMachineName() {
-        return virtualMachineName;
-    }
-
     public void setVirtualMachineName(String virtualMachineName) {
         this.virtualMachineName = virtualMachineName;
-    }
-
-    public String getVirtualMachineDisplayName() {
-        return virtualMachineDisplayName;
     }
 
     public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
@@ -229,10 +168,6 @@ public class IPAddressResponse extends BaseResponse {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getState() {
-        return state;
     }
 
     public void setState(String state) {
@@ -262,5 +197,15 @@ public class IPAddressResponse extends BaseResponse {
     @Override
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
+    }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

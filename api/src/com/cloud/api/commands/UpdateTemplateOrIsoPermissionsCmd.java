@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
+import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Logger s_logger = getLogger();
@@ -51,13 +52,20 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
+    
+    @Parameter(name = ApiConstants.PROJECT_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
+    private List<Long> projectIds;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
     public List<String> getAccountNames() {
-        return accountNames;
+        if (accountNames != null && projectIds != null) {
+            throw new InvalidParameterValueException("Accounts and projectIds can't be specified together");  
+        }
+        
+        return accountNames; 
     }
 
     public Long getId() {
@@ -78,6 +86,13 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     
     public String getOperation() {
         return operation;
+    }
+    
+    public List<Long> getProjectIds() {
+        if (accountNames != null && projectIds != null) {
+            throw new InvalidParameterValueException("Accounts and projectIds can't be specified together");  
+        }
+        return projectIds;
     }
 
     // ///////////////////////////////////////////////////

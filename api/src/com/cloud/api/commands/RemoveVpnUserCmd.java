@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -39,13 +40,16 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="username", type=CommandType.STRING, required=true, description="username for the vpn user")
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="username for the vpn user")
     private String userName;
     
-    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
     private String accountName;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="remove vpn user from the project")
+    private Long projectId;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
     private Long domainId;
     
     /////////////////////////////////////////////////////
@@ -65,8 +69,8 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 		return userName;
 	}
 
-	public void setUserName(String userName) {
-		this.userName = userName;
+	public Long getProjecId() {
+	    return projectId;
 	}
 
 	
@@ -81,21 +85,12 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-		Account account = UserContext.current().getCaller();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
+	    Long accountId = getAccountId(accountName, domainId, projectId);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
         }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        
+        return accountId;
     }
 
 	@Override
@@ -111,7 +106,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        Account owner = getValidOwner(accountName, domainId);
+        Account owner = _accountService.getAccount(getEntityOwnerId());
         boolean result = _ravService.removeVpnUser(owner.getId(), userName);
         if (!result) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");

@@ -78,6 +78,8 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -176,6 +178,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private DataCenterDao _dcDao;
     @Inject 
     private DomainManager _domainMgr;
+    @Inject
+    private ProjectManager _projectMgr;
+    
     private Adapters<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
@@ -261,7 +266,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public void checkAccess(Account caller, Domain domain, AccessType accessType) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(caller, domain, accessType)) {
+            if (checker.checkAccess(caller, domain)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
                 }
@@ -316,7 +321,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     throw new PermissionDeniedException("Domain is not found.", caller, domain.getValue());
                 }
                 try {
-                    checker.checkAccess(caller, d, accessType);
+                    checker.checkAccess(caller, d);
                 } catch (PermissionDeniedException e) {
                     e.addDetails(caller, domain.getValue());
                     throw e;
@@ -644,7 +649,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
             user.setRegistrationToken(registrationToken);
         }
-        
         
         txn.commit();
         return _userAccountDao.findById(user.getId());
@@ -1195,11 +1199,30 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public Account finalizeOwner(Account caller, String accountName, Long domainId) {
+    public Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId) {
         // don't default the owner to the system account
-        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM && (accountName == null || domainId == null)) {
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM && ((accountName == null || domainId == null) && projectId == null)) {
             throw new InvalidParameterValueException("Account and domainId are needed for resource creation");
         }
+        
+        //projectId and account/domainId can't be specified together
+        if ((accountName != null && domainId != null) && projectId != null) {
+            throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
+        }
+        
+        if (projectId != null) {
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
+            }
+            
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new PermissionDeniedException("Account " + caller + " is unauthorised to use project id=" + projectId);
+            }
+            
+            return getAccount(project.getProjectAccountId());
+        }
+        
 
         if (isAdmin(caller.getType()) && accountName != null && domainId != null) {
             Domain domain =  _domainMgr.getDomain(domainId);
@@ -1267,7 +1290,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId) {
+    public Pair<List<Long>,Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId, Long projectId) {
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        
         if (isAdmin(caller.getType())) {
             if (domainId == null && accountName != null) {
                 throw new InvalidParameterValueException("accountName and domainId might be specified together");
@@ -1284,18 +1309,39 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     if (owner == null) {
                         throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain id=" + domainId);
                     }
+                    
+                    permittedAccounts.add(owner.getId());
                 }
             }
         } else if (accountName != null && domainId != null) {
             if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
                 throw new PermissionDeniedException("Can't list port forwarding rules for account " + accountName + " in domain " + domainId + ", permission denied");
             }
+            permittedAccounts.add(getActiveAccountByName(accountName, domainId).getId());
         } else {
-            accountName = caller.getAccountName();
+            permittedAccounts.add(caller.getAccountId());
+        }
+        
+        if (domainId == null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             domainId = caller.getDomainId();
         }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        } 
 
-        return new Pair<String, Long>(accountName, domainId);
+        return new Pair<List<Long>, Long>(permittedAccounts, domainId);
     }
 
 	@Override

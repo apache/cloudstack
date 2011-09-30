@@ -17,9 +17,6 @@
 
 package com.cloud.agent.api;
 
-import java.util.Map;
-
-import com.cloud.vm.VirtualMachine.State;
 
 public class ClusterSyncCommand extends Command implements CronCommand {
     int _interval;

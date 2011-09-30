@@ -22,7 +22,6 @@ import java.util.Map;
 
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,7 +37,7 @@ import com.cloud.user.Account;
 
 public interface NetworkService {
 
-    List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId);
+    List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     List<? extends NetworkOffering> listNetworkOfferings();
 
@@ -55,7 +54,7 @@ public interface NetworkService {
      */
     IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
-    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
+    boolean disassociateIpAddress(long ipAddressId);
 
     Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException;
 

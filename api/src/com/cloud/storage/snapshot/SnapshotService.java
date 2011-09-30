@@ -20,7 +20,6 @@ package com.cloud.storage.snapshot;
 import java.util.List;
 
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
-import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
@@ -44,8 +43,9 @@ public interface SnapshotService {
     /**
      * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This will be
      * used for manual snapshots too.
+     * @param snapshotId TODO
      */
-    boolean deleteSnapshot(DeleteSnapshotCmd cmd);
+    boolean deleteSnapshot(long snapshotId);
 
     /**
      * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be retained.

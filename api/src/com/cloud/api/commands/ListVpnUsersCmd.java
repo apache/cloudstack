@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,17 +41,20 @@ public class ListVpnUsersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="the account of the remote access vpn. Must be used with the domainId parameter.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the remote access vpn. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID of the remote access vpn. If used with the account parameter, lists remote access vpns for the account in the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of the remote access vpn. If used with the account parameter, lists remote access vpns for the account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the vpn user")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the vpn user")
     private Long id;
 
-    @Parameter(name="username", type=CommandType.STRING, description="the username of the vpn user.")
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="the username of the vpn user.")
     private String userName;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
+    private Long projectId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,6 +75,9 @@ public class ListVpnUsersCmd extends BaseListCmd {
         return userName;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

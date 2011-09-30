@@ -45,7 +45,6 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address to disassociate")
     private Long id;
 
-    
     // unexposed parameter needed for events logging
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
     private Long ownerId;
@@ -69,7 +68,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Ip Id: "+getIpAddressId());
-        boolean result = _networkService.disassociateIpAddress(this);
+        boolean result = _networkService.disassociateIpAddress(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

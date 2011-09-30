@@ -107,13 +107,13 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public Account finalizeOwner(Account caller, String accountName, Long domainId) {
+    public Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId) {
+    public Pair<List<Long>,Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId, Long projectId) {
         // TODO Auto-generated method stub
         return null;
     }

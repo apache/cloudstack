@@ -76,7 +76,7 @@ public class PrepareTemplateCmd extends BaseCmd {
     public void execute() {
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
     	
-    	VirtualMachineTemplate vmTemplate = _templateService.prepareTemplate(this);
+    	VirtualMachineTemplate vmTemplate = _templateService.prepareTemplate(templateId, zoneId);
     	List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(vmTemplate.getId(), zoneId, true);
         response.setResponses(templateResponses);
         response.setResponseName(getCommandName());              

@@ -31,7 +31,6 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
-import com.cloud.domain.Domain.Type;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -128,7 +127,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         }
 
         DomainVO parentDomain = _domainDao.findById(parentId);
-        if (parentDomain == null || parentDomain.getType() == Domain.Type.Project) {
+        if (parentDomain == null) {
             throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
         }
         
@@ -139,13 +138,13 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         _accountMgr.checkAccess(caller, parentDomain, null);
 
        
-        return createDomain(name, parentId, caller.getId(), networkDomain, null);
+        return createDomain(name, parentId, caller.getId(), networkDomain);
        
     }
     
     @Override
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, Type domainType) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain) {
         //Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -153,12 +152,6 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                         + "and the hyphen ('-'); can't start or end with \"-\"");
             }
-        }
-     
-        
-        //verify domainType
-        if (domainType != null && !(domainType == Domain.Type.Project || domainType == Domain.Type.Normal)) {
-            throw new InvalidParameterValueException("Invalid domain type; following values are supported: " + Domain.Type.Normal + ", " + Domain.Type.Project);
         }
 
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
@@ -173,7 +166,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainType));
+        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
         
         txn.commit();
@@ -209,7 +202,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         
         DomainVO domain = _domainDao.findById(domainId);
         
-        if (domain == null || domain.getType() == Domain.Type.Project) {
+        if (domain == null) {
             throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
         } else if (domainId == DomainVO.ROOT_DOMAIN) {
             throw new PermissionDeniedException("Can't delete ROOT domain");

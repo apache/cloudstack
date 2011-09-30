@@ -67,7 +67,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        ArrayList<String> result = _mgr.getCloudIdentifierResponse(this);
+        ArrayList<String> result = _mgr.getCloudIdentifierResponse(userid);
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         if (result != null) {
             response.setCloudIdentifier(result.get(0));

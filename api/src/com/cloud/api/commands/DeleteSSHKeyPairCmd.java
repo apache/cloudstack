@@ -47,6 +47,9 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the keypair")
     private Long domainId;
     
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="the project associated with keypair")
+    private Long projectId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     ///////////////////////////////////////////////////// 
@@ -62,8 +65,11 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
     public Long getDomainId() {
         return domainId;
     }
-	
-	
+    
+    public Long getProjectId() {
+        return projectId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
 	/////////////////////////////////////////////////////

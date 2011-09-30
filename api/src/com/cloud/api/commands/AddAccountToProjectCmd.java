@@ -28,7 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class)

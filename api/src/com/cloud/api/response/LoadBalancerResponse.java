@@ -21,16 +21,17 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class LoadBalancerResponse extends BaseResponse {
-    @SerializedName("id")
+@SuppressWarnings("unused")
+public class LoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID)
     @Param(description = "the load balancer rule ID")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the load balancer")
     private String name;
 
-    @SerializedName("description")
+    @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "the description of the load balancer")
     private String description;
 
@@ -42,34 +43,40 @@ public class LoadBalancerResponse extends BaseResponse {
     @Param(description = "the public ip address")
     private String publicIp;
 
-    @SerializedName("publicport")
+    @SerializedName(ApiConstants.PUBLIC_PORT)
     @Param(description = "the public port")
     private String publicPort;
 
-    @SerializedName("privateport")
+    @SerializedName(ApiConstants.PRIVATE_PORT)
     @Param(description = "the private port")
     private String privatePort;
 
-    @SerializedName("algorithm")
+    @SerializedName(ApiConstants.ALGORITHM)
     @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
     
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
 
-    @SerializedName("account")
+    @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account of the load balancer rule")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the load balancer")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the load balancer")
+    private String projectName;
 
-    @SerializedName("domainid")
+    @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the load balancer rule")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain of the load balancer rule")
     private String domainName;
 
-    @SerializedName("state")
+    @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the rule")
     private String state;
 
@@ -77,115 +84,70 @@ public class LoadBalancerResponse extends BaseResponse {
     @Param(description = "the id of the zone the rule belongs to")
     private Long zoneId;
 
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getPublicIp() {
-        return publicIp;
     }
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
     }
 
-    public String getPublicPort() {
-        return publicPort;
-    }
-
     public void setPublicPort(String publicPort) {
         this.publicPort = publicPort;
-    }
-
-    public String getPrivatePort() {
-        return privatePort;
     }
 
     public void setPrivatePort(String privatePort) {
         this.privatePort = privatePort;
     }
 
-    public String getCidrList() {
-        return cidrList;
-    }
-
     public void setCidrList(String cidrs) {
         this.cidrList = cidrs;
-    }
-
-    public String getAlgorithm() {
-        return algorithm;
     }
 
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
     public void setAccountName(String accountName) {
         this.accountName = accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public String getState() {
-        return state;
     }
 
     public void setState(String state) {
         this.state = state;
     }
 
-    public Long getPublicIpId() {
-        return publicIpId;
-    }
-
     public void setPublicIpId(Long publicIpId) {
         this.publicIpId = publicIpId;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     public void setZoneId(Long zoneId) {
         this.zoneId = zoneId;
     }
+
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+   
 }
