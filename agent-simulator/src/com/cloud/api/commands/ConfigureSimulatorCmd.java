@@ -5,9 +5,12 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.repsonse.ConfigureSimulatorResponse;
 import com.cloud.api.response.BaseResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -16,6 +19,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
+@Implementation(description="configure simulator", responseObject=SuccessResponse.class)
 public class ConfigureSimulatorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulatorCmd.class.getName());
     private static final String s_name = "configuresimulatorresponse";
@@ -47,8 +51,7 @@ public class ConfigureSimulatorCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure simulator");
         }
         
-        BaseResponse response = new BaseResponse();
-        response.setResponseName(getCommandName());
+        SuccessResponse response = new SuccessResponse(getCommandName());
         this.setResponseObject(response);
     }
 

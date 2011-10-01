@@ -6,5 +6,6 @@ import com.cloud.utils.db.GenericDao;
 public interface MockConfigurationDao extends GenericDao<MockConfigurationVO, Long> {
     MockConfigurationVO findByCommand(Long dcId, Long podId, Long clusterId, Long hostId, String name);
 
-    MockConfigurationVO findByGlobal(String name);
+	MockConfigurationVO findByNameBottomUP(Long dcId, Long podId,
+			Long clusterId, Long hostId, String name);
 }

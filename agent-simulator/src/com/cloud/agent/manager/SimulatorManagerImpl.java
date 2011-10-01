@@ -136,15 +136,26 @@ public class SimulatorManagerImpl implements SimulatorManager {
         
         try {
             MockHost host = _mockHost.findByGuid(hostGuid);
-            MockConfigurationVO config = _mockConfigDao.findByCommand(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmd.toString());
-            if (config == null) {
-                config = _mockConfigDao.findByGlobal(cmd.toString());
+            String cmdName = cmd.toString();
+            int index = cmdName.lastIndexOf(".");
+            if (index != -1) {
+            	cmdName = cmdName.substring(index + 1);
             }
+            MockConfigurationVO config = _mockConfigDao.findByNameBottomUP(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmdName);
             
             if (config != null) {
                 Map<String, String> configParameters = config.getParameters();
-                if (configParameters.get("enabled").equalsIgnoreCase("false")) {
+                if ("false".equalsIgnoreCase(configParameters.get("enabled"))) {
                     return new Answer(cmd, false, "cmd is disabled");
+                } else if (configParameters.get("timeout") != null) {
+                	try {
+                		int timeout = Integer.valueOf(configParameters.get("timeout"));
+                		Thread.sleep(timeout * 1000);
+                	} catch (NumberFormatException e) {
+                		s_logger.debug("invalid timeout parameter: " + e.toString());
+                	} catch (InterruptedException e) {
+                		s_logger.debug("thread is interrupted: " + e.toString());
+                	}
                 }
             }
             
@@ -257,14 +268,20 @@ public class SimulatorManagerImpl implements SimulatorManager {
 
     @Override
     public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values) {
-        MockConfigurationVO config = new MockConfigurationVO();
-        config.setClusterId(clusterId);
-        config.setDataCenterId(zoneId);
-        config.setPodId(podId);
-        config.setHostId(hostId);
-        config.setName(command);
-        config.setValues(values);
-        _mockConfigDao.persist(config);
+    	MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
+    	if (config == null) {
+    		config = new MockConfigurationVO();
+    		config.setClusterId(clusterId);
+    		config.setDataCenterId(zoneId);
+    		config.setPodId(podId);
+    		config.setHostId(hostId);
+    		config.setName(command);
+    		config.setValues(values);
+    		_mockConfigDao.persist(config);
+    	} else {
+    		config.setValues(values);
+    		_mockConfigDao.update(config.getId(), config);
+    	}
         return true;
     }
     

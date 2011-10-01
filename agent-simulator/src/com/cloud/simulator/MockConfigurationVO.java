@@ -90,9 +90,9 @@ public class MockConfigurationVO {
             return maps;
         }
         
-        String[] vals = this.values.split(";");
+        String[] vals = this.values.split("\\|");
         for (String val : vals) {
-            String[] paras = val.split("=");
+            String[] paras = val.split(":");
             maps.put(paras[0], paras[1]);
         }
         return maps;
