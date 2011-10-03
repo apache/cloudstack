@@ -181,18 +181,6 @@ public class MockVmManagerImpl implements MockVmManager {
 	}
 	
 	@Override
-    public boolean migrate(String vmName, String params) {
-		MockVm vm = _mockVmDao.findByVmName(vmName);
-		if(vm != null) {
-		    vm.setState(State.Stopped);
-		    _mockVmDao.remove(vm.getId());
-		    return true;
-		}
-
-		return false;
-	}
-	
-	@Override
     public Map<String, State> getVmStates(String hostGuid) {
 		Map<String, State> states = new HashMap<String, State>();
 		List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
@@ -248,9 +236,9 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public Answer startVM(StartCommand cmd, String hostGuid) {
+    public Answer startVM(StartCommand cmd, SimulatorInfo info) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
-        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getSpeed(), vm.getMaxRam(), vm.getBootArgs(), hostGuid);
+        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
             return new StartAnswer(cmd, result);
         } else {
@@ -279,17 +267,17 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public MigrateAnswer Migrate(MigrateCommand cmd, String hostGuid) {
+    public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
         String vmName = cmd.getVmName();
         String destGuid = cmd.getHostGuid();
-        MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, hostGuid);
+        MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
         if (vm == null) {
-            return new MigrateAnswer(cmd, false, "can;t find vm:" + vmName + " on host:" + hostGuid, null);
+            return new MigrateAnswer(cmd, false, "can;t find vm:" + vmName + " on host:" + info.getHostUuid(), null);
         }
         
         MockHost destHost = _mockHostDao.findByGuid(destGuid);
         if (destHost == null) {
-            return new MigrateAnswer(cmd, false, "can;t find host:" + hostGuid, null);
+            return new MigrateAnswer(cmd, false, "can;t find host:" + info.getHostUuid(), null);
         }
         vm.setHostId(destHost.getId());
         _mockVmDao.update(vm.getId(), vm);
@@ -317,10 +305,10 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, String hostGuid) {
-        List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(hostGuid);
+    public Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info) {
+        List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
         for (MockSecurityRulesVO rule : rules) {
-            MockVMVO vm = _mockVmDao.findByVmNameAndHost(rule.getVmName(), hostGuid);
+            MockVMVO vm = _mockVmDao.findByVmNameAndHost(rule.getVmName(), info.getHostUuid());
             if (vm == null) {
                 _mockSecurityDao.remove(rule.getId());
             }
@@ -365,15 +353,18 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, String hostGuid) {
+    public SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, SimulatorInfo info) {
+        if (!info.isEnabled()) {
+        	return new SecurityIngressRuleAnswer(cmd, false, "Disabled", SecurityIngressRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
+        }
         
-        Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(hostGuid);
+        Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(info.getHostUuid());
        
         if (rules == null) {
             logSecurityGroupAction(cmd, null);
             rules = new ConcurrentHashMap<String, Ternary<String, Long, Long>>();
             rules.put(cmd.getVmName(), new Ternary<String,Long, Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
-            _securityRules.put(hostGuid, rules);
+            _securityRules.put(info.getHostUuid(), rules);
         } else {
             logSecurityGroupAction(cmd, rules.get(cmd.getVmName()));
             rules.put(cmd.getVmName(), new Ternary<String, Long,Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
@@ -437,10 +428,10 @@ public class MockVmManagerImpl implements MockVmManager {
     }
     
     @Override
-    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
+    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info) {
         HashMap<String, Pair<Long, Long>> maps = new HashMap<String, Pair<Long, Long>>();
         
-        Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(hostGuid);
+        Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(info.getHostUuid());
         if (rules == null) {
             return maps;
         }

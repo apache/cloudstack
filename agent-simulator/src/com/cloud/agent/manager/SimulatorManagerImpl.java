@@ -143,18 +143,29 @@ public class SimulatorManagerImpl implements SimulatorManager {
             }
             MockConfigurationVO config = _mockConfigDao.findByNameBottomUP(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmdName);
             
+            SimulatorInfo info = new SimulatorInfo();
+            info.setHostUuid(hostGuid);
+            
             if (config != null) {
                 Map<String, String> configParameters = config.getParameters();
-                if ("false".equalsIgnoreCase(configParameters.get("enabled"))) {
-                    return new Answer(cmd, false, "cmd is disabled");
-                } else if (configParameters.get("timeout") != null) {
-                	try {
-                		int timeout = Integer.valueOf(configParameters.get("timeout"));
-                		Thread.sleep(timeout * 1000);
-                	} catch (NumberFormatException e) {
-                		s_logger.debug("invalid timeout parameter: " + e.toString());
-                	} catch (InterruptedException e) {
-                		s_logger.debug("thread is interrupted: " + e.toString());
+                for (Map.Entry<String, String> entry : configParameters.entrySet()) {
+                	if (entry.getKey().equalsIgnoreCase("enabled")) {
+                		info.setEnabled(Boolean.parseBoolean(entry.getValue()));
+                	} else if (entry.getKey().equalsIgnoreCase("timeout")) {
+                		try {
+                			info.setTimeout(Integer.valueOf(entry.getValue()));
+                		} catch (NumberFormatException e) {
+                			s_logger.debug("invalid timeout parameter: " + e.toString());
+                		}
+                	} else if (entry.getKey().equalsIgnoreCase("wait")) {
+                		try {
+                			int wait = Integer.valueOf(entry.getValue());
+                			Thread.sleep(wait * 1000);
+                		} catch (NumberFormatException e) {
+                			s_logger.debug("invalid timeout parameter: " + e.toString());
+                		} catch (InterruptedException e) {
+                			s_logger.debug("thread is interrupted: " + e.toString());
+                		}
                 	}
                 }
             }
@@ -166,9 +177,9 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof PingTestCommand) {
                 return _mockAgentMgr.pingTest((PingTestCommand)cmd);
             } else if (cmd instanceof MigrateCommand) {
-                return _mockVmMgr.Migrate((MigrateCommand)cmd, hostGuid);
+                return _mockVmMgr.Migrate((MigrateCommand)cmd, info);
             } else if (cmd instanceof StartCommand) {
-                return _mockVmMgr.startVM((StartCommand)cmd, hostGuid);
+                return _mockVmMgr.startVM((StartCommand)cmd, info);
             } else if (cmd instanceof CheckSshCommand) {
                 return _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
@@ -186,7 +197,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof VmDataCommand) {
                 return _mockVmMgr.setVmData((VmDataCommand)cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
-                return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, hostGuid);
+                return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
             } else if (cmd instanceof StopCommand) {
                 return _mockVmMgr.stopVM((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
@@ -198,7 +209,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
                 return _mockVmMgr.WatchConsoleProxyLoad((WatchConsoleProxyLoadCommand)cmd);
             } else if (cmd instanceof SecurityIngressRulesCmd) {
-                return _mockVmMgr.AddSecurityIngressRules((SecurityIngressRulesCmd)cmd, hostGuid);
+                return _mockVmMgr.AddSecurityIngressRules((SecurityIngressRulesCmd)cmd, info);
             } else if (cmd instanceof SavePasswordCommand) {
                 return _mockVmMgr.SavePassword((SavePasswordCommand)cmd);
             } else if (cmd instanceof PrimaryStorageDownloadCommand) {
@@ -230,7 +241,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof ManageSnapshotCommand) {
                 return _mockStorageMgr.ManageSnapshot((ManageSnapshotCommand)cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
-                return _mockStorageMgr.BackupSnapshot((BackupSnapshotCommand)cmd);
+                return _mockStorageMgr.BackupSnapshot((BackupSnapshotCommand)cmd, info);
             } else if (cmd instanceof DeleteSnapshotBackupCommand) {
                 return _mockStorageMgr.DeleteSnapshotBackup((DeleteSnapshotBackupCommand)cmd);
             } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
@@ -299,7 +310,9 @@ public class SimulatorManagerImpl implements SimulatorManager {
 
     @Override
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
-        return _mockVmMgr.syncNetworkGroups(hostGuid);
+    	SimulatorInfo info = new SimulatorInfo();
+    	info.setHostUuid(hostGuid);
+        return _mockVmMgr.syncNetworkGroups(info);
     }
 
 }
