@@ -156,7 +156,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("type", TypeDcStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("dc", TypeDcStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getState(), SearchCriteria.Op.EQ);
+        TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
 
         IdStatusSearch = createSearchBuilder();
@@ -225,7 +225,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DirectlyConnectedSearch.and("resource", DirectlyConnectedSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         DirectlyConnectedSearch.and("ms", DirectlyConnectedSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         DirectlyConnectedSearch.and("statuses", DirectlyConnectedSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        DirectlyConnectedSearch.and("resourceState", DirectlyConnectedSearch.entity().getResource(), SearchCriteria.Op.NOTIN);
+        DirectlyConnectedSearch.and("resourceState", DirectlyConnectedSearch.entity().getResourceState(), SearchCriteria.Op.NOTIN);
         DirectlyConnectedSearch.done();
 
         UnmanagedDirectConnectSearch = createSearchBuilder();

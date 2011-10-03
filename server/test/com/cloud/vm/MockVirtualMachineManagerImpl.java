@@ -192,4 +192,10 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
         return false;
     }
 
+	@Override
+    public VMInstanceVO findById(long vmId) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
 }

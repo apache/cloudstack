@@ -201,12 +201,6 @@ public class MockAgentManagerImpl implements AgentManager {
         return null;
     }
 
-    @Override
-    public void updateStatus(HostVO host, Event event) {
-        // TODO Auto-generated method stub
-        
-    }
-
 	@Override
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
 	    // TODO Auto-generated method stub
@@ -232,12 +226,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
 	@Override
-    public void disconnect(long hostId, Event event) {
-	    // TODO Auto-generated method stub
-	    
-    }
-
-	@Override
     public boolean disconnectAgent(HostVO host, Event e, long msId) {
 	    // TODO Auto-generated method stub
 	    return false;
@@ -245,6 +233,18 @@ public class MockAgentManagerImpl implements AgentManager {
 
 	@Override
     public void pullAgentToMaintenance(long hostId) {
+	    // TODO Auto-generated method stub
+	    
+    }
+
+	@Override
+    public void disconnectWithoutInvestigation(long hostId, Event event) {
+	    // TODO Auto-generated method stub
+	    
+    }
+
+	@Override
+    public void disconnectWithInvestigation(long hostId, Event event) {
 	    // TODO Auto-generated method stub
 	    
     }

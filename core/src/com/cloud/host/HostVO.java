@@ -697,6 +697,7 @@ public class HostVO implements Host {
     }
 
 	@Override
+	@Transient
 	public Status getState() {
 		return status;
 	}
