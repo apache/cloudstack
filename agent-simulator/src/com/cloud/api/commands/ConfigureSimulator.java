@@ -8,8 +8,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.repsonse.ConfigureSimulatorResponse;
-import com.cloud.api.response.BaseResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -20,8 +18,8 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 
 @Implementation(description="configure simulator", responseObject=SuccessResponse.class)
-public class ConfigureSimulatorCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ConfigureSimulatorCmd.class.getName());
+public class ConfigureSimulator extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(ConfigureSimulator.class.getName());
     private static final String s_name = "configuresimulatorresponse";
     
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="configure range: in a zone")

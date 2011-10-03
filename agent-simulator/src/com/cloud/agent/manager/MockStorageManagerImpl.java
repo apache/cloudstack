@@ -295,11 +295,14 @@ public class MockStorageManagerImpl implements MockStorageManager {
         if (volume != null) {
             _mockVolumeDao.remove(volume.getId());
         }
-        MockVm vm = _mockVMDao.findByVmName(cmd.getVmName());
-        vm.setState(State.Expunging);
-        if (vm != null ) {
-        	MockVMVO vmVo = _mockVMDao.createForUpdate(vm.getId());
-        	_mockVMDao.update(vm.getId(), vmVo);
+        
+        if (cmd.getVmName() != null) {
+        	MockVm vm = _mockVMDao.findByVmName(cmd.getVmName());
+        	vm.setState(State.Expunging);
+        	if (vm != null ) {
+        		MockVMVO vmVo = _mockVMDao.createForUpdate(vm.getId());
+        		_mockVMDao.update(vm.getId(), vmVo);
+        	}
         }
         return new Answer(cmd);
     }
@@ -399,7 +402,12 @@ public class MockStorageManagerImpl implements MockStorageManager {
     }
 
     @Override
-    public BackupSnapshotAnswer BackupSnapshot(BackupSnapshotCommand cmd) {
+    public BackupSnapshotAnswer BackupSnapshot(BackupSnapshotCommand cmd, SimulatorInfo info) {
+    	//emulate xenserver backupsnapshot, if the base volume is deleted, then backupsnapshot failed
+    	MockVolumeVO volume = _mockVolumeDao.findByStoragePathAndType(cmd.getVolumePath());
+    	if (volume == null) {
+    		return new BackupSnapshotAnswer(cmd, false, "Can't find base volume: " + cmd.getVolumePath(), null, true);
+    	}
         String snapshotPath = cmd.getSnapshotUuid();
         MockVolumeVO snapshot = _mockVolumeDao.findByStoragePathAndType(snapshotPath);
         if (snapshot == null) {

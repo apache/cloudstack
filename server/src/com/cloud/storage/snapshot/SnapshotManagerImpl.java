@@ -450,8 +450,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
             } else {
             	snapshot = _snapshotDao.findById(snapshotId);
-                snapshot.setStatus(Status.Error);
-                _snapshotDao.update(snapshotId, snapshot);
+            	if (snapshot != null) {
+            		snapshot.setStatus(Status.Error);
+            		_snapshotDao.update(snapshotId, snapshot);
+            	}
             }
             
             if ( volume != null ) {

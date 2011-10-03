@@ -49,13 +49,11 @@ public interface MockVmManager extends Manager {
     public Answer stopVM(StopCommand cmd);
 	public Answer rebootVM(RebootCommand cmd);
     
-    public boolean migrate(String vmName, String params);
-    
     public Answer checkVmState(CheckVirtualMachineCommand cmd, String hostGuid);
     public Map<String, State> getVmStates(String hostGuid);
     public Answer getVncPort(GetVncPortCommand cmd);
 
-	Answer startVM(StartCommand cmd, String hostGuid);
+	Answer startVM(StartCommand cmd, SimulatorInfo info);
 
 	Answer getVmStats(GetVmStatsCommand cmd);
     public CheckSshAnswer checkSshCommand(CheckSshCommand cmd);
@@ -66,8 +64,6 @@ public interface MockVmManager extends Manager {
     
     Answer getNetworkUsage(NetworkUsageCommand cmd);
     
-    Answer Migrate(MigrateCommand cmd, String hostGuid);
-    
     Answer IpAssoc(IpAssocCommand cmd);
 
     Answer LoadBalancerConfig(LoadBalancerConfigCommand cmd);
@@ -75,13 +71,14 @@ public interface MockVmManager extends Manager {
     Answer AddDhcpEntry(DhcpEntryCommand cmd);
     
     Answer setVmData(VmDataCommand cmd);
-    Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, String hostGuid);
+    Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info);
     
     Answer CheckConsoleProxyLoad(CheckConsoleProxyLoadCommand cmd);
     Answer WatchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd);
     
     Answer SavePassword(SavePasswordCommand cmd);
-    HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
-    SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, String hostGuid);
+    HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info);
+    SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, SimulatorInfo info);
+	MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
     
 }

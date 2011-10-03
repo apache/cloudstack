@@ -61,7 +61,7 @@ public interface MockStorageManager extends Manager {
 	public Answer DownloadProcess(DownloadProgressCommand cmd);
 	public GetStorageStatsAnswer GetStorageStats(GetStorageStatsCommand cmd);
 	public Answer ManageSnapshot(ManageSnapshotCommand cmd);
-	public Answer BackupSnapshot(BackupSnapshotCommand cmd);
+	public Answer BackupSnapshot(BackupSnapshotCommand cmd, SimulatorInfo info);
 	public Answer DeleteSnapshotBackup(DeleteSnapshotBackupCommand cmd);
 	public Answer CreateVolumeFromSnapshot(CreateVolumeFromSnapshotCommand cmd);
 	public Answer DeleteTemplate(DeleteTemplateCommand cmd);

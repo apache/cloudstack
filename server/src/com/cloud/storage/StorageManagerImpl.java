@@ -2428,6 +2428,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
+    @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
     public boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException {
         Account account = UserContext.current().getCaller();
@@ -2443,54 +2444,59 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         // Check that the volume ID is valid
-        VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);
         if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
-        }
-
-        // If the account is not an admin, check that the volume is owned by the account that was passed in
-        if (!isAdmin) {
-            if (account.getId() != volume.getAccountId()) {
-                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-            }
-        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
-        }
-
-        // If the account is not an admin, check that the volume is owned by the account that was passed in
-        if (!isAdmin) {
-            if (account.getId() != volume.getAccountId()) {
-                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-            }
-        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
-        }
-
-        // Check that the volume is stored on shared storage
-        // NOTE: We used to ensure the volume is on shared storage before deleting. However, this seems like an unnecessary
-        // check since all we allow
-        // is deleting a detached volume. Is there a technical reason why the volume has to be on shared storage? If so,
-        // uncomment this...otherwise,
-        // just delete the detached volume regardless of storage pool.
-        // if (!volumeOnSharedStoragePool(volume)) {
-        // throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        // }
-
-        // Check that the volume is not currently attached to any VM
-        if (volume.getInstanceId() != null) {
-            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
-        }
-
-        // Check that the volume is not already destroyed
-        if (volume.getState() != Volume.State.Destroy) {
-            destroyVolume(volume);
+            throw new InvalidParameterValueException("Unable to aquire volume with ID: " + volumeId);
         }
 
         try {
-            expungeVolume(volume);
-        } catch (Exception e) {
-            s_logger.warn("Failed to expunge volume:", e);
-            return false;
+
+        	// If the account is not an admin, check that the volume is owned by the account that was passed in
+        	if (!isAdmin) {
+        		if (account.getId() != volume.getAccountId()) {
+        			throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+        		}
+        	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+        		throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
+        	}
+
+        	// If the account is not an admin, check that the volume is owned by the account that was passed in
+        	if (!isAdmin) {
+        		if (account.getId() != volume.getAccountId()) {
+        			throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+        		}
+        	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+        		throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
+        	}
+
+        	// Check that the volume is stored on shared storage
+        	// NOTE: We used to ensure the volume is on shared storage before deleting. However, this seems like an unnecessary
+        	// check since all we allow
+        	// is deleting a detached volume. Is there a technical reason why the volume has to be on shared storage? If so,
+        	// uncomment this...otherwise,
+        	// just delete the detached volume regardless of storage pool.
+        	// if (!volumeOnSharedStoragePool(volume)) {
+        	// throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        	// }
+
+        	// Check that the volume is not currently attached to any VM
+        	if (volume.getInstanceId() != null) {
+        		throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+        	}
+
+        	// Check that the volume is not already destroyed
+        	if (volume.getState() != Volume.State.Destroy) {
+        		destroyVolume(volume);
+        	}
+
+        	try {
+        		expungeVolume(volume);
+        	} catch (Exception e) {
+        		s_logger.warn("Failed to expunge volume:", e);
+        		return false;
+        	}
+        } finally {
+        	_volumeDao.releaseFromLockTable(volumeId);
         }
 
         return true;

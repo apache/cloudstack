@@ -429,7 +429,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             pstmt.setString(2, threadName);
             pstmt.setInt(3, threadId);
             int rows = pstmt.executeUpdate();
-            assert (false) : "Abandon hope, all ye who enter here....There were still " + rows + ":" + c + " locks not released when the transaction ended!";
+            assert (false) : "Abandon hope, all ye who enter here....There were still " + rows + ":" + c + " locks not released when the transaction ended, check for lock not released or @DB is not added to the code that using the locks!";
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't clear locks " + pstmt, e);
         } finally {
