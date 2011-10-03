@@ -30,20 +30,16 @@ import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
-import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
@@ -59,18 +55,22 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1 = "SELECT DISTINCT capacity.cluster_id  FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster` cluster on (cluster.id = capacity.cluster_id AND cluster.removed is NULL) WHERE ";
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2 = " AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ? " +
     		"AND cluster_id IN (SELECT distinct cluster_id  FROM `cloud`.`op_host_capacity` WHERE ";
-    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART3 = " AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ?) " +
-    		"ORDER BY ((total_capacity * ?) - used_capacity + reserved_capacity) DESC";
+    private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART3 = " AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ?) ";
     
-    private SearchBuilder<CapacityVO> _hostIdTypeSearch;
-	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
+    private final SearchBuilder<CapacityVO> _hostIdTypeSearch;
+	private final SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
     protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch;
 	private SearchBuilder<CapacityVO> _allFieldsSearch;
     protected final StoragePoolDaoImpl _storagePoolDao = ComponentLocator.inject(StoragePoolDaoImpl.class);
+
 	
-	private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
+    private static final String LIST_HOSTS_IN_CLUSTER_WITH_ENOUGH_CAPACITY = "SELECT a.host_id FROM (host JOIN op_host_capacity a ON host.id = a.host_id AND host.cluster_id = ? AND host.type = ? " +
 			"AND (a.total_capacity * ? - a.used_capacity) >= ? and a.capacity_type = 1) " +
 			"JOIN op_host_capacity b ON a.host_id = b.host_id AND b.total_capacity - b.used_capacity >= ? AND b.capacity_type = 0";
+	
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART1 = "SELECT cluster_id FROM `cloud`.`op_host_capacity` WHERE " ;
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART2 = " AND capacity_type = ? GROUP BY cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) ASC";
+	
     
     public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();
@@ -164,7 +164,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }  
     
     @Override
-    public List<Long> orderClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor){
+    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor){
     	Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -187,27 +187,15 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
             pstmt.setLong(1, id);
-            if(capacityTypeForOrdering == CapacityVO.CAPACITY_TYPE_CPU){
-            	pstmt.setShort(2, CapacityVO.CAPACITY_TYPE_CPU);
-            	pstmt.setFloat(3, cpuOverprovisioningFactor);
-            	pstmt.setLong(4, requiredCpu);
-            	pstmt.setLong(5, id);
-            	pstmt.setShort(6, CapacityVO.CAPACITY_TYPE_MEMORY);
-            	pstmt.setFloat(7, 1);
-            	pstmt.setLong(8, requiredRam);
-            	pstmt.setFloat(9, cpuOverprovisioningFactor);
-            }else{
-            	pstmt.setShort(2, CapacityVO.CAPACITY_TYPE_MEMORY);
-            	pstmt.setFloat(3, 1);
-            	pstmt.setLong(4, requiredRam);
-            	pstmt.setLong(5, id);
-            	pstmt.setShort(6, CapacityVO.CAPACITY_TYPE_CPU);
-            	pstmt.setFloat(7, cpuOverprovisioningFactor);
-            	pstmt.setLong(8, requiredCpu);
-            	pstmt.setFloat(9, 1);
-            }
-            
-            ResultSet rs = pstmt.executeQuery();
+        	pstmt.setShort(2, CapacityVO.CAPACITY_TYPE_CPU);
+        	pstmt.setFloat(3, cpuOverprovisioningFactor);
+        	pstmt.setLong(4, requiredCpu);
+        	pstmt.setLong(5, id);
+        	pstmt.setShort(6, CapacityVO.CAPACITY_TYPE_MEMORY);
+        	pstmt.setFloat(7, 1);
+        	pstmt.setLong(8, requiredRam);
+
+        	ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 result.add(rs.getLong(1));
             }
@@ -362,5 +350,42 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
         
         return remove(sc) > 0;
+    }
+    
+    @Override
+    public List<Long> orderClustersByAggregateCapacity(long id, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor){
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+
+        StringBuilder sql = new StringBuilder(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART1);
+        
+        if(isZone){
+            sql.append("data_center_id = ?");
+        }else{
+            sql.append("pod_id = ?");
+        }
+        sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART2);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, id);
+            pstmt.setShort(2, capacityTypeForOrdering);
+            
+            if(capacityTypeForOrdering == CapacityVO.CAPACITY_TYPE_CPU){
+                pstmt.setFloat(3, cpuOverprovisioningFactor);
+            }else{
+                pstmt.setFloat(3, 1);
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
     }
 }
