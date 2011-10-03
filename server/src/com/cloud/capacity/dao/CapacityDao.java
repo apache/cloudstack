@@ -21,6 +21,7 @@ package com.cloud.capacity.dao;
 import java.util.List;
 
 import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.utils.db.GenericDao;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
