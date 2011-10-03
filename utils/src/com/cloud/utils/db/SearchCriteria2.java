@@ -22,7 +22,7 @@ public class SearchCriteria2<T, K> extends SearchCriteria<K> {
 		return (SearchCriteria2<T, K>) sc;
 	}
 	
-	public void and(Object useless, Op op, Object...values) {
+	public void addAnd(Object useless, Op op, Object...values) {
 		String uuid = UUID.randomUUID().toString();
 		_sb.and(uuid, null, op);
 		this.setParameters(uuid, values);

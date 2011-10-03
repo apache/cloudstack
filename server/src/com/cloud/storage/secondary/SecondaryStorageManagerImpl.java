@@ -19,6 +19,7 @@ package com.cloud.storage.secondary;
 
 import java.util.ArrayList;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -98,6 +99,8 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -200,6 +203,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     UserVmDetailsDao _vmDetailsDao;
     @Inject 
     protected ResourceManager _resourceMgr;
+    @Inject
+    protected SecondaryStorageVmManager _ssvmMgr;
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
@@ -258,7 +263,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 return false;
             }
 
-            List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(zoneId);
+            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
             for( HostVO ssHost : ssHosts ) {
                 String secUrl = ssHost.getStorageUrl();
                 SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl);
@@ -489,7 +494,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     }
 
     protected Map<String, Object> createSecStorageVmInstance(long dataCenterId, SecondaryStorageVm.Role role) {
-        HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
+        HostVO secHost = findSecondaryStorageHost(dataCenterId);
         if (secHost == null) {
             String msg = "No secondary storage available in zone " + dataCenterId + ", cannot create secondary storage vm";
             s_logger.warn(msg);
@@ -675,7 +680,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
+            HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dataCenterId);
             if (secHost == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
@@ -960,7 +965,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
     	
-        HostVO secHost = _hostDao.findSecondaryStorageHost(dest.getDataCenter().getId());
+        HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dest.getDataCenter().getId());
         assert (secHost != null);
 
         StringBuilder buf = profile.getBootArgsBuilder();
@@ -1169,7 +1174,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating,
                 State.Starting,  State.Stopped, State.Stopping );
         int vmSize = (ssVms == null)? 0 : ssVms.size();
-        List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dataCenterId);        
+        List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dataCenterId);        
         int hostSize = (ssHosts == null)? 0 : ssHosts.size();
         if ( hostSize > vmSize ) {
             s_logger.info("No secondary storage vms found in datacenter id=" + dataCenterId + ", starting a new one");
@@ -1259,5 +1264,50 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return new DeleteHostAnswer(false);
         }
         return null;
+    }
+
+	@Override
+    public HostVO findSecondaryStorageHost(long dcId) {
+	    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
+	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+	    List<HostVO> storageHosts = sc.list();
+	    if (storageHosts == null || storageHosts.size() < 1) {
+            return null;
+        } else {
+            Collections.shuffle(storageHosts);
+            return storageHosts.get(0);
+        }
+    }
+
+	@Override
+    public List<HostVO> listSecondaryStorageHostsInAllZones() {
+	    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listLocalSecondaryStorageHostsInOneZone(long dataCenterId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.LocalSecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage);
+	    return sc.list();
     }
 }

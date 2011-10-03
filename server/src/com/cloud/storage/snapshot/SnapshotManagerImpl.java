@@ -89,6 +89,7 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -167,6 +168,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private ResourceLimitService _resourceLimitMgr;
     @Inject
     private SwiftDao _swiftDao;
+    @Inject
+    private SecondaryStorageVmManager _ssvmMgr;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -976,7 +979,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 continue;
             }
             
-            List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
+            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
             for ( HostVO ssHost : ssHosts ) {           
                 DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, ssHost.getStorageUrl(), dcId, accountId, volumeId, volume.getPath());
                 Answer answer = null;

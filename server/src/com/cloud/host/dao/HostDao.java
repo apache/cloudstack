@@ -46,13 +46,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 	List<HostVO> listByResourceState(ResourceState...states);
 	List<HostVO> listBy(Host.Type type, long dcId);
 	List<HostVO> listAllBy(Host.Type type, long dcId);
-	HostVO findSecondaryStorageHost(long dcId);
 	List<HostVO> listByCluster(long clusterId);
-	/**
-	 * Lists all secondary storage hosts, across all zones
-	 * @return list of Hosts
-	 */
-	List<HostVO> listSecondaryStorageHosts();
 
     /**
      * Mark all hosts associated with a certain management server
@@ -127,8 +121,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
 
     long countRoutingHostsByDataCenter(long dcId);
-
-    List<HostVO> listSecondaryStorageHosts(long dataCenterId);
     
     List<HostVO> listDirectHostsBy(long msId, Status status);
     
@@ -137,12 +129,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listManagedRoutingAgents();
 
     HostVO findTrafficMonitorHost();
-
-    List<HostVO> listLocalSecondaryStorageHosts();
-
-    List<HostVO> listLocalSecondaryStorageHosts(long dataCenterId);
-
-    List<HostVO> listAllSecondaryStorageHosts(long dataCenterId);
 
     List<HostVO> listRoutingHostsByManagementServer(long msId);
 

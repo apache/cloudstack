@@ -320,61 +320,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<HostVO> hosts = listBy(sc);
         return hosts.size();
     }
-
-    @Override
-    public HostVO findSecondaryStorageHost(long dcId) {
-        SearchCriteria<HostVO> sc = TypeDcSearch.create();
-        sc.setParameters("type", Host.Type.SecondaryStorage);
-        sc.setParameters("dc", dcId);
-        List<HostVO> storageHosts = listBy(sc);
-        if (storageHosts == null || storageHosts.size() < 1) {
-            return null;
-        } else {
-            Collections.shuffle(storageHosts);
-            return storageHosts.get(0);
-        }
-    }
-
-    @Override
-    public List<HostVO> listSecondaryStorageHosts() {
-        SearchCriteria<HostVO> sc = createSearchCriteria();
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.SecondaryStorage);
-        return search(sc, null);
-    }
-
-    @Override
-    public List<HostVO> listSecondaryStorageHosts(long dataCenterId) {
-        SearchCriteria<HostVO> sc = createSearchCriteria();
-        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.SecondaryStorage);
-        return search(sc, null);
-
-    }
-
-    @Override
-    public List<HostVO> listLocalSecondaryStorageHosts() {
-        SearchCriteria<HostVO> sc = createSearchCriteria();
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.LocalSecondaryStorage);
-        return search(sc, null);
-    }
-
-    @Override
-    public List<HostVO> listLocalSecondaryStorageHosts(long dataCenterId) {
-        SearchCriteria<HostVO> sc = createSearchCriteria();
-        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.LocalSecondaryStorage);
-        return search(sc, null);
-
-    }    
-
-    @Override
-    public List<HostVO> listAllSecondaryStorageHosts(long dataCenterId) {
-        SearchCriteria<HostVO> sc = createSearchCriteria();                            
-        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
-        sc.addAnd("type", SearchCriteria.Op.IN, new Object[]{Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage});
-        return search(sc, null);
-    }
-
+    
     @Override
     public List<HostVO> findDirectlyConnectedHosts() {
         SearchCriteria<HostVO> sc = DirectlyConnectedSearch.create();

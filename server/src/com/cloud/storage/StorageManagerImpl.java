@@ -287,6 +287,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected OCFS2Manager _ocfs2Mgr;
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
+    @Inject
+    protected SecondaryStorageVmManager _ssvmMgr;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -965,7 +967,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public HostVO getSecondaryStorageHost(long zoneId, long tmpltId) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
             return null;
         }
@@ -980,7 +982,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
             return null;
         }
@@ -1006,9 +1008,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public HostVO getSecondaryStorageHost(long zoneId) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
-            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            hosts = _ssvmMgr.listLocalSecondaryStorageHostsInOneZone(zoneId);
             if (hosts.isEmpty()) {
                 return null;
             }
@@ -1022,9 +1024,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public List<HostVO> getSecondaryStorageHosts(long zoneId) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
-            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            hosts = _ssvmMgr.listLocalSecondaryStorageHostsInOneZone(zoneId);
             if (hosts.isEmpty()) {
                 return new ArrayList<HostVO>();
             }
@@ -1973,7 +1975,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 	}
 
                     // Cleanup secondary storage hosts
-                    List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+                    List<HostVO> secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
                     for (HostVO secondaryStorageHost : secondaryStorageHosts) {
                         try {
                             long hostId = secondaryStorageHost.getId();
@@ -3025,7 +3027,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         long dcId = pool.getDataCenterId();
         Long podId = pool.getPodId();
 
-        List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
+        List<HostVO> secHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
 
         //FIXME, for cloudzone, the local secondary storoge
         if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem && secHosts.isEmpty()) {

@@ -104,6 +104,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     SecondaryStorageVmDao _secStorageVmDao;
     @Inject
     AlertManager _alertMgr;
+    @Inject
+    SecondaryStorageVmManager _ssvmMgr;
     
     @Inject
     private final DataCenterDao _dcDao = null;
@@ -361,7 +363,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         long templateId = template.getId();
         boolean isPublic = template.isFeatured() || template.isPublicTemplate(); 
         for ( DataCenterVO dc : dcs ) {
-    	    List<HostVO> ssHosts = _hostDao.listAllSecondaryStorageHosts(dc.getId());
+    	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(dc.getId());
     	    for ( HostVO ssHost : ssHosts ) {
         		if (isTemplateUpdateable(templateId, ssHost.getId())) {
        				initiateTemplateDownload(templateId, ssHost);
@@ -481,7 +483,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	
     @Override
     public void handleTemplateSync(long dcId) {
-        List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
+        List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
         for ( HostVO ssHost : ssHosts ) {
             handleTemplateSync(ssHost);
         }

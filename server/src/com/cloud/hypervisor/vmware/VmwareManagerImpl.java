@@ -61,6 +61,7 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -100,6 +101,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Inject ClusterManager _clusterMgr;
     @Inject CheckPointManager _checkPointMgr;
     @Inject VirtualNetworkApplianceManager _routerMgr;
+    @Inject SecondaryStorageVmManager _ssvmMgr;
 
     String _mountParent;
     StorageLayer _storage;
@@ -420,7 +422,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
     @Override
     public String getSecondaryStorageStoreUrl(long dcId) {
-    	List<HostVO> secStorageHosts = _hostDao.listSecondaryStorageHosts(dcId);
+    	List<HostVO> secStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
     	if(secStorageHosts.size() > 0)
     		return secStorageHosts.get(0).getStorageUrl();
     	

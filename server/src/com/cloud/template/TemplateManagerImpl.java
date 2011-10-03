@@ -100,6 +100,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
@@ -166,6 +167,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject HypervisorGuruManager _hvGuruMgr;
     @Inject AccountService _accountService;
     @Inject ResourceLimitService _resourceLimitMgr;
+    @Inject SecondaryStorageVmManager _ssvmMgr;
     int _primaryStorageDownloadWait;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
@@ -518,7 +520,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     @DB
     public boolean copy(long userId, VMTemplateVO template, HostVO srcSecHost, DataCenterVO srcZone, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
-    	List<HostVO> dstSecHosts = _hostDao.listSecondaryStorageHosts(dstZone.getId());
+    	List<HostVO> dstSecHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dstZone.getId());
     	long tmpltId = template.getId();
         long dstZoneId = dstZone.getId();
     	if (dstSecHosts == null || dstSecHosts.isEmpty() ) {
@@ -913,7 +915,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     		throw new InvalidParameterValueException("Please specify a valid iso.");
     	}
     	
-    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+    	if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());

@@ -45,7 +45,7 @@ public class SearchCriteria2Test extends TestCase {
     	
     	s_logger.debug("Test seraching host:");
     	SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-    	sc.and(sc.getEntity().getStatus(), Op.EQ, Status.Disconnected);
+    	sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Disconnected);
     	List<HostVO> ups = sc.list();
     	for (HostVO vo : ups) {
     		s_logger.info("Host id: " + vo.getId() + " is Disconnected");
@@ -53,7 +53,7 @@ public class SearchCriteria2Test extends TestCase {
     	
     	
     	SearchCriteria2<VMInstanceVO, VMInstanceVO> sc1 = SearchCriteria2.create(VMInstanceVO.class);
-    	sc1.and(sc1.getEntity().getState(), Op.EQ, VirtualMachine.State.Running);
+    	sc1.addAnd(sc1.getEntity().getState(), Op.EQ, VirtualMachine.State.Running);
     	List<VMInstanceVO> vms = sc1.list();
     	for (VMInstanceVO vm : vms) {
     		s_logger.info("Vm name:" + vm.getInstanceName());
