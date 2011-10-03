@@ -459,9 +459,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         //look at the aggregate available cpu and ram per cluster
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 
-        //we need clusters having enough cpu AND RAM
+        //we need clusters having enough cpu AND RAM to host this particular VM and order them by aggregate cluster capacity
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Listing clusters that have enough aggregate CPU and RAM capacity under this "+(isZone ? "Zone: " : "Pod: " )+id);
+            s_logger.debug("Listing clusters in order of aggregate capacity, that have (atleast one host with) enough CPU and RAM capacity under this "+(isZone ? "Zone: " : "Pod: " )+id);
         }
         String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
         short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
@@ -472,11 +472,22 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("CPUOverprovisioningFactor considered: " + cpuOverprovisioningFactor);
         }
-        List<Long> clusterIdswithEnoughCapacity = _capacityDao.orderClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone, cpuOverprovisioningFactor);
+        List<Long> clusterIdswithEnoughCapacity = _capacityDao.listClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone, cpuOverprovisioningFactor);
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace("ClusterId List having enough aggregate capacity: " + clusterIdswithEnoughCapacity);
+            s_logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
         }
-        return clusterIdswithEnoughCapacity;
+        List<Long> clusterIdsOrderedByAggregateCapacity = _capacityDao.orderClustersByAggregateCapacity(id, capacityType, isZone, cpuOverprovisioningFactor);
+        //only keep the clusters that have enough capacity to host this VM
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("ClusterId List in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
+        }
+        clusterIdsOrderedByAggregateCapacity.retainAll(clusterIdswithEnoughCapacity);
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("ClusterId List having enough CPU and RAM capacity & in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
+        }
+        
+        return clusterIdsOrderedByAggregateCapacity;
 
     }
 
