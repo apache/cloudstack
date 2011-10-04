@@ -48,6 +48,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
@@ -95,6 +96,8 @@ public class UploadMonitorImpl implements UploadMonitor {
 	private AgentManager _agentMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ResourceManager _resourceMgr;
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
@@ -165,7 +168,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 
 		Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 				
-		List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
+		List<HostVO> storageServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
 		HostVO sserver = storageServers.get(0);			
 		
 		UploadVO uploadTemplateObj = new UploadVO(sserver.getId(), template.getId(), new Date(), 
@@ -264,7 +267,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    String errorString = "";
 	    boolean success = false;
 	    try{
-            List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
+            List<HostVO> storageServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
             if(storageServers == null ){
                 errorString = "No Storage Server found at the datacenter - " +dataCenterId;
                 throw new CloudRuntimeException(errorString);   

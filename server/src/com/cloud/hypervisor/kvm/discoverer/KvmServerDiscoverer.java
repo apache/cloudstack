@@ -231,7 +231,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 
 	private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {
 		for (int i = 0; i < _waitTime *2; i++) {
-			List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+			List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, dcId);
 			for (HostVO host : hosts) {
 				if (host.getGuid().equalsIgnoreCase(guid)) {
 					return host;
@@ -315,7 +315,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 
 		/* KVM requires host are the same in cluster */
 		ClusterVO clusterVO = _clusterDao.findById(host.getClusterId());
-		List<HostVO> hostsInCluster = _hostDao.listByCluster(clusterVO.getId());
+		List<HostVO> hostsInCluster = _resourceMgr.listAllHostsInCluster(clusterVO.getId());
 		if (!hostsInCluster.isEmpty()) {
 			HostVO oneHost = hostsInCluster.get(0);
 			_hostDao.loadDetails(oneHost);

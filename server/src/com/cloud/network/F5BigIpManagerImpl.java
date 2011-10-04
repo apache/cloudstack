@@ -39,6 +39,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.F5BigIpResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -72,6 +73,8 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
     ConfigurationManager _configMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    ResourceManager _resourcMgr;
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(F5BigIpManagerImpl.class);
 
@@ -87,7 +90,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
             zoneName = zone.getName();
         }
 
-        List<HostVO> externalLoadBalancersInZone = _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+        List<HostVO> externalLoadBalancersInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalLoadBalancer, zoneId);
         if (externalLoadBalancersInZone.size() != 0) {
             throw new InvalidParameterValueException("Already found an external load balancer in zone: " + zoneName);
         }
@@ -183,7 +186,7 @@ public class F5BigIpManagerImpl extends ExternalNetworkManagerImpl implements Ex
     @Override
     public List<HostVO> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalLoadBalancer, zoneId);
     }
 
     @Override

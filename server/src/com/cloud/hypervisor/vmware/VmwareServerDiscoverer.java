@@ -84,7 +84,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     		return null;
         }
         
-        List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         if(hosts.size() >= _vmwareMgr.getMaxHostsPerCluster()) {
         	String msg = "VMware cluster " + cluster.getName() + " is too big to add new host now. (current configured cluster size: " + _vmwareMgr.getMaxHostsPerCluster() + ")";
         	s_logger.error(msg);

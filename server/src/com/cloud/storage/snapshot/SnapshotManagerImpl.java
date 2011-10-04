@@ -67,6 +67,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Snapshot.Type;
@@ -170,6 +171,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private SwiftDao _swiftDao;
     @Inject
     private SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    private ResourceManager _resourceMgr;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -373,7 +376,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (_volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
                 StoragePoolVO storagePool = _storagePoolDao.findById(v.getPoolId());
                 ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
-                List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
+                List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
                 if (hosts != null && !hosts.isEmpty()) {
                     HostVO host = hosts.get(0);
                     if (!hostSupportSnapsthot(host)) {

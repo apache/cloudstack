@@ -119,6 +119,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -289,6 +290,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected ResourceLimitService _resourceLimitMgr;
     @Inject
     protected SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    protected ResourceManager _resourceMgr;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -939,7 +942,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId) {
         String isoPath = null;
 
-        List<HostVO> storageHosts = _hostDao.listAllBy(Host.Type.SecondaryStorage, dataCenterId);
+        List<HostVO> storageHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
         if (storageHosts != null) {
             for (HostVO storageHost : storageHosts) {
                 VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
@@ -1105,7 +1108,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         // Check if there is host up in this cluster
-        List<HostVO> allHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, zoneId);
+        List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, zoneId);
         if (allHosts.isEmpty()) {
             throw new ResourceUnavailableException("No host up to associate a storage pool with in cluster " + clusterId, HostPodVO.class, podId);
         }
@@ -1739,9 +1742,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         // Check that there is at least one host in the specified zone
-        List<HostVO> hosts = _hostDao.listByDataCenter(zoneId);
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, zoneId);
         if (hosts.isEmpty()) {
-            throw new InvalidParameterValueException("Please add a host in the specified zone before creating a new volume.");
+            throw new InvalidParameterValueException("There is no workable host in data center id " + zoneId + ", please check hosts' agent status and see if they are disabled");
         }
 
         if (!sharedPoolExists) {
@@ -2072,7 +2075,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             
-            List<HostVO> hosts = _hostDao.listByClusterStatus(primaryStorage.getClusterId(), Status.Up);
+            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(primaryStorage.getClusterId(), Status.Up);
             if( hosts == null || hosts.size() == 0 ) {
                 primaryStorage.setStatus(StoragePoolStatus.Maintenance);
                 _storagePoolDao.update(primaryStorageId, primaryStorage);
@@ -2304,7 +2307,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             primaryStorage.setStatus(StoragePoolStatus.Up);
             _storagePoolDao.update(primaryStorageId, primaryStorage);
             txn.commit();
-            List<HostVO> hosts = _hostDao.listByClusterStatus(primaryStorage.getClusterId(), Status.Up);
+            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(primaryStorage.getClusterId(), Status.Up);
             if( hosts == null || hosts.size() == 0 ) {
                 return _storagePoolDao.findById(primaryStorageId);
             } 

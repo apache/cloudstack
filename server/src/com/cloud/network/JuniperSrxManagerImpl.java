@@ -96,7 +96,7 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
             zoneName = zone.getName();
         }
 
-        List<HostVO> externalFirewallsInZone = _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+        List<HostVO> externalFirewallsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalFirewall, zoneId);
         if (externalFirewallsInZone.size() != 0) {
             throw new InvalidParameterValueException("Already added an external firewall in zone: " + zoneName);
         }
@@ -265,7 +265,7 @@ public class JuniperSrxManagerImpl extends ExternalNetworkManagerImpl implements
     @Override
     public List<HostVO> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalFirewall, zoneId);
     }
 
     @Override

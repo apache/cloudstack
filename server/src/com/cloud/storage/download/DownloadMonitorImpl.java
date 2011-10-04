@@ -54,6 +54,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -127,6 +128,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     private ClusterDao _clusterDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private ResourceManager _resourceMgr;
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
@@ -421,14 +424,14 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	
 	@Override
     public void handleSysTemplateDownload(HostVO host) {
-	    List<HypervisorType> hypers = _hostDao.getAvailHypervisorInZone(host.getId(), host.getDataCenterId());
+	    List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(host.getId(), host.getDataCenterId());
 	    HypervisorType hostHyper = host.getHypervisorType();
 	    if (hypers.contains(hostHyper)) {
 	        return;
 	    }
 
 	    Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-	    List<HostVO> ssHosts = _hostDao.listBy(Host.Type.SecondaryStorage, host.getDataCenterId());
+	    List<HostVO> ssHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.SecondaryStorage, host.getDataCenterId());
 	    if (ssHosts == null || ssHosts.isEmpty()) {
 	        return;
 	    }

@@ -42,6 +42,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -57,6 +58,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 	@Inject protected HostDao _hostDao;
 	@Inject protected ConfigurationDao _configDao;
 	@Inject protected CapacityManager _capacityMgr;
+	@Inject protected ResourceManager _resourceMgr;
 	String _name;
 	
 	@Override
@@ -94,7 +96,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 		int cpu_requested;
 		long ram_requested;
 		HostVO target = null;
-		List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
+		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
 		if (hostTag != null) {
 			for (HostVO h : hosts) {
 				_hostDao.loadDetails(h);

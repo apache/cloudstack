@@ -127,7 +127,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         }
 
 
-        List<HostVO> trafficMonitorsInZone = _hostDao.listByTypeDataCenter(Host.Type.TrafficMonitor, zoneId);
+        List<HostVO> trafficMonitorsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
         if (trafficMonitorsInZone.size() != 0) {
             throw new InvalidParameterValueException("Already added an traffic monitor in zone: " + zoneName);
         }
@@ -198,7 +198,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     @Override
     public List<HostVO> listTrafficMonitors(ListTrafficMonitorsCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.TrafficMonitor, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
     }
 
     @Override

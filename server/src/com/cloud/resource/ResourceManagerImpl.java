@@ -111,6 +111,8 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -472,7 +474,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 throw new InvalidParameterValueException("can not fine cluster for clusterId " + clusterId);
             } else {
                 if (cluster.getGuid() == null) {
-                    List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+                    List<HostVO> hosts = listAllHostsInCluster(clusterId);
                     if (!hosts.isEmpty()) {
                         throw new CloudRuntimeException("Guid is not updated for cluster " + clusterId + " need to wait hosts in this cluster up");
                     }
@@ -622,7 +624,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     if (resource instanceof KvmDummyResourceBase) {
                         Map<String, String> details = entry.getValue();
                         String guid = details.get("guid");
-                        List<HostVO> kvmHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+                        List<HostVO> kvmHosts = listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, dcId);
                         for (HostVO host : kvmHosts) {
                             if (host.getGuid().equalsIgnoreCase(guid)) {
                                 if(hostTags != null){
@@ -709,7 +711,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         _hostDao.remove(hostId);
         if (clusterId != null) {
-            List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+            List<HostVO> hosts = listAllHostsInCluster(clusterId);
             if (hosts.size() == 0) {
                 ClusterVO cluster = _clusterDao.findById(clusterId);
                 cluster.setGuid(null);
@@ -778,7 +780,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return true;
             }
 
-            List<HostVO> hosts = _hostDao.listByCluster(cmd.getId());
+            List<HostVO> hosts = this.listAllHostsInCluster(cmd.getId());
             if (hosts.size() > 0) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cluster: " + cmd.getId() + " still has hosts");
@@ -886,7 +888,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
                     _clusterDao.update(cluster.getId(), cluster);
                     txn.commit();
-                    List<HostVO>  hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
+                    List<HostVO>  hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
                     for( HostVO host : hosts ) {
                         if(host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected) 
                                 && !host.getStatus().equals(Status.Up) && !host.getStatus().equals(Status.Alert) ) {
@@ -908,7 +910,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                             Thread.sleep(20 * 1000);
                         } catch (Exception e) {
                         }
-                        hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
+                        hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
                         for( HostVO host : hosts ) {
                             if ( !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) 
                                     && !host.getStatus().equals(Status.Alert)) {
@@ -1010,8 +1012,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return true;
             }
 
-            List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());
-
+            List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.size() <= 1 || !answer.getMigrate()) {
                     // for the last host in this cluster, stop all the VMs
@@ -1486,7 +1487,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         Map<String, String> details = hostDetails;
         String guid = details.get("guid");
-        List<HostVO> currentHosts = _hostDao.listBy(hostType, zoneId);
+        List<HostVO> currentHosts = this.listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
         for (HostVO currentHost : currentHosts) {
             if (currentHost.getGuid().equals(guid)) {
                 return currentHost;
@@ -1775,7 +1776,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             return doUpdateHostPassword(cmd.getHostId());
         } else {
             // get agents for the cluster
-            List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
+            List<HostVO> hosts = this.listAllHostsInCluster(cmd.getClusterId());
             for (HostVO h : hosts) {
                 try {
                     /*FIXME: this is a buggy logic, check with alex. Shouldn't return if propagation return non null*/
@@ -1809,5 +1810,91 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return false;
             }
         }
+    }
+
+	@Override
+    public List<HostVO> findDirectlyConnectedHosts() {
+		/* The resource column is not null for direct connected resource */
+	    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+	    sc.addAnd(sc.getEntity().getResource(), Op.NNULL);
+	    sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Disabled);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		if (type != null) {
+			sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		}
+		if (clusterId != null) {
+			sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+		}
+		if (podId != null) {
+			sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
+		}
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+		return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllHostsInCluster(long clusterId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, status);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllHostsInAllZonesByType(Type type) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		if (zoneId != null) {
+			sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+		}
+		if (hostId != null) {
+			sc.addAnd(sc.getEntity().getHostId(), Op.EQ, hostId);
+		}
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+		List<HostVO> hosts = sc.list();
+		
+		List<HypervisorType> hypers = new ArrayList<HypervisorType>(5);
+        for (HostVO host : hosts) {
+            hypers.add(host.getHypervisorType());
+        }
+        return hypers;
     }
 }

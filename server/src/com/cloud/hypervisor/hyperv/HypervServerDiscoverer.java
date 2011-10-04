@@ -48,6 +48,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.hyperv.resource.HypervDummyResourceBase;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.nio.HandlerFactory;
@@ -65,6 +66,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     @Inject AlertManager _alertMgr;
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject HostDao _hostDao = null;
+    @Inject ResourceManager _resourceMgr;
     Link _link;
 
     @SuppressWarnings("static-access")
@@ -204,7 +206,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
 
     private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {
         for (int i = 0; i < _waitTime *2; i++) {
-            List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+            List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, dcId);
             for (HostVO host : hosts) {
                 if (host.getGuid().equalsIgnoreCase(guid)) {
                     return host;

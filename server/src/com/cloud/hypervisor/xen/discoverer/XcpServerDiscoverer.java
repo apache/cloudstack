@@ -151,7 +151,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 		
         try {
-            List<HostVO> eHosts = _hostDao.listByCluster(clusterId);
+            List<HostVO> eHosts = _resourceMgr.listAllHostsInCluster(clusterId);
             if( eHosts.size() > 0 ) {
             	HostVO eHost = eHosts.get(0);
             	_hostDao.loadDetails(eHost);
@@ -180,7 +180,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if ( clu.getGuid()== null ) {
             	clu.setGuid(poolUuid);
             } else {
-                List<HostVO> clusterHosts = _hostDao.listByCluster(clusterId);
+                List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clusterId);
                 if( clusterHosts != null && clusterHosts.size() > 0) {
                     if (!clu.getGuid().equals(poolUuid)) {
                         if (hosts.size() == 1) {
@@ -348,7 +348,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected boolean addHostsToPool(Connection conn, String hostIp, Long clusterId) throws XenAPIException, XmlRpcException, DiscoveryException {
         
         List<HostVO> hosts;
-        hosts = _hostDao.listByCluster(clusterId);
+        hosts = _resourceMgr.listAllHostsInCluster(clusterId);
 
         String masterIp = null;
         String username = null;

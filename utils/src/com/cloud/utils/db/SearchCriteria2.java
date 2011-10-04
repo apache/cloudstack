@@ -18,8 +18,12 @@ public class SearchCriteria2<T, K> extends SearchCriteria<K> {
 		GenericDao<? extends Serializable, ? extends Serializable> dao = (GenericDao<? extends Serializable, ? extends Serializable>)GenericDaoBase.getDao(entityType);
 		assert dao != null : "Can not find DAO for " + entityType.getName();
 		SearchBuilder<T> sb = (SearchBuilder<T>) dao.createSearchBuilder();
-		SearchCriteria2<T, T> sc = new SearchCriteria2(sb, dao);
+		SearchCriteria2<T, K> sc = new SearchCriteria2(sb, dao);
 		return (SearchCriteria2<T, K>) sc;
+	}
+		
+	public void selectField(Object... useless) {
+		_sb.selectField(useless);
 	}
 	
 	public void addAnd(Object useless, Op op, Object...values) {

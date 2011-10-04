@@ -18,6 +18,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -34,6 +35,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
 	@Inject HostDao _hostDao;
+	@Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
@@ -43,13 +45,13 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 		if (profile.getZoneId() == null || profile.getZoneId() == -1) {
 			List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 			for (DataCenterVO dc : dcs) {
-				List<HostVO> pxeServers = _hostDao.listAllBy(Host.Type.PxeServer, dc.getId());
+				List<HostVO> pxeServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, dc.getId());
 				if (pxeServers.size() == 0) {
 					throw new CloudRuntimeException("Please add PXE server before adding baremetal template in zone " + dc.getName());
 				}
 			}
 		} else {
-			List<HostVO> pxeServers = _hostDao.listAllBy(Host.Type.PxeServer, profile.getZoneId());
+			List<HostVO> pxeServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, profile.getZoneId());
 			if (pxeServers.size() == 0) {
 				throw new CloudRuntimeException("Please add PXE server before adding baremetal template in zone " + profile.getZoneId());
 			}
@@ -86,7 +88,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 		if (zoneId == null || zoneId == -1) {
 			List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 			for (DataCenterVO dc : dcs) {
-				HostVO pxe = _hostDao.listAllBy(Host.Type.PxeServer, dc.getId()).get(0);
+				HostVO pxe = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, dc.getId()).get(0);
 
 				vmTemplateHost = _tmpltHostDao.findByHostTemplate(dc.getId(), template.getId());
 				if (vmTemplateHost == null) {
@@ -97,7 +99,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 				}
 			}
 		} else {
-			HostVO pxe = _hostDao.listAllBy(Host.Type.PxeServer, zoneId).get(0);
+			HostVO pxe = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, zoneId).get(0);
 			vmTemplateHost = new VMTemplateHostVO(pxe.getId(), template.getId(), new Date(), 100,
 					Status.DOWNLOADED, null, null, null, null, template.getUrl());
 			_tmpltHostDao.persist(vmTemplateHost);

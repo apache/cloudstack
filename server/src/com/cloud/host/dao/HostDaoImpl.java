@@ -248,7 +248,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.done();
         
 
-
         DirectConnectSearch = createSearchBuilder();
         DirectConnectSearch.and("resource", DirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         DirectConnectSearch.and("id", DirectConnectSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -321,13 +320,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return hosts.size();
     }
     
-    @Override
-    public List<HostVO> findDirectlyConnectedHosts() {
-        SearchCriteria<HostVO> sc = DirectlyConnectedSearch.create();
-        sc.setParameters("resourceState", ResourceState.Disabled);
-        return search(sc, null);
-    }
-
     @Override @DB
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         Transaction txn = Transaction.currentTxn();
@@ -391,56 +383,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ub = getUpdateBuilder(host);
         update(ub, sc, null);
     }
-
-    @Override
-    public List<HostVO> listBy(Host.Type type, Long clusterId, Long podId, long dcId) {
-        SearchCriteria<HostVO> sc = TypePodDcStatusSearch.create();
-        if (type != null) {
-            sc.setParameters("type", type.toString());
-        }
-        if (clusterId != null) {
-            sc.setParameters("cluster", clusterId);
-        }
-        if (podId != null) {
-            sc.setParameters("pod", podId);
-        }
-        sc.setParameters("dc", dcId);
-        sc.setParameters("status", Status.Up.toString());
-        sc.setParameters("resourceState", ResourceState.Enabled.toString());
-
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listByInAllStatus(Host.Type type, Long clusterId, Long podId, long dcId) {
-        SearchCriteria<HostVO> sc = TypePodDcStatusSearch.create();
-        if ( type != null ) {
-            sc.setParameters("type", type.toString());
-        }
-        if (clusterId != null) {
-            sc.setParameters("cluster", clusterId);
-        }
-        if (podId != null ) {
-            sc.setParameters("pod", podId);
-        }
-        sc.setParameters("dc", dcId);
-
-        return listBy(sc);
-    }
-    
-    @Override
-    public List<HostVO> listBy(Long clusterId, Long podId, long dcId) {
-        SearchCriteria<HostVO> sc = TypePodDcStatusSearch.create();
-        if (podId != null) {
-            sc.setParameters("pod", podId);
-        }
-        if (clusterId != null) {
-            sc.setParameters("cluster", clusterId);
-        }
-        sc.setParameters("dc", dcId);
-        return listBy(sc);
-    }
-
+ 
     @Override
     public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
 
@@ -473,66 +416,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         return listBy(sc);
     }
-
-    @Override
-    public List<HostVO> listByCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = ClusterStatusSearch.create();
-
-        sc.setParameters("cluster", clusterId);
-
-        return listBy(sc);
-    }
     
-
-    @Override
-    public List<HostVO> listByClusterStatus(long clusterId, Status status) {
-        SearchCriteria<HostVO> sc = ClusterStatusSearch.create();
-
-        sc.setParameters("cluster", clusterId);
-        sc.setParameters("status", status.toString());
-
-        return listBy(sc);
-    }
-
-
-    @Override
-    public List<HostVO> listBy(Host.Type type, long dcId) {
-        SearchCriteria<HostVO> sc = TypeDcStatusSearch.create();
-        sc.setParameters("type", type.toString());
-        sc.setParameters("dc", dcId);
-        sc.setParameters("status", Status.Up.toString());
-        sc.setParameters("resourceState", ResourceState.Enabled.toString());
-
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listAllBy(Host.Type type, long dcId) {
-        SearchCriteria<HostVO> sc = TypeDcSearch.create();
-        sc.setParameters("type", type.toString());
-        sc.setParameters("dc", dcId);
-
-        return listBy(sc);
-    }
-
-    @Override
-    public HostVO findByPrivateIpAddressInDataCenter(long dcId, String privateIpAddress) {
-        SearchCriteria<HostVO> sc = DcPrivateIpAddressSearch.create();
-        sc.setParameters("dc", dcId);
-        sc.setParameters("privateIpAddress", privateIpAddress);
-
-        return findOneBy(sc);
-    }
-
-    @Override
-    public HostVO findByStorageIpAddressInDataCenter(long dcId, String privateIpAddress) {
-        SearchCriteria<HostVO> sc = DcStorageIpAddressSearch.create();
-        sc.setParameters("dc", dcId);
-        sc.setParameters("storageIpAddress", privateIpAddress);
-
-        return findOneBy(sc);
-    }
-
     @Override
     public void loadDetails(HostVO host) {
         Map<String, String> details = _detailsDao.findDetails(host.getId());
@@ -596,14 +480,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-
-
-    @Override
-    public List<HostVO> listByDataCenter(long dcId) {
-        SearchCriteria<HostVO> sc = DcSearch.create("dc", dcId);
-        return listBy(sc);
-    }
-
     @Override
     public HostVO findConsoleProxyHost(String name, Type type) {
         SearchCriteria<HostVO> sc = ConsoleProxyHostSearch.create();
@@ -617,54 +493,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             return hostList.get(0);
         }
     }
-
-    @Override
-    public List<HostVO> listByHostPod(long podId) {
-        SearchCriteria<HostVO> sc = PodSearch.create("pod", podId);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listByStatus(Status... status) {
-        SearchCriteria<HostVO> sc = StatusSearch.create();
-        sc.setParameters("status", (Object[]) status);
-        return listBy(sc);
-    }
     
-    @Override
-    public List<HostVO> listByResourceState(ResourceState... states) {
-        SearchCriteria<HostVO> sc = ResourceStateSearch.create();
-        sc.setParameters("resourceState", (Object[]) states);
-        return listBy(sc);
-    }
-
-
-    @Override
-    public List<HostVO> listByTypeDataCenter(Type type, long dcId) {
-        SearchCriteria<HostVO> sc = TypeDcSearch.create();
-        sc.setParameters("type", type.toString());
-        sc.setParameters("dc", dcId);
-
-        return listBy(sc);
-    }
-    
-    @Override
-    public List<HostVO> listSecondaryStorageVM(long dcId) {
-        SearchCriteria<HostVO> sc = SecondaryStorageVMSearch.create();
-        sc.setParameters("type", Type.SecondaryStorageVM);
-        sc.setParameters("status", Status.Up);
-        sc.setParameters("dc", dcId);
-
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listByType(Type type) {
-        SearchCriteria<HostVO> sc = TypeSearch.create();
-        sc.setParameters("type", type.toString());
-        return listBy(sc);
-    }
-
     @Override
     public void saveDetails(HostVO host) {
         Map<String, String> details = host.getDetails();
@@ -775,48 +604,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return s_seqFetcher.getNextSequence(Long.class, tg, hostId);
     }
 
-    @Override
-    public List<HypervisorType> getAvailHypervisorInZone(Long hostId, Long zoneId) {
-        SearchCriteria<HostVO> sc = AvailHypevisorInZone.create();
-        if ( zoneId != null ) {
-            sc.setParameters("zoneId", zoneId);
-        }
-        if ( hostId != null ) {
-            sc.setParameters("hostId", hostId);
-        }
-        sc.setParameters("type", Host.Type.Routing);
-        List<HostVO> hosts = listBy(sc);
-        List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
-        for (HostVO host : hosts) {
-            hypers.add(host.getHypervisorType());
-        }
-        return hypers;
-    }
-
-    @Override
-    public List<Long> listBy(Long dataCenterId, Long podId, Long clusterId, Type hostType, Status... statuses) {
-        SearchCriteria<Long> sc = HostsInStatusSearch.create();
-        if (dataCenterId != null) {
-            sc.setParameters("dc", dataCenterId);
-        }
-
-        if (podId != null) {
-            sc.setParameters("pod", podId);
-        }
-
-        if (clusterId != null) {
-            sc.setParameters("cluster", clusterId);
-        }
-
-        if (hostType != null) {
-            sc.setParameters("type", hostType);
-        }
-
-        sc.setParameters("statuses", (Object[]) statuses);
-
-        return customSearch(sc, null);
-    }
-
     /*TODO: this is used by mycloud, check if it needs resource state Enabled */
     @Override
     public long countRoutingHostsByDataCenter(long dcId) {
@@ -838,46 +625,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         } else {
             return trafficHosts.get(0);
         }
-    }
-
-    @Override
-    public List<HostVO> listDirectHostsBy(long msId, Status status) {
-        SearchCriteria<HostVO> sc = DirectlyConnectedSearch.create();
-        sc.setParameters("ms", msId);
-        if (status != null) {
-            sc.setParameters("statuses", Status.Up);
-        }
-
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listManagedDirectAgents() {
-        SearchCriteria<HostVO> sc = ManagedDirectConnectSearch.create();
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listManagedRoutingAgents() {
-        SearchCriteria<HostVO> sc = ManagedRoutingServersSearch.create();
-        sc.setParameters("type", Type.Routing);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listRoutingHostsByManagementServer(long msId) {
-        SearchCriteria<HostVO> sc = MsStatusSearch.create();
-        sc.setParameters("ms", msId);
-        sc.setParameters("type", Type.Routing);
-
-        return listBy(sc);
-    }
-
-    @Override
-    public List<HostVO> listAllRoutingAgents() {
-        SearchCriteria<HostVO> sc = RoutingSearch.create();
-        sc.setParameters("type", Type.Routing);
-        return listBy(sc);
     }
 
 	@Override

@@ -201,7 +201,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
 			s_logger.debug("Zone " + zone.getName() + " is not configured for external networking.");
 			return null;
 		} else {
-			List<HostVO> externalNetworkAppliancesInZone = _hostDao.listBy(type, zoneId);
+			List<HostVO> externalNetworkAppliancesInZone = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(type, zoneId);
 			if (externalNetworkAppliancesInZone.size() != 1) {
 				return null;
 			} else {
@@ -225,7 +225,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
             zoneName = zone.getName();
         }
 
-        List<HostVO> externalLoadBalancersInZone = _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+        List<HostVO> externalLoadBalancersInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalLoadBalancer, zoneId);
         if (externalLoadBalancersInZone.size() != 0) {
             throw new InvalidParameterValueException("Already found an external load balancer in zone: " + zoneName);
         }
@@ -340,7 +340,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
     @Override
     public List<HostVO> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalLoadBalancer, zoneId);
     }
 
     @Override
@@ -542,7 +542,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
             zoneName = zone.getName();
         }
 
-        List<HostVO> externalFirewallsInZone = _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+        List<HostVO> externalFirewallsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalFirewall, zoneId);
         if (externalFirewallsInZone.size() != 0) {
             throw new InvalidParameterValueException("Already added an external firewall in zone: " + zoneName);
         }
@@ -717,7 +717,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager, Resou
     @Override
     public List<HostVO> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalFirewall, zoneId);
     }
 
     @Override

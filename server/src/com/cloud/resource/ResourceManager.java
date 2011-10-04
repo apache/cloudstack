@@ -26,6 +26,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -83,4 +84,20 @@ public interface ResourceManager {
 	public boolean maintain(final long hostId) throws AgentUnavailableException;
 	
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
+    
+    public List<HostVO> findDirectlyConnectedHosts();
+    
+    public List<HostVO> listAllUpAndEnabledHosts(Host.Type type, Long clusterId, Long podId, long dcId);
+    
+    public List<HostVO> listAllHostsInCluster(long clusterId);
+    
+    public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status);
+    
+    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Host.Type type, long dcId);
+    
+    public List<HostVO> listAllHostsInOneZoneByType(Host.Type type, long dcId);
+    
+    public List<HostVO> listAllHostsInAllZonesByType(Type type);
+    
+    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
 }

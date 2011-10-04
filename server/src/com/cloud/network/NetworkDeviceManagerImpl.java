@@ -25,6 +25,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.api.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
 import com.cloud.server.api.response.PxePingResponse;
@@ -38,6 +39,7 @@ public class NetworkDeviceManagerImpl implements NetworkDeviceManager {
 	@Inject ExternalDhcpManager _dhcpMgr;
 	@Inject PxeServerManager _pxeMgr;
 	@Inject HostDao _hostDao;
+	@Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -137,14 +139,14 @@ public class NetworkDeviceManagerImpl implements NetworkDeviceManager {
 	private List<Host> listNetworkDevice(Long zoneId, Long podId, Host.Type type) {
 		List<Host> res = new ArrayList<Host>();
 		if (podId != null) {
-			List<HostVO> devs = _hostDao.listBy(type, null, podId, zoneId);
+			List<HostVO> devs = _resourceMgr.listAllUpAndEnabledHosts(type, null, podId, zoneId);
 			if (devs.size() == 1) {
 				res.add(devs.get(0));
 			} else {
 				s_logger.debug("List " + type + ": " + devs.size() + " found");
 			}
 		} else {
-			List<HostVO> devs = _hostDao.listBy(type, zoneId);
+			List<HostVO> devs = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(type, zoneId);
 			res.addAll(devs);
 		}
 		

@@ -34,6 +34,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VirtualMachine;
@@ -44,6 +45,7 @@ public class RandomAllocator implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomAllocator.class);
     private String _name;
     private HostDao _hostDao;
+    private ResourceManager _resourceMgr;
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
@@ -78,7 +80,7 @@ public class RandomAllocator implements HostAllocator {
         if(hostTag != null){
         	hosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag);
         }else{
-        	hosts = _hostDao.listBy(type, clusterId, podId, dcId);
+        	hosts = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
         }
         
         s_logger.debug("Random Allocator found " + hosts.size() + "  hosts");
@@ -126,6 +128,7 @@ public class RandomAllocator implements HostAllocator {
     public boolean configure(String name, Map<String, Object> params) {
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _hostDao = locator.getDao(HostDao.class);
+        _resourceMgr = locator.getManager(ResourceManager.class);
         if (_hostDao == null) {
             s_logger.error("Unable to get host dao.");
             return false;

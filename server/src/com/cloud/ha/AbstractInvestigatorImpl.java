@@ -33,9 +33,13 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 public abstract class AbstractInvestigatorImpl implements Investigator {
     private static final Logger s_logger = Logger.getLogger(AbstractInvestigatorImpl.class);
@@ -43,6 +47,7 @@ public abstract class AbstractInvestigatorImpl implements Investigator {
     private String _name = null;
     @Inject private HostDao _hostDao = null;
     @Inject private AgentManager _agentMgr = null;
+    @Inject private ResourceManager _resourceMgr = null;
 
 
     @Override
@@ -69,7 +74,12 @@ public abstract class AbstractInvestigatorImpl implements Investigator {
     
     // Host.status is up and Host.type is routing
     protected List<Long> findHostByPod(long podId, Long excludeHostId) {
-        List<Long> hostIds = _hostDao.listBy(null, podId, null, Type.Routing, Status.Up);
+        SearchCriteria2<HostVO, Long> sc = SearchCriteria2.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getType(), Op.EQ, Type.Routing);
+        sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
+        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+        List<Long> hostIds = sc.list();
+        
         if (excludeHostId != null){
             hostIds.remove(excludeHostId);
         }

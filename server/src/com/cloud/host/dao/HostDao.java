@@ -36,17 +36,7 @@ import com.cloud.utils.fsm.StateDao;
  *
  */
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
-    List<HostVO> listBy(Host.Type type, Long clusterId, Long podId, long dcId);
-
     long countBy(long clusterId,  ResourceState... states);
-
-    List<HostVO> listByDataCenter(long dcId);
-	List<HostVO> listByHostPod(long podId);
-	List<HostVO> listByStatus(Status... status);
-	List<HostVO> listByResourceState(ResourceState...states);
-	List<HostVO> listBy(Host.Type type, long dcId);
-	List<HostVO> listAllBy(Host.Type type, long dcId);
-	List<HostVO> listByCluster(long clusterId);
 
     /**
      * Mark all hosts associated with a certain management server
@@ -60,36 +50,11 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
 	List<HostVO> findHostsLike(String hostName);
 
-	/**
-	 * Find hosts that are directly connected.
-	 */
-	List<HostVO> findDirectlyConnectedHosts();
-
     List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
-
-	HostVO findByStorageIpAddressInDataCenter(long dcId, String privateIpAddress);
-    HostVO findByPrivateIpAddressInDataCenter(long dcId, String privateIpAddress);
 
 	public HostVO findByGuid(String guid);
 
 	public HostVO findByName(String name);
-
-
-	/**
-	 * find all hosts of a certain type in a data center
-	 * @param type
-	 * @param routingCapable
-	 * @param dcId
-	 * @return
-	 */
-	List<HostVO> listByTypeDataCenter(Host.Type type, long dcId);
-
-	/**
-	 * find all hosts of a particular type
-	 * @param type
-	 * @return
-	 */
-	List<HostVO> listByType(Type type);
 
     List<RunningHostCountInfo> getRunningHostCounts(Date cutTime);
 
@@ -101,46 +66,15 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
 	HostVO findConsoleProxyHost(String name, Type type);
 
-    List<HypervisorType> getAvailHypervisorInZone(Long hostId, Long zoneId);
-
-    /**
-     * Returns a list of host ids given the conditions.
-     * @param dataCenterId if specified, then must be in this data center.
-     * @param podId if specified, then must be in this pod.
-     * @param clusterId if specified, then must be in this cluster.
-     * @param hostType TODO
-     * @param statuses the host needs to be in.
-     * @return ids of the host meeting the search parameters.
-     */
-    List<Long> listBy(Long dataCenterId, Long podId, Long clusterId, Type hostType, Status... statuses);
-
-    List<HostVO> listBy(Long clusterId, Long podId, long dcId);
-
     void loadHostTags(HostVO host);
 
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
 
     long countRoutingHostsByDataCenter(long dcId);
     
-    List<HostVO> listDirectHostsBy(long msId, Status status);
-    
-    List<HostVO> listManagedDirectAgents();
-    
-    List<HostVO> listManagedRoutingAgents();
-
     HostVO findTrafficMonitorHost();
-
-    List<HostVO> listRoutingHostsByManagementServer(long msId);
-
-    List<HostVO> listSecondaryStorageVM(long dcId);
-    
-    List<HostVO> listAllRoutingAgents();
 
 	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
-    List<HostVO> listByInAllStatus(Type type, Long clusterId, Long podId, long dcId);
-
-    List<HostVO> listByClusterStatus(long clusterId, Status status);
-    
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
 }

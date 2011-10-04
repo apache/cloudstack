@@ -1310,4 +1310,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage);
 	    return sc.list();
     }
+
+	@Override
+    public List<HostVO> listUpSecondaryStorageVmHost(long dcId) {
+		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, com.cloud.host.Status.Up);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+	    return sc.list();
+    }
 }

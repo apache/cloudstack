@@ -57,6 +57,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
@@ -73,6 +74,8 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -619,8 +622,14 @@ public class ClusterManagerImpl implements ClusterManager {
                     
                     //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
                     if (_agentLBEnabled && !_agentLbHappened) {
-                        List<HostVO> allManagedRoutingAgents = _hostDao.listManagedRoutingAgents();
-                        List<HostVO> allAgents = _hostDao.listAllRoutingAgents();
+                        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                        sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
+                        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+                        List<HostVO> allManagedRoutingAgents = sc.list();
+                        
+                        sc = SearchCriteria2.create(HostVO.class);
+                        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+                        List<HostVO> allAgents = sc.list();
                         double allHostsCount = allAgents.size();
                         double managedHostsCount = allManagedRoutingAgents.size();
                         if (allHostsCount > 0.0) {

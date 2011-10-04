@@ -126,7 +126,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			throw new InvalidParameterValueException("Could not find pod with ID: " + podId);
 		} 
 		
-		List<HostVO> dhcps = _hostDao.listBy(Host.Type.ExternalDhcp, null, podId, zoneId);
+		List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.ExternalDhcp, null, podId, zoneId);
 		if (dhcps.size() != 0) {
 			throw new InvalidParameterValueException("Already had a DHCP server in Pod: " + podId + " zone: " + zoneId);
 		}
@@ -194,7 +194,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			return;
 		}
 		
-		List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterIdToDeployIn());
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterIdToDeployIn());
 		if (servers.size() != 1) {
 			throw new CloudRuntimeException("Wrong number of PXE server found in zone " + vm.getDataCenterIdToDeployIn()
 					+ " Pod " + vm.getPodIdToDeployIn() + ", number is " + servers.size());
@@ -209,7 +209,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			ReservationContext context) throws ResourceUnavailableException {
 		Long zoneId = profile.getVirtualMachine().getDataCenterIdToDeployIn();
 		Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
-		List<HostVO> hosts = _hostDao.listBy(Type.ExternalDhcp, null, podId, zoneId);
+		List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.ExternalDhcp, null, podId, zoneId);
 		if (hosts.size() == 0) {
 			throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId + " pod " + podId);
 		}

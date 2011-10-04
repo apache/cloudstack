@@ -65,7 +65,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 			throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
 		} 
 		
-		List<HostVO> pxeServers = _hostDao.listBy(Host.Type.PxeServer, null, podId, zoneId);
+		List<HostVO> pxeServers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, podId, zoneId);
 		if (pxeServers.size() != 0) {
 			throw new InvalidParameterValueException("Already had a PXE server in Pod: " + podId + " zone: " + zoneId);
 		}

@@ -58,6 +58,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -71,7 +72,9 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
@@ -709,7 +712,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void startRebalanceAgents() {
         s_logger.debug("Management server " + _nodeId + " is asking other peers to rebalance their agents");
         List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up);
-        List<HostVO> allManagedAgents = _hostDao.listManagedRoutingAgents();
+        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
+        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+        List<HostVO> allManagedAgents = sc.list();
 
         int avLoad = 0;
 
