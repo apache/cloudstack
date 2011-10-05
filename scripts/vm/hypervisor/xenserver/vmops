@@ -435,17 +435,39 @@ def ipset(ipsetname, proto, start, end, ips):
 
     try: 
         util.pread2(['ipset', '-N', ipsettmp, 'iptreemap']) 
+    except:
+        util.SMlog("Failed to create temp ipset, reusing old name= " + ipsettmp)
+        try: 
+            util.pread2(['ipset', '-F', ipsettmp]) 
+        except:
+            util.SMlog("Failed to clear old temp ipset name=" + ipsettmp)
+            return False
+        
+    try: 
         for ip in ips:
             try:
                 util.pread2(['ipset', '-A', ipsettmp, ip])
             except CommandException, cex:
                 if cex.reason.rfind('already in set') == -1:
                    raise
-        util.pread2(['ipset', '-W', ipsettmp, ipsetname]) 
-        util.pread2(['ipset', '-X', ipsettmp]) 
     except:
         util.SMlog("Failed to program ipset " + ipsetname)
+        util.pread2(['ipset', '-F', ipsettmp]) 
+        util.pread2(['ipset', '-X', ipsettmp]) 
+        return False
+
+    try: 
+        util.pread2(['ipset', '-W', ipsettmp, ipsetname]) 
+    except:
+        util.SMlog("Failed to swap ipset " + ipsetname)
         result = False
+
+    try: 
+        util.pread2(['ipset', '-F', ipsettmp]) 
+        util.pread2(['ipset', '-X', ipsettmp]) 
+    except:
+        # if the temporary name clashes next time we'll just reuse it
+        util.SMlog("Failed to delete temp ipset " + ipsettmp)
 
     return result
 
