@@ -1073,7 +1073,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
                 networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
                 NicProfile gatewayNic = new NicProfile();
-                gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
+                if (isRedundant) {
+                    gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
+                } else {
+                    gatewayNic.setIp4Address(guestNetwork.getGateway());
+                }
                 gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
                 gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
                 gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
@@ -1392,12 +1396,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
-            Network net = _networkMgr.getNetwork(nic.getNetworkId());
-            String guestIp = nic.getIp4Address();
-            if (nic.getTrafficType() == TrafficType.Guest && !router.getIsRedundantRouter()) {
-                guestIp = net.getGateway();
-            }
-            buf.append(" eth").append(deviceId).append("ip=").append(guestIp);
+            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
             buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
@@ -1444,6 +1443,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 controlNic = nic;
             } else if (nic.getTrafficType() == TrafficType.Guest && isRedundant) {
+                Network net = _networkMgr.getNetwork(nic.getNetworkId());
                 buf.append(" guestgw=").append(net.getGateway());
                 String brd = NetUtils.long2Ip(NetUtils.ip2Long(nic.getIp4Address()) | ~NetUtils.ip2Long(nic.getNetmask()));
                 buf.append(" guestbrd=").append(brd);
