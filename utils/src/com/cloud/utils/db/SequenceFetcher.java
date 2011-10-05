@@ -20,6 +20,7 @@ package com.cloud.utils.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -48,11 +49,19 @@ public class SequenceFetcher {
     ExecutorService _executors;
     
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg) {
-        return getNextSequence(clazz, tg, null);
+        return getNextSequence(clazz, tg, null, false);
     }
     
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg, Object key) {
-        Future<T> future = _executors.submit(new Fetcher<T>(clazz, tg, key));
+    	return getNextSequence(clazz, tg, key, false);
+    }
+    
+    public <T> T getRandomNextSequence(Class<T> clazz, TableGenerator tg) {
+        return getNextSequence(clazz, tg, null, true);
+    }
+    
+    public <T> T getNextSequence(Class<T> clazz, TableGenerator tg, Object key, boolean isRandom) {
+        Future<T> future = _executors.submit(new Fetcher<T>(clazz, tg, key, isRandom));
         try {
             return future.get();
         } catch (Exception e) {
@@ -74,11 +83,13 @@ public class SequenceFetcher {
         TableGenerator _tg;
         Class<T> _clazz;
         Object _key;
+        boolean isRandom = false;
         
-        protected Fetcher(Class<T> clazz, TableGenerator tg, Object key) {
+        protected Fetcher(Class<T> clazz, TableGenerator tg, Object key, boolean isRandom) {
             _tg = tg;
             _clazz = clazz;
             _key = key;
+            this.isRandom = isRandom;
         }
         
         @Override @SuppressWarnings("unchecked")
@@ -103,7 +114,12 @@ public class SequenceFetcher {
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append("=?");
                 
                 PreparedStatement updateStmt = txn.prepareStatement(sql.toString());
-                updateStmt.setInt(2, _tg.allocationSize());
+                if(isRandom){
+                	Random random = new Random();
+                	updateStmt.setInt(2, random.nextInt(10));
+                } else {
+                	updateStmt.setInt(2, _tg.allocationSize());
+                }
                 if (_key == null) {
                     updateStmt.setString(3, _tg.pkColumnValue());
                 } else {
