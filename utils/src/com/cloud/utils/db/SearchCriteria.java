@@ -115,7 +115,7 @@ public class SearchCriteria<K> {
     private final Map<String, Attribute> _attrs;
     private final ArrayList<Condition> _conditions;
     private ArrayList<Condition> _additionals = null;
-    private final HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
+    private HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
     private int _counter;
     private HashMap<String, JoinBuilder<SearchCriteria<?>>> _joins;
     private final ArrayList<Select> _selects;
@@ -137,6 +137,21 @@ public class SearchCriteria<K> {
         _groupByValues = null;
         _resultType = null;
         _selectType = null;
+    }
+    
+    protected SearchCriteria(final Map<String, Attribute> attrs, ArrayList<GenericSearchBuilder.Condition> conditions, ArrayList<Select> selects, SelectType selectType, Class<K> resultType, HashMap<String, Object[]> params) {
+    	this._attrs = attrs;
+    	this._conditions = conditions;
+    	this._selects = selects;
+    	this._selectType = selectType;
+		this._resultType = resultType;
+		this._params = params;
+		this._builder = null;
+		this._additionals = new ArrayList<Condition>();
+		this._counter = 0;
+		this._joins = null;
+		this._groupBy = null;
+		this._groupByValues = null;
     }
     
     protected SearchCriteria(GenericSearchBuilder<?, K> sb) {

@@ -236,5 +236,9 @@ public interface GenericDao<T, ID extends Serializable> {
     boolean lockInLockTable(String id, int seconds);
 
     boolean unlockFromLockTable(String id);
+
+	<K> SearchCriteria2 createSearchCriteria2(Class<K> resultType);
+
+	SearchCriteria2 createSearchCriteria2();
     
 }

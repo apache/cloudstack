@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -51,7 +52,6 @@ public class SearchCriteria2Test extends TestCase {
     		s_logger.info("Host id: " + vo.getId() + " is Disconnected");
     	}
     	
-    	
     	SearchCriteria2<VMInstanceVO, VMInstanceVO> sc1 = SearchCriteria2.create(VMInstanceVO.class);
     	sc1.addAnd(sc1.getEntity().getState(), Op.EQ, VirtualMachine.State.Running);
     	List<VMInstanceVO> vms = sc1.list();
@@ -59,6 +59,14 @@ public class SearchCriteria2Test extends TestCase {
     		s_logger.info("Vm name:" + vm.getInstanceName());
     	}
     	
+    	SearchCriteria2<HostVO, Long> sc3 = SearchCriteria2.create(HostVO.class, Long.class);
+    	sc3.selectField(sc3.getEntity().getId());
+    	sc3.addAnd(sc3.getEntity().getStatus(), Op.EQ, Status.Disconnected);
+    	sc3.addAnd(sc3.getEntity().getType(), Op.EQ, Host.Type.Routing);
+    	List<Long> hostIds = sc3.list();
+    	for (Long id : hostIds) {
+    		s_logger.info("Host Id is " + id);
+    	}
     }
     
     @Override
