@@ -208,6 +208,7 @@ public class AgentResourceBase implements ServerResource {
 
 	@Override
 	public boolean stop() {
+		s_logger.debug("anget is stopped");
 	    this.stopped = true;
 		return true;
 	}

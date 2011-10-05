@@ -95,11 +95,12 @@ CREATE TABLE `cloud`.`mocksecurityrules` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmid` bigint unsigned,
   `signature` varchar(255),
-  `ruleset` varchar(4095),
   `hostid` varchar(255),
   `seqnum` bigint unsigned,
   `vmname` varchar(255),
   PRIMARY KEY (`id`),
   INDEX `i_mocksecurityrules__vmid`(`vmid`),
+  INDEX `i_mocksecurityrules__seqnum`(`seqnum`),
+  INDEX `i_mocksecurityrules__signature`(`signature`),
   INDEX `i_mocksecurityrules__hostid`(`hostid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

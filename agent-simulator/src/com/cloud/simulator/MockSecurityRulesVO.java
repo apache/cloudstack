@@ -25,9 +25,6 @@ public class MockSecurityRulesVO {
     @Column(name="seqnum")
     private Long seqNum;
     
-    @Column(name="ruleset")
-    private String ruleSet;
-    
     @Column(name="hostid")
     private String hostId;
     
@@ -76,13 +73,5 @@ public class MockSecurityRulesVO {
     
     public void setSeqNum(Long seqNum) {
         this.seqNum = seqNum;
-    }
-    
-    public String getRuleSet() {
-        return this.ruleSet;
-    }
-    
-    public void setRuleSet(String ruleset) {
-        this.ruleSet = ruleset;
     }
 }

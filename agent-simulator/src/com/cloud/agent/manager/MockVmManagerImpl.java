@@ -357,7 +357,7 @@ public class MockVmManagerImpl implements MockVmManager {
         if (!info.isEnabled()) {
         	return new SecurityIngressRuleAnswer(cmd, false, "Disabled", SecurityIngressRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
-        
+        /*
         Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(info.getHostUuid());
        
         if (rules == null) {
@@ -368,16 +368,34 @@ public class MockVmManagerImpl implements MockVmManager {
         } else {
             logSecurityGroupAction(cmd, rules.get(cmd.getVmName()));
             rules.put(cmd.getVmName(), new Ternary<String, Long,Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
-        }
+        }*/
         
+        MockSecurityRulesVO rule = _mockSecurityDao.findByVmId(cmd.getVmId());
+        if (rule == null) {
+        	logSecurityGroupAction(cmd, null);
+        	rule = new MockSecurityRulesVO();
+        	rule.setSeqNum(cmd.getSeqNum());
+        	rule.setSignature(cmd.getSignature());
+        	rule.setVmId(cmd.getVmId());
+        	rule.setVmName(cmd.getVmName());
+        	rule.setHostId(info.getHostUuid());
+        	rule = _mockSecurityDao.persist(rule);
+        } else {
+        	boolean update = logSecurityGroupAction(cmd, rule);
+        	if (update) {
+        		rule.setSeqNum(cmd.getSeqNum());
+        		rule.setSignature(cmd.getSignature());
+        		_mockSecurityDao.update(rule.getId(), rule);
+        	}
+        }
         return new SecurityIngressRuleAnswer(cmd);
     }
     
-    private boolean logSecurityGroupAction(SecurityIngressRulesCmd cmd, Ternary<String,Long, Long> rule) {
+    private boolean logSecurityGroupAction(SecurityIngressRulesCmd cmd, MockSecurityRulesVO rule) {
         String action = ", do nothing";
         String reason = ", reason=";
-        Long currSeqnum = rule == null? null: rule.third();
-        String currSig = rule == null? null: rule.first();
+        Long currSeqnum = rule == null? null: rule.getSeqNum();
+        String currSig = rule == null? null: rule.getSignature();
         boolean updateSeqnoAndSig = false;
         if (currSeqnum != null) {
             if (cmd.getSeqNum() > currSeqnum) {
@@ -430,13 +448,18 @@ public class MockVmManagerImpl implements MockVmManager {
     @Override
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info) {
         HashMap<String, Pair<Long, Long>> maps = new HashMap<String, Pair<Long, Long>>();
-        
+        /*
         Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(info.getHostUuid());
         if (rules == null) {
             return maps;
         }
         for (Map.Entry<String,Ternary<String, Long, Long>> rule : rules.entrySet()) {
             maps.put(rule.getKey(), new Pair<Long, Long>(rule.getValue().second(), rule.getValue().third()));
+        }*/
+        
+        List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
+        for (MockSecurityRulesVO rule: rules) {
+        	maps.put(rule.getVmName(), new Pair<Long, Long>(rule.getVmId(), rule.getSeqNum()));
         }
         return maps;
     }
