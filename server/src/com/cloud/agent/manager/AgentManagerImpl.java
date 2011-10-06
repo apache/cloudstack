@@ -1589,6 +1589,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     private boolean isAgentEventAllowedByResourceState(HostVO host, Status.Event event) {
+    	host = _hostDao.findById(host.getId());
         ResourceState state = host.getResourceState();
         boolean allow = true;
         if (state == ResourceState.Enabled) {
@@ -1606,7 +1607,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         } else if (state == ResourceState.Maintenance) {
             
         } else if (state == ResourceState.Creating) {
-        }else {
+        } else if (state == ResourceState.Error) {
+        	allow = false;
+        } else {
             throw new CloudRuntimeException("Unknown resource state " + state);
         }
         
@@ -1616,8 +1619,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     @Override
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId) {
         if (!isAgentEventAllowedByResourceState(host, e)) {
-            s_logger.debug(String.format("Cannot proceed agent event %1$s because it is not allowed by current resource state %2$s fort host %3$s", e, host.getResourceState(), host.getId()));
-            return false;
+        	String err = String.format("Cannot proceed agent event %1$s because it is not allowed by current resource state %2$s fort host %3$s", e, host.getResourceState(), host.getId());
+            s_logger.debug(err);
+            throw new CloudRuntimeException(err);
         }
         
         host.setManagementServerId(msId);

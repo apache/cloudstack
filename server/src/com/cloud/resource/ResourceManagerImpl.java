@@ -1396,9 +1396,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		}
 
 		try {
+			resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
 			/* Agent goes to Connecting status */
 			_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
-			resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
 		} catch (Exception e) {
 			s_logger.debug("Cannot transmit host " + host.getId() + " to Creating state", e);
 			_agentMgr.agentStatusTransitTo(host, Status.Event.Error, _nodeId);
@@ -1835,7 +1835,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
 		}
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
-		sc.addAnd(sc.getEntity(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
 		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
 		return sc.list();
     }
@@ -1887,7 +1887,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
 		}
 		if (hostId != null) {
-			sc.addAnd(sc.getEntity().getHostId(), Op.EQ, hostId);
+			sc.addAnd(sc.getEntity().getId(), Op.EQ, hostId);
 		}
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
 		List<HostVO> hosts = sc.list();
