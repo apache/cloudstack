@@ -12,6 +12,7 @@ import socket
 import stat
 import tempfile
 import util
+import zlib
 from util import CommandException
 
 def echo(fn):
@@ -1015,6 +1016,10 @@ def remove_rule_log_for_vm(vmName):
     return result
 
 @echo
+def inflate_rules (zipped):
+   return zlib.decompress(base64.b64decode(zipped))
+
+@echo
 def network_rules(session, args):
   try:
     vm_name = args.get('vmName')
@@ -1022,6 +1027,10 @@ def network_rules(session, args):
     vm_id = args.get('vmID')
     signature = args.pop('signature')
     seqno = args.pop('seqno')
+    deflated = 'false'
+    if 'deflated' in args:
+        deflated = args.pop('deflated')
+    
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
         if len(vm) != 1:
@@ -1070,6 +1079,9 @@ def network_rules(session, args):
         reason = 'domid_change'
     
     rules = args.pop('rules')
+    if deflated.lower() == 'true':
+       rules = inflate_rules (rules)
+   
     lines = rules.split(' ')
 
     util.SMlog("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
