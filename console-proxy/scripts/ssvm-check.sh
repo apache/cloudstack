@@ -26,6 +26,16 @@
 
 
 CMDLINE=/var/cache/cloud/cmdline
+for i in `cat $CMDLINE`
+do
+   key=`echo $i | cut -d= -f1`
+   value=`echo $i | cut -d= -f2`
+   case $key in
+      host)
+         MGMTSERVER=$value       
+         ;;
+   esac
+done
 
 
 # ping dns server
@@ -100,7 +110,6 @@ fi
 
 # check for connectivity to the management server
 echo ================================================
-MGMTSERVER=`awk '{print $12}' $CMDLINE | awk -F= '{print $2}'`
 echo Management server is $MGMTSERVER.  Checking connectivity.
 socatout=$(echo | socat - TCP:$MGMTSERVER:8250,connect-timeout=3 2>&1)
 if [ $? -eq 0 ]
