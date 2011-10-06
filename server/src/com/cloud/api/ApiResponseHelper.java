@@ -2196,7 +2196,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserVmData newUserVmData(UserVm userVm){
         UserVmData userVmData = new UserVmData();
         userVmData.setId(userVm.getId());
-        userVmData.setName(userVm.getInstanceName());
+        userVmData.setName(userVm.getHostName());
         userVmData.setCreated(userVm.getCreated());
         userVmData.setGuestOsId(userVm.getGuestOSId());
         userVmData.setHaEnable(userVm.isHaEnabled());
