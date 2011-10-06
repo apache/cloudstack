@@ -56,6 +56,6 @@ public interface UploadMonitor extends Manager{
             VMTemplateHostVO vmTemplateHost, Long dataCenterId, long eventId);
 
     void createVolumeDownloadURL(Long entityId, String path, Type type,
-            Long dataCenterId, Long uploadId);
+            Long dataCenterId, Long uploadId, String volType);
 
 }

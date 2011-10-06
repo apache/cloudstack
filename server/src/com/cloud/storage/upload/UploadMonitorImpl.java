@@ -259,7 +259,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 	
 	@Override
-    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId) {
+    public void createVolumeDownloadURL(Long entityId, String path, Type type, Long dataCenterId, Long uploadId, String volType) {
         
 	    String errorString = "";
 	    boolean success = false;
@@ -282,7 +282,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                 throw new CloudRuntimeException(errorString);
             }
             // Create Symlink at ssvm
-            String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
+            String uuid = UUID.randomUUID().toString() + "." + volType ;
             HostVO secStorage = ApiDBUtils.findHostById(ApiDBUtils.findUploadById(uploadId).getHostId());
             HostVO ssvm = _agentMgr.getSSAgent(secStorage);
             if( ssvm == null ) {

@@ -4375,7 +4375,7 @@ public class ManagementServerImpl implements ManagementServer {
                 _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
                 return uploadJob.getId();
             } else { // Volume is copied now make it visible under apache and create a URL.
-                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());
+                _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId(), getFormatForPool(srcPool));
                 return uploadJob.getId();
             }
         }

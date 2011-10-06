@@ -940,13 +940,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	    String secondaryStorageUrl = cmd.getSecondaryStorageURL();
 	    StoragePool primaryPool = null;
 	    Connect conn;
+	    StoragePool secondaryStoragePool = null;
         try {
             conn = LibvirtConnection.getConnection();
             primaryPool = _storageResource.getStoragePool(conn, pool.getUuid());
             LibvirtStoragePoolDef primary = _storageResource.getStoragePoolDef(conn, primaryPool);
             String primaryMountPath = primary.getTargetPath();
             
-            StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStorageUrl));
+            secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStorageUrl));
             LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
             String ssPmountPath = spd.getTargetPath();
             
@@ -955,10 +956,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (copyToSecondary) {
                 StorageVol volume = _storageResource.getVolume(conn, primaryPool, volumePath);
                 String volumeDestPath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator;
-                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName, _cmdsTimeout);
+                _storageResource.copyVolume(volumePath, volumeDestPath, volumeName + ".qcow2", _cmdsTimeout);
                 return new CopyVolumeAnswer(cmd, true, null, null, volumeName);
             } else {
-                volumePath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator + volumePath;
+                volumePath = ssPmountPath + File.separator + "volumes/" + cmd.getVolumeId() + File.separator + volumePath + ".qcow2";
                 _storageResource.copyVolume(volumePath, primaryMountPath, volumeName, _cmdsTimeout);
                 return new CopyVolumeAnswer(cmd, true, null, null, primaryMountPath + File.separator + volumeName);
             }

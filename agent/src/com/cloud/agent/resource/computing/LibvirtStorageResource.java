@@ -391,12 +391,15 @@ public class LibvirtStorageResource {
         if (!_storageLayer.exists(srcPath)) {
             throw new InternalErrorException("volume:" + srcPath + " is not exits");
         }
-        String result = Script.runSimpleBashScript("cp " + srcPath + " " + destPath + File.separator + volumeName, timeout);
+        destPath = destPath + File.separator + volumeName;
+        String result = Script.runSimpleBashScript("qemu-img convert " + srcPath + " " + destPath, timeout);
         if (result != null) {
             return false;
         } else {
-            return true;
+        	result = Script.runSimpleBashScript("chmod 777 " + destPath);
+        	return true;
         }
+        
     }
     
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {
