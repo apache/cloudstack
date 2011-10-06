@@ -80,6 +80,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -180,6 +181,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private DomainManager _domainMgr;
     @Inject
     private ProjectManager _projectMgr;
+    @Inject
+    private ProjectDao _projectDao;
     
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -414,7 +417,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         return cleanupAccount(account, callerUserId, caller);
-
     }
 
     @Override
@@ -1154,7 +1156,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     List<AccountVO> disabledAccounts = _accountDao.findCleanupsForDisabledAccounts();
                     s_logger.info("Found " + disabledAccounts.size() + " disabled accounts to cleanup");
                     for (AccountVO account : disabledAccounts) {
-                        s_logger.debug("Cleaning up " + account.getId());
+                        s_logger.debug("Disabling account " + account.getId());
                         try {
                             if (disableAccount(account.getId())) {
                                 account.setNeedsCleanup(false);
@@ -1176,10 +1178,27 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                                 s_logger.debug("Removing inactive domain id=" + domainId);
                                 _domainMgr.removeDomain(domainId);
                             } else {
-                                s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need clenaup");
+                                s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need cleanup");
                             } 
                         } catch (Exception e) {
                             s_logger.error("Skipping due to error on domain " + domainId, e);
+                        }
+                    }
+                    
+                    //cleanup inactive projects
+                    List<? extends Project> inactiveProjects = _projectDao.listByState(Project.State.Disabled);
+                    s_logger.info("Found " + inactiveProjects.size() + " disabled projects to cleanup");
+                    for (Project project : inactiveProjects) {
+                        try {
+                            Account projectAccount = getAccount(project.getProjectAccountId());
+                            if (projectAccount == null) {
+                                s_logger.debug("Removing inactive project id=" + project.getId());
+                                _projectMgr.deleteProject(project.getId());
+                            } else {
+                                s_logger.debug("Can't remove disabled project " + project + " as it has non removed account id=" + project.getId());
+                            } 
+                        } catch (Exception e) {
+                            s_logger.error("Skipping due to error on project " + project, e);
                         }
                     }
                     

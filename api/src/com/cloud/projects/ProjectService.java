@@ -2,7 +2,9 @@ package com.cloud.projects;
 
 import java.util.List;
 
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
 
@@ -36,7 +38,7 @@ public interface ProjectService {
      */
     Project getProject(long id);
     
-    List<? extends Project> listProjects(Long id, String name, String displayText, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize);
+    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
     
@@ -50,7 +52,7 @@ public interface ProjectService {
     
     Project updateProject(long id, String displayText, String newOwnerName);
     
-    boolean addAccountToProject(long projectId, String accountName);
+    boolean addAccountToProject(long projectId, String accountName, String email);
 
     boolean deleteAccountFromProject(long projectId, String accountName);
     
@@ -58,5 +60,9 @@ public interface ProjectService {
     
     List<? extends ProjectInvitation> listProjectInvitations(Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal);
     
-    boolean joinProject(long projectId, String accountName);
+    boolean joinProject(long projectId, String accountName, String token);
+    
+    Project activateProject(long projectId);
+    
+    Project suspendProject(long projectId) throws ConcurrentOperationException, ResourceUnavailableException;
 }

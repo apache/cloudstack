@@ -21,50 +21,40 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class)
-public class AddAccountToProjectCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
+@Implementation(description="Suspends a project", responseObject=ProjectResponse.class)
+public class SuspendProjectCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(SuspendProjectCmd.class.getName());
 
-    private static final String s_name = "addaccounttoprojectresponse";
+    private static final String s_name = "suspendprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, required=true, description="id of the project to add the account to")
-    private Long projectId;
-    
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="name of the account to be added to the project")
-    private String accountName;
-    
-    @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, description="email to which invitation to the project is going to be sent")
-    private String email;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be suspended")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getProjectId() {
-        return projectId;
-    }
-
-    
-    public String getEmail() {
-        return email;
+    public Long geId() {
+        return id;
     }
 
     @Override
@@ -77,25 +67,37 @@ public class AddAccountToProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
-        UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
-        boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
+        UserContext.current().setEventDetails("Project Id: " + id);
+        Project project = _projectService.suspendProject(id);
+        if (project != null) {
+            ProjectResponse response = _responseGenerator.createProjectResponse(project);
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add account to the project");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to suspend a project");
         }
     }
     
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROJECT_SUSPEND;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return  "Suspending project: " + id;
+    }
+    
+    @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(projectId);
+        Project project= _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            throw new InvalidParameterValueException("Unable to find project by id " + id);
         } 
         
-        return _projectService.getProjectOwner(projectId).getId(); 
+        return _projectService.getProjectOwner(id).getId(); 
     }
+    
 }

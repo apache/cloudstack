@@ -289,7 +289,14 @@ public enum Config {
     DefaultMaxProjectVolumes("Project Defaults", ManagementServer.class, Long.class, "max.project.volumes", "20", "The default maximum number of volumes that can be created for a project", null),
 	
     ProjectInviteRequired("Project Defaults", ManagementServer.class, Boolean.class, "project.invite.required", "false", "If invitation confirmation is required when add account to project. Default value is false", null),
-    ProjectInvitationExpirationTime("Project Defaults", ManagementServer.class, Long.class, "project.invite.timeout", "86400", "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", null);
+    ProjectInvitationExpirationTime("Project Defaults", ManagementServer.class, Long.class, "project.invite.timeout", "86400", "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", null),
+    
+    ProjectEmailSender("Project Defaults", ManagementServer.class, String.class, "project.email.sender", null, "Sender of project invitation email (will be in the From header of the email)", null),
+    ProjectSMTPHost("Project Defaults", ManagementServer.class, String.class, "project.smtp.host", null, "SMTP hostname used for sending out email project invitations", null),
+    ProjectSMTPPassword("Project Defaults", ManagementServer.class, String.class, "project.smtp.password", null, "Password for SMTP authentication (applies only if project.smtp.useAuth is true)", null),
+    ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
+    ProjectSMTPUseAuth("Project Defaults", ManagementServer.class, String.class, "project.smtp.useAuth", null, "If true, use SMTP authentication when sending emails", null),
+    ProjectSMTPUsername("Project Defaults", ManagementServer.class, String.class, "project.smtp.username", null, "Username for SMTP authentication (applies only if project.smtp.useAuth is true)", null);
 
 	private final String _category;
 	private final Class<?> _componentClass;

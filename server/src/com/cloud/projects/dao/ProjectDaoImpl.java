@@ -1,9 +1,13 @@
 package com.cloud.projects.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -24,6 +28,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getProjectAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
         
         CountByDomain = createSearchBuilder(Long.class);
@@ -74,5 +79,13 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         sc.setParameters("projectAccountId", projectAccountId);
         
         return findOneBy(sc);
+    }
+    
+    @Override
+    public List<ProjectVO> listByState(Project.State state) {
+        SearchCriteria<ProjectVO> sc = AllFieldsSearch.create();
+        sc.setParameters("state", state);
+        
+        return listBy(sc);
     }
 }

@@ -43,6 +43,9 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
     private String accountName;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="project who will own the VLAN")
+    private Long projectId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID with which the VLAN IP range is associated.  If used with the account parameter, returns all VLAN IP ranges for that account in the specified domain.")
     private Long domainId;
@@ -101,7 +104,10 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 		return forVirtualNetwork;
 	}
     
-   
+    public Long getProjectId() {
+        return projectId;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

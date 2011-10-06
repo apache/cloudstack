@@ -110,6 +110,8 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -202,6 +204,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     CapacityDao _capacityDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ProjectManager _projectMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -1932,11 +1936,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
         String networkVlanId = null;
-
-        // If an account name and domain ID are specified, look up the account
+        
+        //projectId and accountName can't be specified together
         String accountName = cmd.getAccountName();
+        Long projectId = cmd.getProjectId();
         Long domainId = cmd.getDomainId();
         Account account = null;
+        
+        if (projectId != null) {
+            if (accountName != null) {
+                throw new InvalidParameterValueException("Account and projectId are mutually exclusive");
+            }
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            
+            account = _accountMgr.getAccount(project.getProjectAccountId());
+        }
+
         if ((accountName != null) && (domainId != null)) {
             account = _accountDao.findActiveAccount(accountName, domainId);
             if (account == null) {

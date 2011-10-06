@@ -36,12 +36,14 @@ public class JoinProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.PROJECT_ID, required=true, type=CommandType.LONG, description="list by project id")
+    @Parameter(name=ApiConstants.PROJECT_ID, required=true, type=CommandType.LONG, description="id of the project to join")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list invitations for specified account; this parameter has to be specified with domainId")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="account that is joining the project")
     private String accountName;
     
+    @Parameter(name=ApiConstants.TOKEN, type=CommandType.STRING, description="list invitations for specified account; this parameter has to be specified with domainId")
+    private String token;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,6 +61,10 @@ public class JoinProjectCmd extends BaseCmd {
         return s_name;
     }
     
+    public String getToken() {
+        return token;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -73,7 +79,7 @@ public class JoinProjectCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
-        boolean result = _projectService.joinProject(projectId, accountName);
+        boolean result = _projectService.joinProject(projectId, accountName, token);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

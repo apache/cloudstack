@@ -405,13 +405,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (resourceCount.getResourceOwnerType() == ResourceOwnerType.Account) {
             Account accountTemp = ApiDBUtils.findAccountById(resourceCount.getOwnerId());
             if (accountTemp != null) {
-                resourceCountResponse.setAccountName(accountTemp.getAccountName());
-                resourceCountResponse.setDomainId(accountTemp.getDomainId());
-                resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+                populateAccount(resourceCountResponse, accountTemp.getId());
+                populateDomain(resourceCountResponse, accountTemp.getDomainId());
             }
         } else if (resourceCount.getResourceOwnerType() == ResourceOwnerType.Domain) {
-            resourceCountResponse.setDomainId(resourceCount.getOwnerId());
-            resourceCountResponse.setDomainName(ApiDBUtils.findDomainById(resourceCount.getOwnerId()).getName());
+            populateDomain(resourceCountResponse, resourceCount.getOwnerId());
         }
 
         resourceCountResponse.setResourceType(Integer.valueOf(resourceCount.getType().getOrdinal()).toString());
@@ -629,9 +627,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         vlanResponse.setNetworkId(vlan.getNetworkId());
         Account owner = ApiDBUtils.getVlanAccount(vlan.getId());
         if (owner != null) {
-            vlanResponse.setAccountName(owner.getAccountName());
-            vlanResponse.setDomainId(owner.getDomainId());
-            vlanResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+            populateAccount(vlanResponse, owner.getId());
+            populateDomain(vlanResponse, owner.getDomainId());
         }
 
         vlanResponse.setObjectName("vlan");
@@ -1475,12 +1472,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setCreated(iso.getCreated());
             isoResponse.setChecksum(iso.getChecksum());
             isoResponse.setPasswordEnabled(false);
-            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-            if (owner != null) {
-                isoResponse.setAccountName(owner.getAccountName());
-                isoResponse.setDomainId(owner.getDomainId());
-                isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-            }
+            
+            populateOwner(isoResponse, iso);
+            
             isoResponse.setObjectName("iso");
             isoResponses.add(isoResponse);
             return isoResponses;
@@ -1529,15 +1523,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setOsTypeId(-1L);
             isoResponse.setOsTypeName("");
         }
-
-        // add account ID and name
-        Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
-        if (owner != null) {
-            isoResponse.setAccountName(owner.getAccountName());
-            isoResponse.setDomainId(owner.getDomainId());
-            // TODO: implement
-            isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
-        }
+        
+        populateOwner(isoResponse, iso);
 
         Account account = UserContext.current().getCaller();
         boolean isAdmin = false;
@@ -1592,12 +1579,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             netGrpResponse.setId(networkGroup.getId());
             netGrpResponse.setName(networkGroup.getName());
             netGrpResponse.setDescription(networkGroup.getDescription());
-            netGrpResponse.setAccountName(networkGroup.getAccountName());
             
             populateOwner(netGrpResponse, networkGroup);
-            
-            netGrpResponse.setDomainId(networkGroup.getDomainId());
-            netGrpResponse.setDomainName(ApiDBUtils.findDomainById(networkGroup.getDomainId()).getName());
 
             List<IngressRuleResultObject> ingressRules = networkGroup.getIngressRules();
             if ((ingressRules != null) && !ingressRules.isEmpty()) {
@@ -1639,12 +1622,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group) {
         SecurityGroupResponse response = new SecurityGroupResponse();
-        Account account = ApiDBUtils.findAccountById(group.getAccountId());
+        
+        populateOwner(response, group);
 
-        response.setAccountName(account.getAccountName());
-        response.setDomainId(group.getDomainId());
         response.setDescription(group.getDescription());
-        response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
         response.setId(group.getId());
         response.setName(group.getName());
 
@@ -1721,16 +1702,16 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public EventResponse createEventResponse(Event event) {
         EventResponse responseEvent = new EventResponse();
-        responseEvent.setAccountName(event.getAccountName());
         responseEvent.setCreated(event.getCreateDate());
         responseEvent.setDescription(event.getDescription());
-        responseEvent.setDomainId(event.getDomainId());
         responseEvent.setEventType(event.getType());
         responseEvent.setId(event.getId());
         responseEvent.setLevel(event.getLevel());
         responseEvent.setParentId(event.getStartId());
         responseEvent.setState(event.getState());
-        responseEvent.setDomainName(ApiDBUtils.findDomainById(event.getDomainId()).getName());
+        
+        populateOwner(responseEvent, event);
+        
         User user = ApiDBUtils.findUserById(event.getUserId());
         if (user != null) {
             responseEvent.setUsername(user.getUsername());
@@ -1998,10 +1979,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 account = ApiDBUtils.findAccountById(securityGroup.getAccountId());
                 securiytGroupAccounts.put(securityGroup.getAccountId(), account);
             }
-
-            response.setAccountName(account.getAccountName());
-            response.setDomainId(account.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(securityGroup.getDomainId()).getName());
+            
+            populateAccount(response, account.getId());
+            populateDomain(response, account.getDomainId());
 
             List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
             for (IngressRule ingressRule : ingressRules) {
@@ -2068,9 +2048,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 securiytGroupAccounts.put(securityGroup.getAccountId(), account);
             }
 
-            response.setAccountName(account.getAccountName());
-            response.setDomainId(account.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(securityGroup.getDomainId()).getName());
+            populateAccount(response, account.getId());
+            populateDomain(response, account.getDomainId());
+
 
             List<EgressRuleResponse> responses = new ArrayList<EgressRuleResponse>();
             for (EgressRule egressRule : egressRules) {
@@ -2258,6 +2238,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(project.getId());
         response.setName(project.getName());
         response.setDisplaytext(project.getDisplayText());
+        response.setState(project.getState().toString());
 
         Domain domain = ApiDBUtils.findDomainById(project.getDomainId());
         response.setDomainId(domain.getId());
@@ -2384,9 +2365,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             sgr.setId(sgd.getId());
             sgr.setName(sgd.getName());
             sgr.setDescription(sgd.getDescription());
-            sgr.setAccountName(sgd.getAccountName());
-            sgr.setDomainId(sgd.getDomainId());
-            sgr.setDomainName(sgd.getDomainName());
+            
+            Account account = ApiDBUtils.findAccountByNameDomain(sgd.getAccountName(), sgd.getDomainId());
+            populateAccount(sgr, account.getId());
+            populateDomain(sgr, sgd.getDomainId());
+            
             sgr.setObjectName(sgd.getObjectName());
             securityGroupResponse.add(sgr);
         }
@@ -2425,7 +2408,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     private void populateOwner(ControlledEntityResponse response, ControlledEntity object) {
-        Account account = ApiDBUtils.findAccountById(object.getAccountId());
+        Account account = ApiDBUtils.findAccountByIdIncludingRemoved(object.getAccountId());
         
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
@@ -2442,7 +2425,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     private void populateAccount(ControlledEntityResponse response, long accountId) {
-        Account account = ApiDBUtils.findAccountById(accountId);
+        Account account = ApiDBUtils.findAccountByIdIncludingRemoved(accountId);
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
@@ -2497,9 +2480,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProjectName(ApiDBUtils.findProjectById(invite.getProjectId()).getName());
         response.setInvitationState(invite.getState().toString());
         
-        Account account = ApiDBUtils.findAccountById(invite.getAccountId());
-        response.setAccountName(account.getAccountName());
-        populateDomain(response, account.getDomainId());
+        if (invite.getAccountId() != null) {
+            Account account = ApiDBUtils.findAccountById(invite.getAccountId());
+            response.setAccountName(account.getAccountName());
+            
+        } else {
+            response.setEmail(invite.getEmail());
+        }
+       
+        populateDomain(response, invite.getDomainId());
         
         response.setObjectName("projectinvitation");
         return response;

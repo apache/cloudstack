@@ -16,10 +16,13 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     private Long domainId;
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
-    private String domain;
+    private String domainName;
     
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name of the project's owner")
     private String accountName;
+    
+    @SerializedName(ApiConstants.EMAIL) @Param(description="the email the invitation was sent to")
+    private String email;
     
     @SerializedName(ApiConstants.STATE) @Param(description="the invitation state")
     private String invitationState;
@@ -37,7 +40,7 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     }
 
     public void setDomainName(String domain) {
-        this.domain = domain;
+        this.domainName = domain;
     }
 
     public void setAccountName(String accountName) {
@@ -48,5 +51,7 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
         this.invitationState = invitationState;
     }
 
-   
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }

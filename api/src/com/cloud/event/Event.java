@@ -19,7 +19,9 @@ package com.cloud.event;
 
 import java.util.Date;
 
-public interface Event {
+import com.cloud.acl.ControlledEntity;
+
+public interface Event extends ControlledEntity{
     public enum State {
         Created,
         Scheduled,

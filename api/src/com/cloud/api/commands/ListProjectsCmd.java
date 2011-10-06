@@ -54,6 +54,9 @@ public class ListProjectsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list projects by display text")
     private String displayText;
     
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list projects by state")
+    private String state;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -89,7 +92,7 @@ public class ListProjectsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, accountName, domainId, this.getKeyword(), this.getStartIndex(), this.getPageSizeVal());
+        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, state, accountName, domainId, this.getKeyword(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
         List<ProjectResponse> projectResponses = new ArrayList<ProjectResponse>();
         for (Project project : projects) {

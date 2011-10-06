@@ -42,6 +42,9 @@ public class ProjectResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name of the project's owner")
     private String ownerName;
+    
+    @SerializedName(ApiConstants.STATE) @Param(description="the state of the project")
+    private String state;
 
     public void setId(Long id) {
         this.id = id;
@@ -66,5 +69,8 @@ public class ProjectResponse extends BaseResponse{
     public void setOwner(String owner) {
         this.ownerName = owner;
     }
-   
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

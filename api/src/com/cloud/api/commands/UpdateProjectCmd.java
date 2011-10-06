@@ -32,7 +32,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a project", responseObject=ProjectResponse.class)
 public class UpdateProjectCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateProjectCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
     private static final String s_name = "updateprojectresponse";
 

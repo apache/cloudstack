@@ -24,7 +24,8 @@ import com.cloud.event.Event;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class EventResponse extends BaseResponse {
+@SuppressWarnings("unused")
+public class EventResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the event")
     private Long id;
 
@@ -42,6 +43,12 @@ public class EventResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name for the account that owns the object being acted on in the event (e.g. the owner of the virtual machine, ip address, or security group)")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the id of the account's domain")
     private Long domainId;
@@ -58,91 +65,60 @@ public class EventResponse extends BaseResponse {
     @SerializedName("parentid") @Param(description="whether the event is parented")
     private Long parentId;
 
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
     }
 
     public void setUsername(String username) {
         this.username = username;
     }
 
-    public String getEventType() {
-        return eventType;
-    }
-
     public void setEventType(String eventType) {
         this.eventType = eventType;
-    }
-
-    public String getLevel() {
-        return level;
     }
 
     public void setLevel(String level) {
         this.level = level;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
+    @Override
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public Date getCreated() {
-        return created;
     }
 
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    public Event.State getState() {
-        return state;
-    }
-
     public void setState(Event.State state) {
         this.state = state;
     }
 
-    public Long getParentId() {
-        return parentId;
-    }
-
     public void setParentId(Long parentId) {
         this.parentId = parentId;
+    }
+
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

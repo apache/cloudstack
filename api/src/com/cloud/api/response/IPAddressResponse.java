@@ -114,14 +114,17 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.sourceNat = sourceNat;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
+    @Override
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
     
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }

@@ -1137,8 +1137,12 @@ public class ManagementServerImpl implements ManagementServer {
         Long networkId = cmd.getNetworkId();
         Boolean forVirtual = cmd.getForVirtualNetwork();
         String vlanType = null;
+        Long projectId = cmd.getProjectId();
 
         if (accountName != null && domainId != null) {
+            if (projectId != null) {
+                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+            }
             Account account = _accountDao.findActiveAccount(accountName, domainId);
             if (account == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
@@ -1153,6 +1157,15 @@ public class ManagementServerImpl implements ManagementServer {
             } else {
                 vlanType = VlanType.DirectAttached.toString();
             }
+        }
+        
+        //set project information
+        if (projectId != null) {
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            accountId = project.getProjectAccountId();
         }
 
         Filter searchFilter = new Filter(VlanVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1599,33 +1612,49 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<EventVO> searchForEvents(ListEventsCmd cmd) {
-        Account account = UserContext.current().getCaller();
-        Long accountId = null;
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
         boolean isAdmin = false;
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
 
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((caller == null) || isAdmin(caller.getType())) {
             isAdmin = true;
             // validate domainId before proceeding
             if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                     throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list events.");
                 }
 
                 if (accountName != null) {
                     Account userAccount = _accountDao.findAccount(accountName, domainId);
                     if (userAccount != null) {
-                        accountId = userAccount.getId();
+                        permittedAccounts.add(userAccount.getId());
                     } else {
                         throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
                 }
             } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                domainId = ((caller == null) ? DomainVO.ROOT_DOMAIN : caller.getDomainId());
             }
         } else {
-            accountId = account.getId();
+            permittedAccounts.add(caller.getId());
+        }
+        
+        //set project information
+        if (projectId != null) {
+            permittedAccounts.clear();
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+            }
+            permittedAccounts.add(project.getProjectAccountId());
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
         }
 
         Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1650,7 +1679,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
         sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
@@ -1658,7 +1687,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
 
-        if ((accountId == null) && (accountName == null) && (domainId != null) && isAdmin) {
+        if ((permittedAccounts.isEmpty()) && (accountName == null) && (domainId != null) && isAdmin) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -1682,8 +1711,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("levelEQ", level);
         }
 
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
         } else if (domainId != null) {
             if (accountName != null) {
                 sc.setParameters("domainIdEQ", domainId);

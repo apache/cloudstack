@@ -27,4 +27,7 @@ public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Lo
     List<ProjectInvitationVO> listExpiredInvitations();
     boolean expirePendingInvitations(long timeOut);
     boolean isActive(long id, long timeout);
+    ProjectInvitationVO findPendingByEmailAndProjectId(String email, long projectId);
+    ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId);
+    void cleanupInvitations(long projectId);
 }

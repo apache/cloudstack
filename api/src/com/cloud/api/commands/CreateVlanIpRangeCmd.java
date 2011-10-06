@@ -44,6 +44,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
     private String accountName;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="project who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
+    private Long projectId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a VLAN")
     private Long domainId;
@@ -119,7 +122,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return zoneId;
     }
 
-    
+    public Long getProjectId() {
+        return projectId;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

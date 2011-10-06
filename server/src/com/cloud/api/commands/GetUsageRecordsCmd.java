@@ -30,15 +30,16 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
+import com.cloud.projects.Project;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.server.api.response.UsageRecordResponse;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
+import com.cloud.user.Account;
 
 @Implementation(description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
@@ -64,6 +65,9 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, description="List usage records for the specified account")
     private Long accountId;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="List usage records for specified project")
+    private Long projectId;
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.LONG, description="List usage records for the specified usage type")
     private Long usageType;
@@ -94,6 +98,10 @@ public class GetUsageRecordsCmd extends BaseListCmd {
 
     public Long getUsageType() {
         return usageType;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
     
     /////////////////////////////////////////////////////
@@ -213,10 +221,20 @@ public class GetUsageRecordsCmd extends BaseListCmd {
             UsageRecordResponse usageRecResponse = new UsageRecordResponse();
             if (usageRecordGeneric instanceof UsageVO) {
                 UsageVO usageRecord = (UsageVO)usageRecordGeneric;
-
-                usageRecResponse.setAccountName(ApiDBUtils.findAccountByIdIncludingRemoved(usageRecord.getAccountId()).getAccountName());
-                usageRecResponse.setAccountId(usageRecord.getAccountId());
+      
+                Account account = ApiDBUtils.findAccountByIdIncludingRemoved(usageRecord.getAccountId()); 
+                if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    //find the project
+                    Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                    usageRecResponse.setProjectId(project.getId());
+                    usageRecResponse.setProjectName(project.getName());
+                } else {
+                    usageRecResponse.setAccountId(account.getId());
+                    usageRecResponse.setAccountName(account.getAccountName());
+                }
+             
                 usageRecResponse.setDomainId(usageRecord.getDomainId());
+                
                 usageRecResponse.setZoneId(usageRecord.getZoneId());
                 usageRecResponse.setDescription(usageRecord.getDescription());
                 usageRecResponse.setUsage(usageRecord.getUsageDisplay());

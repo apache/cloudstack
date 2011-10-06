@@ -480,7 +480,12 @@ public abstract class BaseCmd {
             
             Project project = _projectService.getProject(projectId);
             if (project != null) {
-                return project.getProjectAccountId();
+                if (project.getState() == Project.State.Active) {
+                    return project.getProjectAccountId();
+                } else {
+                    throw new InvalidParameterValueException("Can't add resources to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+                }
+                
             } else {
                 throw new InvalidParameterValueException("Unable to find project by id " + projectId);
             }

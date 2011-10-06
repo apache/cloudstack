@@ -17,62 +17,65 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class ResourceCountResponse extends BaseResponse {
-    @SerializedName("account") @Param(description="the account for which resource count's are updated")
+@SuppressWarnings("unused")
+public class ResourceCountResponse extends BaseResponse implements ControlledEntityResponse{
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account for which resource count's are updated")
     private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id for which resource count's are updated")
+    private Long projectId;
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name for which resource count's are updated")
+    private String projectName;
 
-    @SerializedName("domainid") @Param(description="the domain ID for which resource count's are updated")
+
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID for which resource count's are updated")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name for which resource count's are updated")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name for which resource count's are updated")
     private String domainName;
 
-    @SerializedName("resourcetype") @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")
+    @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")
     private String resourceType;
 
     @SerializedName("resourcecount") @Param(description="resource count")
     private long resourceCount;
-    
-    public String getAccountName() {
-        return accountName;
-    }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
+    @Override
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public String getResourceType() {
-        return resourceType;
     }
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 
-    public Long getResourceCount() {
-        return resourceCount;
-    }
-
     public void setResourceCount(Long resourceCount) {
         this.resourceCount = resourceCount;
     }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+    
 }

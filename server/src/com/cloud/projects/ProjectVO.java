@@ -50,15 +50,15 @@ public class ProjectVO implements Project{
     @Column(name="project_account_id")
     long projectAccountId;
     
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    private State state;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
-    private State state;
     
     protected ProjectVO(){
     }
@@ -68,7 +68,7 @@ public class ProjectVO implements Project{
         this.displayText = displayText;
         this.projectAccountId = projectAccountId;
         this.domainId = domainId;
-        this.state = State.Inactive;
+        this.state = State.Active;
     }
     
     @Override

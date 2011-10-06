@@ -31,6 +31,7 @@ import com.cloud.api.commands.GetUsageRecordsCmd;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project;
 import com.cloud.server.api.response.UsageTypeResponse;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.UsageTypes;
@@ -102,12 +103,24 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account account = (Account)UserContext.current().getCaller();
+        Account caller = (Account)UserContext.current().getCaller();
         Long usageType = cmd.getUsageType();
+        Long projectId = cmd.getProjectId();
+        
+        if (projectId != null) {
+            if (accountId != null) {
+                throw new InvalidParameterValueException("Projectid and accountId can't be specified together");
+            }
+            Project project = _projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            }
+            accountId = project.getProjectAccountId();
+        }
         
         //if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
-            if (_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+            if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                 Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
                 List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter); 
                 if(accounts.size() > 0){
@@ -127,13 +140,13 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         
         //If accountId couldn't be found using accountName and domainId, get it from userContext
         if(accountId == null){
-            accountId = account.getId();
+            accountId = caller.getId();
             //List records for all the accounts if the caller account is of type admin. 
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
-            if(account.getType() == Account.ACCOUNT_TYPE_ADMIN){
+            if(caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
                 isAdmin = true;
             }
-            s_logger.debug("Account details not available. Using userContext accountId: "+accountId);
+            s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
         }
 
         Date startDate = cmd.getStartDate();

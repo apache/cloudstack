@@ -26,6 +26,8 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         AllFieldsSearch.and("created", AllFieldsSearch.entity().getCreated(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("email", AllFieldsSearch.entity().getEmail(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("token", AllFieldsSearch.entity().getToken(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
         
         InactiveSearch = createSearchBuilder();
@@ -95,5 +97,33 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
             return false;
         }
     }
-
+    
+    @Override
+    public ProjectInvitationVO findPendingByEmailAndProjectId(String email, long projectId) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+        sc.setParameters("email", email);
+        sc.setParameters("projectId", projectId);
+        sc.setParameters("state", State.Pending);
+        
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+        sc.setParameters("token", token);
+        sc.setParameters("projectId", projectId);
+        sc.setParameters("state", State.Pending);
+        
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public void cleanupInvitations(long projectId) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+        sc.setParameters("projectId", projectId);
+        
+        int numberRemoved = remove(sc);
+        s_logger.debug("Removed " + numberRemoved + " invitations for project id=" + projectId);
+    }
 }

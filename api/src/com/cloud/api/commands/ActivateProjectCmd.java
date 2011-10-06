@@ -27,51 +27,28 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a project", responseObject=ProjectResponse.class)
-public class CreateProjectCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateProjectCmd.class.getName());
+@Implementation(description="Activates a project", responseObject=ProjectResponse.class)
+public class ActivateProjectCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(ActivateProjectCmd.class.getName());
 
-    private static final String s_name = "createprojectresponse";
+    private static final String s_name = "activaterojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the project")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a project")
-    private Long domainId;
-
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the project")
-    private String name;
-
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="display text of the project")
-    private String displayText;
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDisplayText() {
-        return displayText;
+    public Long getId() {
+        return id;
     }
 
     @Override
@@ -81,17 +58,13 @@ public class CreateProjectCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Account caller = UserContext.current().getCaller();
+        Project project= _projectService.getProject(id);
+        //verify input parameters
+        if (project == null) {
+            throw new InvalidParameterValueException("Unable to find project by id " + id);
+        } 
         
-        if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {
-            throw new InvalidParameterValueException("Account name and domain id must be specified together");
-        }
-        
-        if (accountName != null) {
-            return _accountService.finalizeOwner(caller, accountName, domainId, null).getId();
-        }
-        
-        return caller.getId();
+        return _projectService.getProjectOwner(id).getId(); 
     }
  
 
@@ -100,15 +73,15 @@ public class CreateProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceAllocationException{
-        UserContext.current().setEventDetails("Project Name: "+ getName());
-        Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
+    public void execute(){
+        UserContext.current().setEventDetails("Project id: "+ getId());
+        Project project = _projectService.activateProject(id);
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to activate a project");
         }
     }
 }

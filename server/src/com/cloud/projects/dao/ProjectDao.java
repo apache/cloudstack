@@ -17,6 +17,9 @@
  */
 package com.cloud.projects.dao;
 
+import java.util.List;
+
+import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -27,5 +30,7 @@ public interface ProjectDao extends GenericDao<ProjectVO, Long>{
     Long countProjectsForDomain(long domainId);
     
     ProjectVO findByProjectAccountId(long projectAccountId);
+    
+    List<ProjectVO> listByState(Project.State state);
 
 }

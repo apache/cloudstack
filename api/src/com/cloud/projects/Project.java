@@ -22,7 +22,7 @@ import java.util.Date;
 import com.cloud.domain.PartOf;
 
 public interface Project extends PartOf{
-    public enum State {Active, Inactive, Suspended}
+    public enum State {Active, Disabled, Suspended}
 
     String getDisplayText();
 

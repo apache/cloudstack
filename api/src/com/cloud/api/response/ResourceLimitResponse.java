@@ -23,16 +23,16 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ResourceLimitResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName("account") @Param(description="the account of the resource limit")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the resource limit")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the resource limit")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the resource limit")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the resource limit")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the resource limit")
     private String domainName;
 
-    @SerializedName("resourcetype") @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")
+    @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")
     private String resourceType;
 
     @SerializedName("max") @Param(description="the maximum number of the resource. A -1 means the resource currently has no limit.")

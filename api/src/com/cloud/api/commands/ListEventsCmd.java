@@ -68,6 +68,9 @@ public class ListEventsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the event type (see event types)")
     private String type;
+    
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list events by projectId")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -107,6 +110,10 @@ public class ListEventsCmd extends BaseListCmd {
 
     public String getType() {
         return type;
+    }
+    
+    public Long getProjectId() {
+        return projectId;
     }
 
     /////////////////////////////////////////////////////

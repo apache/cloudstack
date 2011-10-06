@@ -23,6 +23,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the alert")
     private Long id;
@@ -36,32 +37,16 @@ public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.SENT) @Param(description="the date and time the alert was sent")
     private Date lastSent;
 
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Short getAlertType() {
-        return alertType;
     }
 
     public void setAlertType(Short alertType) {
         this.alertType = alertType;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Date getLastSent() {
-        return lastSent;
     }
 
     public void setLastSent(Date lastSent) {

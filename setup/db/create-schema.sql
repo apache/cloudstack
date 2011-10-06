@@ -1709,7 +1709,10 @@ CREATE TABLE  `cloud`.`project_invitations` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_project_invitations__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_project_invitations__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_project_invitations__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_project_invitations__project_id` FOREIGN KEY(`project_id`) REFERENCES `projects`(`id`) ON DELETE CASCADE,
+  UNIQUE (`project_id`, `account_id`),
+  UNIQUE (`project_id`, `email`),
+  UNIQUE (`project_id`, `token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
