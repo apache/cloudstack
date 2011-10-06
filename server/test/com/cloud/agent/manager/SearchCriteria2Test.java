@@ -60,6 +60,11 @@ public class SearchCriteria2Test extends TestCase {
     		s_logger.info("Vm name:" + vm.getInstanceName());
     	}
     	
+    	sc1 = SearchCriteria2.create(VMInstanceVO.class);
+    	sc1.addAnd(sc1.getEntity().getInstanceName(), Op.EQ, "s-1-TEST");
+    	VMInstanceVO vo = sc1.find();
+    	s_logger.info("SSVM name is " + vo.getInstanceName());
+    	
     	SearchCriteriaService<HostVO, Long> sc3 = SearchCriteria2.create(HostVO.class, Long.class);
     	sc3.selectField(sc3.getEntity().getId());
     	sc3.addAnd(sc3.getEntity().getStatus(), Op.EQ, Status.Disconnected);

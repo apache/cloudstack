@@ -24,6 +24,7 @@ import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Host.Type;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
@@ -58,5 +59,4 @@ public interface ConsoleProxyManager extends Manager {
 	
     public void onAgentConnect(HostVO host, StartupCommand cmd);
 	public void onAgentDisconnect(long agentId, Status state);
-	
 }

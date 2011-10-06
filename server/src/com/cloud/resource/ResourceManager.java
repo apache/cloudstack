@@ -100,4 +100,10 @@ public interface ResourceManager {
     public List<HostVO> listAllHostsInAllZonesByType(Type type);
     
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
+    
+    public HostVO findHostByGuid(String guid);
+    
+    public HostVO findHostByName(String name);
+    
+    public List<HostVO> listHostsByNameLike(String name);
 }

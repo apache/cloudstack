@@ -9,4 +9,5 @@ public interface SearchCriteriaService<T, K> {
 	public void addAnd(Object useless, Op op, Object...values);
 	public List<K> list();
 	public T getEntity();
+	public <K> K find();
 }

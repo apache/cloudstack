@@ -186,4 +186,12 @@ public class SearchCriteria2<T, K> implements SearchCriteriaService<T, K>, Metho
         return methodProxy.invokeSuper(object, args);
     }
 
+	@Override
+    public <K> K find() {
+		assert isSelectAll() : "find doesn't support select search";
+		done();
+		SearchCriteria sc1 = createSearchCriteria();
+		return (K)_dao.findOneBy(sc1);
+    }
+
 }

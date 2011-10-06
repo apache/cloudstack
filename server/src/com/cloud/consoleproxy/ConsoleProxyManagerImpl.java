@@ -70,6 +70,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host.Type;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -116,7 +117,10 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -1467,7 +1471,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             long proxyVmId = startupCmd.getProxyVmId();
             ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
             assert (consoleProxy != null);
-            HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getHostName(), Type.ConsoleProxy);
+            HostVO consoleProxyHost = findConsoleProxyHostByName(consoleProxy.getHostName());
 
             Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -1687,5 +1691,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
 	    // TODO Auto-generated method stub
 	    return null;
+    }
+
+    protected HostVO findConsoleProxyHostByName(String name) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.ConsoleProxy);
+		sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+	    return sc.find();
     }
 }

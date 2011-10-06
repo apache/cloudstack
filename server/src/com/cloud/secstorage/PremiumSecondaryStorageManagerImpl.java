@@ -18,6 +18,7 @@ import com.cloud.configuration.Config;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
@@ -45,6 +46,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     @Inject SecondaryStorageVmDao _secStorageVmDao;
     @Inject CommandExecLogDao _cmdExecLogDao;
     @Inject HostDao _hostDao;
+    @Inject ResourceManager _resourceMgr;
     protected SearchBuilder<CommandExecLogVO> ActiveCommandSearch;
     protected SearchBuilder<HostVO> HostSearch;
     
@@ -134,7 +136,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 		for(Long vmId : vms) {
 			SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(vmId);
 			HostVO host;
-			host = _hostDao.findByName(secStorageVm.getHostName());
+			host = _resourceMgr.findHostByName(secStorageVm.getHostName());
 			if(host != null && host.getStatus() == Status.Up)
 				return new Pair<HostVO, SecondaryStorageVmVO>(host, secStorageVm);
 		}

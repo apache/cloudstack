@@ -107,7 +107,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
     		String agentIp = ia.getHostAddress();
     		String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
     		String guidWithTail = guid + "-HypervResource";/*tail added by agent.java*/
-    		if (_hostDao.findByGuid(guidWithTail) != null) {
+    		if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
     			s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
     			return null;
     		}

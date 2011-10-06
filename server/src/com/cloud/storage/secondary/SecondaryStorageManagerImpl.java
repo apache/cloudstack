@@ -289,7 +289,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             String secUrl = cssHost.getStorageUrl();
             SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl);
             for ( SecondaryStorageVmVO ssVm : alreadyRunning ) {
-                HostVO host = _hostDao.findByName(ssVm.getInstanceName());
+                HostVO host = _resourceMgr.findHostByName(ssVm.getInstanceName());
                 Answer answer = _agentMgr.easySend(host.getId(), setupCmd);
                 if (answer != null && answer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
@@ -410,7 +410,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 continue;
             }
             String instanceName = ssVm.getInstanceName();
-            HostVO host = _hostDao.findByName(instanceName);
+            HostVO host = _resourceMgr.findHostByName(instanceName);
             if ( host == null ) {
                 continue;
             }

@@ -429,18 +429,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         host.setHostTags(hostTags);
     }
 
-    @Override
-    public HostVO findByGuid(String guid) {
-        SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public HostVO findByName(String name) {
-        SearchCriteria<HostVO> sc = NameSearch.create("name", name);
-        return findOneBy(sc);
-    }
-
     @DB
     @Override
     public List<HostVO> findLostHosts(long timeout) {
@@ -472,28 +460,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         return result;
     }
-
-    @Override
-    public List<HostVO> findHostsLike(String hostName) {
-        SearchCriteria<HostVO> sc = NameLikeSearch.create();
-        sc.setParameters("name", "%" + hostName + "%");
-        return listBy(sc);
-    }
-
-    @Override
-    public HostVO findConsoleProxyHost(String name, Type type) {
-        SearchCriteria<HostVO> sc = ConsoleProxyHostSearch.create();
-        sc.setParameters("name", name);
-        sc.setParameters("type", type);
-        List<HostVO> hostList = listBy(sc);
-
-        if (hostList == null || hostList.size() == 0) {
-            return null;
-        } else {
-            return hostList.get(0);
-        }
-    }
-    
+   
     @Override
     public void saveDetails(HostVO host) {
         Map<String, String> details = host.getDetails();
@@ -614,18 +581,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return customSearch(sc, null).get(0);
     }
 
-    @Override
-    public HostVO findTrafficMonitorHost() {
-        SearchCriteria<HostVO> sc = TypeSearch.create();
-        sc.setParameters("type", Host.Type.TrafficMonitor);
-        List<HostVO> trafficHosts = listBy(sc);
-
-        if (trafficHosts == null || trafficHosts.size() < 1) {
-            return null;
-        } else {
-            return trafficHosts.get(0);
-        }
-    }
 
 	@Override
 	public boolean updateState(Status oldStatus, Event event, Status newStatus, Host vo, Long id) {

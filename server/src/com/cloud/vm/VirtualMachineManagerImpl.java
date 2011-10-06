@@ -102,6 +102,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -219,6 +220,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Inject(adapter = HostAllocator.class)
     protected Adapters<HostAllocator> _hostAllocators;
+    
+    @Inject
+    protected ResourceManager _resourceMgr;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -736,7 +740,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     if (startAnswer != null && startAnswer.getResult()) {
                         String host_guid = startAnswer.getHost_guid();
                         if( host_guid != null ) {
-                            HostVO finalHost = _hostDao.findByGuid(host_guid);
+                            HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
                             if ( finalHost == null ) {
                                 throw new CloudRuntimeException("Host Guid " + host_guid + " doesn't exist in DB, something wrong here");
                             }
@@ -1836,7 +1840,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 } else {
                     castedVm = info.vm;
                     String host_guid = info.getHost();
-                    host = _hostDao.findByGuid(host_guid);
+                    host = _resourceMgr.findHostByGuid(host_guid);
                     if ( host == null ) {
                         infos.put(vm.getId(), info);
                         continue;

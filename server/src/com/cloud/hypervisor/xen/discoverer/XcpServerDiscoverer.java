@@ -243,7 +243,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 String hostOSVer = prodVersion;
                 String hostKernelVer = record.softwareVersion.get("linux");
 
-                if (_hostDao.findByGuid(record.uuid) != null) {
+                if (_resourceMgr.findHostByGuid(record.uuid) != null) {
                     s_logger.debug("Skipping " + record.address + " because " + record.uuid + " is already in the database.");
                     continue;
                 }                

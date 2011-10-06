@@ -1288,10 +1288,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	protected HostVO createHostVO(StartupCommand[] cmds, ServerResource resource, Map<String, String> details, List<String> hostTags,
 	        ResourceStateAdapter.Event stateEvent) {
 		StartupCommand startup = cmds[0];
-		HostVO host = _hostDao.findByGuid(startup.getGuid());
+		HostVO host = findHostByGuid(startup.getGuid());
 		boolean isNew = false;
 		if (host == null) {
-			host = _hostDao.findByGuid(startup.getGuidWithoutResource());
+			host = findHostByGuid(startup.getGuidWithoutResource());
 		}
 		if (host == null) {
 			host = new HostVO(startup.getGuid());
@@ -1431,9 +1431,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 			if (old) {
 				StartupCommand firstCmd = cmds[0];
-				host = _hostDao.findByGuid(firstCmd.getGuid());
+				host = findHostByGuid(firstCmd.getGuid());
 				if (host == null) {
-					host = _hostDao.findByGuid(firstCmd.getGuidWithoutResource());
+					host = findHostByGuid(firstCmd.getGuidWithoutResource());
 				}
 				if (host != null && host.getRemoved() == null) {
 					s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
@@ -1897,5 +1897,26 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             hypers.add(host.getHypervisorType());
         }
         return hypers;
+    }
+
+	@Override
+    public HostVO findHostByGuid(String guid) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+	    return sc.find();
+    }
+
+	@Override
+    public HostVO findHostByName(String name) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+	    return sc.find();
+    }
+
+	@Override
+    public List<HostVO> listHostsByNameLike(String name) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getName(), Op.LIKE, "%" + name + "%");
+	    return sc.list();
     }
 }

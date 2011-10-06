@@ -159,7 +159,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			agentIp = ia.getHostAddress();
 			String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
 			String guidWithTail = guid + "-LibvirtComputingResource";/*tail added by agent.java*/
-			if (_hostDao.findByGuid(guidWithTail) != null) {
+			if (_resourceMgr.findHostByGuid(guidWithTail) != null) {
 				s_logger.debug("Skipping " + agentIp + " because " + guidWithTail + " is already in the database.");
 				return null;
 			}       

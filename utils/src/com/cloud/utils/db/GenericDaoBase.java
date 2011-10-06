@@ -818,9 +818,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         assert results.size() <= 1 : "Didn't the limiting worked?";
         return results.size() == 0 ? null : results.get(0);
     }
-
+    
+    @Override
     @DB(txn=false)
-    protected T findOneBy(final SearchCriteria<T> sc) {
+    public T findOneBy(final SearchCriteria<T> sc) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }

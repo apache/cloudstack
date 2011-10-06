@@ -240,5 +240,6 @@ public interface GenericDao<T, ID extends Serializable> {
 	<K> SearchCriteria2 createSearchCriteria2(Class<K> resultType);
 
 	SearchCriteria2 createSearchCriteria2();
-    
+	
+	public T findOneBy(final SearchCriteria<T> sc);
 }

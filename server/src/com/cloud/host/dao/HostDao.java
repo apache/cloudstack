@@ -48,13 +48,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
 	List<HostVO> findLostHosts(long timeout);
 
-	List<HostVO> findHostsLike(String hostName);
-
     List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
-
-	public HostVO findByGuid(String guid);
-
-	public HostVO findByName(String name);
 
     List<RunningHostCountInfo> getRunningHostCounts(Date cutTime);
 
@@ -64,15 +58,11 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     void saveDetails(HostVO host);
 
-	HostVO findConsoleProxyHost(String name, Type type);
-
     void loadHostTags(HostVO host);
 
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
 
     long countRoutingHostsByDataCenter(long dcId);
-    
-    HostVO findTrafficMonitorHost();
 
 	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
