@@ -17,12 +17,20 @@
  */
 package com.cloud.agent.api;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.zip.DeflaterOutputStream;
+
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.utils.net.NetUtils;
 
 
 public class SecurityIngressRulesCmd extends Command {
+    private static Logger s_logger = Logger.getLogger(SecurityIngressRulesCmd.class);
     public static class IpPortAndProto {
         String proto;
         int startPort;
@@ -130,6 +138,56 @@ public class SecurityIngressRulesCmd extends Command {
             ruleBuilder.append(" ");
         }
         return ruleBuilder.toString();
+    }
+    
+    //convert cidrs in the form "a.b.c.d/e" to "hexvalue of 32bit ip/e"
+    private String compressCidr(String cidr) {
+        String [] toks = cidr.split("/");
+        long ipnum = NetUtils.ip2Long(toks[0]);
+        return Long.toHexString(ipnum) + "/" + toks[1];
+    }
+    
+    
+    public String stringifyCompressedRules() {
+        StringBuilder ruleBuilder = new StringBuilder();
+        for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+            ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
+            for (String cidr: ipPandP.getAllowedCidrs()) {
+                //convert cidrs in the form "a.b.c.d/e" to "hexvalue of 32bit ip/e"
+                ruleBuilder.append(compressCidr(cidr)).append(",");
+            }
+            ruleBuilder.append("NEXT");
+            ruleBuilder.append(" ");
+        }
+        return ruleBuilder.toString();
+    }
+    /*
+     * Compress the ingress rules using zlib compression to allow the call to the hypervisor
+     * to scale beyond 8k cidrs.
+     */
+    public String compressStringifiedRules() {
+        StringBuilder ruleBuilder = new StringBuilder();
+        for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+            ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
+            for (String cidr: ipPandP.getAllowedCidrs()) {
+                ruleBuilder.append(cidr).append(",");
+            }
+            ruleBuilder.append("NEXT");
+            ruleBuilder.append(" ");
+        }
+        String stringified = ruleBuilder.toString();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            //Note : not using GZipOutputStream since that is for files
+            //GZipOutputStream gives a different header, although the compression is the same
+            DeflaterOutputStream dzip = new DeflaterOutputStream(out);
+            dzip.write(stringified.getBytes());
+            dzip.close();
+        } catch (IOException e) {
+            s_logger.warn("Exception while compressing ingress rules");
+            return null;
+        }
+        return Base64.encodeBase64String(out.toByteArray());
     }
 
     public String getSignature() {
