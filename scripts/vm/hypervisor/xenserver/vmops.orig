@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# Version @VERSION@
-#
+# Version 2.2.8.2011-08-18T08:15:52Z
+#  
 # A plugin for executing script needed by vmops cloud 
 
 import os, sys, time
@@ -12,8 +12,11 @@ import socket
 import stat
 import tempfile
 import util
+<<<<<<< HEAD
 import subprocess
+=======
 import zlib
+>>>>>>> acfbe18... bug 11336: compression to allow number of cidrs to scale beyond 8k
 from util import CommandException
 
 def echo(fn):
@@ -1087,8 +1090,8 @@ def network_rules(session, args):
 
     util.SMlog("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
               " update iptables, reason=%s" % (vm_name, seqno, len(lines), signature, vm_ip, reason))
+    util.pread2(['iptables', '-F', vmchain])
     
-    cmds = []
     for line in lines:
         tokens = line.split(':')
         if len(tokens) != 4:
@@ -1122,7 +1125,7 @@ def network_rules(session, args):
                 if start == "-1":
                     range = "any"
                     iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
-            cmds.append(iptables)
+            util.pread2(iptables)
             util.SMlog(iptables)
         
         if allow_any and protocol != 'all':
@@ -1133,12 +1136,9 @@ def network_rules(session, args):
                 if start == "-1":
                     range = "any"
                     iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'ACCEPT']
-            cmds.append(iptables)
+            util.pread2(iptables)
             util.SMlog(iptables)
             
-    util.pread2(['iptables', '-F', vmchain])
-    for cmd in cmds:
-        util.pread2(cmd)
     util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
     if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno) == False:

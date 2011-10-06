@@ -4762,7 +4762,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 "vmID", Long.toString(cmd.getVmId()),
                 "signature", cmd.getSignature(),
                 "seqno", Long.toString(cmd.getSeqNum()),
-                "rules", cmd.stringifyRules());
+                "deflated", "true",
+                "rules", cmd.compressStringifiedRules());
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
