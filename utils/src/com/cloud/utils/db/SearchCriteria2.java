@@ -117,6 +117,7 @@ public class SearchCriteria2<T, K> implements SearchCriteriaService<T, K>, Metho
         return _selects == null || _selects.size() == 0;
     }
 	
+	@Override
 	public T getEntity() {
 		return (T) _entity; 
 	}

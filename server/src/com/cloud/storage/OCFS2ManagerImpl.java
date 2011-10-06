@@ -30,6 +30,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value ={OCFS2Manager.class})
@@ -131,7 +132,7 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
             throw new CloudRuntimeException("Cannot find cluster for ID " + clusterId);
         }
         
-        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
         sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cluster.getPodId());
         sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, cluster.getDataCenterId());

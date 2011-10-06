@@ -8,4 +8,5 @@ public interface SearchCriteriaService<T, K> {
 	public void selectField(Object... useless);
 	public void addAnd(Object useless, Op op, Object...values);
 	public List<K> list();
+	public T getEntity();
 }

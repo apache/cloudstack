@@ -101,6 +101,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -1268,7 +1269,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
     public HostVO findSecondaryStorageHost(long dcId) {
-	    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
 	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
 	    List<HostVO> storageHosts = sc.list();
@@ -1282,14 +1283,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
     public List<HostVO> listSecondaryStorageHostsInAllZones() {
-	    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
 	    return sc.list();
     }
 
 	@Override
     public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
 	    return sc.list();
@@ -1297,7 +1298,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
     public List<HostVO> listLocalSecondaryStorageHostsInOneZone(long dataCenterId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.LocalSecondaryStorage);
 	    return sc.list();
@@ -1305,7 +1306,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
     public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
 		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage);
 	    return sc.list();
@@ -1313,7 +1314,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	@Override
     public List<HostVO> listUpSecondaryStorageVmHost(long dcId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
 		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, com.cloud.host.Status.Up);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);

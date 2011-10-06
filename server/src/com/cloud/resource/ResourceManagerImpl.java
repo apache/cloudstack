@@ -113,6 +113,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -1815,7 +1816,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	@Override
     public List<HostVO> findDirectlyConnectedHosts() {
 		/* The resource column is not null for direct connected resource */
-	    SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 	    sc.addAnd(sc.getEntity().getResource(), Op.NNULL);
 	    sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Disabled);
 	    return sc.list();
@@ -1823,7 +1824,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 	@Override
     public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		if (type != null) {
 			sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
 		}
@@ -1841,14 +1842,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 	@Override
     public List<HostVO> listAllHostsInCluster(long clusterId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
 	    return sc.list();
     }
 
 	@Override
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
 		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, status);
 	    return sc.list();
@@ -1856,7 +1857,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 	@Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
 		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
@@ -1866,7 +1867,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 	@Override
     public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
 	    return sc.list();
@@ -1874,14 +1875,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
 	@Override
     public List<HostVO> listAllHostsInAllZonesByType(Type type) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
 	    return sc.list();
     }
 
 	@Override
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId) {
-		SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		if (zoneId != null) {
 			sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
 		}

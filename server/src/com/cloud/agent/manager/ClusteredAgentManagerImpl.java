@@ -73,6 +73,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -712,7 +713,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void startRebalanceAgents() {
         s_logger.debug("Management server " + _nodeId + " is asking other peers to rebalance their agents");
         List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up);
-        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
         sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> allManagedAgents = sc.list();

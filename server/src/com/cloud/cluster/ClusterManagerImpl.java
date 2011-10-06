@@ -76,6 +76,7 @@ import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -622,7 +623,7 @@ public class ClusterManagerImpl implements ClusterManager {
                     
                     //initiate agent lb task will be scheduled and executed only once, and only when number of agents loaded exceeds _connectedAgentsThreshold
                     if (_agentLBEnabled && !_agentLbHappened) {
-                        SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                    	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                         sc.addAnd(sc.getEntity().getManagementServerId(), Op.NNULL);
                         sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
                         List<HostVO> allManagedRoutingAgents = sc.list();

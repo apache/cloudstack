@@ -49,6 +49,7 @@ import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -143,7 +144,7 @@ public class AgentMonitor extends Thread implements Listener {
                     _agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
                 }
 
-                SearchCriteria2<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                 sc.addAnd(sc.getEntity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
                 List<HostVO> hosts = sc.list();
                 
