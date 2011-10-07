@@ -390,7 +390,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
        
        if (domainId != null) {
            sc.setParameters("domainId", domainId);
-           sc.setParameters("accountId", null);
+           sc.setParameters("accountId", (Object[])null);
        }
        
        if (resourceType != null) {

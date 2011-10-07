@@ -39,6 +39,25 @@ public class DbUpgradeUtils {
     }
     
     
+    public static void dropPrimaryKeyIfExists(Connection conn, String tableName) {
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP PRIMARY KEY ");
+            pstmt.executeUpdate();
+            s_logger.debug("Primary key is dropped successfully from the table " + tableName);
+        } catch (SQLException e) {
+            // do nothing here
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+    
+    
     public static void dropTableColumnsIfExist(Connection conn, String tableName, List<String> columns) {
         PreparedStatement pstmt = null;
         try {

@@ -178,8 +178,7 @@ CREATE TABLE  `cloud_usage`.`usage_load_balancer_policy` (
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL,
-  PRIMARY KEY  (`id`)
+  `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_load_balancer_policy` ADD INDEX `i_usage_load_balancer_policy__account_id`(`account_id`);
@@ -210,8 +209,7 @@ CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
   `account_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL,
-  PRIMARY KEY  (`id`)
+  `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_port_forwarding` ADD INDEX `i_usage_port_forwarding__account_id`(`account_id`);

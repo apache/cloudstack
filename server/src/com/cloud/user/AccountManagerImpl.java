@@ -244,7 +244,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return true;
     }
 
-
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
             _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
