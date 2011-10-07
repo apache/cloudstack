@@ -1105,8 +1105,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         InterfaceDef nic = createVif(conn, nicTO, InterfaceDef.nicModel.VIRTIO);
         Domain vm = getDomain(conn, vmName);
         vm.attachDevice(nic.toString());
+
+        try {
+        	Thread.sleep(10000);
+        } catch (InterruptedException e) {
+        }
+
     }
-    
+
     public Answer execute(IpAssocCommand cmd) {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
