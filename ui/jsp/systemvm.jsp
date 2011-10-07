@@ -18,7 +18,12 @@ dictionary = {
 	'message.action.reboot.systemvm' : '<fmt:message key="message.action.reboot.systemvm"/>',
 	'label.action.destroy.systemvm': '<fmt:message key="label.action.destroy.systemvm"/>',
     'label.action.destroy.systemvm.processing': '<fmt:message key="label.action.destroy.systemvm.processing"/>',
-    'message.action.destroy.systemvm': '<fmt:message key="message.action.destroy.systemvm"/>'
+    'message.migrate.systemvm.confirm' : '<fmt:message key="message.migrate.systemvm.confirm"/>',
+	'label.action.migrate.systemvm': '<fmt:message key="label.action.migrate.systemvm"/>',
+    'label.action.migrate.systemvm.processing': '<fmt:message key="label.action.migrate.systemvm.processing"/>',    
+    'message.action.destroy.systemvm': '<fmt:message key="message.action.destroy.systemvm"/>',
+    'label.full': '<fmt:message key="label.full"/>',
+	'label.available': '<fmt:message key="label.available"/>'
 };	
 </script>
 
@@ -202,6 +207,27 @@ dictionary = {
         </div>  
     </div>
     <!-- Details tab (end)-->
+</div>
+
+<!-- Migrate System VM Dialog -->
+<div id="dialog_migrate_systemvm" title='<fmt:message key="label.action.migrate.systemvm" />' style="display: none">
+    <p> 
+		<fmt:message key="message.migrate.systemvm.confirm" />
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.migrate.systemvm.to" />:</label>
+                <select class="select" id="migrate_instance_hosts">
+                </select>
+                <div id="migrate_vm_hosts_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
 </div>
 
 <!-- view console template (begin)  -->
