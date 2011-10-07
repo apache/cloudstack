@@ -76,7 +76,8 @@ function routerGetSearchParams() {
 
 function afterLoadRouterJSP() {
 	// dialogs    
-    initDialog("dialog_change_system_service_offering", 600);  
+    initDialog("dialog_change_system_service_offering", 600); 
+    initDialog("dialog_migrate_router", 600);
 }
 
 function routerToMidmenu(jsonObj, $midmenuItem1) {
@@ -208,6 +209,10 @@ function routerBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
         buildActionLinkForTab("label.action.stop.router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         buildActionLinkForTab("label.action.reboot.router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
         buildActionLinkForTab("label.action.change.service", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);
+        if (isAdmin()) 
+		{
+			buildActionLinkForTab("label.action.migrate.router", routerActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		}
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
@@ -364,6 +369,59 @@ function doChangeSystemServiceOffering($actionLink, $detailsTab, $midmenuItem1) 
 	}).dialog("open");
 }
 
+function doMigrateRouter($actionLink, $detailsTab, $midmenuItem1) {    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;	
+	$.ajax({	   
+	    data: createURL("command=listHosts&VirtualMachineId="+id), 
+		//data: createURL("command=listHosts"), //for testing, comment it out before checking in.
+		dataType: "json",
+		async: false,
+		success: function(json) {
+			var hosts = json.listhostsresponse.host;
+			var hostSelect = $("#dialog_migrate_router #host_select").empty();
+			
+			if (hosts != null && hosts.length > 0) {
+				for (var i = 0; i < hosts.length; i++) {
+					var option = $("<option value='" + hosts[i].id + "'>" + fromdb(hosts[i].name) + ": " +((hosts[i].hasEnoughCapacity) ? dictionary["label.available"] : dictionary["label.full"]) + "</option>").data("name", fromdb(hosts[i].name));
+					hostSelect.append(option); 
+				}
+			} 
+		},
+		error: function(XMLHttpResponse) {
+			handleError(XMLHttpResponse, function() {
+				$("#dialog_migrate_router #host_select").empty();
+			});
+		}
+    });
+	
+	$("#dialog_migrate_router")
+	.dialog('option', 'buttons', { 						
+		"OK": function() { 
+		    var $thisDialog = $(this);
+		      
+		    var isValid = true;				
+			isValid &= validateDropDownBox("Host", $thisDialog.find("#host_select"), $thisDialog.find("#host_select_errormsg"));	
+			if (!isValid) 
+			    return;
+		    
+			$thisDialog.dialog("close"); 
+			var hostId = $thisDialog.find("#host_select").val();
+			/*		
+			if(jsonObj.state != "Stopped") {				    
+		        $midmenuItem1.find("#info_icon").addClass("error").show();
+                $midmenuItem1.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
+	        }
+			*/
+            var apiCommand = "command=migrateSystemVm&hostid="+hostId+"&virtualmachineid="+id;	     
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 			
+		} 
+	}).dialog("open");
+}
+
 var routerActionMap = {      
     "label.action.start.router": {        
         isAsyncJob: true,
@@ -403,5 +461,26 @@ var routerActionMap = {
             var jsonObj = json.changeserviceforrouterresponse.domainrouter;       
             vmToMidmenu(jsonObj, $midmenuItem1);           
         }
-    }
+    },
+    "label.action.migrate.router": {
+        isAsyncJob: true,        
+ 		asyncJobResponse: "migratesystemvmresponse", 
+        inProcessText: "label.action.migrate.router.processing",
+        dialogBeforeActionFn : doMigrateRouter,
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {       	   
+            //var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance 
+	    	$.ajax({
+	            data: createURL("command=listRouters&id="+id),
+	            dataType: "json",
+	            async: false,
+	            success: function(json) {  
+	                var items = json.listroutersresponse.router;                   
+	                if(items != null && items.length > 0) {
+	                    jsonObj = items[0];
+	                    routerToMidmenu(jsonObj, $midmenuItem1); 
+	                }
+	            }
+	        });   
+        }
+    }     
 }   

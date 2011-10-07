@@ -19,6 +19,11 @@ dictionary = {
 	'label.action.change.service': '<fmt:message key="label.action.change.service"/>',
 	'label.action.change.service.processing': '<fmt:message key="label.action.change.service.processing"/>',
 	'message.action.change.service.warning.for.router': '<fmt:message key="message.action.change.service.warning.for.router"/>',
+	'message.migrate.router.confirm' : '<fmt:message key="message.migrate.router.confirm"/>',
+	'label.action.migrate.router': '<fmt:message key="label.action.migrate.router"/>',
+    'label.action.migrate.router.processing': '<fmt:message key="label.action.migrate.router.processing"/>',      
+    'label.full': '<fmt:message key="label.full"/>',
+	'label.available': '<fmt:message key="label.available"/>'
 };	
 </script>
 
@@ -225,6 +230,27 @@ dictionary = {
     </div>   
 </div>
 <!-- router detail panel (end) -->
+
+<!-- Migrate router dialog -->
+<div id="dialog_migrate_router" title='<fmt:message key="label.action.migrate.router" />' style="display: none">
+    <p> 
+		<fmt:message key="message.migrate.router.confirm" />
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <fmt:message key="label.migrate.router.to" />:</label>
+                <select class="select" id="host_select">
+                </select>
+                <div id="host_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
 
 <!-- view console template (begin)  -->
 <div id="view_console_template" style="display:none">

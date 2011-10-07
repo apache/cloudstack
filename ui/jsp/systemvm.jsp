@@ -220,9 +220,9 @@ dictionary = {
             <li>
                 <label>
                     <fmt:message key="label.migrate.systemvm.to" />:</label>
-                <select class="select" id="migrate_instance_hosts">
+                <select class="select" id="host_select">
                 </select>
-                <div id="migrate_vm_hosts_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                <div id="host_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
         </ol>
