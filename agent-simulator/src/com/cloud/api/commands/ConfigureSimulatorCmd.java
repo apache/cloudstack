@@ -8,6 +8,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.BaseResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -47,7 +48,7 @@ public class ConfigureSimulatorCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure simulator");
         }
         
-        BaseResponse response = new BaseResponse();
+        BaseResponse response = new SuccessResponse();
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

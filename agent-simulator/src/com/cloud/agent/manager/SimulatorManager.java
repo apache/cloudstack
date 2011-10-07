@@ -20,6 +20,7 @@
 package com.cloud.agent.manager;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;

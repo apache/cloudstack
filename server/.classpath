@@ -10,5 +10,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/vmware-base"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/agent"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/agent-simulator"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

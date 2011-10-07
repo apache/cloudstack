@@ -28,11 +28,25 @@ public class DatabaseCallbackFilter implements CallbackFilter {
     }
     
     public static boolean checkAnnotation(Method method) {
+    	/*Check self*/
         DB db = method.getAnnotation(DB.class);
         if (db != null) {
             return db.txn();
         }
         Class<?> clazz = method.getDeclaringClass();
+        
+        /*Check parent method*/
+        try {
+	        Method pMethod = clazz.getMethod(method.getName(), method.getParameterTypes());
+	        db = pMethod.getAnnotation(DB.class);
+	        if (db != null) {
+	            return db.txn();
+	        }
+        } catch (SecurityException e) {
+        } catch (NoSuchMethodException e) {
+        }
+        
+        /*Check class's annotation and ancestor's annotation*/
         do {
             db = clazz.getAnnotation(DB.class);
             if (db != null) {
