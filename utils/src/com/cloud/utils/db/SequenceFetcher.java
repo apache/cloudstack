@@ -47,6 +47,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 public class SequenceFetcher {
     private final static Logger s_logger = Logger.getLogger(SequenceFetcher.class);
     ExecutorService _executors;
+    private final static Random random = new Random();
     
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg) {
         return getNextSequence(clazz, tg, null, false);
@@ -115,8 +116,7 @@ public class SequenceFetcher {
                 
                 PreparedStatement updateStmt = txn.prepareStatement(sql.toString());
                 if(isRandom){
-                	Random random = new Random();
-                	updateStmt.setInt(2, random.nextInt(10));
+                	updateStmt.setInt(2, random.nextInt(10) + 1);
                 } else {
                 	updateStmt.setInt(2, _tg.allocationSize());
                 }
