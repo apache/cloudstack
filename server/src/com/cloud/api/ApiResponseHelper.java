@@ -2512,6 +2512,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setRole(router.getRole().toString());
             }
         }
+        vmResponse.setObjectName("systemvminstance");
         return vmResponse;
     }
 }
