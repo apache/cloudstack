@@ -389,7 +389,7 @@ function doMigrateSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 		async: false,
 		success: function(json) {
 			var hosts = json.listhostsresponse.host;
-			var hostSelect = $("#dialog_migrate_systemvm #migrate_instance_hosts").empty();
+			var hostSelect = $("#dialog_migrate_systemvm #host_select").empty();
 			
 			if (hosts != null && hosts.length > 0) {
 				for (var i = 0; i < hosts.length; i++) {
@@ -400,7 +400,7 @@ function doMigrateSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 		},
 		error: function(XMLHttpResponse) {
 			handleError(XMLHttpResponse, function() {
-				$("#dialog_migrate_systemvm #migrate_instance_hosts").empty();
+				$("#dialog_migrate_systemvm #host_select").empty();
 			});
 		}
     });
@@ -411,12 +411,12 @@ function doMigrateSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 		    var $thisDialog = $(this);
 		      
 		    var isValid = true;				
-			isValid &= validateDropDownBox("Host", $thisDialog.find("#migrate_instance_hosts"), $thisDialog.find("#migrate_instance_errormsg"));	
+			isValid &= validateDropDownBox("Host", $thisDialog.find("#host_select"), $thisDialog.find("#host_select_errormsg"));	
 			if (!isValid) 
 			    return;
 		    
 			$thisDialog.dialog("close"); 
-			var hostId = $thisDialog.find("#migrate_instance_hosts").val();
+			var hostId = $thisDialog.find("#host_select").val();
 			/*		
 			if(jsonObj.state != "Stopped") {				    
 		        $midmenuItem1.find("#info_icon").addClass("error").show();
