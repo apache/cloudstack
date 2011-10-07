@@ -489,7 +489,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
        
        if (domainId != null) {
            sc.setParameters("domainId", domainId);
-           sc.setParameters("accountId", null);
+           sc.setParameters("accountId", (Object[])null);
        }
        
        if (resourceType != null) {

@@ -89,5 +89,8 @@ public class Upgrade2212to2213 implements DbUpgrade {
         }
         
         
+        // drop primary keys
+        DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud_usage.usage_load_balancer_policy");
+        DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud_usage.usage_port_forwarding");
     }
 }
