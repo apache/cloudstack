@@ -19,6 +19,11 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -55,6 +60,7 @@ public class Upgrade2212to2213 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        fixForeignKeys(conn);
     }
 
     @Override
@@ -62,4 +68,26 @@ public class Upgrade2212to2213 implements DbUpgrade {
         return null;
     }
  
+
+    private void fixForeignKeys(Connection conn) {
+        HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
+        List<String> keys = new ArrayList<String>();
+        keys.add("fk_networks__data_center_id");
+        foreignKeys.put("networks", keys);
+
+        // drop all foreign keys
+        s_logger.debug("Dropping old key fk_networks__data_center_id...");
+        for (String tableName : foreignKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
+        }
+
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to reinsert data center key for the network", e);
+        }
+        
+        
+    }
 }
