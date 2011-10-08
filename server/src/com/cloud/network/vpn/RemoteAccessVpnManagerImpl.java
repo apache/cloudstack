@@ -50,6 +50,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
@@ -221,10 +222,10 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         _remoteAccessVpnDao.update(vpn.getServerAddressId(), vpn);
         
         
-        List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
+        List<? extends RemoteAccessVPNServiceProvider> elements = _networkMgr.getRemoteAccessVpnElements();
         boolean success = false;
         try {
-            for (RemoteAccessVpnElement element : elements) {
+            for (RemoteAccessVPNServiceProvider element : elements) {
                 if (element.stopVpn(network, vpn)) {
                     success = true;
                     break;
@@ -349,7 +350,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
 
-        List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
+        List<? extends RemoteAccessVPNServiceProvider > elements = _networkMgr.getRemoteAccessVpnElements();
         boolean started = false;
         try {
             boolean firewallOpened = true;
@@ -358,7 +359,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             }
             
             if (firewallOpened) {
-                for (RemoteAccessVpnElement element : elements) {
+                for (RemoteAccessVPNServiceProvider element : elements) {
                     if (element.startVpn(network, vpn)) {
                         started = true;
                         break;
@@ -395,12 +396,12 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             }
         }
         
-        List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
+        List<? extends RemoteAccessVPNServiceProvider> elements = _networkMgr.getRemoteAccessVpnElements();
 
         boolean success = true;
 
         boolean[] finals = new boolean[users.size()];
-        for (RemoteAccessVpnElement element : elements) {
+        for (RemoteAccessVPNServiceProvider element : elements) {
             s_logger.debug("Applying vpn access to " + element.getName());
             for (RemoteAccessVpnVO vpn : vpns) {
                 try {

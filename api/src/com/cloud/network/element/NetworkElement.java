@@ -21,7 +21,6 @@
  */
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.deploy.DeployDestination;
@@ -33,9 +32,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
@@ -115,33 +111,4 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      */
     boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException;
-    
-    
-    /**
-     * Apply ip addresses to this network
-     * @param network
-     * @param ipAddress
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
-    
-    /**
-     * Apply rules
-     * @param network
-     * @param rules
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
-    
-    /**
-     * Creates static nat rule (public IP to private IP mapping) on the network element
-     * @param config
-     * @param rules
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException;
-
 }

@@ -97,7 +97,12 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.PasswordServiceProvider;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.SourceNATServiceProvider;
+import com.cloud.network.element.StaticNATServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
@@ -106,8 +111,6 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -493,10 +496,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         boolean success = true;
+        int found = 0;
         for (NetworkElement element : _networkElements) {
             try {
+                if (!(element instanceof SourceNATServiceProvider)) {
+                    continue;
+                }
+                SourceNATServiceProvider e = (SourceNATServiceProvider)element;
+                if (!e.isSourceNATServiceProvider()) {
+                    continue;
+                }
+                found ++;
                 s_logger.trace("Asking " + element + " to apply ip associations");
-                element.applyIps(network, publicIps);
+                e.applyIps(network, publicIps);
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
@@ -1478,11 +1490,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements() {
-        List<RemoteAccessVpnElement> elements = new ArrayList<RemoteAccessVpnElement>();
+    public List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements() {
+        List<RemoteAccessVPNServiceProvider> elements = new ArrayList<RemoteAccessVPNServiceProvider>();
         for (NetworkElement element : _networkElements) {
-            if (element instanceof RemoteAccessVpnElement) {
-                elements.add((RemoteAccessVpnElement) element);
+            if (element instanceof RemoteAccessVPNServiceProvider) {
+                RemoteAccessVPNServiceProvider e = (RemoteAccessVPNServiceProvider) element;
+                if (e.isRemoteAccessVPNServiceProvider()) {
+                    elements.add(e);
+                }
             }
         }
 
@@ -2303,9 +2318,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
         Network network = _networksDao.findById(rules.get(0).getNetworkId());
+        int found = 0;
         for (NetworkElement ne : _networkElements) {
             try {
-                boolean handled = ne.applyRules(network, rules);
+                if (!(ne instanceof FirewallServiceProvider)) {
+                    continue;
+                }
+                FirewallServiceProvider e = (FirewallServiceProvider)ne;
+                if (!e.isFirewallServiceProvider()) {
+                    continue;
+                }
+                found ++;
+                boolean handled = e.applyRules(network, rules);
                 s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {
@@ -2810,11 +2834,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends PasswordResetElement> getPasswordResetElements() {
-        List<PasswordResetElement> elements = new ArrayList<PasswordResetElement>();
+    public List<? extends PasswordServiceProvider> getPasswordResetElements() {
+        List<PasswordServiceProvider> elements = new ArrayList<PasswordServiceProvider>();
         for (NetworkElement element : _networkElements) {
-            if (element instanceof PasswordResetElement) {
-                elements.add((PasswordResetElement) element);
+            if (element instanceof PasswordServiceProvider) {
+                PasswordServiceProvider e = (PasswordServiceProvider)element;
+                if (e.isPasswordServiceProvider()) {
+                    elements.add(e);
+                }
             }
         }
         return elements;
@@ -3267,9 +3294,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
         Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
+        int found = 0;
         for (NetworkElement ne : _networkElements) {
             try {
-                boolean handled = ne.applyStaticNats(network, staticNats);
+                if (!(ne instanceof StaticNATServiceProvider)) {
+                    continue;
+                }
+                StaticNATServiceProvider e = (StaticNATServiceProvider)ne;
+                if (!e.isStaticNATServiceProvider()) {
+                    continue;
+                }
+                found ++;
+                boolean handled = e.applyStaticNats(network, staticNats);
                 s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {

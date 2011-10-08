@@ -53,20 +53,6 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 	@Inject OvsTunnelManager _ovsTunnelMgr;
 	
 	@Override
-	public boolean applyIps(Network network,
-			List<? extends PublicIpAddress> ipAddress)
-			throws ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean applyRules(Network network,
-			List<? extends FirewallRule> rules)
-			throws ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
 	public boolean destroy(Network network)
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
@@ -143,10 +129,4 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
-	
-   @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
-    }
-
 }

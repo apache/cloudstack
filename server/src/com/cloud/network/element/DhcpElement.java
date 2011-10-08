@@ -49,7 +49,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
@@ -68,7 +67,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DhcpElement extends AdapterBase implements NetworkElement, PasswordResetElement{
+public class DhcpElement extends AdapterBase implements PasswordServiceProvider {
     private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -177,17 +176,6 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     }
 
     @Override
-    public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return false;
-    }
-
-    @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return false;
-    }
-    
-    
-    @Override
     public Provider getProvider() {
         return Provider.DhcpServer;
     }
@@ -268,9 +256,9 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
     }
-    
+
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
+    public boolean isPasswordServiceProvider() {
+        return true;
     }
 }

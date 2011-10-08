@@ -54,7 +54,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 
 @Local(value=NetworkElement.class)
-public class ElasticLoadBalancerElement extends AdapterBase implements NetworkElement{
+public class ElasticLoadBalancerElement extends AdapterBase implements FirewallServiceProvider {
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     @Inject NetworkManager _networkManager;
@@ -136,11 +136,6 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
     }
 
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return true;
-    }
-
-    @Override
     public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         if (!canHandle(network)) {
             return false;
@@ -167,9 +162,9 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
         }
         return true;
     }
-    
+
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
+    public boolean isFirewallServiceProvider() {
+        return true;
     }
 }

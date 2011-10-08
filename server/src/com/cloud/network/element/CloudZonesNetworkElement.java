@@ -74,7 +74,6 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
@@ -96,7 +95,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement, PasswordResetElement{
+public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(CloudZonesNetworkElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -195,22 +194,6 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return false;
-    }
-
-    @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return false;
-    }
-    
-    @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
-    }
-    
-    
-    @Override
     public Provider getProvider() {
         return Provider.ExternalDhcpServer;
     }
@@ -234,12 +217,6 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         s_logger.trace("Cloudzones element doesn't handle network restart for the network " + network);
         return true;
 
-    }
-    
-    @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException{
-        s_logger.trace("Cloudzones element doesn't handle saving passwords for " + network);
-        return true;
     }
     
     private VmDataCommand generateVmDataCommand( String vmPrivateIpAddress,

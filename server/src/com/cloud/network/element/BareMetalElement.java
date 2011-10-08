@@ -116,20 +116,4 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 	public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
-
-	@Override
-	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-		return true;
-	}
-	
-	@Override
-	public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-	    return false;
-	}
-
 }

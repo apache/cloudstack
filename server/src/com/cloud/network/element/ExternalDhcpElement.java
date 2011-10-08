@@ -45,7 +45,6 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -56,7 +55,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalDhcpElement extends AdapterBase implements NetworkElement, PasswordResetElement {
+public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
 	@Inject ExternalDhcpManager _dhcpMgr;
 	private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
@@ -70,11 +69,6 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 		}
 
 		return false;
-	}
-
-	@Override
-	public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException {
-		return true;
 	}
 
 	@Override
@@ -129,20 +123,4 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 	public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
-
-	@Override
-	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-		return true;
-	}
-	
-    @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
-    }
-
 }

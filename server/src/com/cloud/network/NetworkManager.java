@@ -33,11 +33,11 @@ import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.element.PasswordServiceProvider;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -142,7 +142,7 @@ public interface NetworkManager extends NetworkService {
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 
-    List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
+    List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements();
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 
@@ -186,7 +186,7 @@ public interface NetworkManager extends NetworkService {
 
     Nic getDefaultNic(long vmId);
 
-    List<? extends PasswordResetElement> getPasswordResetElements();
+    List<? extends PasswordServiceProvider> getPasswordResetElements();
 
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
 

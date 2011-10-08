@@ -48,7 +48,6 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -60,7 +59,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalFirewallElement extends AdapterBase implements NetworkElement, RemoteAccessVpnElement  {
+public class ExternalFirewallElement extends AdapterBase implements SourceNATServiceProvider, FirewallServiceProvider, RemoteAccessVPNServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(ExternalFirewallElement.class);
     
@@ -239,8 +238,18 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
     }
     
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
+    public boolean isSourceNATServiceProvider() {
+        return true;
+    }
+
+    @Override
+    public boolean isFirewallServiceProvider() {
+        return true;
+    }
+
+    @Override
+    public boolean isRemoteAccessVPNServiceProvider() {
+        return true;
     }
 }
 

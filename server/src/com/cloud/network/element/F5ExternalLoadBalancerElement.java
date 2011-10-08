@@ -53,7 +53,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class F5ExternalLoadBalancerElement extends AdapterBase implements NetworkElement  {
+public class F5ExternalLoadBalancerElement extends AdapterBase implements FirewallServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(F5ExternalLoadBalancerElement.class);
     
@@ -107,11 +107,6 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements Networ
     }
     
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return true;
-    }
-    
-    @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config)) {
             return false;
@@ -153,10 +148,9 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements Networ
     public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         return true;
     }
-    
+
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
+    public boolean isFirewallServiceProvider() {
+        return true;
     }
-	
 }
