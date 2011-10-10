@@ -520,10 +520,8 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                     host.getPodId(), 
                     host.getClusterId(),
                     usedCpu,
-                    (long)(host.getCpus().longValue()
-                            * host.getSpeed().longValue()
-                            * _cpuOverProvisioningFactor),
-                            CapacityVO.CAPACITY_TYPE_CPU);
+                    (long)(host.getCpus().longValue() * host.getSpeed().longValue()),
+                    CapacityVO.CAPACITY_TYPE_CPU);
             capacity.setReservedCapacity(reservedCpu);
             _capacityDao.persist(capacity);
             
