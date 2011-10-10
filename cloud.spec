@@ -449,7 +449,7 @@ fi
 %{_javadir}/%{name}-server.jar
 %{_javadir}/%{name}-vmware-base.jar
 %{_javadir}/%{name}-ovm.jar
-%{_sysconfdir}/%{name}/server/*
+%config(noreplace) %{_sysconfdir}/%{name}/server/*
 
 %files agent-scripts
 %defattr(-,root,root,-)
@@ -599,7 +599,7 @@ fi
 %attr(0755,root,root) %{_initrddir}/%{name}-usage
 %attr(0755,root,root) %{_libexecdir}/usage-runner
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
-%{_sysconfdir}/%{name}/usage/usage-components.xml
+%config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
 
