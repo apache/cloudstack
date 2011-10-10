@@ -783,20 +783,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, true, false, null, null,
                 null, true, Availability.Required,
                 // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct, false);
+                true, true, true, false, false, false, false, GuestIpType.Direct);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
         NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null,
                 true, Availability.Required,
                 // services
-                true, true, true, true, true, true, true, GuestIpType.Virtual, false);
+                true, true, true, true, true, true, true, GuestIpType.Virtual);
 
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
         NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, false, true, null, null, null, true,
                 Availability.Optional,
                 // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct, false);
+                true, true, true, false, false, false, false, GuestIpType.Direct);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
@@ -1185,15 +1185,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            // Check if we can provide the required capability
-            if (offering.getRedundantRouter()) {
-                DataCenter dc = dest.getDataCenter();
-                Map<Service, Map<Capability, String>> capabilities = getZoneCapabilities(dc.getId());
-                Map<Capability, String> gatewayCap = capabilities.get(Service.Gateway);
-                if (!gatewayCap.get(Capability.Redundancy).equalsIgnoreCase("true")) {
-                    throw new InsufficientNetworkCapacityException("Zone lacks the feature that required by NetworkOffering: Redundant Virtual Router", dc.getClass(), dc.getId());
-                }
-            }
 
             network.setReservationId(context.getReservationId());
             network.setState(Network.State.Implementing);

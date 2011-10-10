@@ -270,7 +270,6 @@ CREATE TABLE `cloud`.`network_offerings` (
   `dhcp_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dhcp service',
   `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service',
   `guest_type` char(32) COMMENT 'guest ip type of network offering',
-  `redundant_router` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides redundant routers',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`)

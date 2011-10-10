@@ -2909,7 +2909,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true,
-                gatewayService, firewallService, lbService, vpnService, guestIpType, redundantRouter);
+                gatewayService, firewallService, lbService, vpnService, guestIpType);
 
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails(" Id: "+offering.getId()+" Name: "+name);

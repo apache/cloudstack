@@ -116,9 +116,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="guest_type")
     GuestIpType guestType;
     
-    @Column(name="redundant_router")
-    boolean redundantRouter;
-
     @Override
     public String getDisplayText() {
         return displayText;
@@ -332,16 +329,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.uniqueName = uniqueName;
     }
 
-    @Override
-    public boolean getRedundantRouter() {
-        return this.redundantRouter;
-    }
-    
-    public void setRedundantRouter(boolean redundantRouter) {
-        this.redundantRouter = redundantRouter;
-    }
-    
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType, boolean isRedundantRouterEnabled) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -360,7 +348,6 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.lbService = lbService;
         this.vpnService = vpnService;
         this.guestType = guestIpType;
-        this.redundantRouter = isRedundantRouterEnabled;
         this.uniqueName = name;
     }
     
@@ -370,7 +357,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, false, false, false, false, false, false, false, null, false);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, false, false, false, false, false, false, false, null);
     }
     
     @Override
