@@ -2008,7 +2008,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //account level networks
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
         if (!permittedAccounts.isEmpty()) {
-            accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts);
+            accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
         }
 
         accountSC.addAnd("isShared", SearchCriteria.Op.EQ, false);
