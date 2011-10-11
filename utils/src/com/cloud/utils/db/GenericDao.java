@@ -236,5 +236,7 @@ public interface GenericDao<T, ID extends Serializable> {
     boolean lockInLockTable(String id, int seconds);
 
     boolean unlockFromLockTable(String id);
+
+    public <K> K getRandomlyIncreasingNextInSequence(Class<K> clazz, String name);
     
 }

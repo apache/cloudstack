@@ -182,9 +182,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         Type t = getClass().getGenericSuperclass();
         if (t instanceof ParameterizedType) {
             _entityBeanType = (Class<T>)((ParameterizedType)t).getActualTypeArguments()[0];
-        } else {
+        } else if (((Class<?>)t).getGenericSuperclass() instanceof ParameterizedType) {
             _entityBeanType = (Class<T>)((ParameterizedType)((Class<?>)t).getGenericSuperclass()).getActualTypeArguments()[0];
-
+        } else {
+        	_entityBeanType = (Class<T>)((ParameterizedType)
+        				( (Class<?>)((Class<?>)t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
         }
 
         s_daoMaps.put(_entityBeanType, this);
@@ -291,6 +293,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return s_seqFetcher.getNextSequence(clazz, tg);
     }
 
+    @Override @DB(txn=false)
+    public <K> K getRandomlyIncreasingNextInSequence(final Class<K> clazz, final String name) {
+        final TableGenerator tg = _tgs.get(name);
+        assert (tg != null) : "Couldn't find Table generator using " + name;
+
+        return s_seqFetcher.getRandomNextSequence(clazz, tg);
+    }
+    
     @Override @DB(txn=false)
     public List<T> lockRows(final SearchCriteria<T> sc, final Filter filter, final boolean exclusive) {
         return search(sc, filter, exclusive, false);
