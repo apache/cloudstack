@@ -829,12 +829,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         Long instanceId = volume.getInstanceId();
         if (instanceId != null && volume.getState() != Volume.State.Destroy) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
-            volResponse.setVirtualMachineId(vm.getId());
-            volResponse.setVirtualMachineName(vm.getHostName());
-            UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
-            if (userVm != null) {
-                volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
-                volResponse.setVirtualMachineState(vm.getState().toString());
+            if(vm != null){
+            	volResponse.setVirtualMachineId(vm.getId());
+            	volResponse.setVirtualMachineName(vm.getHostName());
+            	UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
+            	if (userVm != null) {
+            		volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+            		volResponse.setVirtualMachineState(vm.getState().toString());
+            	} else {
+            		s_logger.error("User Vm with Id: "+instanceId+" does not exist for volume "+volume.getId());	
+            	}
+            } else {
+            	s_logger.error("Vm with Id: "+instanceId+" does not exist for volume "+volume.getId());	
             }
         }
 
