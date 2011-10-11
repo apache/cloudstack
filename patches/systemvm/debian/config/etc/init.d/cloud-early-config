@@ -24,13 +24,44 @@ log_it() {
   log_action_begin_msg "$@"
 }
 
+init_interfaces_orderby_macs() {
+    macs=( $(echo $1 | sed "s/|/ /g") )
+    total_nics=${#macs[@]}
+    interface_file=${2:-"/etc/network/interfaces"}
+    rule_file=${3:-"/etc/udev/rules.d/70-persistent-net.rules"}
+    
+    echo -n "auto lo" > $interface_file
+    for((i=0; i<total_nics; i++))
+    do
+        if [[ $i < 3 ]] 
+        then
+           echo -n " eth$i" >> $interface_file
+        fi
+    done
+    cat >> $interface_file << EOF
+
+iface lo inet loopback
+
+EOF
+
+    echo "" > $rule_file
+    for((i=0; i < ${#macs[@]}; i++))
+    do
+        echo "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"${macs[$i]}\", NAME=\"eth$i\"" >> $rule_file 
+    done
+}
 
 init_interfaces() {
-  cat > /etc/network/interfaces << EOF
+  if [ "$NIC_MACS" == "" ]
+  then
+    cat > /etc/network/interfaces << EOF
 auto lo $1 $2 $3
 iface lo inet loopback
 
 EOF
+  else
+    init_interfaces_orderby_macs "$NIC_MACS"
+  fi
 }
 
 hypervisor() {
@@ -120,6 +151,7 @@ patch() {
     hyperVisor=$(hypervisor)
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT $hyperVisor
     umount $PATCH_MOUNT
+    
     if [ "$shouldpatch" == "true" ] 
     then
       log_it "Rebooting system since we patched init scripts"
@@ -139,6 +171,7 @@ setup_interface() {
   local ip=$2
   local mask=$3
   local gw=$4
+  local force=$5
   local intf=eth${intfnum} 
   local bootproto="static"
 
@@ -151,7 +184,7 @@ setup_interface() {
     fi
   fi
 
-  if [ "$ip" != "0.0.0.0" -a "$ip" != "" ]
+  if [ "$ip" != "0.0.0.0" -a "$ip" != "" -o "$force" == "force" ]
   then
      echo "iface  $intf inet $bootproto" >> /etc/network/interfaces
      if [ "$bootproto" == "static" ]
@@ -161,11 +194,16 @@ setup_interface() {
      fi
   fi
 
-  ifdown $intf
-  ifup $intf
-  if [ "$RROUTER" == "1" -a "$1" == "2" ]
+  if [ "$force" == "force" ]
   then
-    ifdown $intf
+      ifdown $intf
+  else
+      ifdown $intf
+      ifup $intf
+      if [ "$RROUTER" == "1" -a "$1" == "2" ]
+      then
+        ifdown $intf
+      fi
   fi
 }
 
@@ -391,16 +429,55 @@ setup_redundant_router() {
 
 setup_router() {
   log_it "Setting up virtual router system vm"
+  
+  oldmd5=
+  [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
+  
   if [ -n "$ETH2_IP" ]
   then
       setup_common eth0 eth1 eth2
-      if [ "$RROUTER" == "1" ]
+      
+      if [ -n "$EXTRA_PUBNICS" ]
       then
-        setup_redundant_router
+        for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
+        do
+            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+        done
       fi
   else
   	setup_common eth0 eth1
+      if [ -n "$EXTRA_PUBNICS" ]
+      then
+        for((i = 2; i < 2 + $EXTRA_PUBNICS; i++))
+        do
+            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+        done
+      fi
   fi
+  
+  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
+  then
+    setup_redundant_router
+  fi
+  
+  log_it "Checking udev NIC assignment order changes"
+  if [ "$NIC_MACS" != "" ]
+  then
+    init_interfaces_orderby_macs "$NIC_MACS" "/tmp/interfaces" "/tmp/udev-rules"
+    newmd5=$(md5sum "/tmp/udev-rules" | awk '{print $1}')
+    rm /tmp/interfaces
+    rm /tmp/udev-rules
+    
+    if [ "$oldmd5" != "$newmd5" ]
+    then
+      log_it "udev NIC assignment requires reboot to take effect"
+      sync
+      sleep 2
+      reboot
+    fi
+  fi
+  
+  
   
   setup_dnsmasq
   
@@ -705,6 +782,12 @@ for i in $CMDLINE
         ;;
       router_pr)
         ROUTER_PR=$VALUE
+        ;;
+      extra_pubnics)
+        EXTRA_PUBNICS=$VALUE
+        ;;
+      nic_macs)
+        NIC_MACS=$VALUE
         ;;
     esac
 done
