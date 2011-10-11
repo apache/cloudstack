@@ -148,9 +148,4 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         return true;
     }
-
-    @Override
-    public boolean isFirewallServiceProvider() {
-        return true;
-    }
 }

@@ -148,9 +148,4 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements Firewa
     public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         return true;
     }
-
-    @Override
-    public boolean isFirewallServiceProvider() {
-        return true;
-    }
 }

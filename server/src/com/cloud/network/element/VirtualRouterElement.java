@@ -378,24 +378,4 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
     }
-
-    @Override
-    public boolean isSourceNATServiceProvider() {
-        return true;
-    }
-
-    @Override
-    public boolean isFirewallServiceProvider() {
-        return true;
-    }
-
-    @Override
-    public boolean isStaticNATServiceProvider() {
-        return true;
-    }
-
-    @Override
-    public boolean isRemoteAccessVPNServiceProvider() {
-        return true;
-    }
 }

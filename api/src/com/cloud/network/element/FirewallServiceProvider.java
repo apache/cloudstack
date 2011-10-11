@@ -15,5 +15,4 @@ public interface FirewallServiceProvider extends NetworkElement {
      * @throws ResourceUnavailableException
      */
     boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
-    boolean isFirewallServiceProvider();
 }

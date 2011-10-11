@@ -15,6 +15,4 @@ public interface StaticNATServiceProvider extends NetworkElement {
      * @throws ResourceUnavailableException
      */
     boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException;
-    
-    boolean isStaticNATServiceProvider();
 }

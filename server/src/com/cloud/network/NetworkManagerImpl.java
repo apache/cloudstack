@@ -503,9 +503,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     continue;
                 }
                 SourceNATServiceProvider e = (SourceNATServiceProvider)element;
-                if (!e.isSourceNATServiceProvider()) {
-                    continue;
-                }
                 found ++;
                 s_logger.trace("Asking " + element + " to apply ip associations");
                 e.applyIps(network, publicIps);
@@ -1486,9 +1483,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (element instanceof RemoteAccessVPNServiceProvider) {
                 RemoteAccessVPNServiceProvider e = (RemoteAccessVPNServiceProvider) element;
-                if (e.isRemoteAccessVPNServiceProvider()) {
-                    elements.add(e);
-                }
+                elements.add(e);
             }
         }
 
@@ -2316,9 +2311,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     continue;
                 }
                 FirewallServiceProvider e = (FirewallServiceProvider)ne;
-                if (!e.isFirewallServiceProvider()) {
-                    continue;
-                }
                 found ++;
                 boolean handled = e.applyRules(network, rules);
                 s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
@@ -2830,9 +2822,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (element instanceof PasswordServiceProvider) {
                 PasswordServiceProvider e = (PasswordServiceProvider)element;
-                if (e.isPasswordServiceProvider()) {
-                    elements.add(e);
-                }
+                elements.add(e);
             }
         }
         return elements;
@@ -3292,9 +3282,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     continue;
                 }
                 StaticNATServiceProvider e = (StaticNATServiceProvider)ne;
-                if (!e.isStaticNATServiceProvider()) {
-                    continue;
-                }
                 found ++;
                 boolean handled = e.applyStaticNats(network, staticNats);
                 s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());

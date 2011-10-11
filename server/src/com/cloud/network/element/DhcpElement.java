@@ -256,9 +256,4 @@ public class DhcpElement extends AdapterBase implements PasswordServiceProvider 
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
     }
-
-    @Override
-    public boolean isPasswordServiceProvider() {
-        return true;
-    }
 }

@@ -13,6 +13,4 @@ public interface RemoteAccessVPNServiceProvider extends NetworkElement {
     boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
     
     boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
-    
-    boolean isRemoteAccessVPNServiceProvider();
 }

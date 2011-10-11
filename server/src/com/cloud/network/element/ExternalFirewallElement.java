@@ -236,21 +236,6 @@ public class ExternalFirewallElement extends AdapterBase implements SourceNATSer
     public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         return true;
     }
-    
-    @Override
-    public boolean isSourceNATServiceProvider() {
-        return true;
-    }
-
-    @Override
-    public boolean isFirewallServiceProvider() {
-        return true;
-    }
-
-    @Override
-    public boolean isRemoteAccessVPNServiceProvider() {
-        return true;
-    }
 }
 
 

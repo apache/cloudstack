@@ -162,9 +162,4 @@ public class ElasticLoadBalancerElement extends AdapterBase implements FirewallS
         }
         return true;
     }
-
-    @Override
-    public boolean isFirewallServiceProvider() {
-        return true;
-    }
 }

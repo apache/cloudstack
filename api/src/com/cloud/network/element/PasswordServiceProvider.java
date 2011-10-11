@@ -8,5 +8,4 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface PasswordServiceProvider extends NetworkElement {
     boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException;
-    boolean isPasswordServiceProvider();
 }

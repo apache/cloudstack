@@ -15,6 +15,4 @@ public interface SourceNATServiceProvider extends NetworkElement {
      * @throws ResourceUnavailableException
      */
     boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
-    
-    boolean isSourceNATServiceProvider();
 }
