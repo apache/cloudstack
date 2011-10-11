@@ -113,6 +113,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
     int _maxHostsPerCluster;
+    int _routerExtraPublicNics = 2;
     
     String _cpuOverprovisioningFactor = "1";
     String _reserveCpu = "false";
@@ -213,7 +214,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         	_managemetPortGroupName = "Management Network";
         }
         
-        configDao.getValue(Config.VmwareServiceConsole.key());
         _additionalPortRangeStart = NumbersUtil.parseInt(configDao.getValue(Config.VmwareAdditionalVncPortRangeStart.key()), 59000);
         if(_additionalPortRangeStart > 65535) {
         	s_logger.warn("Invalid port range start port (" + _additionalPortRangeStart + ") for additional VNC port allocation, reset it to default start port 59000");
@@ -225,6 +225,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         	s_logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
         	_additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
+        
+        _routerExtraPublicNics = NumbersUtil.parseInt(configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
         
         _maxHostsPerCluster = NumbersUtil.parseInt(configDao.getValue(Config.VmwarePerClusterHostMax.key()), VmwareManager.MAX_HOSTS_PER_CLUSTER);
         _cpuOverprovisioningFactor = configDao.getValue(Config.CPUOverprovisioningFactor.key());
@@ -241,6 +243,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         _reserveMem = configDao.getValue(Config.VmwareReserveMem.key());
         if(_reserveMem == null || _reserveMem.isEmpty())
         	_reserveMem = "false";
+        
+        
         
     	s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
@@ -829,4 +833,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     public int getMaxHostsPerCluster() {
     	return this._maxHostsPerCluster;
     }
+    
+    @Override
+	public int getRouterExtraPublicNics() {
+		return this._routerExtraPublicNics;
+	}
 }

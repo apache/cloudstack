@@ -112,6 +112,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
@@ -328,7 +329,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private String _dnsBasicZoneUpdates = "all";
     
     private boolean _disable_rp_filter = false;
-
+    int _routerExtraPublicNics = 5;
     
     private long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     
@@ -594,6 +595,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _mgmt_host = configs.get("host");
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
         _routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
+        
+        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 5);
+        
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
 
@@ -1360,7 +1364,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
         
-
         String rpValue = _configDao.getValue(Config.NetworkRouterRpFilter.key());
         if (rpValue != null && rpValue.equalsIgnoreCase("true")) {
             _disable_rp_filter = true;
@@ -1488,6 +1491,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String use_external_dns =  _configDao.getValue(Config.UseExternalDnsServers.key());
         if (use_external_dns!=null && use_external_dns.equals("true")){
             buf.append(" useextdns=true");
+        }
+        
+        if(profile.getHypervisorType() == HypervisorType.VMware) {
+        	buf.append(" extra_pubnics=" + _routerExtraPublicNics);
         }
         
         if (s_logger.isDebugEnabled()) {

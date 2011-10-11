@@ -3,7 +3,11 @@
  */
 package com.cloud.hypervisor.guru;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -19,9 +23,11 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.CheckPointManager;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -31,6 +37,10 @@ import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.GuestOSVO;
@@ -40,9 +50,11 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -52,6 +64,7 @@ import com.cloud.vm.VmDetailConstants;
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
 	private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
+	@Inject NetworkDao _networkDao;
 	@Inject GuestOSDao _guestOsDao;
     @Inject HostDao _hostDao;
     @Inject HostDetailsDao _hostDetailsDao;
@@ -60,6 +73,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject VmwareManager _vmwareMgr;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject CheckPointManager _checkPointMgr;
+    @Inject NetworkManager _networkMgr;
 
     protected VMwareGuru() {
     	super();
@@ -109,10 +123,105 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
     	to.setDetails(details);
 
+    	if(vm.getVirtualMachine() instanceof DomainRouterVO) {
+    		List<NicProfile> nicProfiles = vm.getNics();
+    		NicProfile publicNicProfile = null;
+    		
+    		for(NicProfile nicProfile : nicProfiles) {
+    			if(nicProfile.getTrafficType() == TrafficType.Public) {
+    				publicNicProfile = nicProfile;
+    				break;
+    			}
+    		}
+    		
+    		if(publicNicProfile != null) {
+	    		NicTO[] nics = to.getNics();
+
+	    		// reserve extra NICs
+	    		NicTO[] expandedNics = new NicTO[nics.length + _vmwareMgr.getRouterExtraPublicNics()];
+	    		int i = 0;
+	    		int deviceId = -1;
+	    		for(i = 0; i < nics.length; i++) {
+	    			expandedNics[i] = nics[i];
+	    			if(nics[i].getDeviceId() > deviceId)
+	    				deviceId = nics[i].getDeviceId();
+	    		}
+	    		deviceId++;
+	    		
+	    		long networkId = publicNicProfile.getNetworkId();
+	    		NetworkVO network = _networkDao.findById(networkId);
+	    		
+	    		for(; i < nics.length + _vmwareMgr.getRouterExtraPublicNics(); i++) {
+	    			NicTO nicTo = new NicTO();
+	    			
+	    			nicTo.setDeviceId(deviceId++);
+	    			nicTo.setBroadcastType(publicNicProfile.getBroadcastType());
+	    			nicTo.setType(publicNicProfile.getTrafficType());
+	    			nicTo.setIp("0.0.0.0");
+	    			nicTo.setNetmask("255.255.255.255");
+	    			
+	    			try {
+	    				String mac = _networkMgr.getNextAvailableMacAddressInNetwork(networkId);
+						nicTo.setMac(mac);
+					} catch (InsufficientAddressCapacityException e) {
+						throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
+					}
+	    			nicTo.setDns1(publicNicProfile.getDns1());
+	    			nicTo.setDns2(publicNicProfile.getDns2());
+	    	        if (publicNicProfile.getGateway() != null) {
+	    	        	nicTo.setGateway(publicNicProfile.getGateway());
+	    	        } else {
+	    	        	nicTo.setGateway(network.getGateway());
+	    	        }
+	    	        nicTo.setDefaultNic(false);
+	    	        nicTo.setBroadcastUri(publicNicProfile.getBroadCastUri());
+	    	        nicTo.setIsolationuri(publicNicProfile.getIsolationUri());
+
+	    	        Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
+	    	        nicTo.setNetworkRateMbps(networkRate);
+	    	        
+	    	        expandedNics[i] = nicTo;
+	    		}
+	    		
+	    		to.setNics(expandedNics);
+    		}
+    		
+    		StringBuffer sbMacSequence = new StringBuffer();
+        	for(NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
+    			sbMacSequence.append(nicTo.getMac()).append("|");
+        	}
+    		sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+    		String bootArgs = to.getBootArgs();
+    		to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+    	}
+
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
         return to;
+    }
+    
+    private NicTO[] sortNicsByDeviceId(NicTO[] nics) {
+
+        List<NicTO> listForSort = new ArrayList<NicTO>();
+        for (NicTO nic : nics) {
+            listForSort.add(nic);
+        }
+        Collections.sort(listForSort, new Comparator<NicTO>() {
+
+            @Override
+            public int compare(NicTO arg0, NicTO arg1) {
+                if (arg0.getDeviceId() < arg1.getDeviceId()) {
+                    return -1;
+                } else if (arg0.getDeviceId() == arg1.getDeviceId()) {
+                    return 0;
+                }
+
+                return 1;
+            }
+        });
+
+        return listForSort.toArray(new NicTO[0]);
     }
     
     @Override @DB

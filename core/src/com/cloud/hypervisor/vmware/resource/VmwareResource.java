@@ -210,6 +210,7 @@ import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
@@ -447,7 +448,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource SetPortForwardingRulesCommand: " + _gson.toJson(cmd));
         }
 
-        // String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
         String args = "";
         String[] results = new String[cmd.getRules().length];
@@ -542,7 +542,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource SetFirewallRuleCommand: " + _gson.toJson(cmd));
         }
 
-        // String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String args = null;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
@@ -754,7 +753,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         if (removeVif) {
-            vmMo.tearDownDevice(publicNicInfo.second());
+        	
+        	String nicMasksStr = vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK);
+        	int nicMasks = Integer.parseInt(nicMasksStr);
+        	nicMasks &= ~(1 << publicNicInfo.first().intValue());
+        	vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
+        	
+            // vmMo.tearDownDevice(publicNicInfo.second());
 
             HostMO hostMo = vmMo.getRunningHost();
             List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
@@ -777,12 +782,64 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         Pair<ManagedObjectReference, String> networkInfo = HypervisorHostHelper.preparePublicNetwork(this._publicNetworkVSwitchName, 
         	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
         
-        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
+        int nicIndex = allocPublicNicIndex(vmMo);
+        
+        try {
+        	VirtualDevice[] nicDevices = vmMo.getNicDevices();
+        	
+        	VirtualEthernetCard device = (VirtualEthernetCard)nicDevices[nicIndex];
+        	
+    		VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
+    		nicBacking.setDeviceName(networkInfo.second());
+    		nicBacking.setNetwork(networkInfo.first());
+    		device.setBacking(nicBacking);
+        	
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+            deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
+            deviceConfigSpecArray[0].setDevice(device);
+            deviceConfigSpecArray[0].setOperation(VirtualDeviceConfigSpecOperation.edit);
+            
+            vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
+            if(!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Failed to configure devices when plugPublicNic");
+            }
+        } catch(Exception e) {
+        
+        	// restore allocation mask in case of exceptions
+        	String nicMasksStr = vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK);
+        	int nicMasks = Integer.parseInt(nicMasksStr);
+        	nicMasks &= ~(1 << nicIndex);
+        	vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
+        	
+        	throw e;
+        }
+        
+/*
         // Note: public NIC is plugged inside system VM
         VirtualDevice nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), VirtualEthernetCardType.Vmxnet3, 
         	networkInfo.second(), vifMacAddress, -1, 1, true, true);
         vmMo.plugDevice(nic);
+*/        
+    }
+    
+    private int allocPublicNicIndex(VirtualMachineMO vmMo) throws Exception {
+    	String nicMasksStr = vmMo.getCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK);
+    	if(nicMasksStr == null || nicMasksStr.isEmpty()) {
+    		throw new Exception("Could not find NIC allocation info");
+    	}
+    	
+    	int nicMasks = Integer.parseInt(nicMasksStr);
+    	VirtualDevice[] nicDevices = vmMo.getNicDevices();
+    	for(int i = 3; i < nicDevices.length; i++) {
+    		if((nicMasks & (1 << i)) == 0) {
+    			nicMasks |= (1 << i);
+    			vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
+    			return i;
+    		}
+    	}
+    	
+    	throw new Exception("Could not allocate a free public NIC");
     }
 
     protected Answer execute(IpAssocCommand cmd) {
@@ -799,7 +856,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             IpAddressTO[] ips = cmd.getIpAddresses();
             String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-            // String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
             String controlIp = VmwareResource.getRouterSshControlIp(cmd);
 
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
@@ -1314,6 +1370,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualDevice nic;
+            int nicMask = 0;
+            int nicCount = 0;
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
@@ -1326,8 +1384,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 
             	if(s_logger.isDebugEnabled())
             		s_logger.debug("Prepare NIC at new device " + _gson.toJson(deviceConfigSpecArray[i]));
+ 
+            	// this is really a hacking for DomR, upon DomR startup, we will reset all the NIC allocation after eth3
+                if(nicCount < 3)
+                	nicMask |= (1 << nicCount);
                 
                 i++;
+                nicCount++;
             }
 
             vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
@@ -1350,6 +1413,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmName);
             }
+            
+            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMask));
 
             if (!vmMo.powerOn()) {
                 throw new Exception("Failed to start VM. vmName: " + vmName);
@@ -1472,7 +1537,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
         StringBuffer argsBuf = new StringBuffer();
         if (cmd.isCreate()) {
@@ -1519,7 +1583,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String controlIp = getRouterSshControlIp(cmd);
         for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
             StringBuffer argsBuf = new StringBuffer();
@@ -1738,6 +1801,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 try {
+                    vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
+                	
                     if (getVmState(vmMo) != State.Stopped) {
                         Long bytesSent = 0L;
                         Long bytesRcvd = 0L;
@@ -3720,7 +3785,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         value = (String) params.get("vmware.reserve.mem");
         if(value != null && value.equalsIgnoreCase("true"))
         	_reserveMem = true;
-
+        
         String[] tokens = _guid.split("@");
         _vCenterAddress = tokens[1];
         _morHyperHost = new ManagedObjectReference();
@@ -3737,6 +3802,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
             cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
             cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
+            cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
 
             VmwareHypervisorHost hostMo = this.getHyperHost(context);
             _hostName = hostMo.getHyperHostName();
