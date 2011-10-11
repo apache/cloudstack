@@ -19,11 +19,15 @@
 
 package com.cloud.agent.resource.computing;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -2892,9 +2896,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
         	Connect conn = LibvirtConnection.getConnection();
         	final NodeInfo hosts = conn.nodeInfo();
-
+        	boolean result = false;
+        	try {
+        		BufferedReader in = new BufferedReader(new FileReader("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"));
+        		speed = Long.parseLong(in.readLine())/1000;
+        		result = true;
+        	} catch (FileNotFoundException e) {
+        		
+        	} catch (IOException e) {
+        		
+			} catch (NumberFormatException e) {
+				
+			}
+        	
+        	if (!result) {
+        		speed = hosts.mhz;
+        	}
+        	
         	cpus = hosts.cpus;
-        	speed = hosts.mhz;
         	ram = hosts.memory * 1024L;
             LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
             parser.parseCapabilitiesXML(conn.getCapabilities());
