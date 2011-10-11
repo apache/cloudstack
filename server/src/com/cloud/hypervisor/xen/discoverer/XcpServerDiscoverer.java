@@ -391,6 +391,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if(prodBrand.equals("XCP") && prodVersion.equals("1.0.0")) 
         	return new XcpServerResource();
         
+        if(prodBrand.equals("XCP") && prodVersion.equals("1.1.0")) 
+            return new XcpServerResource();
+        
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServer56Resource();
         
