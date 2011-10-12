@@ -113,16 +113,15 @@ def raiseExceptionIfFail(res):
 def ipToHeartBeatFileName(ip):
     return ip.replace('.', '_') + "_HEARTBEAT"
 
-def parseVmConfigureFile(cfgPath):
-    if not isfile(cfgPath): return {}
-    
-    res = {}
+def getVmNameFromConfigureFile(cfgPath):
     fd = open(cfgPath)
     for i in fd.readlines():
-        (key, value) = i.split("=", 1)
-        key = key.strip().strip("'")
-        value = value.strip().strip("'")
-        res[key] = value
+        i = i.strip()
+        if i.startswith('name'):
+            (key, value) = i.split("=", 1)
+            value = value.strip().strip("'")
+            fd.close()
+            return value
     fd.close()
-    return res
+    raise Exception('Cannot find vm name in %s'%cfgPath)
     
