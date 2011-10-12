@@ -2742,4 +2742,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean processTimeout(long agentId, long seq) {
         return false;
     }
+
+    @Override
+    public String getPropertiesFile() {
+        return "virtualrouter_commands.properties";
+    }
+
 }

@@ -45,6 +45,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -71,6 +72,7 @@ public class ApiDispatcher {
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
 
         setupParameters(cmd, params);
+        plugService(cmd);
 
         try {
             UserContext ctx = UserContext.current();
@@ -113,6 +115,7 @@ public class ApiDispatcher {
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
         setupParameters(cmd, params);
+        ApiDispatcher.plugService(cmd);
         try {
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
@@ -328,5 +331,45 @@ public class ApiDispatcher {
         cal.set(Calendar.MINUTE, minute);
         cal.set(Calendar.SECOND, second);
         return cal.getTime();
+    }
+    
+    public static void plugService(BaseCmd cmd) {
+        
+        if(!ApiServer.isPluggableServiceCommand(cmd.getClass().getName())){
+            return;
+        }
+        Class<?> clazz = cmd.getClass();
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        do {
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field field : fields) {
+                PlugService plugService = field.getAnnotation(PlugService.class);
+                if (plugService == null) {
+                    continue;
+                }
+                Class<?> fc = field.getType();
+                Object instance = null;
+                if (PluggableService.class.isAssignableFrom(fc)) {
+                    instance = locator.getPluggableService(fc);
+                } 
+        
+                if (instance == null) {
+                    throw new CloudRuntimeException("Unable to plug service " + fc.getSimpleName() + " in command " + clazz.getSimpleName());
+                }
+                
+                try {
+                    field.setAccessible(true);
+                    field.set(cmd, instance);
+                } catch (IllegalArgumentException e) {
+                    s_logger.error("IllegalArgumentException at plugService for command " + cmd.getCommandName() + ", field " + field.getName());
+                    throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [Illegal argumet at field " + field.getName() + "]");
+                } catch (IllegalAccessException e) {
+                    s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+                    throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+                }
+            }
+            clazz = clazz.getSuperclass();
+        } while (clazz != Object.class && clazz != null);
+
     }
 }

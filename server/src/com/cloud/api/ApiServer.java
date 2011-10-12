@@ -107,6 +107,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -138,6 +139,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_adminCommands = null;
     private static List<String> s_resourceDomainAdminCommands = null;
     private static List<String> s_allCommands = null;
+    private static List<String> s_pluggableServiceCommands = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
@@ -148,6 +150,7 @@ public class ApiServer implements HttpRequestHandler {
         s_adminCommands = new ArrayList<String>();
         s_resourceDomainAdminCommands = new ArrayList<String>();
         s_allCommands = new ArrayList<String>();
+        s_pluggableServiceCommands = new ArrayList<String>();
     }
 
     private ApiServer() {
@@ -168,12 +171,32 @@ public class ApiServer implements HttpRequestHandler {
     public Properties get_apiCommands() {
         return _apiCommands;
     }
+    
+    public static boolean isPluggableServiceCommand(String cmdClassName){
+        if(s_pluggableServiceCommands != null){
+            if(s_pluggableServiceCommands.contains(cmdClassName)){
+                return true;
+            }
+        }
+        return false;
+    }
 
-    public void init(String[] apiConfig) {
-        try {
-            BaseCmd.setComponents(new ApiResponseHelper());
-            BaseListCmd.configure();
-            _apiCommands = new Properties();
+    private String[] getPluggableServicesApiConfigs(){
+        List<String> pluggableServicesApiConfigs = new ArrayList<String>();
+        
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        List<PluggableService> services = locator.getAllPluggableServices();
+        for(PluggableService service : services){
+            pluggableServicesApiConfigs.add(service.getPropertiesFile());
+        }
+        return pluggableServicesApiConfigs.toArray(new String[0]);
+    }
+    
+    private void processConfigFiles(String[] apiConfig, boolean pluggableServicesConfig){
+        try{
+            if(_apiCommands == null){
+                _apiCommands = new Properties();
+            }
             Properties preProcessedCommands = new Properties();
             if (apiConfig != null) {
                 for (String configFile : apiConfig) {
@@ -184,6 +207,11 @@ public class ApiServer implements HttpRequestHandler {
                     String preProcessedCommand = preProcessedCommands.getProperty((String) key);
                     String[] commandParts = preProcessedCommand.split(";");
                     _apiCommands.put(key, commandParts[0]);
+                    
+                    if(pluggableServicesConfig){
+                        s_pluggableServiceCommands.add(commandParts[0]);
+                    }
+                    
                     if (commandParts.length > 1) {
                         try {
                             short cmdPermissions = Short.parseShort(commandParts[1]);
@@ -204,7 +232,7 @@ public class ApiServer implements HttpRequestHandler {
                         }
                     }
                 }
-
+    
                 s_allCommands.addAll(s_adminCommands);
                 s_allCommands.addAll(s_resourceDomainAdminCommands);
                 s_allCommands.addAll(s_userCommands);
@@ -215,6 +243,16 @@ public class ApiServer implements HttpRequestHandler {
         } catch (IOException ioex) {
             s_logger.error("Exception loading properties file", ioex);
         }
+    }
+    
+    public void init(String[] apiConfig) {
+        BaseCmd.setComponents(new ApiResponseHelper());
+        BaseListCmd.configure();
+        processConfigFiles(apiConfig, false);
+        
+        //get commands for all pluggable services
+        String[] pluggableServicesApiConfigs = getPluggableServicesApiConfigs();
+        processConfigFiles(pluggableServicesApiConfigs, true);
 
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _accountMgr = locator.getManager(AccountManager.class);
@@ -400,6 +438,7 @@ public class ApiServer implements HttpRequestHandler {
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.setupParameters(cmdObj, params);
+                ApiDispatcher.plugService(cmdObj);
             }
 
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmdObj;

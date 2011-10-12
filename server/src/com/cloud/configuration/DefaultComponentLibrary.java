@@ -70,6 +70,7 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -153,6 +154,7 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ClusteredVirtualMachineManagerImpl;
 import com.cloud.vm.ItWorkDaoImpl;
@@ -362,5 +364,17 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         HashMap<Class<?>, Class<?>> factories = new HashMap<Class<?>, Class<?>>();
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;
+    }
+    
+    protected void populateServices() {
+        addService("VirtualRouterService", VirtualNetworkApplianceService.class, VirtualNetworkApplianceManagerImpl.class);
+    }
+    
+    @Override
+    public synchronized Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
+        if (_pluggableServices.size() == 0) {
+            populateServices();
+        }
+        return _pluggableServices;
     }
 }

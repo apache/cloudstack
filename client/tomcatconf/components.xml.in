@@ -107,6 +107,7 @@
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
         </adapters>
 
+        <!-- pluggableservice name="VirtualRouterService" key="com.cloud.network.VirtualNetworkApplianceService" class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl"/ -->
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">

@@ -22,8 +22,9 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.utils.component.PluggableService;
 
-public interface VirtualNetworkApplianceService{
+public interface VirtualNetworkApplianceService extends PluggableService{
     /**
      * Starts domain router
      * @param cmd the command specifying router's id

@@ -1,0 +1,5 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+#### router commands
+configureRouter=com.cloud.api.commands.ConfigureRouterCmd;7

@@ -45,6 +45,7 @@ public abstract class ComponentLibraryBase implements ComponentLibrary {
 
     protected Map<String, ComponentInfo<Manager>> _managers = new LinkedHashMap<String, ComponentInfo<Manager>>();
     protected Map<String, List<ComponentInfo<Adapter>>> _adapters = new LinkedHashMap<String, List<ComponentInfo<Adapter>>>();
+    protected Map<String, ComponentInfo<PluggableService>> _pluggableServices = new LinkedHashMap<String, ComponentInfo<PluggableService>>();
 
     protected ComponentInfo<Manager> addManager(String name, Class<? extends Manager> clazz, List<Pair<String, Object>> params, boolean singleton) {
         ComponentInfo<Manager> info = new ComponentInfo<Manager>(name, clazz, params, singleton);
@@ -85,4 +86,15 @@ public abstract class ComponentLibraryBase implements ComponentLibrary {
         adapters.add(new Pair<String, Class<? extends T>>(name, adapterClass));
         return addAdapterChain(interphace, adapters).get(0);
     }
-}
+    
+
+    protected <T> ComponentInfo<PluggableService> addService(String name, Class<T> serviceInterphace, Class<? extends PluggableService> clazz, List<Pair<String, Object>> params, boolean singleton) {
+        ComponentInfo<PluggableService> info = new ComponentInfo<PluggableService>(name, clazz, params, singleton);
+        _pluggableServices.put(serviceInterphace.getName(), info);
+        return info;
+    }
+    
+    protected <T> ComponentInfo<PluggableService> addService(String name, Class<T> serviceInterphace, Class<? extends PluggableService> clazz) {
+        return addService(name, serviceInterphace, clazz, new ArrayList<Pair<String, Object>>(), true);
+    }
+ }

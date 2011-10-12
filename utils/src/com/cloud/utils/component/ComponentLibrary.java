@@ -51,4 +51,9 @@ public interface ComponentLibrary {
     
     Map<Class<?>, Class<?>> getFactories();
     
+    /**
+     * @return all the services
+     * 
+     */
+    Map<String, ComponentInfo<PluggableService>> getPluggableServices();
 }
