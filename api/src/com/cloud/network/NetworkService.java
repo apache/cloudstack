@@ -85,4 +85,6 @@ public interface NetworkService {
     Integer getNetworkRate(long networkId, Long vmId);
 
     Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+    
+    Map<String, String> listNetworkOfferingServices(long networkOfferingId);
 }

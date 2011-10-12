@@ -18,6 +18,7 @@
 package com.cloud.configuration;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -30,6 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
@@ -173,12 +175,15 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param maxConnections
 	 * @param guestIpType TODO
 	 * @param networkRate TODO
+	 * @param serviceProviderMap TODO
+	 * @param isDefault TODO
+	 * @param isSecurityGroupEnabled TODO
 	 * @param id
 	 * @param specifyVlan;
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType, boolean redundantRouter, Integer networkRate);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType, Integer networkRate, Map<Network.Service, Network.Provider> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     

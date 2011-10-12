@@ -22,6 +22,7 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -44,14 +45,16 @@ public interface Network extends ControlledEntity {
     }
 
     public static class Service {
+        private static List<Service> supportedServices = new ArrayList<Service>();
 
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnTypes);
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
-        public static final Service Gateway = new Service("Gateway", Capability.Redundancy);
+        public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
+        public static final Service SourceNat = new Service("SourceNat");
 
         private String name;
         private Capability[] caps;
@@ -59,6 +62,7 @@ public interface Network extends ControlledEntity {
         public Service(String name, Capability... caps) {
             this.name = name;
             this.caps = caps;
+            supportedServices.add(this);
         }  
 
         public String getName() {
@@ -83,9 +87,19 @@ public interface Network extends ControlledEntity {
 
             return success;
         }
+        
+        public static Service getService(String serviceName) {
+            for (Service service : supportedServices) {
+                if (service.getName().equalsIgnoreCase(serviceName)) {
+                    return service;
+                }
+            }
+            return null;
+        }
     }
 
     public static class Provider {
+        private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
         public static final Provider VirtualRouter = new Provider("VirtualRouter");
         public static final Provider DhcpServer = new Provider("DhcpServer");
@@ -102,10 +116,20 @@ public interface Network extends ControlledEntity {
 
         public Provider(String name) {
             this.name = name;
+            supportedProviders.add(this);
         }
 
         public String getName() {
             return name;
+        }
+        
+        public static Provider getProvider(String providerName) {
+            for (Provider provider : supportedProviders) {
+                if (provider.getName().equalsIgnoreCase(providerName)) {
+                    return provider;
+                }
+            }
+            return null;
         }
     }
 
@@ -121,7 +145,6 @@ public interface Network extends ControlledEntity {
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
-        public static final Capability Redundancy = new Capability("Redundancy");
 
         private String name;
 

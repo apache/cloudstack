@@ -32,6 +32,12 @@ public interface NetworkOffering {
         Unavailable;
     }
     
+    public enum State {
+        Disabled,
+        Enabled, 
+        Inactive
+    }
+    
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
@@ -40,7 +46,6 @@ public interface NetworkOffering {
     
     public final static String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
     public final static String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
-    public final static String DefaultDirectChooseVlanNetworkOffering = "DefaultDirectChooseVlanNetworkOffering";
 
     long getId();
 
@@ -81,24 +86,15 @@ public interface NetworkOffering {
     
     Availability getAvailability();
     
-    
-    boolean isDnsService();
-    
-    boolean isGatewayService();
-    
-    boolean isFirewallService();
-    
-    boolean isLbService();
-    
-    boolean isUserdataService();
-    
-    boolean isVpnService();
-    
-    boolean isDhcpService();
-    
     boolean isSharedSourceNatService();
     
     GuestIpType getGuestType();
 
     String getUniqueName();
+
+    boolean isSecurityGroupEnabled();
+
+    void setState(State state);
+
+    State getState();
 }

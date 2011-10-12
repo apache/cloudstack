@@ -648,4 +648,8 @@ public class ApiDBUtils {
     public static long getProjectOwnwerId(long projectId) {
         return _projectMgr.getProjectOwner(projectId).getId();
     }
+    
+    public static Map<String, String> listNetworkOfferingServices(long networkOfferingId) {
+        return _networkMgr.listNetworkOfferingServices(networkOfferingId);
+    }
 }

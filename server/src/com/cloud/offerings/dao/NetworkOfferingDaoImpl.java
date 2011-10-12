@@ -27,8 +27,6 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -40,9 +38,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Local(value=NetworkOfferingDao.class) @DB(txn=false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
-    
-    private final static Logger s_logger = Logger.getLogger(NetworkOfferingDaoImpl.class);
-    
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;

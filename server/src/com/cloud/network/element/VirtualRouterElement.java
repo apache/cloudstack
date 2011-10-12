@@ -314,10 +314,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
         
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
-        
-        Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
-        gatewayCapabilities.put(Capability.Redundancy, "true");
-        capabilities.put(Service.Gateway, gatewayCapabilities);
+        capabilities.put(Service.Gateway, null);
         
         return capabilities;
     }

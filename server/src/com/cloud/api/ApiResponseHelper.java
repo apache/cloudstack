@@ -2110,12 +2110,23 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setRedundantRouter(false);
+        response.setIsSecurityGroupEnabled(offering.isSecurityGroupEnabled());
 
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }
-
+        
+        response.setState(offering.getState().name());
+        
+        Map<String, String> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (String service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            svcRsp.setName(service);
+            svcRsp.setProvider(serviceProviderMap.get(service));
+            serviceResponses.add(svcRsp);
+        }
+        response.setServices(serviceResponses);
         response.setObjectName("networkoffering");
         return response;
     }

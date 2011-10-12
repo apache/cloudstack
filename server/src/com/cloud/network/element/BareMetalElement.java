@@ -19,7 +19,6 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -37,9 +36,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;

@@ -79,7 +79,6 @@ import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -88,6 +87,7 @@ import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -114,8 +114,10 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
@@ -234,6 +236,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject DomainRouterDao _routerDao;
     @Inject DomainManager _domainMgr;
     @Inject ProjectManager _projectMgr;
+    @Inject NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -752,7 +755,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    @Override
+    @Override @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
@@ -777,24 +780,47 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, true, false, null, null,
-                null, true, Availability.Required,
-                // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct);
-        guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
+        
+        //populate providers
+        Map<Network.Service, Network.Provider> defaultDirectNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultDirectNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
+        defaultDirectNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
+        defaultDirectNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        
+        Map<Network.Service, Network.Provider> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultVirtualNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.Firewall, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.Gateway, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.Lb, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //there is only 1 diff between offering #1 and #3 - securityGroup is enabled for the first, and disabled for the third
+        //check that offering already exists
+        NetworkOfferingVO offering = null;
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, GuestIpType.Direct, null, defaultDirectNetworkOfferingProviders, true, true);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+        
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, GuestIpType.Virtual, null, defaultVirtualNetworkOfferingProviders, true, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        } 
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null,
-                true, Availability.Required,
-                // services
-                true, true, true, true, true, true, true, GuestIpType.Virtual);
-
-        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, false, true, null, null, null, true,
-                Availability.Optional,
-                // services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false, false, false, GuestIpType.Direct);
-        defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultDirectNetworkOffering) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, GuestIpType.Direct, null, defaultDirectNetworkOfferingProviders, true, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+        
+        txn.commit();
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
         SearchBuilder<NetworkAccountVO> networkAccountSearch = _networksDao.createSearchBuilderForAccount();
@@ -2850,24 +2876,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isServiceSupported(long networkOfferingId, Network.Service service) {
-        NetworkOffering offering = _configMgr.getNetworkOffering(networkOfferingId);
-        if (service == Service.Lb) {
-            return offering.isLbService();
-        } else if (service == Service.Dhcp) {
-            return offering.isDhcpService();
-        } else if (service == Service.Dns) {
-            return offering.isDnsService();
-        } else if (service == Service.Firewall) {
-            return offering.isFirewallService();
-        } else if (service == Service.UserData) {
-            return offering.isUserdataService();
-        } else if (service == Service.Vpn) {
-            return offering.isVpnService();
-        } else if (service == Service.Gateway) {
-            return offering.isGatewayService();
-        }
-
-        return false;
+        return (_ntwkOfferingSrvcDao.isServiceSupported(networkOfferingId, service));
     }
 
     private boolean cleanupIpResources(long ipId, long userId, Account caller) {
@@ -3305,5 +3314,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             return podVlanMaps.getPodId();
         }
+    }
+    
+    @Override
+    public Map<String, String> listNetworkOfferingServices(long networkOfferingId) {
+        Map<String, String> serviceProviderMap = new HashMap<String, String>();
+        List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.getServices(networkOfferingId);
+        
+        for (NetworkOfferingServiceMapVO instance : map) {
+            serviceProviderMap.put(instance.getService(), instance.getProvider());
+        }
+        
+        return serviceProviderMap;
     }
 }

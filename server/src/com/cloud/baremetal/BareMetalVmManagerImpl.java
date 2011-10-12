@@ -310,6 +310,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			throw new InvalidParameterValueException("Unable to find a default network to start a vm");
 		}
 		
+		
 		networkList = new ArrayList<Long>();
 		networkList.add(defaultNetwork.getId());
 		

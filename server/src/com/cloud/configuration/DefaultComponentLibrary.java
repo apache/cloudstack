@@ -107,6 +107,7 @@ import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
@@ -280,6 +281,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
         addDao("ProjectsAccountDao", ProjectAccountDaoImpl.class);
         addDao("ProjectInvitationDao", ProjectInvitationDaoImpl.class);
+        addDao("NetworkOfferingServiceMapDao", NetworkOfferingServiceMapDaoImpl.class);
         info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
         info.addParameter("cache.size", "100");
         info.addParameter("cache.time.to.live", "600");

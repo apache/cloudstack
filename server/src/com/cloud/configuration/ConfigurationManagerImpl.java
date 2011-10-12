@@ -107,8 +107,10 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
@@ -206,6 +208,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     ResourceLimitService _resourceLimitMgr;
     @Inject
     ProjectManager _projectMgr;
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -2841,7 +2845,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
         String guestIpTypeString = cmd.getGuestIpType();
-        Boolean redundantRouter = cmd.getRedundantRouter();
+        Boolean isSecurityGroupEnabled = cmd.getSecurityGroupEnabled();
 
         Integer networkRate = cmd.getNetworkRate();
 
@@ -2884,39 +2888,77 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         Integer maxConnections = cmd.getMaxconnections();
-
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, redundantRouter, networkRate);
+        
+        //configure service provider map
+        Map<Network.Service, Network.Provider> serviceProviderMap = new HashMap<Network.Service, Network.Provider>();
+        //populate all services first
+        if (cmd.getDhcpService()) {
+            serviceProviderMap.put(Network.Service.Dhcp, null);            
+        } else if (cmd.getDnsService()) {
+            serviceProviderMap.put(Network.Service.Dns, null);    
+        } else if (cmd.getFirewallService()) {
+            serviceProviderMap.put(Network.Service.Firewall, null);    
+        } else if (cmd.getGatewayService()) {
+            serviceProviderMap.put(Network.Service.Gateway, null);    
+        } else if (cmd.getLbService()) {
+            serviceProviderMap.put(Network.Service.Lb, null);    
+        } else if (cmd.getSourceNatService()) {
+            serviceProviderMap.put(Network.Service.SourceNat, null);    
+        } else if (cmd.getUserdataService()) {
+            serviceProviderMap.put(Network.Service.UserData, null);    
+        } else if (cmd.getVpnService()) {
+            serviceProviderMap.put(Network.Service.Vpn, null);    
+        } 
+        
+        //populate providers
+        Map<String, String> svcPrv = (Map<String, String>)cmd.getServiceProviderList();
+        for (String serviceStr : svcPrv.keySet()) {
+            if (serviceProviderMap.containsKey(serviceStr)) {
+                Network.Service service = Network.Service.getService(serviceStr);
+                //check if provider is supported
+                Network.Provider provider;
+                String prvNameStr = svcPrv.get(serviceStr);
+                provider = Network.Provider.getProvider(prvNameStr);
+                if (provider == null) {
+                    throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
+                }   
+                serviceProviderMap.put(service, provider);
+            } else {
+                throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+            }
+        }
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, networkRate, serviceProviderMap, false, isSecurityGroupEnabled);
     }
 
-    @Override
+    @Override @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, 
-            Availability availability, GuestIpType guestIpType, boolean redundantRouter, Integer networkRate) {
+            Availability availability, GuestIpType guestIpType, Integer networkRate, Map<Network.Service, Network.Provider> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
-        boolean firewallService = false;
-        boolean lbService = false;
-        boolean vpnService = false;
-        boolean gatewayService = false;
 
-        if (trafficType == TrafficType.Guest) {
-            firewallService = true;
-            lbService = true;
-            vpnService = true;
-            gatewayService = true;
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability,guestIpType, tags, isSecurityGroupEnabled);
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //create network offering object
+        s_logger.debug("Adding network offering " + offering);
+        offering = _networkOfferingDao.persist(offering);
+        //populate services and providers
+        if (serviceProviderMap != null) {
+            for (Network.Service service : serviceProviderMap.keySet()) {
+                NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, serviceProviderMap.get(service));
+                _ntwkOffServiceMapDao.persist(offService);
+                s_logger.trace("Added service for the network offering: " + offService);
+            }
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true,
-                gatewayService, firewallService, lbService, vpnService, guestIpType);
-
-        if ((offering = _networkOfferingDao.persist(offering)) != null) {
-            UserContext.current().setEventDetails(" Id: "+offering.getId()+" Name: "+name);
-            return offering;
-        } else {
-            return null;
-        }
+        txn.commit();
+        
+        UserContext.current().setEventDetails(" Id: "+offering.getId()+" Name: "+name);
+        return offering;
     }
 
     @Override
@@ -2933,6 +2975,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
         Object guestIpType = cmd.getGuestIpType();
+        Object sgEnabled = cmd.getSecurityGroupEnabled();
+        Object state = cmd.getState();
         Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
 
@@ -2983,6 +3027,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (availability != null) {
             sc.addAnd("availability", SearchCriteria.Op.EQ, availability);
+        }
+        
+        if (state != null) {
+            sc.addAnd("state", SearchCriteria.Op.EQ, state);
+        }
+        
+        if (sgEnabled != null) {
+            sc.addAnd("securityGroupEnabled", SearchCriteria.Op.EQ, sgEnabled);
         }
 
         if (zone != null) {

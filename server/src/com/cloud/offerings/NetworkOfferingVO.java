@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.State;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
@@ -70,14 +71,22 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="system_only")
     boolean systemOnly;
     
-    @Column(name="service_offering_id")
-    Long serviceOfferingId;
-    
     @Column(name="tags", length=4096)
     String tags;
    
     @Column(name="default")
     boolean isDefault;
+    
+    @Column(name="availability")
+    @Enumerated(value=EnumType.STRING)
+    Availability availability;
+    
+    @Column(name="guest_type")
+    GuestIpType guestType;
+    
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    State state = State.Disabled;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -85,36 +94,11 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
     
-    @Column(name="availability")
-    @Enumerated(value=EnumType.STRING)
-    Availability availability;
-    
-    @Column(name="dns_service")
-    boolean dnsService;
-    
-    @Column(name="gateway_service")
-    boolean gatewayService;
-    
-    @Column(name="firewall_service")
-    boolean firewallService;
-    
-    @Column(name="lb_service")
-    boolean lbService;
-    
-    @Column(name="userdata_service")
-    boolean userdataService;
-    
-    @Column(name="vpn_service")
-    boolean vpnService;
-    
-    @Column(name="dhcp_service")
-    boolean dhcpService;
-    
     @Column(name="shared_source_nat_service")
     boolean sharedSourceNatService;
     
-    @Column(name="guest_type")
-    GuestIpType guestType;
+    @Column(name="is_security_group_enabled")
+    boolean securityGroupEnabled;
     
     @Override
     public String getDisplayText() {
@@ -168,13 +152,6 @@ public class NetworkOfferingVO implements NetworkOffering {
         return tags;
     }
     
-    public void setTags(String tags) {
-        this.tags = tags;
-    }
-    
-    public NetworkOfferingVO() {
-    }
-    
     public void setName(String name) {
         this.name = name;
     }
@@ -190,31 +167,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     public void setMulticastRateMbps(Integer multicastRateMbps) {
         this.multicastRateMbps = multicastRateMbps;
     }
-
-    public void setConcurrentConnections(Integer concurrentConnections) {
-        this.concurrentConnections = concurrentConnections;
-    }
-
-    public void setTrafficType(TrafficType trafficType) {
-        this.trafficType = trafficType;
-    }
-
-    public void setSystemOnly(boolean systemOnly) {
-        this.systemOnly = systemOnly;
-    }
-
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-    
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
-    }
-    
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
     
     @Override
     public boolean isDefault() {
@@ -224,10 +176,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean getSpecifyVlan() {
         return specifyVlan;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
     }
     
     @Override
@@ -240,84 +188,13 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
     
     @Override
-    public boolean isDnsService() {
-        return dnsService;
-    }
-
-    public void setDnsService(boolean dnsService) {
-        this.dnsService = dnsService;
-    }
-
-    @Override
-    public boolean isGatewayService() {
-        return gatewayService;
-    }
-
-    public void setGatewayService(boolean gatewayService) {
-        this.gatewayService = gatewayService;
-    }
-    
-    @Override
-    public boolean isFirewallService() {
-        return firewallService;
-    }
-
-    public void setFirewallService(boolean firewallService) {
-        this.firewallService = firewallService;
-    }
-
-    @Override
-    public boolean isLbService() {
-        return lbService;
-    }
-
-    public void setLbService(boolean lbService) {
-        this.lbService = lbService;
-    }
-
-    @Override
-    public boolean isUserdataService() {
-        return userdataService;
-    }
-
-    public void setUserdataService(boolean userdataService) {
-        this.userdataService = userdataService;
-    }
-    
-    @Override
-    public boolean isVpnService() {
-        return vpnService;
-    }
-
-    public void setVpnService(boolean vpnService) {
-        this.vpnService = vpnService;
-    }
-    
-    @Override
-    public boolean isDhcpService() {
-        return dhcpService;
-    }
-
-    public void setDhcpService(boolean dhcpService) {
-        this.dhcpService = dhcpService;
-    }
-    
-    @Override
     public boolean isSharedSourceNatService() {
         return sharedSourceNatService;
-    }
-    
-    public void setSharedSourceNatService(boolean sharedSourceNatService) {
-        this.sharedSourceNatService = sharedSourceNatService;
     }
     
     @Override
     public GuestIpType getGuestType() {
         return guestType;
-    }
-
-    public void setGuestType(GuestIpType guestType) {
-        this.guestType = guestType;
     }
     
     @Override
@@ -325,11 +202,22 @@ public class NetworkOfferingVO implements NetworkOffering {
         return uniqueName;
     }
 
-    public void setUniqueName(String uniqueName) {
-        this.uniqueName = uniqueName;
+    @Override
+    public boolean isSecurityGroupEnabled() {
+        return securityGroupEnabled;
+    }
+    
+    @Override
+    public void setState(State state) {
+        this.state = state;
+    }   
+
+    @Override
+    public State getState() {
+        return state;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, GuestIpType guestIpType, String tags, boolean isSecurityGroupEnabled) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -340,15 +228,13 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.specifyVlan = specifyVlan;
         this.isDefault = isDefault;
         this.availability = availability;
-        this.dnsService = dnsService;
-        this.dhcpService = dhcpService;
-        this.userdataService = userDataService;  
-        this.gatewayService = gatewayService;
-        this.firewallService = firewallService;
-        this.lbService = lbService;
-        this.vpnService = vpnService;
-        this.guestType = guestIpType;
         this.uniqueName = name;
+        this.tags = tags;
+        this.guestType = guestIpType;
+        this.securityGroupEnabled = isSecurityGroupEnabled;
+    }
+    
+    public NetworkOfferingVO() {
     }
     
     /**
@@ -357,7 +243,8 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, false, false, false, false, false, false, false, null);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null, false);
+        this.state = State.Enabled;
     }
     
     @Override

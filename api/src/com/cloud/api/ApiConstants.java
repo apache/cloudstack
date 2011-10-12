@@ -267,5 +267,15 @@ public class ApiConstants {
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";
     public static final String TOKEN = "token";
+    public static final String DHCP_SERVICE = "dhcpservice";
+    public static final String DNS_SERVICE = "dnsservice";
+    public static final String SOURCE_NAT_SERVICE = "sourcenatservice";
+    public static final String VPN_SERVICE = "vpnservice";
+    public static final String USERDATA_SERVICE = "userdataservice";
+    public static final String LB_SERVICE = "lbservice";
+    public static final String FIREWALL_SERVICE = "firewallservice";
+    public static final String GATEWAY_SERVICE = "gatewayservice";
+    public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
+    public static final String PROVIDER = "provider";
 
 }
