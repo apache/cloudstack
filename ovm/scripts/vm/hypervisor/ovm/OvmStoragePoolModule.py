@@ -276,7 +276,22 @@ class OvmStoragePool(OvmObject):
             fd.close()
             doCmd(['hostname', nodeName])
             
+        def checkStaleCluster(clusterName):
+            if exists('/sys/kernel/config/cluster/'):
+                dirs = os.listdir('/sys/kernel/config/cluster/')
+                for dir in dirs:
+                    if dir != clusterName:
+                        errMsg = '''CloudStack detected there is a stale cluster(%s) on host %s. Please manually clean up it first then add again by
+1) remove the host from cloudstack 
+2) umount all OCFS2 device on host
+3) /etc/init.d/o2cb offline %s
+4) /etc/init.d/o2cb restart
+if this doesn't resolve the problem, please check oracle manual to see how to offline a cluster
+    ''' % (dir, get_master_ip, dir)
+                        raise Exception(errMsg)
+            
         try:
+            checkStaleCluster(clusterName)
             nodeString = nodeString.strip(";")
             nodes = []
             for n in nodeString.split(";"):
@@ -327,9 +342,7 @@ class OvmStoragePool(OvmObject):
             secMountPoint = ""
             if not isfile(volumePath): raise Exception("Cannot find %s"%volumePath)
             vmCfg = join(dirname(volumePath), 'vm.cfg')
-            cfgs = parseVmConfigureFile(vmCfg)
-            if len(cfgs) == 0: raise Exception("Cannot find vm.cfg, this volume(%s) seems not the ROOT volume. We don't support create template from non-ROOT volume"%volumePath)
-            vmName = cfgs['name']
+            vmName = getVmNameFromConfigureFile(vmCfg)
             if vmName in doCmd(['xm', 'list']):
                 raise Exception("%s is still running, please stop it first then create template again"%vmName)
             
