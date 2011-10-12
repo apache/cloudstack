@@ -25,7 +25,9 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -64,6 +66,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -87,6 +90,7 @@ import com.cloud.ovm.object.OvmVm;
 import com.cloud.ovm.object.OvmVolume;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.hypervisor.HypervisorResource;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.TemplateInfo;
@@ -1163,56 +1167,83 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
 	}
 	
+	protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromVolumeCommand cmd) {
+		String secondaryStoragePoolURL = cmd.getSecondaryStorageURL();
+		String volumePath = cmd.getVolumePath();
+		Long accountId = cmd.getAccountId();
+		Long templateId = cmd.getTemplateId();
+		int wait = cmd.getWait();
+		if (wait == 0) {
+			/* Defaut timeout 2 hours */
+			wait = 7200;
+		}
+		 
+		try {
+			URI uri;
+			uri = new URI(secondaryStoragePoolURL);
+			String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+			String installPath = "template/tmpl/" + accountId + "/" + templateId;
+			Map<String, String> res = OvmStoragePool.createTemplateFromVolume(_conn, secondaryStorageMountPath, installPath, volumePath, wait);
+			return new CreatePrivateTemplateAnswer(cmd, true, null, res.get("installPath"), Long.valueOf(res.get("virtualSize")), Long.valueOf(res.get("physicalSize")), res.get("templateFileName"), ImageFormat.RAW);
+		} catch (Exception e) {
+			s_logger.debug("Create template failed", e);
+			return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
+		}
+	}
+	
 	@Override
 	public Answer executeRequest(Command cmd) {
-		if (cmd instanceof ReadyCommand) {
+		Class<? extends Command> clazz = cmd.getClass();
+		if (clazz == ReadyCommand.class) {
 			return execute((ReadyCommand)cmd);
-		} else if (cmd instanceof CreateStoragePoolCommand) {
+		} else if (clazz == CreateStoragePoolCommand.class) {
 			return execute((CreateStoragePoolCommand)cmd);
-		} else if (cmd instanceof ModifyStoragePoolCommand) {
+		} else if (clazz == ModifyStoragePoolCommand.class) {
 			return execute((ModifyStoragePoolCommand)cmd);
-		} else if (cmd instanceof PrimaryStorageDownloadCommand) {
+		} else if (clazz == PrimaryStorageDownloadCommand.class) {
 			return execute((PrimaryStorageDownloadCommand)cmd);
-		} else if (cmd instanceof CreateCommand) {
+		} else if (clazz == CreateCommand.class) {
 			return execute((CreateCommand)cmd);
-		} else if (cmd instanceof GetHostStatsCommand) {
+		} else if (clazz == GetHostStatsCommand.class) {
 			return execute((GetHostStatsCommand)cmd);
-		} else if (cmd instanceof StopCommand) {
+		} else if (clazz == StopCommand.class) {
 			return execute((StopCommand)cmd);
-		} else if (cmd instanceof RebootCommand) {
+		} else if (clazz == RebootCommand.class) {
 			return execute((RebootCommand)cmd);
-		} else if (cmd instanceof GetStorageStatsCommand) { 
+		} else if (clazz == GetStorageStatsCommand.class) { 
 			return execute((GetStorageStatsCommand)cmd);
-		} else if (cmd instanceof GetVmStatsCommand) {
+		} else if (clazz == GetVmStatsCommand.class) {
 			return execute((GetVmStatsCommand)cmd);
-		} else if (cmd instanceof AttachVolumeCommand) {
+		} else if (clazz == AttachVolumeCommand.class) {
 			return execute((AttachVolumeCommand)cmd);
-		} else if (cmd instanceof DestroyCommand) {
+		} else if (clazz == DestroyCommand.class) {
 			return execute((DestroyCommand)cmd);
-		} else if (cmd instanceof PrepareForMigrationCommand) {
+		} else if (clazz == PrepareForMigrationCommand.class) {
 			return execute((PrepareForMigrationCommand)cmd);
-		} else if (cmd instanceof MigrateCommand) {
+		} else if (clazz == MigrateCommand.class) {
 			return execute((MigrateCommand)cmd);
-		} else if (cmd instanceof CheckVirtualMachineCommand) {
+		} else if (clazz == CheckVirtualMachineCommand.class) {
 			return execute((CheckVirtualMachineCommand)cmd);
-		} else if (cmd instanceof MaintainCommand) {
+		} else if (clazz == MaintainCommand.class) {
 			return execute((MaintainCommand)cmd);
-		} else if (cmd instanceof StartCommand) {
+		} else if (clazz == StartCommand.class) {
 			return execute((StartCommand)cmd);
-		} else if (cmd instanceof GetVncPortCommand) {
+		} else if (clazz == GetVncPortCommand.class) {
 			return execute((GetVncPortCommand)cmd);
-		} else if (cmd instanceof PingTestCommand) {
+		} else if (clazz == PingTestCommand.class) {
 			return execute((PingTestCommand)cmd);
-		} else if (cmd instanceof FenceCommand) {
+		} else if (clazz == FenceCommand.class) {
 			return execute((FenceCommand)cmd);
-		} else if (cmd instanceof AttachIsoCommand) {
+		} else if (clazz == AttachIsoCommand.class) {
 			return execute((AttachIsoCommand)cmd);
-		} else if (cmd instanceof SecurityIngressRulesCmd) {
+		} else if (clazz == SecurityIngressRulesCmd.class) {
 		    return execute((SecurityIngressRulesCmd) cmd);
-		} else if (cmd instanceof CleanupNetworkRulesCmd) {
+		} else if (clazz == CleanupNetworkRulesCmd.class) {
 		    return execute((CleanupNetworkRulesCmd) cmd);
-		} else if (cmd instanceof PrepareOCFS2NodesCommand) {
+		} else if (clazz == PrepareOCFS2NodesCommand.class) {
 		    return execute((PrepareOCFS2NodesCommand)cmd);
+		} else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
+			return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
 		}else {
 			return Answer.createUnsupportedCommandAnswer(cmd);
 		}

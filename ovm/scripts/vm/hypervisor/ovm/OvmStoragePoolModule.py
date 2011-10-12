@@ -74,12 +74,25 @@ class OvmStoragePool(OvmObject):
         res = doCmd(['mount'])
         return (path in res)
     
-    def _mount(self, target, mountpoint):
+    def _mount(self, target, mountpoint, readonly=False):
         if not exists(mountpoint):
             os.makedirs(mountpoint)
             
         if not OvmStoragePool()._isMounted(mountpoint):
-            doCmd(['mount', target, mountpoint, '-r'])
+            if readonly:
+                doCmd(['mount', target, mountpoint, '-r'])
+            else:
+                doCmd(['mount', target, mountpoint])
+    
+    def _umount(self, mountpoint):
+        umountCmd = ['umount', '-f', mountpoint]
+        doCmd(umountCmd)
+        ls = os.listdir(mountpoint)
+        if len(ls) == 0:
+            rmDirCmd = ['rm', '-r', mountpoint]
+            doCmd(rmDirCmd)
+        else:
+            logger.warning(OvmStoragePool._umount, "Something wrong when umount %s, there are still files in directory:%s", mountpoint, " ".join(ls))
          
     @staticmethod
     def create(jStr):
@@ -174,14 +187,7 @@ class OvmStoragePool(OvmObject):
         finally:
             if exists(secMountPoint):
                 try:
-                    umountCmd = ['umount', '-f', secMountPoint]
-                    doCmd(umountCmd)
-                    ls = os.listdir(secMountPoint)
-                    if len(ls) == 0:
-                        rmDirCmd = ['rm', '-r', secMountPoint]
-                        doCmd(rmDirCmd)
-                    else:
-                        logger.warning(OvmStoragePool.downloadTemplate, "Something wrong when umount %s, there are still files in directory:%s", secMountPoint, " ".join(ls))
+                    OvmStoragePool()._umount(secMountPoint)
                 except Exception, e:
                     errmsg = fmt_err_msg(e)
                     logger.error(OvmStoragePool.downloadTemplate, 'unmount secondary storage at %s failed, %s'%(secMountPoint, errmsg))
@@ -314,6 +320,48 @@ class OvmStoragePool(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmStoragePool.prepareOCFS2Nodes, errmsg)
             raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.prepareOCFS2Nodes), errmsg)
+    
+    @staticmethod
+    def createTemplateFromVolume(secStorageMountPath, installPath, volumePath):
+        try:
+            secMountPoint = ""
+            if not isfile(volumePath): raise Exception("Cannot find %s"%volumePath)
+            vmCfg = join(dirname(volumePath), 'vm.cfg')
+            cfgs = parseVmConfigureFile(vmCfg)
+            if len(cfgs) == 0: raise Exception("Cannot find vm.cfg, this volume(%s) seems not the ROOT volume. We don't support create template from non-ROOT volume"%volumePath)
+            vmName = cfgs['name']
+            if vmName in doCmd(['xm', 'list']):
+                raise Exception("%s is still running, please stop it first then create template again"%vmName)
             
-
+            tmpUuid = get_uuid()
+            secMountPoint = join("/var/cloud/", tmpUuid)
+            OvmStoragePool()._mount(secStorageMountPath, secMountPoint)
+            installPath = installPath.lstrip('/')
+            destPath = join(secMountPoint, installPath)
+            if exists(destPath):
+                logger.warning("%s is already here, delete it since it is most likely stale"%destPath)
+                doCmd(['rm', '-rf', destPath])
+            OvmStoragePool()._checkDirSizeForImage(secMountPoint, volumePath)
+            
+            os.makedirs(destPath)
+            newName = get_uuid() + ".raw"
+            destName = join(destPath, newName)
+            doCmd(['cp', volumePath, destName])
+            size = os.path.getsize(destName)
+            resInstallPath = join(installPath, newName)
+            OvmStoragePool()._umount(secMountPoint)
+            rs = toGson({"installPath":resInstallPath, "templateFileName":newName, "virtualSize":size, "physicalSize":size})
+            return rs
+        
+        except Exception, e:
+            try:
+                if exists(secMountPoint):
+                    OvmStoragePool()._umount(secMountPoint)
+            except Exception, e:
+                logger.warning(OvmStoragePool.createTemplateFromVolume, "umount %s failed"%secMountPoint)       
+                
+            errmsg = fmt_err_msg(e)
+            logger.error(OvmStoragePool.createTemplateFromVolume, errmsg)
+            raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.createTemplateFromVolume), errmsg)
+                
             

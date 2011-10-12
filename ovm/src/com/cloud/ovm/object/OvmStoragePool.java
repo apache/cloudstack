@@ -67,4 +67,11 @@ public class OvmStoragePool extends OvmObject {
 	    Object[] params = {clusterName, nodes};
 	    c.call("OvmStoragePool.prepareOCFS2Nodes", params);
 	}
+	
+	public static Map<String, String> createTemplateFromVolume(Connection c, String secStorageMountPath, String installPath, String volumePath, int timeout) throws XmlRpcException {
+		Object[] params = {secStorageMountPath, installPath, volumePath};
+		String res = (String) c.callTimeoutInSec("OvmStoragePool.createTemplateFromVolume", params, timeout);
+		Map info = Coder.mapFromJson(res);
+		return info;		
+	}
 }

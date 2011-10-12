@@ -73,7 +73,7 @@ class OvmVm(OvmObject):
     name = ''
     bootDev = ''
     type = ''
-    
+        
     def _getVifs(self, vmName):
         vmPath = OvmHost()._vmNameToPath(vmName)
         domId = OvmHost()._getDomainIdByName(vmName)

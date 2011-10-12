@@ -38,6 +38,8 @@ errCode = {
        "OvmStoragePool.getDetailsByUuid":OvmStoragePoolErrCodeStub+2,
        "OvmStoragePool.downloadTemplate":OvmStoragePoolErrCodeStub+3,
        "OvmStoragePool.prepareOCFS2Nodes":OvmStoragePoolErrCodeStub+4,
+       "OvmStoragePool.createTemplateFromVolume":OvmStoragePoolErrCodeStub+5,
+       "OvmStoragePool._umount":OvmStoragePoolErrCodeStub+6,
        
        "OvmNetwork.createBridge":OvmNetworkErrCodeStub+1,
        "OvmNetwork.deleteBridge":OvmNetworkErrCodeStub+2,
