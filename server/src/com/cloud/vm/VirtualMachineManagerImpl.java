@@ -1947,8 +1947,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             try {
                 long seq_no=_agentMgr.send(agentId, syncCmd, this);
                 _syncCommandMap.put(clusterId +"", syncCmd);
-            } catch (AgentUnavailableException e1) {
-                e1.printStackTrace();
+                s_logger.debug("Cluster VM sync started with jobid " + seq_no);
+            } catch (AgentUnavailableException e) {
+                s_logger.fatal("The Cluster VM sync process failed with ", e);
+                _syncCommandMap.remove(clusterId); // remove so that connecting next host can start the sync
             }
         }
     }
