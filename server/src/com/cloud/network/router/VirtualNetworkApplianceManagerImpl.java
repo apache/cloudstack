@@ -329,7 +329,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private String _dnsBasicZoneUpdates = "all";
     
     private boolean _disable_rp_filter = false;
-    int _routerExtraPublicNics = 5;
+    int _routerExtraPublicNics = 2;
     
     private long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     
@@ -596,7 +596,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
         _routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
         
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 5);
+        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
         
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
