@@ -112,4 +112,17 @@ def raiseExceptionIfFail(res):
 
 def ipToHeartBeatFileName(ip):
     return ip.replace('.', '_') + "_HEARTBEAT"
+
+def parseVmConfigureFile(cfgPath):
+    if not isfile(cfgPath): return {}
+    
+    res = {}
+    fd = open(cfgPath)
+    for i in fd.readlines():
+        (key, value) = i.split("=", 1)
+        key = key.strip().strip("'")
+        value = value.strip().strip("'")
+        res[key] = value
+    fd.close()
+    return res
     
