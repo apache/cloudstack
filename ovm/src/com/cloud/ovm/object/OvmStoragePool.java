@@ -74,4 +74,11 @@ public class OvmStoragePool extends OvmObject {
 		Map info = Coder.mapFromJson(res);
 		return info;		
 	}
+	
+	public static String copyVolume(Connection c, String secStorageMountPath, String volumeFolderOnSecStorage, String volumePath, String storagePoolUuid, Boolean toSec, int timeout) throws XmlRpcException {
+		Object[] params = {secStorageMountPath, volumeFolderOnSecStorage, volumePath, storagePoolUuid, toSec};
+		String res = (String) c.callTimeoutInSec("OvmStoragePool.copyVolume", params, timeout);
+		Map info = Coder.mapFromJson(res);
+		return (String) info.get("installPath");
+	}
 }

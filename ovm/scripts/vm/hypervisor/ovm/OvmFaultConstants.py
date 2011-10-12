@@ -40,6 +40,7 @@ errCode = {
        "OvmStoragePool.prepareOCFS2Nodes":OvmStoragePoolErrCodeStub+4,
        "OvmStoragePool.createTemplateFromVolume":OvmStoragePoolErrCodeStub+5,
        "OvmStoragePool._umount":OvmStoragePoolErrCodeStub+6,
+       "OvmStoragePool.copyVolume":OvmStoragePoolErrCodeStub+7,
        
        "OvmNetwork.createBridge":OvmNetworkErrCodeStub+1,
        "OvmNetwork.deleteBridge":OvmNetworkErrCodeStub+2,
