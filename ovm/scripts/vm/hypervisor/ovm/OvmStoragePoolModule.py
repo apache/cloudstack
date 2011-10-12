@@ -351,6 +351,8 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             OvmStoragePool()._mount(secStorageMountPath, secMountPoint)
             installPath = installPath.lstrip('/')
             destPath = join(secMountPoint, installPath)
+            #This prevent us deleting whole secondary in case we got a wrong installPath
+            if destPath == secMountPoint: raise Exception("Install path equals to root of secondary storage(%s)"%destPath)
             if exists(destPath):
                 logger.warning("%s is already here, delete it since it is most likely stale"%destPath)
                 doCmd(['rm', '-rf', destPath])
@@ -376,5 +378,60 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             errmsg = fmt_err_msg(e)
             logger.error(OvmStoragePool.createTemplateFromVolume, errmsg)
             raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.createTemplateFromVolume), errmsg)
+    
+    @staticmethod
+    def copyVolume(secStorageMountPath, volumeFolderOnSecStorage, volumePath, storagePoolUuid, toSec):
+        def copyToSecStorage(secMountPoint, volumeFolderOnSecStorage, volumePath):
+            if not isfile(volumePath): raise Exception("Cannot find volume at %s"%volumePath)
+            OvmStoragePool()._checkDirSizeForImage(secMountPoint, volumePath)
+            volumeFolderOnSecStorage = volumeFolderOnSecStorage.lstrip("/")
+            destPath = join(secMountPoint, volumeFolderOnSecStorage)
+            #This prevent us deleting whole secondary in case we got a wrong volumeFolderOnSecStorage
+            if destPath == secMountPoint: raise Exception("volume path equals to root of secondary storage(%s)"%destPath)
+            if exists(destPath):
+                logger.warning("%s already exists, delete it first"%destPath)
+                doCmd(['rm', '-rf', destPath])
+            os.makedirs(destPath)
+            newName = get_uuid() + ".raw"
+            destName = join(destPath, newName)
+            doCmd(['cp', volumePath, destName])
+            return destName
+        
+        def copyToPrimary(secMountPoint, volumeFolderOnSecStorage, volumePath, primaryMountPath):
+            srcPath = join(secMountPoint, volumeFolderOnSecStorage.lstrip("/"), volumePath.lstrip("/"))
+            if not isfile(srcPath): raise Exception("Cannot find volume at %s"%srcPath)
+            if not exists(primaryMountPath): raise Exception("Primary storage(%s) seems to have gone"%primaryMountPath)
+            OvmStoragePool()._checkDirSizeForImage(primaryMountPath, srcPath)
+            destPath = join(primaryMountPath, "sharedDisk")
+            newName = get_uuid() + ".raw"
+            destName = join(destPath, newName)
+            doCmd(['cp', srcPath, destName])
+            return destName
+                      
+        secMountPoint = ""
+        try:
+            tmpUuid = get_uuid()
+            secMountPoint = join("/var/cloud/", tmpUuid)
+            OvmStoragePool()._mount(secStorageMountPath, secMountPoint)
+            if toSec:
+                resultPath = copyToSecStorage(secMountPoint, volumeFolderOnSecStorage, volumePath)
+            else:
+                sr = OvmStoragePool()._getSrByNameLable(storagePoolUuid)
+                primaryStoragePath = sr.mountpoint
+                resultPath = copyToPrimary(secMountPoint, volumeFolderOnSecStorage, volumePath, primaryStoragePath)
+            OvmStoragePool()._umount(secMountPoint)
+            rs = toGson({"installPath":resultPath})
+            return rs
+        except Exception, e:
+            try:
+                if exists(secMountPoint):
+                    OvmStoragePool()._umount(secMountPoint)
+            except Exception, e:
+                logger.warning(OvmStoragePool.copyVolume, "umount %s failed"%secMountPoint)       
+                
+            errmsg = fmt_err_msg(e)
+            logger.error(OvmStoragePool.copyVolume, errmsg)
+            raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.copyVolume), errmsg)
+                
                 
             

@@ -64,6 +64,8 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -1191,6 +1193,28 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		}
 	}
 	
+	protected CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
+	    String volumePath = cmd.getVolumePath();
+	    String secondaryStorageURL = cmd.getSecondaryStorageURL();
+	    int wait = cmd.getWait();
+	    if (wait == 0) {
+	    	wait = 7200;
+	    }
+	    
+	    try {
+	    	URI uri = new URI(secondaryStorageURL);
+	    	String secStorageMountPath = uri.getHost() + ":" + uri.getPath();
+	    	String volumeFolderOnSecStorage = "volumes/" + String.valueOf(cmd.getVolumeId());
+	    	String storagePoolUuid = cmd.getPool().getUuid();
+	    	Boolean toSec = cmd.toSecondaryStorage();
+	    	String res = OvmStoragePool.copyVolume(_conn, secStorageMountPath, volumeFolderOnSecStorage, volumePath, storagePoolUuid, toSec, wait);
+	    	return new CopyVolumeAnswer(cmd, true, null, null, res);
+	    } catch (Exception e) {
+	    	s_logger.debug("Copy volume failed", e);
+	    	return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
+	    }
+	}
+	
 	@Override
 	public Answer executeRequest(Command cmd) {
 		Class<? extends Command> clazz = cmd.getClass();
@@ -1244,6 +1268,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		    return execute((PrepareOCFS2NodesCommand)cmd);
 		} else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
 			return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
+		} else if (clazz == CopyVolumeCommand.class) {
+			return execute((CopyVolumeCommand)cmd);
 		}else {
 			return Answer.createUnsupportedCommandAnswer(cmd);
 		}
