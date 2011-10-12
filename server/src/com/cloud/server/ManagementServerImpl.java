@@ -2465,7 +2465,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<CapacityVO> listCapacityByType(ListCapacityByTypeCmd cmd) {
     	
-    	List<SummedCapacity> results = _capacityDao.findCapacityByType(cmd.getType().shortValue(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(), cmd.getStartIndex(), cmd.getPageSizeVal());
+    	List<SummedCapacity> results = _capacityDao.findCapacityByType(cmd.getType(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(), cmd.getStartIndex(), cmd.getPageSizeVal());
     	for (SummedCapacity sum : results){
     		s_logger.info("Total - " +sum.sumTotal+ " Used - " +sum.sumUsed+ " cluster " +sum.clusterId+ " pod " +sum.podId);
     	}

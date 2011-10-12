@@ -94,7 +94,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
     
     @Override
-    public  List<SummedCapacity> findCapacityByType(short capacityType, Long zoneId, Long podId, Long clusterId, Long startIndex, Long pageSize){
+    public  List<SummedCapacity> findCapacityByType(Integer capacityType, Long zoneId, Long podId, Long clusterId, Long startIndex, Long pageSize){
     	
     	SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
@@ -103,8 +103,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         SummedCapacitySearch.select("podId", Func.NATIVE, SummedCapacitySearch.entity().getPodId());
         
         SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
-        SummedCapacitySearch.and("capacityType", SummedCapacitySearch.entity().getCapacityType(), Op.EQ);
-        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getClusterId());
+        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getClusterId(), SummedCapacitySearch.entity().getCapacityType());
         
         if (podId != null){
         	SummedCapacitySearch.and("podId", SummedCapacitySearch.entity().getPodId(), Op.EQ);
@@ -112,17 +111,23 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         if (clusterId != null){
         	SummedCapacitySearch.and("clusterId", SummedCapacitySearch.entity().getClusterId(), Op.EQ);
         }
+        if (capacityType != null){
+        	SummedCapacitySearch.and("capacityType", SummedCapacitySearch.entity().getCapacityType(), Op.EQ);	
+        }        
+
         SummedCapacitySearch.done();
         
         
         SearchCriteria<SummedCapacity> sc = SummedCapacitySearch.create();
         sc.setParameters("dcId", zoneId);
-        sc.setParameters("capacityType", capacityType);
         if (podId != null){
         	sc.setParameters("podId", podId);
         }
         if (clusterId != null){
         	sc.setParameters("clusterId", clusterId);
+        }
+        if (capacityType != null){
+        	sc.setParameters("capacityType", capacityType);
         }
         
         Filter filter = new Filter(CapacityVO.class, null, true, startIndex, pageSize);

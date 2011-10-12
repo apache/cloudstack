@@ -28,7 +28,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 	CapacityVO findByHostIdType(Long hostId, short capacityType);
 	List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor);
 	List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType, float cpuOverprovisioningFactor);	
-	 List<SummedCapacity> findCapacityByType(short capacityType, Long zoneId, Long podId,
+	 List<SummedCapacity> findCapacityByType(Integer capacityType, Long zoneId, Long podId,
 			Long clusterId, Long startIndex, Long pageSize);
 	boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId);
 	List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId);
