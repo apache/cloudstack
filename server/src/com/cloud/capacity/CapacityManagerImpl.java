@@ -91,8 +91,6 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        _hostCapacityCheckerDelay = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerWait.key()), 3600);
-        _hostCapacityCheckerInterval = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerInterval.key()), 3600);
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
         _storageOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.StorageOverprovisioningFactor.key()), 1.0f);
         _cpuOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.CPUOverprovisioningFactor.key()), 1.0f);
@@ -110,7 +108,6 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
     @Override
     public boolean start() {
-        _executor.scheduleWithFixedDelay(new HostCapacityCollector(), _hostCapacityCheckerDelay, _hostCapacityCheckerInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -412,20 +409,6 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
         return hasCapacity;
 
-    }
-
-    public class HostCapacityCollector implements Runnable {
-
-        @Override
-        public void run() {
-        	s_logger.debug("HostCapacityCollector is running...");
-            // get all hosts...even if they are not in 'UP' state
-            List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
-            for (HostVO host : hosts) {
-            	updateCapacityForHost(host);
-            }
-
-        }        
     }
     
     @Override

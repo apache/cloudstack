@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -51,6 +52,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -86,7 +88,7 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private AlertDao _alertDao;
     @Inject private HostDao _hostDao;
     @Inject protected StorageManager _storageMgr;
-    @Inject private ServiceOfferingDao _offeringsDao;
+    @Inject protected CapacityManager _capacityMgr;
     @Inject private CapacityDao _capacityDao;
     @Inject private DataCenterDao _dcDao;
     @Inject private HostPodDao _podDao;
@@ -239,16 +241,12 @@ public class AlertManagerImpl implements AlertManager {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("recalculating system capacity");
         }
-
-        // get all hosts..
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-
-        // prep the service offerings
-        List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
-        Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-        for (ServiceOfferingVO offering : offerings) {
-            offeringsMap.put(offering.getId(), offering);
+        
+        // Calculate CPU and RAM capacitites
+        // 	get all hosts...even if they are not in 'UP' state
+        List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
+        for (HostVO host : hosts) {
+        	_capacityMgr.updateCapacityForHost(host);
         }
         
         // Calculate storage pool capacity
@@ -274,9 +272,9 @@ public class AlertManagerImpl implements AlertManager {
 		        //ideal way would be to remove out the vlan param, and filter only on dcId
 		        //implementing the same
 
-            	s_logger.trace("Executing capacity update");
+            	s_logger.trace("Executing public ip capacity update");
 		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
-                s_logger.trace("Done with capacity update");
+                s_logger.trace("Done with public ip capacity update");
 
 		    }
         	txn.commit();
@@ -288,9 +286,9 @@ public class AlertManagerImpl implements AlertManager {
 	            long podId = pod.getId();
 	            long dcId = pod.getDataCenterId();
 
-            	s_logger.trace("Executing capacity update");
+            	s_logger.trace("Executing private ip capacity update");
 	            createOrUpdateIpCapacity(dcId, podId, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
-                s_logger.trace("Done with capacity update");
+                s_logger.trace("Done with private ip capacity update");
 
 	        }
         	txn.commit();
