@@ -79,6 +79,7 @@
             <adapter name="XenServerFenceBuilder" class="com.cloud.ha.XenServerFencer"/>
             <adapter name="KVMFenceBuilder" class="com.cloud.ha.KVMFencer"/>
             <adapter name="VmwareFenceBuilder" class="com.cloud.ha.VmwareFencer"/>
+            <adapter name="VmwareFenceBuilder" class="com.cloud.ovm.hypervisor.OvmFencer"/>
         </adapters>
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
