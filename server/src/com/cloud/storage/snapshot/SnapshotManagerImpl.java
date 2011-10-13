@@ -1269,6 +1269,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }
+        
+        UserVmVO vm = _vmDao.findById(volume.getInstanceId());
+        if (vm.getHypervisorType() == HypervisorType.Ovm) {
+        	throw new InvalidParameterValueException("Ovm won't support taking snapshot");
+        }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO == null) {
