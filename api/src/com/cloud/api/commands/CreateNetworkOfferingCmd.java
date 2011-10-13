@@ -18,6 +18,9 @@
 
 package com.cloud.api.commands;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -28,6 +31,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
@@ -127,7 +131,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public String getAvailability() {
-        return availability == null ? Availability.Required.toString() : availability;
+        return availability == null ? Availability.Optional.toString() : availability;
     }
     
     public Integer getNetworkRate() {
@@ -147,43 +151,56 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Boolean getDhcpService() {
-        return dhcpService;
+        return dhcpService == null ? false : dhcpService;
     }
 
     public Boolean getDnsService() {
-        return dnsService;
+        return dnsService == null ? false : dnsService;
     }
 
     public Boolean getGatewayService() {
-        return gatewayService;
+        return gatewayService == null ? false : gatewayService;
     }
 
     public Boolean getFirewallService() {
-        return firewallService;
+        return firewallService == null ? false : firewallService;
     }
 
     public Boolean getLbService() {
-        return lbService;
+        return lbService == null ? false : lbService;
     }
 
     public Boolean getUserdataService() {
-        return userdataService;
+        return userdataService == null ? false : userdataService;
     }
 
     public Boolean getSourceNatService() {
-        return sourceNatService;
+        return sourceNatService == null ? false : sourceNatService;
     }
 
     public Boolean getVpnService() {
-        return vpnService;
+        return vpnService == null ? false : vpnService;
     }
 
-    public Map getServiceProviderList() {
-        return serviceProviderList;
+    public Map<String, String> getServiceProviderList() {
+        Map<String, String> serviceProviderMap = null;
+        if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
+            serviceProviderMap = new HashMap<String, String>();
+            Collection servicesCollection = serviceProviderList.values();
+            Iterator iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                String service = (String)services.get("service");
+                String provider = (String) services.get("provider");
+                serviceProviderMap.put(service, provider);
+            }
+        }
+        
+        return serviceProviderMap;
     }
 
     public Boolean getSecurityGroupEnabled() {
-        return securityGroupEnabled;
+        return securityGroupEnabled == null ? false : securityGroupEnabled;
     }
 
     /////////////////////////////////////////////////////

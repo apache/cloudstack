@@ -2893,40 +2893,57 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Map<Network.Service, Network.Provider> serviceProviderMap = new HashMap<Network.Service, Network.Provider>();
         //populate all services first
         if (cmd.getDhcpService()) {
-            serviceProviderMap.put(Network.Service.Dhcp, null);            
-        } else if (cmd.getDnsService()) {
-            serviceProviderMap.put(Network.Service.Dns, null);    
-        } else if (cmd.getFirewallService()) {
-            serviceProviderMap.put(Network.Service.Firewall, null);    
-        } else if (cmd.getGatewayService()) {
-            serviceProviderMap.put(Network.Service.Gateway, null);    
-        } else if (cmd.getLbService()) {
-            serviceProviderMap.put(Network.Service.Lb, null);    
-        } else if (cmd.getSourceNatService()) {
-            serviceProviderMap.put(Network.Service.SourceNat, null);    
-        } else if (cmd.getUserdataService()) {
-            serviceProviderMap.put(Network.Service.UserData, null);    
-        } else if (cmd.getVpnService()) {
-            serviceProviderMap.put(Network.Service.Vpn, null);    
+            serviceProviderMap.put(Network.Service.Dhcp, Network.Provider.defaultProvider);            
+        }
+        
+        if (cmd.getDnsService()) {
+            serviceProviderMap.put(Network.Service.Dns, Network.Provider.defaultProvider);    
+        }
+        
+        if (cmd.getFirewallService()) {
+            serviceProviderMap.put(Network.Service.Firewall, Network.Provider.defaultProvider);    
+        }
+        
+        if (cmd.getGatewayService()) {
+            serviceProviderMap.put(Network.Service.Gateway, Network.Provider.defaultProvider);    
+        }
+        
+        if (cmd.getLbService()) {
+            serviceProviderMap.put(Network.Service.Lb, Network.Provider.defaultProvider);    
+        }
+        
+        if (cmd.getSourceNatService()) {
+            serviceProviderMap.put(Network.Service.SourceNat, Network.Provider.defaultProvider);    
+        }
+        
+        if (cmd.getUserdataService()) {
+            serviceProviderMap.put(Network.Service.UserData, Network.Provider.defaultProvider);    
+        }
+        
+        if (cmd.getVpnService()) {
+            serviceProviderMap.put(Network.Service.Vpn, Network.Provider.defaultProvider);    
         } 
         
         //populate providers
         Map<String, String> svcPrv = (Map<String, String>)cmd.getServiceProviderList();
-        for (String serviceStr : svcPrv.keySet()) {
-            if (serviceProviderMap.containsKey(serviceStr)) {
+        if (svcPrv != null) {
+            for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
-                //check if provider is supported
-                Network.Provider provider;
-                String prvNameStr = svcPrv.get(serviceStr);
-                provider = Network.Provider.getProvider(prvNameStr);
-                if (provider == null) {
-                    throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
-                }   
-                serviceProviderMap.put(service, provider);
-            } else {
-                throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+                if (serviceProviderMap.containsKey(service)) {
+                    //check if provider is supported
+                    Network.Provider provider;
+                    String prvNameStr = svcPrv.get(serviceStr);
+                    provider = Network.Provider.getProvider(prvNameStr);
+                    if (provider == null) {
+                        throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
+                    }   
+                    serviceProviderMap.put(service, provider);
+                } else {
+                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+                }
             }
         }
+        
         return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, networkRate, serviceProviderMap, false, isSecurityGroupEnabled);
     }
 

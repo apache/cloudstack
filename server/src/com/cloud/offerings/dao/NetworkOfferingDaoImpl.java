@@ -124,4 +124,11 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         return listBy(sc, null);
     }
     
+    @Override
+    public boolean remove(Long networkOfferingId){
+        NetworkOfferingVO offering = findById(networkOfferingId);
+        offering.setName(null);
+        update(networkOfferingId, offering);
+        return super.remove(networkOfferingId);
+    }
 }
