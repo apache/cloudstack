@@ -30,16 +30,16 @@ import com.cloud.utils.script.Script;
 
 
 @Local(value=ServerResource.class)
-public class XenServer60Resource extends XenServer56Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServer60Resource.class);
+public class XenServer600Resource extends XenServer56Resource {
+    private static final Logger s_logger = Logger.getLogger(XenServer600Resource.class);
     
-    public XenServer60Resource() {
+    public XenServer600Resource() {
         super();
     }
     
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXenServer60GuestOsType(stdType, bootFromCD);
+        return CitrixHelper.getXenServer600GuestOsType(stdType, bootFromCD);
     }
    
     @Override
