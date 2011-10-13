@@ -3210,7 +3210,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm " + vm);
         }
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)) {
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM, cannot migrate this VM.");
             }
