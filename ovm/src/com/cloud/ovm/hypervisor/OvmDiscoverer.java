@@ -14,6 +14,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.DiscoveryException;
@@ -32,11 +33,22 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 @Local(value=Discoverer.class)
 public class OvmDiscoverer extends DiscovererBase implements Discoverer {
 	private static final Logger s_logger = Logger.getLogger(OvmDiscoverer.class);
+	protected String _publicNetworkDevice;
+	protected String _privateNetworkDevice;
+	protected String _guestNetworkDevice;
 	
 	@Inject ClusterDao _clusterDao;
 	
+	@Override
+	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+		super.configure(name, params);
+		_publicNetworkDevice = _params.get(Config.OvmPublicNetwork.key());
+		_privateNetworkDevice = _params.get(Config.OvmPrivateNetwork.key());
+		_guestNetworkDevice = _params.get(Config.OvmGuestNetwork.key());
+		return true;
+	}
+	
 	protected OvmDiscoverer() {
-		
 	}
 	
 	@Override
@@ -115,6 +127,15 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer {
 			details.put("cluster", Long.toString(clusterId));
 			details.put("agentusername", agentUsername);
 			details.put("agentpassword", agentPassword);
+			if (_publicNetworkDevice != null) {
+				details.put("public.network.device", _publicNetworkDevice);
+			}
+			if (_privateNetworkDevice != null) {
+				details.put("private.network.device", _privateNetworkDevice);
+			}
+			if (_guestNetworkDevice != null) {
+				details.put("guest.network.device", _guestNetworkDevice);
+			}
 	
 			Map<String, Object> params = new HashMap<String, Object>();
 			params.putAll(details);

@@ -208,15 +208,15 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		}
 		
 		if (_privateNetworkName != null && !bridges.contains(_privateNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _privateNetworkName + " on hsot " + _ip + ", all bridges are:" + bridges);
+			throw new ConfigurationException("Cannot find bridge " + _privateNetworkName + " on host " + _ip + ", all bridges are:" + bridges);
 		}
 		
 		if (_publicNetworkName != null && !bridges.contains(_publicNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _publicNetworkName + " on hsot " + _ip + ", all bridges are:" + bridges);
+			throw new ConfigurationException("Cannot find bridge " + _publicNetworkName + " on host " + _ip + ", all bridges are:" + bridges);
 		}
 		
 		if (_guestNetworkName != null && !bridges.contains(_guestNetworkName)) {
-			throw new ConfigurationException("Cannot find bridge " + _guestNetworkName + " on hsot " + _ip + ", all bridges are:" + bridges);
+			throw new ConfigurationException("Cannot find bridge " + _guestNetworkName + " on host " + _ip + ", all bridges are:" + bridges);
 		}
         
 		/* set to false so each time ModifyStoragePoolCommand will re-setup heartbeat*/
