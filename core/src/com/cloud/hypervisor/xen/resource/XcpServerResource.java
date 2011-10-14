@@ -34,13 +34,28 @@ import com.xensource.xenapi.Types.XenAPIException;
 
 @Local(value=ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
-    public XcpServerResource() {
+    static int _version=-1;
+    public final static int XCP_1_0_0 = 0;
+    public final static int XCP_1_1_0 = 1;
+    
+    public XcpServerResource(int version) {
         super();
+        _version = version;
     }
     
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	return CitrixHelper.getXcpGuestOsType(stdType);
+        assert _version < 2 && _version > -1 : "Unknown version for XCP " + _version;
+    	if (_version == XCP_1_0_0){
+    	    return CitrixHelper.getXcp100GuestOsType(stdType);
+    	}
+    	else if (_version == XCP_1_1_0) {
+            return CitrixHelper.getXcp110GuestOsType(stdType);
+        }
+    	else {
+    	    throw new IllegalStateException("Unknown version for XCP " + _version);
+    	}
+        
     }
 
     @Override
