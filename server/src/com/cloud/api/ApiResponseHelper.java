@@ -1869,8 +1869,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
-        List<CapacityVO> summedCapacities = sumCapacities(result);
-        for (CapacityVO summedCapacity : summedCapacities) { 
+        //List<CapacityVO> summedCapacities = sumCapacities(result);
+        for (Capacity summedCapacity : result) { 
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
             capacityResponse.setCapacityType(summedCapacity.getCapacityType());

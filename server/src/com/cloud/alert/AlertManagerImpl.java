@@ -242,7 +242,7 @@ public class AlertManagerImpl implements AlertManager {
             s_logger.trace("recalculating system capacity");
         }
         
-        // Calculate CPU and RAM capacitites
+        // Calculate CPU and RAM capacities
         // 	get all hosts...even if they are not in 'UP' state
         List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
         for (HostVO host : hosts) {
@@ -458,6 +458,11 @@ public class AlertManagerImpl implements AlertManager {
                 s_logger.error("Exception in CapacityChecker", ex);
             }
         }
+    }
+    
+    
+    public void newAlertSystem(){
+    	
     }
 
     class EmailAlert {

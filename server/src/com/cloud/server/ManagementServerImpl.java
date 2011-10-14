@@ -67,7 +67,6 @@ import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;
-import com.cloud.api.commands.ListCapacityByTypeCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
@@ -2461,55 +2460,32 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _alertDao.search(sc, searchFilter);
     }
-
-    @Override
-    public List<CapacityVO> listCapacityByType(ListCapacityByTypeCmd cmd) {
-    	
-    	List<SummedCapacity> results = _capacityDao.findCapacityByType(cmd.getType(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(), cmd.getStartIndex(), cmd.getPageSizeVal());
-    	for (SummedCapacity sum : results){
-    		s_logger.info("Total - " +sum.sumTotal+ " Used - " +sum.sumUsed+ " cluster " +sum.clusterId+ " pod " +sum.podId);
-    	}
-    	return null;
-    	
-    }
     
     @Override
     public List<CapacityVO> listCapacities(ListCapacityCmd cmd) {
 
-        Filter searchFilter = new Filter(CapacityVO.class, "capacityType", true, null, null);
-        SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
-        List<CapacityVO> capacities = new LinkedList<CapacityVO>();
-
-        Integer type = cmd.getType();
+    	Integer capacityType = cmd.getType();
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
-        Long hostId = cmd.getHostId();
+        Long clusterId = cmd.getClusterId();
 
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        List<SummedCapacity> summedCapacities = _capacityDao.findCapacityBy(capacityType, zoneId, podId, clusterId);
+        List<CapacityVO> capacities = new ArrayList<CapacityVO>();
 
-        if (type != null) {
-            sc.addAnd("capacityType", SearchCriteria.Op.EQ, type);
-        }
+        for (SummedCapacity summedCapacity : summedCapacities){
+        	CapacityVO capacity = new CapacityVO(null, zoneId, podId, clusterId,
+        			summedCapacity.getUsedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
 
-        if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        	capacities.add(capacity);		
         }
-
-        if (podId != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-        }
-
-        if (hostId != null) {
-            sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
-        }
-        capacities = _capacityDao.search(sc, searchFilter);
 
         // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
-        if (type == null || type == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
-            capacities.addAll(_storageMgr.getSecondaryStorageUsedStats(hostId, podId, zoneId));
+        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+            capacities.addAll(_storageMgr.getSecondaryStorageUsedStats(null, podId, zoneId));
         }
-        if (type == null || type == Capacity.CAPACITY_TYPE_STORAGE) {
-            capacities.addAll(_storageMgr.getStoragePoolUsedStats(hostId, podId, zoneId));
+        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
+            capacities.addAll(_storageMgr.getStoragePoolUsedStats(null, podId, zoneId));
         }
 
         return capacities;

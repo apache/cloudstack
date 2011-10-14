@@ -94,16 +94,16 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
     
     @Override
-    public  List<SummedCapacity> findCapacityByType(Integer capacityType, Long zoneId, Long podId, Long clusterId, Long startIndex, Long pageSize){
+    public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId){
     	
     	SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
+        SummedCapacitySearch.select("sumReserved", Func.SUM, SummedCapacitySearch.entity().getReservedCapacity());
         SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());
-        SummedCapacitySearch.select("clusterId", Func.NATIVE, SummedCapacitySearch.entity().getClusterId());
-        SummedCapacitySearch.select("podId", Func.NATIVE, SummedCapacitySearch.entity().getPodId());
+        SummedCapacitySearch.select("capacityType", Func.SUM, SummedCapacitySearch.entity().getCapacityType());        
         
         SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
-        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getClusterId(), SummedCapacitySearch.entity().getCapacityType());
+        SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getCapacityType());
         
         if (podId != null){
         	SummedCapacitySearch.and("podId", SummedCapacitySearch.entity().getPodId(), Op.EQ);
@@ -130,7 +130,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         	sc.setParameters("capacityType", capacityType);
         }
         
-        Filter filter = new Filter(CapacityVO.class, null, true, startIndex, pageSize);
+        Filter filter = new Filter(CapacityVO.class, null, true, null, null);
         List<SummedCapacity> results = customSearchIncludingRemoved(sc, filter);
         return results;        
     	
@@ -242,6 +242,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     
 	public static class SummedCapacity {
 	    public long sumUsed;
+	    public long sumReserved;
 	    public long sumTotal;
 	    public short capacityType;
 	    public long clusterId;
@@ -253,6 +254,9 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 		}
 		public Long getUsedCapacity() {
 			return sumUsed;
+		}
+		public long getSumReserved() {
+			return sumReserved;
 		}
 		public Long getTotalCapacity() {
 			return sumTotal;

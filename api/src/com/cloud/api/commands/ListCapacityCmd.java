@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.Capacity;
@@ -42,12 +43,15 @@ public class ListCapacityCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="lists capacity by the Host ID")
-    private Long hostId;
+ 
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG,  required=true, description="lists capacity by the Zone ID")
+    private Long zoneId;
 
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
+    
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="lists capacity by the Cluster ID")
+    private Long clusterId;
 
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +
     																		 "* CAPACITY_TYPE_MEMORY = 0" +
@@ -60,29 +64,26 @@ public class ListCapacityCmd extends BaseListCmd {
 
     private Integer type;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
-    private Long zoneId;
-
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getHostId() {
-        return hostId;
+    public Long getZoneId() {
+        return zoneId;
     }
-
+    
     public Long getPodId() {
         return podId;
     }
 
-    public Integer getType() {
+    public Long getClusterId() {
+		return clusterId;
+	}
+
+	public Integer getType() {
         return type;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
