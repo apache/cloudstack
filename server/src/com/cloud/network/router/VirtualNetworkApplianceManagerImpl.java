@@ -80,12 +80,14 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.AccountVlanMapDao;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -315,6 +317,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     FirewallRulesCidrsDao _firewallCidrsDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
+    @Inject
+    ClusterDao _clusterDao;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1013,6 +1017,35 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return priority;
     }
     
+    /*
+     * Ovm won't support any system. So we have to choose a partner cluster in the same pod to start domain router for us
+     */
+    private HypervisorType getAClusterToStartDomainRouterForOvm(long podId) {
+        List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
+        for (ClusterVO cv : clusters) {
+        	if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal) {
+        		continue;
+        	}
+        	
+        	List<HostVO> hosts = _hostDao.listByCluster(cv.getId());
+        	if (hosts == null || hosts.isEmpty()) {
+        		continue;
+        	}
+        	
+        	for (HostVO h : hosts) {
+        		if (h.getStatus() == Status.Up) {
+        			s_logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " + cv.getId() + " to start domain router for OVM");
+        			return h.getHypervisorType();
+        		}
+        	}
+        }
+        
+		String errMsg = "Cannot find an available cluster in Pod "
+		        + podId
+		        + " to start domain router for Ovm. \n Ovm won't support any system vm including domain router, please make sure you have a cluster with hypervisor type of any of xenserver/KVM/Vmware in the same pod with Ovm cluster. And there is at least one host in UP status in that cluster.";
+		throw new CloudRuntimeException(errMsg);
+    }
+    
     @DB
     protected List<DomainRouterVO> findOrCreateVirtualRouters(Network guestNetwork, DeployDestination dest, Account owner, boolean isRedundant) throws ConcurrentOperationException, InsufficientCapacityException {
         
@@ -1090,8 +1123,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
                 networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
+                HypervisorType hyType;
+                if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
+                	hyType = getAClusterToStartDomainRouterForOvm(dest.getCluster().getPodId());
+                } else {
+                	hyType = dest.getCluster().getHypervisorType();
+                }
+                
                 /* Before starting router, already know the hypervisor type */
-                VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
+                VMTemplateVO template = _templateDao.findRoutingTemplate(hyType);
                 if (routers.size() >= 5) {
                     s_logger.error("Too much redundant routers!");
                 }
@@ -1283,7 +1323,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
             /* Before starting router, already know the hypervisor type */
-            VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
+            HypervisorType hyType;
+            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
+            	hyType = getAClusterToStartDomainRouterForOvm(dest.getCluster().getPodId());
+            } else {
+            	hyType = dest.getCluster().getHypervisorType();
+            }
+            VMTemplateVO template = _templateDao.findRoutingTemplate(hyType);
 
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
                     owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
