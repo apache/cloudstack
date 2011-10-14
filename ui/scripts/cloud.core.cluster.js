@@ -93,14 +93,12 @@ function clusterBuildActionMenu(jsonObj) {
         buildActionLinkForTab("label.action.enable.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
     else if(jsonObj.allocationstate == "Enabled")  
         buildActionLinkForTab("label.action.disable.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-    
-    /*
+        
     if(jsonObj.managedstate == "Managed")
     	buildActionLinkForTab("label.action.unmanage.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
     else //PrepareUnmanaged , PrepareUnmanagedError, Unmanaged 
     	buildActionLinkForTab("label.action.manage.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-    */
-    
+        
     buildActionLinkForTab("label.action.delete.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
 }
 
