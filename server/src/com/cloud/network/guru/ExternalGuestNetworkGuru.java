@@ -246,7 +246,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         } else {
             super.reserve(nic, config, vm, dest, context);
         }
-
     }
 
     @Override

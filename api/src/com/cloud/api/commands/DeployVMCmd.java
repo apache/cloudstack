@@ -230,14 +230,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return hostId;
     }
     
-    private String getIpAddress() {
-        return ipAddress;
-    }
-    
-    private String getKeyboard() {
-    	return keyboard;
-    }
-
     private Map<Long, String> getIpToNetworkMap() {
         if ((networkIds != null || ipAddress != null) && ipToNetworkList != null) {
             throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");

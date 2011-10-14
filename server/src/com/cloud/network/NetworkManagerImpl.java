@@ -147,7 +147,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -3071,9 +3070,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         _accountMgr.checkAccess(caller, null, network);
         
-        // Don't allow to update system network - make an exception for the Guest network in Basic zone
+        // Don't allow to update system network
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-        if (offering.isSystemOnly() && network.getTrafficType() != TrafficType.Guest) {
+        if (offering.isSystemOnly()) {
             throw new InvalidParameterValueException("Can't update system networks");
         }
 
@@ -3093,12 +3092,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Domain name change is not supported for network id=" + network.getNetworkOfferingId() + " in zone id=" + network.getDataCenterId());
             }
 
-            //restart network if it has active network elements
-            List<DomainRouterVO> routers = _routerDao.listActive(networkId);
-            if (!routers.isEmpty()) {
-               restartNetwork = true;
-            }
             network.setNetworkDomain(domainSuffix);
+            //have to restart the network
+            restartNetwork = true;
         }
 
         if (name != null) {
@@ -3119,15 +3115,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (networkOffering == null || networkOffering.isSystemOnly()) {
                 throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
             }
-            if (networkOffering.getAvailability() == Availability.Unavailable) {
-                throw new InvalidParameterValueException("Can't update network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
+            if (networkOffering.getAvailability() == Availability.Unavailable || networkOffering.getState() == NetworkOffering.State.Disabled || networkOffering.getState() == NetworkOffering.State.Inactive) {
+                throw new InvalidParameterValueException("Can't update network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability() + " and " + networkOffering.getState());
             }
-            network.setNetworkOfferingId(networkOfferingId);
-        }
-        
-        if ((networkOfferingId != 0) && (networkOfferingId != oldNetworkOfferingId)) {
-            restartNetwork = true;
-        }
+            
+            if (networkOfferingId != oldNetworkOfferingId) {
+                //check if the network is upgradable
+                if (!canUpgrade(oldNetworkOfferingId, networkOfferingId)) {
+                    throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
+                }
+                network.setNetworkOfferingId(networkOfferingId);
+                restartNetwork = true;
+            }
+        }   
 
         boolean success = _networksDao.update(networkId, network);
         
@@ -3343,5 +3343,55 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider){
         return _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, service, provider);
+    }
+    
+    protected boolean canUpgrade(long oldNetworkOfferingId, long newNetworkOfferingId) {
+        NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+        NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
+        
+        //security group property should be the same
+        if (oldNetworkOffering.isSecurityGroupEnabled() != newNetworkOffering.isSecurityGroupEnabled()) {
+            s_logger.debug("Offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different securityGroupProperty, can't upgrade");
+            return false;
+        }
+        
+        //Type of the network should be the same
+        if (oldNetworkOffering.getType() != newNetworkOffering.getType()){
+            s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " are of different types, can't upgrade");
+            return false;
+        }
+        
+        //Traffic types should be the same 
+        if (oldNetworkOffering.getTrafficType() != newNetworkOffering.getTrafficType()) {
+            s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different traffic types, can't upgrade");
+            return false;
+        }
+        
+        //list of services and providers should be the same
+        Map<String, Set<String>> newServices = listNetworkOfferingServices(newNetworkOfferingId);
+        Map<String, Set<String>> oldServices = listNetworkOfferingServices(oldNetworkOfferingId);
+        
+        if (newServices.size() != oldServices.size()) {
+            s_logger.debug("Number of supported services is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
+            return false;
+        }
+        
+        for (String service : newServices.keySet()) {
+            Set<String> newProviders = newServices.get(service);
+            Set<String> oldProviders = oldServices.get(service);
+            if (newProviders.size() != oldProviders.size()) {
+                s_logger.debug("Number of providers for the service " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
+                return false;
+            }
+            
+            for (String provider : newProviders) {
+                if (!oldProviders.contains(provider)) {
+                    s_logger.debug("Providers are different for the " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
+                    return false;
+                }
+            } 
+        }
+        
+        return true;
     }
 }

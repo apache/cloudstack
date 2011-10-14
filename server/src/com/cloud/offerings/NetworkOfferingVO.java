@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Type;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
@@ -260,6 +261,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO(String name, TrafficType trafficType) {
         this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null, false, null);
         this.state = State.Enabled;
+        this.type = Type.Shared;
     }
     
     @Override

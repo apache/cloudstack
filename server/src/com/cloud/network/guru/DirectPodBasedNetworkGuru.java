@@ -19,7 +19,6 @@
 package com.cloud.network.guru;
 
 import java.net.URI;
-import java.util.List;
 
 import javax.ejb.Local;
 
@@ -80,7 +79,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles system Direct pod based network
-        if (dc.getNetworkType() == NetworkType.Basic && offering.getTrafficType() == TrafficType.Guest && offering.isSystemOnly()) {
+        if (dc.getNetworkType() == NetworkType.Basic && offering.getTrafficType() == TrafficType.Guest && offering.isSecurityGroupEnabled()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest Direct Pod based networks");

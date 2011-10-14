@@ -60,7 +60,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
-    @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, description="network offering ID")
+    @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, description="network offering ID - upgrade network to the new network offering")
     private Long networkOfferingId;
   
     /////////////////////////////////////////////////////
