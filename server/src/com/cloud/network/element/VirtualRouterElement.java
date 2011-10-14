@@ -25,6 +25,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -44,6 +45,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.VirtualRouterElementsDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
@@ -52,6 +54,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.element.VirtualRouterElementService;
+import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
@@ -88,6 +91,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     @Inject LoadBalancerDao _lbDao;
     @Inject HostDao _hostDao;
     @Inject ConfigurationDao _configDao;
+    @Inject VirtualRouterElementsDao _vrElementsDao;
     
     private boolean canHandle(Type networkType, long offeringId) {
         boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
@@ -381,8 +385,58 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     }
     
     @Override
-    public boolean configure() {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean configure(ConfigureVirtualRouterElementCmd cmd) {
+        addElement(new Long(1), cmd.getUUID());
+        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
+        if (element == null) {
+            s_logger.trace("Can't find element with UUID " + cmd.getUUID());
+            return false;
+        }
+        if (cmd.getDhcpService() && cmd.getDhcpRange() == null) {
+            s_logger.trace("DHCP service is provided, but no specific DHCP range!");
+            return false;
+        }
+        if (cmd.getDnsService() && (cmd.getDns1() == null || cmd.getDomainName() == null)) {
+            s_logger.trace("DNS service is provided, but no domain name or dns server!");
+            return false;
+        }
+        if (cmd.getGatewayService() && cmd.getGateway() == null) {
+            s_logger.trace("Gateway service is provided, but no gateway IP specific!");
+            return false;
+        }
+        element.setIsDhcpProvided(cmd.getDhcpService());
+        element.setDhcpRange(cmd.getDhcpRange());
+        
+        element.setIsDnsProvided(cmd.getDnsService());
+        element.setDefaultDomainName(cmd.getDomainName());
+        element.setDns1(cmd.getDns1());
+        element.setDns2(cmd.getDns2());
+        element.setInternalDns1(cmd.getInternalDns1());
+        element.setInternalDns2(cmd.getInternalDns2());
+        
+        element.setIsGatewayProvided(cmd.getGatewayService());
+        element.setGatewayIp(cmd.getGateway());
+        
+        element.setIsFirewallProvided(cmd.getFirewallService());
+        element.setIsLoadBalanceProvided(cmd.getLbService());
+        element.setIsSourceNatProvided(cmd.getSourceNatService());
+        element.setIsVpnProvided(cmd.getVpnService());
+        
+        element.setIsReady(true);
+        _vrElementsDao.persist(element);
+        
+        return true;
+    }
+    
+    @Override
+    public boolean addElement(Long nspId, String uuid) {
+        long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
+        if (serviceOfferingId == 0) {
+            return false;
+        }
+        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, serviceOfferingId, false, VirtualRouterElementsType.VirtualRouterElement, 
+                                        false, false, false, false, false, false, false);
+        _vrElementsDao.persist(element);
+        return true;
     }
 }

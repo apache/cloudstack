@@ -1,7 +1,7 @@
 package com.cloud.network.element;
 
-import com.cloud.utils.component.PluggableService;
+import com.cloud.api.commands.ConfigureRedundantVirtualRouterElementCmd;
 
-public interface RedundantVirtualRouterElementService extends PluggableService{
-    boolean configure();
+public interface RedundantVirtualRouterElementService extends VirtualRouterElementService {
+    boolean configure(ConfigureRedundantVirtualRouterElementCmd cmd);
 }

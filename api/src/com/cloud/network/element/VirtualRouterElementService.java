@@ -1,7 +1,7 @@
 package com.cloud.network.element;
 
-import com.cloud.utils.component.PluggableService;
+import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
 
-public interface VirtualRouterElementService extends PluggableService{
-    boolean configure();
+public interface VirtualRouterElementService extends DhcpElementService {
+    boolean configure(ConfigureVirtualRouterElementCmd cmd);
 }

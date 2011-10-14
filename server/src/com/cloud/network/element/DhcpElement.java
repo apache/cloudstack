@@ -25,6 +25,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.ConfigureDhcpElementCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -43,10 +44,12 @@ import com.cloud.network.Network.Type;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.VirtualRouterElementsDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.element.DhcpElementService;
+import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
@@ -80,6 +83,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
     @Inject HostPodDao _podDao;
     @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
+    @Inject VirtualRouterElementsDao _vrElementsDao;
      
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, Type networkType, long offeringId) {
         if (_networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.JuniperSRX) && networkType == Network.Type.Isolated) {
@@ -249,14 +253,65 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
     }
 
     @Override
-    public boolean configure() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public String getPropertiesFile() {
         return "virtualrouter_commands.properties";
     }
-
+    
+    @Override
+    public boolean configure(ConfigureDhcpElementCmd cmd) {
+        addElement(new Long(3), cmd.getUUID());
+        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
+        if (element == null) {
+            s_logger.trace("Can't find element with UUID " + cmd.getUUID());
+            return false;
+        }
+        if (cmd.getDhcpService() && cmd.getDhcpRange() == null) {
+            s_logger.trace("DHCP service is provided, but no specific DHCP range!");
+            return false;
+        }
+        if (cmd.getDnsService() && (cmd.getDns1() == null || cmd.getDomainName() == null)) {
+            s_logger.trace("DNS service is provided, but no domain name or dns server!");
+            return false;
+        }
+        element.setIsDhcpProvided(cmd.getDhcpService());
+        element.setDhcpRange(cmd.getDhcpRange());
+        
+        element.setIsDnsProvided(cmd.getDnsService());
+        element.setDefaultDomainName(cmd.getDomainName());
+        element.setDns1(cmd.getDns1());
+        element.setDns2(cmd.getDns2());
+        element.setInternalDns1(cmd.getInternalDns1());
+        element.setInternalDns2(cmd.getInternalDns2());
+        
+        element.setIsGatewayProvided(false);
+        element.setIsFirewallProvided(false);
+        element.setIsLoadBalanceProvided(false);
+        element.setIsSourceNatProvided(false);
+        element.setIsVpnProvided(false);
+        
+        _vrElementsDao.persist(element);
+        
+        return true;
+    }
+    
+    @Override
+    public boolean addElement(Long nspId, String uuid) {
+        long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
+        if (serviceOfferingId == 0) {
+            return false;
+        }
+        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, serviceOfferingId, false, VirtualRouterElementsType.DhcpElement, 
+                                        false, false, false, false, false, false, false);
+        _vrElementsDao.persist(element);
+        return true;
+    }
+    
+    @Override
+    public Long getIdByUUID(String uuid) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(uuid);
+        if (element == null) {
+            return new Long(0);
+        }
+        return element.getId();
+    }
 }

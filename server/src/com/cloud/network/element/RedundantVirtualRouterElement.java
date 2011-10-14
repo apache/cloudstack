@@ -8,6 +8,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.ConfigureRedundantVirtualRouterElementCmd;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -19,7 +20,9 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Type;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.dao.VirtualRouterElementsDao;
 import com.cloud.network.element.RedundantVirtualRouterElementService;
+import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
@@ -34,6 +37,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     private static final Logger s_logger = Logger.getLogger(RedundantVirtualRouterElement.class);
     
     @Inject NetworkManager _networkMgr;
+    @Inject VirtualRouterElementsDao _vrElementsDao;
     
     private boolean canHandle(Type networkType, long offeringId) {
         boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
@@ -85,8 +89,58 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     }
     
     @Override
-    public boolean configure() {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean configure(ConfigureRedundantVirtualRouterElementCmd cmd) {
+        addElement(new Long(2), cmd.getUUID());
+        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
+        if (element == null) {
+            s_logger.trace("Can't find element with UUID " + cmd.getUUID());
+            return false;
+        }
+        if (cmd.getDhcpService() && cmd.getDhcpRange() == null) {
+            s_logger.trace("DHCP service is provided, but no specific DHCP range!");
+            return false;
+        }
+        if (cmd.getDnsService() && (cmd.getDns1() == null || cmd.getDomainName() == null)) {
+            s_logger.trace("DNS service is provided, but no domain name or dns server!");
+            return false;
+        }
+        if (cmd.getGatewayService() && cmd.getGateway() == null) {
+            s_logger.trace("Gateway service is provided, but no gateway IP specific!");
+            return false;
+        }
+        element.setIsDhcpProvided(cmd.getDhcpService());
+        element.setDhcpRange(cmd.getDhcpRange());
+        
+        element.setIsDnsProvided(cmd.getDnsService());
+        element.setDefaultDomainName(cmd.getDomainName());
+        element.setDns1(cmd.getDns1());
+        element.setDns2(cmd.getDns2());
+        element.setInternalDns1(cmd.getInternalDns1());
+        element.setInternalDns2(cmd.getInternalDns2());
+        
+        element.setIsGatewayProvided(cmd.getGatewayService());
+        element.setGatewayIp(cmd.getGateway());
+        
+        element.setIsFirewallProvided(cmd.getFirewallService());
+        element.setIsLoadBalanceProvided(cmd.getLbService());
+        element.setIsSourceNatProvided(cmd.getSourceNatService());
+        element.setIsVpnProvided(cmd.getVpnService());
+        
+        element.setIsReady(true);
+        _vrElementsDao.persist(element);
+        
+        return true;
+    }
+    
+    @Override
+    public boolean addElement(Long nspId, String uuid) {
+        long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
+        if (serviceOfferingId == 0) {
+            return false;
+        }
+        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, serviceOfferingId, false, VirtualRouterElementsType.RedundantVirtualRouterElement, 
+                                        false, false, false, false, false, false, false);
+        _vrElementsDao.persist(element);
+        return true;
     }
 }

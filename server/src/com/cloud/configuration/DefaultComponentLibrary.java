@@ -83,6 +83,7 @@ import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
+import com.cloud.network.dao.VirtualRouterElementsDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.element.DhcpElement;
 import com.cloud.network.element.RedundantVirtualRouterElement;
@@ -295,6 +296,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         info.addParameter("cache.time.to.live", "600");
         addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
         addDao("PhysicalNetworkServiceProviderDao", PhysicalNetworkServiceProviderDaoImpl.class);
+        addDao("VirtualRouterElementsDao", VirtualRouterElementsDaoImpl.class);
     }
 
     @Override

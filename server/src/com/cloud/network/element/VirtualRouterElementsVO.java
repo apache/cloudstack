@@ -51,6 +51,9 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     @Column(name="uuid")
     private String uuid;
     
+    @Column(name="service_offering_id")
+    private long serviceOfferingId;
+    
     @Column(name="dhcp_provided")
     private boolean isDhcpProvided;
     
@@ -96,10 +99,14 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    public VirtualRouterElementsVO(long nspId, String uuid, boolean isReady, VirtualRouterElementsType type, boolean isDhcpProvided, boolean isDnsProvided,
+    public VirtualRouterElementsVO() {
+    }
+    
+    public VirtualRouterElementsVO(long nspId, String uuid, long serviceOfferingId, boolean isReady, VirtualRouterElementsType type, boolean isDhcpProvided, boolean isDnsProvided,
             boolean isGatewayProvided, boolean isFirewallProvided, boolean isSourceNatProvided, boolean isLoadBalanceProvided, boolean isVpnProvided) {
         this.nspId = nspId;
         this.uuid = uuid;
+        this.serviceOfferingId = serviceOfferingId;
         this.isReady = isReady;
         this.type = type;
         this.isDhcpProvided = isDhcpProvided;
@@ -110,12 +117,12 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         this.isLoadBalanceProvided = isLoadBalanceProvided;
         this.isVpnProvided = isVpnProvided;
     }
-    
+
     public long getNspId() {
         return nspId;
     }
 
-    public String getUUID() {
+    public String getUuid() {
         return uuid;
     }
 
@@ -171,34 +178,62 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         this.internalDns2 = internalDns2;
     }
 
-    public boolean isDhcpProvided() {
+    public boolean getIsDhcpProvided() {
         return isDhcpProvided;
     }
 
-    public boolean isDnsProvided() {
+    public boolean getIsDnsProvided() {
         return isDnsProvided;
     }
 
-    public boolean isGatewayProvided() {
+    public boolean getIsGatewayProvided() {
         return isGatewayProvided;
     }
 
-    public boolean isFirewallProvided() {
+    public boolean getIsFirewallProvided() {
         return isFirewallProvided;
     }
 
-    public boolean isSourceNatProvided() {
+    public boolean getIsSourceNatProvided() {
         return isSourceNatProvided;
     }
 
-    public boolean isLoadBalanceProvided() {
+    public boolean getIsLoadBalanceProvided() {
         return isLoadBalanceProvided;
     }
 
-    public boolean isVpnProvided() {
+    public boolean getIsVpnProvided() {
         return isVpnProvided;
     }
+    
+    public void setIsDhcpProvided(boolean isDhcpProvided) {
+        this.isDhcpProvided = isDhcpProvided;
+    }
 
+    public void setIsDnsProvided(boolean isDnsProvided) {
+        this.isDnsProvided = isDnsProvided;
+    }
+
+    public void setIsGatewayProvided(boolean isGatewayProvided) {
+        this.isGatewayProvided = isGatewayProvided;
+    }
+
+    public void setIsFirewallProvided(boolean isFirewallProvided) {
+        this.isFirewallProvided = isFirewallProvided;
+    }
+
+    public void setIsSourceNatProvided(boolean isSourceNatProvided) {
+        this.isSourceNatProvided = isSourceNatProvided;
+    }
+
+    public void setIsLoadBalanceProvided(boolean isLoadBalanceProvided) {
+        this.isLoadBalanceProvided = isLoadBalanceProvided;
+    }
+
+    public void setIsVpnProvided(boolean isVpnProvided) {
+        this.isVpnProvided = isVpnProvided;
+    }
+    
     @Override
     public VirtualRouterElementsType getType() {
         return this.type;
@@ -220,11 +255,35 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         this.removed = removed;
     }
 
-    public void setReady(boolean isReady) {
+    public void setIsReady(boolean isReady) {
         this.isReady = isReady;
     }
 
-    public boolean isReady() {
+    public boolean getIsReady() {
         return isReady;
+    }
+
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+    
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setType(VirtualRouterElementsType type) {
+        this.type = type;
+    }
+
+    public void setNspId(long nspId) {
+        this.nspId = nspId;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

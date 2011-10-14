@@ -91,5 +91,6 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     String getDnsBasicZoneUpdate();
     
     boolean applyStaticNats(Network network, List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
-
+    
+    long getDefaultVirtualRouterServiceOfferingId();
 }

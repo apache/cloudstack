@@ -49,15 +49,78 @@ public class ConfigureDhcpElementCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the dhcp element")
-    private Long id;
+    @Parameter(name=ApiConstants.UUID, type=CommandType.STRING, required=true, description="the UUID of the virtual router element")
+    private String uuid;
 
+    @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is dhcp service would be enabled")
+    private Boolean dhcpService; 
+    
+    @Parameter(name=ApiConstants.DNS_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is dns service would be enabled")
+    private Boolean dnsService; 
+    
+    @Parameter(name=ApiConstants.USERDATA_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is user data service would be enabled")
+    private Boolean userdataService;
+    
+    @Parameter(name=ApiConstants.DHCP_RANGE, type=CommandType.STRING, description="the dhcp range for the DHCP service ")
+    private String dhcpRange;
+
+    @Parameter(name=ApiConstants.DNS1, type=CommandType.STRING, description="the first DNS")
+    private String dns1;
+
+    @Parameter(name=ApiConstants.DNS2, type=CommandType.STRING, description="the second DNS")
+    private String dns2;
+
+    @Parameter(name=ApiConstants.INTERNAL_DNS1, type=CommandType.STRING, description="the first internal DNS")
+    private String internalDns1;
+
+    @Parameter(name=ApiConstants.INTERNAL_DNS2, type=CommandType.STRING, description="the second internal DNS")
+    private String internalDns2;
+
+    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="the gateway ip")
+    private String domainName;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public String getUUID() {
+        return uuid;
+    }
+
+    public Boolean getDhcpService() {
+        return dhcpService;
+    }
+
+    public Boolean getDnsService() {
+        return dnsService;
+    }
+
+    public Boolean getUserdataService() {
+        return userdataService;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+    
+    public String getDhcpRange() {
+        return dhcpRange;
+    }
+
+    public String getDns1() {
+        return dns1;
+    }
+
+    public String getDns2() {
+        return dns2;
+    }
+
+    public String getInternalDns1() {
+        return internalDns1;
+    }
+
+    public String getInternalDns2() {
+        return internalDns2;
     }
 
     /////////////////////////////////////////////////////
@@ -85,7 +148,7 @@ public class ConfigureDhcpElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "configuring dhcp element: " + getId();
+        return  "configuring dhcp element: " + getUUID();
     }
     
     public AsyncJob.Type getInstanceType() {
@@ -93,13 +156,13 @@ public class ConfigureDhcpElementCmd extends BaseAsyncCmd {
     }
     
     public Long getInstanceId() {
-    	return getId();
+        return _service.getIdByUUID(uuid);
     }
 	
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Dhcp element Id: " + getId());
-        Boolean result = _service.configure();
+        UserContext.current().setEventDetails("Dhcp element: " + getUUID());
+        Boolean result = _service.configure(this);
         if (result){
             SuccessResponse response = new SuccessResponse();
             response.setResponseName(getCommandName());

@@ -284,5 +284,6 @@ public class ApiConstants {
     public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
     public static final String ENABLED = "enabled";
     public static final String SERVICE_NAME = "servicename";
-
+    public static final String DHCP_RANGE = "dhcprange";
+    public static final String UUID = "uuid";
 }

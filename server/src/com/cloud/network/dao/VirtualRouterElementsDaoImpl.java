@@ -36,7 +36,7 @@ public class VirtualRouterElementsDaoImpl extends GenericDaoBase<VirtualRouterEl
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("nsp_id", AllFieldsSearch.entity().getNspId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getUUID(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
