@@ -190,9 +190,9 @@ public interface StorageManager extends Manager {
 
 	Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
 
-	List<CapacityVO> getSecondaryStorageUsedStats(Long hostId, Long podId, Long zoneId);
+	CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 
-	List<CapacityVO> getStoragePoolUsedStats(Long poolId, Long podId, Long zoneId);
+	CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);
 
     boolean createStoragePool(long hostId, StoragePoolVO pool);
 

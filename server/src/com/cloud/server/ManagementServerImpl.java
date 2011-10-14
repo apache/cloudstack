@@ -2482,10 +2482,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
         if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
-            capacities.addAll(_storageMgr.getSecondaryStorageUsedStats(null, podId, zoneId));
+            capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
         }
         if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
-            capacities.addAll(_storageMgr.getStoragePoolUsedStats(null, podId, zoneId));
+            capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
         }
 
         return capacities;

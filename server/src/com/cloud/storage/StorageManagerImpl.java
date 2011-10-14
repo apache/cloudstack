@@ -28,7 +28,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -72,7 +71,6 @@ import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
@@ -113,8 +111,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
@@ -161,11 +159,11 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -178,9 +176,9 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -3053,37 +3051,34 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
-    public List<CapacityVO> getSecondaryStorageUsedStats(Long hostId, Long podId, Long zoneId) {
+    public CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId) {
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
-
-        if (podId != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        if(hostId != null){
+        	hosts.add(ApiDBUtils.findHostById(hostId));
+        }else{
+        	hosts = _hostDao.listSecondaryStorageHosts(zoneId);
         }
 
-        if (hostId != null) {
-            sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
-        }
-
-        List<HostVO> hosts = _hostDao.search(sc, null);
-        List<CapacityVO> capacities = new LinkedList<CapacityVO>();
+        CapacityVO capacity = new CapacityVO(hostId, zoneId, null, null, 0, 0, CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);        
         for (HostVO host : hosts) {
             StorageStats stats = ApiDBUtils.getSecondaryStorageStatistics(host.getId());
             if (stats == null) {
                 continue;
             }
-
-            CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), stats.getByteUsed(), stats.getCapacityBytes(),
-                    Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
-            capacities.add(capacity);
+            capacity.setUsedCapacity(stats.getByteUsed() + capacity.getUsedCapacity());
+            capacity.setTotalCapacity(stats.getCapacityBytes() + capacity.getTotalCapacity());                        
         }
-        return capacities;
+        
+        return capacity;
     }
 
     @Override
-    public List<CapacityVO> getStoragePoolUsedStats(Long poolId, Long podId, Long zoneId) {
+    public CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId) {
         SearchCriteria<StoragePoolVO> sc = _storagePoolDao.createSearchCriteria();
         List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
 
@@ -3095,6 +3090,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
 
+        if (clusterId != null) {
+            sc.addAnd("clusterId", SearchCriteria.Op.EQ, clusterId);
+        }
+        
         if (poolId != null) {
             sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, poolId);
         }
@@ -3103,19 +3102,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             pools = _storagePoolDao.search(sc, null);
         }
-        List<CapacityVO> capacities = new LinkedList<CapacityVO>();
-
+        
+        CapacityVO capacity = new CapacityVO(poolId, zoneId, podId, clusterId, 0, 0, CapacityVO.CAPACITY_TYPE_STORAGE);
         for (StoragePoolVO storagePool : pools) {
             StorageStats stats = ApiDBUtils.getStoragePoolStatistics(storagePool.getId());
             if (stats == null) {
                 continue;
             }
-
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), stats.getByteUsed(), stats.getCapacityBytes(),
-                    CapacityVO.CAPACITY_TYPE_STORAGE);
-            capacities.add(capacity);
+            capacity.setUsedCapacity(stats.getByteUsed() + capacity.getUsedCapacity());
+            capacity.setTotalCapacity(stats.getCapacityBytes() + capacity.getTotalCapacity());
         }
-        return capacities;
+        return capacity;
     }
     
     
