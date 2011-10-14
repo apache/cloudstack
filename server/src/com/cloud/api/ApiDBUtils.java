@@ -21,6 +21,7 @@ package com.cloud.api;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
@@ -649,7 +650,7 @@ public class ApiDBUtils {
         return _projectMgr.getProjectOwner(projectId).getId();
     }
     
-    public static Map<String, String> listNetworkOfferingServices(long networkOfferingId) {
+    public static Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
         return _networkMgr.listNetworkOfferingServices(networkOfferingId);
     }
 }

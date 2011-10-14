@@ -112,4 +112,11 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         sc.setParameters("networkOfferingId", networkOfferingId);
         return listBy(sc);
     }
+    
+    @Override
+    public void deleteByOfferingId(long networkOfferingId) {
+        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        remove(sc);
+    }
 }

@@ -187,6 +187,7 @@ CREATE TABLE `cloud`.`networks` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
+  `type` char(32) COMMENT 'type of the network, can be Shared or Isolated',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
@@ -264,6 +265,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `guest_type` char(32) COMMENT 'guest ip type of network offering',
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   `state` char(32) COMMENT 'state of the network offering; has Disabled value by default',
+  `type` char(32) COMMENT 'type of the network offering, can be Shared or Isolated',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`)

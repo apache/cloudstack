@@ -19,6 +19,7 @@ package com.cloud.network;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
@@ -86,5 +87,5 @@ public interface NetworkService {
 
     Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
     
-    Map<String, String> listNetworkOfferingServices(long networkOfferingId);
+    Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId);
 }

@@ -34,15 +34,13 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.Provider; 
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.AdapterBase;
@@ -67,8 +65,8 @@ public class ElasticLoadBalancerElement extends AdapterBase implements FirewallS
     TrafficType _frontEndTrafficType = TrafficType.Guest;
     
     private boolean canHandle(Network network) {
-        if (network.getGuestType() != Network.GuestIpType.Direct || network.getTrafficType() != TrafficType.Guest) {
-            s_logger.debug("Not handling network with guest Type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
+        if (network.getType() != Network.Type.Shared|| network.getTrafficType() != TrafficType.Guest) {
+            s_logger.debug("Not handling network with type  " + network.getType() + " and traffic type " + network.getTrafficType());
             return false;
         }
         

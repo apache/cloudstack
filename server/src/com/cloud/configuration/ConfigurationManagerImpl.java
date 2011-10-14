@@ -97,6 +97,8 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -1523,7 +1525,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, isNetworkDefault, false, null, null);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, null);
             }
         }
     }
@@ -1998,7 +2000,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (network == null) {
                 // find default public network in the zone
                 networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
-            } else if (network.getGuestType() != null || network.getTrafficType() != TrafficType.Public) {
+            } else if (network.getType() != null || network.getTrafficType() != TrafficType.Public) {
                 throw new InvalidParameterValueException("Can't find Public network by id=" + networkId);
             }
         } else {
@@ -2012,8 +2014,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     networkId = network.getId();
                 }
-            } else if (network.getGuestType() == null || network.getGuestType() == GuestIpType.Virtual) {
-                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with GuestType: " + network.getGuestType());
+            } else if (network.getType() == null || network.getType()== Network.Type.Isolated) {
+                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getType());
             }
         }
 
@@ -2852,6 +2854,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         TrafficType trafficType = null;
         GuestIpType guestIpType = null;
         Availability availability = null;
+        Network.Type type = null;
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -2875,6 +2878,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (guestIpType == null) {
             throw new InvalidParameterValueException("Invalid guest IP type; can have Direct or Virtual value");
         }
+        
+        //Verify offering type
+        for (Network.Type offType : Network.Type.values()) {
+            if (offType.name().equalsIgnoreCase(cmd.getType())){
+                type = offType;
+                break;
+            }
+        }
+        
+        if (type == null) {
+            throw new InvalidParameterValueException("Invalid type is given; can have Shared and Isolated values");
+        }
 
         // Verify availability
         for (Availability avlb : Availability.values()) {
@@ -2890,73 +2905,79 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Integer maxConnections = cmd.getMaxconnections();
         
         //configure service provider map
-        Map<Network.Service, Network.Provider> serviceProviderMap = new HashMap<Network.Service, Network.Provider>();
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        defaultProviders.add(Network.Provider.defaultProvider);
         //populate all services first
         if (cmd.getDhcpService()) {
-            serviceProviderMap.put(Network.Service.Dhcp, Network.Provider.defaultProvider);            
+            serviceProviderMap.put(Network.Service.Dhcp, defaultProviders);            
         }
         
         if (cmd.getDnsService()) {
-            serviceProviderMap.put(Network.Service.Dns, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.Dns, defaultProviders);    
         }
         
         if (cmd.getFirewallService()) {
-            serviceProviderMap.put(Network.Service.Firewall, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.Firewall, defaultProviders);    
         }
         
         if (cmd.getGatewayService()) {
-            serviceProviderMap.put(Network.Service.Gateway, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.Gateway, defaultProviders);    
         }
         
         if (cmd.getLbService()) {
-            serviceProviderMap.put(Network.Service.Lb, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.Lb, defaultProviders);    
         }
         
         if (cmd.getSourceNatService()) {
-            serviceProviderMap.put(Network.Service.SourceNat, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);    
         }
         
         if (cmd.getUserdataService()) {
-            serviceProviderMap.put(Network.Service.UserData, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.UserData, defaultProviders);    
         }
         
         if (cmd.getVpnService()) {
-            serviceProviderMap.put(Network.Service.Vpn, Network.Provider.defaultProvider);    
+            serviceProviderMap.put(Network.Service.Vpn, defaultProviders);    
         } 
         
         //populate providers
-        Map<String, String> svcPrv = (Map<String, String>)cmd.getServiceProviderList();
+        Map<String, List<String>> svcPrv = (Map<String, List<String>>)cmd.getServiceProviders();
         if (svcPrv != null) {
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
                 if (serviceProviderMap.containsKey(service)) {
-                    //check if provider is supported
-                    Network.Provider provider;
-                    String prvNameStr = svcPrv.get(serviceStr);
-                    provider = Network.Provider.getProvider(prvNameStr);
-                    if (provider == null) {
-                        throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
-                    }   
-                    serviceProviderMap.put(service, provider);
+                    serviceProviderMap.clear();
+                    Set<Provider> providers = new HashSet<Provider>();
+                    for (String prvNameStr : svcPrv.get(serviceStr)) {
+                        //check if provider is supported
+                        Network.Provider provider;
+                        provider = Network.Provider.getProvider(prvNameStr);
+                        if (provider == null) {
+                            throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
+                        }
+                        providers.add(provider);
+                    }
+                    serviceProviderMap.put(service, providers);
                 } else {
                     throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
                 }
             }
         }
         
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, networkRate, serviceProviderMap, false, isSecurityGroupEnabled);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, networkRate, serviceProviderMap, false, isSecurityGroupEnabled, type);
     }
 
     @Override @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, 
-            Availability availability, GuestIpType guestIpType, Integer networkRate, Map<Network.Service, Network.Provider> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled) {
+            Availability availability, GuestIpType guestIpType, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability,guestIpType, tags, isSecurityGroupEnabled);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability,guestIpType, tags, isSecurityGroupEnabled, type);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -2966,9 +2987,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //populate services and providers
         if (serviceProviderMap != null) {
             for (Network.Service service : serviceProviderMap.keySet()) {
-                NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, serviceProviderMap.get(service));
-                _ntwkOffServiceMapDao.persist(offService);
-                s_logger.trace("Added service for the network offering: " + offService);
+                for (Network.Provider provider : serviceProviderMap.get(service)) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
+                    _ntwkOffServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
             }
         }
 
@@ -3095,12 +3118,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_EDIT, eventDescription = "updating network offering")
+    @DB
     public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
         String displayText = cmd.getDisplayText();
         Long id = cmd.getId();
         String name = cmd.getNetworkOfferingName();
         String availabilityStr = cmd.getAvailability();
         Availability availability = null;
+        Boolean sgEnabled = cmd.getSecurityGroupEnabled();
+        String state = cmd.getState();
         UserContext.current().setEventDetails(" Id: "+id);
         
         // Verify input parameters
@@ -3114,11 +3140,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Can't update system network offerings");
         }
 
-        // Don't allow to update default Direct network offering
-        if (offeringToUpdate.isDefault() && offeringToUpdate.getGuestType() == GuestIpType.Direct) {
-            throw new InvalidParameterValueException("Can't update Default Direct network offering");
-        }
-
         NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
 
         if (name != null) {
@@ -3127,6 +3148,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (displayText != null) {
             offering.setDisplayText(displayText);
+        }
+        
+        if (state != null) {
+            boolean validState = false;
+            for (NetworkOffering.State st : NetworkOffering.State.values()) {
+                if (st.name().equalsIgnoreCase(state)) {
+                    validState = true;
+                    offering.setState(st);
+                }
+            }
+            if (!validState) {
+                throw new InvalidParameterValueException("Incorrect state value: " + state);
+            }
         }
 
         // Verify availability
@@ -3142,10 +3176,107 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 offering.setAvailability(availability);
             }
         }
-
-        if (_networkOfferingDao.update(id, offering)) {
-            offering = _networkOfferingDao.findById(id);
-            return offering;
+        
+        //All parameters below can be updated only when there are no networks using this offering
+        Long networks = _networkDao.getNetworkCountByOfferingId(id);
+        boolean networksExist = (networks != null && networks.longValue() > 0);
+        
+        if (sgEnabled != null) {
+            if (networksExist) {
+                throw new InvalidParameterValueException("Unable to reset securityGroupEnabled property as there are existing networks using this network offering");
+            }
+            offering.setSecurityGroupEnabled(sgEnabled);
+        }
+        
+        //configure service provider map
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        defaultProviders.add(Network.Provider.defaultProvider);
+        //populate all services first
+        if (cmd.getDhcpService()) {
+            serviceProviderMap.put(Network.Service.Dhcp, defaultProviders);            
+        }
+        
+        if (cmd.getDnsService()) {
+            serviceProviderMap.put(Network.Service.Dns, defaultProviders);    
+        }
+        
+        if (cmd.getFirewallService()) {
+            serviceProviderMap.put(Network.Service.Firewall, defaultProviders);    
+        }
+        
+        if (cmd.getGatewayService()) {
+            serviceProviderMap.put(Network.Service.Gateway, defaultProviders);    
+        }
+        
+        if (cmd.getLbService()) {
+            serviceProviderMap.put(Network.Service.Lb, defaultProviders);    
+        }
+        
+        if (cmd.getSourceNatService()) {
+            serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);    
+        }
+        
+        if (cmd.getUserdataService()) {
+            serviceProviderMap.put(Network.Service.UserData, defaultProviders);    
+        }
+        
+        if (cmd.getVpnService()) {
+            serviceProviderMap.put(Network.Service.Vpn, defaultProviders);    
+        } 
+        
+        //populate providers
+        Map<String, List<String>> svcPrv = (Map<String, List<String>>)cmd.getServiceProviders();
+        if (svcPrv != null) {
+            for (String serviceStr : svcPrv.keySet()) {
+                Network.Service service = Network.Service.getService(serviceStr);
+                if (serviceProviderMap.containsKey(service)) {
+                    serviceProviderMap.clear();
+                    Set<Provider> providers = new HashSet<Provider>();
+                    for (String prvNameStr : svcPrv.get(serviceStr)) {
+                        //check if provider is supported
+                        Network.Provider provider;
+                        provider = Network.Provider.getProvider(prvNameStr);
+                        if (provider == null) {
+                            throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
+                        }
+                        providers.add(provider);
+                    }
+                    serviceProviderMap.put(service, providers);
+                } else {
+                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+                }
+            }
+        }
+        
+        if (svcPrv != null && !svcPrv.isEmpty()) {
+            if (networksExist) {
+                throw new InvalidParameterValueException("Unable to reset service providers as there are existing networks using this network offering");
+            }
+        }
+        
+        
+        boolean success = true;
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //update network offering
+        success = success && _networkOfferingDao.update(id, offering);
+        _ntwkOffServiceMapDao.deleteByOfferingId(id);
+        //update services/providers - delete old ones, insert new ones
+        if (serviceProviderMap != null) {
+            for (Network.Service service : serviceProviderMap.keySet()) {
+                for (Network.Provider provider : serviceProviderMap.get(service)) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
+                    _ntwkOffServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+            }
+        }
+        
+        txn.commit();
+        
+        if (success) {
+            return _networkOfferingDao.findById(id);
         } else {
             return null;
         }

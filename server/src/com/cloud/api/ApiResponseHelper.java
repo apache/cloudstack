@@ -66,6 +66,7 @@ import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
@@ -2111,6 +2112,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setIsSecurityGroupEnabled(offering.isSecurityGroupEnabled());
+        if (offering.getType() != null) {
+            response.setType(offering.getType().toString());
+        }
 
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
@@ -2118,12 +2122,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         response.setState(offering.getState().name());
         
-        Map<String, String> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
+        Map<String, Set<String>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (String service : serviceProviderMap.keySet()) {
             ServiceResponse svcRsp = new ServiceResponse();
             svcRsp.setName(service);
-            svcRsp.setProvider(serviceProviderMap.get(service));
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (String provider : serviceProviderMap.get(service)) {
+                ProviderResponse providerRsp = new ProviderResponse();
+                providerRsp.setName(provider);
+                providers.add(providerRsp);
+            }
+            svcRsp.setProviders(providers);
             serviceResponses.add(svcRsp);
         }
         response.setServices(serviceResponses);
@@ -2179,7 +2189,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
         }
 
-        response.setIsShared(network.getIsShared());
+        if (network.getType() != null && network.getType() == Network.Type.Shared) {
+            response.setIsShared(true);
+        }
         response.setIsDefault(network.isDefault());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());

@@ -74,8 +74,8 @@ public class ExternalFirewallElement extends AdapterBase implements SourceNATSer
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() != Network.GuestIpType.Virtual) || (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() != Network.GuestIpType.Direct)) {
-            s_logger.trace("Not handling guest ip type = " + config.getGuestType());
+        if ((zone.getNetworkType() == NetworkType.Advanced && config.getType() != Network.Type.Isolated) || (zone.getNetworkType() == NetworkType.Basic && config.getType() != Network.Type.Shared)) {
+            s_logger.trace("Not handling network type = " + config.getType());
             return false;
         }   
         

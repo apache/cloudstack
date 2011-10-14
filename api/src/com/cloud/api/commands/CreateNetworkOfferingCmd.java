@@ -18,9 +18,11 @@
 
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -31,7 +33,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
@@ -101,6 +102,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true is security group is enabled for the network offering")
     private Boolean securityGroupEnabled;
+    
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network offering: Shared or Isolated")
+    private String type;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -182,17 +186,28 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return vpnService == null ? false : vpnService;
     }
 
-    public Map<String, String> getServiceProviderList() {
-        Map<String, String> serviceProviderMap = null;
+    public String getType() {
+        return type;
+    }
+
+    public Map<String, List<String>> getServiceProviders() {
+        Map<String, List<String>> serviceProviderMap = null;
         if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
-            serviceProviderMap = new HashMap<String, String>();
+            serviceProviderMap = new HashMap<String, List<String>>();
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> services = (HashMap<String, String>) iter.next();
                 String service = (String)services.get("service");
                 String provider = (String) services.get("provider");
-                serviceProviderMap.put(service, provider);
+                List<String> providerList = null;
+                if (serviceProviderMap.containsKey(service)) {
+                    providerList = serviceProviderMap.get(service);
+                } else {
+                    providerList = new ArrayList<String>();
+                }
+                providerList.add(provider);
+                serviceProviderMap.put(service, providerList);
             }
         }
         

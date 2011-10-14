@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -24,30 +24,12 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class ServiceResponse extends BaseResponse {
+public class ProviderResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the service name")
+    @SerializedName(ApiConstants.NAME) @Param(description="the provider name")
     private String name;
     
-    @SerializedName(ApiConstants.PROVIDER) @Param(description="the service provider name")
-    private List<ProviderResponse> providers;
-    
-    @SerializedName("capability") @Param(description="the list of capabilities", responseObject = CapabilityResponse.class)
-    private List<CapabilityResponse> capabilities;
-
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setCapabilities(List<CapabilityResponse> capabilities) {
-        this.capabilities = capabilities;
-    }
-
-    public void setProviders(List<ProviderResponse> providers) {
-        this.providers = providers;
     }
 }

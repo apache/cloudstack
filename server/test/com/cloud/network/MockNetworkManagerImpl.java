@@ -9,7 +9,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
@@ -27,8 +26,6 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
@@ -89,12 +86,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public boolean deleteNetwork(long networkId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -202,15 +193,15 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault,
-            boolean errorIfAlreadySetup, Long domainId, List<String> tags) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
+            Long domainId, List<String> tags) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -344,8 +335,8 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId,
-            String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException {
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
+            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -383,12 +374,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public Nic getDefaultNic(long vmId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<? extends PasswordResetElement> getPasswordResetElements() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -449,12 +434,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements() {
         // TODO Auto-generated method stub
         return null;
     }

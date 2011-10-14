@@ -43,6 +43,11 @@ public interface Network extends ControlledEntity {
         Virtual,
         Direct,
     }
+    
+    public enum Type {
+        Shared,
+        Isolated
+    }
 
     public static class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
@@ -247,8 +252,6 @@ public interface Network extends ControlledEntity {
 
     String getDisplayText();
 
-    boolean getIsShared();
-
     String getReservationId();
 
     boolean isDefault();
@@ -258,5 +261,7 @@ public interface Network extends ControlledEntity {
     boolean isSecurityGroupEnabled();
 
     List<String> getTags();
+
+    Type getType();
 
 }

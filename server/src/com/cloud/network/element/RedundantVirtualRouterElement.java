@@ -8,7 +8,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -16,9 +15,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Type;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -29,9 +32,10 @@ import com.cloud.vm.VirtualMachineProfile;
 public class RedundantVirtualRouterElement extends VirtualRouterElement {
     private static final Logger s_logger = Logger.getLogger(RedundantVirtualRouterElement.class);
     
-    private boolean canHandle(GuestIpType ipType, DataCenter dc) {
-        String provider = dc.getGatewayProvider();
-        boolean result = (provider != null && ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
+    @Inject NetworkManager _networkMgr;
+    
+    private boolean canHandle(Type networkType, long offeringId) {
+        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
         if (!result) {
             s_logger.trace("Virtual router element only takes care of guest ip type " + GuestIpType.Virtual + " for provider " + Provider.VirtualRouter.getName());
         }
@@ -41,7 +45,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement {
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
+        if (!canHandle(guestConfig.getType(), offering.getId())) {
             return false;
         }
         
@@ -56,7 +60,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement {
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), dest.getDataCenter())) {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }

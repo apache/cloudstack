@@ -19,7 +19,6 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -37,18 +36,15 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Type;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -58,12 +54,12 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
 	@Inject ExternalDhcpManager _dhcpMgr;
-	private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
+	private boolean canHandle(DeployDestination dest, TrafficType trafficType, Type networkType) {
 		DataCenter dc = dest.getDataCenter();
 		Pod pod = dest.getPod();
 		
 		if (pod.getExternalDhcp() && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
-				&& ipType == GuestIpType.Direct) {
+				&& networkType == Network.Type.Shared) {
 			s_logger.debug("External DHCP can handle");
 			return true;
 		}
@@ -84,7 +80,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	@Override
 	public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-		if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+		if (!canHandle(dest, offering.getTrafficType(), network.getType())) {
 			return false;
 		}
 		return true;
@@ -94,7 +90,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
 			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 		Host host = dest.getHost();
-		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(network.getGuestType(), dest, network.getTrafficType())) {
+		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getType())) {
 			//BareMetalElement or DhcpElement handle this
 			return false;
 		}

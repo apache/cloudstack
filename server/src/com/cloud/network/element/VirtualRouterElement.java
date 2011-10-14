@@ -35,9 +35,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Type;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
@@ -52,7 +52,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.uservm.UserVm;
@@ -89,18 +88,17 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
     @Inject HostDao _hostDao;
     @Inject ConfigurationDao _configDao;
     
-    private boolean canHandle(GuestIpType ipType, DataCenter dc) {
-        String provider = dc.getGatewayProvider();
-        boolean result = (provider != null && ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
+    private boolean canHandle(Type networkType, long offeringId) {
+        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
         if (!result) {
-            s_logger.trace("Virtual router element only takes care of guest ip type " + GuestIpType.Virtual + " for provider " + Provider.VirtualRouter.getName());
+            s_logger.trace("Virtual router element only takes care of type " + Network.Type.Isolated + " for provider " + Provider.VirtualRouter.getName());
         }
         return result;
     }
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
+        if (!canHandle(guestConfig.getType(), offering.getId())) {
             return false;
         }
         
@@ -115,7 +113,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), dest.getDataCenter())) {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -136,7 +134,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
     @Override
     public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        if (!canHandle(network.getGuestType(), dc)) {
+        if (!canHandle(network.getType(), network.getNetworkOfferingId())) {
             s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
             return false;
         }
@@ -182,7 +180,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
     
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
-        if (canHandle(config.getGuestType(),dc)) {
+        if (canHandle(config.getType(), config.getNetworkOfferingId())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + config.getId());
@@ -211,7 +209,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
             return null;
         }
         
-        if (canHandle(network.getGuestType(),dc)) {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             return _routerMgr.applyVpnUsers(network, users, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle applyVpnUsers command");
@@ -229,7 +227,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
             return true;
         }
         
-        if (canHandle(network.getGuestType(),dc)) {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             return _routerMgr.startRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle createVpn command");
@@ -247,7 +245,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
             return true;
         }
         
-        if (canHandle(network.getGuestType(),dc)) {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle removeVpn command");
@@ -258,7 +256,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        if (canHandle(network.getGuestType(),dc)) {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
@@ -322,7 +320,7 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
-        if (canHandle(config.getGuestType(),dc)) {
+        if (canHandle(config.getType(), config.getNetworkOfferingId())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual router doesn't exist in the network " + config.getId());

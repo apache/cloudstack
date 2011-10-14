@@ -43,14 +43,14 @@ public class NetworkProfile implements Network {
     private String cidr;
     private long networkOfferingId;
     private long related;
-    private GuestIpType guestIpType;
     private String displayText;
-    private boolean isShared;
     private String reservationId;
     private boolean isDefault;
     private String networkDomain;
     private boolean isSecurityGroupEnabled;
     private List<String> tags;
+    private Network.Type type;
+    private GuestIpType guestIpType;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -66,14 +66,14 @@ public class NetworkProfile implements Network {
         this.cidr = network.getCidr();
         this.networkOfferingId = network.getNetworkOfferingId();
         this.related = network.getRelated();
-        this.guestIpType = network.getGuestType();
         this.displayText = network.getDisplayText();
-        this.isShared = network.getIsShared();
         this.reservationId = network.getReservationId();
         this.isDefault = network.isDefault();
         this.networkDomain = network.getNetworkDomain();
         this.domainId = network.getDomainId();
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
+        this.type = network.getType();
+        this.guestIpType = network.getGuestType();
     }
 
     @Override
@@ -175,12 +175,7 @@ public class NetworkProfile implements Network {
     public String getDisplayText() {
         return displayText;
     }
-
-    @Override
-    public boolean getIsShared() {
-        return isShared;
-    }
-
+    
     @Override
     public String getReservationId() {
         return reservationId;
@@ -204,5 +199,10 @@ public class NetworkProfile implements Network {
     @Override
     public boolean isSecurityGroupEnabled() {
         return isSecurityGroupEnabled;
+    }
+    
+    @Override
+    public Network.Type getType(){
+        return type;
     }
 }

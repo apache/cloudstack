@@ -28,8 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
-import com.cloud.network.Network.State;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
@@ -99,6 +99,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="is_security_group_enabled")
     boolean securityGroupEnabled;
+    
+    @Column(name="type")
+    @Enumerated(value=EnumType.STRING)
+    Network.Type type;
     
     @Override
     public String getDisplayText() {
@@ -216,8 +220,18 @@ public class NetworkOfferingVO implements NetworkOffering {
     public State getState() {
         return state;
     }
+   
+    @Override
+    public void setSecurityGroupEnabled(boolean securityGroupEnabled) {
+        this.securityGroupEnabled = securityGroupEnabled;
+    }
+    
+    @Override
+    public Network.Type getType() {
+        return type;
+    }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, GuestIpType guestIpType, String tags, boolean isSecurityGroupEnabled) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, GuestIpType guestIpType, String tags, boolean isSecurityGroupEnabled, Network.Type type) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -232,6 +246,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.tags = tags;
         this.guestType = guestIpType;
         this.securityGroupEnabled = isSecurityGroupEnabled;
+        this.type = type;
     }
     
     public NetworkOfferingVO() {
@@ -243,7 +258,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null, false);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null, false, null);
         this.state = State.Enabled;
     }
     

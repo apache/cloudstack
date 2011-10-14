@@ -27,12 +27,10 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.network.Network;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a network", responseObject=NetworkResponse.class)
@@ -80,9 +78,6 @@ public class CreateNetworkCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a network")
     private Long domainId;
-    
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
-    private Boolean isShared;
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
     private Boolean isDefault;
@@ -142,10 +137,6 @@ public class CreateNetworkCmd extends BaseCmd {
     
     public String getDisplayText() {
         return displayText;
-    }
-    
-    public boolean getIsShared() {
-        return isShared == null ? false : isShared;
     }
     
     public Boolean isDefault() {

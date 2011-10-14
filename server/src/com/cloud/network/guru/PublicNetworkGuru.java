@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -78,7 +77,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (((dc.getNetworkType() == NetworkType.Advanced && !dc.isSecurityGroupEnabled()) || dc.getNetworkType() == NetworkType.Basic) && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
+        if (!offering.isSecurityGroupEnabled() && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of System only Public Virtual Network");

@@ -637,7 +637,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 // First IP address should be source nat when it's being associated with Guest Virtual network
                 List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
 
-                if (addrs.isEmpty() && network.getGuestType() == GuestIpType.Virtual) {
+                if (addrs.isEmpty() && network.getType() == Network.Type.Isolated) {
                     isSourceNat = true;
                 }
             }
@@ -782,20 +782,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
         
         //populate providers
-        Map<Network.Service, Network.Provider> defaultDirectNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultDirectNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
-        defaultDirectNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
-        defaultDirectNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        Map<Network.Service, Set<Network.Provider>> defaultDirectNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        defaultProviders.add(Network.Provider.DhcpServer);
+        defaultDirectNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultDirectNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultDirectNetworkOfferingProviders.put(Service.UserData, defaultProviders);
         
-        Map<Network.Service, Network.Provider> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultVirtualNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Firewall, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Gateway, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Lb, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
+        Map<Network.Service, Set<Network.Provider>> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        defaultProviders.clear();
+        defaultProviders.add(Network.Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.UserData, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.Firewall, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.Gateway, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.Lb, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -803,19 +807,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //check that offering already exists
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, GuestIpType.Direct, null, defaultDirectNetworkOfferingProviders, true, true);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, GuestIpType.Direct, null, defaultDirectNetworkOfferingProviders, true, true, Network.Type.Shared);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, GuestIpType.Virtual, null, defaultVirtualNetworkOfferingProviders, true, false);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, GuestIpType.Virtual, null, defaultVirtualNetworkOfferingProviders, true, false, Network.Type.Isolated);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultDirectNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, GuestIpType.Direct, null, defaultDirectNetworkOfferingProviders, true, false);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, GuestIpType.Direct, null, defaultDirectNetworkOfferingProviders, true, false, Network.Type.Shared);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -913,15 +917,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault, false, null, null);
+        return setupNetwork(owner, offering, null, plan, name, displayText, isDefault, false, null, null);
     }
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault,
-            boolean errorIfAlreadySetup, Long domainId, List<String> tags) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
+            Long domainId, List<String> tags) throws ConcurrentOperationException {
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
@@ -980,8 +984,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     related = id;
                 }
 
-                NetworkVO vo = new NetworkVO(id, network, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault,
-                        predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain());
+                NetworkVO vo = new NetworkVO(id, network, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
+                        predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain(), offering.getType());
                 vo.setTags(tags);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() != null));
 
@@ -1223,13 +1227,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // If this is a guest virtual network and the network offering does not support a shared source NAT rule,
             // associate a source NAT IP (if one isn't already associated with the network)
-            if (network.getGuestType() == GuestIpType.Virtual && !offering.isSharedSourceNatService()) {
+            if (network.getType() == Network.Type.Isolated && !offering.isSharedSourceNatService()) {
                 List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(networkId, true);
 
                 if (ips.isEmpty()) {
                     s_logger.debug("Creating a source nat ip for " + network);
                     Account owner = _accountMgr.getAccount(network.getAccountId());
-                    PublicIp sourceNatIp = assignSourceNatIpAddress(owner, network, context.getCaller().getId()); 
+                    assignSourceNatIpAddress(owner, network, context.getCaller().getId()); 
                 }
             }
 
@@ -1556,7 +1560,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String vlanId = cmd.getVlan();
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
-        Boolean isShared = cmd.getIsShared();
         Boolean isDefault = cmd.isDefault();
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
@@ -1574,12 +1577,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkOffering == null || networkOffering.isSystemOnly()) {
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
         }
+        
+        if (networkOffering.getState() != NetworkOffering.State.Enabled) {
+            throw new InvalidParameterValueException("Can't use network offering id=" + networkOfferingId + " as its state is not " + NetworkOffering.State.Enabled);
+        }
+        
+        boolean isShared = false;
+        if (networkOffering.getType() == Network.Type.Shared) {
+            isShared = true;
+        }
 
         // Check if the network is domain specific
         if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
-            if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Direct) {
-                throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest Ip type " + GuestIpType.Direct);
-            } else if (isShared == null || !isShared) {
+            if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getType() != Network.Type.Shared) {
+                throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and only for type " + Network.Type.Shared);
+            } else if (!isShared) {
                 throw new InvalidParameterValueException("Network dedicated to domain should be shared");
             } else {
                 DomainVO domain = _domainDao.findById(cmd.getDomainId());
@@ -1679,15 +1691,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             domainId = cmd.getDomainId();
         }
 
-        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags);
+        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags);
 
-        // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
+        // Don't pass owner to create vlan when network offering is of type Shared - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
-        if (network.getGuestType() == GuestIpType.Direct) {
+        if (network.getType() == Network.Type.Shared) {
             owner = null;
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && defineNetworkConfig) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getType() == Network.Type.Shared && defineNetworkConfig) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
         }
@@ -1699,30 +1711,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId,
-            String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException {
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
+            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException {
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
 
-        // Only Direct Account specific networks can be created in Advanced Security Group enabled zone
-        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual || (isShared != null && isShared))) {
-            throw new InvalidParameterValueException("Virtual Network and Direct Shared Network creation is not allowed if zone is security group enabled");
-        }
-
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
-        }
-
-        // allow isDefault/isShared to be set only for Direct network
-        if (networkOffering.getGuestType() == GuestIpType.Virtual) {
+        // allow isDefault to be set only for Shared network
+        if (networkOffering.getType() == Network.Type.Isolated) {
             if (isDefault != null && !isDefault) {
                 throw new InvalidParameterValueException("Can specify isDefault parameter only for Direct network.");
             } else {
                 isDefault = true;
-            }
-            if (isShared != null && isShared) {
-                throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
             }
         } else {
             if (isDefault == null) {
@@ -1730,7 +1730,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // if network is shared, defult its owner to be system
+        // if network is shared, default its owner to be system
+        boolean isShared = false;
+        if (networkOffering.getType() == Network.Type.Shared) {
+            isShared = true;
+        }
         if (isShared) {
             owner = _accountMgr.getSystemAccount();
         }
@@ -1824,13 +1828,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault, true, domainId, tags);
+        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isDefault, true, domainId, tags);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
             throw new CloudRuntimeException("Fail to create a network");
         } else {
-            if (networks.size() > 0 && networks.get(0).getGuestType() == GuestIpType.Virtual && networks.get(0).getTrafficType() == TrafficType.Guest) {
+            if (networks.size() > 0 && networks.get(0).getType()== Network.Type.Isolated && networks.get(0).getTrafficType() == TrafficType.Guest) {
                 Network defaultGuestNetwork = networks.get(0);
                 for (Network nw : networks) {
                     if (nw.getCidr() != null && nw.getCidr().equals(zone.getGuestNetworkCidr())) {
@@ -2745,7 +2749,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // create new Virtual network for the user if it doesn't exist
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null, zoneId, null, null, null, null, owner, false, null, null);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, zoneId, null, null, null, null, owner, false, null, null);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -2957,7 +2961,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkVO network : zoneNetworks) {
             NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!no.isSystemOnly()) {
-                if (network.getIsShared() || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
+                if (network.getType() == Network.Type.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
                     if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
                         accountNetworks.add(network);
                     }
@@ -3013,7 +3017,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
-        if (!network.getIsShared()) {
+        if (network.getType() != Network.Type.Shared) {
             s_logger.trace("Network id=" + networkId + " is not shared");
             return false;
         }
@@ -3317,14 +3321,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public Map<String, String> listNetworkOfferingServices(long networkOfferingId) {
-        Map<String, String> serviceProviderMap = new HashMap<String, String>();
+    public Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
+        Map<String, Set<String>> serviceProviderMap = new HashMap<String, Set<String>>();
         List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.getServices(networkOfferingId);
         
         for (NetworkOfferingServiceMapVO instance : map) {
-            serviceProviderMap.put(instance.getService(), instance.getProvider());
+            String service = instance.getService();
+            Set<String> providers;
+            if (serviceProviderMap.containsKey(service)) {
+                providers = serviceProviderMap.get(service);
+            } else {
+                providers = new HashSet<String>();
+            }
+            providers.add(instance.getProvider());
+            serviceProviderMap.put(service, providers);
         }
         
         return serviceProviderMap;
+    }
+    
+    @Override
+    public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider){
+        return _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, service, provider);
     }
 }

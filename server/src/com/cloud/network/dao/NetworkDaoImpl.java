@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
@@ -31,13 +32,16 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.Transaction;
@@ -51,6 +55,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
+    final GenericSearchBuilder<NetworkVO, Long> CountByOfferingId;
 
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
@@ -72,7 +77,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("guesttype", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
-        AllFieldsSearch.and("isShared", AllFieldsSearch.entity().getIsShared(), Op.EQ);
+        AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
         AllFieldsSearch.done();
 
         AccountSearch = createSearchBuilder();
@@ -109,6 +114,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
         ZoneSecurityGroupSearch.and("securityGroup", ZoneSecurityGroupSearch.entity().isSecurityGroupEnabled(), Op.EQ);
         ZoneSecurityGroupSearch.done();
+        
+        CountByOfferingId = createSearchBuilder(Long.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("offeringId", CountByOfferingId.entity().getNetworkOfferingId(), Op.EQ);
+        CountByOfferingId.and("removed", CountByOfferingId.entity().getRemoved(), Op.NULL);
+        CountByOfferingId.done();
 
         _tgMacAddress = _tgs.get("macAddress");
 
@@ -297,7 +308,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     public List<NetworkVO> listNetworksBy(boolean isShared) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
-        sc.setParameters("isShared", isShared);
+        if (isShared) {
+            sc.setParameters("type", Network.Type.Shared);
+         } else {
+             sc.setParameters("type", Network.Type.Isolated);
+         }
+        
         return listBy(sc);
     }
 
@@ -306,5 +322,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         return listIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public Long getNetworkCountByOfferingId(long offeringId) {
+        SearchCriteria<Long> sc = CountByOfferingId.create();
+        sc.setParameters("offering", offeringId);
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
     }
 }

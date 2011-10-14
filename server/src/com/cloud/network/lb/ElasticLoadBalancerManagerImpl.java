@@ -461,7 +461,7 @@ public class ElasticLoadBalancerManagerImpl implements
         try {
 
             NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-            if (offering.isSystemOnly() || guestNetwork.getIsShared()) {
+            if (offering.isSystemOnly() || guestNetwork.getType() == Network.Type.Shared) {
                 owner = _accountService.getSystemAccount();
             }
 
@@ -486,7 +486,7 @@ public class ElasticLoadBalancerManagerImpl implements
  
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
                 NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
                 NicProfile guestNic = new NicProfile();
@@ -613,8 +613,8 @@ public class ElasticLoadBalancerManagerImpl implements
         NetworkVO network=_networkDao.findById(networkId);
 
 
-        if (network.getGuestType() != GuestIpType.Direct) {
-            s_logger.info("ELB: not handling guest traffic of type " + network.getGuestType());
+        if (network.getType() != Network.Type.Shared) {
+            s_logger.info("ELB: not handling traffic for network of type " + network.getType());
             return null;
         }
         return network;

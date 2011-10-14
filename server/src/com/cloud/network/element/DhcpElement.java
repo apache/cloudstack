@@ -27,8 +27,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -37,18 +37,15 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Type;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
@@ -83,27 +80,20 @@ public class DhcpElement extends AdapterBase implements PasswordServiceProvider 
     @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
      
-    private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
-        DataCenter dc = dest.getDataCenter();
-        String provider = dc.getGatewayProvider();
-        
-        if (provider != null && provider.equalsIgnoreCase(Provider.JuniperSRX.getName()) && ipType == GuestIpType.Virtual) {
+    private boolean canHandle(DeployDestination dest, TrafficType trafficType, Type networkType, long offeringId) {
+        if (_networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.JuniperSRX) && networkType == Network.Type.Isolated) {
             return true;
         } else if (dest.getPod() != null && dest.getPod().getExternalDhcp()){
         	//This pod is using external DHCP server
         	return false;
         } else {
-            if (dc.getNetworkType() == NetworkType.Basic) {
-                return (ipType == GuestIpType.Direct && trafficType == TrafficType.Guest);
-            } else {
-                return (ipType == GuestIpType.Direct);
-            }
+            return (networkType == Network.Type.Shared);
         } 
     }
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+        if (!canHandle(dest, offering.getTrafficType(), network.getType(), network.getNetworkOfferingId())) {
             return false;
         }
         
@@ -115,7 +105,7 @@ public class DhcpElement extends AdapterBase implements PasswordServiceProvider 
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), dest, network.getTrafficType())) {
+        if (canHandle(dest, network.getTrafficType(), network.getType(), network.getNetworkOfferingId())) {
             
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
@@ -204,7 +194,7 @@ public class DhcpElement extends AdapterBase implements PasswordServiceProvider 
         DeployDestination dest = new DeployDestination(dc, null, null, null);
         NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         
-        if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+        if (!canHandle(dest, offering.getTrafficType(), network.getType(), network.getNetworkOfferingId())) {
             s_logger.trace("Dhcp element doesn't handle network restart for the network " + network);
             return false;
         } 

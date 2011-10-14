@@ -2096,12 +2096,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
                 }
 
-                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != GuestIpType.Direct || (network.getIsShared() && !network.isSecurityGroupEnabled())) {
+                if (network.getTrafficType() != TrafficType.Guest || network.getType() != Network.Type.Shared || (network.getType() == Network.Type.Shared && !network.isSecurityGroupEnabled())) {
                     throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
                 }
 
                 // Perform account permission check
-                if (!network.getIsShared()) {
+                if (network.getType() != Network.Type.Shared) {
                     // Check account permissions
                     List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
                     if (networkMap == null || networkMap.isEmpty()) {
@@ -2177,8 +2177,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                    Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null,
-                            zone.getId(), null, null, null, null, owner, false, null, null);
+                    Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, zone.getId(),
+                            null, null, null, null, owner, false, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + owner + "; please specify networkIds");
@@ -2190,8 +2190,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (defaultNetworks.isEmpty()) {
                     if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
                         s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                        Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, null,
-                                zone.getId(), null, null, null, null, owner, false, null, null);
+                        Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, zone.getId(),
+                                null, null, null, null, owner, false, null, null);
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     } else {
                         throw new InvalidParameterValueException("Unable to find default networks for account " + owner);
@@ -2231,7 +2231,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
 
                 // Perform account permission check
-                if (!network.getIsShared()) {
+                if (network.getType() != Network.Type.Shared) {
                     List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
                     if (networkMap == null || networkMap.isEmpty()) {
                         throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
@@ -3324,7 +3324,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             for (NetworkVO network : zoneNetworks) { // get the default networks for the account
                 NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
                 if (!no.isSystemOnly()) {
-                    if (network.getIsShared() || !_networkDao.listBy(oldAccount.getId(), network.getId()).isEmpty()) {
+                    if (network.getType() == Network.Type.Shared || !_networkDao.listBy(oldAccount.getId(), network.getId()).isEmpty()) {
                         if (network.isDefault()) {
                             oldNetworks.add(network);
                         }
@@ -3335,8 +3335,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 long networkOffering =  oldNet.getNetworkOfferingId();   
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
                 if (virtualNetworks.isEmpty()) {
-                    Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", false, null,
-                            vm.getDataCenterIdToDeployIn(), null, null, null, null, newAccount, false, null, null);
+                    Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, vm.getDataCenterIdToDeployIn(),
+                            null, null, null, null, newAccount, false, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");

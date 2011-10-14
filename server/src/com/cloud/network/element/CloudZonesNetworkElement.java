@@ -63,7 +63,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -111,7 +110,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     @Inject AgentManager _agentManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     
-    private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
+    private boolean canHandle(DeployDestination dest, TrafficType trafficType) {
         DataCenterVO dc = (DataCenterVO)dest.getDataCenter();
         
         if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
@@ -127,7 +126,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+        if (!canHandle(dest, offering.getTrafficType())) {
             return false;
         }
         
@@ -136,7 +135,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), dest, network.getTrafficType())) {
+        if (canHandle(dest, network.getTrafficType())) {
             
             if (vmProfile.getType() != VirtualMachine.Type.User) {
                 return false;

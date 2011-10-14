@@ -1063,11 +1063,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
                 NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
                 NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
+                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
                 networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
                 NicProfile gatewayNic = new NicProfile();
                 if (isRedundant) {
@@ -1253,7 +1253,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
 
@@ -1304,7 +1304,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public List<DomainRouterVO> deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException, StorageUnavailableException,
             ConcurrentOperationException, ResourceUnavailableException {
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-        if (offering.isSystemOnly() || guestNetwork.getIsShared()) {
+        if (offering.isSystemOnly() || guestNetwork.getType() == Network.Type.Shared) {
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
         
@@ -1461,11 +1461,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" dnssearchorder=").append(domain_suffix);
         }
        
-        if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {
+        if (!network.isDefault() && network.getType() == Network.Type.Shared) {
             buf.append(" defaultroute=false");
 
             String virtualNetworkElementNicIP = _networkMgr.getIpOfNetworkElementInVirtualNetwork(network.getAccountId(), network.getDataCenterId());
-            if (!network.getIsShared() && virtualNetworkElementNicIP != null) {
+            if (network.getType() != Network.Type.Shared && virtualNetworkElementNicIP != null) {
                 defaultDns1 = virtualNetworkElementNicIP;
             } else {
                 s_logger.debug("No Virtual network found for account id=" + network.getAccountId() + " so setting dns to the dns of the network id=" + network.getId());
@@ -1908,7 +1908,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (cmds.size() > 0) {
                 boolean podLevelException = false;
                 //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
-                if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Direct) {
+                if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getType() == Network.Type.Shared) {
                     podLevelException = true;
                 }
                 try {

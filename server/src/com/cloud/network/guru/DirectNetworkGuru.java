@@ -34,7 +34,6 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -76,8 +75,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles only non-system network with guestIpType = Direct
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getGuestType() == GuestIpType.Direct && offering.getTrafficType() == TrafficType.Guest) {
-            if (dc.isSecurityGroupEnabled()) {
+        //TODO - after broadCastDomainType + physical network are introduced, don't rely on network type of the dc
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getType() == Network.Type.Shared && offering.getTrafficType() == TrafficType.Guest) {
+            if (offering.isSecurityGroupEnabled()) {
                 return true;
             } else if (!offering.isSystemOnly()) {
                 return true;

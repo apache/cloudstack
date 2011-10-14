@@ -18,6 +18,9 @@
 package com.cloud.offering;
 
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Type;
 import com.cloud.network.Networks.TrafficType;
 
 /**
@@ -97,4 +100,8 @@ public interface NetworkOffering {
     void setState(State state);
 
     State getState();
+
+    void setSecurityGroupEnabled(boolean securityGroupEnabled);
+
+    Type getType();
 }
