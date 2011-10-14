@@ -514,7 +514,7 @@ public class CitrixHelper {
     
     
     public static String getXcp110GuestOsType(String stdType) {
-        String guestOS =  _xcp100GuestOsMap.get(stdType);
+        String guestOS =  _xcp110GuestOsMap.get(stdType);
         if (guestOS == null) {
             s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
             guestOS = "Other install media";
