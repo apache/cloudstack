@@ -1957,7 +1957,8 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		if (isAdmin() 
 			&& (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN' || jsonObj.rootdevicetype == 'PreSetup')
-			&& (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == 'VMware' || jsonObj.hypervisor == 'KVM')) 
+			//&& (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == 'VMware' || jsonObj.hypervisor == 'KVM')
+			) 
 		{
 			buildActionLinkForTab("label.action.migrate.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		}
