@@ -228,6 +228,10 @@ public class StoragePoolVO implements StoragePool {
         this.uuid = uuid;
     }
     
+    public void setPath(String path) {
+    	this.path = path;
+    }
+    
     @Override
     public int getPort() {
         return port;

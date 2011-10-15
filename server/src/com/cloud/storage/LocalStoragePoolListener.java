@@ -30,6 +30,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.component.Inject;
@@ -83,7 +84,17 @@ public class LocalStoragePoolListener implements Listener {
         
         try {
             StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(), pInfo.getUuid());
+        	if(pool == null && host.getHypervisorType() == HypervisorType.VMware) {
+        		// perform run-time upgrade. In versions prior to 2.2.12, there is a bug that we don't save local datastore info (host path is empty), this will cause us
+        		// not able to distinguish multiple local datastores that may be available on the host, to support smooth migration, we 
+        		// need to perform runtime upgrade here
+        		if(pInfo.getHostPath().length() > 0) {
+        			pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), "", pInfo.getUuid());
+        		}
+        	}
+            
             if (pool == null) {
+            	
                 long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
                 String name = cmd.getName() == null ? (host.getName() + " Local Storage") : cmd.getName();
                 Transaction txn = Transaction.currentTxn();
@@ -99,6 +110,7 @@ public class LocalStoragePoolListener implements Listener {
             } else {
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
+                pool.setPath(pInfo.getHostPath());
                 pool.setAvailableBytes(pInfo.getAvailableBytes());
                 pool.setCapacityBytes(pInfo.getCapacityBytes());
                 _storagePoolDao.update(pool.getId(), pool);
@@ -117,7 +129,6 @@ public class LocalStoragePoolListener implements Listener {
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
         }
     }
-    
    
 
     @Override
