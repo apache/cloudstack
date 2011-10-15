@@ -2394,23 +2394,15 @@ function vmVolumeJSONToTemplate(json, $template) {
 	//***** actions (begin) *****
 	var $actionLink = $template.find("#action_link");		
 	bindActionLink($actionLink);
-	/*
-	$actionLink.unbind("mouseover").bind("mouseover", function(event) {
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.unbind("mouseout").bind("mouseout", function(event) {
-        $(this).find("#action_menu").hide();    
-        return false;
-    });		
-	*/
-	
+		
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
-     
-    buildActionLinkForSubgridItem("label.action.take.snapshot", vmVolumeActionMap, $actionMenu, $template);	 
-    noAvailableActions = false;		
+    	
+	if(json.hypervisor != "Ovm") {   
+		buildActionLinkForSubgridItem("label.action.take.snapshot", vmVolumeActionMap, $actionMenu, $template);	 
+		noAvailableActions = false;		
+	}
      
 	if(json.type=="ROOT") { //"label.action.create.template" is allowed(when stopped), "label.action.detach.disk" is disallowed.
 		if (json.vmstate == "Stopped") {

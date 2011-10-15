@@ -446,9 +446,11 @@ function volumeJsonToDetailsTab(){
     //actions ***    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-        
-    buildActionLinkForTab("label.action.take.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
-    buildActionLinkForTab("label.action.recurring.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
+    	
+    if(jsonObj.hypervisor != "Ovm") {   
+      buildActionLinkForTab("label.action.take.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
+      buildActionLinkForTab("label.action.recurring.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
+	}
     
     if(jsonObj.state != "Allocated")
         buildActionLinkForTab("label.action.download.volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
