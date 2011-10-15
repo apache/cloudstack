@@ -3128,9 +3128,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     DatastoreSummary dsSummary = dsMo.getSummary();
                     String address = hostMo.getHostName();
-                    StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, "", "", StoragePoolType.LVM, dsSummary.getCapacity(), dsSummary.getFreeSpace());
+                    StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, dsMo.getMor().get_value(), "", StoragePoolType.LVM, dsSummary.getCapacity(), dsSummary.getFreeSpace());
                     StartupStorageCommand cmd = new StartupStorageCommand();
-                    cmd.setName(poolUuid + "@" + hostMo.getHostName());
+                    cmd.setName(poolUuid);
                     cmd.setPoolInfo(pInfo);
                     cmd.setGuid(poolUuid); // give storage host the same UUID as the local storage pool itself
                     cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
