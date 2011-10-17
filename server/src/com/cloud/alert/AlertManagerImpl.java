@@ -42,13 +42,18 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -92,6 +97,7 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private CapacityDao _capacityDao;
     @Inject private DataCenterDao _dcDao;
     @Inject private HostPodDao _podDao;
+    @Inject private ClusterDao _clusterDao;
     @Inject private VolumeDao _volumeDao;
     @Inject private IPAddressDao _publicIPAddressDao;
     @Inject private DataCenterIpAddressDao _privateIPAddressDao;
@@ -106,6 +112,7 @@ public class AlertManagerImpl implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
+    Map<Short,Double> _capacityTypeThresholdMap = new HashMap<Short, Double>(); 
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -167,7 +174,13 @@ public class AlertManagerImpl implements AlertManager {
         if (privateIPCapacityThreshold != null) {
         	_privateIPCapacityThreshold = Double.parseDouble(privateIPCapacityThreshold);
         }
-
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE, _storageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, _storageAllocCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, _cpuCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, _memoryCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PUBLIC_IP, _publicIPCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
+        
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
             _capacityCheckPeriod = Long.parseLong(capacityCheckPeriodStr);
@@ -462,6 +475,141 @@ public class AlertManagerImpl implements AlertManager {
     
     
     public void newAlertSystem(){
+    	recalculateCapacity();
+
+        // abort if we can't possibly send an alert...
+        if (_emailAlert == null) {
+            return;
+        }
+        
+        //Get all datacenters, pods and clusters in the system.
+        List<DataCenterVO> dataCenterList = _dcDao.listAll();
+        List<ClusterVO> clusterList = _clusterDao.listAll();
+        List<HostPodVO> podList = _podDao.listAll();
+        //Get capacity types at different levels
+        List<Short> dataCenterCapacityTypes = getCapacityTypesAtZoneLevel();         
+        List<Short> podCapacityTypes = getCapacityTypesAtPodLevel();        
+        List<Short> clusterCapacityTypes = getCapacityTypesAtClusterLevel();        
+        
+        // Generate Alerts for Zone Level capacities
+        for(DataCenterVO dc : dataCenterList){
+        	for (Short capacityType : dataCenterCapacityTypes){
+        		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
+        		double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double usedCapacity =  capacity.get(0).getUsedCapacity();
+                if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
+                	generateEmailAlert(dc, null, null, totalCapacity, usedCapacity, capacityType);
+                }
+        	}
+        }
+        
+        // Generate Alerts for Pod Level capacities
+        for( HostPodVO pod : podList){
+        	for (Short capacityType : podCapacityTypes){
+        		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), pod.getDataCenterId(), pod.getId(), null);
+        		double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double usedCapacity =  capacity.get(0).getUsedCapacity();
+                if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
+                	generateEmailAlert(ApiDBUtils.findZoneById(pod.getDataCenterId()), pod, null, 
+                			totalCapacity, usedCapacity, capacityType);
+                }
+        	}
+        }
+        
+        // Generate Alerts for Cluster Level capacities
+        for( ClusterVO cluster : clusterList){
+        	for (Short capacityType : clusterCapacityTypes){
+        		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
+        		double totalCapacity = capacity.get(0).getTotalCapacity(); 
+                double usedCapacity =  capacity.get(0).getUsedCapacity();
+                if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
+                	generateEmailAlert(ApiDBUtils.findZoneById(cluster.getDataCenterId()), ApiDBUtils.findPodById(cluster.getPodId()), cluster,
+                			totalCapacity, usedCapacity, capacityType);
+                }
+        	}
+        }
+        
+    }
+    
+    private void generateEmailAlert(DataCenterVO dc, HostPodVO pod, ClusterVO cluster, double totalCapacity, double usedCapacity, short capacityType){
+    	
+    	String msgSubject = null;
+        String msgContent = null;
+        String totalStr;
+        String usedStr;
+        String pctStr = formatPercent(usedCapacity/totalCapacity);
+        
+    	switch (capacityType) {
+        case CapacityVO.CAPACITY_TYPE_MEMORY:
+            msgSubject = "System Alert: Low Available Memory in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            totalStr = formatBytesToMegabytes(totalCapacity);
+            usedStr = formatBytesToMegabytes(usedCapacity);
+            msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_CPU:
+            msgSubject = "System Alert: Low Unallocated CPU in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            totalStr = _dfWhole.format(totalCapacity);
+            usedStr = _dfWhole.format(usedCapacity);
+            msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_STORAGE:
+            msgSubject = "System Alert: Low Available Storage in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            totalStr = formatBytesToMegabytes(totalCapacity);
+            usedStr = formatBytesToMegabytes(usedCapacity);
+            msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED:
+            msgSubject = "System Alert: Remaining unallocated Storage is low in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            totalStr = formatBytesToMegabytes(totalCapacity);
+            usedStr = formatBytesToMegabytes(usedCapacity);
+            msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_PUBLIC_IP:
+            msgSubject = "System Alert: Number of unallocated public IPs is low in availablity zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:        	
+        	msgSubject = "System Alert: Number of unallocated private IPs is low in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+        	totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+        	msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+        	break;
+        }
+    	
+    	try {
+			_emailAlert.sendAlert(capacityType, dc.getId(), null, msgSubject, msgContent);
+    	} catch (Exception ex) {
+            s_logger.error("Exception in CapacityChecker", ex);        
+		}
+    }
+    
+    private List<Short> getCapacityTypesAtZoneLevel(){
+    	
+    	List<Short> dataCenterCapacityTypes = new ArrayList<Short>();
+    	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_PUBLIC_IP);
+    	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
+		return dataCenterCapacityTypes;
+    	
+    }
+    
+    private List<Short> getCapacityTypesAtPodLevel(){
+    	
+    	List<Short> podCapacityTypes = new ArrayList<Short>();
+    	podCapacityTypes.add(Capacity.CAPACITY_TYPE_PRIVATE_IP);    	
+		return podCapacityTypes;
+    	
+    }
+    
+    private List<Short> getCapacityTypesAtClusterLevel(){
+    	
+    	List<Short> clusterCapacityTypes = new ArrayList<Short>();
+    	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_CPU);
+    	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_MEMORY);
+    	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_STORAGE);
+    	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
+		return clusterCapacityTypes;
     	
     }
 
