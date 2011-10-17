@@ -28,6 +28,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -1215,6 +1216,16 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 	    }
 	}
 	
+	protected Answer execute(DeleteStoragePoolCommand cmd) {
+		try {
+			OvmStoragePool.delete(_conn, cmd.getPool().getUuid());
+		} catch (Exception e) {
+			s_logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell managment server it succeeded", e);
+		}
+		
+		return new Answer(cmd);
+	}
+	
 	@Override
 	public Answer executeRequest(Command cmd) {
 		Class<? extends Command> clazz = cmd.getClass();
@@ -1270,7 +1281,9 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 			return execute((CreatePrivateTemplateFromVolumeCommand)cmd);
 		} else if (clazz == CopyVolumeCommand.class) {
 			return execute((CopyVolumeCommand)cmd);
-		}else {
+		} else if (clazz == DeleteStoragePoolCommand.class) {
+			return execute((DeleteStoragePoolCommand)cmd);
+		} else {
 			return Answer.createUnsupportedCommandAnswer(cmd);
 		}
 	}

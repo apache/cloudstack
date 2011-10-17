@@ -81,4 +81,9 @@ public class OvmStoragePool extends OvmObject {
 		Map info = Coder.mapFromJson(res);
 		return (String) info.get("installPath");
 	}
+	
+	public static void delete(Connection c, String uuid) throws XmlRpcException {
+		Object[] params = {uuid};
+		c.call("OvmStoragePool.delete", params);
+	}
 }

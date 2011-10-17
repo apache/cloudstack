@@ -380,6 +380,19 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.createTemplateFromVolume), errmsg)
     
     @staticmethod
+    def delete(uuid):
+        try:
+            sr = OvmStoragePool()._getSrByNameLable(uuid)
+            primaryStoragePath = sr.mountpoint
+            OvmStoragePool()._umount(primaryStoragePath)
+            rs = SUCC()
+            return rs
+        except Exception, e:
+            errmsg = fmt_err_msg(e)
+            logger.error(OvmStoragePool.delete, errmsg)
+            raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.delete), errmsg) 
+        
+    @staticmethod
     def copyVolume(secStorageMountPath, volumeFolderOnSecStorage, volumePath, storagePoolUuid, toSec):
         def copyToSecStorage(secMountPoint, volumeFolderOnSecStorage, volumePath):
             if not isfile(volumePath): raise Exception("Cannot find volume at %s"%volumePath)
