@@ -42,6 +42,8 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.ClusterSyncAnswer;
+import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
@@ -1515,7 +1517,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         return new StopCommand(vmName);
     }
 
-    public Commands deltaSync(long hostId, Map<String, State> newStates) {
+    public Commands deltaSync(Map<String, Pair<String, State>> newStates) {
         Map<Long, AgentVmInfo> states = convertDeltaToInfos(newStates);
         Commands commands = new Commands(OnError.Continue);
 
@@ -1527,7 +1529,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             Command command = null;
             if (vm != null) {
                 HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-                command = compareState(hostId, vm, info, false, hvGuru.trackVmHostChange());
+                command = compareState(vm.hostId, vm, info, false, hvGuru.trackVmHostChange());
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cleaning up a VM that is no longer found: " + info.name);
@@ -1543,8 +1545,43 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         return commands;
     }
 
+    public Commands fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
+        Commands commands = new Commands(OnError.Continue);
+        Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
+        long hId = 0;
+        final List<VMInstanceVO> vms = _vmDao.listByClusterId(clusterId);
+        for (VMInstanceVO vm : vms) {
+            AgentVmInfo info = infos.remove(vm.getId());
+            VMInstanceVO castedVm = null;
+            if (info == null) {
+                info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+                castedVm = info.guru.findById(vm.getId());
+                hId = vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId();
+            } else {
+                castedVm = info.vm;
+                String host_guid = info.getHostUuid();
+                Host host = _hostDao.findByGuid(host_guid);
+                if (host == null) {
+                    infos.put(vm.getId(), info);
+                    continue;
+                }
+                hId = host.getId();
+            }
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
+            Command command = compareState(hId, castedVm, info, true, hvGuru.trackVmHostChange());
+            if (command != null) {
+                commands.addCommand(command);
+            }
+        }
+        for (final AgentVmInfo left : infos.values()) {
+            s_logger.warn("Stopping a VM that we have no record of: " + left.name);
+            commands.addCommand(cleanup(left.name));
+        }
+        return commands;
+    }
 
-    protected Map<Long, AgentVmInfo> convertDeltaToInfos(final Map<String, State> states) {
+
+    protected Map<Long, AgentVmInfo> convertDeltaToInfos(final Map<String, Pair<String, State>> states) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
 
         if (states == null) {
@@ -1553,20 +1590,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
 
-        for (Map.Entry<String, State> entry : states.entrySet()) {
+        for (Map.Entry<String, Pair<String, State>> entry : states.entrySet()) {
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
                 String name = entry.getKey();
 
                 VMInstanceVO vm = vmGuru.findByName(name);
 
                 if (vm != null) {
-                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue()));
+                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second()));
                     break;
                 }
 
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null,entry.getValue()));
+                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second()));
                     break;
                 }
             }
@@ -1575,36 +1612,33 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         return map;
     }
 
-    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, VmState> states) {
+    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
 
-        if (states == null) {
+        if (newStates == null) {
             return map;
         }
 
         Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
 
-        for (Map.Entry<String, VmState> entry : states.entrySet()) {
+        for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
                 String name = entry.getKey();
-
                 VMInstanceVO vm = vmGuru.findByName(name);
-
                 if (vm != null) {
-                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().getState(), entry.getValue().getHost() ));
+                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second(), entry.getValue().first()));
                     break;
                 }
-
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null,entry.getValue().getState(), entry.getValue().getHost() ));
+                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second(), entry.getValue().first()));
                     break;
                 }
             }
         }
-
         return map;
     }
+
 
     /**
      * compareState does as its name suggests and compares the states between management server and agent. It returns whether
@@ -1622,7 +1656,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("VM " + serverName + ": server state = " + serverState + " and agent state = " + agentState);
         }
-
+        
         if (agentState == State.Error) {
             agentState = State.Stopped;
 
@@ -1817,95 +1851,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }        
     }
 
-    public Commands fullSync(final long hostId, StartupRoutingCommand startup) {
-
-        Commands commands = new Commands(OnError.Continue);
-        Map<Long, AgentVmInfo> infos = convertToInfos(startup.getVmStates());
-        if( startup.isPoolSync()) {
-            long hId = 0;
-            Host host = _hostDao.findById(hostId);
-            long clusterId= host.getClusterId();
-            final List<? extends VMInstanceVO> vms = _vmDao.listByClusterId(clusterId);
-            s_logger.debug("Found " + vms.size() + " VMs for cluster " + clusterId);
-            for (VMInstanceVO vm : vms) {
-                AgentVmInfo info = infos.remove(vm.getId());
-                VMInstanceVO castedVm = null;
-                if (info == null) {
-                    info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                    hId = 0;
-                    castedVm = info.guru.findById(vm.getId());
-                } else {
-                    castedVm = info.vm;
-                    String host_guid = info.getHost();
-                    host = _hostDao.findByGuid(host_guid);
-                    if ( host == null ) {
-                        infos.put(vm.getId(), info);
-                        continue;
-                    }
-                    hId = host.getId();
-                    HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-
-                    Command command = compareState(hId, castedVm, info, true, hvGuru.trackVmHostChange());
-                    if (command != null) {
-                        commands.addCommand(command);
-                    }
-                }
-            }
-            for (final AgentVmInfo left : infos.values()) {
-                s_logger.warn("Stopping a VM that we have no record of: " + left.name);
-                commands.addCommand(cleanup(left.name));
-            }
-
-        } else {           
-            final List<? extends VMInstanceVO> vms = _vmDao.listByHostId(hostId);
-            s_logger.debug("Found " + vms.size() + " VMs for host " + hostId);
-            for (VMInstanceVO vm : vms) {
-                AgentVmInfo info = infos.remove(vm.getId());
-
-                VMInstanceVO castedVm = null;
-                if (info == null) {
-                    info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                    castedVm = info.guru.findById(vm.getId());
-                } else {
-                    castedVm = info.vm;
-                }
-
-                HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-
-                Command command = compareState(hostId, castedVm, info, true, hvGuru.trackVmHostChange());
-                if (command != null) {
-                    commands.addCommand(command);
-                }
-            }
-
-            for (final AgentVmInfo left : infos.values()) {
-                boolean found = false;
-                for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : _vmGurus.values()) {
-                    VMInstanceVO vm = vmGuru.findByName(left.name);
-                    if (vm != null) {
-                        found = true;
-                        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-                        if(hvGuru.trackVmHostChange()) {
-                            Command command = compareState(hostId, vm, left, true, true);
-                            if (command != null) {
-                                commands.addCommand(command);
-                            }
-                        } else {
-                            s_logger.warn("Stopping a VM,  VM " + left.name + " migrate from Host " + vm.getHostId() + " to Host " + hostId );
-                            commands.addCommand(cleanup(left.name));
-                        }
-                        break;
-                    }
-                }
-                if ( ! found ) {
-                    s_logger.warn("Stopping a VM that we have no record of: " + left.name);
-                    commands.addCommand(cleanup(left.name));
-                }
-            }
-        }
-        return commands;
-    }
-
     @Override
     public boolean isRecurring() {
         return false;
@@ -1914,7 +1859,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (final Answer answer : answers) {
-            if (!answer.getResult()) {
+            if (answer instanceof ClusterSyncAnswer) {
+                ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
+                if (hs.isFull()) {
+                    fullSync(hs.getClusterId(), hs.getNewStates());
+                } else {
+                    deltaSync(hs.getNewStates());
+                }
+            } else if (!answer.getResult()) {
                 s_logger.warn("Cleanup failed due to " + answer.getDetails());
             } else {
                 if (s_logger.isDebugEnabled()) {
@@ -1937,24 +1889,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] cmds) {
-        boolean processed = false;
-        for (Command cmd : cmds) {
-            if (cmd instanceof PingRoutingCommand) {
-                PingRoutingCommand ping = (PingRoutingCommand) cmd;
-                if (ping.getNewStates().size() > 0) {
-                    Commands commands = deltaSync(agentId, ping.getNewStates());
-                    if (commands.size() > 0) {
-                        try {
-                            _agentMgr.send(agentId, commands, this);
-                        } catch (final AgentUnavailableException e) {
-                            s_logger.warn("Agent is now unavailable", e);
-                        }
-                    }
-                }
-                processed = true;
-            }
-        }
-        return processed;
+        return false;
     }
 
     @Override
@@ -1979,33 +1914,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         long agentId = agent.getId();
-
-        StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
-
-        Commands commands = fullSync(agentId, startup);
-
-        if (commands.size() > 0) {
-            s_logger.debug("Sending clean commands to the agent");
-
-            try {
-                boolean error = false;
-                Answer[] answers = _agentMgr.send(agentId, commands);
-                for (Answer answer : answers) {
-                    if (!answer.getResult()) {
-                        s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
-                        error = true;
-                    }
-                }
-                if (error) {
-                    throw new ConnectionException(true, "Unable to stop VMs");
-                }
-            } catch (final AgentUnavailableException e) {
-                s_logger.warn("Agent is unavailable now", e);
-                throw new ConnectionException(true, "Unable to sync", e);
-            } catch (final OperationTimedoutException e) {
-                s_logger.warn("Agent is unavailable now", e);
-                throw new ConnectionException(true, "Unable to sync", e);
-            }
+        Long clusterId = agent.getClusterId();
+        ClusterSyncCommand syncCmd = new ClusterSyncCommand(60, 20, clusterId);
+        try {
+            long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
+            s_logger.debug("Cluster VM sync started with jobid " + seq_no);
+        } catch (AgentUnavailableException e) {
+            s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
         }
     }
 
@@ -2045,7 +1960,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected class AgentVmInfo {
         public String name;
         public State state;
-        public String host;
+        public String hostUuid;
         public VMInstanceVO vm;
         public VirtualMachineGuru<VMInstanceVO> guru;
 
@@ -2055,15 +1970,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             this.state = state;
             this.vm = vm;
             this.guru = (VirtualMachineGuru<VMInstanceVO>) guru;
-            this.host = host;
+            this.hostUuid = host;
         }
 
         public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state) {
             this(name, guru, vm, state, null);
         }
 
-        public String getHost() {
-            return host;
+        public String getHostUuid() {
+            return hostUuid;
         }
     }
 
