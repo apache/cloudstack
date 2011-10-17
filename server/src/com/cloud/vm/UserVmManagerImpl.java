@@ -3212,7 +3212,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM, cannot migrate this VM.");
+                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm, cannot migrate this VM.");
             }
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
         }
