@@ -24,8 +24,8 @@ import com.cloud.vm.VirtualMachine.State;
 
 public class ClusterSyncAnswer extends Answer {
     long _clusterId;
-    HashMap<String, Pair<String, State>> _newStates;
-    int _type = -1; // 0 for full, 1 for delta
+    private HashMap<String, Pair<String, State>> _newStates;
+    private int _type = -1; // 0 for full, 1 for delta
     
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
