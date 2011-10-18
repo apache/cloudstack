@@ -113,6 +113,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.network.IPAddressVO;
@@ -237,6 +238,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     
     @Inject StorageService _storageSvr = null;
     @Inject StorageManager _storageMgr = null;
+    
+    @Inject
+    protected HypervisorGuruManager _hvGuruMgr;
+    
 
     protected int _retry = 2;
 
@@ -572,7 +577,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 }
                 Answer answer = null;
                 try {
-                    answer = easySend(host.getId(), cmd);
+                	
+                    long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd);
+                    answer = easySend(targetHostId, cmd);
                 } catch (Exception e) {
                 }
                 if (answer != null) {
