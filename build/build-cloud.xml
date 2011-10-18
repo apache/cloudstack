@@ -78,7 +78,7 @@
   <property name="server.test.dir" location="${server.dir}/test" />
   <property name="server.dist.dir" location="${dist.dir}/client" />
   <property name="db.scripts.dir" location="${target.dir}/db"/>
-  <property name="apidoc.scripts.dir" location="${base.dir}/setup/bin/apidoc/"/>
+  <property name="apidoc.scripts.dir" location="${base.dir}/setup/apidoc/"/>
 
   <!-- directories for core code compilation-->
   <property name="core.dir" location="${base.dir}/core" />
