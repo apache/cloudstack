@@ -27,20 +27,24 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress.State;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
-import com.cloud.vm.VirtualMachine;
 
 @Local(value = { IPAddressDao.class })
 @DB
@@ -51,10 +55,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected final SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCount;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
-    protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
-    protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCountForDashboard;
+    protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;    
     protected final GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
-
+    protected final VlanDaoImpl _vlanDao = ComponentLocator.inject(VlanDaoImpl.class);
     
     
     // make it public for JUnit test
@@ -88,18 +91,20 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCount.and("dc", AllocatedIpCount.entity().getDataCenterId(), Op.EQ);
         AllocatedIpCount.and("vlan", AllocatedIpCount.entity().getVlanId(), Op.EQ);
         AllocatedIpCount.and("allocated", AllocatedIpCount.entity().getAllocatedTime(), Op.NNULL);
-        AllocatedIpCount.done();
+        AllocatedIpCount.done();              
         
         AllIpCountForDashboard = createSearchBuilder(Integer.class);
         AllIpCountForDashboard.select(null, Func.COUNT, AllIpCountForDashboard.entity().getAddress());
-        AllIpCountForDashboard.and("dc", AllIpCountForDashboard.entity().getDataCenterId(), Op.EQ);
-        AllIpCountForDashboard.done();
+        AllIpCountForDashboard.and("dc", AllIpCountForDashboard.entity().getDataCenterId(), Op.EQ);        
+        AllIpCountForDashboard.and("state", AllIpCountForDashboard.entity().getState(), SearchCriteria.Op.NEQ);                
 
-        AllocatedIpCountForDashboard = createSearchBuilder(Integer.class);
-        AllocatedIpCountForDashboard.select(null, Func.COUNT, AllocatedIpCountForDashboard.entity().getAddress());
-        AllocatedIpCountForDashboard.and("dc", AllocatedIpCountForDashboard.entity().getDataCenterId(), Op.EQ);
-        AllocatedIpCountForDashboard.and("allocated", AllocatedIpCountForDashboard.entity().getAllocatedTime(), Op.NNULL);
-        AllocatedIpCountForDashboard.done();
+        SearchBuilder<VlanVO> virtaulNetworkVlan = _vlanDao.createSearchBuilder();
+        virtaulNetworkVlan.and("vlanType", virtaulNetworkVlan.entity().getVlanType(), SearchCriteria.Op.EQ);
+
+        AllIpCountForDashboard.join("vlan", virtaulNetworkVlan, virtaulNetworkVlan.entity().getId(),
+        		AllIpCountForDashboard.entity().getVlanId(), JoinBuilder.JoinType.INNER);
+        virtaulNetworkVlan.done();
+        AllIpCountForDashboard.done();
 
         AllocatedIpCountForAccount = createSearchBuilder(Long.class);
         AllocatedIpCountForAccount.select(null, Func.COUNT, AllocatedIpCountForAccount.entity().getAddress());
@@ -241,9 +246,12 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
 
     @Override
     public int countIPsForDashboard(long dcId, boolean onlyCountAllocated) {
-        SearchCriteria<Integer> sc = onlyCountAllocated ? AllocatedIpCountForDashboard.create() : AllIpCountForDashboard.create();
+        SearchCriteria<Integer> sc = AllIpCountForDashboard.create();
         sc.setParameters("dc", dcId);
-
+        if (onlyCountAllocated){
+        	sc.setParameters("state", State.Free);
+        }
+        sc.setJoinParameters("vlan", "vlanType", VlanType.VirtualNetwork.toString());
         return customSearch(sc, null).get(0);
     }
 
