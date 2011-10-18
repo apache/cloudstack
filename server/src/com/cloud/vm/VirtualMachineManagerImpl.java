@@ -1656,7 +1656,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("VM " + serverName + ": server state = " + serverState + " and agent state = " + agentState);
         }
-        
         if (agentState == State.Error) {
             agentState = State.Stopped;
 
@@ -1915,7 +1914,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         long agentId = agent.getId();
         Long clusterId = agent.getClusterId();
-        ClusterSyncCommand syncCmd = new ClusterSyncCommand(60, 20, clusterId);
+        ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()), 
+                Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
         try {
             long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
             s_logger.debug("Cluster VM sync started with jobid " + seq_no);
