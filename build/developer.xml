@@ -374,18 +374,20 @@
   </target>
   
   
-  <target name="build-apidocs" description="Generate api documentation">
-      <property name="commands.file" location="${tomcat.home}/conf/commands.properties" /> 
-	  <property name="commands.ext.file" location="${tomcat.home}/conf/commands-ext.properties" />
-	  	<property name="commands.simulator.file" location="${tomcat.home}/conf/commands-simulator.properties" />
+  <target name="build-apidocs" description="Generate api documentation" depends="build-all-with-simulator">
+      <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
+      <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
+      <property name="commands.simulator.file" location="${dist.dir}/client/conf/commands-simulator.properties" />
   
 	<echo message="build-apidocs" />
     <exec dir="${apidoc.scripts.dir}" executable="bash">
       <arg value="build-apidoc.sh" />
+      <arg value="${target.dir}/jar" />
+      <arg value="${deps.dir}" />
       <arg value="-f ${commands.file},${commands.ext.file},${commands.simulator.file}" />
       <arg value="-d ${dist.dir}" />
-      <env key="CATALINA_HOME" value="${tomcat.home}"/>
     </exec>
+    <echo message="Result locates at ${dist.dir}/commands.xml" />
     
     <chmod perm="666">
       <fileset dir="${apidoc.scripts.dir}">

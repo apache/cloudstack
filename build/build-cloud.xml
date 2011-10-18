@@ -78,7 +78,7 @@
   <property name="server.test.dir" location="${server.dir}/test" />
   <property name="server.dist.dir" location="${dist.dir}/client" />
   <property name="db.scripts.dir" location="${target.dir}/db"/>
-  <property name="apidoc.scripts.dir" location="${target.dir}/apidoc"/>
+  <property name="apidoc.scripts.dir" location="${base.dir}/setup/bin/apidoc/"/>
 
   <!-- directories for core code compilation-->
   <property name="core.dir" location="${base.dir}/core" />
@@ -323,19 +323,7 @@
         <filter token="VERSION" value="${impl.version}"/>
       </filterset>
     </copy>
-    
-     <copy overwrite="true" todir="${apidoc.scripts.dir}">
-      <fileset dir="${setup.apidoc.dir}">
-        <include name="**/*"/>
-      </fileset>
-      <filterset>
-        <filter token="VERSION" value="${impl.version}"/>
-      </filterset>
-    </copy>
-    
   </target>
-  
-  
 
   <path id="console-common.classpath">
     <path refid="deps.classpath" />
