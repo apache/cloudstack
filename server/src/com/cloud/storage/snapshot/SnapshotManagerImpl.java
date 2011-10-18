@@ -750,7 +750,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot.getBackupSnapshotId() != null) {
             List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(snapshot.getVolumeId(), snapshot.getBackupSnapshotId());
-            if (!snaps.isEmpty()) {
+            if ( snaps != null && snaps.size() > 1 ) {
                 snapshot.setBackupSnapshotId(null);
                 _snapshotDao.update(snapshot.getId(), snapshot);
             }
@@ -787,7 +787,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
                 if (BackupSnapshotId != null) {
                     List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(lastSnapshot.getVolumeId(), BackupSnapshotId);
-                    if (snaps != null && !snaps.isEmpty()) {
+                    if ( snaps != null && snaps.size() > 1) {
                         lastSnapshot.setBackupSnapshotId(null);
                         _snapshotDao.update(lastSnapshot.getId(), lastSnapshot);
                     } else {
