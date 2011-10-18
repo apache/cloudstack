@@ -2509,39 +2509,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Com'on no control domain?  What the crap?!#@!##$@");
     }
     
-    protected void fullHostSync(StartupRoutingCommand cmd, Connection conn) {
-        try {
-            final HashMap<String, VmState> vmStates = new HashMap<String, VmState>();
-            Host lhost = Host.getByUuid(conn, _host.uuid);
-            Set<VM> vms = lhost.getResidentVMs(conn);
-            for (VM vm: vms) {
-                VM.Record record = vm.getRecord(conn);
-                if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
-                    continue; // Skip DOM0
-                }
-                String vm_name = record.nameLabel;
-                VmPowerState ps = record.powerState;
-                final State state = convertToState(ps);
-                Host host = record.residentOn;
-                String host_uuid = null;
-                if( ! isRefNull(host) ) {
-                    host_uuid = host.getUuid(conn);        
-                    VmState vm_state = new StartupRoutingCommand.VmState(state, host_uuid);
-                    vmStates.put(vm_name, vm_state);
-                    s_vms.put(_cluster, host_uuid, vm_name, state); 
-                }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
-                }  
-            }
-            cmd.setChanges(vmStates);
-        } catch (final Throwable e) {
-            String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();      
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg);
-        }
-    }
-
     
     protected ReadyAnswer execute(ReadyCommand cmd) {
         Connection conn = getConnection();
@@ -3929,7 +3896,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(conn, cmd);
 
-        fullHostSync(cmd, conn);
+        Pool pool;
+        try {
+            pool = Pool.getByUuid(conn, _host.pool);
+            Pool.Record poolr = pool.getRecord(conn);
+
+            Host.Record hostr = poolr.master.getRecord(conn);
+            if (_host.uuid.equals(hostr.uuid)) {
+                s_logger.debug("Doing the initial cluster sync from the pool master  " + _host.ip); 
+                fullClusterSync(cmd, conn);
+            }
+        } catch (Exception e) {
+            s_logger.warn("Check for master failed, failing the probbaly initial Cluster sync ", e);
+        } 
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
@@ -6521,6 +6500,40 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
       cmd.incrStep();
       return new ClusterSyncAnswer(cmd.getClusterId(), newStates, sync_type);
   }
+  
+
+  protected void fullClusterSync(StartupRoutingCommand cmd, Connection conn) {
+      try {
+          final HashMap<String, VmState> vmStates = new HashMap<String, VmState>();
+          Host lhost = Host.getByUuid(conn, _host.uuid);
+          Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);
+          for (VM.Record record: vm_map.values()) {
+              if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
+                  continue; // Skip DOM0
+              }
+              String vm_name = record.nameLabel;
+              VmPowerState ps = record.powerState;
+              final State state = convertToState(ps);
+              Host host = record.residentOn;
+              String host_uuid = null;
+              if( ! isRefNull(host) ) {
+                  host_uuid = host.getUuid(conn);        
+                  VmState vm_state = new StartupRoutingCommand.VmState(state, host_uuid);
+                  vmStates.put(vm_name, vm_state);
+                  s_vms.put(_cluster, host_uuid, vm_name, state); 
+              }
+              if (s_logger.isTraceEnabled()) {
+                  s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
+              }  
+          }
+          cmd.setChanges(vmStates);
+      } catch (final Throwable e) {
+          String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();      
+          s_logger.warn(msg, e);
+          throw new CloudRuntimeException(msg);
+      }
+  }
+
   
 
   protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
