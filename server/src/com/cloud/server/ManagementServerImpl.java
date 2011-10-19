@@ -2481,8 +2481,12 @@ public class ManagementServerImpl implements ManagementServer {
 
         for (SummedCapacity summedCapacity : summedCapacities){
         	CapacityVO capacity = new CapacityVO(null, zoneId, podId, clusterId,
-        			summedCapacity.getUsedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
-
+        			summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(), 
+        			summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
+        	
+        	if (capacityType == Capacity.CAPACITY_TYPE_CPU){
+        		capacity.setTotalCapacity((long)(summedCapacity.getTotalCapacity() * ApiDBUtils.getCpuOverprovisioningFactor()));
+        	}
         	capacities.add(capacity);		
         }
 

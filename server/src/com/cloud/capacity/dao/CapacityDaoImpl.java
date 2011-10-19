@@ -255,7 +255,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 		public Long getUsedCapacity() {
 			return sumUsed;
 		}
-		public long getSumReserved() {
+		public long getReservedCapacity() {
 			return sumReserved;
 		}
 		public Long getTotalCapacity() {
