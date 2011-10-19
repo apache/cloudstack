@@ -20,7 +20,7 @@
 	<classpathentry exported="true" kind="lib" path="cloud-jsch-0.1.42.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jstl-1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-libvirt-0.4.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="cloud-log4j.jar" sourcepath="/home/dev/thirdparty/apache-log4j-1.2.16/src/main/java"/>
+	<classpathentry exported="true" kind="lib" path="cloud-log4j.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-mysql-connector-java-5.1.7-bin.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-servlet-api.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-trilead-ssh2-build213.jar"/>
