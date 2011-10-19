@@ -18,8 +18,8 @@
 package com.cloud.storage;
 
 public interface Swift {
-    public String getHostName();
+    public String getUrl();
     public String getAccount();
     public String getUserName();
-    public String getToken();
+    public String getKey();
 }

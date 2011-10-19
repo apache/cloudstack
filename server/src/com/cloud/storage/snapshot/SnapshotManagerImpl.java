@@ -540,7 +540,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
     
     private SwiftTO toSwiftTO(SwiftVO swift) {
-        return new SwiftTO(swift.getHostName(), swift.getAccount(), swift.getUserName(), swift.getToken());
+        return new SwiftTO(swift.getUrl(), swift.getAccount(), swift.getUserName(), swift.getKey());
     }
 
     @Override

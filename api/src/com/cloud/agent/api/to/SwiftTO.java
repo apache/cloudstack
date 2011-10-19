@@ -19,23 +19,23 @@ package com.cloud.agent.api.to;
   
 public class SwiftTO {
    
-    String hostName;
+    String url;
     String account;
         
     String userName;
-    String token;
+    String key;
             
     public SwiftTO() { }
 
-    public SwiftTO(String hostName, String account, String userName, String token) {
-        this.hostName = hostName;
+    public SwiftTO(String url, String account, String userName, String key) {
+        this.url = url;
         this.account = account;
         this.userName = userName;
-        this.token = token;
+        this.key = key;
     }
     
-    public String getHostName() {
-        return hostName;
+    public String getUrl() {
+        return url;
     }
 
     public String getAccount() {
@@ -46,8 +46,8 @@ public class SwiftTO {
         return userName;
     }
 
-    public String getToken() {
-        return token;
+    public String getKey() {
+        return key;
     }
     
 

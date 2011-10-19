@@ -2968,9 +2968,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     boolean swiftDownload(Connection conn, SwiftTO swift, String rfilename, String lfilename) {
         String result = null;
         try {
-            result = callHostPluginAsync(conn, "swift", "swift", 60 * 60,
-                "op", "download", "hostname", swift.getHostName(), "account", swift.getAccount(),
-                "username", swift.getUserName(), "token", swift.getToken(), "rfilename", rfilename,
+            result = callHostPluginAsync(conn, "swiftxen", "swift", 60 * 60,
+                "op", "download", "url", swift.getUrl(), "account", swift.getAccount(),
+                "username", swift.getUserName(), "key", swift.getKey(), "rfilename", rfilename,
                 "lfilename", lfilename);
             if( result != null && result.equals("true")) {
                 return true;
@@ -2981,18 +2981,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
     
-    boolean swiftUpload(Connection conn, SwiftTO swift, String rfilename, String lfilename) {
+    boolean swiftUpload(Connection conn, SwiftTO swift, String container, String ldir, String lfilename, Boolean isISCSI, int wait) {
         String result = null;
         try {
-            result = callHostPluginAsync(conn, "swift", "swift", 60 * 60,
-                "op", "upload", "hostname", swift.getHostName(), "account", swift.getAccount(),
-                "username", swift.getUserName(), "token", swift.getToken(), "rfilename", rfilename,
-                "lfilename", lfilename);
+            result = callHostPluginAsync(conn, "swiftxen", "swift", wait,
+                "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(),
+                "username", swift.getUserName(), "key", swift.getKey(), "container", container,
+                "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
             if( result != null && result.equals("true")) {
                 return true;
             }
         } catch (Exception e) {
-            s_logger.warn("swift download failed due to ", e);
+            s_logger.warn("swift upload failed due to " + e.toString(), e);
         }
         return false;
     }
@@ -3000,9 +3000,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     boolean swiftDelete(Connection conn, SwiftTO swift, String rfilename) {
         String result = null;
         try {
-            result = callHostPlugin(conn, "swift", "swift",
-                "op", "delete", "hostname", swift.getHostName(), "account", swift.getAccount(),
-                "username", swift.getUserName(), "token", swift.getToken(), "rfilename", rfilename);
+            result = callHostPlugin(conn, "swiftxen", "swift",
+                "op", "delete", "url", swift.getUrl(), "account", swift.getAccount(),
+                "username", swift.getUserName(), "key", swift.getKey(), "rfilename", rfilename);
             if( result != null && result.equals("true")) {
                 return true;
             }
@@ -3012,8 +3012,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
     
-    private void swiftBackupSnapshot(SwiftTO swift, String srUuid, String snapshotUuid, String name, Boolean isISCSI) {
-        
+    private void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
+        String lfilename;
+        String ldir;
+        if ( isISCSI ) {
+            ldir = "/dev/VG_XenStorage-" + srUuid;
+            lfilename = "VHD-" + snapshotUuid;
+        } else {
+            ldir = "/var/run/sr-mount/" + srUuid;
+            lfilename = snapshotUuid + ".vhd";
+        }
+        swiftUpload(conn, swift, container, ldir, lfilename, isISCSI, wait);
     }
     
 
@@ -5914,9 +5923,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             URI uri = new URI(secondaryStoragePoolURL);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
+            String snapshotPaUuid = null;
             if ( prevBackupUuid != null ) {
                 try {
-                    String snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
+                    snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
                     if( snapshotPaUuid != null ) {
                         String snashotPaPaPaUuid = getVhdParent(conn, psUuid, snapshotPaUuid, isISCSI);
                         String prevSnashotPaUuid = getVhdParent(conn, psUuid, prevSnapshotUuid, isISCSI);
@@ -5927,7 +5937,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (Exception e) {
                 }
             }
-            String filename = volumeId + "_" + cmd.getSnapshotId() + "_" + cmd.getSnapshotUuid();
 
             if (fullbackup) {
                 // the first snapshot is always a full snapshot
@@ -5945,12 +5954,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     snapshotBackupUuid = backedVdi.getUuid(conn);
                     if( cmd.getSwift() != null ) {
                         try {
-                            swiftBackupSnapshot(cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, filename, false);
-                            snapshotBackupUuid = filename;
+                            swiftBackupSnapshot(conn, cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, volumeId.toString(), false, wait);
                         } finally {
                             deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotBackupUuid);
                         }
                     }
+                    snapshotBackupUuid = snapshotBackupUuid + ".vhd";
                     success = true;
                 } finally {
                     if( snapshotSr != null) {
@@ -5960,8 +5969,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
                 if( cmd.getSwift() != null ) {
-                    swiftBackupSnapshot(cmd.getSwift(), primaryStorageSRUuid, snapshotUuid, filename, isISCSI);
-                    snapshotBackupUuid = filename;
+                    swiftBackupSnapshot(conn, cmd.getSwift(), primaryStorageSRUuid, snapshotPaUuid, volumeId.toString(), isISCSI, wait);
+                    if ( isISCSI ) {
+                        snapshotBackupUuid = "VHD-" + snapshotPaUuid;
+                    } else {
+                        snapshotBackupUuid = snapshotPaUuid + ".vhd";
+                    }
                     success = true;
                 } else {
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);

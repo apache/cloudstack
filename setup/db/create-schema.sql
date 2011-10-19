@@ -1645,10 +1645,10 @@ CREATE TABLE `cloud`.`keystore` (
 
 CREATE TABLE `cloud`.`swift` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `hostname` varchar(255),
-  `account` varchar(255) COMMENT ' account in swift',
-  `username` varchar(255) COMMENT ' username in swift',
-  `token` varchar(255) COMMENT 'token for this user',
+  `url` varchar(255) NOT NULL,
+  `account` varchar(255) NOT NULL COMMENT ' account in swift',
+  `username` varchar(255) NOT NULL COMMENT ' username in swift',
+  `key` varchar(255) NOT NULL COMMENT 'token for this user',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
