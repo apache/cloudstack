@@ -1479,7 +1479,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setChecksum(iso.getChecksum());
             isoResponse.setPasswordEnabled(false);
             
-            populateOwner(isoResponse, iso);
+            // add account ID and name
+            Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
+            populateAccount(isoResponse, owner.getId());
+            populateDomain(isoResponse, owner.getDomainId());
             
             isoResponse.setObjectName("iso");
             isoResponses.add(isoResponse);
