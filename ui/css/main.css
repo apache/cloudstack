@@ -632,7 +632,7 @@ a:hover {
 	text-align:left;
 	color:#333;
 	margin:3px 0 0 10px;
-	display:inline
+	display:inline;
 	padding:0;
 }
 
@@ -5214,7 +5214,7 @@ a:hover.search_button {
 .zonepoup_formcontent .checkbox { width:12px; height:12px; float:left; margin:0 10px 0 0; padding:0;}
 .zonepoup_formcontent .text { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 16px; width: 200px; margin:0 5px 3px 0; padding:0; color:#666;}
 .zonepoup_formcontent .text2 { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: auto; margin:0 0 0 0; padding:0; color:#666;}
-.zonepoup_formcontent .smalltext { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 90px; margin:0 5px 3px 0 padding:0; color:#666;}
+.zonepoup_formcontent .smalltext { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 90px; margin:0 5px 3px 0; padding:0; color:#666;}
 .zonepoup_formcontent .error_smalltext { background-color: #fbabb3; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 90px; margin:0 5px 3px 0; padding:0; color:#666;}
 .zonepoup_formcontent_errormsg {font: normal 10px Arial, Helvetica, sans-serif; float:left; height: auto; width: 160px; margin:0 10px 2px 110px; padding:0; color:#F00; display:inline;}
 .zonepoup_formcontent_errormsg_long {font: normal 10px Arial, Helvetica, sans-serif; float:left; height: auto; width: 250px; margin:2px 10px 2px 0;  padding:0; color:#F00; display:inline;}
@@ -5339,7 +5339,7 @@ a:hover.search_button {
 .dialog_formcontent .checkbox { width:12px; height:12px; float:left; margin:0 10px 0 0; padding:0;}
 .dialog_formcontent .text { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 16px; width: 150px; margin:0 5px 3px 0; padding:0; color:#666;}
 .dialog_formcontent .text2 { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: auto; margin:0 0 0 0; padding:0; color:#666;}
-.dialog_formcontent .smalltext { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 67px; margin:0 5px 3px 0 padding:0; color:#666;}
+.dialog_formcontent .smalltext { background-color: #f4f2f2; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 67px; margin:0 5px 3px 0; padding:0; color:#666;}
 .dialog_formcontent .error_smalltext { background-color: #fbabb3; font: normal 11px Arial, Helvetica, sans-serif; float:left; border: 1px solid #999; height: 14px; width: 67px; margin:0 5px 3px 0; padding:0; color:#666;}
 .dialog_formcontent_errormsg {font: normal 10px Arial, Helvetica, sans-serif; float:left; height: auto; width: 160px; margin:0 10px 2px 110px; padding:0; color:#F00; display:inline;}
 .dialog_formcontent_errormsg_long {font: normal 10px Arial, Helvetica, sans-serif; float:left; height: auto; width: 250px; margin:2px 10px 2px 0;  padding:0; color:#F00; display:inline;}
@@ -5358,7 +5358,7 @@ a:hover.search_button {
 /* Snapshots in dialog
 ----------------------------------*/
 .dialog_snapshotbox {width:auto; height:auto; float:left; display:block;  margin:0; padding:0;}
-.dialog_snapshotcontainer {width:auto height:auto; display:block; float:left; margin:0; padding:0;}
+.dialog_snapshotcontainer {width:auto; height:auto; display:block; float:left; margin:0; padding:0;}
 .dialog_snapshotleft {width:400px; height:10px; float:left;display:block;  margin:0; padding:0;}
 .dialog_snapshotleft_list {width:705px; height:auto; float:left; margin:0 0 10px 0; padding:0;  color:#333; font-size:11px;}
 .dialog_snapshotleft_info {width:470px; height:auto; float:left; margin:0 0 10px 0; padding:0;  color:#333; font-size:11px;}
