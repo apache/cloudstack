@@ -2189,9 +2189,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
         }
 
-        if (network.getType() != null && network.getType() == Network.Type.Shared) {
-            response.setIsShared(true);
-        }
+        response.setIsShared(network.getIsShared());
+       
         response.setIsDefault(network.isDefault());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());

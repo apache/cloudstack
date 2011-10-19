@@ -69,7 +69,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
     private String networkOfferingAvailability;
     
-    @Deprecated
     @SerializedName(ApiConstants.IS_SHARED) @Param(description="true if network is shared, false otherwise")
     private Boolean isShared;
     

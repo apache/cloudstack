@@ -1525,7 +1525,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, null);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, null, true);
             }
         }
     }
@@ -2846,13 +2846,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
-        String guestIpTypeString = cmd.getGuestIpType();
         Boolean isSecurityGroupEnabled = cmd.getSecurityGroupEnabled();
 
         Integer networkRate = cmd.getNetworkRate();
 
         TrafficType trafficType = null;
-        GuestIpType guestIpType = null;
         Availability availability = null;
         Network.Type type = null;
 
@@ -2867,17 +2865,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Invalid value for traffictype. Supported traffic types: Public, Management, Control, Guest, Vlan or Storage");
         }
 
-        // Verify guest ip type
-        for (GuestIpType gType : GuestIpType.values()) {
-            if (gType.name().equalsIgnoreCase(guestIpTypeString)) {
-                guestIpType = gType;
-                break;
-            }
-        }
-
-        if (guestIpType == null) {
-            throw new InvalidParameterValueException("Invalid guest IP type; can have Direct or Virtual value");
-        }
         
         //Verify offering type
         for (Network.Type offType : Network.Type.values()) {
@@ -2888,7 +2875,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (type == null) {
-            throw new InvalidParameterValueException("Invalid type is given; can have Shared and Isolated values");
+            throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
 
         // Verify availability
@@ -2965,19 +2952,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, networkRate, serviceProviderMap, false, isSecurityGroupEnabled, type);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, isSecurityGroupEnabled, type);
     }
 
     @Override @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, 
-            Availability availability, GuestIpType guestIpType, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type) {
+            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability,guestIpType, tags, isSecurityGroupEnabled, type);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, isSecurityGroupEnabled, type);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();

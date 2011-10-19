@@ -263,5 +263,6 @@ public interface Network extends ControlledEntity {
     List<String> getTags();
 
     Type getType();
-
+    
+    boolean getIsShared();
 }

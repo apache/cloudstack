@@ -51,6 +51,7 @@ public class NetworkProfile implements Network {
     private List<String> tags;
     private Network.Type type;
     private GuestIpType guestIpType;
+    private boolean isShared;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -74,6 +75,7 @@ public class NetworkProfile implements Network {
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
         this.type = network.getType();
         this.guestIpType = network.getGuestType();
+        this.isShared = network.getIsShared();
     }
 
     @Override
@@ -204,5 +206,10 @@ public class NetworkProfile implements Network {
     @Override
     public Network.Type getType(){
         return type;
+    }
+
+    @Override
+    public boolean getIsShared() {
+        return isShared;
     }
 }

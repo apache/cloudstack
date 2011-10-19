@@ -33,7 +33,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -176,7 +175,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param trafficType
 	 * @param tags
 	 * @param maxConnections
-	 * @param guestIpType TODO
 	 * @param networkRate TODO
 	 * @param serviceProviderMap TODO
 	 * @param isDefault TODO
@@ -187,7 +185,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     

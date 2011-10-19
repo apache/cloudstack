@@ -85,6 +85,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
+    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
+    private Boolean isShared;
+    
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the network")
     private List<String> tags;
 
@@ -151,10 +154,13 @@ public class CreateNetworkCmd extends BaseCmd {
         return projectId;
     }
     
+    public Boolean getIsShared() {
+        return isShared == null ? false : isShared;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
     @Override
     public String getCommandName() {
         return s_name;

@@ -486,7 +486,7 @@ public class ElasticLoadBalancerManagerImpl implements
  
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
                 NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
                 NicProfile guestNic = new NicProfile();

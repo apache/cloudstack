@@ -108,11 +108,11 @@ public interface NetworkManager extends NetworkService {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean isShared)
             throws ConcurrentOperationException;
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, List<String> tags) throws ConcurrentOperationException;
+            Long domainId, List<String> tags, boolean isShared) throws ConcurrentOperationException;
 
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
 
@@ -161,7 +161,7 @@ public interface NetworkManager extends NetworkService {
     boolean destroyNetwork(long networkId, ReservationContext context);
 
     Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
-            boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException;
+            boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared) throws ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * @throws InsufficientCapacityException

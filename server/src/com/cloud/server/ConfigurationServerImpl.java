@@ -67,7 +67,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
@@ -852,7 +851,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "System-Guest-Network", 
                 TrafficType.Guest, 
                 false, false, null, null, null, true, 
-                Availability.Optional, GuestIpType.Direct, null, true, Network.Type.Shared);
+                Availability.Optional, null, true, Network.Type.Shared);
         
         guestNetworkOffering.setState(NetworkOffering.State.Enabled);
 
@@ -869,7 +868,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Virtual Vlan", 
                 TrafficType.Guest, 
                 false, false, null, null, null, true, 
-                Availability.Required, GuestIpType.Virtual, null, false, Network.Type.Isolated);
+                Availability.Required, null, false, Network.Type.Isolated);
         
         defaultGuestNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
@@ -886,7 +885,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Direct", 
                 TrafficType.Guest, 
                 false, true, null, null, null, true, 
-                Availability.Optional, GuestIpType.Direct, null, false, Network.Type.Shared);
+                Availability.Optional, null, false, Network.Type.Shared);
         
         defaultGuestDirectNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
@@ -953,7 +952,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.Type.Shared);
+                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.Type.Shared, true);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

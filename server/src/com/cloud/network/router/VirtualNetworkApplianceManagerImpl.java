@@ -1063,11 +1063,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
                 NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
                 NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
                 networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
                 NicProfile gatewayNic = new NicProfile();
                 if (isRedundant) {
@@ -1253,7 +1253,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
 

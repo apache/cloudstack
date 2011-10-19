@@ -2,6 +2,7 @@ package com.cloud.network;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -9,6 +10,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.ListNetworksCmd;
+import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
@@ -20,9 +22,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.element.PasswordServiceProvider;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
@@ -193,7 +198,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean isShared)
             throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
@@ -201,7 +206,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, List<String> tags) throws ConcurrentOperationException {
+            Long domainId, List<String> tags, boolean isShared) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -336,7 +341,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
-            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException {
+            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared) throws ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -479,5 +484,37 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
+    
+    @Override
+    public Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
+        return null;
+    }
+    
+    @Override
+    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return false;
+    }
+    
+    @Override
+    public List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements() {
+        return null;
+    }
 
+    @Override
+    public List<? extends PasswordServiceProvider> getPasswordResetElements() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Long getPodIdForVlan(long vlanDbId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }
