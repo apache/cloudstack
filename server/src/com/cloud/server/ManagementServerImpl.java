@@ -2484,7 +2484,7 @@ public class ManagementServerImpl implements ManagementServer {
         			summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(), 
         			summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
         	
-        	if (capacityType == Capacity.CAPACITY_TYPE_CPU){
+        	if ( summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU){
         		capacity.setTotalCapacity((long)(summedCapacity.getTotalCapacity() * ApiDBUtils.getCpuOverprovisioningFactor()));
         	}
         	capacities.add(capacity);		

@@ -245,16 +245,17 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
-    public int countIPsForDashboard(long dcId, boolean onlyCountAllocated) {
+    public int countIPsForNetwork(long dcId, boolean onlyCountAllocated, VlanType vlanType) {
         SearchCriteria<Integer> sc = AllIpCountForDashboard.create();
         sc.setParameters("dc", dcId);
         if (onlyCountAllocated){
         	sc.setParameters("state", State.Free);
         }
-        sc.setJoinParameters("vlan", "vlanType", VlanType.VirtualNetwork.toString());
+        sc.setJoinParameters("vlan", "vlanType", vlanType.toString());
         return customSearch(sc, null).get(0);
     }
 
+    
     @Override
     @DB
     public int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask) {

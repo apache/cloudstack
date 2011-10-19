@@ -31,11 +31,11 @@ import java.util.TimerTask;
 
 import javax.ejb.Local;
 import javax.mail.Authenticator;
-import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.URLName;
+import javax.mail.Message.RecipientType;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
@@ -53,18 +53,15 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
-import com.cloud.dc.dao.DataCenterVnetDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -75,7 +72,6 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -114,6 +110,8 @@ public class AlertManagerImpl implements AlertManager {
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
     private double _secondaryStorageCapacityThreshold = 0.75; 
+	private double _vlanCapacityThreshold = 0.75;
+	private double _directNetworkPublicIpCapacityThreshold = 0.75;
     Map<Short,Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
 
     @Override
@@ -158,6 +156,8 @@ public class AlertManagerImpl implements AlertManager {
         String publicIPCapacityThreshold = configs.get("public.ip.capacity.threshold");
         String privateIPCapacityThreshold = configs.get("private.ip.capacity.threshold");
         String secondaryStorageCapacityThreshold = configs.get("secondarystorage.capacity.threshold");
+        String vlanCapacityThreshold = configs.get("vlan.capacity.threshold");
+        String directNetworkPublicIpCapacityThreshold = configs.get("directnetwork.public.ip.capacity.threshold");
         
         if (storageCapacityThreshold != null) {
             _storageCapacityThreshold = Double.parseDouble(storageCapacityThreshold);
@@ -180,14 +180,22 @@ public class AlertManagerImpl implements AlertManager {
         if (secondaryStorageCapacityThreshold != null) {
             _secondaryStorageCapacityThreshold = Double.parseDouble(secondaryStorageCapacityThreshold);
         }
+        if (vlanCapacityThreshold != null) {
+            _vlanCapacityThreshold = Double.parseDouble(vlanCapacityThreshold);
+        }
+        if (directNetworkPublicIpCapacityThreshold != null) {
+            _directNetworkPublicIpCapacityThreshold = Double.parseDouble(directNetworkPublicIpCapacityThreshold);
+        }
         
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE, _storageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, _storageAllocCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, _cpuCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, _memoryCapacityThreshold);
-        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PUBLIC_IP, _publicIPCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, _secondaryStorageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VLAN, _vlanCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
         
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -291,10 +299,15 @@ public class AlertManagerImpl implements AlertManager {
 		        //ideal way would be to remove out the vlan param, and filter only on dcId
 		        //implementing the same
         		
-            	// Calculate new Public IP capacity
-            	s_logger.trace("Executing public ip capacity update");
-		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
-                s_logger.trace("Done with public ip capacity update");
+            	// Calculate new Public IP capacity for Virtual Network
+            	s_logger.trace("Executing public ip capacity update for Virtual Network");
+		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
+                s_logger.trace("Done with public ip capacity update for Virtual Network");
+                
+            	// Calculate new Public IP capacity for Direct Attached Network
+            	s_logger.trace("Executing public ip capacity update for Direct Attached Network");
+		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
+                s_logger.trace("Done with public ip capacity update for Direct Attached Network");
                 
                 //Calculate VLAN's capacity
             	s_logger.trace("Executing VLAN capacity update");
@@ -364,9 +377,12 @@ public class AlertManagerImpl implements AlertManager {
         if (capacityType == CapacityVO.CAPACITY_TYPE_PRIVATE_IP){
         	totalIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
         	allocatedIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
-        }else{
-        	totalIPs = _publicIPAddressDao.countIPsForDashboard(dcId, false);
-            allocatedIPs = _publicIPAddressDao.countIPsForDashboard(dcId, true);
+        }else if (capacityType == CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP){
+        	totalIPs = _publicIPAddressDao.countIPsForNetwork(dcId, false, VlanType.VirtualNetwork);
+            allocatedIPs = _publicIPAddressDao.countIPsForNetwork(dcId, true, VlanType.VirtualNetwork);
+        }else {
+        	totalIPs = _publicIPAddressDao.countIPsForNetwork(dcId, false, VlanType.DirectAttached);
+            allocatedIPs = _publicIPAddressDao.countIPsForNetwork(dcId, true, VlanType.DirectAttached);
         }
         
         if (capacities.size() == 0){
@@ -416,6 +432,9 @@ public class AlertManagerImpl implements AlertManager {
         for(DataCenterVO dc : dataCenterList){
         	for (Short capacityType : dataCenterCapacityTypes){
         		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
+        		if (capacity == null || capacity.size() == 0){
+        			continue;
+        		}
         		double totalCapacity = capacity.get(0).getTotalCapacity(); 
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
@@ -428,6 +447,9 @@ public class AlertManagerImpl implements AlertManager {
         for( HostPodVO pod : podList){
         	for (Short capacityType : podCapacityTypes){
         		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), pod.getDataCenterId(), pod.getId(), null);
+        		if (capacity == null || capacity.size() == 0){
+        			continue;
+        		}
         		double totalCapacity = capacity.get(0).getTotalCapacity(); 
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
@@ -441,6 +463,9 @@ public class AlertManagerImpl implements AlertManager {
         for( ClusterVO cluster : clusterList){
         	for (Short capacityType : clusterCapacityTypes){
         		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
+        		if (capacity == null || capacity.size() == 0){
+        			continue;
+        		}
         		double totalCapacity = capacity.get(0).getTotalCapacity(); 
                 double usedCapacity =  capacity.get(0).getUsedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
@@ -485,7 +510,7 @@ public class AlertManagerImpl implements AlertManager {
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
             break;
-        case CapacityVO.CAPACITY_TYPE_PUBLIC_IP:
+        case CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
             msgSubject = "System Alert: Number of unallocated public IPs is low in availablity zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
@@ -497,6 +522,13 @@ public class AlertManagerImpl implements AlertManager {
             usedStr = Double.toString(usedCapacity);
         	msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
         	break;
+        	
+        case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:        	
+        	msgSubject = "System Alert: Low Available Storage in availablity zone " + dc.getName();
+        	totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+        	msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+        	break;        
         }
     	
     	try {
@@ -509,8 +541,10 @@ public class AlertManagerImpl implements AlertManager {
     private List<Short> getCapacityTypesAtZoneLevel(){
     	
     	List<Short> dataCenterCapacityTypes = new ArrayList<Short>();
-    	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_PUBLIC_IP);
+    	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
+    	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
     	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
+    	dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VLAN);
 		return dataCenterCapacityTypes;
     	
     }

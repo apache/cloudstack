@@ -20,6 +20,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
@@ -48,7 +49,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
 	boolean mark(long dcId, Ip ip);
 
-	int countIPsForDashboard(long dcId, boolean onlyCountAllocated);
+	int countIPsForNetwork(long dcId, boolean onlyCountAllocated, VlanType vlanType);
 	
 	IPAddressVO findByAssociatedVmId(long vmId);
 	

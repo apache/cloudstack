@@ -101,6 +101,8 @@ public enum Config {
 	PublicIpCapacityThreshold("Usage", ManagementServer.class, Float.class, "public.ip.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent.", null),
 	PrivateIpCapacityThreshold("Usage", ManagementServer.class, Float.class, "private.ip.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent.", null),
 	SecondaryStorageCapacityThreshold("Usage", ManagementServer.class, Float.class, "secondarystorage.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.", null),
+	VlanCapacityThreshold("Usage", ManagementServer.class, Float.class, "vlan.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.", null),
+	DirectNetworkPublicIpCapacityThreshold("Usage", ManagementServer.class, Float.class, "directnetwork.public.ip.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", null),
 	
 	// Console Proxy
 	ConsoleProxyCapacityStandby("Console Proxy", AgentManager.class, String.class, "consoleproxy.capacity.standby", "10", "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", null),

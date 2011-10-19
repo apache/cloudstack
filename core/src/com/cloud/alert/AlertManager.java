@@ -26,8 +26,9 @@ public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_CPU = CapacityVO.CAPACITY_TYPE_CPU;
     public static final short ALERT_TYPE_STORAGE = CapacityVO.CAPACITY_TYPE_STORAGE;
     public static final short ALERT_TYPE_STORAGE_ALLOCATED = CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED;
-    public static final short ALERT_TYPE_PUBLIC_IP = CapacityVO.CAPACITY_TYPE_PUBLIC_IP;
+    public static final short ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
     public static final short ALERT_TYPE_PRIVATE_IP = CapacityVO.CAPACITY_TYPE_PRIVATE_IP;
+    public static final short ALERT_TYPE_SECONDARY_STORAGE = CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE;
     public static final short ALERT_TYPE_HOST = 6;
     public static final short ALERT_TYPE_USERVM = 7;
     public static final short ALERT_TYPE_DOMAIN_ROUTER = 8;
