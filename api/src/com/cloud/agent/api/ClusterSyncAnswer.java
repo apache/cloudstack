@@ -30,7 +30,11 @@ public class ClusterSyncAnswer extends Answer {
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
     
-    public ClusterSyncAnswer() {
+    public ClusterSyncAnswer(long clusterId) {
+        _clusterId = clusterId;
+        result = false;
+        this.details = "Ignore sync as this is not a pool master";
+        _type = -1;
     }
     
     public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates, int type){
@@ -50,5 +54,9 @@ public class ClusterSyncAnswer extends Answer {
     
     public boolean isFull(){
         return _type==0;
+    }
+
+    public boolean isDelta(){
+        return _type==1;
     }
 }

@@ -1862,7 +1862,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
                 if (hs.isFull()) {
                     fullSync(hs.getClusterId(), hs.getNewStates());
-                } else {
+                } else if (hs.isDelta()) {
                     deltaSync(hs.getNewStates());
                 }
             } else if (!answer.getResult()) {
