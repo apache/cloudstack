@@ -23,12 +23,17 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.network.IpAddress.State;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -41,6 +46,8 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearch;
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearchAllocated;
     private final SearchBuilder<DataCenterVnetVO> DcSearchAllocated;
+    private final GenericSearchBuilder<DataCenterVnetVO, Integer> countZoneVlans;
+    private final GenericSearchBuilder<DataCenterVnetVO, Integer> countAllocatedZoneVlans;
     
     public List<DataCenterVnetVO> listAllocatedVnets(long dcId) {
     	SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
@@ -54,6 +61,13 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     	sc.setParameters("vnet", vnet);
     	return listBy(sc);
     }
+    
+    public int countZoneVlans(long dcId, boolean onlyCountAllocated){    	
+        SearchCriteria<Integer> sc = onlyCountAllocated ?  countAllocatedZoneVlans.create() : countZoneVlans.create();
+        sc.setParameters("dc", dcId);                
+        return customSearch(sc, null).get(0);
+    }
+    
     
     @DB
     public void add(long dcId, int start, int end) {
@@ -136,6 +150,17 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         VnetDcSearch.and("vnet", VnetDcSearch.entity().getVnet(), SearchCriteria.Op.EQ);
         VnetDcSearch.and("dc", VnetDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         VnetDcSearch.done();
+        
+        countZoneVlans = createSearchBuilder(Integer.class);
+        countZoneVlans.select(null, Func.COUNT, countZoneVlans.entity().getId());
+        countZoneVlans.and("dc", countZoneVlans.entity().getDataCenterId(), Op.EQ);  
+        countZoneVlans.done();
+        
+        countAllocatedZoneVlans = createSearchBuilder(Integer.class);
+        countAllocatedZoneVlans.select(null, Func.COUNT, countAllocatedZoneVlans.entity().getId());
+        countAllocatedZoneVlans.and("dc", countAllocatedZoneVlans.entity().getDataCenterId(), Op.EQ);
+        countAllocatedZoneVlans.and("allocated", countAllocatedZoneVlans.entity().getTakenAt(), SearchCriteria.Op.NNULL);
+        countAllocatedZoneVlans.done();
 
         VnetDcSearchAllocated = createSearchBuilder();
         VnetDcSearchAllocated.and("vnet", VnetDcSearchAllocated.entity().getVnet(), SearchCriteria.Op.EQ);

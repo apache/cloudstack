@@ -53,6 +53,9 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="lists capacity by the Cluster ID")
     private Long clusterId;
 
+    @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, description="recalculate capacities")
+    private Boolean fetchLatest;
+    
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +
     																		 "* CAPACITY_TYPE_MEMORY = 0" +
     																		 "* CAPACITY_TYPE_CPU = 1" +
@@ -78,6 +81,10 @@ public class ListCapacityCmd extends BaseListCmd {
 
     public Long getClusterId() {
 		return clusterId;
+	}
+
+	public Boolean getFetchLatest() {
+		return fetchLatest;
 	}
 
 	public Integer getType() {

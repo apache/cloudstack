@@ -75,4 +75,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVO> listEnabledZones();
     DataCenterVO findByToken(String zoneToken);    
     DataCenterVO findByTokenOrIdOrName(String tokenIdOrName);
+
+	int countZoneVlans(long dcId, boolean onlyCountAllocated);
 }

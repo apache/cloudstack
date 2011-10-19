@@ -29,6 +29,8 @@ public interface Capacity {
     public static final short CAPACITY_TYPE_PUBLIC_IP = 4;
     public static final short CAPACITY_TYPE_PRIVATE_IP = 5;
     public static final short CAPACITY_TYPE_SECONDARY_STORAGE = 6;
+    public static final short CAPACITY_TYPE_VLAN = 7;
+    
     
     public long getId();
     

@@ -56,6 +56,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DataCenterVnetDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -83,7 +84,7 @@ import com.sun.mail.smtp.SMTPTransport;
 public class AlertManagerImpl implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
-    private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // five minutes expressed in milliseconds
+    private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
 
     private static final DecimalFormat _dfPct = new DecimalFormat("###.##");
     private static final DecimalFormat _dfWhole = new DecimalFormat("########");
@@ -269,12 +270,10 @@ public class AlertManagerImpl implements AlertManager {
             Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
             disk = sizes.second();
             _storageMgr.createCapacityEntry(pool, disk);
-        }
+        }       
 
-        Transaction txn = Transaction.currentTxn();
-        try {
-        	txn.start();   
-        	// Calculate new Public IP capacity
+        try {   
+
         	List<DataCenterVO> datacenters = _dcDao.listAll();
         	for (DataCenterVO datacenter : datacenters) {
         		long dcId = datacenter.getId();
@@ -284,15 +283,21 @@ public class AlertManagerImpl implements AlertManager {
 		        //with no filter based on a vlan
 		        //ideal way would be to remove out the vlan param, and filter only on dcId
 		        //implementing the same
-
+        		
+            	// Calculate new Public IP capacity
             	s_logger.trace("Executing public ip capacity update");
 		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
                 s_logger.trace("Done with public ip capacity update");
-
+                
+                //Calculate VLAN's capacity
+            	s_logger.trace("Executing VLAN capacity update");
+            	createOrUpdateVlanCapacity(dcId);
+            	s_logger.trace("Executing VLAN capacity update");
 		    }
-        	txn.commit();
+
+        
+
         	
-        	txn.start();
 	        // Calculate new Private IP capacity
 	        List<HostPodVO> pods = _podDao.listAll();
 	        for (HostPodVO pod : pods) {
@@ -304,16 +309,40 @@ public class AlertManagerImpl implements AlertManager {
                 s_logger.trace("Done with private ip capacity update");
 
 	        }
-        	txn.commit();
-        } catch (Exception ex) {
-        	txn.rollback();
+
+        } catch (Exception ex) {        	
         	s_logger.error("Unable to start transaction for capacity update");
-        }finally {
-        	txn.close();
         }
     }
     
-    public void createOrUpdateIpCapacity(Long dcId, Long podId, short capacityType){
+    private void createOrUpdateVlanCapacity(long dcId) {
+    	
+    	SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
+
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
+        capacitySC = _capacityDao.createSearchCriteria();
+        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
+        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, Capacity.CAPACITY_TYPE_VLAN);
+        capacities = _capacityDao.search(capacitySC, null);
+		
+       int totalVlans = _dcDao.countZoneVlans(dcId, false);
+       int allocatedVlans = _dcDao.countZoneVlans(dcId, true);
+        
+        if (capacities.size() == 0){
+        	CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
+            _capacityDao.persist(newPublicIPCapacity);
+        }else if ( !(capacities.get(0).getUsedCapacity() == allocatedVlans 
+        		&& capacities.get(0).getTotalCapacity() == totalVlans) ){
+        	CapacityVO capacity = capacities.get(0);
+        	capacity.setUsedCapacity(allocatedVlans);
+        	capacity.setTotalCapacity(totalVlans);
+            _capacityDao.update(capacity.getId(), capacity);        	
+        }
+        
+        
+	}
+
+	public void createOrUpdateIpCapacity(Long dcId, Long podId, short capacityType){
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
 
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);

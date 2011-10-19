@@ -127,6 +127,11 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
     	return _vnetAllocDao.findVnet(dcId, vnet);
     }
+    
+    @Override
+    public int countZoneVlans(long dcId, boolean onlyCountAllocated){    	
+    	return _vnetAllocDao.countZoneVlans(dcId, onlyCountAllocated);
+    }
 
     @Override
     public void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId) {
