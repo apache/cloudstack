@@ -38,6 +38,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.MockAgentManager;
 import com.cloud.agent.manager.MockStorageManager;
 import com.cloud.agent.manager.SimulatorManager;
@@ -66,7 +67,7 @@ import com.cloud.utils.component.Inject;
  * 
  */
 @Local(value = Discoverer.class)
-public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener {
+public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
 	private static final Logger s_logger = Logger
 			.getLogger(SimulatorDiscoverer.class);
 	
@@ -78,6 +79,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject AgentManager _agentMgr = null;
     @Inject MockAgentManager _mockAgentMgr = null;
     @Inject MockStorageManager _mockStorageMgr = null;
+    @Inject ResourceManager _resourceMgr;
     
 	/**
 	 * Finds ServerResources of an in-process simulator
@@ -243,7 +245,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _agentMgr.registerForHostEvents(this, true, false, false);       
+        _agentMgr.registerForHostEvents(this, true, false, false);
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
@@ -303,6 +306,43 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
+    }
+
+	@Override
+	public HostVO createHostVOForConnectedAgent(HostVO host,
+			StartupCommand[] cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HostVO createHostVOForDirectConnectAgent(HostVO host,
+			StartupCommand[] startup, ServerResource resource,
+			Map<String, String> details, List<String> hostTags) {
+		StartupCommand firstCmd = startup[0];
+		if (!(firstCmd instanceof StartupRoutingCommand)) {
+			return null;
+		}
+		
+		StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+		if (ssCmd.getHypervisorType() != HypervisorType.Simulator) {
+			return null;
+		}
+		
+		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Simulator, details, hostTags);
+	}
+
+	@Override
+	public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
+			boolean isForceDeleteStorage) throws UnableDeleteHostException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
     }
     
 }

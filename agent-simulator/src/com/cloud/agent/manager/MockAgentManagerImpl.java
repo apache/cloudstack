@@ -24,6 +24,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -349,7 +350,7 @@ public class MockAgentManagerImpl implements MockAgentManager {
 
 
     @Override
-    public Answer MaintainCommand(com.cloud.agent.api.MaintainCommand cmd) {
-        return new Answer(cmd);
+    public MaintainAnswer MaintainCommand(com.cloud.agent.api.MaintainCommand cmd) {
+        return new MaintainAnswer(cmd);
     }
 }
