@@ -113,7 +113,8 @@ public class AlertManagerImpl implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
-    Map<Short,Double> _capacityTypeThresholdMap = new HashMap<Short, Double>(); 
+    private double _secondaryStorageCapacityThreshold = 0.75; 
+    Map<Short,Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -156,6 +157,7 @@ public class AlertManagerImpl implements AlertManager {
         String storageAllocCapacityThreshold = configs.get("storage.allocated.capacity.threshold");
         String publicIPCapacityThreshold = configs.get("public.ip.capacity.threshold");
         String privateIPCapacityThreshold = configs.get("private.ip.capacity.threshold");
+        String secondaryStorageCapacityThreshold = configs.get("secondarystorage.capacity.threshold");
         
         if (storageCapacityThreshold != null) {
             _storageCapacityThreshold = Double.parseDouble(storageCapacityThreshold);
@@ -175,12 +177,17 @@ public class AlertManagerImpl implements AlertManager {
         if (privateIPCapacityThreshold != null) {
         	_privateIPCapacityThreshold = Double.parseDouble(privateIPCapacityThreshold);
         }
+        if (secondaryStorageCapacityThreshold != null) {
+            _secondaryStorageCapacityThreshold = Double.parseDouble(secondaryStorageCapacityThreshold);
+        }
+        
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE, _storageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, _storageAllocCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, _cpuCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, _memoryCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, _secondaryStorageCapacityThreshold);
         
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -378,124 +385,8 @@ public class AlertManagerImpl implements AlertManager {
     class CapacityChecker extends TimerTask {
         @Override
 		public void run() {
-            recalculateCapacity();
-
-            // abort if we can't possibly send an alert...
-            if (_emailAlert == null) {
-                return;
-            }
-
             try {
-                List<CapacityVO> capacityList = _capacityDao.listAllIncludingRemoved();
-                Map<String, List<CapacityVO>> capacityDcTypeMap = new HashMap<String, List<CapacityVO>>();
-                /*CapacityVO storagePoolStats = _storageMgr.getStoragePoolUsedStats(null, null, null, null);
-                
-                if (capacityList == null){
-                	capacityList = storagePoolStatsList;
-                }else {
-                	capacityList.addAll(storagePoolStatsList);
-                }*/
-
-                for (CapacityVO capacity : capacityList) {
-                    long dataCenterId = capacity.getDataCenterId();
-                    Long podId = capacity.getPodId();
-                    short type = capacity.getCapacityType();
-                    String key = null;
-                    if((type == CapacityVO.CAPACITY_TYPE_PUBLIC_IP) || (type == CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE)){
-                        key = "dc" + dataCenterId + "t" + type;    
-                    } else {
-                        key = "pod" + podId + "t" + type;
-                    }
-                    
-                    List<CapacityVO> list = capacityDcTypeMap.get(key);
-                    if (list == null) {
-                        list = new ArrayList<CapacityVO>();
-                    }
-                    list.add(capacity);
-                    capacityDcTypeMap.put(key, list);
-                }
-
-                for (String keyValue : capacityDcTypeMap.keySet()) {
-                    List<CapacityVO> capacities = capacityDcTypeMap.get(keyValue);
-                    double totalCapacity = 0d;
-                    double usedCapacity = 0d;
-                    CapacityVO cap = capacities.get(0);
-                    short capacityType = cap.getCapacityType();
-                    long dataCenterId = cap.getDataCenterId();
-                    Long podId = cap.getPodId();
-
-                    for (CapacityVO capacity : capacities) {
-                        totalCapacity += capacity.getTotalCapacity();
-                        usedCapacity += capacity.getUsedCapacity();
-                    }
-
-                    double capacityPct = (usedCapacity / totalCapacity);
-                    double thresholdLimit = 1.0;
-                    DataCenterVO dcVO = _dcDao.findById(dataCenterId);
-                    String dcName = ((dcVO == null) ? "unknown" : dcVO.getName());
-                    String podName = "";
-                    if( podId != null){
-                        HostPodVO pod = _podDao.findById(podId);
-                        podName = ((pod == null) ? "unknown" : pod.getName());
-                    }
-                    String msgSubject = "";
-                    String msgContent = "";
-                    String totalStr = "";
-                    String usedStr = "";
-                    String pctStr = formatPercent(capacityPct);
-
-                    // check for over threshold
-                    switch (capacityType) {
-                    case CapacityVO.CAPACITY_TYPE_MEMORY:
-                        thresholdLimit = _memoryCapacityThreshold;
-                        msgSubject = "System Alert: Low Available Memory in pod "+podName+" of availablity zone " + dcName;
-                        totalStr = formatBytesToMegabytes(totalCapacity);
-                        usedStr = formatBytesToMegabytes(usedCapacity);
-                        msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                        break;
-                    case CapacityVO.CAPACITY_TYPE_CPU:
-                        thresholdLimit = _cpuCapacityThreshold;
-                        msgSubject = "System Alert: Low Unallocated CPU in pod "+podName+" of availablity zone " + dcName;
-                        totalStr = _dfWhole.format(totalCapacity);
-                        usedStr = _dfWhole.format(usedCapacity);
-                        msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
-                        break;
-                    case CapacityVO.CAPACITY_TYPE_STORAGE:
-                        thresholdLimit = _storageCapacityThreshold;
-                        msgSubject = "System Alert: Low Available Storage in pod "+podName+" of availablity zone " + dcName;
-                        totalStr = formatBytesToMegabytes(totalCapacity);
-                        usedStr = formatBytesToMegabytes(usedCapacity);
-                        msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                        break;
-                    case CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED:
-                        thresholdLimit = _storageAllocCapacityThreshold;
-                        msgSubject = "System Alert: Remaining unallocated Storage is low in pod "+podName+" of availablity zone " + dcName;
-                        totalStr = formatBytesToMegabytes(totalCapacity);
-                        usedStr = formatBytesToMegabytes(usedCapacity);
-                        msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-                        break;
-                    case CapacityVO.CAPACITY_TYPE_PUBLIC_IP:
-                        thresholdLimit = _publicIPCapacityThreshold;
-                        msgSubject = "System Alert: Number of unallocated public IPs is low in availablity zone " + dcName;
-                        totalStr = Double.toString(totalCapacity);
-                        usedStr = Double.toString(usedCapacity);
-                        msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-                        break;
-                    case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:
-                    	thresholdLimit = _privateIPCapacityThreshold;
-                    	msgSubject = "System Alert: Number of unallocated private IPs is low in pod "+podName+" of availablity zone " + dcName;
-                    	totalStr = Double.toString(totalCapacity);
-                        usedStr = Double.toString(usedCapacity);
-                    	msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-                    	break;
-                    }
-
-                    if (capacityPct > thresholdLimit) {
-                        _emailAlert.sendAlert(capacityType, dataCenterId, null, msgSubject, msgContent);
-                    } else {
-                        _emailAlert.clearAlert(capacityType, dataCenterId, null);
-                    }
-                }
+            	checkForAlerts();
             } catch (Exception ex) {
                 s_logger.error("Exception in CapacityChecker", ex);
             }
@@ -503,7 +394,8 @@ public class AlertManagerImpl implements AlertManager {
     }
     
     
-    public void newAlertSystem(){
+    public void checkForAlerts(){
+    	
     	recalculateCapacity();
 
         // abort if we can't possibly send an alert...
