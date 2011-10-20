@@ -152,7 +152,22 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     List<T> search(SearchCriteria<T> sc, Filter filter);
     
+
+    /**
+     * Search for the entity beans using the sql SQL_CACHE option
+     * @param sc
+     * @param filter
+     * @param enable_query_cache
+     * @return list of entity beans.
+     */
+    List<T> search(SearchCriteria<T> sc, Filter filter, final boolean enable_query_cache);
+    
+    
     List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache);
+    
+
+    List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enable_query_cache);
+    
     
     /**
      * Customized search with SearchCritiria
