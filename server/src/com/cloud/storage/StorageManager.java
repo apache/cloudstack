@@ -177,7 +177,7 @@ public interface StorageManager extends Manager {
     <T extends VMInstanceVO> DiskProfile allocateRawVolume(Type type, String name, DiskOfferingVO offering, Long size, T vm, Account owner);
     <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(Type type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, Account owner);
     
-	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
+	void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
     
     void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;

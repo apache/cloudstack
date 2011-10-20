@@ -61,9 +61,12 @@ public class ListCapacityCmd extends BaseListCmd {
     																		 "* CAPACITY_TYPE_CPU = 1" +
     																		 "* CAPACITY_TYPE_STORAGE = 2" +
     																		 "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" +
-    																		 "* CAPACITY_TYPE_PUBLIC_IP = 4" +
+    																		 "* CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4" +
     																		 "* CAPACITY_TYPE_PRIVATE_IP = 5" +
-    																		 "* CAPACITY_TYPE_SECONDARY_STORAGE = 6")
+    																		 "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" +
+    																		 "* CAPACITY_TYPE_VLAN = 7" +
+    																		 "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" +
+    																		 "* CAPACITY_TYPE_LOCAL_STORAGE = 9.")
 
     private Integer type;
 

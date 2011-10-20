@@ -284,7 +284,11 @@ public class AlertManagerImpl implements AlertManager {
             long disk = 0l;
             Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
             disk = sizes.second();
-            _storageMgr.createCapacityEntry(pool, disk);
+            if (pool.isShared()){
+            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
+            }else {
+            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+            }
         }       
 
         try {   

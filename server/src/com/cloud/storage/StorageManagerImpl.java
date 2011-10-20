@@ -71,6 +71,7 @@ import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
@@ -1801,18 +1802,18 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool) {
-        createCapacityEntry(storagePool, 0);
+        createCapacityEntry(storagePool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 0);
     }
 
     @Override
-    public void createCapacityEntry(StoragePoolVO storagePool, long allocated) {
+    public void createCapacityEntry(StoragePoolVO storagePool, short capacityType ,long allocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
 
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
         capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
-        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
+        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
         capacities = _capacityDao.search(capacitySC, null);
 
@@ -1822,7 +1823,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         if (capacities.size() == 0) {
             CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, storagePool.getCapacityBytes()
-                    * provFactor, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
+                    * provFactor, capacityType);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
@@ -1840,7 +1841,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 _capacityDao.update(capacity.getId(), capacity);
             }
         }
-        s_logger.debug("Successfully set Capacity - " + storagePool.getCapacityBytes() * _overProvisioningFactor + " for CAPACITY_TYPE_STORAGE_ALLOCATED, DataCenterId - "
+        s_logger.debug("Successfully set Capacity - " + storagePool.getCapacityBytes() * _overProvisioningFactor + " for capacity type - " +capacityType+ " , DataCenterId - "
                 + storagePool.getDataCenterId() + ", HostOrPoolId - " + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
 
