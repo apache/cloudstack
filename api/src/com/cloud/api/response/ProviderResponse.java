@@ -17,8 +17,6 @@
  */
 package com.cloud.api.response;
 
-import java.util.List;
-
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -29,7 +27,53 @@ public class ProviderResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME) @Param(description="the provider name")
     private String name;
     
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    private Long physicalNetworkId;
+
+    @SerializedName(ApiConstants.DEST_PHYSICAL_NETWORK_ID) @Param(description="the destination physical network")
+    private Long destinationPhysicalNetworkId;
+    
+    @SerializedName(ApiConstants.STATE) @Param(description="state of the network provider")
+    private String state;
+
+    @SerializedName(ApiConstants.ID) @Param(description="id of the network provider")
+    private Long id;
+    
+    
     public void setName(String name) {
         this.name = name;
     }
+
+    public void setPhysicalNetworkId(long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+
+    public long getphysicalNetworkId() {
+        return physicalNetworkId;
+    }
+    
+    public void setDestinationPhysicalNetworkId(long destPhysicalNetworkId) {
+        this.destinationPhysicalNetworkId = destPhysicalNetworkId;
+    }
+
+    public long getDestinationPhysicalNetworkId() {
+        return destinationPhysicalNetworkId;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+    
+    public String getState() {
+        return this.state;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public Long getId() {
+        return this.id;
+    }
+    
 }

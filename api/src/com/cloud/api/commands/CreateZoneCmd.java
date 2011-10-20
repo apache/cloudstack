@@ -57,9 +57,6 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Zone")
     private String zoneName;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the Zone")
-    private String vlan;
-    
     @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Network domain name for the networks in the zone")
     private String domain;
 
@@ -68,9 +65,6 @@ public class CreateZoneCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.NETWORK_TYPE, type=CommandType.STRING, required=true, description="network type of the zone, can be Basic or Advanced")
     private String networkType; 
-    
-    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true if network is security group enabled, false otherwise")
-    private Boolean securitygroupenabled;
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Zone for allocation of new resources")
     private String allocationState;
@@ -103,10 +97,6 @@ public class CreateZoneCmd extends BaseCmd {
         return zoneName;
     }
 
-    public String getVlan() {
-        return vlan;
-    }
-    
     public String getDomain() {
         return domain;
     }
@@ -117,13 +107,6 @@ public class CreateZoneCmd extends BaseCmd {
     
     public String getNetworkType(){
         return networkType;
-    }
-    
-    public Boolean isSecurityGroupEnabled() {
-        if (securitygroupenabled == null) {
-            return false;
-        }
-        return securitygroupenabled;
     }
     
     public String getAllocationState() {

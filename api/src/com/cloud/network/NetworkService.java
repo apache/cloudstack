@@ -31,6 +31,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
@@ -88,4 +89,24 @@ public interface NetworkService {
     Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
     
     Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId);
+
+    PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags);
+
+    List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize);
+
+    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> isolationMethods, List<String> tags, String newVnetRangeString, String state);
+
+    boolean deletePhysicalNetwork(Long id);
+
+    List<? extends Service> listNetworkServices();
+
+    List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName);
+
+    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId);
+
+    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId);
+
+    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, Boolean enabled);
+
+    boolean deleteNetworkServiceProvider(Long id);
 }

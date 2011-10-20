@@ -80,6 +80,8 @@ import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.firewall.FirewallManagerImpl;
@@ -285,6 +287,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
         info.addParameter("cache.size", "100");
         info.addParameter("cache.time.to.live", "600");
+        addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
+        addDao("PhysicalNetworkServiceProviderDao", PhysicalNetworkServiceProviderDaoImpl.class);
     }
 
     @Override

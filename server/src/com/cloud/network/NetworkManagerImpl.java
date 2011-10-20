@@ -19,6 +19,9 @@ package com.cloud.network;
 
 import java.net.URI;
 import java.security.InvalidParameterException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -56,6 +59,7 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -92,11 +96,15 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PasswordServiceProvider;
@@ -236,7 +244,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject DomainManager _domainMgr;
     @Inject ProjectManager _projectMgr;
     @Inject NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
-    
+    @Inject PhysicalNetworkDao _physicalNetworkDao;
+    @Inject PhysicalNetworkServiceProviderDao _pNSPDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -3389,4 +3398,475 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         return true;
     }
+
+    @Override
+    @DB
+    public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags) {
+        // Check if zone exists
+        if (zoneId == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+        
+        if (tags != null && tags.size() > 1) {
+            throw new InvalidParameterException("Only one tag can be specified for a physical network at this time");
+        }
+        
+        if (isolationMethods != null && isolationMethods.size() > 1) {
+            throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
+        }
+
+        int vnetStart = 0;
+        int vnetEnd = 0;
+        if (vnetRange != null) {
+            String[] tokens = vnetRange.split("-");
+            try {
+                vnetStart = Integer.parseInt(tokens[0]);
+                if (tokens.length == 1) {
+                    vnetEnd = vnetStart;
+                } else {
+                    vnetEnd = Integer.parseInt(tokens[1]);
+                }
+            } catch (NumberFormatException e) {
+                throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
+            }
+
+            if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
+                s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
+                throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
+            }
+        }
+        
+        BroadcastDomainRange broadcastDomainRange = null;
+        if (broadcastDomainRangeStr != null && !broadcastDomainRangeStr.isEmpty()) {
+            try {
+                broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.valueOf(broadcastDomainRangeStr);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve broadcastDomainRange '" + broadcastDomainRangeStr + "' to a supported value {Pod or Zone}");
+            }
+        }
+
+        
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            // Create the new physical network in the database
+            PhysicalNetworkVO pNetwork = new PhysicalNetworkVO(zoneId, vnetRange, networkSpeed, domainId, broadcastDomainRange);
+            pNetwork.setTags(tags);
+            pNetwork.setIsolationMethods(isolationMethods);
+
+            pNetwork = _physicalNetworkDao.persist(pNetwork);
+
+            // Add vnet entries for the new zone if zone type is Advanced
+            if (vnetRange != null) {
+                _dcDao.addVnet(zone.getId(), pNetwork.getId(), vnetStart, vnetEnd);
+            }
+
+            txn.commit();
+            return pNetwork;
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.warn("Exception: ", ex);
+            throw new CloudRuntimeException("Fail to create a physical network");
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize){
+        Filter searchFilter = new Filter(PhysicalNetworkVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+        SearchCriteria<PhysicalNetworkVO> sc = _physicalNetworkDao.createSearchCriteria();
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (zoneId != null) {
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
+        return _physicalNetworkDao.search(sc, searchFilter);     
+    }
+
+    @Override
+    @DB
+    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> isolationMethods, List<String> tags, String newVnetRangeString, String state) {
+        
+        // verify input parameters
+        PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
+        if (network == null) {
+            throw new InvalidParameterValueException("Network id=" + id + "doesn't exist in the system");
+        }
+
+        if (tags != null && tags.size() > 1) {
+            throw new InvalidParameterException("Unable to support more than one tag on network yet");
+        }
+
+        if (isolationMethods != null && isolationMethods.size() > 1) {
+            throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
+        }
+
+        PhysicalNetwork.State networkState = null;
+        if (state != null && !state.isEmpty()) {
+            try {
+                networkState = PhysicalNetwork.State.valueOf(state);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve state '" + state + "' to a supported value {Enabled or Disabled}");
+            }
+        }
+        
+        if(state != null){
+            network.setState(networkState);
+        }
+        
+        if (tags != null) {
+            network.setTags(tags);
+        }
+        
+        if (isolationMethods != null) {
+            for(String isMethod : isolationMethods){
+                PhysicalNetwork.IsolationMethod isolationMethodVal = null;
+                if (isMethod != null && !isMethod.isEmpty()) {
+                    try {
+                        isolationMethodVal = PhysicalNetwork.IsolationMethod.valueOf(isMethod);
+                    } catch (IllegalArgumentException ex) {
+                        throw new InvalidParameterValueException("Unable to resolve IsolationMethod '" + isMethod + "' to a supported value {VLAN or L3 or GRE}");
+                    }
+                }
+            }
+            
+            network.setIsolationMethods(isolationMethods);
+        }
+        
+        if(networkSpeed != null){
+            network.setSpeed(networkSpeed);
+        }
+            
+        // Vnet range can be extended only
+        boolean replaceVnet = false;
+        ArrayList<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>(2); 
+        
+        if (newVnetRangeString != null) {
+            Integer newStartVnet = 0;
+            Integer newEndVnet = 0;
+            String[] newVnetRange = newVnetRangeString.split("-");
+
+            if (newVnetRange.length < 2) {
+                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
+            }
+
+            if (newVnetRange[0] == null || newVnetRange[1] == null) {
+                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
+            }
+
+            try {
+                newStartVnet = Integer.parseInt(newVnetRange[0]);
+                newEndVnet = Integer.parseInt(newVnetRange[1]);
+            } catch (NumberFormatException e) {
+                s_logger.warn("Unable to parse vnet range:", e);
+                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
+            }
+
+            if (newStartVnet < 0 || newEndVnet > 4096) {
+                throw new InvalidParameterValueException("Vnet range has to be between 0-4096");
+            }
+
+            if (newStartVnet > newEndVnet) {
+                throw new InvalidParameterValueException("Vnet range has to be between 0-4096 and start range should be lesser than or equal to stop range");
+            } 
+            
+            if (physicalNetworkHasAllocatedVnets(network.getDataCenterId(), network.getId())) {
+                String[] existingRange = network.getVnet().split("-");
+                int existingStartVnet = Integer.parseInt(existingRange[0]);
+                int existingEndVnet = Integer.parseInt(existingRange[1]);
+                
+                //check if vnet is being extended
+                if (!(newStartVnet.intValue() > existingStartVnet && newEndVnet.intValue() < existingEndVnet)) {
+                    throw new InvalidParameterValueException("Can's shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
+                }
+                
+                if (newStartVnet < existingStartVnet) {
+                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
+                }
+                
+                if (newEndVnet > existingEndVnet) {
+                    vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
+                }
+                
+            } else {
+                vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
+                replaceVnet = true;
+            }
+        }
+        
+        if (newVnetRangeString != null) {
+            network.setVnet(newVnetRangeString);
+        }
+        
+
+        _physicalNetworkDao.update(id, network);
+
+        if (replaceVnet) {
+            s_logger.debug("Deleting existing vnet range for the physicalNetwork id= "+id +" and zone id=" + network.getDataCenterId() + " as a part of updatePhysicalNetwork call");
+            _dcDao.deleteVnet(network.getDataCenterId(), network.getId());
+        }
+
+        for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
+            s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the physicalNetwork id= "+id +" and zone id=" + network.getDataCenterId() + " as a part of updatePhysicalNetwork call");
+            _dcDao.addVnet(network.getDataCenterId(), network.getId(), vnetToAdd.first(), vnetToAdd.second());
+        }
+        
+        return network;
+    }
+    
+    private boolean physicalNetworkHasAllocatedVnets(long zoneId, long physicalNetworkId) {
+        return !_dcDao.listAllocatedVnets(zoneId, physicalNetworkId).isEmpty();
+    }
+
+    @Override
+    public boolean deletePhysicalNetwork(Long physicalNetworkId) {
+
+        // verify input parameters
+        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Network id=" + physicalNetworkId + "doesn't exist in the system");
+        }
+        
+        //delete physical network only if no network is associated to it
+        List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
+        
+        if(networks != null && !networks.isEmpty()){
+            s_logger.debug("Unable to remove the physical network id=" + physicalNetworkId + " as it has active networks associated.");
+            return false;
+        }
+        
+        List<DataCenterVnetVO> allocatedVnets = _dcDao.listAllocatedVnets(network.getDataCenterId(), physicalNetworkId);
+
+        if(allocatedVnets != null && !allocatedVnets.isEmpty()){
+            s_logger.debug("Unable to remove the physical network id=" + physicalNetworkId + " as it has active vnets associated.");
+            return false;
+        }        
+        //checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
+        
+        return _physicalNetworkDao.remove(physicalNetworkId);
+    }
+    
+    @DB
+    private void checkIfPhysicalNetworkIsDeletable(Long physicalNetworkId) {
+        List<List<String>> tablesToCheck = new ArrayList<List<String>>();
+
+        List<String> networks = new ArrayList<String>();
+        networks.add(0, "networks");
+        networks.add(1, "physical_network_id");
+        networks.add(2, "there are networks associated to this physical network");
+        tablesToCheck.add(networks);
+
+        /*List<String> privateIP = new ArrayList<String>();
+        privateIP.add(0, "op_dc_ip_address_alloc");
+        privateIP.add(1, "data_center_id");
+        privateIP.add(2, "there are private IP addresses allocated for this zone");
+        tablesToCheck.add(privateIP);
+
+        List<String> publicIP = new ArrayList<String>();
+        publicIP.add(0, "user_ip_address");
+        publicIP.add(1, "data_center_id");
+        publicIP.add(2, "there are public IP addresses allocated for this zone");
+        tablesToCheck.add(publicIP);
+
+        List<String> vmInstance = new ArrayList<String>();
+        vmInstance.add(0, "vm_instance");
+        vmInstance.add(1, "data_center_id");
+        vmInstance.add(2, "there are virtual machines running in this zone");
+        tablesToCheck.add(vmInstance);
+
+        List<String> volumes = new ArrayList<String>();
+        volumes.add(0, "volumes");
+        volumes.add(1, "data_center_id");
+        volumes.add(2, "there are storage volumes for this zone");
+        tablesToCheck.add(volumes);*/
+
+        List<String> vnet = new ArrayList<String>();
+        vnet.add(0, "op_dc_vnet_alloc");
+        vnet.add(1, "physical_network_id");
+        vnet.add(2, "there are allocated vnets for this physical network");
+        tablesToCheck.add(vnet);
+
+        for (List<String> table : tablesToCheck) {
+            String tableName = table.get(0);
+            String column = table.get(1);
+            String errorMsg = table.get(2);
+
+            String dbName = "cloud";
+
+            String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + column + " = ?";
+
+            if (tableName.equals("op_dc_vnet_alloc")) {
+                selectSql += " AND taken IS NOT NULL";
+            }
+
+            if (tableName.equals("user_ip_address")) {
+                selectSql += " AND state!='Free'";
+            }
+
+            if (tableName.equals("op_dc_ip_address_alloc")) {
+                selectSql += " AND taken IS NOT NULL";
+            }
+
+            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
+                selectSql += " AND removed is NULL";
+            }
+
+            if (tableName.equals("vm_instance")) {
+                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
+            }
+
+            Transaction txn = Transaction.currentTxn();
+            try {
+                PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+                stmt.setLong(1, physicalNetworkId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs != null && rs.next()) {
+                    throw new CloudRuntimeException("The Physical Network is not deletable because " + errorMsg);
+                }
+            } catch (SQLException ex) {
+                throw new CloudRuntimeException("The Management Server failed to detect if physical network is deletable. Please contact Cloud Support.");
+            }
+        }
+
+    }    
+
+    @Override
+    public List<? extends Service> listNetworkServices(){
+        return Service.listAllServices();
+    }
+    
+    @Override
+    public List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName){
+        Network.Service service = null;
+        if(serviceName != null){
+            service = Network.Service.getService(serviceName);
+            if(service == null){
+                throw new InvalidParameterValueException("Invalid Network Service=" + serviceName);
+            }
+        }
+        
+        List<Provider> supportedProviders = new ArrayList<Provider>();
+        for (NetworkElement element : _networkElements) {
+            if(element.getProvider() != null){
+                if(service != null){
+                    //chk if this serviceprovider supports this service
+                    if(isServiceProvided(element, service)){
+                        supportedProviders.add(element.getProvider());
+                    }
+                }else{
+                    supportedProviders.add(element.getProvider());
+                }
+            }
+        }
+        return supportedProviders;
+    }
+    
+    private boolean isServiceProvided(NetworkElement element, Service service){
+        if(element.getCapabilities() != null){
+            return element.getCapabilities().containsKey(service);
+        }
+        return false;
+    }
+
+    @Override
+    @DB
+    public PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId) {
+
+        // verify input parameters
+        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Physical Network id=" + physicalNetworkId + "doesn't exist in the system");
+        }
+
+        // verify input parameters
+        if(destinationPhysicalNetworkId != null){
+            PhysicalNetworkVO destNetwork = _physicalNetworkDao.findById(destinationPhysicalNetworkId);
+            if (destNetwork == null) {
+                throw new InvalidParameterValueException("Destination Physical Network id=" + destinationPhysicalNetworkId + "doesn't exist in the system");
+            }
+        }
+        
+        if(providerName != null){
+            Provider provider = Network.Provider.getProvider(providerName);
+            if(provider == null){
+                throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
+            }
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            // Create the new physical network in the database
+            PhysicalNetworkServiceProviderVO nsp = new PhysicalNetworkServiceProviderVO(physicalNetworkId, providerName);
+            if(destinationPhysicalNetworkId != null){
+                nsp.setDestinationPhysicalNetworkId(destinationPhysicalNetworkId);
+            }
+            nsp = _pNSPDao.persist(nsp);
+
+            txn.commit();
+            return nsp;
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.warn("Exception: ", ex);
+            throw new CloudRuntimeException("Fail to add a provider to physical network");
+        } finally {
+            txn.close();
+        }
+        
+    }
+
+    @Override
+    public List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId) {
+        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Physical Network id=" + physicalNetworkId + "doesn't exist in the system");
+        }
+        
+        return _pNSPDao.listBy(physicalNetworkId);
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, Boolean enabled) {
+        
+        PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
+        
+        if(provider == null){
+            throw new InvalidParameterValueException("Network Service Provider id=" + id + "doesn't exist in the system");
+        }
+        
+        if(enabled){
+            //TODO: need to check if the provider is ready for the physical network.
+            provider.setState(PhysicalNetworkServiceProvider.State.Enabled);
+        }else{
+            //do we need to do anything for the provider instances before disabling?
+            provider.setState(PhysicalNetworkServiceProvider.State.Disabled);
+        }
+        
+        _pNSPDao.update(id, provider);
+        
+        return provider;
+    }
+
+    @Override
+    public boolean deleteNetworkServiceProvider(Long id) {
+        PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
+        
+        if(provider == null){
+            throw new InvalidParameterValueException("Network Service Provider id=" + id + "doesn't exist in the system");
+        }
+        
+        //TODO provider instances?
+        
+        return _pNSPDao.remove(id);
+    }
+
 }

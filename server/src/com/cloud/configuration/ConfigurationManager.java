@@ -113,7 +113,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param dns2
      * @param internalDns1
      * @param internalDns2
-     * @param vnetRange
      * @param guestCidr
      * @param zoneType
      * @param allocationState
@@ -122,7 +121,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationState, String networkDomain);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState, String networkDomain);
 
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -190,7 +189,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     
-    void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException;
+    void createDefaultNetworks(long zoneId) throws ConcurrentOperationException;
     
     HostPodVO getPod(long id);
     

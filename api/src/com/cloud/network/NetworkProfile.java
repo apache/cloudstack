@@ -52,6 +52,7 @@ public class NetworkProfile implements Network {
     private Network.Type type;
     private GuestIpType guestIpType;
     private boolean isShared;
+    private long physicalNetworkId;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -76,6 +77,7 @@ public class NetworkProfile implements Network {
         this.type = network.getType();
         this.guestIpType = network.getGuestType();
         this.isShared = network.getIsShared();
+        this.physicalNetworkId = network.getPhysicalNetworkId();
     }
 
     @Override
@@ -211,5 +213,10 @@ public class NetworkProfile implements Network {
     @Override
     public boolean getIsShared() {
         return isShared;
+    }
+    
+    @Override
+    public long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 }

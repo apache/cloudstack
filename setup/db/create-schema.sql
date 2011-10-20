@@ -117,6 +117,7 @@ DROP TABLE IF EXISTS `cloud`.`data_center_details`;
 DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud`.`op_host_transfer`;
 DROP TABLE IF EXISTS `cloud`.`projects`;
+DROP TABLE IF EXISTS `cloud`.`physical_network`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -168,6 +169,7 @@ CREATE TABLE `cloud`.`networks` (
   `cidr` varchar(18) COMMENT 'network cidr', 
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
+  `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
   `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
   `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
@@ -189,7 +191,7 @@ CREATE TABLE `cloud`.`networks` (
   `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   `type` char(32) COMMENT 'type of the network, can be Shared or Isolated',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
+  CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),  
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
@@ -371,6 +373,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('checkpoint_seq', 1);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('physical_networks_seq', 200);
 
 CREATE TABLE `cloud`.`volumes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
@@ -483,7 +486,6 @@ CREATE TABLE  `cloud`.`data_center` (
   `internal_dns2` varchar(255),
   `gateway` varchar(15),
   `netmask` varchar(15),
-  `vnet` varchar(255),
   `router_mac_address` varchar(17) NOT NULL DEFAULT '02:00:00:00:00:01' COMMENT 'mac address for the router within the domain',
   `mac_address` bigint unsigned NOT NULL DEFAULT '1' COMMENT 'Next available mac address for the ethernet card interacting with public internet',
   `guest_network_cidr` varchar(18),
@@ -497,7 +499,6 @@ CREATE TABLE  `cloud`.`data_center` (
   `lb_provider` char(64) DEFAULT 'VirtualRouter',
   `vpn_provider` char(64) DEFAULT 'VirtualRouter',
   `userdata_provider` char(64) DEFAULT 'VirtualRouter',
-  `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this data center enabled for allocation for new resources',
   `zone_token` varchar(255),
   `removed` datetime COMMENT 'date removed if not null',
@@ -562,6 +563,7 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
 CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary id',
     `vnet` varchar(18) NOT NULL COMMENT 'vnet',
+	`physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network the vnet belongs to',	
     `data_center_id` bigint unsigned NOT NULL COMMENT 'data center the vnet belongs to',
     `reservation_id` char(40) NULL COMMENT 'reservation id',
     `account_id` bigint unsigned NULL COMMENT 'account the vnet belongs to right now',
@@ -1734,5 +1736,57 @@ CREATE TABLE  `ntwk_offering_service_map` (
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`physical_network` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',
+  `vnet` varchar(255),
+  `speed` varchar(32),  
+  `domain_id` bigint unsigned COMMENT 'foreign key to domain id',
+  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'Pod' COMMENT 'range of broadcast domain : Pod/Zone', 
+  `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'what state is this configuration in',
+  `created` datetime COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_physical_network__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  INDEX `i_physical_network__removed`(`removed`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `tag` varchar(255) NOT NULL COMMENT 'tag',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_tags__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  UNIQUE KEY(`physical_network_id`, `tag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_isolation_methods` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `isolation_method` varchar(255) NOT NULL COMMENT 'isolation method(VLAN, L3 or GRE)',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_imethods__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  UNIQUE KEY(`physical_network_id`, `isolation_method`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_traffic_types` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_traffic_types__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  UNIQUE KEY(`physical_network_id`, `traffic_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_service_providers` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name',
+  `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'provider state',
+  `destination_physical_network_id` bigint unsigned COMMENT 'id of the physical network to bridge to',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

@@ -23,8 +23,8 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
@@ -32,7 +32,6 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -56,7 +55,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
     final GenericSearchBuilder<NetworkVO, Long> CountByOfferingId;
-
+    final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
+    final SearchBuilder<NetworkVO> securityGroupSearch;
+    
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
@@ -78,6 +79,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("guesttype", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
+        AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);        
         AllFieldsSearch.done();
 
         AccountSearch = createSearchBuilder();
@@ -121,6 +123,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         CountByOfferingId.and("removed", CountByOfferingId.entity().getRemoved(), Op.NULL);
         CountByOfferingId.done();
 
+        
+        PhysicalNetworkSearch = createSearchBuilder();
+        PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        PhysicalNetworkSearch.done();
+        
+        securityGroupSearch = createSearchBuilder();
+        securityGroupSearch.and("isSgEnabled", securityGroupSearch.entity().isSecurityGroupEnabled(), SearchCriteria.Op.EQ);
+        securityGroupSearch.done();
+        
         _tgMacAddress = _tgs.get("macAddress");
 
     }
@@ -331,4 +342,18 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         List<Long> results = customSearch(sc, null);
         return results.get(0);
     }
+    
+    public List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId){
+        SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<NetworkVO> listSecurityGroupEnabledNetworks() {
+        SearchCriteria<NetworkVO> sc = securityGroupSearch.create();
+        sc.setParameters("isSgEnabled", true);
+        return listBy(sc);
+    }
+    
 }

@@ -43,7 +43,10 @@ public class DataCenterVnetVO {
 
     @Column(name="vnet", updatable=false, nullable=false)
     protected String vnet;
-    
+
+    @Column(name="physical_network_id", updatable=false, nullable=false)
+    protected long physicalNetworkId;
+
     @Column(name="data_center_id", updatable=false, nullable=false)
     protected long dataCenterId;
 
@@ -61,9 +64,10 @@ public class DataCenterVnetVO {
         this.takenAt = taken;
     }
 
-    public DataCenterVnetVO(String vnet, long dcId) {
+    public DataCenterVnetVO(String vnet, long dcId, long physicalNetworkId) {
         this.vnet = vnet;
         this.dataCenterId = dcId;
+        this.physicalNetworkId = physicalNetworkId;
         this.takenAt = null;
     }
     
@@ -93,6 +97,10 @@ public class DataCenterVnetVO {
     
     public long getDataCenterId() {
         return dataCenterId;
+    }
+
+    public long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
     
     protected DataCenterVnetVO() {

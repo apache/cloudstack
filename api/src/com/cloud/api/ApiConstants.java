@@ -277,5 +277,12 @@ public class ApiConstants {
     public static final String GATEWAY_SERVICE = "gatewayservice";
     public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
     public static final String PROVIDER = "provider";
+    public static final String NETWORK_SPEED = "networkspeed";
+    public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";
+    public static final String ISOLATION_METHODS = "isolationmethods";
+    public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
+    public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
+    public static final String ENABLED = "enabled";
+    public static final String SERVICE_NAME = "servicename";
 
 }

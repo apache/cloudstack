@@ -87,6 +87,9 @@ public class NetworkVO implements Network {
     @Column(name="network_offering_id")
     long networkOfferingId;
 
+    @Column(name="physical_network_id")
+    long physicalNetworkId;
+    
     @Column(name="data_center_id")
     long dataCenterId;
 
@@ -181,6 +184,20 @@ public class NetworkVO implements Network {
         this.id = -1;
         this.guestType = guestType;
     }
+    /**
+     * Constructor to be used for the adapters because it only initializes what's needed.
+     * @param trafficType
+     * @param mode
+     * @param broadcastDomainType
+     * @param networkOfferingId
+     * @param dataCenterId
+     * @param state TODO
+     * @param physicalNetworkId
+     */
+    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, State state, long physicalNetworkId) {
+        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, state);
+        this.physicalNetworkId = physicalNetworkId;
+    }
 
     public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared) {
         this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText,isDefault, isDomainSpecific, networkDomain, type, isShared);
@@ -194,6 +211,11 @@ public class NetworkVO implements Network {
         if (state == null) {
             state = State.Allocated;
         }
+    }
+
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, long physicalNetworkId) {
+        this(id, that, offeringId, dataCenterId, guruName, domainId, accountId, related, name, displayText, isDefault, isSecurityGroupEnabled, isDomainSpecific, networkDomain, type);
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     /**
@@ -379,6 +401,15 @@ public class NetworkVO implements Network {
     @Override
     public int hashCode() {
         return NumbersUtil.hash(id);
+    }
+
+    @Override
+    public long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+    
+    public void setPhysicalNetworkId(long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     @Override

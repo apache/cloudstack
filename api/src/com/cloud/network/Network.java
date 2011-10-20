@@ -101,6 +101,10 @@ public interface Network extends ControlledEntity {
             }
             return null;
         }
+        
+        public static List<Service> listAllServices(){
+            return supportedServices;
+        }
     }
 
     public static class Provider {
@@ -265,4 +269,6 @@ public interface Network extends ControlledEntity {
     Type getType();
     
     boolean getIsShared();
+
+    long getPhysicalNetworkId();
 }

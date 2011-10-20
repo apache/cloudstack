@@ -129,7 +129,6 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -962,10 +961,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return !vmInstances.isEmpty();
     }
 
-    private boolean zoneHasAllocatedVnets(long zoneId) {
-        return !_zoneDao.listAllocatedVnets(zoneId).isEmpty();
-    }
-
     @DB
     protected void checkIfZoneIsDeletable(long zoneId) {
         List<List<String>> tablesToCheck = new ArrayList<List<String>>();
@@ -1185,7 +1180,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String newVnetRangeString = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
         List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
         Boolean isPublic = cmd.isPublic();
@@ -1234,15 +1228,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             zoneName = zone.getName();
         }
 
-        // if zone is of Basic type, don't allow to add vnet range and cidr
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            if (newVnetRangeString != null) {
-                throw new InvalidParameterValueException("Can't add vnet range for the zone that supports " + zone.getNetworkType() + " network");
-            } else if (guestCidr != null) {
-                throw new InvalidParameterValueException("Can't add cidr for the zone that supports " + zone.getNetworkType() + " network");
-            }
-        }
-
         if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
@@ -1250,63 +1235,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Make sure the zone exists
         if (!validZone(zoneId)) {
             throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
-        }
-
-        // Vnet range can be extended only
-        boolean replaceVnet = false;
-        ArrayList<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>(2); 
-        
-        if (newVnetRangeString != null) {
-            Integer newStartVnet = 0;
-            Integer newEndVnet = 0;
-            String[] newVnetRange = newVnetRangeString.split("-");
-
-            if (newVnetRange.length < 2) {
-                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
-            }
-
-            if (newVnetRange[0] == null || newVnetRange[1] == null) {
-                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
-            }
-
-            try {
-                newStartVnet = Integer.parseInt(newVnetRange[0]);
-                newEndVnet = Integer.parseInt(newVnetRange[1]);
-            } catch (NumberFormatException e) {
-                s_logger.warn("Unable to parse vnet range:", e);
-                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
-            }
-
-            if (newStartVnet < 0 || newEndVnet > 4096) {
-                throw new InvalidParameterValueException("Vnet range has to be between 0-4096");
-            }
-
-            if (newStartVnet > newEndVnet) {
-                throw new InvalidParameterValueException("Vnet range has to be between 0-4096 and start range should be lesser than or equal to stop range");
-            } 
-            
-            if (zoneHasAllocatedVnets(zoneId)) {
-                String[] existingRange = zone.getVnet().split("-");
-                int existingStartVnet = Integer.parseInt(existingRange[0]);
-                int existingEndVnet = Integer.parseInt(existingRange[1]);
-                
-                //check if vnet is being extended
-                if (!(newStartVnet.intValue() <= existingStartVnet && newEndVnet.intValue() >= existingEndVnet)) {
-                    throw new InvalidParameterValueException("Can's shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
-                }
-                
-                if (newStartVnet < existingStartVnet) {
-                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
-                }
-                
-                if (newEndVnet > existingEndVnet) {
-                    vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
-                }
-                
-            } else {
-                vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
-                replaceVnet = true;
-            }
         }
 
         String oldZoneName = zone.getName();
@@ -1362,10 +1290,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone.setGuestNetworkCidr(guestCidr);
         zone.setDomain(networkDomain);
 
-        if (newVnetRangeString != null) {
-            zone.setVnet(newVnetRangeString);
-        }
-
         // update a private zone to public; not vice versa
         if (isPublic != null && isPublic) {
             zone.setDomainId(null);
@@ -1396,44 +1320,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
         }
 
-        if (replaceVnet) {
-            s_logger.debug("Deleting existing vnet range for the zone id=" + zoneId + " as a part of updateZone call");
-            _zoneDao.deleteVnet(zoneId);
-        }
-
-        for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
-            s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the zone id=" + zoneId + " as a part of updateZone call");
-            _zoneDao.addVnet(zone.getId(), vnetToAdd.first(), vnetToAdd.second());
-        }
-        
         txn.commit();
         return zone;
     }
 
     @Override
     @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationStateStr, String networkDomain) {
-        int vnetStart = 0;
-        int vnetEnd = 0;
-        if (vnetRange != null) {
-            String[] tokens = vnetRange.split("-");
-            try {
-                vnetStart = Integer.parseInt(tokens[0]);
-                if (tokens.length == 1) {
-                    vnetEnd = vnetStart;
-                } else {
-                    vnetEnd = Integer.parseInt(tokens[1]);
-                }
-            } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
-            }
-
-            if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
-                s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
-                throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
-            }
-        }
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
+            NetworkType zoneType, String allocationStateStr, String networkDomain) {
 
         // checking the following params outside checkzoneparams method as we do not use these params for updatezone
         // hence the method below is generic to check for common params
@@ -1458,20 +1352,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, isSecurityGroupEnabled, zoneToken, networkDomain);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
             }
             zone = _zoneDao.persist(zone);
 
-            // Add vnet entries for the new zone if zone type is Advanced
-            if (vnetRange != null) {
-                _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-            }
-
             // Create deafult networks
-            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled);
+            createDefaultNetworks(zone.getId());
             txn.commit();
             return zone;
         } catch (Exception ex) {
@@ -1484,7 +1373,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException {
+    public void createDefaultNetworks(long zoneId) throws ConcurrentOperationException {
         DataCenterVO zone = _zoneDao.findById(zoneId);
         String networkDomain = null;
         // Create public, management, control and storage networks as a part of the zone creation
@@ -1509,7 +1398,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     } else {
                         continue;
                     }
-                } else if (offering.getTrafficType() == TrafficType.Guest) {
+                } /*else if (offering.getTrafficType() == TrafficType.Guest) {
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
@@ -1522,7 +1411,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     
                     networkDomain = "cs" + Long.toHexString(Account.ACCOUNT_ID_SYSTEM) + _networkMgr.getGlobalGuestDomainSuffix();
-                }
+                }*/
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
                 _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, null, true);
@@ -1539,7 +1428,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
         Long domainId = cmd.getDomainId();
         String type = cmd.getNetworkType();
@@ -1557,16 +1445,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             isBasic = true;
         }
 
-        Boolean securityGroupEnabled = cmd.isSecurityGroupEnabled();
-
         NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
 
-        // Guest cidr is required for Advanced zone creation; error out when the parameter specified for Basic zone
+        /*Guest cidr is required for Advanced zone creation; error out when the parameter specified for Basic zone
         if (zoneType == NetworkType.Advanced && guestCidr == null && !securityGroupEnabled) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is required for Advanced zone creation");
         } else if (zoneType == NetworkType.Basic && guestCidr != null) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
-        }
+        }*/
 
         DomainVO domainVO = null;
 
@@ -1578,17 +1464,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             domainVO = _domainDao.findById(domainId);
         }
 
-        // Verify zone type
+        /* Verify zone type
         if (zoneType == NetworkType.Basic && vnetRange != null) {
             vnetRange = null;
         }
 
         if (zoneType == NetworkType.Basic) {
             securityGroupEnabled = true;
-        }
+        }*/
 
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, securityGroupEnabled,
-                allocationState, networkDomain);
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain);
     }
 
     @Override
@@ -2149,10 +2034,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Only Direct Untagged and Virtual networks are supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
         }
 
-        // don't allow to create a virtual vlan when zone's vnet is NULL in Advanced zone
+        //TODO
+        /*  don't allow to create a virtual vlan when zone's vnet is NULL in Advanced zone
         if ((zone.getNetworkType() == NetworkType.Advanced && zone.getVnet() == null) && forVirtualNetwork) {
             throw new InvalidParameterValueException("Can't add virtual network to the zone id=" + zone.getId() + " as zone doesn't have guest vlan configured");
-        }
+        }*/
 
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
 

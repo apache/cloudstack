@@ -144,7 +144,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 network.getDataCenterId(), State.Allocated);
 
         if (network.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, network.getAccountId(), context.getReservationId());
+            String vnet = _dcDao.allocateVnet(dcId, network.getPhysicalNetworkId(), network.getAccountId(), context.getReservationId());
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
@@ -235,7 +235,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
         if (profile.getBroadcastUri() != null) {
-            _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
+            _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
             profile.setBroadcastUri(null);

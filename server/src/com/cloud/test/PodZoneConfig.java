@@ -254,7 +254,7 @@ public class PodZoneConfig {
     }
 	
 	@DB
-	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, int vnetStart, int vnetEnd, String guestNetworkCidr, String networkType) {
+	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, String guestNetworkCidr, String networkType) {
 		
 		if (printOutput) System.out.println("Saving zone, please wait...");
 		
@@ -299,10 +299,6 @@ public class PodZoneConfig {
 			values += ",'" + networkType + "'";
 		}
 		
-		//save vnet information
-		columns += ", vnet";
-        values += ",'" + vnetStart + "-" + vnetEnd + "'";
-			
 			
 		columns += ")";
 		values += ")";
@@ -311,18 +307,46 @@ public class PodZoneConfig {
 		
 		DatabaseConfig.saveSQL(sql, "Failed to save zone due to exception. Please contact Cloud Support.");
 		
-		// Hardcode the vnet range to be the full range
-		int begin = 0x64;
+		if (printOutput) System.out.println("Successfully saved zone.");
+	}
+	
+	@DB
+    public void savePhysicalNetwork(boolean printOutput, long id, long dcId, int vnetStart, int vnetEnd) {
+        
+        if (printOutput) System.out.println("Saving physical network, please wait...");
+        
+        String columns = null;
+        String values = null;
+        
+        columns = "(id ";
+        values = "('" + id + "'";
+        
+        columns += ", data_center_id ";
+        values += ",'" + dcId + "'";
+        
+        //save vnet information
+        columns += ", vnet";
+        values += ",'" + vnetStart + "-" + vnetEnd + "'";
+            
+            
+        columns += ")";
+        values += ")";
+        
+        String sql = "INSERT INTO `cloud`.`physical_network` " + columns +  " VALUES " + values;
+        
+        DatabaseConfig.saveSQL(sql, "Failed to save physical network due to exception. Please contact Cloud Support.");
+        
+        // Hardcode the vnet range to be the full range
+        int begin = 0x64;
         int end = 64000;
         
         // If vnet arguments were passed in, use them
         if (vnetStart != -1 && vnetEnd != -1) {
-        	begin = vnetStart;
-        	end = vnetEnd;
+            begin = vnetStart;
+            end = vnetEnd;
         }
         
-        long dcId = getZoneId(name);
-        String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id) VALUES ( ?, ?)";
+        String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
 
         Transaction txn = Transaction.currentTxn();
         try {
@@ -330,15 +354,16 @@ public class PodZoneConfig {
             for (int i = begin; i <= end; i++) {
                 stmt.setString(1, Integer.toString(i));
                 stmt.setLong(2, dcId);
+                stmt.setLong(3, id);
                 stmt.addBatch();
             }
             stmt.executeBatch();
         } catch (SQLException ex) {
-            printError("Error creating vnet for the data center. Please contact Cloud Support.");
+            printError("Error creating vnet for the physical network. Please contact Cloud Support.");
         }
-		
-		if (printOutput) System.out.println("Successfully saved zone.");
-	}
+        
+        if (printOutput) System.out.println("Successfully saved physical network.");
+    }	
 	
 	public void deleteZone(String name) {
 		String sql = "DELETE FROM `cloud`.`data_center` WHERE name=\"" + name + "\"";

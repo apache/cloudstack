@@ -36,9 +36,9 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     String[] getNextAvailableMacAddressPair(long id, long mask);
     Pair<String, Long> allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
     String allocateLinkLocalIpAddress(long id, long podId, long instanceId, String reservationId);
-    String allocateVnet(long dcId, long accountId, String reservationId);
+    String allocateVnet(long dcId, long physicalNetworkId, long accountId, String reservationId);
     
-    void releaseVnet(String vnet, long dcId, long accountId, String reservationId);
+    void releaseVnet(String vnet, long dcId, long physicalNetworkId, long accountId, String reservationId);
     void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId);
     void releasePrivateIpAddress(long nicId, String reservationId);
     void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId);
@@ -52,11 +52,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     
     List<DataCenterVnetVO> findVnet(long dcId, String vnet);
     
-    void addVnet(long dcId, int start, int end);
-    
     void deleteVnet(long dcId);
-    
-    List<DataCenterVnetVO> listAllocatedVnets(long dcId);
 
     String allocatePodVlan(long podId, long accountId);
 
@@ -66,8 +62,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
 	List<DataCenterVO> findChildZones(Object[] ids);
 
-    List<DataCenterVO> listSecurityGroupEnabledZones();
-    
     void loadDetails(DataCenterVO zone);
     void saveDetails(DataCenterVO zone);
     
@@ -75,4 +69,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVO> listEnabledZones();
     DataCenterVO findByToken(String zoneToken);    
     DataCenterVO findByTokenOrIdOrName(String tokenIdOrName);
+    
+    void addVnet(long dcId, long physicalNetworkId, int start, int end);
+    void deleteVnet(long dcId, long physicalNetworkId);
+    List<DataCenterVnetVO> listAllocatedVnets(long dcId, long physicalNetworkId);
 }

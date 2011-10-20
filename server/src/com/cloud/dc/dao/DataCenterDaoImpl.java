@@ -32,7 +32,6 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanVO;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
@@ -61,7 +60,6 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
     protected SearchBuilder<DataCenterVO> PublicZonesSearch;
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
-    protected SearchBuilder<DataCenterVO> securityGroupSearch;
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
     
@@ -112,15 +110,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public List<DataCenterVO> listSecurityGroupEnabledZones() {
-        SearchCriteria<DataCenterVO> sc = securityGroupSearch.create();
-        sc.setParameters("isSgEnabled", true);
-        return listBy(sc);
-    }
-
-    @Override
-    public void releaseVnet(String vnet, long dcId, long accountId, String reservationId) {
-        _vnetAllocDao.release(vnet, dcId, accountId, reservationId);
+    public void releaseVnet(String vnet, long dcId, long physicalNetworkId, long accountId, String reservationId) {
+        _vnetAllocDao.release(vnet, dcId, physicalNetworkId, accountId, reservationId);
     }
     
     @Override
@@ -159,8 +150,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocateVnet(long dataCenterId, long accountId, String reservationId) {
-        DataCenterVnetVO vo = _vnetAllocDao.take(dataCenterId, accountId, reservationId);
+    public String allocateVnet(long dataCenterId, long physicalNetworkId, long accountId, String reservationId) {
+        DataCenterVnetVO vo = _vnetAllocDao.take(dataCenterId, physicalNetworkId, accountId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -214,20 +205,27 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         return vo.getIpAddress();
     }
     
-    @Override
-    public void addVnet(long dcId, int start, int end) {
-        _vnetAllocDao.add(dcId, start, end);
-    }
     
     @Override
     public void deleteVnet(long dcId) {
     	_vnetAllocDao.delete(dcId);
     }
     
+   
     @Override
-    public List<DataCenterVnetVO> listAllocatedVnets(long dcId) {
-    	return _vnetAllocDao.listAllocatedVnets(dcId);
+    public void addVnet(long dcId, long physicalNetworkId, int start, int end) {
+        _vnetAllocDao.add(dcId, physicalNetworkId, start, end);
     }
+    
+    @Override
+    public void deleteVnet(long dcId, long physicalNetworkId) {
+        _vnetAllocDao.delete(dcId, physicalNetworkId);
+    }
+    
+    @Override
+    public List<DataCenterVnetVO> listAllocatedVnets(long dcId, long physicalNetworkId) {
+        return _vnetAllocDao.listAllocatedVnets(dcId, physicalNetworkId);
+    }    
     
     @Override
     public void addPrivateIpAddress(long dcId,long podId, String start, String end) {
@@ -275,10 +273,6 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         ChildZonesSearch = createSearchBuilder();
         ChildZonesSearch.and("domainid", ChildZonesSearch.entity().getDomainId(), SearchCriteria.Op.IN);
         ChildZonesSearch.done();
-        
-        securityGroupSearch = createSearchBuilder();
-        securityGroupSearch.and("isSgEnabled", securityGroupSearch.entity().isSecurityGroupEnabled(), SearchCriteria.Op.EQ);
-        securityGroupSearch.done();
         
         DisabledZonesSearch = createSearchBuilder();
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);

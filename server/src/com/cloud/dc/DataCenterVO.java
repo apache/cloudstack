@@ -67,9 +67,6 @@ public class DataCenterVO implements DataCenter {
     @Column(name="router_mac_address", updatable = false, nullable=false)
     private String routerMacAddress = "02:00:00:00:00:01";
     
-    @Column(name="vnet")
-    private String vnet = null;
-
 	@Column(name="guest_network_cidr")
     private String guestNetworkCidr = null;
     
@@ -103,9 +100,6 @@ public class DataCenterVO implements DataCenter {
     
     @Column(name="firewall_provider")
     private String firewallProvider;
-    
-    @Column(name="is_security_group_enabled")
-    boolean securityGroupEnabled;
     
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
@@ -172,26 +166,24 @@ public class DataCenterVO implements DataCenter {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false, zoneToken, domainSuffix);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled, String zoneToken, String domainSuffix) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
         this.dns2 = dns2;
         this.internalDns1 = dns3;
         this.internalDns2 = dns4;
-        this.vnet = vnet;
         this.guestNetworkCidr = guestCidr;
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
         this.allocationState = Grouping.AllocationState.Enabled;
-        this.securityGroupEnabled = securityGroupEnabled;
         
         if (zoneType == NetworkType.Advanced) {
             loadBalancerProvider = Provider.VirtualRouter.getName();
@@ -248,20 +240,11 @@ public class DataCenterVO implements DataCenter {
         return routerMacAddress;
     }
     
-    public void setVnet(String vnet) {
-        this.vnet = vnet;
-    }
-
     @Override
     public String getDns1() {
         return dns1;
     }
     
-    @Override
-    public String getVnet() {
-        return vnet;
-    }
-
     @Override
     public String getDns2() {
         return dns2;
@@ -345,11 +328,10 @@ public class DataCenterVO implements DataCenter {
     
     @Override 
     public boolean isSecurityGroupEnabled() {
-        return securityGroupEnabled;
+        return false;
     }
     
     public void setSecurityGroupEnabled(boolean enabled) {
-        this.securityGroupEnabled = enabled;
     }
     
     @Override

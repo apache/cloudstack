@@ -27,7 +27,6 @@ import com.cloud.api.commands.DeleteExternalFirewallCmd;
 import com.cloud.api.commands.DeleteExternalLoadBalancerCmd;
 import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.api.commands.ListExternalLoadBalancersCmd;
-import com.cloud.dc.DataCenter;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -91,7 +90,7 @@ public interface ExternalNetworkManager extends Manager {
 	
 	// General methods
 	
-	public int getVlanOffset(DataCenter zone, int vlanTag);
+	public int getVlanOffset(long physicalNetworkId, int vlanTag);
 	
 	public int getGloballyConfiguredCidrSize();
 }

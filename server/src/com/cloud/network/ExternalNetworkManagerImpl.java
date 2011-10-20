@@ -76,6 +76,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -147,6 +148,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     @Inject VpnUserDao _vpnUsersDao;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject AccountManager _accountMgr;
+    @Inject PhysicalNetworkDao _physicalNetworkDao;
 
 	ScheduledExecutorService _executor;
 	int _externalNetworkStatsInterval;
@@ -902,7 +904,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 		String[] ipRange = vpn.getIpRange().split("-");
 		DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
 		int vlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
-		int offset = getVlanOffset(zone, vlanTag);
+		int offset = getVlanOffset(network.getPhysicalNetworkId(), vlanTag);
 		int cidrSize = getGloballyConfiguredCidrSize();
 		
 		for (int i = 0; i < 2; i++) {
@@ -980,12 +982,16 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     	return (detail != null && detail.getValue().equals("true"));
     }
     
-    public int getVlanOffset(DataCenter zone, int vlanTag) {
-        if (zone.getVnet() == null) {
-            throw new CloudRuntimeException("Could not find vlan range for zone " + zone.getName() + ".");
+    public int getVlanOffset(long physicalNetworkId, int vlanTag) {
+        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (pNetwork == null) {
+            throw new CloudRuntimeException("Could not find the physical Network " + physicalNetworkId + ".");
         }
 
-        String vlanRange[] = zone.getVnet().split("-");
+        if (pNetwork.getVnet() == null) {
+            throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
+        }
+        String vlanRange[] = pNetwork.getVnet().split("-");
         int lowestVlanTag = Integer.valueOf(vlanRange[0]);
         return vlanTag - lowestVlanTag;
     }

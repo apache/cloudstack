@@ -62,6 +62,7 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
+import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
@@ -116,9 +117,12 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -786,7 +790,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             zoneResponse.setDns2(dataCenter.getDns2());
             zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
             zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
-            zoneResponse.setVlan(dataCenter.getVnet());
             zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
         }
 
@@ -2529,6 +2532,69 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setRole(router.getRole().toString());
             }
         }
+        vmResponse.setObjectName("systemvminstance");
         return vmResponse;
+    }
+
+    @Override
+    public PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result) {
+        PhysicalNetworkResponse response = new PhysicalNetworkResponse();
+        
+        response.setZoneId(result.getDataCenterId());
+        response.setNetworkSpeed(result.getSpeed());
+        response.setVlan(result.getVnet());
+        response.setDomainId(result.getDomainId());
+        response.setId(result.getId());
+        if(result.getBroadcastDomainRange() != null){
+            response.setBroadcastDomainRange(result.getBroadcastDomainRange().toString());
+        }
+        response.setIsolationMethods(result.getIsolationMethods());
+        response.setTags(result.getTags());
+        if(result.getState() != null){
+            response.setState(result.getState().toString());
+        }
+        response.setObjectName("physicalnetwork");
+        return response;
+    }
+
+    @Override
+    public ServiceResponse createNetworkServiceResponse(Service service){
+        ServiceResponse response = new ServiceResponse();
+        response.setName(service.getName());
+        
+        // set list of capabilities required for the service
+        List<CapabilityResponse> capabilityResponses = new ArrayList<CapabilityResponse>();
+        Capability[] capabilities = service.getCapabilities();
+        for(Capability cap : capabilities){
+            CapabilityResponse capabilityResponse = new CapabilityResponse();
+            capabilityResponse.setName(cap.getName());
+            capabilityResponse.setObjectName("capability");
+            capabilityResponses.add(capabilityResponse);
+        }
+        response.setCapabilities(capabilityResponses);
+
+        response.setObjectName("networkservice");
+        return response;
+        
+    }
+
+    @Override
+    public ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider) {
+        ProviderResponse response = new ProviderResponse();
+        response.setName(serviceProvider.getName());
+        response.setObjectName("networkserviceprovider");
+        return response;
+    }
+    
+    @Override
+    public ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result){
+        ProviderResponse response = new ProviderResponse();
+        response.setId(result.getId());
+        response.setName(result.getProviderName());
+        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        response.setDestinationPhysicalNetworkId(result.getDestinationPhysicalNetworkId());
+        response.setState(result.getState().toString());
+        response.setObjectName("networkserviceprovider");
+        return response;
     }
 }

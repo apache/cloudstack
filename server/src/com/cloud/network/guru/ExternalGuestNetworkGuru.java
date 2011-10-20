@@ -114,7 +114,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         // Get a vlan tag
         int vlanTag;
         if (config.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(zone.getId(), config.getAccountId(), context.getReservationId());
+            String vnet = _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId());
 
             try {
                 vlanTag = Integer.parseInt(vnet);
@@ -130,7 +130,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         // Determine the offset from the lowest vlan tag
-        int offset = _externalNetworkMgr.getVlanOffset(zone, vlanTag);
+        int offset = _externalNetworkMgr.getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
 
         // Determine the new gateway and CIDR
         String[] oldCidr = config.getCidr().split("/");

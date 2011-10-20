@@ -41,7 +41,6 @@ public interface DataCenter extends Grouping {
     Long getDomainId();
     String getDescription();
     String getDomain();
-    String getVnet();
     
     NetworkType getNetworkType();
     String getInternalDns1();

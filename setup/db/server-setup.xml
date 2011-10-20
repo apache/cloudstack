@@ -22,8 +22,16 @@
 	  <vnet>560-579</vnet>      
       <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
     </zone>
-  </zones> -->
+  </zones> 
 
+  <physicalNetworks>
+	 <physicalNetwork>
+      <id>200</id>
+      <zoneId>1</zoneId>
+      <vnet>1075-1089</vnet>
+    </physicalNetwork>
+  </physicalNetworks>  -->
+  
   <!--
     ipAddressRange:  It is possible to specify a single IP address.  For example, to add 192.168.1.1
     as the only address, specify as <ipAddressRange>192.168.1.1<ipAddressRange>.  To specify 192.168.1.1
