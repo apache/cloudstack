@@ -106,7 +106,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             return networks.get(0).getId();
         } else {
             Network defaultGuestNetwork = _networkService.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
-            
             if (defaultGuestNetwork == null) {
                 throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
             } else {

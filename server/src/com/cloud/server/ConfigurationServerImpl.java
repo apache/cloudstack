@@ -850,7 +850,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.SystemGuestNetwork, 
                 "System-Guest-Network", 
                 TrafficType.Guest, 
-                false, false, null, null, null, true, 
+                true, false, null, null, null, true, 
                 Availability.Optional, null, true, Network.Type.Shared);
         
         guestNetworkOffering.setState(NetworkOffering.State.Enabled);

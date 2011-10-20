@@ -99,7 +99,6 @@ import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -1231,17 +1230,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(vm);
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
-                if (network != null) {
-                    TrafficType trafficType = TrafficType.Public;
-                    if (zone.getNetworkType() == NetworkType.Basic || zone.isSecurityGroupEnabled()) {
-                        trafficType = TrafficType.Guest;
-                    }
-                    if (network.getTrafficType() == trafficType) {
-                        vmResponse.setPublicIp(singleNicProfile.getIp4Address());
-                        vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
-                        vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
-                        vmResponse.setGateway(singleNicProfile.getGateway());
-                    } else if (network.getTrafficType() == TrafficType.Management) {
+                if (network != null) { 
+                    if (network.getTrafficType() == TrafficType.Management) {
                         vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
                         vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPrivateNetmask(singleNicProfile.getNetmask());
@@ -1249,6 +1239,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
+                    } else {
+                        vmResponse.setPublicIp(singleNicProfile.getIp4Address());
+                        vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
+                        vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
+                        vmResponse.setGateway(singleNicProfile.getGateway());
                     }
                 }
             }
