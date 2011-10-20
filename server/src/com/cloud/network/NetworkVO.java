@@ -213,8 +213,8 @@ public class NetworkVO implements Network {
         }
     }
 
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, long physicalNetworkId) {
-        this(id, that, offeringId, dataCenterId, guruName, domainId, accountId, related, name, displayText, isDefault, isSecurityGroupEnabled, isDomainSpecific, networkDomain, type);
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long physicalNetworkId) {
+        this(id, that, offeringId, dataCenterId, guruName, domainId, accountId, related, name, displayText, isDefault, isSecurityGroupEnabled, isDomainSpecific, networkDomain, type, isShared);
         this.physicalNetworkId = physicalNetworkId;
     }
 
