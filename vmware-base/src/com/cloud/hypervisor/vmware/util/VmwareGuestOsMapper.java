@@ -70,25 +70,47 @@ public class VmwareGuestOsMapper {
 		s_mapper.put("OS/2", VirtualMachineGuestOsIdentifier.os2Guest);
 		s_mapper.put("Windows 2000 Professional", VirtualMachineGuestOsIdentifier.win2000ProGuest);
 		s_mapper.put("Red Hat Enterprise Linux 4(64-bit)", VirtualMachineGuestOsIdentifier.rhel4_64Guest);
+		
 		s_mapper.put("SUSE Linux Enterprise 9(32-bit)", VirtualMachineGuestOsIdentifier.suseGuest);
 		s_mapper.put("SUSE Linux Enterprise 9(64-bit)", VirtualMachineGuestOsIdentifier.suse64Guest);
 		s_mapper.put("SUSE Linux Enterprise 10(32-bit)", VirtualMachineGuestOsIdentifier.suseGuest);
 		s_mapper.put("SUSE Linux Enterprise 10(64-bit)", VirtualMachineGuestOsIdentifier.suse64Guest);
+		
+		s_mapper.put("CentOS 4.5 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 4.6 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 4.7 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 4.8 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 5.0 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 5.0 (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
+		s_mapper.put("CentOS 5.1 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 5.1 (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
+		s_mapper.put("CentOS 5.2 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 5.2 (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
+		s_mapper.put("CentOS 5.3 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 5.3 (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
+		s_mapper.put("CentOS 5.4 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("CentOS 5.4 (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
 		s_mapper.put("CentOS 5.5 (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
 		s_mapper.put("CentOS 5.5 (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
+		s_mapper.put("Other CentOS (32-bit)", VirtualMachineGuestOsIdentifier.centosGuest);
+		s_mapper.put("Other CentOS (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
+		
 		s_mapper.put("Red Hat Enterprise Linux 5.5 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
 		s_mapper.put("Red Hat Enterprise Linux 5.5 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
 		s_mapper.put("Red Hat Enterprise Linux 2", VirtualMachineGuestOsIdentifier.rhel2Guest);
-		s_mapper.put("Ubuntu 10.04 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
-		s_mapper.put("Ubuntu 9.10 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
-		s_mapper.put("Ubuntu 9.04 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
-		s_mapper.put("Ubuntu 8.10 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
+		
 		s_mapper.put("Ubuntu 8.04 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
-		s_mapper.put("Ubuntu 10.04 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
-		s_mapper.put("Ubuntu 9.10 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
-		s_mapper.put("Ubuntu 9.04 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
-		s_mapper.put("Ubuntu 8.10 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
 		s_mapper.put("Ubuntu 8.04 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
+		s_mapper.put("Ubuntu 8.10 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
+		s_mapper.put("Ubuntu 8.10 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
+		s_mapper.put("Ubuntu 9.04 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
+		s_mapper.put("Ubuntu 9.04 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
+		s_mapper.put("Ubuntu 9.10 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
+		s_mapper.put("Ubuntu 9.10 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
+		s_mapper.put("Ubuntu 10.04 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
+		s_mapper.put("Ubuntu 10.04 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
+		s_mapper.put("Other Ubuntu (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
+		s_mapper.put("Other Ubuntu (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
 	}
 	
 	public static VirtualMachineGuestOsIdentifier getGuestOsIdentifier(String guestOsName) {
