@@ -84,6 +84,12 @@ import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
+import com.cloud.network.element.DhcpElement;
+import com.cloud.network.element.RedundantVirtualRouterElement;
+import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.DhcpElementService;
+import com.cloud.network.element.RedundantVirtualRouterElementService;
+import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
@@ -373,7 +379,9 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     }
     
     protected void populateServices() {
-        addService("VirtualRouterService", VirtualNetworkApplianceService.class, VirtualNetworkApplianceManagerImpl.class);
+        addService("DhcpElementService", DhcpElementService.class, DhcpElement.class);
+        addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
+        addService("RedundantVirtualRouterElementService", RedundantVirtualRouterElementService.class, RedundantVirtualRouterElement.class);
     }
     
     @Override

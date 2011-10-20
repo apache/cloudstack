@@ -107,7 +107,9 @@
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
         </adapters>
 
-        <!-- pluggableservice name="VirtualRouterService" key="com.cloud.network.VirtualNetworkApplianceService" class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl"/ -->
+        <pluggableservice name="DhcpElementService" key="com.cloud.network.element.DhcpElementService" class="com.cloud.network.element.DhcpElement"/>
+        <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
+        <pluggableservice name="RedundantVirtualRouterElementService" key="com.cloud.network.element.RedundantVirtualRouterElementService" class="com.cloud.network.element.RedundantVirtualRouterElement"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">

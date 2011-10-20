@@ -46,6 +46,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.element.DhcpElementService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
@@ -64,7 +65,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DhcpElement extends AdapterBase implements PasswordServiceProvider {
+public class DhcpElement extends AdapterBase implements DhcpElementService, PasswordServiceProvider {
     private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -246,4 +247,16 @@ public class DhcpElement extends AdapterBase implements PasswordServiceProvider 
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
     }
+
+    @Override
+    public boolean configure() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getPropertiesFile() {
+        return "virtualrouter_commands.properties";
+    }
+
 }

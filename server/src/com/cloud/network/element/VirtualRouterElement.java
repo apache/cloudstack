@@ -51,6 +51,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
@@ -69,7 +70,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends DhcpElement implements SourceNATServiceProvider, FirewallServiceProvider, StaticNATServiceProvider, RemoteAccessVPNServiceProvider {
+public class VirtualRouterElement extends DhcpElement implements VirtualRouterElementService, SourceNATServiceProvider, FirewallServiceProvider, StaticNATServiceProvider, RemoteAccessVPNServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -372,5 +373,16 @@ public class VirtualRouterElement extends DhcpElement implements SourceNATServic
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
  
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+    }
+
+    @Override
+    public String getPropertiesFile() {
+        return "virtualrouter_commands.properties";
+    }
+    
+    @Override
+    public boolean configure() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

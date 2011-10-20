@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -27,32 +27,29 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.VirtualNetworkApplianceService;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-
-
-@Implementation(responseObject=DomainRouterResponse.class, description="Configures a router.")
-public class ConfigureRouterCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(ConfigureRouterCmd.class.getName());
-    private static final String s_name = "configurerouterresponse";
+@Implementation(responseObject=SuccessResponse.class, description="Configures a virtual router element.")
+public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
+	public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
+    private static final String s_name = "configurevirtualrouterelementresponse";
     
     @PlugService
-    private static VirtualNetworkApplianceService _myrouterService;
+    private VirtualRouterElementService _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the router")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the virtual router element")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -73,31 +70,26 @@ public class ConfigureRouterCmd extends BaseAsyncCmd {
     }
     
     public static String getResultObjectName() {
-    	return "router"; 
+    	return "boolean";
     }
     
     @Override
     public long getEntityOwnerId() {
-        VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
-        if (router != null) {
-            return router.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ROUTER_START;
+        return EventTypes.EVENT_NETWORK_ELEMENT_CONFIGURE;
     }
 
     @Override
     public String getEventDescription() {
-        return  "configuring router: " + getId();
+        return  "configuring virtual router element: " + getId();
     }
     
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.DomainRouter;
+    	return AsyncJob.Type.None;
     }
     
     public Long getInstanceId() {
@@ -106,15 +98,15 @@ public class ConfigureRouterCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Router Id: "+getId());
-        //This should call the configure API. Calling startRouter for now.
-        VirtualRouter result = _myrouterService.startRouter(id);
-        if (result != null){
-            DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
-            routerResponse.setResponseName(getCommandName());
-            this.setResponseObject(routerResponse);
+        UserContext.current().setEventDetails("Virtual router element Id: " + getId());
+        Boolean result = _service.configure();
+        if (result){
+            SuccessResponse response = new SuccessResponse();
+            response.setResponseName(getCommandName());
+            response.setSuccess(result);
+            this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure the virtual router element");
         }
     }
 }

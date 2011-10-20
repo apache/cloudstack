@@ -19,6 +19,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Type;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.element.RedundantVirtualRouterElementService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
@@ -29,7 +30,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class RedundantVirtualRouterElement extends VirtualRouterElement {
+public class RedundantVirtualRouterElement extends VirtualRouterElement implements RedundantVirtualRouterElementService {
     private static final Logger s_logger = Logger.getLogger(RedundantVirtualRouterElement.class);
     
     @Inject NetworkManager _networkMgr;
@@ -76,5 +77,16 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement {
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public String getPropertiesFile() {
+        return "virtualrouter_commands.properties";
+    }
+    
+    @Override
+    public boolean configure() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

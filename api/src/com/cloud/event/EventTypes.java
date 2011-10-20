@@ -211,4 +211,7 @@ public class EventTypes {
 	public static final String EVENT_PROJECT_SUSPEND = "PROJECT.SUSPEND";
 	public static final String EVENT_PROJECT_ACCOUNT_ADD = "PROJECT.ACCOUNT.ADD";
 	public static final String EVENT_PROJECT_ACCOUNT_REMOVE = "PROJECT.ACCOUNT.REMOVE";
+	
+	//Network as a Service
+	public static final String EVENT_NETWORK_ELEMENT_CONFIGURE = "NETWORK.ELEMENT.CONFIGURE";
 }

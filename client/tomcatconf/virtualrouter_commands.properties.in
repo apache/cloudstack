@@ -2,4 +2,6 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 #### router commands
-configureRouter=com.cloud.api.commands.ConfigureRouterCmd;7
+configureDhcpElement=com.cloud.api.commands.ConfigureDhcpElementCmd;7
+configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
+configureRedundantVirtualRouterElement=com.cloud.api.commands.ConfigureRedundantVirtualRouterElementCmd;7

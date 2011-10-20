@@ -24,7 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.component.PluggableService;
 
-public interface VirtualNetworkApplianceService extends PluggableService{
+public interface VirtualNetworkApplianceService {
     /**
      * Starts domain router
      * @param cmd the command specifying router's id
