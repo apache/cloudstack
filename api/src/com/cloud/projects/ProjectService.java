@@ -65,4 +65,6 @@ public interface ProjectService {
     Project activateProject(long projectId);
     
     Project suspendProject(long projectId) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    Project enableProject(long projectId);
 }

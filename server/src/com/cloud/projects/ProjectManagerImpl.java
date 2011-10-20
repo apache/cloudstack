@@ -154,7 +154,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project")
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", create=true)
     @DB
     public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException{
         Account caller = UserContext.current().getCaller();
@@ -202,6 +202,29 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         return project;
     }
+    
+    
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", async=true)
+    @DB
+    public Project enableProject(long projectId){
+        Account caller = UserContext.current().getCaller();
+        
+        ProjectVO project= getProject(projectId);
+        //verify input parameters
+        if (project == null) {
+            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+        }
+        
+        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()), AccessType.ModifyProject);
+        
+        //at this point enabling project doesn't require anything, so just update the state
+        project.setState(State.Active);
+        _projectDao.update(projectId, project);
+        
+        return project;
+    }
+    
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true)
@@ -382,7 +405,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_ADD, eventDescription = "adding account to project")
     public ProjectAccount assignAccountToProject(Project project, long accountId, ProjectAccount.Role accountRole) {
         return _projectAccountDao.persist(new ProjectAccountVO(project, accountId, accountRole));
     }
@@ -436,7 +458,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override @DB
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project")
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async=true)
     public Project updateProject(long projectId, String displayText, String newOwnerName) {
         Account caller = UserContext.current().getCaller();
         
@@ -491,6 +513,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_ADD, eventDescription = "adding account to project", async=true)
     public boolean addAccountToProject(long projectId, String accountName, String email) {
         Account caller = UserContext.current().getCaller();
         
@@ -523,6 +546,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (_invitationRequired) {
             return inviteAccountToProject(project, account, email);
         } else {
+            if (account == null) {
+                throw new InvalidParameterValueException("Account information is required for assigning account to the project");
+            }
             if (assignAccountToProject(project, account.getId(), ProjectAccount.Role.Regular) != null) {
                 return true;
             } else {
@@ -557,7 +583,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_REMOVE, eventDescription = "removing account from project")
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACCOUNT_REMOVE, eventDescription = "removing account from project", async=true)
     public boolean deleteAccountFromProject(long projectId, String accountName) {
         Account caller = UserContext.current().getCaller();
         
@@ -755,6 +781,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
     
     @Override @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_JOIN, eventDescription = "account joining from project", async=true)
     public boolean joinProject(long projectId, String accountName, String token) {
         Account caller = UserContext.current().getCaller();
         Long accountId = null;

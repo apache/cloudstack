@@ -210,5 +210,6 @@ public class EventTypes {
 	public static final String EVENT_PROJECT_ACTIVATE = "PROJECT.ACTIVATE";
 	public static final String EVENT_PROJECT_SUSPEND = "PROJECT.SUSPEND";
 	public static final String EVENT_PROJECT_ACCOUNT_ADD = "PROJECT.ACCOUNT.ADD";
+	public static final String EVENT_PROJECT_JOIN = "PROJECT.JOIN";
 	public static final String EVENT_PROJECT_ACCOUNT_REMOVE = "PROJECT.ACCOUNT.REMOVE";
 }

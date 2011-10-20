@@ -20,16 +20,18 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Makes account to join the project", responseObject=SuccessResponse.class)
-public class JoinProjectCmd extends BaseCmd {
+public class JoinProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(JoinProjectCmd.class.getName());
     private static final String s_name = "joinprojectresponse";
 
@@ -86,5 +88,15 @@ public class JoinProjectCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to join the project");
         }
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROJECT_JOIN;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return  "Account " + accountName + " joining the project: " + projectId;
     }
 }

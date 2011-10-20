@@ -21,17 +21,19 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class)
-public class AddAccountToProjectCmd extends BaseCmd {
+public class AddAccountToProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
 
     private static final String s_name = "addaccounttoprojectresponse";
@@ -78,6 +80,10 @@ public class AddAccountToProjectCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        if (accountName == null && email == null) {
+            throw new InvalidParameterValueException("Either accountName or email is required");
+        }
+        
         UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail());
         if (result) {
@@ -97,5 +103,19 @@ public class AddAccountToProjectCmd extends BaseCmd {
         } 
         
         return _projectService.getProjectOwner(projectId).getId(); 
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROJECT_ACCOUNT_ADD;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        if (accountName != null) {
+            return  "Adding account " + accountName + " to project: " + projectId;
+        } else {
+            return  "Sending invitation to email " + email + " to join project: " + projectId;
+        }  
     }
 }

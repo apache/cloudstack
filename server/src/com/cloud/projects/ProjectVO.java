@@ -68,7 +68,7 @@ public class ProjectVO implements Project{
         this.displayText = displayText;
         this.projectAccountId = projectAccountId;
         this.domainId = domainId;
-        this.state = State.Active;
+        this.state = State.Disabled;
     }
     
     @Override

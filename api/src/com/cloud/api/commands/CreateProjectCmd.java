@@ -21,11 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
@@ -33,7 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a project", responseObject=ProjectResponse.class)
-public class CreateProjectCmd extends BaseCmd {
+public class CreateProjectCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateProjectCmd.class.getName());
 
     private static final String s_name = "createprojectresponse";
@@ -59,11 +61,20 @@ public class CreateProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public String getAccountName() {
-        return accountName;
+        if (accountName != null) {
+            return accountName;
+        } else {
+            return UserContext.current().getCaller().getAccountName();
+        }
     }
 
     public Long getDomainId() {
-        return domainId;
+        if (domainId != null) {
+            return domainId;
+        } else {
+            return UserContext.current().getCaller().getDomainId();
+        }
+        
     }
 
     public String getName() {
@@ -100,9 +111,8 @@ public class CreateProjectCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceAllocationException{
-        UserContext.current().setEventDetails("Project Name: "+ getName());
-        Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
+    public void execute(){
+        Project project = _projectService.enableProject(this.getEntityId());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
             response.setResponseName(getCommandName());
@@ -110,5 +120,26 @@ public class CreateProjectCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
         }
+    }
+    
+    @Override
+    public void create() throws ResourceAllocationException{
+        UserContext.current().setEventDetails("Project Name: "+ getName());
+        Project project = _projectService.createProject(getName(), getDisplayText(), getAccountName(), getDomainId());
+        if (project != null) {
+            this.setEntityId(project.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
+        }
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROJECT_CREATE;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return "creating project";
     }
 }

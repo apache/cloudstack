@@ -276,7 +276,6 @@ addAccountToProject=com.cloud.api.commands.AddAccountToProjectCmd;15
 deleteAccountFromProject=com.cloud.api.commands.DeleteAccountFromProjectCmd;15
 listProjectAccounts=com.cloud.api.commands.ListProjectAccountsCmd;15
 listProjectInvitations=com.cloud.api.commands.ListProjectInvitationsCmd;15
-
 joinProject=com.cloud.api.commands.JoinProjectCmd;15
 
 #### 

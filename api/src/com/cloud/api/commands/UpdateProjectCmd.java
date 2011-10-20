@@ -21,17 +21,20 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a project", responseObject=ProjectResponse.class)
-public class UpdateProjectCmd extends BaseCmd {
+public class UpdateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
     private static final String s_name = "updateprojectresponse";
@@ -97,5 +100,15 @@ public class UpdateProjectCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update a project");
         }
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROJECT_UPDATE;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return  "Updating project: " + id;
     }
 }
