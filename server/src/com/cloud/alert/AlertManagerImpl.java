@@ -99,6 +99,7 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private IPAddressDao _publicIPAddressDao;
     @Inject private DataCenterIpAddressDao _privateIPAddressDao;
     @Inject private StoragePoolDao _storagePoolDao;
+    @Inject private ConfigurationDao _configDao;
     
     private Timer _timer = null;
     private float _cpuOverProvisioningFactor = 1;
@@ -112,6 +113,7 @@ public class AlertManagerImpl implements AlertManager {
     private double _secondaryStorageCapacityThreshold = 0.75; 
 	private double _vlanCapacityThreshold = 0.75;
 	private double _directNetworkPublicIpCapacityThreshold = 0.75;
+	private double _localStorageCapacityThreshold = 0.75;
     Map<Short,Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
 
     @Override
@@ -149,15 +151,17 @@ public class AlertManagerImpl implements AlertManager {
 
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
-        String storageCapacityThreshold = configs.get("storage.capacity.threshold");
-        String cpuCapacityThreshold = configs.get("cpu.capacity.threshold");
-        String memoryCapacityThreshold = configs.get("memory.capacity.threshold");
-        String storageAllocCapacityThreshold = configs.get("storage.allocated.capacity.threshold");
-        String publicIPCapacityThreshold = configs.get("public.ip.capacity.threshold");
-        String privateIPCapacityThreshold = configs.get("private.ip.capacity.threshold");
-        String secondaryStorageCapacityThreshold = configs.get("secondarystorage.capacity.threshold");
-        String vlanCapacityThreshold = configs.get("vlan.capacity.threshold");
-        String directNetworkPublicIpCapacityThreshold = configs.get("directnetwork.public.ip.capacity.threshold");
+         
+        String storageCapacityThreshold = _configDao.getValue(Config.StorageCapacityThreshold.key());configs.get("storage.capacity.notificationThreshold");
+        String cpuCapacityThreshold = _configDao.getValue(Config.CPUCapacityThreshold.key());configs.get("cpu.capacity.notificationThreshold");
+        String memoryCapacityThreshold = _configDao.getValue(Config.MemoryCapacityThreshold.key());configs.get("memory.capacity.notificationThreshold");
+        String storageAllocCapacityThreshold = _configDao.getValue(Config.StorageAllocatedCapacityThreshold.key());configs.get("storage.allocated.capacity.notificationThreshold");
+        String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());configs.get("public.ip.capacity.notificationThreshold");
+        String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());configs.get("private.ip.capacity.notificationThreshold");
+        String secondaryStorageCapacityThreshold = _configDao.getValue(Config.SecondaryStorageCapacityThreshold.key());configs.get("secondarystorage.capacity.notificationThreshold");
+        String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());configs.get("vlan.capacity.notificationThreshold");
+        String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());configs.get("directnetwork.public.ip.capacity.notificationThreshold");
+        String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());configs.get("directnetwork.public.ip.capacity.notificationThreshold");
         
         if (storageCapacityThreshold != null) {
             _storageCapacityThreshold = Double.parseDouble(storageCapacityThreshold);
@@ -186,6 +190,9 @@ public class AlertManagerImpl implements AlertManager {
         if (directNetworkPublicIpCapacityThreshold != null) {
             _directNetworkPublicIpCapacityThreshold = Double.parseDouble(directNetworkPublicIpCapacityThreshold);
         }
+        if (localStorageCapacityThreshold != null) {
+            _localStorageCapacityThreshold = Double.parseDouble(localStorageCapacityThreshold);
+        }
         
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE, _storageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, _storageAllocCapacityThreshold);
@@ -196,6 +203,8 @@ public class AlertManagerImpl implements AlertManager {
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, _secondaryStorageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VLAN, _vlanCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, _localStorageCapacityThreshold);
+
         
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -490,49 +499,72 @@ public class AlertManagerImpl implements AlertManager {
         String pctStr = formatPercent(usedCapacity/totalCapacity);
         
     	switch (capacityType) {
+    	
+    	//Cluster Level
         case CapacityVO.CAPACITY_TYPE_MEMORY:
-            msgSubject = "System Alert: Low Available Memory in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            msgSubject = "System Alert: Low Available Memory in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
             break;
         case CapacityVO.CAPACITY_TYPE_CPU:
-            msgSubject = "System Alert: Low Unallocated CPU in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            msgSubject = "System Alert: Low Unallocated CPU in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = _dfWhole.format(totalCapacity);
             usedStr = _dfWhole.format(usedCapacity);
             msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
             break;
         case CapacityVO.CAPACITY_TYPE_STORAGE:
-            msgSubject = "System Alert: Low Available Storage in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            msgSubject = "System Alert: Low Available Storage in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
             break;
         case CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED:
-            msgSubject = "System Alert: Remaining unallocated Storage is low in pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            msgSubject = "System Alert: Remaining unallocated Storage is low in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
             break;
-        case CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
-            msgSubject = "System Alert: Number of unallocated public IPs is low in availablity zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+        case CapacityVO.CAPACITY_TYPE_LOCAL_STORAGE:
+            msgSubject = "System Alert: Remaining unallocated Local Storage is low in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
+            totalStr = formatBytesToMegabytes(totalCapacity);
+            usedStr = formatBytesToMegabytes(usedCapacity);
+            msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
             break;
+           
+        //Pod Level    
         case CapacityVO.CAPACITY_TYPE_PRIVATE_IP:        	
         	msgSubject = "System Alert: Number of unallocated private IPs is low in pod " +pod.getName()+ " of availablity zone " + dc.getName();
         	totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
         	msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
         	break;
-        	
+        
+        //Zone Level
         case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:        	
         	msgSubject = "System Alert: Low Available Storage in availablity zone " + dc.getName();
-        	totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
+        	totalStr = formatBytesToMegabytes(totalCapacity);
+            usedStr = formatBytesToMegabytes(usedCapacity);
         	msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-        	break;        
+        	break;
+        case CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
+            msgSubject = "System Alert: Number of unallocated virtual network public IPs is low in availablity zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
+            msgSubject = "System Alert: Number of unallocated direct attached public IPs is low in availablity zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Number of unallocated direct attached public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            break;
+        case CapacityVO.CAPACITY_TYPE_VLAN:
+            msgSubject = "System Alert: Number of unallocated VLANs is low in availablity zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            break;
         }
     	
     	try {
@@ -568,6 +600,7 @@ public class AlertManagerImpl implements AlertManager {
     	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_MEMORY);
     	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_STORAGE);
     	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
+    	clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_LOCAL_STORAGE);
 		return clusterCapacityTypes;
     	
     }

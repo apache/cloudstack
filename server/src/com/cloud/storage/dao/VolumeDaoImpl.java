@@ -297,7 +297,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
-        List<SumCount> results = customSearchIncludingRemoved(sc, null);
+        List<SumCount> results = customSearch(sc, null);
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);
 	}
