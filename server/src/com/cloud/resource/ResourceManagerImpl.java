@@ -975,7 +975,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         return (_agentMgr.reconnect(hostId) ? host : null);
     }
-
+    
     @Override
     public boolean resourceStateTransitTo(Host host, ResourceState.Event event, long msId) throws NoTransitionException {
         ResourceState currentState = host.getResourceState();
@@ -1674,7 +1674,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         
 		try {
 			resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
-			_agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.ResetRequested);
+			_agentMgr.pullAgentOutMaintenance(hostId);
 			return true;
 		} catch (NoTransitionException e) {
 			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);

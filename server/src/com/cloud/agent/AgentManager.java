@@ -215,6 +215,8 @@ public interface AgentManager extends Manager {
     public boolean disconnectAgent(HostVO host, Status.Event e, long msId);
     
     public void pullAgentToMaintenance(long hostId);
+    
+    public void pullAgentOutMaintenance(long hostId);
 
 	boolean reconnect(long hostId);
 }

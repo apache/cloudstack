@@ -1710,4 +1710,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             attache.cancelAllCommands(Status.Disconnected, false);
         }        
     }
+    
+    @Override
+    public void pullAgentOutMaintenance(long hostId) {
+        AgentAttache attache = findAttache(hostId);
+        if (attache != null) {
+        	attache.setMaintenanceMode(false);
+        }
+    }
 }
