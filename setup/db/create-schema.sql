@@ -118,6 +118,7 @@ DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud`.`op_host_transfer`;
 DROP TABLE IF EXISTS `cloud`.`projects`;
 DROP TABLE IF EXISTS `cloud`.`physical_network`;
+DROP TABLE IF EXISTS `cloud`.`virtual_router_elements`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -929,6 +930,7 @@ CREATE TABLE `cloud`.`user_vm_details` (
 
 CREATE TABLE `cloud`.`domain_router` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
+  `element_id` bigint unsigned NOT NULL COMMENT 'correlated virtual router element ID',
   `public_mac_address` varchar(17)   COMMENT 'mac address of the public facing network card',
   `public_ip_address` char(40)  COMMENT 'public ip address used for source net',
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
@@ -945,6 +947,7 @@ CREATE TABLE `cloud`.`domain_router` (
   `scripts_version` varchar(100) COMMENT 'scripts version',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+  #CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id` (`element_id`) REFERENCES `virtual_router_elements`(`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';
 
 CREATE TABLE  `cloud`.`upload` (
@@ -1722,6 +1725,32 @@ CREATE TABLE `cloud`.`elastic_lb_vm_map` (
   CONSTRAINT `fk_elastic_lb_vm_map__ip_id` FOREIGN KEY `fk_elastic_lb_vm_map__ip_id` (`ip_addr_id`) REFERENCES `user_ip_address` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_elastic_lb_vm_map__elb_vm_id` FOREIGN KEY `fk_elastic_lb_vm_map__elb_vm_id` (`elb_vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_elastic_lb_vm_map__lb_id` FOREIGN KEY `fk_elastic_lb_vm_map__lb_id` (`lb_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`virtual_router_elements` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `nsp_id` bigint unsigned NOT NULL,
+  `uuid` varchar(255) UNIQUE,
+  `ready` int(1) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `dhcp_provided` int(1) NOT NULL,
+  `dns_provided` int(1) NOT NULL,
+  `gateway_provided` int(1) NOT NULL,
+  `firewall_provided` int(1) NOT NULL,
+  `source_nat_provided` int(1) NOT NULL,
+  `load_balance_provided` int(1) NOT NULL,
+  `vpn_provided` int(1) NOT NULL,
+  `service_offering_id` bigint unsigned NOT NULL,
+  `dhcp_range` varchar(255),
+  `default_domain_name` varchar(255),
+  `dns1` varchar(255),
+  `dns2` varchar(255),
+  `internal_dns1` varchar(255),
+  `internal_dns2` varchar(255),
+  `gateway_ip` varchar(255),
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_virtual_router_elements__service_offering_id` FOREIGN KEY `fk_virtual_router_elements__service_offering_id` (`service_offering_id`) REFERENCES `service_offering`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -1090,8 +1090,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (routers.size() >= 5) {
                     s_logger.error("Too much redundant routers!");
                 }
-                router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
+                router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
                 router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
                 // Creating stats entry for router
                 UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
@@ -1275,8 +1275,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             /* Before starting router, already know the hypervisor type */
             VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
 
-            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                    owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
+            router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                    template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
             routers.add(router);
