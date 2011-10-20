@@ -386,7 +386,6 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean configure(ConfigureVirtualRouterElementCmd cmd) {
-        addElement(new Long(1), cmd.getUUID());
         VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
         if (element == null) {
             s_logger.trace("Can't find element with UUID " + cmd.getUUID());

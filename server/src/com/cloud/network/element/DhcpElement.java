@@ -259,7 +259,6 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
     
     @Override
     public boolean configure(ConfigureDhcpElementCmd cmd) {
-        addElement(new Long(3), cmd.getUUID());
         VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
         if (element == null) {
             s_logger.trace("Can't find element with UUID " + cmd.getUUID());

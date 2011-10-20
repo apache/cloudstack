@@ -90,7 +90,6 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean configure(ConfigureRedundantVirtualRouterElementCmd cmd) {
-        addElement(new Long(2), cmd.getUUID());
         VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
         if (element == null) {
             s_logger.trace("Can't find element with UUID " + cmd.getUUID());
