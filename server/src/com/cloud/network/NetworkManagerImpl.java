@@ -3128,6 +3128,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (!canUpgrade(oldNetworkOfferingId, networkOfferingId)) {
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
                 }
+                
+                //TODO - need to find the way how to cleanup the rules on the old provider
                 network.setNetworkOfferingId(networkOfferingId);
                 restartNetwork = true;
             }
@@ -3371,30 +3373,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return false;
         }
         
-        //list of services and providers should be the same
-        Map<String, Set<String>> newServices = listNetworkOfferingServices(newNetworkOfferingId);
-        Map<String, Set<String>> oldServices = listNetworkOfferingServices(oldNetworkOfferingId);
-        
-        if (newServices.size() != oldServices.size()) {
-            s_logger.debug("Number of supported services is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
-            return false;
-        }
-        
-        for (String service : newServices.keySet()) {
-            Set<String> newProviders = newServices.get(service);
-            Set<String> oldProviders = oldServices.get(service);
-            if (newProviders.size() != oldProviders.size()) {
-                s_logger.debug("Number of providers for the service " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
-                return false;
-            }
-            
-            for (String provider : newProviders) {
-                if (!oldProviders.contains(provider)) {
-                    s_logger.debug("Providers are different for the " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
-                    return false;
-                }
-            } 
-        }
+//        //list of services and providers should be the same
+//        Map<String, Set<String>> newServices = listNetworkOfferingServices(newNetworkOfferingId);
+//        Map<String, Set<String>> oldServices = listNetworkOfferingServices(oldNetworkOfferingId);
+//        
+//        if (newServices.size() != oldServices.size()) {
+//            s_logger.debug("Number of supported services is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
+//            return false;
+//        }
+//        
+//        for (String service : newServices.keySet()) {
+//            Set<String> newProviders = newServices.get(service);
+//            Set<String> oldProviders = oldServices.get(service);
+//            if (newProviders.size() != oldProviders.size()) {
+//                s_logger.debug("Number of providers for the service " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
+//                return false;
+//            }
+//            
+//            for (String provider : newProviders) {
+//                if (!oldProviders.contains(provider)) {
+//                    s_logger.debug("Providers are different for the " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
+//                    return false;
+//                }
+//            }
+//        }
         
         return true;
     }
