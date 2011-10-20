@@ -6610,11 +6610,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Host.Record hostr = poolr.master.getRecord(conn);
             if (!_host.uuid.equals(hostr.uuid)) {
                 s_logger.debug("Not the master node so just return ok: " + _host.ip); 
-                return new Answer(cmd, false, "Not a pool master");
+                return new ClusterSyncAnswer(cmd.getClusterId());
             }
         } catch (Exception e) {
             s_logger.warn("Check for master failed, failing the Cluster sync command");
-            return new Answer(cmd, false, "Not a pool master");
+            return new ClusterSyncAnswer(cmd.getClusterId());
         } 
         HashMap<String, Pair<String, State>> newStates;
         int sync_type;

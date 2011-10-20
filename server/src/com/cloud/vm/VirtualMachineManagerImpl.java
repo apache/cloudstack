@@ -1943,7 +1943,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         long agentId = agent.getId();
         Long clusterId = agent.getClusterId();
-        ClusterSyncCommand syncCmd = new ClusterSyncCommand(60, 20, clusterId);
+        ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()),
+                Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
         try {
             long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
             s_logger.debug("Cluster VM sync started with jobid " + seq_no);
