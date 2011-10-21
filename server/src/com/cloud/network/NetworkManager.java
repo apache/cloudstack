@@ -222,5 +222,7 @@ public interface NetworkManager extends NetworkService {
     Long getPodIdForVlan(long vlanDbId);
     
     boolean isProviderSupported(long networkOfferingId, Service service, Provider provider);
+    
+    List<Long> listNetworkOfferingsForUpgrade(long networkId); 
 
 }

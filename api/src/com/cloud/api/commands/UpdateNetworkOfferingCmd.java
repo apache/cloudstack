@@ -113,35 +113,35 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     }    
 
     public Boolean getDhcpService() {
-        return dhcpService;
+        return dhcpService == null ? false : dhcpService;
     }
 
     public Boolean getDnsService() {
-        return dnsService;
+        return dnsService == null ? false : dnsService;
     }
 
     public Boolean getGatewayService() {
-        return gatewayService;
+        return gatewayService == null ? false : gatewayService;
     }
 
     public Boolean getFirewallService() {
-        return firewallService;
+        return firewallService == null ? false : firewallService;
     }
 
     public Boolean getLbService() {
-        return lbService;
+        return lbService == null ? false : lbService;
     }
 
     public Boolean getUserdataService() {
-        return userdataService;
+        return userdataService == null ? false : userdataService;
     }
 
     public Boolean getSourceNatService() {
-        return sourceNatService;
+        return sourceNatService == null ? false : sourceNatService;
     }
 
     public Boolean getVpnService() {
-        return vpnService;
+        return vpnService == null ? false : vpnService;
     }
 
     public Map<String, List<String>> getServiceProviders() {

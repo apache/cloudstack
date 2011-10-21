@@ -111,27 +111,34 @@ public interface Network extends ControlledEntity {
     public static class Provider {
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
 
-        public static final Provider VirtualRouter = new Provider("VirtualRouter");
-        public static final Provider DhcpServer = new Provider("DhcpServer");
-        public static final Provider JuniperSRX = new Provider("JuniperSRX");
-        public static final Provider F5BigIp = new Provider("F5BigIp");
-        public static final Provider NetscalerMPX = new Provider("NetscalerMPX");        
-        public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer");
-        public static final Provider ExternalGateWay = new Provider("ExternalGateWay");
-        public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm");
+        public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
+        public static final Provider DhcpServer = new Provider("DhcpServer", false);
+        public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
+        public static final Provider F5BigIp = new Provider("F5BigIp", true);
+        public static final Provider NetscalerMPX = new Provider("NetscalerMPX", true);        
+        public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer", true);
+        public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
+        public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
+        
         public static final Provider defaultProvider = VirtualRouter;
 
-        public static final Provider None = new Provider("None");
+        public static final Provider None = new Provider("None", false);
 
         private String name;
+        private boolean isExternal;
 
-        public Provider(String name) {
+        public Provider(String name, boolean isExternal) {
             this.name = name;
+            this.isExternal = isExternal;
             supportedProviders.add(this);
         }
 
         public String getName() {
             return name;
+        }
+        
+        public boolean isExternal() {
+            return isExternal;
         }
         
         public static Provider getProvider(String providerName) {

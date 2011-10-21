@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
@@ -75,6 +76,9 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
     private String state;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -126,6 +130,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     public String getState() {
         return state;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////

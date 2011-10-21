@@ -686,7 +686,6 @@ public class ElasticLoadBalancerManagerImpl implements
                         s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
                         if (newIp)
                             releaseIp(ipId, UserContext.current().getCallerUserId(), account);
-                       
                     }
                 }
 

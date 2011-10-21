@@ -338,7 +338,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     public Long getNetworkCountByOfferingId(long offeringId) {
         SearchCriteria<Long> sc = CountByOfferingId.create();
-        sc.setParameters("offering", offeringId);
+        sc.setParameters("offeringId", offeringId);
         List<Long> results = customSearch(sc, null);
         return results.get(0);
     }

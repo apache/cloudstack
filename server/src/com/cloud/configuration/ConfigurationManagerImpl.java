@@ -139,7 +139,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -2874,10 +2873,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
         Filter searchFilter = new Filter(NetworkOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
 
-        Object id = cmd.getId();
+        Long id = cmd.getId();
         Object name = cmd.getNetworkOfferingName();
         Object displayText = cmd.getDisplayText();
         Object trafficType = cmd.getTrafficType();
@@ -2890,6 +2890,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object state = cmd.getState();
         Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
+        Long networkId = cmd.getNetworkId();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -2903,10 +2904,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
         if (guestIpType != null) {
@@ -2956,9 +2953,37 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 sc.addAnd("guestType", SearchCriteria.Op.EQ, GuestIpType.Direct);
             }
         }
-
+        
         // Don't return system network offerings to the user
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
+        
+        //list offerings available for upgrade only
+        if (networkId != null) {
+            //check if network exists and the caller can operate with it
+            Network network = _networkMgr.getNetwork(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find the network by id=" + networkId);
+            }
+            // Don't allow to update system network
+            NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+            if (offering.isSystemOnly()) {
+                throw new InvalidParameterValueException("Can't update system networks");
+            }
+            
+            _accountMgr.checkAccess(caller, null, network);
+            
+            List<Long> offeringIds = _networkMgr.listNetworkOfferingsForUpgrade(networkId);
+            
+            if (!offeringIds.isEmpty()) {
+                sc.addAnd("id", SearchCriteria.Op.IN, offeringIds.toArray());  
+            } else {
+                return new ArrayList<NetworkOffering>();
+            }
+        }
+        
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
 
         return _networkOfferingDao.search(sc, searchFilter);
     }

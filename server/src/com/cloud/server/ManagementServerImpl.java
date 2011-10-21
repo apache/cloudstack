@@ -768,11 +768,8 @@ public class ManagementServerImpl implements ManagementServer {
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
             }
-            if ((caller != null) && !isAdmin(caller.getType())) {
-                if (caller.getId() != vmInstance.getAccountId()) {
-                    throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
-                }
-            }
+            
+            _accountMgr.checkAccess(caller, null, vmInstance);
 
             ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());

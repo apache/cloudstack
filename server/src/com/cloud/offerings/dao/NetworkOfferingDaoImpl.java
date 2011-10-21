@@ -29,12 +29,15 @@ import javax.persistence.EntityExistsException;
 
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value=NetworkOfferingDao.class) @DB(txn=false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
@@ -42,6 +45,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     final SearchBuilder<NetworkOfferingVO> TrafficTypeGuestTypeSearch;
+    private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -65,6 +69,16 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         TrafficTypeGuestTypeSearch.and("guestType", TrafficTypeGuestTypeSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
         TrafficTypeGuestTypeSearch.and("isSystem", TrafficTypeGuestTypeSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         TrafficTypeGuestTypeSearch.done();
+
+        UpgradeSearch = createSearchBuilder(Long.class);
+        UpgradeSearch.selectField(UpgradeSearch.entity().getId());
+        UpgradeSearch.and("physicalNetworkId", UpgradeSearch.entity().getId(), Op.NEQ);
+        UpgradeSearch.and("physicalNetworkId", UpgradeSearch.entity().isSystemOnly(), Op.EQ);
+        UpgradeSearch.and("trafficType", UpgradeSearch.entity().getTrafficType(), Op.EQ);
+        UpgradeSearch.and("type", UpgradeSearch.entity().getType(), Op.EQ);
+        UpgradeSearch.and("state", UpgradeSearch.entity().getState(), Op.EQ);
+        UpgradeSearch.and("securityGroupEnabled", UpgradeSearch.entity().isSecurityGroupEnabled(), Op.EQ);
+        UpgradeSearch.done();
     }
     
     @Override
@@ -130,5 +144,28 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         offering.setName(null);
         update(networkOfferingId, offering);
         return super.remove(networkOfferingId);
+    }
+    
+    @Override
+    public List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering) {
+        SearchCriteria<Long> sc = UpgradeSearch.create();
+        //exclude original offering
+        sc.addAnd("id", SearchCriteria.Op.NEQ, originalOffering.getId());
+        
+        //list only non-system offerings
+        sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
+        
+        //security group property should be the same
+        sc.addAnd("securityGroupEnabled", SearchCriteria.Op.EQ, originalOffering.isSecurityGroupEnabled());
+        
+        //Type of the network should be the same
+        sc.addAnd("type", SearchCriteria.Op.EQ, originalOffering.getType());
+        
+        //Traffic types should be the same 
+        sc.addAnd("trafficType", SearchCriteria.Op.EQ, originalOffering.getTrafficType());
+        
+        sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
+
+        return customSearch(sc, null);
     }
 }

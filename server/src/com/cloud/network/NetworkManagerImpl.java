@@ -1787,36 +1787,38 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // If networkDomain is not specified, take it from the global configuration
-        Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(zoneId, networkOfferingId, Service.Dns);
-        String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
-        if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
-            if (networkDomain != null) {
-                throw new InvalidParameterValueException("Domain name change is not supported by network offering id=" + networkOfferingId + " in zone id=" + zoneId);
-            }
-        } else {
-            if (networkDomain == null) {
-                //1) Get networkDomain from the corresponding account/domain/zone
-                if (isShared) {
-                    if (domainId != null) {
-                        networkDomain = getDomainNetworkDomain(domainId, zoneId);
-                    } else {
-                        networkDomain = getZoneNetworkDomain(zoneId);
-                    }
-                } else {
-                    networkDomain = getAccountNetworkDomain(owner.getId(), zoneId);
+        if (isServiceSupported(networkOfferingId, Service.Dns)) {
+            Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(zoneId, networkOfferingId, Service.Dns);
+            String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
+            if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
+                if (networkDomain != null) {
+                    throw new InvalidParameterValueException("Domain name change is not supported by network offering id=" + networkOfferingId + " in zone id=" + zoneId);
                 }
-                
-                //2) If null, generate networkDomain using domain suffix from the global config variables
-                if (networkDomain == null) {
-                    networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
-                }
-                
             } else {
-                // validate network domain
-                if (!NetUtils.verifyDomainName(networkDomain)) {
-                    throw new InvalidParameterValueException(
-                            "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                    + "and the hyphen ('-'); can't start or end with \"-\"");
+                if (networkDomain == null) {
+                    //1) Get networkDomain from the corresponding account/domain/zone
+                    if (isShared) {
+                        if (domainId != null) {
+                            networkDomain = getDomainNetworkDomain(domainId, zoneId);
+                        } else {
+                            networkDomain = getZoneNetworkDomain(zoneId);
+                        }
+                    } else {
+                        networkDomain = getAccountNetworkDomain(owner.getId(), zoneId);
+                    }
+                    
+                    //2) If null, generate networkDomain using domain suffix from the global config variables
+                    if (networkDomain == null) {
+                        networkDomain = "cs" + Long.toHexString(owner.getId()) + _networkDomain;
+                    }
+                    
+                } else {
+                    // validate network domain
+                    if (!NetUtils.verifyDomainName(networkDomain)) {
+                        throw new InvalidParameterValueException(
+                                "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                    }
                 }
             }
         }
@@ -2661,7 +2663,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service) {
 
         if (!isServiceSupported(networkOfferingId, service)) {
-            throw new UnsupportedServiceException("Service " + service.getName() + " is not by the network offering id=" + networkOfferingId);
+            throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
         }
 
         Map<Service, Map<Capability, String>> networkCapabilities = getZoneCapabilities(zoneId);
@@ -3156,6 +3158,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (networkOffering == null || networkOffering.isSystemOnly()) {
                 throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
             }
+            
+            //network offering should be in Enabled state
+            if (networkOffering.getState() != NetworkOffering.State.Enabled) {
+                throw new InvalidParameterValueException("Network offering " + networkOffering + " is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it");
+            }
+            
             if (networkOffering.getAvailability() == Availability.Unavailable || networkOffering.getState() == NetworkOffering.State.Disabled || networkOffering.getState() == NetworkOffering.State.Inactive) {
                 throw new InvalidParameterValueException("Can't update network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability() + " and " + networkOffering.getState());
             }
@@ -3410,31 +3418,47 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return false;
         }
         
-//        //list of services and providers should be the same
-//        Map<String, Set<String>> newServices = listNetworkOfferingServices(newNetworkOfferingId);
-//        Map<String, Set<String>> oldServices = listNetworkOfferingServices(oldNetworkOfferingId);
-//        
-//        if (newServices.size() != oldServices.size()) {
-//            s_logger.debug("Number of supported services is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
-//            return false;
-//        }
-//        
-//        for (String service : newServices.keySet()) {
-//            Set<String> newProviders = newServices.get(service);
-//            Set<String> oldProviders = oldServices.get(service);
-//            if (newProviders.size() != oldProviders.size()) {
-//                s_logger.debug("Number of providers for the service " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
-//                return false;
-//            }
-//            
-//            for (String provider : newProviders) {
-//                if (!oldProviders.contains(provider)) {
-//                    s_logger.debug("Providers are different for the " + service + " is not the same for offering " + newNetworkOfferingId + " and " + oldNetworkOfferingId);
-//                    return false;
-//                }
-//            }
-//        }
+        //compare providers
+        return canUpgradeProviders(oldNetworkOfferingId, newNetworkOfferingId);
+    }
+    
+    
+    protected boolean canUpgradeProviders(long oldNetworkOfferingId, long newNetworkOfferingId) {
+        //list of services and providers should be the same
+        Map<String, Set<String>> newServices = listNetworkOfferingServices(newNetworkOfferingId);
+        Map<String, Set<String>> oldServices = listNetworkOfferingServices(oldNetworkOfferingId);
         
+        if (newServices.size() < oldServices.size()) {
+            s_logger.debug("Network offering downgrade is not allowed: number of supported services for the new offering " + newNetworkOfferingId + " is less than the old offering " + oldNetworkOfferingId);
+            return false;
+        }
+        
+        for (String service : oldServices.keySet()) {
+            
+            //1)check that all old services are present in the new network offering
+            if (!newServices.containsKey(service)) {
+                s_logger.debug("New service offering doesn't have " + service + " service present in the old service offering, downgrade is not allowed");
+                return false;
+            }  
+            
+            Set<String> newProviders = newServices.get(service);
+            Set<String> oldProviders = oldServices.get(service);
+            
+            //2) Can upgrade only from internal provider to external provider. Any other combinations are not allowed
+            for (String oldProvider : oldProviders) {
+                if (newProviders.contains(oldProvider)) {
+                    s_logger.trace("New list of providers contains provider " + oldProvider);
+                    continue;
+                }
+                //iterate through new providers and check that the old provider can upgrade
+                for (String newProvider : newProviders) {
+                    if (!(!Provider.getProvider(oldProvider).isExternal() && Provider.getProvider(newProvider).isExternal())) {
+                        s_logger.debug("Can't downgrade from network offering " + oldNetworkOfferingId + " to the new networkOffering " + newNetworkOfferingId);
+                        return false;
+                    }
+                }
+            }
+        }
         return true;
     }
 
@@ -3489,7 +3513,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Unable to resolve broadcastDomainRange '" + broadcastDomainRangeStr + "' to a supported value {Pod or Zone}");
             }
         }
-
         
         Transaction txn = Transaction.currentTxn();
         try {
@@ -3939,6 +3962,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return pNtwks.get(0).getId();
+    }
+    
+    @Override
+    public List<Long> listNetworkOfferingsForUpgrade(long networkId) {
+        List<Long> offeringIdsToReturn = new ArrayList<Long>();
+        
+        NetworkOffering originalOffering = _configMgr.getNetworkOffering(getNetwork(networkId).getNetworkOfferingId());
+        
+        List<Long> offerings = _networkOfferingDao.getOfferingIdsToUpgradeFrom(originalOffering);
+        
+        //check if providers are upgradable
+        for (Long offering : offerings) {
+            if (canUpgradeProviders(originalOffering.getId(), offering.longValue())) {
+                offeringIdsToReturn.add(offering);
+            }
+        }
+        
+        return offeringIdsToReturn;
     }
 
 }
