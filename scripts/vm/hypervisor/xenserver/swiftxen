@@ -1,0 +1,80 @@
+#!/usr/bin/python
+# Version @VERSION@
+#
+# A plugin for executing script needed by cloud  stack
+
+import os, sys, time
+import XenAPIPlugin
+sys.path.extend(["/opt/xensource/sm/"])
+import util
+
+def echo(fn):
+    def wrapped(*v, **k):
+        name = fn.__name__
+        util.SMlog("#### VMOPS enter  %s ####" % name )
+        res = fn(*v, **k)
+        util.SMlog("#### VMOPS exit  %s ####" % name )
+        return res
+    return wrapped
+
+SWIFT = "/opt/xensource/bin/swift"
+
+MAX_SEG_SIZE = 5 * 1024 * 1024 * 1024
+
+def upload(args):
+    url = args['url']
+    account = args['account']
+    username = args['username']
+    key = args['key']
+    container = args['container']
+    ldir = args['ldir']
+    lfilename = args['lfilename']
+    isISCSI = args['isISCSI']
+    segment = 0
+    util.SMlog("#### VMOPS upload %s to swift ####", lfilename)
+    savedpath = os.getcwd()
+    os.chdir(ldir)
+    try :
+        if isISCSI == 'ture':
+            cmd1 = [ lvchange , "-ay", lfilename ] 
+            util.pread2(cmd1)
+            cmd1 = [ lvdisplay, "-c", lfilename ]
+            lines = util.pread2(cmd).split(':');
+            size = long(lines[6]) * 512
+            if size > MAX_SEG_SIZE :
+                segment = 1
+        else :
+            size = os.path.getsize(lfilename)
+            if size > MAX_SEG_SIZE :        
+                segment = 1
+        if segment :             
+            cmd = [SWIFT, "-A", url, "-U", account + ":" + username, "-K", key, "upload", "-S", MAX_SEG_SIZE, container, lfilename]
+        else :
+            cmd = [SWIFT, "-A", url ,"-U", account + ":" + username, "-K", key, "upload", container, lfilename]
+        util.pread2(cmd)
+        return 'true'
+    finally:
+        os.chdir(savedpath)
+    return 'false'
+
+
+@echo
+def swift(session, args):
+    op = args['op']
+    if op == 'upload':
+        return upload(args)
+    elif op == 'download':
+        return download(args)
+    elif op == 'delete' :
+        cmd = ["st", "-A https://" + hostname + ":8080/auth/v1.0 -U " + account + ":" + username + " -K " + token + " delete " + rfilename]
+    else :
+        util.SMlog("doesn't support swift operation  %s " % op )
+        return 'false'
+    try:
+        util.pread2(cmd)
+        return 'true'
+    except:
+        return 'false'
+   
+if __name__ == "__main__":
+    XenAPIPlugin.dispatch({"swift": swift})
