@@ -41,8 +41,8 @@ public interface PhysicalNetwork {
     }
     
     public enum BroadcastDomainRange {
-        Pod,
-        Zone;
+        POD,
+        ZONE;
     }
     
     long getId();

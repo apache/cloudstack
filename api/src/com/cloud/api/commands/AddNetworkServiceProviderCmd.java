@@ -21,16 +21,20 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProviderResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Adds a network serviceProvider to a physical network", responseObject=ProviderResponse.class)
-public class AddNetworkServiceProviderCmd extends BaseCmd {
+public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkServiceProviderCmd.class.getName());
 
     private static final String s_name = "addnetworkserviceproviderresponse";
@@ -80,7 +84,8 @@ public class AddNetworkServiceProviderCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        PhysicalNetworkServiceProvider result = _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId());
+        UserContext.current().setEventDetails("Network ServiceProvider Id: "+getEntityId());
+        PhysicalNetworkServiceProvider result = _networkService.getCreatedPhysicalNetworkServiceProvider(getEntityId());
         if (result != null) {
             ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
             response.setResponseName(getCommandName());
@@ -88,5 +93,25 @@ public class AddNetworkServiceProviderCmd extends BaseCmd {
         }else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
         }
+    }
+
+    @Override
+    public void create() throws ResourceAllocationException {
+        PhysicalNetworkServiceProvider result = _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId());
+        if (result != null) {
+            setEntityId(result.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider entity to physical network");
+        }        
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SERVICE_PROVIDER_CREATE;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return  "Adding physical network ServiceProvider: " + getEntityId();
     }
 }

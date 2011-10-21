@@ -21,15 +21,17 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
 @Implementation(description="Deletes a Network Service Provider.", responseObject=SuccessResponse.class)
-public class DeleteNetworkServiceProviderCmd extends BaseCmd {
+public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkServiceProviderCmd.class.getName());
 
     private static final String s_name = "deletenetworkserviceproviderresponse";
@@ -74,5 +76,17 @@ public class DeleteNetworkServiceProviderCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network service provider");
         }
+    }
+
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SERVICE_PROVIDER_DELETE;
+    }
+
+
+    @Override
+    public String getEventDescription() {
+        return  "Deleting Physical network ServiceProvider: " + getId();
     }
 }

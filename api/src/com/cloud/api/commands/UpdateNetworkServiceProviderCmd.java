@@ -21,16 +21,18 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProviderResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 
 @Implementation(description="Updates a network serviceProvider of a physical network", responseObject=ProviderResponse.class)
-public class UpdateNetworkServiceProviderCmd extends BaseCmd {
+public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
 
     private static final String s_name = "updatenetworkserviceproviderresponse";
@@ -82,8 +84,14 @@ public class UpdateNetworkServiceProviderCmd extends BaseCmd {
         }
     }
 
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SERVICE_PROVIDER_UPDATE;
+    }
 
-
-
+    @Override
+    public String getEventDescription() {
+        return  "Updating physical network ServiceProvider: " + getId();
+    }
 
 }

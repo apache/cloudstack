@@ -96,7 +96,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
         if(broadcastDomainRange != null){
             this.broadcastDomainRange = broadcastDomainRange;
         }else{
-            this.broadcastDomainRange = BroadcastDomainRange.Pod;
+            this.broadcastDomainRange = BroadcastDomainRange.ZONE;
         }
         this.state = State.Disabled;
     }

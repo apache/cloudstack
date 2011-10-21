@@ -23,16 +23,18 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PhysicalNetworkResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
 @Implementation(description="Updates a physical network", responseObject=PhysicalNetworkResponse.class)
-public class UpdatePhysicalNetworkCmd extends BaseCmd {
+public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
 
     private static final String s_name = "updatephysicalnetworkresponse";
@@ -109,8 +111,18 @@ public class UpdatePhysicalNetworkCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create physical network");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update physical network");
         }
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Updating Physical network: " + getId();
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE;
     }
 
 }

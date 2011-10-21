@@ -21,15 +21,18 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a Physical Network.", responseObject=SuccessResponse.class)
-public class DeletePhysicalNetworkCmd extends BaseCmd {
+public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePhysicalNetworkCmd.class.getName());
 
     private static final String s_name = "deletephysicalnetworkresponse";
@@ -67,6 +70,7 @@ public class DeletePhysicalNetworkCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Physical Network Id: " + id);
         boolean result = _networkService.deletePhysicalNetwork(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -74,5 +78,16 @@ public class DeletePhysicalNetworkCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete physical network");
         }
+    }
+
+
+    @Override
+    public String getEventDescription() {
+        return  "Deleting Physical network: " + getId();
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PHYSICAL_NETWORK_DELETE;
     }
 }

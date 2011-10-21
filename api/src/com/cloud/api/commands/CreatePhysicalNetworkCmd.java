@@ -23,16 +23,20 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PhysicalNetworkResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a physical network", responseObject=PhysicalNetworkResponse.class)
-public class CreatePhysicalNetworkCmd extends BaseCmd {
+public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePhysicalNetworkCmd.class.getName());
 
     private static final String s_name = "createphysicalnetworkresponse";
@@ -108,8 +112,29 @@ public class CreatePhysicalNetworkCmd extends BaseCmd {
     }
     
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PHYSICAL_NETWORK_CREATE;
+    }
+
+    @Override
+    public String getCreateEventType() {
+        return EventTypes.EVENT_PHYSICAL_NETWORK_CREATE;
+    }
+
+    @Override
+    public String getCreateEventDescription() {
+        return "creating Physical Network";
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "creating Physical Network. Id: "+getEntityId();
+    }    
+    
+    @Override
     public void execute(){
-        PhysicalNetwork result = _networkService.createPhysicalNetwork(getZoneId(),getVlan(),getNetworkSpeed(), getIsolationMethods(),getBroadcastDomainRange(),getDomainId(), getTags());
+        UserContext.current().setEventDetails("Physical Network Id: "+getEntityId());
+        PhysicalNetwork result = _networkService.getCreatedPhysicalNetwork(getEntityId());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
             response.setResponseName(getCommandName());
@@ -118,4 +143,15 @@ public class CreatePhysicalNetworkCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create physical network");
         }
     }
+
+    @Override
+    public void create() throws ResourceAllocationException {
+        PhysicalNetwork result = _networkService.createPhysicalNetwork(getZoneId(),getVlan(),getNetworkSpeed(), getIsolationMethods(),getBroadcastDomainRange(),getDomainId(), getTags());
+        if (result != null) {
+            setEntityId(result.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create physical network entity");
+        }
+    }
+
 }

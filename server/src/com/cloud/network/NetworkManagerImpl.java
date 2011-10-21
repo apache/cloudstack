@@ -267,6 +267,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
+    
+    private static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
 
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
@@ -883,6 +885,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
 
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
+        
+        //populate s_serviceToImplementedProvidersMap with current _networkElements
+        for (NetworkElement element : _networkElements) {
+            Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
+            Provider implementedProvider = element.getProvider();
+            if(capabilities != null && implementedProvider != null){
+                for(Service service : capabilities.keySet()){
+                    if(s_serviceToImplementedProvidersMap.containsKey(service)){
+                        List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
+                        providers.add(implementedProvider);
+                    }else{
+                        List<Provider> providers = new ArrayList<Provider>();
+                        providers.add(implementedProvider);
+                        s_serviceToImplementedProvidersMap.put(service, providers);
+                    }
+                }
+            }
+        }
 
         s_logger.info("Network Manager is configured.");
 
@@ -3403,6 +3423,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_CREATE, eventDescription = "Creating Physical Network", create = true)
     public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags) {
         // Check if zone exists
         if (zoneId == null) {
@@ -3446,7 +3467,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         BroadcastDomainRange broadcastDomainRange = null;
         if (broadcastDomainRangeStr != null && !broadcastDomainRangeStr.isEmpty()) {
             try {
-                broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.valueOf(broadcastDomainRangeStr);
+                broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.valueOf(broadcastDomainRangeStr.toUpperCase());
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("Unable to resolve broadcastDomainRange '" + broadcastDomainRangeStr + "' to a supported value {Pod or Zone}");
             }
@@ -3496,6 +3517,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE, eventDescription = "updating physical network", async = true)
     public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> isolationMethods, List<String> tags, String newVnetRangeString, String state) {
         
         // verify input parameters
@@ -3534,7 +3556,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 PhysicalNetwork.IsolationMethod isolationMethodVal = null;
                 if (isMethod != null && !isMethod.isEmpty()) {
                     try {
-                        isolationMethodVal = PhysicalNetwork.IsolationMethod.valueOf(isMethod);
+                        isolationMethodVal = PhysicalNetwork.IsolationMethod.valueOf(isMethod.toUpperCase());
                     } catch (IllegalArgumentException ex) {
                         throw new InvalidParameterValueException("Unable to resolve IsolationMethod '" + isMethod + "' to a supported value {VLAN or L3 or GRE}");
                     }
@@ -3630,6 +3652,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_DELETE, eventDescription = "deleting physical network", async = true)
     public boolean deletePhysicalNetwork(Long physicalNetworkId) {
 
         // verify input parameters
@@ -3637,7 +3660,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network == null) {
             throw new InvalidParameterValueException("Network id=" + physicalNetworkId + "doesn't exist in the system");
         }
-        
+        //for all networks associated, check if they can be deleted.
         //delete physical network only if no network is associated to it
         List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
         
@@ -3756,31 +3779,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        List<Provider> supportedProviders = new ArrayList<Provider>();
-        for (NetworkElement element : _networkElements) {
-            if(element.getProvider() != null){
-                if(service != null){
-                    //chk if this serviceprovider supports this service
-                    if(isServiceProvided(element, service)){
-                        supportedProviders.add(element.getProvider());
-                    }
-                }else{
-                    supportedProviders.add(element.getProvider());
-                }
+        Set<Provider> supportedProviders = new HashSet<Provider>();
+        
+        if(service != null){
+            supportedProviders.addAll(s_serviceToImplementedProvidersMap.get(service));
+        }else{
+            for(List<Provider> pList : s_serviceToImplementedProvidersMap.values()){
+                supportedProviders.addAll(pList);
             }
         }
-        return supportedProviders;
+        
+        return new ArrayList<Provider>(supportedProviders);
     }
     
-    private boolean isServiceProvided(NetworkElement element, Service service){
-        if(element.getCapabilities() != null){
-            return element.getCapabilities().containsKey(service);
-        }
-        return false;
-    }
-
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_CREATE, eventDescription = "Creating Physical Network ServiceProvider", create = true)    
     public PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId) {
 
         // verify input parameters
@@ -3837,6 +3851,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_UPDATE, eventDescription = "Updating physical network ServiceProvider", async = true)
     public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, Boolean enabled) {
         
         PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
@@ -3859,6 +3874,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_DELETE, eventDescription = "Deleting physical network ServiceProvider", async = true)
     public boolean deleteNetworkServiceProvider(Long id) {
         PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
         
@@ -3869,6 +3885,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //TODO provider instances?
         
         return _pNSPDao.remove(id);
+    }
+    
+    @Override
+    public PhysicalNetwork getPhysicalNetwork(Long physicalNetworkId){
+        return _physicalNetworkDao.findById(physicalNetworkId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_CREATE, eventDescription = "Creating Physical Network", async = true)
+    public PhysicalNetwork getCreatedPhysicalNetwork(Long physicalNetworkId) {
+        return getPhysicalNetwork(physicalNetworkId);
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider getPhysicalNetworkServiceProvider(Long providerId) {
+        return _pNSPDao.findById(providerId);
+    }
+    
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_CREATE, eventDescription = "Creating Physical Network ServiceProvider", async = true)
+    public PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId) {
+        return getPhysicalNetworkServiceProvider(providerId);
     }
 
 }

@@ -19,6 +19,7 @@
 
 package com.cloud.network.element;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -37,7 +38,6 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Type;
@@ -54,6 +54,8 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
 	@Inject ExternalDhcpManager _dhcpMgr;
+	private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+	
 	private boolean canHandle(DeployDestination dest, TrafficType trafficType, Type networkType) {
 		DataCenter dc = dest.getDataCenter();
 		Pod pod = dest.getPod();
@@ -67,9 +69,15 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 		return false;
 	}
 
+    private static Map<Service, Map<Capability, String>> setCapabilities() {
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        capabilities.put(Service.Dhcp, null);
+        return capabilities;
+    }
+    
 	@Override
 	public Map<Service, Map<Capability, String>> getCapabilities() {
-		return null;
+		return capabilities;
 	}
 
 	@Override

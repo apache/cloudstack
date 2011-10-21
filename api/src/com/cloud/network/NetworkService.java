@@ -109,4 +109,12 @@ public interface NetworkService {
     PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, Boolean enabled);
 
     boolean deleteNetworkServiceProvider(Long id);
+
+    PhysicalNetwork getPhysicalNetwork(Long physicalNetworkId);
+
+    PhysicalNetwork getCreatedPhysicalNetwork(Long physicalNetworkId);
+
+    PhysicalNetworkServiceProvider getPhysicalNetworkServiceProvider(Long providerId);
+
+    PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
 }
