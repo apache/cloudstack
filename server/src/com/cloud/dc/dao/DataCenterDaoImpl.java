@@ -111,7 +111,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     
     @Override
     public void releaseVnet(String vnet, long dcId, long physicalNetworkId, long accountId, String reservationId) {
-        _vnetAllocDao.release(vnet, dcId, physicalNetworkId, accountId, reservationId);
+        _vnetAllocDao.release(vnet, physicalNetworkId, accountId, reservationId);
     }
     
     @Override
@@ -151,7 +151,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public String allocateVnet(long dataCenterId, long physicalNetworkId, long accountId, String reservationId) {
-        DataCenterVnetVO vo = _vnetAllocDao.take(dataCenterId, physicalNetworkId, accountId, reservationId);
+        DataCenterVnetVO vo = _vnetAllocDao.take(physicalNetworkId, accountId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -204,13 +204,6 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         return vo.getIpAddress();
     }
-    
-    
-    @Override
-    public void deleteVnet(long dcId) {
-    	_vnetAllocDao.delete(dcId);
-    }
-    
    
     @Override
     public void addVnet(long dcId, long physicalNetworkId, int start, int end) {
@@ -218,13 +211,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public void deleteVnet(long dcId, long physicalNetworkId) {
-        _vnetAllocDao.delete(dcId, physicalNetworkId);
+    public void deleteVnet(long physicalNetworkId) {
+        _vnetAllocDao.delete(physicalNetworkId);
     }
     
     @Override
-    public List<DataCenterVnetVO> listAllocatedVnets(long dcId, long physicalNetworkId) {
-        return _vnetAllocDao.listAllocatedVnets(dcId, physicalNetworkId);
+    public List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId) {
+        return _vnetAllocDao.listAllocatedVnets(physicalNetworkId);
     }    
     
     @Override

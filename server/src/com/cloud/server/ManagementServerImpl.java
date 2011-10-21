@@ -1022,7 +1022,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
 
-        DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
         while (enHost.hasMoreElements()) {

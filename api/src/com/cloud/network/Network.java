@@ -39,6 +39,7 @@ import com.cloud.utils.fsm.StateMachine;
  */
 public interface Network extends ControlledEntity {
 
+    @Deprecated
     public enum GuestIpType {
         Virtual,
         Direct,
@@ -252,6 +253,7 @@ public interface Network extends ControlledEntity {
 
     URI getBroadcastUri();
 
+    @Deprecated
     GuestIpType getGuestType();
 
     String getDisplayText();
@@ -270,5 +272,5 @@ public interface Network extends ControlledEntity {
     
     boolean getIsShared();
 
-    long getPhysicalNetworkId();
+    Long getPhysicalNetworkId();
 }

@@ -117,4 +117,6 @@ public interface NetworkService {
     PhysicalNetworkServiceProvider getPhysicalNetworkServiceProvider(Long providerId);
 
     PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
+    
+    long translateZoneToPhysicalNetwork(long zoneId);
 }

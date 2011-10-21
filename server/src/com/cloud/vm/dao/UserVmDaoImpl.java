@@ -77,7 +77,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     private static final int VM_DETAILS_BATCH_SIZE=100;
     private static final String VM_DETAILS = "select vm_instance.id, " +
     		"account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
-    		"data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
+    		"data_center.id, data_center.name, host.id, host.name, " + 
     		"vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
     		"vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
     		"service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
@@ -482,9 +482,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
         
         
-        boolean is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
-        //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
-        if (is_data_center_security_group_enabled){
+        Long securityGroupId = rs.getLong("security_group.id");
+        if (securityGroupId != null && securityGroupId.longValue() != 0){
             SecurityGroupData resp = userVmData.newSecurityGroupData();
             resp.setId(rs.getLong("security_group.id"));
             resp.setName(rs.getString("security_group.name"));

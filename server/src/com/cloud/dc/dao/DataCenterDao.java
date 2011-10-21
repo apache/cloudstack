@@ -51,8 +51,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     void addLinkLocalIpAddress(long dcId,long podId, String start, String end);
     
     List<DataCenterVnetVO> findVnet(long dcId, String vnet);
-    
-    void deleteVnet(long dcId);
 
     String allocatePodVlan(long podId, long accountId);
 
@@ -71,6 +69,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     DataCenterVO findByTokenOrIdOrName(String tokenIdOrName);
     
     void addVnet(long dcId, long physicalNetworkId, int start, int end);
-    void deleteVnet(long dcId, long physicalNetworkId);
-    List<DataCenterVnetVO> listAllocatedVnets(long dcId, long physicalNetworkId);
+    void deleteVnet(long physicalNetworkId);
+    List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId);
 }

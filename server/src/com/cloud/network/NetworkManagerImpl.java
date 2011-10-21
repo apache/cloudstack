@@ -1012,9 +1012,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (related == -1) {
                     related = id;
                 }
-
-                NetworkVO vo = new NetworkVO(id, network, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
-                        predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain(), offering.getType(), isShared);
+                
+                NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
+                        predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain(), offering.getType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
                 vo.setTags(tags);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() != null));
 
@@ -1580,7 +1580,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
     public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
         Long networkOfferingId = cmd.getNetworkOfferingId();
-        Long zoneId = cmd.getZoneId();
         String gateway = cmd.getGateway();
         String startIP = cmd.getStartIp();
         String endIP = cmd.getEndIp();
@@ -1595,6 +1594,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<String> tags = cmd.getTags();
         boolean isDomainSpecific = false;
         Boolean isShared = cmd.getIsShared();
+        long physicalNetworkId = cmd.getPhysicalNetworkId();
 
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Only one tag can be specified for a network at this time");
@@ -1642,18 +1642,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             endIP = startIP;
         }
 
-        // Check if zone exists
-        if (zoneId == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
+        // Check if physical network exists
+        PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
+        if (pNtwk == null) {
+            throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
         }
-
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
+        
+        //check that the physical network is enabled
+        if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
+            throw new InvalidParameterValueException("Physical network id " + physicalNetworkId + " is in incorrect state: " + pNtwk.getState());
         }
+        
+        DataCenter zone = _dcDao.findById(pNtwk.getDataCenterId());
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
-            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
         }
 
         // Check if network offering is Available
@@ -1716,7 +1719,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             domainId = cmd.getDomainId();
         }
 
-        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags, isShared);
+        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags, isShared, pNtwk);
 
         // Don't pass owner to create vlan when network offering is of type Shared - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
@@ -1726,7 +1729,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getType() == Network.Type.Shared && defineNetworkConfig) {
             // Create vlan ip range
-            _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
+            _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
         }
 
         txn.commit();
@@ -1736,11 +1739,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
-            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared) throws ConcurrentOperationException, InsufficientCapacityException {
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
+            boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared, PhysicalNetwork physicalNetwork) throws ConcurrentOperationException, InsufficientCapacityException {
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
-        DataCenterVO zone = _dcDao.findById(zoneId);
+        DataCenterVO zone = _dcDao.findById(physicalNetwork.getDataCenterId());
+        long zoneId = zone.getId();
 
         // allow isDefault to be set only for Shared network
         if (networkOffering.getType() == Network.Type.Isolated) {
@@ -1750,7 +1754,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 isDefault = true;
             }
             if (isShared != null && isShared) {
-                throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
+                throw new InvalidParameterValueException("Can specify isShared parameter for " + Network.Type.Shared + " networks only");
             }
         } else {
             if (isDefault == null) {
@@ -1832,7 +1836,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null, physicalNetwork.getId());
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
         userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
@@ -1892,6 +1896,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<Long> permittedAccounts = new ArrayList<Long>();
         String path = null;
         Long sharedNetworkDomainId = null;
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -1981,27 +1986,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
 
             if (sharedNetworkDomainId != null) {
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, sharedNetworkDomainId));
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, sharedNetworkDomainId));
             } else {
                 SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
                 sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-                networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path));
+                networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, path));
             }
 
             //if user requested only domain specific networks, don't return account/zone wide networks
             if (!permittedAccounts.isEmpty() || (domainId == null && accountName == null && projectId == null)) {
-                networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter, path, permittedAccounts));
+                networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, path, permittedAccounts));
             }
 
             return networksToReturn;
 
         } else {
-            return _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared), searchFilter);
+            return _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, type, isDefault, trafficType, isShared, physicalNetworkId), searchFilter);
         }
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String type, Boolean isDefault, String trafficType, Boolean isShared) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String type, Boolean isDefault, String trafficType, Boolean isShared, Long physicalNetworkId) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -2036,6 +2041,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (isShared != null) {
             sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+        }
+        
+        if (physicalNetworkId != null) {
+            sc.addAnd("physicalNetworkId", SearchCriteria.Op.EQ, physicalNetworkId);
         }
 
         return sc;
@@ -2772,7 +2781,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // create new Virtual network for the user if it doesn't exist
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, zoneId, null, null, null, null, owner, false, null, null, false);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, null, owner, false, null, null, false, null);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -3636,7 +3645,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (replaceVnet) {
             s_logger.debug("Deleting existing vnet range for the physicalNetwork id= "+id +" and zone id=" + network.getDataCenterId() + " as a part of updatePhysicalNetwork call");
-            _dcDao.deleteVnet(network.getDataCenterId(), network.getId());
+            _dcDao.deleteVnet(network.getId());
         }
 
         for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
@@ -3648,7 +3657,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     private boolean physicalNetworkHasAllocatedVnets(long zoneId, long physicalNetworkId) {
-        return !_dcDao.listAllocatedVnets(zoneId, physicalNetworkId).isEmpty();
+        return !_dcDao.listAllocatedVnets(physicalNetworkId).isEmpty();
     }
 
     @Override
@@ -3669,7 +3678,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return false;
         }
         
-        List<DataCenterVnetVO> allocatedVnets = _dcDao.listAllocatedVnets(network.getDataCenterId(), physicalNetworkId);
+        List<DataCenterVnetVO> allocatedVnets = _dcDao.listAllocatedVnets(physicalNetworkId);
 
         if(allocatedVnets != null && !allocatedVnets.isEmpty()){
             s_logger.debug("Unable to remove the physical network id=" + physicalNetworkId + " as it has active vnets associated.");
@@ -3907,6 +3916,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_CREATE, eventDescription = "Creating Physical Network ServiceProvider", async = true)
     public PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId) {
         return getPhysicalNetworkServiceProvider(providerId);
+    }
+
+    
+    @Override
+    public long translateZoneToPhysicalNetwork(long zoneId) {
+        List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZone(zoneId);
+        if (pNtwks.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to find physical network in zone id=" + zoneId);
+        }
+        
+        if (pNtwks.size() > 1) {
+            throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId);
+        }
+        
+        return pNtwks.get(0).getId();
     }
 
 }

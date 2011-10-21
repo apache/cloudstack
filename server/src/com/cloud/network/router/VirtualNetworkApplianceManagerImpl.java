@@ -1123,7 +1123,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return router;
         }
 
-        DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
         DomainRouterVO result = null;
         assert router.getIsRedundantRouter();
         List<DomainRouterVO> routerList = _routerDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn());
@@ -1236,7 +1236,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             // In Basic zone and Guest network we have to start domR per pod, not per network
             if (isPodBased) {
                 routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.DHCP_USERDATA);
-                plan = new DataCenterDeployment(dcId, podId, null, null, null);
+                plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
             } else {
                 routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.DHCP_USERDATA);
                 plan = new DataCenterDeployment(dcId);

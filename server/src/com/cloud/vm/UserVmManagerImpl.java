@@ -2177,8 +2177,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                    Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, zone.getId(),
-                            null, null, null, null, owner, false, null, null, false);
+                    Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                            null, null, null, owner, false, null, null, false, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + owner + "; please specify networkIds");
@@ -2190,8 +2190,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (defaultNetworks.isEmpty()) {
                     if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
                         s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                        Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, zone.getId(),
-                                null, null, null, null, owner, false, null, null, false);
+                        Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                                null, null, null, owner, false, null, null, false, null);
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     } else {
                         throw new InvalidParameterValueException("Unable to find default networks for account " + owner);
@@ -2574,7 +2574,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             DataCenterDeployment plan = null;
             if (destinationHost != null) {
                 s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-                plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null);
+                plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
             }
 
             vm = _itMgr.start(vm, params, caller, owner, plan);
@@ -3335,8 +3335,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 long networkOffering =  oldNet.getNetworkOfferingId();   
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
                 if (virtualNetworks.isEmpty()) {
-                    Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, vm.getDataCenterIdToDeployIn(),
-                            null, null, null, null, newAccount, false, null, null, false);
+                    Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
+                            null, null, null, newAccount, false, null, null, false, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");

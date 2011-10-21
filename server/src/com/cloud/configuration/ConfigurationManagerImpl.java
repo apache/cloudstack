@@ -956,11 +956,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return pod;
     }
 
-    private boolean zoneHasVMs(long zoneId) {
-        List<VMInstanceVO> vmInstances = _vmInstanceDao.listByZoneId(zoneId);
-        return !vmInstances.isEmpty();
-    }
-
+    
     @DB
     protected void checkIfZoneIsDeletable(long zoneId) {
         List<List<String>> tablesToCheck = new ArrayList<List<String>>();
@@ -1001,6 +997,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         volumes.add(2, "there are storage volumes for this zone");
         tablesToCheck.add(volumes);
 
+        //FIXME - move this part of verification to deletePhysicalNetwork code
         List<String> vnet = new ArrayList<String>();
         vnet.add(0, "op_dc_vnet_alloc");
         vnet.add(1, "data_center_id");
@@ -1142,9 +1139,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         txn.start();
 
-        // Delete vNet
-        _zoneDao.deleteVnet(zoneId);
-
         // delete vlans for this zone
         List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
         for (VlanVO vlan : vlans) {
@@ -1152,12 +1146,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Delete networks
+        //FIXME - move this part to deletePhysicalNetwork
         List<NetworkVO> networks = _networkDao.listByZoneIncludingRemoved(zoneId);
         if (networks != null && !networks.isEmpty()) {
             for (NetworkVO network : networks) {
                 _networkDao.remove(network.getId());
             }
         }
+        
+        //FIXME - Delete physical networks belonging to the zone
+        
         success = _zoneDao.remove(zoneId);
         
         if (success) {
@@ -1381,7 +1379,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
 
             for (NetworkOfferingVO offering : ntwkOff) {
-                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null);
+                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
                 NetworkVO userNetwork = new NetworkVO();
 
                 Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);

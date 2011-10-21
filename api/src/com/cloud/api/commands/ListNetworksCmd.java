@@ -69,6 +69,9 @@ public class ListNetworksCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list networks by project id")
     private Long projectId;
+    
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
+    private Long physicalNetworkId;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -112,6 +115,10 @@ public class ListNetworksCmd extends BaseListCmd {
     
     public Long getProjectId() {
         return projectId;
+    }
+
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 
     /////////////////////////////////////////////////////

@@ -30,6 +30,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
@@ -52,7 +53,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, required=true, description="the network offering id")
     private Long networkOfferingId;
     
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the network")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the network")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the network")
@@ -90,6 +91,9 @@ public class CreateNetworkCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the network")
     private List<String> tags;
+    
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
+    private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -100,10 +104,6 @@ public class CreateNetworkCmd extends BaseCmd {
     
     public List<String> getTags() {
         return tags;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     public String getGateway() {
@@ -158,6 +158,16 @@ public class CreateNetworkCmd extends BaseCmd {
         return isShared == null ? false : isShared;
     }
     
+    public Long getPhysicalNetworkId() {
+        if (physicalNetworkId != null) {
+            return physicalNetworkId;
+        } else if (zoneId != null) {
+            return _networkService.translateZoneToPhysicalNetwork(zoneId);
+        } else {
+            throw new InvalidParameterValueException("Either zoneId or physicalNetworkId have to be specified");
+        }
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

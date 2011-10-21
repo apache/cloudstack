@@ -95,7 +95,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Allocated);
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
@@ -141,7 +141,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         long dcId = dest.getDataCenter().getId();
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
-                network.getDataCenterId(), State.Allocated);
+                State.Allocated, network.getDataCenterId(), network.getPhysicalNetworkId());
 
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, network.getPhysicalNetworkId(), network.getAccountId(), context.getReservationId());

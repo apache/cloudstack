@@ -125,6 +125,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     
     @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
     private String tags;
+    
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
+    private Long physicalNetworkId;
+    
 
     public void setId(Long id) {
         this.id = id;
@@ -268,7 +272,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
-    
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
     
 }

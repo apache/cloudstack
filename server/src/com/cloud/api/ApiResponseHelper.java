@@ -2176,6 +2176,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setZoneId(network.getDataCenterId());
+        response.setPhysicalNetworkId(network.getPhysicalNetworkId());
 
         // populate network offering information
         NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
@@ -2381,17 +2382,19 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Set<SecurityGroupResponse> securityGroupResponse = new HashSet<SecurityGroupResponse>();
         for (SecurityGroupData sgd: userVmData.getSecurityGroupList()){
-            SecurityGroupResponse sgr = new SecurityGroupResponse();
-            sgr.setId(sgd.getId());
-            sgr.setName(sgd.getName());
-            sgr.setDescription(sgd.getDescription());
-            
-            Account account = ApiDBUtils.findAccountByNameDomain(sgd.getAccountName(), sgd.getDomainId());
-            populateAccount(sgr, account.getId());
-            populateDomain(sgr, sgd.getDomainId());
-            
-            sgr.setObjectName(sgd.getObjectName());
-            securityGroupResponse.add(sgr);
+            if (sgd.getId() != null) {
+                SecurityGroupResponse sgr = new SecurityGroupResponse();
+                sgr.setId(sgd.getId());
+                sgr.setName(sgd.getName());
+                sgr.setDescription(sgd.getDescription());
+                
+                Account account = ApiDBUtils.findAccountByNameDomain(sgd.getAccountName(), sgd.getDomainId());
+                populateAccount(sgr, account.getId());
+                populateDomain(sgr, sgd.getDomainId());
+                
+                sgr.setObjectName(sgd.getObjectName());
+                securityGroupResponse.add(sgr);
+            }
         }
         userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupResponse>(securityGroupResponse));
 

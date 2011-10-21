@@ -607,7 +607,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Trying to deploy VM, vm has dcId: "+vm.getDataCenterIdToDeployIn()+" and podId: "+vm.getPodIdToDeployIn() );
         }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null, null);
         if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:"+planToDeploy.getDataCenterId() + ", podId: "+ planToDeploy.getPodId() 
@@ -670,9 +670,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                 throw new ResourceUnavailableException("Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for " + vm, Cluster.class, clusterIdSpecified);
                             }
                         }
-                        plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId());
+                        plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null);
                     }else{
-                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
+                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
                         }
@@ -1378,7 +1378,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         Host host = _hostDao.findById(hostId);
 
-        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(hostId);
 

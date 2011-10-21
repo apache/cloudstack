@@ -82,6 +82,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Enumerated(value=EnumType.STRING)
     Availability availability;
     
+    @Deprecated
     @Column(name="guest_type")
     GuestIpType guestType;
     

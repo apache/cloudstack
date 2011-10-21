@@ -954,7 +954,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.Type.Shared, true);
+                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.Type.Shared, true, zoneId, null);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

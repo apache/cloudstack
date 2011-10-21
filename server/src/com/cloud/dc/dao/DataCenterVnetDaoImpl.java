@@ -41,16 +41,9 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearch;
     private final SearchBuilder<DataCenterVnetVO> VnetDcSearchAllocated;
     private final SearchBuilder<DataCenterVnetVO> DcSearchAllocated;
-    
-    public List<DataCenterVnetVO> listAllocatedVnets(long dcId) {
-    	SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
-    	sc.setParameters("dc", dcId);
-    	return listBy(sc);
-    }
 
-    public List<DataCenterVnetVO> listAllocatedVnets(long dcId, long physicalNetworkId) {
+    public List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId) {
         SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
-        sc.setParameters("dc", dcId);
         sc.setParameters("physicalNetworkId", physicalNetworkId);       
         return listBy(sc);
     }
@@ -92,24 +85,15 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         }
     }
     
-    public void delete(long dcId) {
+    public void delete(long physicalNetworkId) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
-        sc.setParameters("dc", dcId);
-        remove(sc);
-    }
-    
-    public void delete(long dcId, long physicalNetworkId) {
-        SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
-        sc.setParameters("dc", dcId);
         sc.setParameters("physicalNetworkId", physicalNetworkId);
-        
         remove(sc);
     }
 
     @DB
-    public DataCenterVnetVO take(long dcId, long physicalNetworkId, long accountId, String reservationId) {
+    public DataCenterVnetVO take(long physicalNetworkId, long accountId, String reservationId) {
         SearchCriteria<DataCenterVnetVO> sc = FreeVnetSearch.create();
-        sc.setParameters("dc", dcId);
         sc.setParameters("physicalNetworkId", physicalNetworkId);        
         Date now = new Date();
         Transaction txn = Transaction.currentTxn();
@@ -127,10 +111,9 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return vo;
     }
 
-    public void release(String vnet, long dcId, long physicalNetworkId, long accountId, String reservationId) {
+    public void release(String vnet, long physicalNetworkId, long accountId, String reservationId) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearchAllocated.create();
         sc.setParameters("vnet", vnet);
-        sc.setParameters("dc", dcId);
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("account", accountId);
         sc.setParameters("reservation", reservationId);

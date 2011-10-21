@@ -94,7 +94,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         if (offering.getTrafficType() == TrafficType.Public) {
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), null, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
+            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), null, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
             return ntwk;
         } else {
             return null;

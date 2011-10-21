@@ -340,8 +340,8 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
-            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared) throws ConcurrentOperationException, InsufficientCapacityException {
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
+            boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared, PhysicalNetwork physicalNetwork) throws ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }

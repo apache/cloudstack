@@ -18,8 +18,6 @@
 package com.cloud.offering;
 
 import com.cloud.network.Network.GuestIpType;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Type;
 import com.cloud.network.Networks.TrafficType;
 
@@ -91,6 +89,7 @@ public interface NetworkOffering {
     
     boolean isSharedSourceNatService();
     
+    @Deprecated
     GuestIpType getGuestType();
 
     String getUniqueName();

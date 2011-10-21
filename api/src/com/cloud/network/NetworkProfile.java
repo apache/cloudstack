@@ -50,9 +50,10 @@ public class NetworkProfile implements Network {
     private boolean isSecurityGroupEnabled;
     private List<String> tags;
     private Network.Type type;
+    @Deprecated
     private GuestIpType guestIpType;
     private boolean isShared;
-    private long physicalNetworkId;
+    private Long physicalNetworkId;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -216,7 +217,7 @@ public class NetworkProfile implements Network {
     }
     
     @Override
-    public long getPhysicalNetworkId() {
+    public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
 }

@@ -476,7 +476,7 @@ public class ElasticLoadBalancerManagerImpl implements
             DataCenterDeployment plan = null;
             DomainRouterVO elbVm = null;
             
-            plan = new DataCenterDeployment(dcId, dest.getPod().getId(), null, null, null);
+            plan = new DataCenterDeployment(dcId, dest.getPod().getId(), null, null, null, null);
 
             if (elbVm == null) {
                 long id = _routerDao.getNextInSequence(Long.class, "id");

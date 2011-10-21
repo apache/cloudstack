@@ -66,6 +66,7 @@ public class NetworkVO implements Network {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
 
+    @Deprecated
     @Column(name="guest_type")
     GuestIpType guestType;
 
@@ -88,7 +89,7 @@ public class NetworkVO implements Network {
     long networkOfferingId;
 
     @Column(name="physical_network_id")
-    long physicalNetworkId;
+    Long physicalNetworkId;
     
     @Column(name="data_center_id")
     long dataCenterId;
@@ -167,15 +168,17 @@ public class NetworkVO implements Network {
      * @param mode
      * @param broadcastDomainType
      * @param networkOfferingId
-     * @param dataCenterId
      * @param state TODO
+     * @param dataCenterId
+     * @param physicalNetworkId TODO
      */
-    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, State state) {
+    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId, Long physicalNetworkId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
+        this.physicalNetworkId = physicalNetworkId;
         if (state == null) {
             state = State.Allocated;
         } else {
@@ -184,23 +187,9 @@ public class NetworkVO implements Network {
         this.id = -1;
         this.guestType = guestType;
     }
-    /**
-     * Constructor to be used for the adapters because it only initializes what's needed.
-     * @param trafficType
-     * @param mode
-     * @param broadcastDomainType
-     * @param networkOfferingId
-     * @param dataCenterId
-     * @param state TODO
-     * @param physicalNetworkId
-     */
-    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, State state, long physicalNetworkId) {
-        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, state);
-        this.physicalNetworkId = physicalNetworkId;
-    }
 
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText,isDefault, isDomainSpecific, networkDomain, type, isShared);
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
+        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText,isDefault, isDomainSpecific, networkDomain, type, isShared, dcId, physicalNetworkId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -211,11 +200,6 @@ public class NetworkVO implements Network {
         if (state == null) {
             state = State.Allocated;
         }
-    }
-
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long physicalNetworkId) {
-        this(id, that, offeringId, dataCenterId, guruName, domainId, accountId, related, name, displayText, isDefault, isSecurityGroupEnabled, isDomainSpecific, networkDomain, type, isShared);
-        this.physicalNetworkId = physicalNetworkId;
     }
 
     /**
@@ -236,8 +220,8 @@ public class NetworkVO implements Network {
      * @param isShared TODO
      * @param isShared
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared) {
-        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, State.Allocated);
+    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
+        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
@@ -404,7 +388,7 @@ public class NetworkVO implements Network {
     }
 
     @Override
-    public long getPhysicalNetworkId() {
+    public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
     
