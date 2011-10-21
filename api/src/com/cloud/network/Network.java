@@ -102,8 +102,12 @@ public interface Network extends ControlledEntity {
         }
     }
 
+    /**
+     * Provider -> NetworkElement must always be one-to-one mapping. Thus for each NetworkElement we need a separate Provider added in here.
+     */
     public static class Provider {
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
+
 
         public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
         public static final Provider DhcpServer = new Provider("DhcpServer", false);
@@ -113,7 +117,7 @@ public interface Network extends ControlledEntity {
         public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer", true);
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
-        
+        public static final Provider RedundantVirtualRouter = new Provider("RedundantVirtualRouter", false);
         public static final Provider defaultProvider = VirtualRouter;
 
         public static final Provider None = new Provider("None", false);

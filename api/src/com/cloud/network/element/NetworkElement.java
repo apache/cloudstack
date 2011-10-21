@@ -46,6 +46,10 @@ public interface NetworkElement extends Adapter {
     
     Map<Service, Map<Capability, String>> getCapabilities();
     
+    /**
+     * NOTE:  
+     * NetworkElement -> Network.Provider is a one-to-one mapping. While adding a new NetworkElement, one must add a new Provider name to Network.Provider.
+     */
     Provider getProvider();
     
     /**

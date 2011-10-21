@@ -23,4 +23,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface PhysicalNetworkServiceProviderDao extends GenericDao<PhysicalNetworkServiceProviderVO, Long> {
     List<PhysicalNetworkServiceProviderVO> listBy(long physicalNetworkId);
+    
+    void deleteProviders(long physicalNetworkId);
 }

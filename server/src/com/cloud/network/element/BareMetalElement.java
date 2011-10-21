@@ -61,7 +61,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 
 	@Override
 	public Provider getProvider() {
-		return Provider.ExternalDhcpServer;
+		return null;
 	}
 
 	@Override

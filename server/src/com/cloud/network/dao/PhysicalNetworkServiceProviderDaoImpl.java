@@ -45,5 +45,12 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return search(sc, null);
     }
+
+    @Override
+    public void deleteProviders(long physicalNetworkId) {
+        SearchCriteria<PhysicalNetworkServiceProviderVO> sc = physicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        remove(sc);
+    }
     
 }

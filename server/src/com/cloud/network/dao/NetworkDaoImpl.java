@@ -347,5 +347,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("isSgEnabled", true);
         return listBy(sc);
     }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkIncludingRemoved(long physicalNetworkId) {
+        SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return listIncludingRemovedBy(sc);
+    }
     
 }

@@ -37,6 +37,11 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     @Inject NetworkManager _networkMgr;
     @Inject VirtualRouterElementsDao _vrElementsDao;
     
+    @Override
+    public Provider getProvider() {
+        return Provider.RedundantVirtualRouter;
+    }
+    
     private boolean canHandle(Type networkType, long offeringId) {
         boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
         if (!result) {

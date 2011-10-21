@@ -995,13 +995,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         volumes.add(2, "there are storage volumes for this zone");
         tablesToCheck.add(volumes);
 
-        //FIXME - move this part of verification to deletePhysicalNetwork code
-        List<String> vnet = new ArrayList<String>();
-        vnet.add(0, "op_dc_vnet_alloc");
-        vnet.add(1, "data_center_id");
-        vnet.add(2, "there are allocated vnets for this zone");
-        tablesToCheck.add(vnet);
-
+        List<String> physicalNetworks = new ArrayList<String>();
+        physicalNetworks.add(0, "physical_network");
+        physicalNetworks.add(1, "data_center_id");
+        physicalNetworks.add(2, "there are physical networks in this zone");
+        tablesToCheck.add(physicalNetworks);
+        
         for (List<String> table : tablesToCheck) {
             String tableName = table.get(0);
             String column = table.get(1);
@@ -1023,7 +1022,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 selectSql += " AND taken IS NOT NULL";
             }
 
-            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
+            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes") || tableName.equals("physical_network")) {
                 selectSql += " AND removed is NULL";
             }
 
@@ -1143,17 +1142,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             _vlanDao.remove(vlan.getId());
         }
 
-        // Delete networks
-        //FIXME - move this part to deletePhysicalNetwork
-        List<NetworkVO> networks = _networkDao.listByZoneIncludingRemoved(zoneId);
-        if (networks != null && !networks.isEmpty()) {
-            for (NetworkVO network : networks) {
-                _networkDao.remove(network.getId());
-            }
-        }
-        
-        //FIXME - Delete physical networks belonging to the zone
-        
         success = _zoneDao.remove(zoneId);
         
         if (success) {

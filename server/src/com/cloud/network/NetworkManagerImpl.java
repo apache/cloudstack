@@ -59,7 +59,6 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -269,6 +268,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
     
     private static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
+    private static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
 
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp) throws InsufficientAddressCapacityException {
@@ -884,10 +884,31 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
         
-        //populate s_serviceToImplementedProvidersMap with current _networkElements
+        s_logger.info("Network Manager is configured.");
+
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return _name;
+    }
+
+    @Override
+    public boolean start() {
+        
+        //populate s_serviceToImplementedProvidersMap & s_providerToNetworkElementMap with current _networkElements
+        //Need to do this in start() since _networkElements are not completely configured until then.
         for (NetworkElement element : _networkElements) {
             Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
             Provider implementedProvider = element.getProvider();
+            if(implementedProvider != null){
+                if(s_providerToNetworkElementMap.containsKey(implementedProvider.getName())){
+                    s_logger.error("Cannot start NetworkManager: Provider <-> NetworkElement must be a one-to-one map, multiple NetworkElements found for Provider: "+implementedProvider.getName());
+                    return false;
+                }
+                s_providerToNetworkElementMap.put(implementedProvider.getName(), element.getName());
+            }
             if(capabilities != null && implementedProvider != null){
                 for(Service service : capabilities.keySet()){
                     if(s_serviceToImplementedProvidersMap.containsKey(service)){
@@ -901,19 +922,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
-
-        s_logger.info("Network Manager is configured.");
-
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
+        
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), _networkGcInterval, _networkGcInterval, TimeUnit.SECONDS);
         return true;
     }
@@ -3688,36 +3697,43 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_DELETE, eventDescription = "deleting physical network", async = true)
+    @DB
     public boolean deletePhysicalNetwork(Long physicalNetworkId) {
 
         // verify input parameters
-        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
-        if (network == null) {
+        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (pNetwork == null) {
             throw new InvalidParameterValueException("Network id=" + physicalNetworkId + "doesn't exist in the system");
         }
-        //for all networks associated, check if they can be deleted.
-        //delete physical network only if no network is associated to it
-        List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
         
-        if(networks != null && !networks.isEmpty()){
-            s_logger.debug("Unable to remove the physical network id=" + physicalNetworkId + " as it has active networks associated.");
-            return false;
+        checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
+        
+        // Delete networks
+        List<NetworkVO> networks = _networksDao.listByPhysicalNetworkIncludingRemoved(physicalNetworkId);
+        if (networks != null && !networks.isEmpty()) {
+            for (NetworkVO network : networks) {
+                _networksDao.remove(network.getId());
+            }
         }
         
-        List<DataCenterVnetVO> allocatedVnets = _dcDao.listAllocatedVnets(physicalNetworkId);
-
-        if(allocatedVnets != null && !allocatedVnets.isEmpty()){
-            s_logger.debug("Unable to remove the physical network id=" + physicalNetworkId + " as it has active vnets associated.");
-            return false;
-        }        
-        //checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
+        //delete vnets
+        _dcDao.deleteVnet(physicalNetworkId);
         
+        //delete service providers
+        _pNSPDao.deleteProviders(physicalNetworkId);
+
         return _physicalNetworkDao.remove(physicalNetworkId);
     }
     
     @DB
     private void checkIfPhysicalNetworkIsDeletable(Long physicalNetworkId) {
         List<List<String>> tablesToCheck = new ArrayList<List<String>>();
+
+        List<String> vnet = new ArrayList<String>();
+        vnet.add(0, "op_dc_vnet_alloc");
+        vnet.add(1, "physical_network_id");
+        vnet.add(2, "there are allocated vnets for this physical network");
+        tablesToCheck.add(vnet);
 
         List<String> networks = new ArrayList<String>();
         networks.add(0, "networks");
@@ -3736,24 +3752,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         publicIP.add(1, "data_center_id");
         publicIP.add(2, "there are public IP addresses allocated for this zone");
         tablesToCheck.add(publicIP);
-
-        List<String> vmInstance = new ArrayList<String>();
-        vmInstance.add(0, "vm_instance");
-        vmInstance.add(1, "data_center_id");
-        vmInstance.add(2, "there are virtual machines running in this zone");
-        tablesToCheck.add(vmInstance);
-
-        List<String> volumes = new ArrayList<String>();
-        volumes.add(0, "volumes");
-        volumes.add(1, "data_center_id");
-        volumes.add(2, "there are storage volumes for this zone");
-        tablesToCheck.add(volumes);*/
-
-        List<String> vnet = new ArrayList<String>();
-        vnet.add(0, "op_dc_vnet_alloc");
-        vnet.add(1, "physical_network_id");
-        vnet.add(2, "there are allocated vnets for this physical network");
-        tablesToCheck.add(vnet);
+         */
+        
 
         for (List<String> table : tablesToCheck) {
             String tableName = table.get(0);
@@ -3763,6 +3763,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             String dbName = "cloud";
 
             String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + column + " = ?";
+
+            if (tableName.equals("networks")) {
+                selectSql += " AND removed is NULL";
+            }
 
             if (tableName.equals("op_dc_vnet_alloc")) {
                 selectSql += " AND taken IS NOT NULL";
@@ -3774,14 +3778,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (tableName.equals("op_dc_ip_address_alloc")) {
                 selectSql += " AND taken IS NOT NULL";
-            }
-
-            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
-                selectSql += " AND removed is NULL";
-            }
-
-            if (tableName.equals("vm_instance")) {
-                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
             }
 
             Transaction txn = Transaction.currentTxn();
@@ -3896,7 +3892,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         if(enabled){
-            //TODO: need to check if the provider is ready for the physical network.
+            //TODO: need to check if the provider element is ready for the physical network.
+            String elementName = s_providerToNetworkElementMap.get(provider.getProviderName());
+            NetworkElement element = _networkElements.get(elementName);
+            //element.isReady();
             provider.setState(PhysicalNetworkServiceProvider.State.Enabled);
         }else{
             //do we need to do anything for the provider instances before disabling?
