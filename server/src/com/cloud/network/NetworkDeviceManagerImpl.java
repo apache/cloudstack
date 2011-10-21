@@ -24,6 +24,7 @@ import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.api.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
@@ -38,7 +39,7 @@ public class NetworkDeviceManagerImpl implements NetworkDeviceManager {
 	@Inject ExternalDhcpManager _dhcpMgr;
 	@Inject PxeServerManager _pxeMgr;
 	@Inject HostDao _hostDao;
-	
+	@Inject ExternalNetworkDeviceManager _externalNetworkDeviceMgr;
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
@@ -93,7 +94,16 @@ public class NetworkDeviceManagerImpl implements NetworkDeviceManager {
 			PxeServerProfile profile = new PxeServerProfile(zoneId, podId, url, username, password, type, pingStorageServerIp, pingDir, tftpDir,
 					pingCifsUsername, pingCifsPassword);
 			return _pxeMgr.addPxeServer(profile);
-
+		} else if (cmd.getType().equalsIgnoreCase(NetworkDeviceType.JuniperSRXFirewall.getName())) {
+			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+			Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
+			return _externalNetworkDeviceMgr.addExternalFirewall(zoneId, networkId, NetworkDeviceType.JuniperSRXFirewall.getName(), cmd.getParamList());
+		} else if (cmd.getType().equalsIgnoreCase(NetworkDeviceType.NetscalerLoadBalancer.getName())) {
+			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+			return _externalNetworkDeviceMgr.addExternalLoadBalancer(zoneId, null, NetworkDeviceType.NetscalerLoadBalancer.getName(), cmd.getParamList());
+		} else if (cmd.getType().equalsIgnoreCase(NetworkDeviceType.F5BigIpLoadBalancer.getName())) {
+			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+			return _externalNetworkDeviceMgr.addExternalLoadBalancer(zoneId, null, NetworkDeviceType.F5BigIpLoadBalancer.getName(), cmd.getParamList());
 		} else {
 			throw new CloudRuntimeException("Unsupported network device type:" + cmd.getType());
 		}
@@ -169,15 +179,31 @@ public class NetworkDeviceManagerImpl implements NetworkDeviceManager {
 			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
 			Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
 			res = listNetworkDevice(zoneId, podId, Host.Type.PxeServer);
+		} else if (NetworkDeviceType.F5BigIpLoadBalancer.getName().equalsIgnoreCase(cmd.getType())) {
+			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+			Long networkId = Long.parseLong((String) params.get(ApiConstants.NETWORK_ID));
+			return _externalNetworkDeviceMgr.listExternalLoadBalancers(zoneId, networkId, NetworkDeviceType.F5BigIpLoadBalancer.getName());
+		} else if (NetworkDeviceType.NetscalerLoadBalancer.getName().equalsIgnoreCase(cmd.getType())) {
+			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+			Long networkId = Long.parseLong((String) params.get(ApiConstants.NETWORK_ID));
+			return _externalNetworkDeviceMgr.listExternalLoadBalancers(zoneId, networkId, NetworkDeviceType.NetscalerLoadBalancer.getName());			
+		} else if (NetworkDeviceType.JuniperSRXFirewall.getName().equalsIgnoreCase(cmd.getType())) {
+			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+			Long networkId = Long.parseLong((String) params.get(ApiConstants.NETWORK_ID));
+			return _externalNetworkDeviceMgr.listExternalFirewalls(zoneId, networkId, NetworkDeviceType.JuniperSRXFirewall.getName());
 		} else if (cmd.getType() == null){
 			Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
 			Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
 			List<Host> res1 = listNetworkDevice(zoneId, podId, Host.Type.PxeServer);
 			List<Host> res2 = listNetworkDevice(zoneId, podId, Host.Type.ExternalDhcp);
-			List<Host> res3 = new ArrayList<Host>();
-			res3.addAll(res1);
-			res3.addAll(res2);
-			res = res3;
+			List<Host> res3 = listNetworkDevice(zoneId, podId, Host.Type.ExternalLoadBalancer);
+			List<Host> res4 = listNetworkDevice(zoneId, podId, Host.Type.ExternalFirewall);
+			List<Host> deviceAll = new ArrayList<Host>();
+			deviceAll.addAll(res1);
+			deviceAll.addAll(res2);
+			deviceAll.addAll(res3);
+			deviceAll.addAll(res4);
+			res = deviceAll;
 		} else {
 			throw new CloudRuntimeException("Unknown network device type:" + cmd.getType());
 		}
@@ -187,7 +213,12 @@ public class NetworkDeviceManagerImpl implements NetworkDeviceManager {
 
 	@Override
 	public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd) {
-		// TODO Auto-generated method stub
-		return true;
+	   HostVO device = _hostDao.findById(cmd.getId());
+	   if (device.getType() == Type.ExternalLoadBalancer) {
+	       return _externalNetworkDeviceMgr.deleteExternalLoadBalancer(cmd.getId());	    	   
+	   } else if (device.getType() == Type.ExternalLoadBalancer) {
+	       return _externalNetworkDeviceMgr.deleteExternalFirewall(cmd.getId());	    	   
+	   }
+	   return true;
 	}
 }

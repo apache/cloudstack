@@ -28,7 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
@@ -71,7 +71,7 @@ public class DeleteExternalLoadBalancerCmd extends BaseCmd {
     public void execute(){
 		try {
 		    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-		    ExternalNetworkManager externalNetworkMgr = locator.getManager(ExternalNetworkManager.class);
+		    ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
 			boolean result = externalNetworkMgr.deleteExternalLoadBalancer(this);
 			if (result) {
 				SuccessResponse response = new SuccessResponse(getCommandName());

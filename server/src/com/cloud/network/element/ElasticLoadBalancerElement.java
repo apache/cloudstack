@@ -52,7 +52,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 
 @Local(value=NetworkElement.class)
-public class ElasticLoadBalancerElement extends AdapterBase implements FirewallServiceProvider {
+public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider {
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     @Inject NetworkManager _networkManager;

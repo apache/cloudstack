@@ -28,10 +28,11 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.ComponentLocator;
@@ -48,6 +49,11 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="zone Id")
     private long zoneId;
 
+	@Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="Pyshical network in the zone from which which external load balancer appliance will be listed.")
+	private Long networkId;
+
+	@Parameter(name=ApiConstants.NETWORK_DEVICE_TYPE, type=CommandType.STRING, description="External load balancer type. Now supports NetscalerLoadBalancer, F5BigIpLoadBalancer.")
+	private String type;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -56,6 +62,14 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     public long getZoneId() {
         return zoneId;
     }
+
+	public Long getNetworkId() {
+		return networkId;
+	}
+
+	public String getDeviceType() {
+		return type;
+	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -69,7 +83,7 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     @Override
     public void execute(){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        ExternalNetworkManager externalNetworkMgr = locator.getManager(ExternalNetworkManager.class);
+        ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
     	List<? extends Host> externalLoadBalancers = externalNetworkMgr.listExternalLoadBalancers(this);
 
         ListResponse<ExternalLoadBalancerResponse> listResponse = new ListResponse<ExternalLoadBalancerResponse>();

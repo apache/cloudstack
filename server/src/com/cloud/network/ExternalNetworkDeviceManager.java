@@ -20,6 +20,7 @@
 package com.cloud.network;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
@@ -30,38 +31,29 @@ import com.cloud.api.commands.ListExternalLoadBalancersCmd;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.network.NetworkDeviceManager.NetworkDeviceType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.Manager;
 
-public interface ExternalNetworkManager extends Manager {
-	
-	public static class ExternalNetworkDeviceType {
-		private String _name;
-		
-		public static final ExternalNetworkDeviceType F5BigIP = new ExternalNetworkDeviceType("F5BigIP");
-		public static final ExternalNetworkDeviceType JuniperSRX = new ExternalNetworkDeviceType("JuniperSRX");
-		public static final ExternalNetworkDeviceType NetscalerMPX = new ExternalNetworkDeviceType("NetscalerMPX");
-		
-		public ExternalNetworkDeviceType(String name) {
-			_name = name;
-		}
-		
-		public String getName() {
-			return _name;
-		}
-	}
+public interface ExternalNetworkDeviceManager extends Manager {
 	
 	// External Firewall methods
 
 	public Host addExternalFirewall(AddExternalFirewallCmd cmd);
-	
+
+	public Host addExternalFirewall(Long zoneId, Long physicalNetworkId, String deviceType, Map deviceParamList);
+
 	public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
 	
-	public List<HostVO> listExternalFirewalls(ListExternalFirewallsCmd cmd);
+    public boolean deleteExternalFirewall(Long hostId);
 	
+	public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
+	
+	public List<Host> listExternalFirewalls(Long zoneId, Long networkId, String deviceType);
+
 	public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
 		
 	public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException;
@@ -78,9 +70,15 @@ public interface ExternalNetworkManager extends Manager {
 	
 	public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd);
 
+	public Host addExternalLoadBalancer(Long zoneId, Long physicalNetworkId, String deviceType, Map deviceParamList);
+
 	public boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd);
+
+	public boolean deleteExternalLoadBalancer(Long hostId);	
 	
-	public List<HostVO> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd);
+	public List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd);
+	
+    public List<Host> listExternalLoadBalancers(Long zoneId, Long networkId, String deviceType);
 	
 	public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer);
 	

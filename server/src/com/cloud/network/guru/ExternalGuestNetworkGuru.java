@@ -33,7 +33,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
@@ -64,7 +64,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     NetworkManager _networkMgr;
     @Inject
-    ExternalNetworkManager _externalNetworkMgr;
+    ExternalNetworkDeviceManager _externalNetworkMgr;
     @Inject
     NetworkDao _networkDao;
     @Inject

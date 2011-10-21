@@ -73,7 +73,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends DhcpElement implements VirtualRouterElementService, SourceNATServiceProvider, FirewallServiceProvider, StaticNATServiceProvider, RemoteAccessVPNServiceProvider {
+public class VirtualRouterElement extends DhcpElement implements VirtualRouterElementService, SourceNATServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, StaticNATServiceProvider, RemoteAccessVPNServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();

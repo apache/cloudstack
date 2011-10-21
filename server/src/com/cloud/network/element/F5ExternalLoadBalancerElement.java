@@ -34,7 +34,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -53,12 +53,12 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class F5ExternalLoadBalancerElement extends AdapterBase implements FirewallServiceProvider {
+public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(F5ExternalLoadBalancerElement.class);
     
     @Inject NetworkManager _networkManager;
-    @Inject ExternalNetworkManager _externalNetworkManager;
+    @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject ConfigurationManager _configMgr;
     
     private boolean canHandle(Network config) {

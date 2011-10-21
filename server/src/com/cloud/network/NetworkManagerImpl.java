@@ -106,6 +106,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PasswordServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
@@ -2369,12 +2370,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         int found = 0;
         for (NetworkElement ne : _networkElements) {
             try {
-                if (!(ne instanceof FirewallServiceProvider)) {
+                if (!(ne instanceof FirewallServiceProvider) && !(ne instanceof LoadBalancingServiceProvider)) {
                     continue;
                 }
-                FirewallServiceProvider e = (FirewallServiceProvider)ne;
                 found ++;
-                boolean handled = e.applyRules(network, rules);
+                boolean handled;
+                if (ne instanceof FirewallServiceProvider) {
+                    FirewallServiceProvider e = (FirewallServiceProvider)ne;
+                    handled = e.applyRules(network, rules);
+                } else {
+                	LoadBalancingServiceProvider e = (LoadBalancingServiceProvider) ne;
+                	handled = e.applyRules(network, rules);
+                }
+                
                 s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {

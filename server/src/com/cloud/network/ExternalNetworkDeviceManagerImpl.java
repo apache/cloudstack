@@ -48,6 +48,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
 import com.cloud.api.commands.DeleteExternalFirewallCmd;
@@ -71,6 +72,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.NetworkDeviceManager.NetworkDeviceType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
@@ -121,8 +123,8 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = {ExternalNetworkManager.class})
-public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
+@Local(value = {ExternalNetworkDeviceManager.class})
+public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceManager {
 	public enum ExternalNetworkResourceName {
 		JuniperSrx,
 		F5BigIp,
@@ -153,7 +155,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 	ScheduledExecutorService _executor;
 	int _externalNetworkStatsInterval;
 	
-	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkManagerImpl.class);
+	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
 	protected String _name;
 	
 	@Override
@@ -205,10 +207,24 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 	
     @Override
     public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd) {
-        long zoneId = cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();
+        Long networkId = cmd.getNetworkId();
+        String deviceType = cmd.getDeviceType();
+        Map deviceParams = new HashMap<String, String>();
+        deviceParams.put(ApiConstants.USERNAME, cmd.getUsername());
+        deviceParams.put(ApiConstants.PASSWORD, cmd.getPassword());
+        deviceParams.put(ApiConstants.URL, cmd.getUrl());        
+        return addExternalLoadBalancer(zoneId, networkId, deviceType, deviceParams);
+    }
+
+    @Override
+    public Host addExternalLoadBalancer(Long zoneId, Long networkId, String deviceType, Map deviceParamList) {
+
         ServerResource resource =null;
         String guid;
-        String deviceType;
+		String url      = (String) deviceParamList.get(ApiConstants.URL);
+		String username = (String) deviceParamList.get(ApiConstants.USERNAME);
+		String password = (String) deviceParamList.get(ApiConstants.PASSWORD);
 
         DataCenterVO zone = _dcDao.findById(zoneId);
         String zoneName;
@@ -225,15 +241,14 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
         URI uri;
         try {
-            uri = new URI(cmd.getUrl());
+            uri = new URI(url);
         } catch (Exception e) {
             s_logger.debug(e);
             throw new InvalidParameterValueException(e.getMessage());
         }
 
         String ipAddress = uri.getHost();
-        String username = cmd.getUsername();
-        String password = cmd.getPassword();
+   
         Map<String, String> params = new HashMap<String, String>();
         UrlUtil.parseQueryParameters(uri.getQuery(), true, params);
         String publicInterface = params.get("publicinterface");
@@ -253,15 +268,14 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             numRetries = "1";
         }
 
-        deviceType = cmd.getType();
         if (deviceType ==null) {
-        	deviceType = ExternalNetworkDeviceType.NetscalerMPX.getName(); //TODO: default it to NetscalerMPX for now, till UI support Netscaler & F5
+        	deviceType = NetworkDeviceType.NetscalerLoadBalancer.getName(); //TODO: default it to Netscaler LB for now, till UI support Netscaler & F5
         }
 
-		if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.F5BigIP.getName())) {
+		if (deviceType.equalsIgnoreCase(NetworkDeviceType.F5BigIpLoadBalancer.getName())) {
 	        resource = new F5BigIpResource();
 	        guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.F5BigIp, ipAddress);
-		} else if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.NetscalerMPX.getName())) {
+		} else if (deviceType.equalsIgnoreCase(NetworkDeviceType.NetscalerLoadBalancer.getName())) {
 			resource = new NetscalerMPXResource();
 	        guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.NetscalerMPX, ipAddress);
 		} else {
@@ -289,9 +303,9 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
         Host host = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
         if (host != null) {
-        	if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.F5BigIP.getName())) {
+        	if (deviceType.equalsIgnoreCase(NetworkDeviceType.F5BigIpLoadBalancer.getName())) {
                 zone.setLoadBalancerProvider(Network.Provider.F5BigIp.getName());
-        	} else if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.NetscalerMPX.getName())) {
+        	} else if (deviceType.equalsIgnoreCase(NetworkDeviceType.NetscalerLoadBalancer.getName())) {
                 zone.setLoadBalancerProvider(Network.Provider.NetscalerMPX.getName());
         	}
             _dcDao.update(zone.getId(), zone);
@@ -303,7 +317,11 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
     @Override
     public boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd) {
-        long hostId = cmd.getId();
+        return deleteExternalLoadBalancer(cmd.getId());
+    }
+
+    @Override
+    public boolean deleteExternalLoadBalancer(Long hostId) {    	
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         HostVO externalLoadBalancer = _hostDao.findById(hostId);
         if (externalLoadBalancer == null) {
@@ -331,9 +349,21 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     }
 
     @Override
-    public List<HostVO> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd) {
-        long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+    public List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd) {
+    	List<Host> lbHosts = new ArrayList<Host>();
+    	if (NetworkDeviceType.NetscalerLoadBalancer.getName().equalsIgnoreCase(cmd.getDeviceType())) {
+    		lbHosts.addAll(listExternalLoadBalancers(cmd.getZoneId(), cmd.getNetworkId(), NetworkDeviceType.NetscalerLoadBalancer.getName()));
+    	} else if (NetworkDeviceType.F5BigIpLoadBalancer.getName().equalsIgnoreCase(cmd.getDeviceType())) {
+    		lbHosts.addAll(listExternalLoadBalancers(cmd.getZoneId(), cmd.getNetworkId(), NetworkDeviceType.F5BigIpLoadBalancer.getName()));    		
+    	}
+        return lbHosts;	
+    }
+    
+    @Override
+    public List<Host> listExternalLoadBalancers(Long zoneId, Long networkId, String type) {
+    	List<Host> lbHosts = new ArrayList<Host>();
+    	lbHosts.addAll(_hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId));
+        return lbHosts;	
     }
 
     @Override
@@ -524,10 +554,24 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     
     @Override
     public Host addExternalFirewall(AddExternalFirewallCmd cmd) {
-        long zoneId = cmd.getZoneId();
-        String deviceType;
+        Long zoneId = cmd.getZoneId();
+        Long networkId = cmd.getNetworkId();
+        String deviceType = cmd.getDeviceType();
+        Map deviceParams = new HashMap<String, String>();
+        deviceParams.put(ApiConstants.USERNAME, cmd.getUsername());
+        deviceParams.put(ApiConstants.URL, cmd.getUrl());
+        deviceParams.put(ApiConstants.PASSWORD, cmd.getPassword());        
+        return addExternalFirewall(zoneId, networkId, deviceType, deviceParams);
+    }
+    
+    @Override
+    public Host addExternalFirewall(Long zoneId, Long networkId, String deviceType, Map deviceParamList) {
 
         DataCenterVO zone = _dcDao.findById(zoneId);
+		String url      = (String) deviceParamList.get(ApiConstants.URL);
+		String username = (String) deviceParamList.get(ApiConstants.USERNAME);
+		String password = (String) deviceParamList.get(ApiConstants.PASSWORD);
+
         String zoneName;
         if (zone == null) {
             throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
@@ -542,15 +586,13 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
         URI uri;
         try {
-            uri = new URI(cmd.getUrl());
+            uri = new URI(url);
         } catch (Exception e) {
             s_logger.debug(e);
             throw new InvalidParameterValueException(e.getMessage());
         }
 
         String ipAddress = uri.getHost();
-        String username = cmd.getUsername();
-        String password = cmd.getPassword();
         Map<String, String> params = new HashMap<String, String>();
         UrlUtil.parseQueryParameters(uri.getQuery(), true, params);
         String publicInterface = params.get("publicinterface");
@@ -597,11 +639,10 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             timeout = "300";
         }
 
-        deviceType = cmd.getType();
         if (deviceType ==null) {
-        	deviceType = ExternalNetworkDeviceType.JuniperSRX.getName(); //default it to Juniper for now
+        	deviceType = NetworkDeviceType.JuniperSRXFirewall.getName(); //default it to Juniper for now
         }
-		if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.JuniperSRX.getName())) {
+		if (deviceType.equalsIgnoreCase(NetworkDeviceType.JuniperSRXFirewall.getName())) {
 	        resource = new JuniperSrxResource();
 	        guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.JuniperSrx, ipAddress);			
 		} else {
@@ -663,7 +704,11 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
     @Override
     public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd) {
-        long hostId = cmd.getId();
+    	return deleteExternalFirewall(cmd.getId());
+    }
+    
+    @Override
+    public boolean deleteExternalFirewall(Long hostId) {
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         HostVO externalFirewall = _hostDao.findById(hostId);
         if (externalFirewall == null) {
@@ -708,11 +753,22 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     }
 
     @Override
-    public List<HostVO> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
-        long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+    public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
+    	List<Host> firewallHosts = new ArrayList<Host>();
+        if (NetworkDeviceType.JuniperSRXFirewall.getName().equalsIgnoreCase(cmd.getDeviceType())) {
+        	firewallHosts.addAll(listExternalFirewalls(cmd.getZoneId(), cmd.getNetworkId(), NetworkDeviceType.JuniperSRXFirewall.getName()));
+        }
+        return firewallHosts;
+
     }
 
+    @Override
+    public List<Host> listExternalFirewalls(Long zoneId, Long networkId, String type) {
+    	List<Host> firewallHosts = new ArrayList<Host>();
+    	firewallHosts.addAll(_hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId));
+        return firewallHosts;	
+    }
+    
     @Override
     public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall) {
         Map<String, String> fwDetails = _detailsDao.findDetails(externalFirewall.getId());

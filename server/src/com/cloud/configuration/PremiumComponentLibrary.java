@@ -34,7 +34,7 @@ import com.cloud.netapp.NetappManagerImpl;
 import com.cloud.netapp.dao.LunDaoImpl;
 import com.cloud.netapp.dao.PoolDaoImpl;
 import com.cloud.netapp.dao.VolumeDaoImpl;
-import com.cloud.network.ExternalNetworkManagerImpl;
+import com.cloud.network.ExternalNetworkDeviceManagerImpl;
 import com.cloud.network.NetworkDeviceManagerImpl;
 import com.cloud.network.NetworkUsageManagerImpl;
 import com.cloud.secstorage.CommandExecLogDaoImpl;
@@ -66,7 +66,7 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
 	
         addManager("HA Manager", HighAvailabilityManagerExtImpl.class);
         addManager("VMWareManager", VmwareManagerImpl.class);
-        addManager("ExternalNetworkManager", ExternalNetworkManagerImpl.class);
+        addManager("ExternalNetworkManager", ExternalNetworkDeviceManagerImpl.class);
         addManager("BareMetalVmManager", BareMetalVmManagerImpl.class);
         addManager("ExternalDhcpManager", ExternalDhcpManagerImpl.class);
         addManager("PxeServerManager", PxeServerManagerImpl.class);

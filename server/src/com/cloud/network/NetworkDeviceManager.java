@@ -15,6 +15,9 @@ public interface NetworkDeviceManager extends Manager {
 		
 		public static final NetworkDeviceType ExternalDhcp = new NetworkDeviceType("ExternalDhcp");
 		public static final NetworkDeviceType PxeServer = new NetworkDeviceType("PxeServer");
+		public static final NetworkDeviceType NetscalerLoadBalancer = new NetworkDeviceType("NetscalerLoadBalancer");
+		public static final NetworkDeviceType F5BigIpLoadBalancer = new NetworkDeviceType("F5BigIpLoadBalancer");
+		public static final NetworkDeviceType JuniperSRXFirewall = new NetworkDeviceType("JuniperSRXFirewall");
 		
 		public NetworkDeviceType(String name) {
 			_name = name;
@@ -24,12 +27,12 @@ public interface NetworkDeviceManager extends Manager {
 			return _name;
 		}
 	}
-	
+
 	public Host addNetworkDevice(AddNetworkDeviceCmd cmd);
 	
 	public NetworkDeviceResponse getApiResponse(Host device);
 	
-	public List<Host> listNetworkDevice(ListNetworkDeviceCmd cmd); 
+	public List<Host> listNetworkDevice(ListNetworkDeviceCmd cmd);
 	
 	public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd);
 }

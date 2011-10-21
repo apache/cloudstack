@@ -20,7 +20,7 @@
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
-        	<adapter name="ExternalFirewall" class="com.cloud.network.element.ExternalFirewallElement"/>
+        	<adapter name="JuniperSRXExternalFirewallElement" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
         	<adapter name="NetscalerExternalLoadBalancer" class="com.cloud.network.element.NetscalerExternalLoadBalancerElement"/>
         	<adapter name="F5ExternalLoadBalancer" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
             <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>

@@ -36,7 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -59,14 +59,14 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalFirewallElement extends AdapterBase implements SourceNATServiceProvider, FirewallServiceProvider, RemoteAccessVPNServiceProvider {
+public class JuniperSRXExternalFirewallElement extends AdapterBase implements SourceNATServiceProvider, FirewallServiceProvider, RemoteAccessVPNServiceProvider {
 
-    private static final Logger s_logger = Logger.getLogger(ExternalFirewallElement.class);
+    private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     
     @Inject NetworkManager _networkManager;
-    @Inject ExternalNetworkManager _externalNetworkManager;
+    @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject HostDao _hostDao;
     @Inject ConfigurationManager _configMgr;
     @Inject NetworkOfferingDao _networkOfferingDao;
