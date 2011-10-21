@@ -100,7 +100,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
         SummedCapacitySearch.select("sumReserved", Func.SUM, SummedCapacitySearch.entity().getReservedCapacity());
         SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());
-        SummedCapacitySearch.select("capacityType", Func.SUM, SummedCapacitySearch.entity().getCapacityType());        
+        SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());        
         
         SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
         SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getCapacityType());

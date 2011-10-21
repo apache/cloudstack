@@ -2491,7 +2491,8 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // op_host_Capacity contains only allocated stats and the real time stats are stored "in memory".
-        if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+        //Show Sec. Storage only when the api is invoked for the zone layer.
+        if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) && podId == null && clusterId == null) {
             capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
         }
         if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
