@@ -434,7 +434,6 @@ CREATE TABLE `cloud`.`snapshots` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
   `swift_id` bigint unsigned COMMENT 'which swift',
-  `swift_name` varchar(255) COMMENT 'Back up name in swift',
   `sechost_id` bigint unsigned COMMENT 'secondary storage host id',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',

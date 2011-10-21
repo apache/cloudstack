@@ -549,7 +549,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
 
-    private Answer sendToSSVM(final long dcId, final Command cmd) {
+    @Override
+    public Answer sendToSSVM(final long dcId, final Command cmd) {
         List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return new Answer(cmd, false, "can not find secondary storage VM agent for data center " + dcId);

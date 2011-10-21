@@ -38,6 +38,7 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
@@ -504,41 +505,60 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             // No need to do anything as snapshot has already been backed up.
         }
     }
-    
-    
-    void setupSnapshotChain(SnapshotVO ss, List<String> snapshots){
-        
+
+
+    @Override
+    public void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId ){
+        DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand("", secondaryStoragePoolUrl, dcId, accountId, volumeId, "");
+        try {
+            Answer ans = _agentMgr.sendToSSVM(dcId, cmd);
+            if ( ans == null || !ans.getResult() ) {
+                s_logger.warn("DeleteSnapshotsDirCommand failed due to " + ans.getDetails() + " volume id: " + volumeId );
+            }
+        } catch (Exception e) {
+            s_logger.warn("DeleteSnapshotsDirCommand failed due to" + e.toString() + " volume id: " + volumeId );
+        }
     }
-    
-    
-    void downloadSnapshotFromSwift(SnapshotVO ss) {
-    }
+
+
     @Override
     public void downloadSnapshotsFromSwift(SnapshotVO ss) {
-        
-        List<String> snapshots = new ArrayList<String>(20);
+        long volumeId = ss.getVolumeId();
+        VolumeVO volume = _volsDao.findById(volumeId);
+        Long dcId = volume.getDataCenterId();
+        Long accountId = volume.getAccountId();
+        HostVO secHost = _storageMgr.getSecondaryStorageHost(dcId);
+        String secondaryStoragePoolUrl = secHost.getStorageUrl();
+
+        Long swiftId = ss.getSwiftId();
+        SwiftVO swift = _swiftDao.findById(swiftId);
+        SwiftTO swiftTO = toSwiftTO(swift);
         SnapshotVO tss = ss;
+        List<String> BackupUuids = new ArrayList<String>(30);
+        while (true) {
+            BackupUuids.add(0, tss.getBackupSnapshotId());
+            if (tss.getPrevSnapshotId() == 0)
+                break;
+            Long id = tss.getPrevSnapshotId();
+            tss = _snapshotDao.findById(id);
+            assert tss != null : " can not find snapshot " + id;
+        }
+        String parent = null;
         try {
-            while(true) {
-                assert tss.getSwiftName() != null : " SwiftName is null";
-                downloadSnapshotFromSwift(tss);
-                snapshots.add(tss.getSwiftName().split("_")[0]);
-                if( tss.getPrevSnapshotId() == 0) 
-                    break;
-                Long id = tss.getPrevSnapshotId();
-                tss = _snapshotDao.findById(id);
-                assert tss != null : " can not find snapshot " + id;
+            for (String backupUuid : BackupUuids) {
+                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swiftTO, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
+                Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
+                if ((answer == null) || !answer.getResult()) {
+                    throw new CloudRuntimeException("downloadSnapshotsFromSwift failed ");
+                }
+                parent = backupUuid;
             }
-            
-            setupSnapshotChain(ss, snapshots);
         } catch (Exception e) {
             throw new CloudRuntimeException("downloadSnapshotsFromSwift failed due to " + e.toString());
         }
         
-        
-        
     }
-    
+
     private SwiftTO toSwiftTO(SwiftVO swift) {
         return new SwiftTO(swift.getUrl(), swift.getAccount(), swift.getUserName(), swift.getKey());
     }
@@ -585,8 +605,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                         prevBackupUuid = prevSnapshot.getBackupSnapshotId();
                         prevSnapshotUuid = prevSnapshot.getPath();
                     }
-                } else if ( prevSnapshot.getSwiftName() != null && swift != null ) {
-                    prevBackupUuid = prevSnapshot.getSwiftName();
+                } else if ( prevSnapshot.getSwiftId() != null && swift != null ) {
+                    prevBackupUuid = prevSnapshot.getBackupSnapshotId();
                     prevSnapshotUuid = prevSnapshot.getPath();
                 }
             }
@@ -619,7 +639,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (backedUp) {
                 if (backupSnapshotCommand.getSwift() != null ) {
                     snapshot.setSwiftId(1L);
-                    snapshot.setSwiftName(backedUpSnapshotUuid);
+                    snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
                 } else {
                     snapshot.setSecHostId(secHost.getId());
                     snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
@@ -726,7 +746,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot.getBackupSnapshotId() != null) {
             List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(snapshot.getVolumeId(), snapshot.getBackupSnapshotId());
-            if (!snaps.isEmpty()) {
+            if (snaps != null && snaps.size() > 1) {
                 snapshot.setBackupSnapshotId(null);
                 _snapshotDao.update(snapshot.getId(), snapshot);
             }
@@ -763,7 +783,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
                 if (BackupSnapshotId != null) {
                     List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(lastSnapshot.getVolumeId(), BackupSnapshotId);
-                    if (snaps != null && !snaps.isEmpty()) {
+                    if (snaps != null && snaps.size() > 1) {
                         lastSnapshot.setBackupSnapshotId(null);
                         _snapshotDao.update(lastSnapshot.getId(), lastSnapshot);
                     } else {
@@ -793,11 +813,21 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override
     public String getSecondaryStorageURL(SnapshotVO snapshot) {
-        HostVO secHost = _hostDao.findById(snapshot.getSecHostId());
-        return secHost.getStorageUrl();
-        
+        HostVO secHost = null;
+
+        if( snapshot.getSwiftId() == null ) {
+            secHost = _hostDao.findById(snapshot.getSecHostId());
+
+        } else {
+            Long dcId = snapshot.getDataCenterId();
+            secHost = _storageMgr.getSecondaryStorageHost(dcId);
+        }
+        if (secHost != null) {
+            return secHost.getStorageUrl();
+        }
+        throw new CloudRuntimeException("Can not find secondary storage");
     }
-    
+
     @Override
     @DB
     public boolean destroySnapshotBackUp(long snapshotId) {

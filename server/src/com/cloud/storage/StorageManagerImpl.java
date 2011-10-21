@@ -633,20 +633,17 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 return new Pair<String, String>(null, "Unable to upgrade snapshot from 2.1 to 2.2 for " + snapshot.getId());
             }
         }
-
-        if( snapshot.getSwiftName() != null ) {
-            _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
-        }
-
-        CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
-                backedUpSnapshotUuid, snapshot.getName(), _createVolumeFromSnapshotWait);
-
-        CreateVolumeFromSnapshotAnswer answer;
-        if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
-            throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to this snapshot is being used, try it later ");
-        }
         String basicErrMsg = "Failed to create volume from " + snapshot.getName() + " on pool " + pool;
         try {
+            if (snapshot.getSwiftId() != null) {
+                _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
+            }
+            CreateVolumeFromSnapshotCommand createVolumeFromSnapshotCommand = new CreateVolumeFromSnapshotCommand(primaryStoragePoolNameLabel, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                    backedUpSnapshotUuid, snapshot.getName(), _createVolumeFromSnapshotWait);
+            CreateVolumeFromSnapshotAnswer answer;
+            if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
+                throw new CloudRuntimeException("failed to create volume from " + snapshotId + " due to this snapshot is being used, try it later ");
+            }
             answer = (CreateVolumeFromSnapshotAnswer) sendToPool(pool, createVolumeFromSnapshotCommand);
             if (answer != null && answer.getResult()) {
                 vdiUUID = answer.getVdi();
@@ -657,9 +654,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } catch (StorageUnavailableException e) {
             s_logger.error(basicErrMsg);
         } finally {
+            if (snapshot.getSwiftId() != null) {
+                _snapshotMgr.deleteSnapshotsForVolume (secondaryStoragePoolUrl, dcId, accountId, volumeId);
+            }
             _snapshotDao.unlockFromLockTable(snapshotId.toString());
         }
-
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
 

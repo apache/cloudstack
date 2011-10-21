@@ -132,4 +132,6 @@ public interface SnapshotManager {
     void downloadSnapshotsFromSwift(SnapshotVO ss);
 
     String getSecondaryStorageURL(SnapshotVO snapshot);
+
+    void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId );
 }
