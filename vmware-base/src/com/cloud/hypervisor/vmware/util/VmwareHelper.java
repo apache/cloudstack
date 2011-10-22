@@ -94,11 +94,6 @@ public class VmwareHelper {
 		nic.setConnectable(connectInfo);
 		nic.setMacAddress(macAddress);
 	
-/*		
-		nic.setControllerKey(vmMo.getPCIDeviceControllerKey());
-		if(deviceNumber < 0)
-			deviceNumber = vmMo.getNextPCIDeviceNumber();
-*/
 		nic.setUnitNumber(deviceNumber);
 		nic.setKey(-contextNumber);
 		return nic;

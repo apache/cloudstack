@@ -48,6 +48,7 @@ import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
@@ -120,6 +121,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     
     String _memOverprovisioningFactor = "1";
     String _reserveMem = "false";
+    
+    String _rootDiskController = DiskControllerType.scsi.toString();
     
     Map<String, String> _storageMounts = new HashMap<String, String>();
 
@@ -244,7 +247,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         if(_reserveMem == null || _reserveMem.isEmpty())
         	_reserveMem = "false";
         
-        
+        _rootDiskController = configDao.getValue(Config.VmwareRootDiskControllerType.key());
+        if(_rootDiskController == null || _rootDiskController.isEmpty())
+        	_rootDiskController = DiskControllerType.scsi.toString();
         
     	s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
@@ -464,6 +469,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         params.put("vmware.reserve.cpu", _reserveCpu);
         params.put("mem.overprovisioning.factor", _memOverprovisioningFactor);
         params.put("vmware.reserve.mem", _reserveMem);
+        params.put("vmware.root.disk.controller", _rootDiskController);
     }
 
     @Override

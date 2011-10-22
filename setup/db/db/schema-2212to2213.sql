@@ -50,3 +50,6 @@ UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.5(32-bi
 UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.6(32-bit)' WHERE hypervisor_type='VmWare' AND guest_os_id=27;
 UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.7(32-bit)' WHERE hypervisor_type='VmWare' AND guest_os_id=28;
 UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.8(32-bit)' WHERE hypervisor_type='VmWare' AND guest_os_id=29;
+
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.root.disk.controller', 'scsi', 'Specify the default disk controller for root volumes, valid values are scsi, ide');
+
