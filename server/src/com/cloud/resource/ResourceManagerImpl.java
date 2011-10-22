@@ -1458,11 +1458,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 				if (host != null) {
 					/* Change agent status to Alert */
 					_agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
-				    try {
-				    	resourceStateTransitTo(host, ResourceState.Event.Error, _nodeId);
-                    } catch (NoTransitionException e) {
-	                    s_logger.debug("Cannot transmit host " + host.getId() +  "to Disabled state", e);
-                    }
+					/* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
 				}
 			}
 		}
@@ -1722,7 +1718,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     			return true;
     		}
     		
-    		resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
+    		resourceStateTransitTo(host, ResourceState.Event.Unmanaged, _nodeId);
 			 _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.AgentDisconnected);
 			return true;
 		} catch (NoTransitionException e) {

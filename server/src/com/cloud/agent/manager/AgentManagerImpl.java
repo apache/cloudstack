@@ -739,7 +739,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                    	handleDisconnectWithoutInvestigation(attache, Event.HypervisorVersionChanged);
+                    	handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
