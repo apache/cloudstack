@@ -339,7 +339,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	}
 	
     @Override
-    public boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId) {
+    public boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId, Long hostId) {
         SearchCriteria<CapacityVO> sc = _allFieldsSearch.create();
         
         if (capacityType != null) {
@@ -356,6 +356,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
+        }
+        
+        if (hostId != null) {
+            sc.setParameters("hostId", hostId);
         }
         
         return remove(sc) > 0;

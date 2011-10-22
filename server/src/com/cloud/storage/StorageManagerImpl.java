@@ -1430,8 +1430,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 _storagePoolDao.update(id, sPool);
                 _storagePoolDao.remove(id);
                 deletePoolStats(id);
+                //Delete op_host_capacity entries
+                _capacityDao.removeBy(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, null, null, null, id);
                 txn.commit();
-
+                                
                 s_logger.debug("Storage pool id=" + id + " is removed successfully");
                 return true;
             } else {

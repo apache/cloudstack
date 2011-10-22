@@ -692,7 +692,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
             
             // Delete corresponding capacity record
-            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_PRIVATE_IP, null, podId, null);
+            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_PRIVATE_IP, null, podId, null, null);
         }
         
         // Delete link local ip addresses for the pod
@@ -1161,7 +1161,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         if (success) {
             //delete all capacity records for the zone
-            _capacityDao.removeBy(null, zoneId, null, null);
+            _capacityDao.removeBy(null, zoneId, null, null, null);
         }
 
         txn.commit();

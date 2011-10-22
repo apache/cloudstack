@@ -43,6 +43,7 @@ import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
@@ -109,6 +110,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected ClusterDetailsDao              _clusterDetailsDao;
     @Inject
     protected ClusterDao                     _clusterDao;
+    @Inject
+    protected CapacityDao 					 _capacityDao;
     @Inject
     protected HostDao                        _hostDao;
     @Inject
@@ -667,7 +670,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return false;
             }
 
-            _clusterDao.remove(cmd.getId());
+            if (_clusterDao.remove(cmd.getId())){
+                _capacityDao.removeBy(null, null, null, cluster.getId(), null);
+            }
 
             txn.commit();
             return true;

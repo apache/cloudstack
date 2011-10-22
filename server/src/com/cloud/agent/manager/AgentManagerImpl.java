@@ -755,16 +755,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     storagePool.setClusterId(null);
                     _storagePoolDao.update(poolId, storagePool);
                     _storagePoolDao.remove(poolId);
+                    _capacityDao.removeBy(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, null, null, null, poolId);        
                     s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
                 }
             }
-
-            // delete the op_host_capacity entry
-            Object[] capacityTypes = { Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY };
-            SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
-            hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
-            hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
-            _capacityDao.remove(hostCapacitySC);
+            
+            //Delete op_host_capacity entries
+            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_MEMORY, null, null, null, hostId);
+            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_CPU, null, null, null, hostId);
             txn.commit();
             return true;
         } catch (Throwable t) {
