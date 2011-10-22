@@ -811,17 +811,22 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return true;
     }
 
-    @Override
-    public String getSecondaryStorageURL(SnapshotVO snapshot) {
-        HostVO secHost = null;
 
+    @Override
+    public HostVO getSecondaryStorageHost(SnapshotVO snapshot) {
+        HostVO secHost = null;
         if( snapshot.getSwiftId() == null ) {
             secHost = _hostDao.findById(snapshot.getSecHostId());
-
         } else {
             Long dcId = snapshot.getDataCenterId();
             secHost = _storageMgr.getSecondaryStorageHost(dcId);
         }
+        return secHost;
+    }
+
+    @Override
+    public String getSecondaryStorageURL(SnapshotVO snapshot) {
+        HostVO secHost = getSecondaryStorageHost(snapshot);
         if (secHost != null) {
             return secHost.getStorageUrl();
         }

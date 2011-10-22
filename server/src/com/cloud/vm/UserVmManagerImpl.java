@@ -1437,12 +1437,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new CloudRuntimeException("Unable to find Snapshot for Id " + snapshotId);
                 }
                 zoneId = snapshot.getDataCenterId();
-                secondaryStorageHost = _hostDao.findById(snapshot.getSecHostId());
-                if (secondaryStorageHost == null) {
-                    throw new CloudRuntimeException("Secondary storage " + snapshot.getSecHostId() + " doesn't exist");
-                }
-                secondaryStorageURL = secondaryStorageHost.getStorageUrl();
-
+                secondaryStorageHost = _snapshotMgr.getSecondaryStorageHost(snapshot);
+                secondaryStorageURL = _snapshotMgr.getSecondaryStorageURL(snapshot);
                 String name = command.getTemplateName();
                 String backupSnapshotUUID = snapshot.getBackupSnapshotId();
                 if (backupSnapshotUUID == null) {
@@ -1600,10 +1596,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
                 // Remove the template record
-                _templateDao.remove(templateId);
+                _templateDao.expunge(templateId);
 
                 // decrement resource count
-                _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                if (accountId != null) {
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                }
                 txn.commit();
             }
         }
