@@ -143,6 +143,7 @@ import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.CustomFieldsManagerMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
@@ -251,6 +252,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     
     protected float _memOverprovisioningFactor = 1;
     protected boolean _reserveMem = false;
+    protected DiskControllerType _rootDiskController = DiskControllerType.scsi;
 
     protected ManagedObjectReference _morHyperHost;
     protected VmwareContext _serviceContext;
@@ -759,8 +761,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         	nicMasks &= ~(1 << publicNicInfo.first().intValue());
         	vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
         	
-            // vmMo.tearDownDevice(publicNicInfo.second());
-
             HostMO hostMo = vmMo.getRunningHost();
             List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
             for (NetworkDetails netDetails : networks) {
@@ -814,13 +814,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         	
         	throw e;
         }
-        
-/*
-        // Note: public NIC is plugged inside system VM
-        VirtualDevice nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), VirtualEthernetCardType.Vmxnet3, 
-        	networkInfo.second(), vifMacAddress, -1, 1, true, true);
-        vmMo.plugDevice(nic);
-*/        
     }
     
     private int allocPublicNicIndex(VirtualMachineMO vmMo) throws Exception {
@@ -1330,10 +1323,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (VolumeTO vol : disks) {
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
 
-                if (vol.getType() == Volume.Type.ROOT || vol.getType() == Volume.Type.ISO) {
+                if (vol.getType() == Volume.Type.ISO) {
                     controllerKey = ideControllerKey;
                 } else {
-                    controllerKey = scsiControllerKey;
+                	if(_rootDiskController == DiskControllerType.scsi)
+                		controllerKey = scsiControllerKey;
+                	else
+                		controllerKey = ideControllerKey;
                 }
 
                 if (vol.getType() != Volume.Type.ISO) {
@@ -1395,20 +1391,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
 
-            // pass boot arguments through machine.id
-            OptionValue[] machineIdOptions = new OptionValue[2];
-            machineIdOptions[0] = new OptionValue();
-            machineIdOptions[0].setKey("machine.id");
-            machineIdOptions[0].setValue(vmSpec.getBootArgs());
+            // pass boot arguments through machine.id & perform customized options to VMX
+    
+            Map<String, String> vmDetailOptions = validateVmDetails(vmSpec.getDetails());
+            OptionValue[] extraOptions = new OptionValue[2 + vmDetailOptions.size()];
+            extraOptions[0] = new OptionValue();
+            extraOptions[0].setKey("machine.id");
+            extraOptions[0].setValue(vmSpec.getBootArgs());
             
-            machineIdOptions[1] = new OptionValue();
-            machineIdOptions[1].setKey("devices.hotplug");
-            machineIdOptions[1].setValue("true");
+            extraOptions[1] = new OptionValue();
+            extraOptions[1].setKey("devices.hotplug");
+            extraOptions[1].setValue("true");
+
+            int j = 2;
+            for(Map.Entry<String, String> entry : vmDetailOptions.entrySet()) {
+            	extraOptions[j] = new OptionValue();
+            	extraOptions[j].setKey(entry.getKey());
+            	extraOptions[j].setValue(entry.getValue());
+            	j++;
+            }
             
             String keyboardLayout = null;
             if(vmSpec.getDetails() != null)
             	keyboardLayout = vmSpec.getDetails().get(VmDetailConstants.KEYBOARD);
-            vmConfigSpec.setExtraConfig(configureVnc(machineIdOptions, hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout));
+            vmConfigSpec.setExtraConfig(configureVnc(extraOptions, hyperHost, vmName, vmSpec.getVncPassword(), keyboardLayout));
 
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmName);
@@ -1440,6 +1446,30 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
+    }
+    
+    private Map<String, String> validateVmDetails(Map<String, String> vmDetails) {
+    	Map<String, String> validatedDetails = new HashMap<String, String>();
+    	
+    	if(vmDetails != null && vmDetails.size() > 0) {
+    		for(Map.Entry<String, String> entry : vmDetails.entrySet()) {
+    			if("machine.id".equalsIgnoreCase(entry.getKey()))
+    				continue;
+    			else if("devices.hotplug".equalsIgnoreCase(entry.getKey()))
+    				continue;
+    			else if("RemoteDisplay.vnc.enabled".equalsIgnoreCase(entry.getKey()))
+    				continue;
+    			else if("RemoteDisplay.vnc.password".equalsIgnoreCase(entry.getKey()))
+    				continue;
+    			else if("RemoteDisplay.vnc.port".equalsIgnoreCase(entry.getKey()))
+    				continue;
+    			else if("RemoteDisplay.vnc.keymap".equalsIgnoreCase(entry.getKey()))
+    				continue;
+    			else
+    				validatedDetails.put(entry.getKey(), entry.getValue());
+    		}
+    	}
+    	return validatedDetails;
     }
 
     private int getReserveCpuMHz(int cpuMHz) {
@@ -3813,6 +3843,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
         _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
         _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
+        
+        value = (String)params.get("vmware.root.disk.controller");
+        if(value != null && value.equalsIgnoreCase("scsi"))
+        	_rootDiskController = DiskControllerType.scsi;
+        else
+        	_rootDiskController = DiskControllerType.ide;
 
         s_logger.info("VmwareResource network configuration info. private vSwitch: " + _privateNetworkVSwitchName + ", public vSwitch: " + _publicNetworkVSwitchName + ", guest network: "
                 + _guestNetworkVSwitchName);
