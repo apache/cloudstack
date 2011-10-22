@@ -655,7 +655,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             s_logger.error(basicErrMsg);
         } finally {
             if (snapshot.getSwiftId() != null) {
-                _snapshotMgr.deleteSnapshotsForVolume (secondaryStoragePoolUrl, dcId, accountId, volumeId);
+                _snapshotMgr.deleteSnapshotsDirForVolume(secondaryStoragePoolUrl, dcId, accountId, volumeId);
             }
             _snapshotDao.unlockFromLockTable(snapshotId.toString());
         }

@@ -79,9 +79,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -447,12 +444,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((ManageSnapshotCommand) cmd);
         } else if (clazz == BackupSnapshotCommand.class) {
             return execute((BackupSnapshotCommand) cmd);
-        } else if (clazz == DeleteSnapshotBackupCommand.class) {
-            return execute((DeleteSnapshotBackupCommand) cmd);
         } else if (clazz == CreateVolumeFromSnapshotCommand.class) {
             return execute((CreateVolumeFromSnapshotCommand) cmd);
-        } else if (clazz == DeleteSnapshotsDirCommand.class) {
-            return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
             return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromSnapshotCommand.class) {
@@ -6087,91 +6080,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new CreateVolumeFromSnapshotAnswer(cmd, result, details, volumeUUID);
     }
 
-    protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
-        Connection conn = getConnection();
-        Long dcId = cmd.getDataCenterId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
-        String backupUUID = cmd.getSnapshotUuid();
-        String details = null;
-        boolean success = false;
-
-        URI uri = null;
-        try {
-            uri = new URI(secondaryStoragePoolURL);
-        } catch (URISyntaxException e) {
-            details = "Error finding the secondary storage URL" + e.getMessage();
-            s_logger.error(details, e);
-        }
-        if (uri != null) {
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-     
-            details = deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID);
-            success = (details != null && details.equals("1"));
-            if (success) {
-                s_logger.debug("Successfully deleted snapshot backup " + backupUUID);
-            }
-        }
-        return new DeleteSnapshotBackupAnswer(cmd, true, details);
-    }
-
-    protected Answer execute(DeleteSnapshotsDirCommand cmd) {
-        Connection conn = getConnection();
-        Long dcId = cmd.getDataCenterId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
-        String snapshotUUID = cmd.getSnapshotUuid();
-        String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-
-        String details = null;
-        boolean success = false;
-
-        SR primaryStorageSR = null;
-        try {
-            primaryStorageSR = getSRByNameLabelandHost(conn, primaryStorageNameLabel);
-            if (primaryStorageSR == null) {
-                details = "Primary Storage SR could not be created from the name label: " + primaryStorageNameLabel;
-            }
-        } catch (XenAPIException e) {
-            details = "Couldn't determine primary SR type " + e.getMessage();
-            s_logger.error(details, e);
-        } catch (Exception e) {
-            details = "Couldn't determine primary SR type " + e.getMessage();
-            s_logger.error(details, e);
-        }
-
-        if (primaryStorageSR != null) {
-            if (snapshotUUID != null) {
-                VDI snapshotVDI = getVDIbyUuid(conn, snapshotUUID);
-                if (snapshotVDI != null) {
-                    destroyVDI(conn, snapshotVDI);
-                }
-            }
-        }
-        URI uri = null;
-        try {
-            uri = new URI(secondaryStoragePoolURL);
-        } catch (URISyntaxException e) {
-            details = "Error finding the secondary storage URL" + e.getMessage();
-            s_logger.error(details, e);
-        }
-        if (uri != null) {
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-
-            success = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
-            if (success) {
-                details = "Successfully deleted snapshotsDir for volume: " + volumeId;
-                s_logger.debug(details);
-            } else {
-                details = "Failed to delete snapshotsDir for volume: " + volumeId;
-                s_logger.warn(details);
-            }
-        }
-
-        return new Answer(cmd, success, details);
-    }
 
     protected VM getVM(Connection conn, String vmName) {
         // Look up VMs with the specified name

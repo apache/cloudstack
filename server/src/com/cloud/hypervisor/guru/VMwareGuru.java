@@ -15,16 +15,14 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.CheckPointManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
@@ -121,8 +119,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     	
     	if(cmd instanceof PrimaryStorageDownloadCommand || 
     		cmd instanceof BackupSnapshotCommand ||
-    		cmd instanceof DeleteSnapshotsDirCommand ||
-    		cmd instanceof DeleteSnapshotBackupCommand ||
     		cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
     		cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
     		cmd instanceof CopyVolumeCommand ||

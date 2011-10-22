@@ -12,8 +12,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
@@ -56,10 +54,6 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             answer = execute((PrimaryStorageDownloadCommand)cmd);
         } else if(cmd instanceof BackupSnapshotCommand) {
             answer = execute((BackupSnapshotCommand)cmd);
-        } else if(cmd instanceof DeleteSnapshotsDirCommand) {
-            answer = execute((DeleteSnapshotsDirCommand)cmd);
-        } else if(cmd instanceof DeleteSnapshotBackupCommand) {
-            answer = execute((DeleteSnapshotBackupCommand)cmd);
         } else if(cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
             answer = execute((CreatePrivateTemplateFromVolumeCommand)cmd);
         } else if(cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
@@ -93,22 +87,6 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     private Answer execute(BackupSnapshotCommand cmd) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource BackupSnapshotCommand: " + _gson.toJson(cmd));
-        }
-
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(DeleteSnapshotsDirCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource DeleteSnapshotsDirCommand: " + _gson.toJson(cmd));
-        }
-
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(DeleteSnapshotBackupCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Executing resource DeleteSnapshotBackupCommand: " + _gson.toJson(cmd));
         }
 
         return _storageMgr.execute(this, cmd);

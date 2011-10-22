@@ -21,9 +21,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -35,8 +32,6 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualLsiLogicController;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.storage.JavaStorageLayer;
@@ -48,13 +43,14 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualSCSISharing;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageManagerImpl.class);
@@ -244,62 +240,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, true);
 	}
 
-    @Override
-	public Answer execute(VmwareHostService hostService, DeleteSnapshotsDirCommand cmd) {
-		Long accountId = cmd.getAccountId();
-		Long volumeId = cmd.getVolumeId();
-		String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
-
-		String details = null;
-		boolean success = false;
-
-		VmwareContext context = hostService.getServiceContext(cmd);
-		try {
-			details = deleteSnapshotDirOnSecondaryStorage(accountId, volumeId, secondaryStoragePoolURL);
-			if (details == null) {
-				success = true;
-			}
-
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
-
-			s_logger.error("Unexpecpted exception ", e);
-
-			details = "DeleteSnapshotDirCommand exception: " + StringUtils.getExceptionStackInfo(e);
-			return new Answer(cmd, false, details);
-		}
-
-		return new Answer(cmd, success, details);
-	}
     
-	public Answer execute(VmwareHostService hostService, DeleteSnapshotBackupCommand cmd) {
-		Long accountId = cmd.getAccountId();
-		Long volumeId = cmd.getVolumeId();
-		String secStorageUrl = cmd.getSecondaryStoragePoolURL();
-		String backupUUID = cmd.getSnapshotUuid();
-		String details = null;
-		boolean success = false;
-		
-		VmwareContext context = hostService.getServiceContext(cmd);
-		try {
-			details = deleteSnapshotOnSecondaryStorge(accountId, volumeId, secStorageUrl, backupUUID);
-			if (details == null) {
-				success = true;
-			}
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
-
-			s_logger.error("Unexpecpted exception ", e);
-			details = "DeleteSnapshotBackupCommand exception: " + StringUtils.getExceptionStackInfo(e);
-			return new DeleteSnapshotBackupAnswer(cmd, false, details);
-		}
-
-		return new DeleteSnapshotBackupAnswer(cmd, success, details);
-	}
 
     @Override
 	public Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromVolumeCommand cmd) {
@@ -791,18 +732,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
         
         return "Failed to delete snapshot backup file, backupUuid: " + backupUuid;
-    }
-    
-    private String deleteSnapshotDirOnSecondaryStorage(long accountId, long volumeId, String secStorageUrl) throws Exception {
-        String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
-        String snapshotMountRoot = secondaryMountPoint + "/" + getSnapshotRelativeDirInSecStorage(accountId, volumeId);
-
-        synchronized(snapshotMountRoot.intern()) {
-            Script command = new Script(false, "rm", _timeout, s_logger);
-            command.add("-rf");
-            command.add(snapshotMountRoot);
-            return command.execute();
-        }
     }
     
     private Pair<String, String> copyVolumeToSecStorage(VmwareHypervisorHost hyperHost, String vmName, long volumeId, String poolId, String volumePath, 

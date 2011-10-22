@@ -41,6 +41,7 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
@@ -205,11 +206,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Long volumeId = cmd.getVolumeId();
         try {
             String parent = getRootDir(secondaryStorageURL);
-            String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId);
-            Script command = new Script("/bin/bash", s_logger);
-            command.add("-c");
-            command.add("rm -f " + lPath + "/*");
-            String result = command.execute();
+            String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/*";
+            String result = deleteLocalFile(lPath);
             if (result != null) {
                 String errMsg = "failed to delete all snapshots " + lPath + " , err=" + result;
                 s_logger.warn(errMsg);
@@ -357,7 +355,52 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
     
+    protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
+        String secondaryStorageURL = cmd.getSecondaryStoragePoolURL();
+        Long accountId = cmd.getAccountId();
+        Long volumeId = cmd.getVolumeId();
+        String name = cmd.getSnapshotUuid();
+        try {
+            SwiftTO swift = cmd.getSwift();
+            if (swift == null) {
+                String parent = getRootDir(secondaryStorageURL);
+                String filename;
+                if (cmd.isAll()) {
+                    filename = "*";
+
+                } else {
+                    filename = "*" + name + "*";
+                }
+                String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/" + filename;
+                String result = deleteLocalFile(lPath);
+                if (result != null) {
+                    String errMsg = "failed to delete snapshot " + lPath + " , err=" + result;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+            } else {
+                String filename;
+                if (cmd.isAll()) {
+                    filename = "";
+                } else {
+                    filename = name;
+                }
+                String result = swiftDelete(swift, volumeId.toString(), filename);
+                if (result != null) {
+                    String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
     
+
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM){
             return new Answer(cmd, true, null);
@@ -413,6 +456,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String result = command.execute();
         if (result != null) {
             String errMsg = "Create local path " + folder + " failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    private String deleteLocalFile(String fullPath) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("rm -f " + fullPath);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "Failed to delete file " + fullPath + ", err=" + result;
             s_logger.warn(errMsg);
             return errMsg;
         }
