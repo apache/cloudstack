@@ -69,6 +69,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         AllFieldSearch.and("status",AllFieldSearch.entity().getStatus(),SearchCriteria.Op.EQ);
         AllFieldSearch.and("path", AllFieldSearch.entity().getPath(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("podId", AllFieldSearch.entity().getPodId(), Op.EQ);
+        AllFieldSearch.and("clusterId", AllFieldSearch.entity().getClusterId(), Op.EQ);
         AllFieldSearch.done();  
         
     	DcPodSearch = createSearchBuilder();
@@ -373,5 +374,13 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         }
         
         return rs.get(0);
+    }
+    
+    @Override
+    public List<StoragePoolVO> listPoolsByCluster(long clusterId) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        
+        return listBy(sc);
     }
 }
