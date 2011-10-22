@@ -70,7 +70,9 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -115,6 +117,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected HostTagsDao                    _hostTagsDao;    
     @Inject
     protected GuestOSCategoryDao             _guestOSCategoryDao;
+    @Inject 
+    protected StoragePoolDao                _storagePoolDao;
 
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
@@ -643,10 +647,21 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return true;
             }
 
+            //don't allow to remove the cluster if it has non-removed hosts
             List<HostVO> hosts = _hostDao.listByCluster(cmd.getId());
             if (hosts.size() > 0) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cluster: " + cmd.getId() + " still has hosts");
+                    s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
+                }
+                txn.rollback();
+                return false;
+            }
+            
+            //don't allow to remove the cluster if it has non-removed storage pools
+            List<StoragePoolVO> storagePools = _storagePoolDao.listPoolsByCluster(cmd.getId());
+            if (storagePools.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " still has storage pools, can't remove");
                 }
                 txn.rollback();
                 return false;
