@@ -874,23 +874,23 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         //revoke static nat for the ip address
-        boolean staticNatRevoked = applyStaticNatForIp(ipId, false, caller, true);
+        boolean success = applyStaticNatForIp(ipId, false, caller, true);
 
         // revoke all port forwarding rules
-        applyPortForwardingRules(ipId, true, caller);
+        success = success && applyPortForwardingRules(ipId, true, caller);
 
         // revoke all all static nat rules
-        applyStaticNatRules(ipId, true, caller);
+        success  = success && applyStaticNatRules(ipId, true, caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_forwardingDao.listByIpAndNotRevoked(ipId));
         rules.addAll(_firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.StaticNat));
 
-        if (s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled() && success) {
             s_logger.debug("Successfully released rules for ip id=" + ipId + " and # of rules now = " + rules.size());
         }
 
-        return (rules.size() == 0 && staticNatRevoked);
+        return (rules.size() == 0 && success);
     }
 
     @Override
@@ -1032,13 +1032,26 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public boolean disableStaticNat(long ipId) throws ResourceUnavailableException {
         boolean success = true;
 
-        Account caller = UserContext.current().getCaller();
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
 
         if (!ipAddress.isOneToOneNat()) {
             throw new InvalidParameterValueException("One to one nat is not enabled for the ip id=" + ipId);
+        }
+        
+        //Revoke all firewall rules for the ip
+        try {
+            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
+            if (!_firewallMgr.revokeFirewallRulesForIp(ipId, ctx.getCallerUserId(), caller)) {
+                s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of disable statis nat");
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to revoke all firewall rules for ip id=" + ipId + " as a part of ip release", e);
+            success = false;
         }
 
         if (!revokeAllPFAndStaticNatRulesForIp(ipId, UserContext.current().getCallerUserId(), caller)) {
