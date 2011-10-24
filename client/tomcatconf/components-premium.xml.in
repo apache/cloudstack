@@ -2,6 +2,7 @@
 <components-premium.xml>
     <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
         <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
+        <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
         <checker name="DatabaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker"/>
         <checker name="PremiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
     </system-integrity-checker>

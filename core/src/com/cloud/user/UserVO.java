@@ -50,7 +50,7 @@ public class UserVO implements User {
     @Column(name = "username")
     private String username = null;
 
-    @Column(name = "password")
+    @Column(name = "password", encryptable=true)
     private String password = null;
 
     @Column(name = "firstname")
@@ -69,10 +69,10 @@ public class UserVO implements User {
     @Enumerated(value=EnumType.STRING)
     private State state;
 
-    @Column(name = "api_key")
+    @Column(name = "api_key", encryptable=true)
     private String apiKey = null;
 
-    @Column(name = "secret_key")
+    @Column(name = "secret_key", encryptable=true)
     private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)

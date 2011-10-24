@@ -44,7 +44,7 @@ public class VpnUserVO implements VpnUser {
     @Column(name="username")
     private String username;
     
-    @Column(name="password")
+    @Column(name="password", encryptable=true)
     private String password;
     
     @Column(name="state")

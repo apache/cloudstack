@@ -137,4 +137,8 @@ public @interface Column {
      * (Applies only if a decimal column is used.)
      */
     int scale() default 0;
+    /**
+     * (Optional) Whether encryption should be used for this column 
+     */
+    boolean encryptable() default false;
 }

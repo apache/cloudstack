@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -126,7 +127,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     	Transaction txn = Transaction.currentTxn();
 		try {
 			PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);
-			stmt.setString(1, value);
+			stmt.setString(1, DBEncryptionUtil.encrypt(value));
 			stmt.setString(2, name);
 			stmt.executeUpdate();
 			return true;

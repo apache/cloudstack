@@ -95,7 +95,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
-    protected HashMap<String, ComponentInfo<SystemIntegrityChecker>>     _checkerMap;
+    protected LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>     _checkerMap;
     protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>    _daoMap;
     protected String                                                    _serverName;
     protected Object                                                    _component;
@@ -131,7 +131,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             SAXParser saxParser = spfactory.newSAXParser();
             _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
             _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
-            _checkerMap = new HashMap<String, ComponentInfo<SystemIntegrityChecker>>();
+            _checkerMap = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             _factories = new HashMap<Class<?>, Class<?>>();
             File file = PropertiesUtil.findConfigFile(filename);
@@ -866,7 +866,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected class XmlHandler extends DefaultHandler {
         public HashMap<String, List<ComponentInfo<Adapter>>>    adapters;
         public HashMap<String, ComponentInfo<Manager>>          managers;
-        public HashMap<String, ComponentInfo<SystemIntegrityChecker>> checkers;
+        public LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>> checkers;
         public LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>> daos;
         public String                                  parent;
         public String                                  library;
@@ -884,7 +884,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             parse = false;
             adapters = new HashMap<String, List<ComponentInfo<Adapter>>>();
             managers = new HashMap<String, ComponentInfo<Manager>>();
-            checkers = new HashMap<String, ComponentInfo<SystemIntegrityChecker>>();
+            checkers = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
             value = null;
             parent = null;

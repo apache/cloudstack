@@ -36,7 +36,7 @@ public class ConfigurationVO implements Configuration{
 	@Column(name="name")
     private String name;
 	
-	@Column(name="value", length=4095)
+	@Column(name="value", length=4095, encryptable=true)
     private String value;
 	
 	@Column(name="description", length=1024)

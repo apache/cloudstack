@@ -68,6 +68,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -498,7 +499,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 byte[] bytes = rs.getBytes(index);
                 if(bytes != null) {
                     try {
-                        field.set(entity, new String(bytes, "UTF-8"));
+                    	if(field.getAnnotation(Column.class).encryptable()){
+                    		field.set(entity, DBEncryptionUtil.decrypt(new String(bytes, "UTF-8")));
+                    	} else {
+                    		field.set(entity, new String(bytes, "UTF-8"));
+                    	}
                     } catch (IllegalArgumentException e) {
                         assert(false);
                         throw new CloudRuntimeException("IllegalArgumentException when converting UTF-8 data");
@@ -1363,7 +1368,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 return;
             }
         }
-
         if (attr.field.getType() == String.class) {
             final String str = (String)value;
             if (str == null) {
@@ -1376,7 +1380,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             // to support generic localization, utilize MySql UTF-8 support
             if (length < str.length()) {
                 try {
-                    pstmt.setBytes(j, str.substring(0, column.length()).getBytes("UTF-8"));
+                	 if (attr.is(Attribute.Flag.Encrypted)){
+                		 pstmt.setBytes(j, DBEncryptionUtil.encrypt(str.substring(0, column.length())).getBytes("UTF-8"));
+                	 } else {
+                		 pstmt.setBytes(j, str.substring(0, column.length()).getBytes("UTF-8"));
+                	 }
                 } catch (UnsupportedEncodingException e) {
                     // no-way it can't support UTF-8 encoding
                     assert(false);
@@ -1384,7 +1392,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 }
             } else {
                 try {
-                    pstmt.setBytes(j, str.getBytes("UTF-8"));
+                	if (attr.is(Attribute.Flag.Encrypted)){
+                		pstmt.setBytes(j, DBEncryptionUtil.encrypt(str).getBytes("UTF-8"));
+                	} else {
+                		pstmt.setBytes(j, str.getBytes("UTF-8"));
+                	}
                 } catch (UnsupportedEncodingException e) {
                     // no-way it can't support UTF-8 encoding
                     assert(false);

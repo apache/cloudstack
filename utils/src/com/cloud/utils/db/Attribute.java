@@ -54,7 +54,8 @@ public class Attribute {
         DC(0x40000),
         CharDT(0x100000),
         StringDT(0x200000),
-        IntegerDT(0x400000);
+        IntegerDT(0x400000),
+        Encrypted(0x800000);
 
         int place;
         Flag(int place) {
@@ -144,6 +145,9 @@ public class Attribute {
             if (column == null || column.nullable()) {
                 flags = Flag.Nullable.setTrue(flags);
             }
+            if (column != null && column.encryptable()) {
+                flags = Flag.Encrypted.setTrue(flags);
+            }
         }
         ElementCollection ec = field.getAnnotation(ElementCollection.class);
         if (ec != null) {
@@ -201,6 +205,10 @@ public class Attribute {
         flags = flag.setFalse(flags);
     }
 
+    public final boolean isEncrypted() {
+        return Flag.Encrypted.check(flags);
+    }
+    
     public Field getField() {
         return field;
     }

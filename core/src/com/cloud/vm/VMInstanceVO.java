@@ -56,7 +56,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="name", updatable=false, nullable=false, length=255)
 	protected String hostName = null;
 
-    @Column(name="vnc_password", updatable=true, nullable=false, length=255)
+    @Column(name="vnc_password", updatable=true, nullable=false, length=255, encryptable=true)
     protected String vncPassword;
     
     @Column(name="proxy_id", updatable=true, nullable=true)

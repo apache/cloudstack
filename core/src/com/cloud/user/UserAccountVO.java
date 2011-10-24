@@ -44,7 +44,7 @@ public class UserAccountVO implements UserAccount {
     @Column(name="username")
     private String username = null;
 
-    @Column(name="password")
+    @Column(name="password", encryptable=true)
     private String password = null;
 
     @Column(name="firstname")

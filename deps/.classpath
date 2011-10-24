@@ -12,6 +12,7 @@
 	<classpathentry exported="true" kind="lib" path="cloud-ehcache.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-email.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-httpcore-4.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-jasypt-1.8.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jsch-0.1.42.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-jstl-1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-libvirt-0.4.5.jar"/>

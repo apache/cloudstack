@@ -41,9 +41,12 @@ import org.apache.commons.pool.KeyedObjectPoolFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
 import org.apache.log4j.Logger;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.jasypt.properties.EncryptableProperties;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 
@@ -954,9 +957,16 @@ public class Transaction {
     static {
         try {
             final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-            final Properties dbProps = new Properties();
+            final Properties dbProps; 
+            
+            if(EncryptionSecretKeyChecker.useEncryption()){
+            	StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
+            	dbProps = new EncryptableProperties(encryptor);
+            } else {
+            	dbProps = new Properties();
+            }
             dbProps.load(new FileInputStream(dbPropsFile));
-
+            
             // FIXME:  If params are missing...default them????
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
             final int cloudMaxIdle = Integer.parseInt(dbProps.getProperty("db.cloud.maxIdle"));

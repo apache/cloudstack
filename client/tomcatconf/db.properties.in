@@ -33,6 +33,9 @@ db.cloud.keyStorePassword=
 db.cloud.trustStore=
 db.cloud.trustStorePassword=
 
+# Encryption Settings
+db.cloud.encryption.type=none
+db.cloud.encrypt.secret=
 
 # usage database settings
 db.usage.username=@DBUSER@
