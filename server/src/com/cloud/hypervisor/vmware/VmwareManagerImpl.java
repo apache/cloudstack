@@ -122,7 +122,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _memOverprovisioningFactor = "1";
     String _reserveMem = "false";
     
-    String _rootDiskController = DiskControllerType.scsi.toString();
+    String _rootDiskController = DiskControllerType.ide.toString();
     
     Map<String, String> _storageMounts = new HashMap<String, String>();
 
@@ -249,7 +249,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         
         _rootDiskController = configDao.getValue(Config.VmwareRootDiskControllerType.key());
         if(_rootDiskController == null || _rootDiskController.isEmpty())
-        	_rootDiskController = DiskControllerType.scsi.toString();
+        	_rootDiskController = DiskControllerType.ide.toString();
         
     	s_logger.info("Additional VNC port allocation range is settled at " + _additionalPortRangeStart + " to " + (_additionalPortRangeStart + _additionalPortRangeSize));
 
