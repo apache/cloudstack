@@ -53,6 +53,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -313,19 +314,23 @@ public class AlertManagerImpl implements AlertManager {
 		        //implementing the same
         		
             	// Calculate new Public IP capacity for Virtual Network
-            	s_logger.trace("Executing public ip capacity update for Virtual Network");
-		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
-                s_logger.trace("Done with public ip capacity update for Virtual Network");
+        		if (datacenter.getNetworkType() == NetworkType.Advanced){
+        			s_logger.trace("Executing public ip capacity update for Virtual Network");
+        			createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
+        			s_logger.trace("Done with public ip capacity update for Virtual Network");
+        		}
                 
             	// Calculate new Public IP capacity for Direct Attached Network
             	s_logger.trace("Executing public ip capacity update for Direct Attached Network");
 		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
                 s_logger.trace("Done with public ip capacity update for Direct Attached Network");
                 
-                //Calculate VLAN's capacity
-            	s_logger.trace("Executing VLAN capacity update");
-            	createOrUpdateVlanCapacity(dcId);
-            	s_logger.trace("Executing VLAN capacity update");
+                if (datacenter.getNetworkType() == NetworkType.Advanced){
+                	//Calculate VLAN's capacity
+                	s_logger.trace("Executing VLAN capacity update");
+                	createOrUpdateVlanCapacity(dcId);
+                	s_logger.trace("Executing VLAN capacity update");
+                }
 		    }
 
         
@@ -497,6 +502,7 @@ public class AlertManagerImpl implements AlertManager {
         String totalStr;
         String usedStr;
         String pctStr = formatPercent(usedCapacity/totalCapacity);
+        short alertType = -1;
         
     	switch (capacityType) {
     	
@@ -506,30 +512,35 @@ public class AlertManagerImpl implements AlertManager {
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+            alertType = ALERT_TYPE_MEMORY;
             break;
         case CapacityVO.CAPACITY_TYPE_CPU:
             msgSubject = "System Alert: Low Unallocated CPU in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = _dfWhole.format(totalCapacity);
             usedStr = _dfWhole.format(usedCapacity);
             msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
+            alertType = ALERT_TYPE_CPU;
             break;
         case CapacityVO.CAPACITY_TYPE_STORAGE:
             msgSubject = "System Alert: Low Available Storage in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+            alertType = ALERT_TYPE_STORAGE;
             break;
         case CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED:
             msgSubject = "System Alert: Remaining unallocated Storage is low in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
+            alertType = ALERT_TYPE_STORAGE_ALLOCATED;
             break;
         case CapacityVO.CAPACITY_TYPE_LOCAL_STORAGE:
             msgSubject = "System Alert: Remaining unallocated Local Storage is low in cluster " +cluster.getName()+ " pod " +pod.getName()+ " of availablity zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
             msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
+            alertType = ALERT_TYPE_LOCAL_STORAGE;
             break;
            
         //Pod Level    
@@ -538,6 +549,7 @@ public class AlertManagerImpl implements AlertManager {
         	totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
         	msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+        	alertType = ALERT_TYPE_PRIVATE_IP;
         	break;
         
         //Zone Level
@@ -546,29 +558,33 @@ public class AlertManagerImpl implements AlertManager {
         	totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
         	msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+        	alertType = ALERT_TYPE_SECONDARY_STORAGE;
         	break;
         case CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
             msgSubject = "System Alert: Number of unallocated virtual network public IPs is low in availablity zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
             msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            alertType = ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
             break;
         case CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
             msgSubject = "System Alert: Number of unallocated direct attached public IPs is low in availablity zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
             msgContent = "Number of unallocated direct attached public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            alertType = ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
             break;
         case CapacityVO.CAPACITY_TYPE_VLAN:
             msgSubject = "System Alert: Number of unallocated VLANs is low in availablity zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
             usedStr = Double.toString(usedCapacity);
             msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            alertType = ALERT_TYPE_VLAN;
             break;
         }
     	
     	try {
-			_emailAlert.sendAlert(capacityType, dc.getId(), null, msgSubject, msgContent);
+			_emailAlert.sendAlert(alertType, dc.getId(), null, msgSubject, msgContent);
     	} catch (Exception ex) {
             s_logger.error("Exception in CapacityChecker", ex);        
 		}

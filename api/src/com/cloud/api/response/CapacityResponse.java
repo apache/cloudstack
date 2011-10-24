@@ -36,6 +36,12 @@ public class CapacityResponse extends BaseResponse {
 
     @SerializedName("podname") @Param(description="the Pod name")
     private String podName;
+    
+    @SerializedName(ApiConstants.CLUSTER_ID) @Param(description="the Cluster ID")
+    private Long clusterId;
+
+    @SerializedName("clustername") @Param(description="the Cluster name")
+    private String clusterName;
 
     @SerializedName("capacityused") @Param(description="the capacity currently in use")
     private Long capacityUsed;
@@ -86,7 +92,23 @@ public class CapacityResponse extends BaseResponse {
         this.podName = podName;
     }
 
-    public Long getCapacityUsed() {
+    public Long getClusterId() {
+		return clusterId;
+	}
+
+	public void setClusterId(Long clusterId) {
+		this.clusterId = clusterId;
+	}
+
+	public String getClusterName() {
+		return clusterName;
+	}
+
+	public void setClusterName(String clusterName) {
+		this.clusterName = clusterName;
+	}
+
+	public Long getCapacityUsed() {
         return capacityUsed;
     }
 

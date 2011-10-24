@@ -46,6 +46,9 @@ public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_STORAGE_DELETE = 20;
     public static final short ALERT_TYPE_UPDATE_RESOURCE_COUNT = 21; // Generated when we fail to update the resource count
     public static final short ALERT_TYPE_USAGE_SANITY_RESULT = 22;
+    public static final short ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 23;
+    public static final short ALERT_TYPE_LOCAL_STORAGE = 24;
+
 
     void clearAlert(short alertType, long dataCenterId, long podId);
 

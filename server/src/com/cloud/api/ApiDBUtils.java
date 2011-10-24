@@ -350,7 +350,15 @@ public class ApiDBUtils {
     public static StorageStats getSecondaryStorageStatistics(long id) {
         return _statsCollector.getStorageStats(id);
     }
+    
+    public static CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId){
+    	return _storageMgr.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId);
+    }
 
+    public static CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId){
+    	return _storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
+    }
+    
     // ///////////////////////////////////////////////////////////
     // Dao methods //
     // ///////////////////////////////////////////////////////////

@@ -763,6 +763,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        	}
 	        	capacityResponses.add(capacityResponse);
         	}
+        	// Do it for stats as well.
+        	capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
         	podResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
         podResponse.setObjectName("pod");
@@ -810,6 +812,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        	}
 	        	capacityResponses.add(capacityResponse);
         	}
+        	// Do it for stats as well.
+        	capacityResponses.addAll(getStatsCapacityresponse(null, null, null, dataCenter.getId()));      	
+        	
         	zoneResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
         
@@ -823,6 +828,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         return zoneResponse;
     }
 
+    private List<CapacityResponse> getStatsCapacityresponse(Long poolId, Long clusterId, Long podId, Long zoneId){
+    	List<CapacityVO> capacities = new ArrayList<CapacityVO>();
+    	capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
+    	if(clusterId == null && podId == null){
+    		capacities.add(ApiDBUtils.getSecondaryStorageUsedStats(poolId, zoneId));
+    	}
+    	
+    	List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
+		for (CapacityVO capacity : capacities){
+    		CapacityResponse capacityResponse = new CapacityResponse();   
+    		capacityResponse.setCapacityType(capacity.getCapacityType());
+        	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());   
+    		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());    	
+    		capacityResponses.add(capacityResponse);
+    	}
+    	
+		return capacityResponses;
+    }
+    
     @Override
     public VolumeResponse createVolumeResponse(Volume volume) {
         VolumeResponse volResponse = new VolumeResponse();
@@ -1012,6 +1036,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        	
 	        	capacityResponses.add(capacityResponse);
         	}
+        	// Do it for stats as well.
+        	capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
         	clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
         clusterResponse.setObjectName("cluster");
@@ -1877,14 +1903,22 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
             if (summedCapacity.getPodId() != null) {
                 capacityResponse.setPodId(summedCapacity.getPodId());
-                if (summedCapacity.getPodId() > 0) {
-                    HostPodVO pod = ApiDBUtils.findPodById(summedCapacity.getPodId());
-                    if (pod != null) {
-                        capacityResponse.setPodName(pod.getName());
-                    }
-                } else {
-                    capacityResponse.setPodName("All");
+                HostPodVO pod = ApiDBUtils.findPodById(summedCapacity.getPodId());
+                if (pod != null) {
+                	capacityResponse.setPodName(pod.getName());
                 }
+            }
+            if (summedCapacity.getClusterId() != null) {
+                capacityResponse.setClusterId(summedCapacity.getClusterId());
+                ClusterVO cluster = ApiDBUtils.findClusterById(summedCapacity.getClusterId());
+                if (cluster != null) {
+                	capacityResponse.setClusterName(cluster.getName());
+                	if (summedCapacity.getPodId() == null){
+                		long podId = cluster.getPodId();
+                		capacityResponse.setPodId(podId);
+                		capacityResponse.setPodName(ApiDBUtils.findPodById(podId).getName());
+                	}
+                }                
             }
             capacityResponse.setZoneId(summedCapacity.getDataCenterId());
             capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
