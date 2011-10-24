@@ -255,7 +255,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     
     protected float _memOverprovisioningFactor = 1;
     protected boolean _reserveMem = false;
-    protected DiskControllerType _rootDiskController = DiskControllerType.scsi;
+    protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
     protected VmwareContext _serviceContext;
@@ -1364,10 +1364,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (vol.getType() == Volume.Type.ISO) {
                     controllerKey = ideControllerKey;
                 } else {
-                	if(_rootDiskController == DiskControllerType.scsi)
-                		controllerKey = scsiControllerKey;
-                	else
-                		controllerKey = ideControllerKey;
+                	if(vmSpec.getDetails() != null && vmSpec.getDetails().get("root.disk.controller") != null)
+                	{
+                		if(vmSpec.getDetails().get("root.disk.controller").equalsIgnoreCase("scsi"))
+	                		controllerKey = scsiControllerKey;
+	                	else
+	                		controllerKey = ideControllerKey;
+                	} else {
+	                	if(_rootDiskController == DiskControllerType.scsi)
+	                		controllerKey = scsiControllerKey;
+	                	else
+	                		controllerKey = ideControllerKey;
+                	}
                 }
 
                 if (vol.getType() != Volume.Type.ISO) {
