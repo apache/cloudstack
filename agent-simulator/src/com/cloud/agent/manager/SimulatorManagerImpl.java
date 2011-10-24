@@ -17,6 +17,7 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -25,6 +26,7 @@ import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
@@ -52,6 +54,7 @@ import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
@@ -260,6 +263,12 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockAgentMgr.MaintainCommand((MaintainCommand)cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
                 return _mockVmMgr.getVmStats((GetVmStatsCommand)cmd);
+            } else if (cmd instanceof GetDomRVersionCmd) {
+            	return _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
+            } else if (cmd instanceof ClusterSyncCommand) {
+            	return new Answer(cmd);
+            } else if (cmd instanceof CopyVolumeCommand) {
+            	return _mockStorageMgr.CopyVolume((CopyVolumeCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }

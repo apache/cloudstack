@@ -31,6 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
@@ -58,7 +59,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
-    protected final Attribute _stateAttr;
     
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
@@ -204,28 +204,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
     
     @Override
-    public boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException {
-        Volume.State oldState = vol.getState();
-        Volume.State newState = oldState.getNextState(event);
-        
-        assert newState != null : "Event "+  event + " cannot happen from " + oldState; 
-        
-        UpdateBuilder builder = getUpdateBuilder(vol);
-        builder.set(vol, _stateAttr, newState);
-        
-        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("id", vol.getId());
-        sc.setParameters("state", oldState);
-        
-        int rows = update(builder, sc, null);
-        if (rows != 1) {
-            VolumeVO dbVol = findById(vol.getId()); 
-            throw new ConcurrentOperationException("Unable to update " + vol + ": Old State=" + oldState + "; New State = " + newState + "; DB State=" + dbVol.getState());
-        }
-        return rows == 1;
-    }
-    
-    @Override
     @DB
 	public HypervisorType getHypervisorType(long volumeId) {
 		/*lookup from cluster of pool*/
@@ -275,6 +253,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), Op.NEQ);
+        AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.done();
         
         DetachedAccountIdSearch = createSearchBuilder();
@@ -312,9 +291,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);        
         CountByAccount.done();
-
-        _stateAttr = _allAttributes.get("state");
-        assert _stateAttr != null : "Couldn't get the state attribute";
 	}
 
 	@Override @DB(txn=false)
@@ -348,4 +324,38 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         
         return listBy(sc);
     }
+
+	@Override
+	public boolean updateState(com.cloud.storage.Volume.State currentState,
+			Event event, com.cloud.storage.Volume.State nextState, Volume vo,
+			Object data) {
+		
+	        Long oldUpdated = vo.getUpdatedCount();
+	        Date oldUpdatedTime = vo.getUpdated();
+	        
+	        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+	        sc.setParameters("id", vo.getId());
+	        sc.setParameters("state", currentState);
+	        sc.setParameters("updatedCount", vo.getUpdatedCount());
+	        
+	        vo.incrUpdatedCount();
+	        
+	        UpdateBuilder builder = getUpdateBuilder(vo);
+	        builder.set(vo, "state", nextState);
+	        builder.set(vo, "updated", new Date());
+	        
+	        int rows = update((VolumeVO)vo, sc);
+	        if (rows == 0 && s_logger.isDebugEnabled()) {
+	            VolumeVO dbVol = findByIdIncludingRemoved(vo.getId()); 
+	            if (dbVol != null) {
+	            	StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+	            	str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=").append(dbVol.getUpdated());
+	            	str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount()).append("; updatedTime=").append(vo.getUpdated());
+	            	str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated).append("; updatedTime=").append(oldUpdatedTime);
+	            } else {
+	            	s_logger.debug("Unable to update volume: id=" + vo.getId() + ", as there is no such volume exists in the database anymore");
+	            }
+	        }
+	        return rows > 0;
+	}
 }

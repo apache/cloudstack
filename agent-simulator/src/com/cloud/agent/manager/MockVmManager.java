@@ -13,6 +13,8 @@ import java.util.Set;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MigrateAnswer;
@@ -80,5 +82,6 @@ public interface MockVmManager extends Manager {
     HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info);
     SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, SimulatorInfo info);
 	MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
+	GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
     
 }

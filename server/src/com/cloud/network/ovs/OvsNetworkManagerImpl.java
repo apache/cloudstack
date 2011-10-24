@@ -110,7 +110,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	    }
 	    
         @Override
-        public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long oldHostId) {
+        public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
             if (!_isEnabled || !status || (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter)) {
                 return false;
             }
@@ -123,7 +123,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
         }
 
         @Override
-        public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long id) {
+        public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
             if (!_isEnabled || !status || (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter)) {
                 return false;
             }

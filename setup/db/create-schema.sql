@@ -382,6 +382,7 @@ CREATE TABLE `cloud`.`volumes` (
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `domain_id` bigint unsigned NOT NULL COMMENT 'the domain that the owner belongs to',
   `pool_id` bigint unsigned  COMMENT 'pool it belongs to. foreign key to storage_pool table',
+  `last_pool_id` bigint unsigned  COMMENT 'last pool it belongs to.',
   `instance_id` bigint unsigned NULL COMMENT 'vm instance it belongs to. foreign key to vm_instance table',
   `device_id` bigint unsigned NULL COMMENT 'which device inside vm instance it is ',
   `name` varchar(255) COMMENT 'A user specified name for the volume',
@@ -404,6 +405,7 @@ CREATE TABLE `cloud`.`volumes` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `state` varchar(32) COMMENT 'State machine',
   `chain_info` text COMMENT 'save possible disk chain info in primary storage',
+  `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'date state was updated',
   PRIMARY KEY (`id`),
   INDEX `i_volumes__removed`(`removed`),
   INDEX `i_volumes__pod_id`(`pod_id`),
@@ -412,9 +414,11 @@ CREATE TABLE `cloud`.`volumes` (
   INDEX `i_volumes__account_id`(`account_id`),
   CONSTRAINT `fk_volumes__pool_id` FOREIGN KEY `fk_volumes__pool_id` (`pool_id`) REFERENCES `storage_pool` (`id`),
   INDEX `i_volumes__pool_id`(`pool_id`),
+  INDEX `i_volumes__last_pool_id`(`last_pool_id`),
   CONSTRAINT `fk_volumes__instance_id` FOREIGN KEY `fk_volumes__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
   INDEX `i_volumes__instance_id`(`instance_id`),
-  INDEX `i_volumes__state`(`state`)
+  INDEX `i_volumes__state`(`state`),
+  INDEX `i_volumes__update_count`(`update_count`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (

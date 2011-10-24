@@ -26,8 +26,9 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
-public interface VolumeDao extends GenericDao<VolumeVO, Long> {
+public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, Volume.Event, Volume> {
 	List<VolumeVO> findDetachedByAccount(long accountId);
     List<VolumeVO> findByAccount(long accountId);
     Pair<Long, Long> getCountAndTotalByPool(long poolId);
@@ -45,13 +46,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
 	List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);
     List<VolumeVO> findUsableVolumesForInstance(long instanceId);
     Long countAllocatedVolumesForAccount(long accountId); 
-    /**
-     * Updates the volume only if the state in memory matches the state in the database.
-     * @param vol Volume to be updated.
-     * @param event event that causes the database change.
-     * @return true if update happened, false if not.
-     */
-    boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException;
+   
     HypervisorType getHypervisorType(long volumeId);
     
     List<VolumeVO> listVolumesToBeDestroyed();

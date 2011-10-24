@@ -20,12 +20,14 @@ class jobStatus(object):
         self.duration = None
         self.jobId = None
         self.responsecls = None
+    def __str__(self):
+        return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v) in self.__dict__.iteritems()))
 class workThread(threading.Thread):
     def __init__(self, in_queue, outqueue, apiClient, db=None, lock=None):
         threading.Thread.__init__(self)
         self.inqueue = in_queue
         self.output = outqueue
-        self.connection = apiClient.connection
+        self.connection = apiClient.connection.__copy__()
         self.db = None
         self.lock = lock
         

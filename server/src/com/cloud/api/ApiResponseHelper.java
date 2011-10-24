@@ -2376,9 +2376,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             sgr.setDescription(sgd.getDescription());
             
             Account account = ApiDBUtils.findAccountByNameDomain(sgd.getAccountName(), sgd.getDomainId());
-            populateAccount(sgr, account.getId());
-            populateDomain(sgr, sgd.getDomainId());
-            
+            if (account != null) {
+            	populateAccount(sgr, account.getId());
+            	populateDomain(sgr, sgd.getDomainId());
+            }
+
             sgr.setObjectName(sgd.getObjectName());
             securityGroupResponse.add(sgr);
         }

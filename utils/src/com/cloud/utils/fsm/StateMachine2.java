@@ -99,7 +99,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
     
  
-    public boolean transitTo(V vo, E e, Long id, StateDao<S,E,V> dao) throws NoTransitionException {
+    public boolean transitTo(V vo, E e, Object opaque, StateDao<S,E,V> dao) throws NoTransitionException {
     	S currentState = vo.getState();
     	S nextState = getNextState(currentState, e);
 
@@ -109,17 +109,16 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     	}
 
     	for (StateListener<S,E, V> listener : _listeners) {
-    		listener.preStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, id);
+    		listener.preStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, opaque);
     	}
     	
-    	Long oldHostId = vo.getHostId();
-    	transitionStatus = dao.updateState(currentState, e, nextState, vo, id);
+    	transitionStatus = dao.updateState(currentState, e, nextState, vo, opaque);
     	if (!transitionStatus) {
     	    return false;
     	}
     	
     	for (StateListener<S,E, V> listener : _listeners) {
-            listener.postStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, oldHostId);
+            listener.postStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, opaque);
         }
     	
     	return true;

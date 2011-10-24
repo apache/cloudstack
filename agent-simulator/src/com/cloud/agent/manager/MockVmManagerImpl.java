@@ -21,6 +21,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -350,6 +352,11 @@ public class MockVmManagerImpl implements MockVmManager {
     @Override
     public Answer WatchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd) {
         return Answer.createUnsupportedCommandAnswer(cmd);
+    }
+    
+    @Override
+    public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
+    	return new GetDomRVersionAnswer(cmd, null, null, null);
     }
 
     @Override

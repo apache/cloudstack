@@ -51,6 +51,7 @@ class cloudConnection(object):
         requestUrl += "&signature=%s"%sig
 
         self.connection.request("GET", "/client/api?%s"%requestUrl)
+        
         return self.connection.getresponse().read()
  
     def make_request_without_auth(self, command, requests={}):

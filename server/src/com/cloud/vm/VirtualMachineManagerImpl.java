@@ -109,6 +109,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -1104,7 +1105,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) throws NoTransitionException {
         vm.setReservationId(reservationId);
-        return _stateMachine.transitTo(vm, e, hostId, _vmDao);
+        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override
@@ -1119,7 +1120,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 vm.setLastHostId(vm.getHostId());
             }
         }
-        return _stateMachine.transitTo(vm, e, hostId, _vmDao);
+        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override
@@ -1168,6 +1169,52 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         return true;
+    }
+    
+    @Override
+    public <T extends VMInstanceVO> T storageMigration(T vm, StoragePool destPool) {
+    	VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+
+    	long vmId = vm.getId();
+    	vm = vmGuru.findById(vmId);
+
+    	try {
+			stateTransitTo(vm, VirtualMachine.Event.StorageMigrationRequested, null);
+		} catch (NoTransitionException e) {
+			s_logger.debug("Unable to migrate vm: " + e.toString());
+			throw new CloudRuntimeException("Unable to migrate vm: " + e.toString());
+		}
+    	
+    	VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+    	boolean migrationResult = false;
+    	try {
+    		try {
+				migrationResult = _storageMgr.StorageMigration(profile, destPool);
+			} catch (ConcurrentOperationException e) {
+				
+			}
+    	} finally {
+    		if (migrationResult) {
+    			try {
+    				//when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
+    				vm.setLastHostId(null);
+    				stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+    			} catch (NoTransitionException e) {
+    				s_logger.debug("Failed to migrate vm: " + e.toString());
+    				throw new CloudRuntimeException("Failed to migrate vm: " + e.toString());
+    			}
+    		} else {
+    			s_logger.debug("storage migration failed: ");
+    			try {
+    				stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+    			} catch (NoTransitionException e) {
+    				s_logger.debug("Failed to change vm state: " + e.toString());
+    				throw new CloudRuntimeException("Failed to change vm state: " + e.toString());
+    			}
+    		}
+    	}
+    	
+    	return vm;
     }
 
     @Override

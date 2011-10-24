@@ -35,6 +35,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -121,5 +122,7 @@ public interface VirtualMachineManager extends Manager {
     boolean isVirtualMachineUpgradable(final UserVm vm, final ServiceOffering offering);
     
     VMInstanceVO findById(long vmId);
+
+	<T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId);
 
 }

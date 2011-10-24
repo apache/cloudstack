@@ -27,11 +27,11 @@ public interface StateListener <S,E,V> {
 	 * @param newState VM's new state
 	 * @param vo the VM instance
 	 * @param status the state transition is allowed or not
-	 * @param id host id
+	 * @param opaque host id
 	 * @param vmDao VM dao
 	 * @return
 	 */
-	public boolean preStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Long id);
+	public boolean preStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Object opaque);
 	
 	/**
 	 * Event is triggered after state machine transition finished
@@ -42,5 +42,5 @@ public interface StateListener <S,E,V> {
      * @param status the state transition is allowed or not
 	 * @return
 	 */
-	public boolean postStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Long id);
+	public boolean postStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Object opaque);
 }

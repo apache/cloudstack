@@ -44,6 +44,8 @@ import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -668,6 +670,50 @@ public class MockStorageManagerImpl implements MockStorageManager {
         template = _mockVolumeDao.persist(template);
         
         return new CreatePrivateTemplateAnswer(cmd, true, "", template.getName(), template.getSize(), template.getSize(), template.getName(), ImageFormat.QCOW2);
+    }
+    
+    @Override
+    public CopyVolumeAnswer CopyVolume(CopyVolumeCommand cmd) {
+    	 boolean toSecondaryStorage = cmd.toSecondaryStorage();
+    	 MockSecStorageVO sec = _mockSecStorageDao.findByUrl(cmd.getSecondaryStorageURL());
+         if (sec == null) {
+             return new CopyVolumeAnswer(cmd, false, "can't find secondary storage", null, null);
+         }
+         MockStoragePoolVO primaryStorage = _mockStoragePoolDao.findByUuid(cmd.getPool().getUuid());
+         if (primaryStorage == null) {
+        	 return new CopyVolumeAnswer(cmd, false, "Can't find primary storage", null, null);
+         }
+         
+         MockVolumeVO volume = _mockVolumeDao.findByStoragePathAndType(cmd.getVolumePath());
+         if (volume == null) {
+             return new CopyVolumeAnswer(cmd, false, "cant' find volume" + cmd.getVolumePath(), null, null);
+         }
+         
+         String name = UUID.randomUUID().toString();
+    	 if (toSecondaryStorage) {
+    		 
+    		 MockVolumeVO vol = new MockVolumeVO();
+    		 
+    		 vol.setName(name);
+    		 vol.setPath(sec.getMountPoint() + name);
+    		 vol.setPoolId(sec.getId());
+    		 vol.setSize(volume.getSize());
+    		 vol.setStatus(Status.DOWNLOADED);
+    		 vol.setType(MockVolumeType.VOLUME);
+    		 vol = _mockVolumeDao.persist(vol);
+    		 return new CopyVolumeAnswer(cmd, true, null, sec.getMountPoint(), vol.getPath());
+    	 }
+    	 else {
+    		 MockVolumeVO vol = new MockVolumeVO();
+    		 vol.setName(name);
+    		 vol.setPath(primaryStorage.getMountPoint() + name);
+    		 vol.setPoolId(primaryStorage.getId());
+    		 vol.setSize(volume.getSize());
+    		 vol.setStatus(Status.DOWNLOADED);
+    		 vol.setType(MockVolumeType.VOLUME);
+    		 vol = _mockVolumeDao.persist(vol);
+    		 return new CopyVolumeAnswer(cmd, true, null, primaryStorage.getMountPoint(), vol.getPath());
+    	 }
     }
     
 }

@@ -27,6 +27,8 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -78,4 +80,6 @@ public interface MockStorageManager extends Manager {
     public Answer CreatePrivateTemplateFromVolume(CreatePrivateTemplateFromVolumeCommand cmd);
 
     StoragePoolInfo getLocalStorage(String hostGuid, Long storageSize);
+
+	CopyVolumeAnswer CopyVolume(CopyVolumeCommand cmd);
 }

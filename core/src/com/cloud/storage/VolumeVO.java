@@ -49,7 +49,10 @@ public class VolumeVO implements Volume {
 
     @Column(name = "pool_id")
     Long poolId;
-
+    
+    @Column(name = "last_pool_id")
+    Long lastPoolId;
+    
     @Column(name = "account_id")
     long accountId;
 
@@ -110,6 +113,9 @@ public class VolumeVO implements Volume {
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
+    
+    @Column(name="update_count", updatable = true, nullable=false)
+    protected long updatedCount;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name = "recreatable")
     boolean recreatable;
@@ -144,6 +150,7 @@ public class VolumeVO implements Volume {
         this.podId = podId;
         this.dataCenterId = dcId;
         this.volumeType = vType;
+        this.state = Volume.State.Allocated;
         this.recreatable = false;
     }
 
@@ -162,6 +169,20 @@ public class VolumeVO implements Volume {
         this.deviceId = that.getDeviceId();
     }
 
+    @Override
+    public long getUpdatedCount() {
+    	return this.updatedCount;
+    }
+    
+    @Override
+    public void incrUpdatedCount() {
+    	this.updatedCount++;
+    }
+    
+    public void decrUpdatedCount() {
+    	this.updatedCount--;
+    }
+    
     @Override
     public boolean isRecreatable() {
         return recreatable;
@@ -342,6 +363,7 @@ public class VolumeVO implements Volume {
         this.poolId = poolId;
     }
 
+    @Override
     public Date getUpdated() {
         return updated;
     }
@@ -349,10 +371,6 @@ public class VolumeVO implements Volume {
     @Override
     public State getState() {
         return state;
-    }
-
-    public void setState(State state) {
-        this.state = state;
     }
 
     public void setUpdated(Date updated) {
@@ -380,6 +398,14 @@ public class VolumeVO implements Volume {
 
     public void setChainInfo(String chainInfo) {
         this.chainInfo = chainInfo;
+    }
+    
+    public Long getLastPoolId() {
+    	return this.lastPoolId;
+    }
+    
+    public void setLastPoolId(Long poolId) {
+    	this.lastPoolId = poolId;
     }
 
     @Override

@@ -33,6 +33,7 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
+import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
@@ -48,12 +49,14 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=true, description="destination Host ID to migrate VM to")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=false, description="destination Host ID to migrate VM to")
     private Long hostId;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine")
     private Long virtualMachineId;
 
+    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="destination storage pool ID to migrate VM to")
+    private Long storageId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,6 +68,10 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+    
+    public Long getStoragePoolId() {
+    	return storageId;
     }
 
 
@@ -99,18 +106,44 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
+    	if (getHostId() == null && getStoragePoolId() == null) {
+    		throw new InvalidParameterValueException("either hostId or storageId must be specified");
+    	}
+    	
+    	if (getHostId() != null && getStoragePoolId() != null) {
+    		throw new InvalidParameterValueException("only one of hostId and storageId can be specified");
+    	}
+    	
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
         if (userVm == null) {
             throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
         }
         
-        Host destinationHost = _resourceService.getHost(getHostId());
-        if (destinationHost == null) {
-            throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
-        }
-        try{
+        Host destinationHost = null;
+        if (getHostId() != null) {
+        	destinationHost = _resourceService.getHost(getHostId());
+        	if (destinationHost == null) {
+        		throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+        	}
         	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
-        	VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
+        }
+        
+        StoragePool destStoragePool = null;
+        if (getStoragePoolId() != null) {
+        	destStoragePool = _storageService.getStoragePool(getStoragePoolId());
+        	if (destStoragePool == null) {
+        		throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
+        	}
+        	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
+        }
+        
+        try{
+        	VirtualMachine migratedVm = null;
+        	if (getHostId() != null) {
+        		migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
+        	} else if (getStoragePoolId() != null) {
+        		migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
+        	}
 	        if (migratedVm != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
                 response.setResponseName(getCommandName());

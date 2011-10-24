@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
@@ -279,13 +280,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updateState(State oldState, Event event,	State newState, VirtualMachine vm, Long hostId) {
+    public boolean updateState(State oldState, Event event,	State newState, VirtualMachine vm, Object opaque) {
     	if (newState == null) {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
     		}
     		return false;
     	}
+
+    	@SuppressWarnings("unchecked")
+		Pair<Long, Long> hosts = (Pair<Long,Long>)opaque;
+		Long newHostId = hosts.second();
     	
     	VMInstanceVO vmi = (VMInstanceVO)vm;
     	Long oldHostId = vmi.getHostId();
@@ -302,7 +307,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	UpdateBuilder ub = getUpdateBuilder(vmi);
     	
     	ub.set(vmi, "state", newState);
-    	ub.set(vmi, "hostId", hostId);
+    	ub.set(vmi, "hostId", newHostId);
     	ub.set(vmi, "podIdToDeployIn", vmi.getPodIdToDeployIn());
     	ub.set(vmi, _updateTimeAttr, new Date());
 

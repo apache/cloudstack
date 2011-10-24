@@ -112,6 +112,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -292,6 +293,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 _snapshotDao.update(snapshotId, snapshot);
             } else {
                 long preSnapshotId = 0;
+               
                 if (preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
                     preSnapshotId = preId;
                     // default delta snap number is 16
@@ -314,6 +316,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     if (i >= deltaSnap) {
                         preSnapshotId = 0;
                     }
+                }
+                
+                //If the volume is moved around, backup a full snapshot to secondary storage
+                if (volume.getLastPoolId() != null && volume.getPoolId() != volume.getLastPoolId()) {
+                	preSnapshotId = 0;
+                	volume.setLastPoolId(volume.getPoolId());
                 }
                 snapshot = updateDBOnCreate(snapshotId, answer.getSnapshotPath(), preSnapshotId);
             }
@@ -348,17 +356,24 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot", async = true)
     public SnapshotVO createSnapshot(Long volumeId, Long policyId, Long snapshotId) {
-        VolumeVO v = _volsDao.findById(volumeId);
-        Account owner = _accountMgr.getAccount(v.getAccountId());
+        VolumeVO volume = _volsDao.findById(volumeId);
+        
+        if (volume == null) {
+        	throw new InvalidParameterValueException("No such volume exist");
+        }
+        
+        Account owner = _accountMgr.getAccount(volume.getAccountId());
         SnapshotVO snapshot = null;
-        VolumeVO volume = null;
+     
         boolean backedUp = false;
+        
         // does the caller have the authority to act on this volume
-        _accountMgr.checkAccess(UserContext.current().getCaller(), null, v);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, volume);
+        
         try {
-            if (v != null && _volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
+            if (volume != null && _volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
                 /* KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume */
-                UserVmVO uservm = _vmDao.findById(v.getInstanceId());
+                UserVmVO uservm = _vmDao.findById(volume.getInstanceId());
                 if (uservm != null) {
                     UserVmVO vm = _vmDao.acquireInLockTable(uservm.getId(), 10);
                     if (vm == null) {
@@ -366,13 +381,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
                 }
             }
-            Long poolId = v.getPoolId();
+            Long poolId = volume.getPoolId();
             if (poolId == null) {
                 throw new CloudRuntimeException("You cannot take a snapshot of a volume until it has been attached to an instance");
             }
 
-            if (_volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
-                StoragePoolVO storagePool = _storagePoolDao.findById(v.getPoolId());
+            if (_volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
+                StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
                 ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
                 List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
                 if (hosts != null && !hosts.isEmpty()) {
@@ -385,8 +400,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
 
             // if volume is attached to a vm in destroyed or expunging state; disallow
-            if (v.getInstanceId() != null) {
-                UserVmVO userVm = _vmDao.findById(v.getInstanceId());
+            if (volume.getInstanceId() != null) {
+                UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
                 if (userVm != null) {
                     if (userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
                         _snapshotDao.expunge(snapshotId);
@@ -395,23 +410,24 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
                     
                     if(userVm.getHypervisorType() == HypervisorType.VMware) {
-                    	List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(v.getInstanceId(), Snapshot.Status.Creating,  Snapshot.Status.CreatedOnPrimary,  Snapshot.Status.BackingUp);
+                    	List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.Status.Creating,  Snapshot.Status.CreatedOnPrimary,  Snapshot.Status.BackingUp);
                     	if(activeSnapshots.size() > 1)
                             throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
                 }
             }
 
-            volume = _volsDao.acquireInLockTable(volumeId, 10);
-            if (volume == null) {
-                _snapshotDao.expunge(snapshotId);
-                volume = _volsDao.findById(volumeId);
-                if (volume == null) {
-                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
-                } else {
-                    volume = null;
-                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
-                }
+            //when taking snapshot, make sure nobody can delete/move the volume
+            boolean stateTransit = false;
+            try {
+            	stateTransit = _storageMgr.stateTransitTo(volume, Volume.Event.SnapshotRequested);
+            } catch (NoTransitionException e) {
+            	s_logger.debug("Failed transit volume state: " + e.toString());
+            } finally {
+            	if (!stateTransit) {
+            		_snapshotDao.expunge(snapshotId);           		
+            		throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
+            	}
             }
 
             snapshot = createSnapshotOnPrimary(volume, policyId, snapshotId);
@@ -442,7 +458,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
                 if ((freshSnapshot != null) && backedUp) {
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-                            v.getSize());
+                            volume.getSize());
                     _usageEventDao.persist(usageEvent);
                 }
                 if( !backedUp ) {
@@ -459,10 +475,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             		_snapshotDao.update(snapshotId, snapshot);
             	}
             }
-            
-            if ( volume != null ) {
-                _volsDao.releaseFromLockTable(volumeId);
+
+            try {
+            	_storageMgr.stateTransitTo(volume, Volume.Event.OperationSucceeded);
+            } catch (NoTransitionException e) {
+            	s_logger.debug("Failed to transit volume state: " + e.toString());
             }
+
         }
 
         return snapshot;

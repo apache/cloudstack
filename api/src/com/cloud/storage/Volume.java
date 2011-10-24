@@ -25,16 +25,22 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.fsm.StateObject;
+import com.cloud.vm.VirtualMachine;
 
-public interface Volume extends ControlledEntity, BasedOn {
+public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.State> {
     enum Type {
         UNKNOWN, ROOT, SWAP, DATADISK, ISO
     };
 
-    enum State implements FiniteState<State, Event> {
+    enum State {
         Allocated("The volume is allocated but has not been created yet."),
         Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."),
         Ready("The volume is ready to be used."),
+        Migrating("The volume is migrating to other storage pool"),
+        Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
+        Expunging("The volume is being expunging"),
         Destroy("The volume is destroyed, and can't be recovered.");
 
         String _description;
@@ -43,46 +49,44 @@ public interface Volume extends ControlledEntity, BasedOn {
             _description = description;
         }
 
-        @Override
-        public StateMachine<State, Event> getStateMachine() {
+        public static StateMachine2<State, Event, Volume> getStateMachine() {
             return s_fsm;
         }
 
-        @Override
-        public State getNextState(Event event) {
-            return s_fsm.getNextState(this, event);
-        }
-
-        @Override
-        public List<State> getFromStates(Event event) {
-            return s_fsm.getFromStates(this, event);
-        }
-
-        @Override
-        public Set<Event> getPossibleEvents() {
-            return s_fsm.getPossibleEvents(this);
-        }
-
-        @Override
         public String getDescription() {
             return _description;
         }
 
-        private final static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
+        private final static StateMachine2<State, Event, Volume> s_fsm = new StateMachine2<State, Event, Volume>();
         static {
-            s_fsm.addTransition(Allocated, Event.Create, Creating);
-            s_fsm.addTransition(Allocated, Event.Destroy, Destroy);
+            s_fsm.addTransition(Allocated, Event.CreateRequested, Creating);
+            s_fsm.addTransition(Allocated, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Creating, Event.OperationRetry, Creating);
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Creating, Event.Destroy, Destroy);
-            s_fsm.addTransition(Creating, Event.Create, Creating);
-            s_fsm.addTransition(Ready, Event.Destroy, Destroy);
+            s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
+            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);
+            s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
+            s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
+            s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
+            s_fsm.addTransition(Snapshotting, Event.OperationSucceeded, Ready);
+            s_fsm.addTransition(Snapshotting, Event.OperationFailed, Ready);
+            s_fsm.addTransition(Ready, Event.MigrationRequested, Migrating);
+            s_fsm.addTransition(Migrating, Event.OperationSucceeded, Ready);
+            s_fsm.addTransition(Migrating, Event.OperationFailed, Ready);
+            s_fsm.addTransition(Destroy, Event.OperationSucceeded, Destroy);
         }
     }
 
     enum Event {
-        Create, OperationFailed, OperationSucceeded, OperationRetry, Destroy;
+        CreateRequested, 
+        OperationFailed, 
+        OperationSucceeded, 
+        OperationRetry,
+        MigrationRequested,
+        SnapshotRequested,
+        DestroyRequested,
+        ExpungingRequested;
     }
 
     long getId();
@@ -133,4 +137,10 @@ public interface Volume extends ControlledEntity, BasedOn {
     String getChainInfo();
 
     boolean isRecreatable();
+    
+    public long getUpdatedCount();
+    
+    public void incrUpdatedCount();
+    
+    public Date getUpdated();
 }

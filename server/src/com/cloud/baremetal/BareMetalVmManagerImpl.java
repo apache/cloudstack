@@ -510,12 +510,12 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	}
 
 	@Override
-	public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Long id) {
+	public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
 		return true;
 	}
 
 	@Override
-	public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Long id) {
+	public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
 		if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
 			return true;
 		}

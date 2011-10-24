@@ -156,6 +156,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -650,7 +651,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (moveVolumeNeeded) {
             // Move the volume to a storage pool in the VM's zone, pod, or cluster
-            volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
+            try {
+				volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
+			} catch (ConcurrentOperationException e) {
+				throw new CloudRuntimeException(e.toString());
+			}
         }
 
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
@@ -3185,6 +3190,39 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public UserVm getUserVm(long vmId) {
         return _vmDao.findById(vmId);
+    }
+    
+    @Override
+    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
+    	 // access check - only root admin can migrate VM
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Caller is not a root admin, permission denied to migrate the VM");
+            }
+            throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
+        }
+        
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
+        }
+        
+        if (vm.getState() != State.Stopped) {
+        	throw new InvalidParameterValueException("VM is not Stopped, unable to migrate the vm " + vm);
+        }
+        
+        if (vm.getType() != VirtualMachine.Type.User) {
+        	throw new InvalidParameterValueException("can only do storage migration on user vm");
+        }
+        
+        HypervisorType destHypervisorType = _clusterDao.findById(destPool.getClusterId()).getHypervisorType();
+        if (vm.getHypervisorType() != destHypervisorType) {
+        	throw new InvalidParameterValueException("hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
+        }
+        VMInstanceVO migratedVm = _itMgr.storageMigration(vm, destPool);
+        return migratedVm;
+        
     }
 
     @Override

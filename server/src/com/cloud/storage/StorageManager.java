@@ -33,10 +33,12 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -87,8 +89,9 @@ public interface StorageManager extends Manager {
 	 * @param destPoolPodId
 	 * @param destPoolClusterId
 	 * @return VolumeVO
+	 * @throws ConcurrentOperationException 
 	 */
-	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType);
+	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException;
 
 	/**
 	 * Create a volume based on the given criteria
@@ -111,8 +114,9 @@ public interface StorageManager extends Manager {
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
 	 * @param volume
+	 * @return 
 	 */
-	void destroyVolume(VolumeVO volume) throws ConcurrentOperationException;
+	boolean destroyVolume(VolumeVO volume) throws ConcurrentOperationException;
 	
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool
@@ -206,5 +210,12 @@ public interface StorageManager extends Manager {
     StoragePoolVO findLocalStorageOnHost(long hostId);
 
     VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly);
+
+	boolean StorageMigration(
+			VirtualMachineProfile<? extends VirtualMachine> vm,
+			StoragePool destPool) throws ConcurrentOperationException;
+
+	boolean stateTransitTo(Volume vol, Event event)
+			throws NoTransitionException;
 
 }

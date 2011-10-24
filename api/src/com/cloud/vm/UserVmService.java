@@ -48,6 +48,7 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -358,11 +359,12 @@ public interface UserVmService {
     /**
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds. Only Root
      * Admin can migrate a VM.
-     * 
+     * @param destinationStorage TODO
      * @param Long vmId
      *            vmId of The VM to migrate
      * @param Host
      *            destinationHost to migrate the VM
+     * 
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
      *             in case we get error finding the VM or host or access errors or other internal errors.
@@ -376,4 +378,6 @@ public interface UserVmService {
     VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
     UserVm moveVMToUser(MoveUserVMCmd moveUserVMCmd)  throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException ;
+
+	VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 }
