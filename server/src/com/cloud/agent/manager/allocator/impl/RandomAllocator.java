@@ -96,13 +96,6 @@ public class RandomAllocator implements HostAllocator {
         		break;
         	}
         	
-            if(host.getHostAllocationState() != Host.HostAllocationState.Enabled){
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" is in " + host.getHostAllocationState().name() + " state, skipping this and trying other available hosts");
-                }
-                continue;
-            }
-            
             if (!avoid.shouldAvoid(host)) {
             	suitableHosts.add(host);
             }else{

@@ -61,7 +61,7 @@ public interface ResourceManager {
     public void unregisterResourceStateAdapter(String name);
     
 	public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
-	        String allocationState, boolean forRebalance);
+	        boolean forRebalance);
 	
 	public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 	

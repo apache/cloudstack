@@ -60,11 +60,6 @@ public interface Host extends StateObject<Status> {
         }
     }
 
-    public enum HostAllocationState {
-        Disabled,
-        Enabled;
-    }    
-
     /**
      * @return id of the host.
      */
@@ -198,8 +193,6 @@ public interface Host extends StateObject<Status> {
     String getStorageNetmaskDeux();
 
     String getStorageMacAddressDeux();
-
-    HostAllocationState getHostAllocationState();
 
     String getHypervisorVersion();
 

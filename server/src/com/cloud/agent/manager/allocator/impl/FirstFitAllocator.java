@@ -195,14 +195,7 @@ public class FirstFitAllocator implements HostAllocator {
                 }
                 continue;
             }
-            
-            if(host.getHostAllocationState() != Host.HostAllocationState.Enabled){
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" is in " + host.getHostAllocationState().name() + " state, skipping this and trying other available hosts");
-                }
-                continue;
-            }
-            
+                        
             //find number of guest VMs occupying capacity on this host.
             Long vmCount = _vmInstanceDao.countRunningByHostId(host.getId());
             Long maxGuestLimit = getHostMaxGuestLimit(host);

@@ -56,6 +56,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class AgentMonitor extends Thread implements Listener {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
+    private static Logger status_Logger = Logger.getLogger(Status.class);
     private long _pingTimeout;
     private HostDao _hostDao;
     private boolean _stop;
@@ -138,10 +139,20 @@ public class AgentMonitor extends Thread implements Listener {
             }
 
             try {
-
                 List<Long> behindAgents = findAgentsBehindOnPing();
                 for (Long agentId : behindAgents) {
-                    _agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
+                	SearchCriteriaService<HostVO, ResourceState> sc = SearchCriteria2.create(HostVO.class, ResourceState.class);
+                	sc.selectField(sc.getEntity().getResourceState());
+                	sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
+                	ResourceState resourceState = sc.find();
+                	if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.Unmanaged || resourceState == ResourceState.ErrorInMaintenance) {
+                		/* Host is in non-operation state, so no investigation and direct put agent to Disconnected */
+                		status_Logger.debug("Ping timeout but host " + agentId + " is in resource state of " + resourceState + ", so no investigation");
+                		_agentMgr.disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
+                	} else {
+                		status_Logger.debug("Ping timeout for host " + agentId + ", do invstigation");
+                		_agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
+                	}
                 }
 
                 SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);

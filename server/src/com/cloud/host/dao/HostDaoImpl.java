@@ -68,6 +68,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao {
     private static final Logger s_logger = Logger.getLogger(HostDaoImpl.class);
+    private static final Logger status_logger = Logger.getLogger(Status.class);
 
     protected final SearchBuilder<HostVO> TypePodDcStatusSearch;
 
@@ -625,7 +626,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 		int result = update(ub, sc, null);
 		assert result <= 1 : "How can this update " + result + " rows? ";
 
-		if (s_logger.isDebugEnabled() && result == 0) {
+		if (status_logger.isDebugEnabled() && result == 0) {
 			HostVO ho = findById(host.getId());
 			assert ho != null : "How how how? : " + host.getId();
 
@@ -636,7 +637,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 			        .append(oldPingTime).append("]");
 			str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=")
 			        .append(vo.getLastPinged()).append("]");
-			s_logger.debug(str.toString());
+			status_logger.debug(str.toString());
 		}
 		
 		StringBuilder msg = new StringBuilder("Agent status update: [");
@@ -644,7 +645,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 		msg.append("; old status = " + oldStatus);
 		msg.append("; event = " + event);
 		msg.append("; new status = " + newStatus + "]");
-		s_logger.debug(msg.toString());
+		status_logger.debug(msg.toString());
 		
 		return result > 0;
 	}

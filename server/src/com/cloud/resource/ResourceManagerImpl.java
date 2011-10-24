@@ -73,7 +73,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -419,7 +418,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         break;
                     }
 
-                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, null, null, false);
+                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, null, false);
                     if (host != null) {
                         hosts.add(host);
                     }
@@ -483,23 +482,18 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
-        String allocationState = cmd.getAllocationState();
-        if (allocationState == null) {
-            allocationState = Host.HostAllocationState.Enabled.toString();
-        }
-
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), allocationState);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams());
     }
 
     @Override
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, null);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null);
     }
     
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
-            Map<String, String> params, String allocationState) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+            Map<String, String> params) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         URI uri = null;
 
         // Check if the zone exists in the system
@@ -641,7 +635,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         return null;
                     }
                     
-                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, allocationState, false);
+                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, false);
                     if (host != null) {
                         hosts.add(host);
                     }
@@ -1100,6 +1094,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             _hostDetailsDao.persist(hostId, hostDetails);
         }
 
+        /*
         String allocationState = cmd.getAllocationState();
         if (allocationState != null) {
             // Verify that the host exists
@@ -1123,6 +1118,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             _hostDao.update(hostId, host);
         }
+        */
         
         List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
@@ -1412,7 +1408,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		return host;
 	}
 	 
-	private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState,
+	private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
 	        boolean forRebalance) {
 		HostVO host = null;
 		AgentAttache attache = null;
@@ -1467,10 +1463,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	}
 	 
 	@Override
-	public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
-	        String allocationState, boolean forRebalance) {
+	public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance) {
 		_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Add);
-		Host host = createHostAndAgent(resource, details, old, hostTags, allocationState, forRebalance);
+		Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
 		_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Del);
 		return host;
 	}
@@ -1491,7 +1486,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
-        return createHostAndAgent(resource, hostDetails, true, null, null, false);
+        return createHostAndAgent(resource, hostDetails, true, null, false);
     }
     
     @Override
@@ -1719,7 +1714,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     		}
     		
     		resourceStateTransitTo(host, ResourceState.Event.Unmanaged, _nodeId);
-			 _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.AgentDisconnected);
 			return true;
 		} catch (NoTransitionException e) {
 			s_logger.debug("Cannot transmit host " + hostId + "to Enabled state", e);

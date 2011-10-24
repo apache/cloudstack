@@ -105,7 +105,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -184,6 +183,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 @Local(value = { AgentManager.class })
 public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
+    private static final Logger status_logger = Logger.getLogger(Status.class);
 
     protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
     protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
@@ -885,7 +885,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     	}
 
         if (forRebalance) {
-            Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, null, true);
+            Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, true);
             return (h == null ? false : true);
         } else {
             _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
@@ -1086,14 +1086,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     if (currentStatus == Status.Disconnected) {
                         if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > _alertWait) {
                             s_logger.warn("Host " + host.getId() + " has been disconnected pass the time it should be disconnected.");
-                            event = Status.Event.WaitedTooLong;
-                        } else {
-                            s_logger.debug("Host has been determined to be disconnected but it hasn't passed the wait time yet.");
-                            return false;
-                        }
-                    } else if (currentStatus == Status.Updating) {
-                        if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > _updateWait) {
-                            s_logger.warn("Host " + host.getId() + " has been updating for too long");
                             event = Status.Event.WaitedTooLong;
                         } else {
                             s_logger.debug("Host has been determined to be disconnected but it hasn't passed the wait time yet.");
@@ -1332,7 +1324,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
                 
-                _resourceMgr.createHostAndAgent(id, resource, details, false, null, null, false);
+                _resourceMgr.createHostAndAgent(id, resource, details, false, null, false);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
@@ -1456,7 +1448,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         final String reason = shutdown.getReason();
                         s_logger.info("Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " + shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
-                            disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
+                            //disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
+                            throw new CloudRuntimeException("Agent update not implemented");
                         } else if (reason.equals(ShutdownCommand.Requested)) {
                             disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                         }
@@ -1587,48 +1580,23 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }  
         return true;
     }
-
-    private boolean isAgentEventAllowedByResourceState(HostVO host, Status.Event event) {
-    	host = _hostDao.findById(host.getId());
-        ResourceState state = host.getResourceState();
-        boolean allow = true;
-        if (state == ResourceState.Enabled) {
-           
-        } else if (state == ResourceState.Disabled) {
-            if (event == Status.Event.AgentConnected) {
-               allow = false;
-            }
-        } else if (state == ResourceState.Unmanaged) {
-            if (event == Status.Event.AgentConnected) {
-                allow = false;
-            }
-        } else if (state == ResourceState.PrepareForMaintenance) {
-            
-        } else if (state == ResourceState.Maintenance) {
-            
-        } else if (state == ResourceState.Creating) {
-        } else if (state == ResourceState.Error) {
-        	allow = false;
-        } else {
-            throw new CloudRuntimeException("Unknown resource state " + state);
-        }
-        
-        return allow;
-     }
     
     @Override
     public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId) {
-        if (!isAgentEventAllowedByResourceState(host, e)) {
-        	String err = String.format("Cannot proceed agent event %1$s because it is not allowed by current resource state %2$s fort host %3$s", e, host.getResourceState(), host.getId());
-            s_logger.debug(err);
-            throw new CloudRuntimeException(err);
+        if (status_logger.isDebugEnabled()) {
+            ResourceState state = host.getResourceState();
+            StringBuilder msg = new StringBuilder("Transition:");
+            msg.append("[Resource state = ").append(state);
+            msg.append(", Agent event = ").append(e.toString());
+            msg.append(", Host id = ").append(host.getId()).append("]");
+            status_logger.debug(msg);
         }
         
         host.setManagementServerId(msId);
         try {
             return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
         } catch (NoTransitionException e1) {
-            s_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId);
+        	status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId);
             throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId + "," + e1.getMessage());
         }
     }

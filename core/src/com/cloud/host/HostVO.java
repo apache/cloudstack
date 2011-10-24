@@ -127,10 +127,6 @@ public class HostVO implements Host {
 
     @Column(name="setup")
     private boolean setup = false;
-
-    @Column(name="allocation_state", nullable=false)
-    @Enumerated(value=EnumType.STRING)
-    private HostAllocationState hostAllocationState;
     
     @Column(name="resource_state", nullable=false)
     @Enumerated(value=EnumType.STRING)
@@ -364,7 +360,6 @@ public class HostVO implements Host {
         this.status = Status.Creating;
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
-        this.hostAllocationState = Host.HostAllocationState.Enabled;
         this.resourceState = ResourceState.Creating;
     }
 
@@ -402,7 +397,6 @@ public class HostVO implements Host {
         this.parent = parent;
         this.totalSize = totalSize;
         this.fsType = fsType;
-        this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
 
     public HostVO(long id,
@@ -460,7 +454,6 @@ public class HostVO implements Host {
         this.disconnectedOn = disconnectedOn;
         this.dom0MinMemory = dom0MinMemory;
         this.storageUrl = url;
-        this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
 
     public void setPodId(Long podId) {
@@ -676,16 +669,6 @@ public class HostVO implements Host {
     public HypervisorType getHypervisorType() {
         return hypervisorType;
     }
-
-    @Override
-    public HostAllocationState getHostAllocationState() {
-        return hostAllocationState;
-    }
-
-    public void setHostAllocationState(HostAllocationState hostAllocationState) {
-        this.hostAllocationState = hostAllocationState;
-    }
-
 
     public void setHypervisorVersion(String hypervisorVersion) {
         this.hypervisorVersion = hypervisorVersion;

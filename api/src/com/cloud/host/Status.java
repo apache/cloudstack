@@ -30,7 +30,6 @@ public enum Status {
     Up(true, false, false),
     Down(true, true, true),
     Disconnected(true, true, true),
-    Updating(true, true, false),
     Alert(true, true, true),
     Removed(true, false, true),
     Error(true, false, true),
@@ -61,7 +60,6 @@ public enum Status {
     public enum Event {
         AgentConnected(false, "Agent connected"),
         PingTimeout(false, "Agent is behind on ping"),
-        UpdateNeeded(false, "UpdateRequested"),
         ShutdownRequested(false, "Shutdown requested by the agent"),
         AgentDisconnected(false, "Agent disconnected"),
         HostDown(false, "Host is found to be down by the investigator"),
@@ -125,13 +123,11 @@ public enum Status {
         s_fsm.addTransition(Status.Connecting, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Connecting, Event.Ready, Status.Up);
         s_fsm.addTransition(Status.Connecting, Event.PingTimeout, Status.Alert);
-        s_fsm.addTransition(Status.Connecting, Event.UpdateNeeded, Status.Updating);
         s_fsm.addTransition(Status.Connecting, Event.ShutdownRequested, Status.Disconnected);
         s_fsm.addTransition(Status.Connecting, Event.HostDown, Status.Alert);
         s_fsm.addTransition(Status.Connecting, Event.Ping, Status.Connecting);
         s_fsm.addTransition(Status.Connecting, Event.ManagementServerDown, Status.Disconnected);
         s_fsm.addTransition(Status.Connecting, Event.AgentDisconnected, Status.Alert);
-        //s_fsm.addTransition(Status.Connecting, Event.Error, Status.Error);
         s_fsm.addTransition(Status.Up, Event.PingTimeout, Status.Alert);
         s_fsm.addTransition(Status.Up, Event.AgentDisconnected, Status.Alert);
         s_fsm.addTransition(Status.Up, Event.ShutdownRequested, Status.Disconnected);
@@ -140,13 +136,6 @@ public enum Status {
         s_fsm.addTransition(Status.Up, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Up, Event.ManagementServerDown, Status.Disconnected);
         s_fsm.addTransition(Status.Up, Event.StartAgentRebalance, Status.Rebalancing);
-        //s_fsm.addTransition(Status.Up, Event.Error, Status.Error);
-        s_fsm.addTransition(Status.Updating, Event.PingTimeout, Status.Alert);
-        s_fsm.addTransition(Status.Updating, Event.Ping, Status.Updating);
-        s_fsm.addTransition(Status.Updating, Event.AgentConnected, Status.Connecting);
-        s_fsm.addTransition(Status.Updating, Event.ManagementServerDown, Status.Disconnected);
-        s_fsm.addTransition(Status.Updating, Event.WaitedTooLong, Status.Alert);
-        //s_fsm.addTransition(Status.Updating, Event.Error, Status.Error);
         s_fsm.addTransition(Status.Disconnected, Event.PingTimeout, Status.Alert);
         s_fsm.addTransition(Status.Disconnected, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Disconnected, Event.Ping, Status.Up);
@@ -155,19 +144,16 @@ public enum Status {
         s_fsm.addTransition(Status.Disconnected, Event.WaitedTooLong, Status.Alert);
         s_fsm.addTransition(Status.Disconnected, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Disconnected, Event.AgentDisconnected, Status.Disconnected);
-        //s_fsm.addTransition(Status.Disconnected, Event.Error, Status.Error);
         s_fsm.addTransition(Status.Down, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Down, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Down, Event.ManagementServerDown, Status.Down);
         s_fsm.addTransition(Status.Down, Event.AgentDisconnected, Status.Down);
-        //s_fsm.addTransition(Status.Down, Event.Error, Status.Error);
         s_fsm.addTransition(Status.Alert, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Alert, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Alert, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Alert, Event.ManagementServerDown, Status.Alert);
         s_fsm.addTransition(Status.Alert, Event.AgentDisconnected, Status.Alert);
         s_fsm.addTransition(Status.Alert, Event.ShutdownRequested, Status.Disconnected);
-        //s_fsm.addTransition(Status.Alert, Event.Error, Status.Error);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceFailed, Status.Disconnected);
         s_fsm.addTransition(Status.Rebalancing, Event.RebalanceCompleted, Status.Connecting);
         s_fsm.addTransition(Status.Rebalancing, Event.AgentConnected, Status.Connecting);

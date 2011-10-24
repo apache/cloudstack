@@ -53,6 +53,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -177,7 +178,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             if(host == null){
                 s_logger.debug("The last host of this VM cannot be found");
             }else{
-                if (host.getStatus() == Status.Up && host.getHostAllocationState() == Host.HostAllocationState.Enabled) {
+                if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor, true)){
                         s_logger.debug("The last host of this VM is UP and has enough capacity");
                         s_logger.debug("Now checking for suitable pools under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
@@ -209,7 +210,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                         s_logger.debug("The last host of this VM does not have enough capacity");
                     }
                 }else{
-                    s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: "+host.getStatus().name() + ", host allocation state is: "+host.getHostAllocationState().name());
+                    s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: "+host.getStatus().name() + ", host resource state is: "+host.getResourceState());
                 }
             }
 
