@@ -109,7 +109,6 @@ public class EncryptionSecretKeyChecker implements SystemIntegrityChecker {
         		BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         		String inputLine, outputLine;
         		if ((inputLine = in.readLine()) != null) {
-        			s_logger.info("Input : "+inputLine);
         			secretKey = inputLine;
         		}
         		out.close();
