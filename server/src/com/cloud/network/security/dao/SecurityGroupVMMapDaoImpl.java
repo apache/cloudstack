@@ -116,7 +116,7 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
 		SearchCriteria<SecurityGroupVMMapVO> sc = ListBySecurityGroupAndStates.create();
 		sc.setParameters("securityGroupId", securityGroupId);
 		sc.setParameters("states", (Object[])vmStates);
-		return listBy(sc);
+		return listBy(sc, null, true);
 	}
 	
     @Override

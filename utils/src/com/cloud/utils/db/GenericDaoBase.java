@@ -859,7 +859,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         }
         return findOneIncludingRemovedBy(sc);
     }
-
+    
     @DB(txn=false)
     protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter) {
         if (_removed != null) {
@@ -869,10 +869,23 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
+    protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter, final boolean enable_query_cache) {
+        if (_removed != null) {
+            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
+        }
+        return listIncludingRemovedBy(sc, filter, enable_query_cache);
+    }
+
+    @DB(txn=false)
     protected List<T> listBy(final SearchCriteria<T> sc) {
         return listBy(sc, null);
     }
 
+    @DB(txn=false)
+    protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter, final boolean enable_query_cache) {
+        return searchIncludingRemoved(sc, filter, null, false, enable_query_cache);
+    }
+    
     @DB(txn=false)
     protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter) {
         return searchIncludingRemoved(sc, filter, null, false);
