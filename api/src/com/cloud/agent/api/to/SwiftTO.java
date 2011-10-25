@@ -18,7 +18,7 @@
 package com.cloud.agent.api.to;
   
 public class SwiftTO {
-   
+    Long id;
     String url;
     String account;
         
@@ -27,13 +27,18 @@ public class SwiftTO {
             
     public SwiftTO() { }
 
-    public SwiftTO(String url, String account, String userName, String key) {
+    public SwiftTO(Long id, String url, String account, String userName, String key) {
+        this.id = id;
         this.url = url;
         this.account = account;
         this.userName = userName;
         this.key = key;
     }
     
+    public Long getId() {
+        return id;
+    }
+
     public String getUrl() {
         return url;
     }

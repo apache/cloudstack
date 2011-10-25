@@ -578,7 +578,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     private SwiftTO toSwiftTO(SwiftVO swift) {
-        return new SwiftTO(swift.getUrl(), swift.getAccount(), swift.getUserName(), swift.getKey());
+        return new SwiftTO(swift.getId(), swift.getUrl(), swift.getAccount(), swift.getUserName(), swift.getKey());
     }
 
     @Override
@@ -870,7 +870,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (backupOfSnapshot == null) {
             return true;
         }
-        SwiftTO swift = getSwiftTO();
+        SwiftTO swift = getSwiftTO(null);
         DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, backupOfSnapshot, false);
         Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
 
@@ -1036,8 +1036,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return _snapshotDao.search(sc, searchFilter);
     }
 
-    private SwiftTO getSwiftTO() {
-        SwiftVO swiftVO = _swiftDao.findById(1l);
+    @Override
+    public SwiftTO getSwiftTO(Long swiftId) {
+        long id = swiftId == null ? 1 : swiftId;
+        SwiftVO swiftVO = _swiftDao.findById(id);
         if (swiftVO != null) {
             return toSwiftTO(swiftVO);
         }
@@ -1062,7 +1064,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 continue;
             }
             List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
-            SwiftTO swift = getSwiftTO();
+            SwiftTO swift = getSwiftTO(null);
             if (swift == null) {
                 for (HostVO ssHost : ssHosts) {
                     DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(null, ssHost.getStorageUrl(), dcId, accountId, volumeId, "", true);

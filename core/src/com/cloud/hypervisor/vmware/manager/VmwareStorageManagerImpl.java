@@ -141,8 +141,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 	public Answer execute(VmwareHostService hostService, BackupSnapshotCommand cmd) {
 		Long accountId = cmd.getAccountId();
 		Long volumeId = cmd.getVolumeId();
-		String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
-		String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
 		String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
 		String prevBackupUuid = cmd.getPrevBackupUuid();
         VirtualMachineMO workerVm=null;
@@ -214,11 +214,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		        }			
 			}
 
-			snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId,
-							volumeId, cmd.getVolumePath(), snapshotUuid,
-							secondaryStoragePoolURL, prevSnapshotUuid,
-							prevBackupUuid,
-							hostService.getWorkerName(context, cmd));
+            snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
+                    hostService.getWorkerName(context, cmd));
 
 			success = (snapshotBackupUuid != null);
 
@@ -244,7 +241,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     @Override
 	public Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromVolumeCommand cmd) {
-		String secondaryStoragePoolURL = cmd.getSecondaryStorageURL();
+        String secondaryStoragePoolURL = cmd.getSecondaryStorageUrl();
 		String volumePath = cmd.getVolumePath();
 		Long accountId = cmd.getAccountId();
 		Long templateId = cmd.getTemplateId();
@@ -292,7 +289,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 	public Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromSnapshotCommand cmd) {
 		Long accountId = cmd.getAccountId();
 		Long volumeId = cmd.getVolumeId();
-		String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
 		String backedUpSnapshotUuid = cmd.getSnapshotUuid();
 		Long newTemplateId = cmd.getNewTemplateId();
 		String details;
@@ -302,7 +299,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		try {
 			Ternary<String, Long, Long> result = createTemplateFromSnapshot(accountId,
 				newTemplateId, uniqeName,
-				secondaryStoragePoolURL, volumeId,
+ secondaryStorageUrl, volumeId,
 				backedUpSnapshotUuid);
 
 			return new CreatePrivateTemplateAnswer(cmd, true, null,
@@ -375,7 +372,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
 		Long accountId = cmd.getAccountId();
 		Long volumeId = cmd.getVolumeId();
-		String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
 		String backedUpSnapshotUuid = cmd.getSnapshotUuid();
 
 		String details = null;
@@ -396,7 +393,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 			DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
 			details = createVolumeFromSnapshot(hyperHost, primaryDsMo,
 					newVolumeName, accountId, volumeId,
-					secondaryStoragePoolURL, backedUpSnapshotUuid);
+ secondaryStorageUrl, backedUpSnapshotUuid);
 			if (details == null) {
 				success = true;
 			}

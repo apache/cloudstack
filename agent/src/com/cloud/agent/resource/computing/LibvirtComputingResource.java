@@ -1216,7 +1216,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	 Long dcId = cmd.getDataCenterId();
          Long accountId = cmd.getAccountId();
          Long volumeId = cmd.getVolumeId();
-         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStoragePoolUrl = cmd.getSecondaryStorageUrl();
          String snapshotName = cmd.getSnapshotName();
          String snapshotPath = cmd.getVolumePath();
          String snapshotDestPath = null;
@@ -1224,7 +1224,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
          try {
         	 Connect conn = LibvirtConnection.getConnection();
-			StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStoragePoolURL));
+            StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStoragePoolUrl));
 			LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
 			String ssPmountPath = spd.getTargetPath();
 			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
@@ -1288,7 +1288,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	try {
     		Connect conn = LibvirtConnection.getConnection();
     		/*Make sure secondary storage is mounted*/
-    		_storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStoragePoolURL()));
+            _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStorageUrl()));
 
     		String snapshotPath = cmd.getSnapshotUuid();
     		String primaryUuid = cmd.getPrimaryStoragePoolNameLabel();
@@ -1326,7 +1326,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	 StoragePool secondaryPool;
     	 try {
     		 Connect conn = LibvirtConnection.getConnection();
-    		 secondaryPool = _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStoragePoolURL()));
+            secondaryPool = _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStorageUrl()));
     		 LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryPool);
     		 String templatePath = spd.getTargetPath() + File.separator + templateInstallFolder;	 
     		 _storage.mkdirs(templatePath);
@@ -1396,7 +1396,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     protected CreatePrivateTemplateAnswer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
-    	 String secondaryStorageURL = cmd.getSecondaryStorageURL();
+        String secondaryStorageURL = cmd.getSecondaryStorageUrl();
 
          StoragePool secondaryStorage = null;
          try {

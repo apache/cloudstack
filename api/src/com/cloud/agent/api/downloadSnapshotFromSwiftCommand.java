@@ -35,9 +35,9 @@ public class downloadSnapshotFromSwiftCommand extends SnapshotCommand {
         
     }
    
-    public downloadSnapshotFromSwiftCommand(SwiftTO swift, String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId, String parent, String BackupUuid, int wait) {
+    public downloadSnapshotFromSwiftCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long volumeId, String parent, String BackupUuid, int wait) {
 
-        super("", secondaryStoragePoolUrl, BackupUuid, "", dcId, accountId, volumeId);
+        super("", secondaryStorageUrl, BackupUuid, "", dcId, accountId, volumeId);
         setParent(parent);
         setSwift(swift);
         setWait(wait);

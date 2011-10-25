@@ -131,7 +131,6 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -3018,36 +3017,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         swiftUpload(conn, swift, container, ldir, lfilename, isISCSI, wait);
     }
     
-    public Answer execute(downloadSnapshotFromSwiftCommand cmd){
-        SwiftTO swift = cmd.getSwift();
-        String secondaryStorageURL = cmd.getSecondaryStoragePoolURL();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String rfilename = cmd.getSnapshotUuid();
-        try {
-            URI uri = new URI(secondaryStorageURL);
-            String remoteMountPath = uri.getHost() + ":" + uri.getPath();
-            String folder = "snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/";
-            String dir = remoteMountPath + "/" + folder;
-            Connection conn = getConnection();
-            if (!createSecondaryStorageFolder(conn, remoteMountPath, folder)) {
-                throw new InternalErrorException("Failed to create the volume folder.");
-            }
-            String lfilename = rfilename;
-            if ( rfilename.startsWith("VHD-") ) {
-                lfilename = rfilename.replace("VHD-", "") + ".vhd";
-            }
-            if(swiftDownload(conn, swift, volumeId.toString(), rfilename, dir, lfilename, true)) {
-                return new Answer(cmd, true, "success");
-            }
-            return new Answer(cmd, false, "failure");
-        } catch (Exception e) {
-            String msg = cmd + " Command failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg);
-        }
-    }
-
 
     protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, Long dcId, Long accountId,
             Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
@@ -5758,7 +5727,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromVolumeCommand cmd) {
         Connection conn = getConnection();
-        String secondaryStoragePoolURL = cmd.getSecondaryStorageURL();
+        String secondaryStoragePoolURL = cmd.getSecondaryStorageUrl();
         String volumeUUID = cmd.getVolumePath();
         Long accountId = cmd.getAccountId();
         String userSpecifiedName = cmd.getTemplateName();
@@ -5818,7 +5787,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     protected Answer execute(final UpgradeSnapshotCommand cmd) {
         
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         Long volumeId = cmd.getVolumeId();
         Long accountId = cmd.getAccountId();
@@ -5831,7 +5800,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         try {
             Connection conn = getConnection();
-            URI uri = new URI(secondaryStoragePoolURL);
+            URI uri = new URI(secondaryStorageUrl);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             String snapshotPath = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/" + backedUpSnapshotUuid + ".vhd";
             String templatePath = secondaryStorageMountPath + "/template/tmpl/" + tmpltAcountId + "/" + templateId;
@@ -5849,7 +5818,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         Long newTemplateId = cmd.getNewTemplateId();
         String userSpecifiedName = cmd.getTemplateName();
@@ -5858,7 +5827,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String details = null;
         boolean result = false;
         try {
-            URI uri = new URI(secondaryStoragePoolURL);
+            URI uri = new URI(secondaryStorageUrl);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             String installPath = "template/tmpl/" + accountId + "/" + newTemplateId;
             if( !createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath)) {
@@ -5930,7 +5899,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Long dcId = cmd.getDataCenterId();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
         String prevBackupUuid = cmd.getPrevBackupUuid();
         String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
@@ -5947,7 +5916,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             String psUuid = primaryStorageSR.getUuid(conn);
             Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
-            URI uri = new URI(secondaryStoragePoolURL);
+            URI uri = new URI(secondaryStorageUrl);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
             String snapshotPaUuid = null;
@@ -5973,7 +5942,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn(details);
                     return new BackupSnapshotAnswer(cmd, false, details, null, false);
                 }
-                String snapshotMountpoint = secondaryStoragePoolURL + "/" + folder;
+                String snapshotMountpoint = secondaryStorageUrl + "/" + folder;
                 SR snapshotSr = null;
                 try {
                     snapshotSr = createNfsSRbyURI(conn, new URI(snapshotMountpoint), false);
@@ -5981,7 +5950,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     snapshotBackupUuid = backedVdi.getUuid(conn);
                     if( cmd.getSwift() != null ) {
                         try {
-                            swiftBackupSnapshot(conn, cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, volumeId.toString(), false, wait);
+                            swiftBackupSnapshot(conn, cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, "S-" + volumeId.toString(), false, wait);
                         } finally {
                             deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotBackupUuid);
                         }
@@ -5996,7 +5965,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
                 if( cmd.getSwift() != null ) {
-                    swiftBackupSnapshot(conn, cmd.getSwift(), primaryStorageSRUuid, snapshotPaUuid, volumeId.toString(), isISCSI, wait);
+                    swiftBackupSnapshot(conn, cmd.getSwift(), primaryStorageSRUuid, snapshotPaUuid, "S-" + volumeId.toString(), isISCSI, wait);
                     if ( isISCSI ) {
                         snapshotBackupUuid = "VHD-" + snapshotPaUuid;
                     } else {
@@ -6030,7 +5999,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         int wait = cmd.getWait();
         boolean result = false;
@@ -6039,8 +6008,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String volumeUUID = null;
         SR snapshotSR = null;
         
-        if (secondaryStoragePoolURL == null) {
-            details += " because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
+        if (secondaryStorageUrl == null) {
+            details += " because the URL passed: " + secondaryStorageUrl + " is invalid.";
             return new CreateVolumeFromSnapshotAnswer(cmd, result, details, volumeUUID);
         }
         try {
@@ -6050,7 +6019,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         + primaryStorageNameLabel);
             }
             // Get the absolute path of the snapshot on the secondary storage.
-            URI snapshotURI = new URI(secondaryStoragePoolURL + "/snapshots/" + accountId + "/" + volumeId );
+            URI snapshotURI = new URI(secondaryStorageUrl + "/snapshots/" + accountId + "/" + volumeId);
             String filename = backedUpSnapshotUuid;
             if ( !filename.startsWith("VHD-") && !filename.endsWith(".vhd")) {
                 filename = backedUpSnapshotUuid + ".vhd";

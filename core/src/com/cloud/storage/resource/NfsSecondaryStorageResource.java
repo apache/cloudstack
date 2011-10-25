@@ -57,6 +57,8 @@ import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
+import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
+import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -148,11 +150,60 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((downloadSnapshotFromSwiftCommand)cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand){
             return execute((DeleteSnapshotsDirCommand)cmd);
+        } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
+            return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
+            return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
     
+
+    private Answer execute(downloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
+        SwiftTO swift = cmd.getSwift();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long templateId = cmd.getTemplateId();
+        try {
+            String parent = getRootDir(secondaryStorageUrl);
+            String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
+            String result = swiftDownload(swift, "T-" + templateId.toString(), "", lPath);
+            if (result != null) {
+                String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
+
+    private Answer execute(uploadTemplateToSwiftFromSecondaryStorageCommand cmd) {
+        SwiftTO swift = cmd.getSwift();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long templateId = cmd.getTemplateId();
+        try {
+            String parent = getRootDir(secondaryStorageUrl);
+            String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
+            String result = swiftUpload(swift, "T-" + templateId.toString(), lPath, "*");
+            if (result != null) {
+                String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
+
     String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
@@ -201,11 +252,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
 
     public Answer execute(DeleteSnapshotsDirCommand cmd){
-        String secondaryStorageURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         try {
-            String parent = getRootDir(secondaryStorageURL);
+            String parent = getRootDir(secondaryStorageUrl);
             String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/*";
             String result = deleteLocalFile(lPath);
             if (result != null) {
@@ -223,14 +274,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     public Answer execute(downloadSnapshotFromSwiftCommand cmd){
         SwiftTO swift = cmd.getSwift();
-        String secondaryStorageURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         String rFilename = cmd.getSnapshotUuid();
         String sParent = cmd.getParent();
         String errMsg = "";
         try {
-            String parent = getRootDir(secondaryStorageURL);
+            String parent = getRootDir(secondaryStorageUrl);
             String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId);
 
             String result = createLocalDir(lPath);
@@ -244,7 +295,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 lFilename = rFilename.replace("VHD-", "") + ".vhd";
             }
             String lFullPath = lPath + "/" + lFilename;
-            result = swiftDownload(swift, volumeId.toString(), rFilename, lFullPath);
+            result = swiftDownload(swift, "S-" + volumeId.toString(), rFilename, lFullPath);
             if (result != null) {
                 return new Answer(cmd, false, result);
             }
@@ -356,14 +407,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
     
     protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
-        String secondaryStorageURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         String name = cmd.getSnapshotUuid();
         try {
             SwiftTO swift = cmd.getSwift();
             if (swift == null) {
-                String parent = getRootDir(secondaryStorageURL);
+                String parent = getRootDir(secondaryStorageUrl);
                 String filename;
                 if (cmd.isAll()) {
                     filename = "*";
