@@ -30,9 +30,11 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.manager.Commands;
+import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
@@ -46,6 +48,7 @@ import com.cloud.vm.VirtualMachine.State;
 @Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
 public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();
+    SecurityGroupWorkTracker _workTracker;
     SecurityManagerMBeanImpl _mBean;
     
     WorkerThread[] _workers;
@@ -166,9 +169,13 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
             if (s_logger.isTraceEnabled()) { 
                 s_logger.trace("SecurityGroupManager v2: found vm, " + userVmId + " state=" + vm.getState());
             }
-            Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
             Long agentId = vm.getHostId();
             if (agentId != null) {
+                if ( !_workTracker.canSend(agentId)) {
+                    s_logger.trace("SecurityGroupManager v2: not sending ruleset update: too many messages outstanding");
+                    return;
+                }
+                Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
                 SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), null, 
                         work.getLogsequenceNumber(), rules);
@@ -185,6 +192,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                     }
                 } catch (AgentUnavailableException e) {
                     s_logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
+                    _workTracker.handleException(agentId);
                 }
             }
         } else {
@@ -261,7 +269,12 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         } catch (Exception e){
             s_logger.error("Failed to register MBean", e);
         }
-        return super.configure(name, params);
+        boolean result = super.configure(name, params);
+        Map<String, String> configs = _configDao.getConfiguration("Network", params);
+        int bufferLength = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkPerAgentMaxQueueSize.key()), 100);
+        _workTracker =  new SecurityGroupWorkTracker(_agentMgr, _answerListener, bufferLength);
+        _answerListener.setWorkDispatcher(_workTracker);
+        return result;
     }
 
     public void disableSchedulerForVm(Long vmId, boolean disable) {
