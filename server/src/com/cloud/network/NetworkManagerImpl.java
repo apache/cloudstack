@@ -1784,7 +1784,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // If networkDomain is not specified, take it from the global configuration
-        if (isServiceSupported(networkOfferingId, Service.Dns)) {
+        if (isServiceSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
             Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(zoneId, networkOfferingId, Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
@@ -2648,7 +2648,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
 
         for (Service service : zoneCapabilities.keySet()) {
-            if (isServiceSupported(networkOfferingId, service)) {
+            if (isServiceSupportedByNetworkOffering(networkOfferingId, service)) {
                 networkCapabilities.put(service, zoneCapabilities.get(service));
             }
         }
@@ -2659,7 +2659,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service) {
 
-        if (!isServiceSupported(networkOfferingId, service)) {
+        if (!isServiceSupportedByNetworkOffering(networkOfferingId, service)) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
         }
 
@@ -2918,7 +2918,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean isServiceSupported(long networkOfferingId, Network.Service service) {
+    public boolean isServiceSupportedByNetworkOffering(long networkOfferingId, Network.Service service) {
         return (_ntwkOfferingSrvcDao.isServiceSupported(networkOfferingId, service));
     }
 

@@ -79,6 +79,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles system Direct pod based network
+        //FIXME - verify broadcast domain type here
         if (dc.getNetworkType() == NetworkType.Basic && offering.getTrafficType() == TrafficType.Guest) {
             return true;
         } else {

@@ -34,6 +34,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -78,8 +79,8 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // This guru handles only non-system Guest Isolated network
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getType() == Network.Type.Isolated && !offering.isSystemOnly()) {
+        // This guru handles only non-system Guest Isolated network that supports Source nat service
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getType() == Network.Type.Isolated  && _networkMgr.isServiceSupportedByNetworkOffering(offering.getId(), Service.SourceNat) && !offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest Virtual networks in zone of type " + NetworkType.Advanced);

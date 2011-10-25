@@ -194,7 +194,7 @@ public interface NetworkManager extends NetworkService {
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
-    boolean isServiceSupported(long networkId, Network.Service service);
+    boolean isServiceSupportedByNetworkOffering(long networkOfferingId, Network.Service service);
 
     NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId);
 

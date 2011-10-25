@@ -139,7 +139,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         //Verify that vpn service is enabled for the network
         Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
-        if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Vpn)) {
+        if (!_networkMgr.isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.Vpn)) {
             throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         }
 

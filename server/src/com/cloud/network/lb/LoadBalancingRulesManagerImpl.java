@@ -421,7 +421,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         _accountMgr.checkAccess(caller.getCaller(), null, ipAddr);
 
         // verify that lb service is supported by the network
-        if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Lb)) {
+        if (!_networkMgr.isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.Lb)) {
             throw new InvalidParameterValueException("LB service is not supported in network id= " + networkId);
 
         }

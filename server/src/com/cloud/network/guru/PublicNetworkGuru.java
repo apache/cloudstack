@@ -77,10 +77,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (!offering.isSecurityGroupEnabled() && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
+        if (offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of System only Public Virtual Network");
+            s_logger.trace("We take care only of System Public Virtual Network");
             return false;
         }
     }
