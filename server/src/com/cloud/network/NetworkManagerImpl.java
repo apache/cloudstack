@@ -3573,7 +3573,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE, eventDescription = "updating physical network", async = true)
-    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> isolationMethods, List<String> tags, String newVnetRangeString, String state) {
+    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state) {
         
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
@@ -3583,10 +3583,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
-        }
-
-        if (isolationMethods != null && isolationMethods.size() > 1) {
-            throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
         }
 
         PhysicalNetwork.State networkState = null;
@@ -3604,21 +3600,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (tags != null) {
             network.setTags(tags);
-        }
-        
-        if (isolationMethods != null) {
-            for(String isMethod : isolationMethods){
-                PhysicalNetwork.IsolationMethod isolationMethodVal = null;
-                if (isMethod != null && !isMethod.isEmpty()) {
-                    try {
-                        isolationMethodVal = PhysicalNetwork.IsolationMethod.valueOf(isMethod.toUpperCase());
-                    } catch (IllegalArgumentException ex) {
-                        throw new InvalidParameterValueException("Unable to resolve IsolationMethod '" + isMethod + "' to a supported value {VLAN or L3 or GRE}");
-                    }
-                }
-            }
-            
-            network.setIsolationMethods(isolationMethods);
         }
         
         if(networkSpeed != null){

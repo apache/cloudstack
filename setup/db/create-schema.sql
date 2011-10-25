@@ -1806,6 +1806,15 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   UNIQUE KEY(`physical_network_id`, `traffic_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`traffic_type_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `traffic_type_id` bigint unsigned NOT NULL COMMENT 'traffic_type id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_traffic_type_details__traffic_type_id` FOREIGN KEY (`traffic_type_id`) REFERENCES `physical_network_traffic_types`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`physical_network_service_providers` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',

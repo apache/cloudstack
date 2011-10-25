@@ -52,9 +52,6 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
     private List<String> tags;
     
-    @Parameter(name=ApiConstants.ISOLATION_METHODS, type=CommandType.LIST, collectionType=CommandType.STRING, description="the isolation method for the physical network[VLAN/L3/GRE]")
-    private List<String> isolationMethods;
-
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled")
     private String state;
 
@@ -69,10 +66,6 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
         return tags;
     }
 
-    public List<String> getIsolationMethods() {
-        return isolationMethods;
-    }
-    
     public String getNetworkSpeed() {
         return speed;
     }
@@ -105,7 +98,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getIsolationMethods(), getTags(), getVlan(), getState());
+        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
             response.setResponseName(getCommandName());

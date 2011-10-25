@@ -92,7 +92,7 @@ public interface NetworkService {
 
     List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize);
 
-    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> isolationMethods, List<String> tags, String newVnetRangeString, String state);
+    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state);
 
     boolean deletePhysicalNetwork(Long id);
 
