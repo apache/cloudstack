@@ -118,6 +118,7 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -1038,18 +1039,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (routers.size() >= routerCount) {
                 return routers;
             }
-
-            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+            
             NicProfile defaultNic = new NicProfile();
-            defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(sourceNatIp.getGateway());
-            defaultNic.setNetmask(sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            defaultNic.setDeviceId(2);
+            //if source nat service is supported by the network, get the source nat ip address
+            if (_networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+                PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
+                defaultNic.setDefaultNic(true);
+                defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
+                defaultNic.setGateway(sourceNatIp.getGateway());
+                defaultNic.setNetmask(sourceNatIp.getNetmask());
+                defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setDeviceId(2);
+            } 
+           
             int count = routerCount - routers.size();
 
             for (int i = 0; i < count; i++) {

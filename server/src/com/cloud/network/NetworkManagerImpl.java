@@ -1266,9 +1266,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
 
-            // If this is a guest virtual network and the network offering does not support a shared source NAT rule,
+            // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a Shared source NAT rule,
             // associate a source NAT IP (if one isn't already associated with the network)
-            if (network.getType() == Network.Type.Isolated && !offering.isSharedSourceNatService()) {
+            if (network.getType() == Network.Type.Isolated && isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !offering.isSharedSourceNatService()) {
                 List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(networkId, true);
 
                 if (ips.isEmpty()) {
