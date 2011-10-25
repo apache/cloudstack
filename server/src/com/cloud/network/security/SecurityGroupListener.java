@@ -60,6 +60,8 @@ public class SecurityGroupListener implements Listener {
     SecurityGroupWorkDao _workDao;
     Map<Long, Integer> _vmFailureCounts = new ConcurrentHashMap<Long, Integer>();
 
+    private SecurityGroupWorkTracker _workTracker;
+
 
     public SecurityGroupListener(SecurityGroupManagerImpl securityGroupManager,
             AgentManager agentMgr, SecurityGroupWorkDao workDao) {
@@ -110,6 +112,8 @@ public class SecurityGroupListener implements Listener {
                     }
                 }
                 commandNum++;
+                if (_workTracker != null)
+                    _workTracker.processAnswers(agentId, seq, answers);
             }
         }
 
@@ -171,6 +175,9 @@ public class SecurityGroupListener implements Listener {
                 //usually hypervisors that do not understand sec group rules.
                 s_logger.debug("Unable to schedule network rules cleanup for host " + host.getId(), e);
             }
+            if (_workTracker != null) {
+                _workTracker.processConnect(host.getId());
+            }
         }
     }
 
@@ -184,11 +191,22 @@ public class SecurityGroupListener implements Listener {
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
+        if (_workTracker != null) {
+            _workTracker.processDisconnect(agentId);
+        }
         return true;
     }
 
     @Override
     public boolean processTimeout(long agentId, long seq) {
+        if (_workTracker != null) {
+            _workTracker.processTimeout(agentId, seq);
+        }
         return true;
+    }
+
+
+    public void setWorkDispatcher(SecurityGroupWorkTracker workDispatcher) {
+        this._workTracker = workDispatcher;
     }
 }
