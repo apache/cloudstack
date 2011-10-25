@@ -3414,8 +3414,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return false;
         }
         
-        //compare providers
-        return canUpgradeProviders(oldNetworkOfferingId, newNetworkOfferingId);
+        return true;
     }
     
     
@@ -3962,20 +3961,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public List<Long> listNetworkOfferingsForUpgrade(long networkId) {
-        List<Long> offeringIdsToReturn = new ArrayList<Long>();
         
         NetworkOffering originalOffering = _configMgr.getNetworkOffering(getNetwork(networkId).getNetworkOfferingId());
         
         List<Long> offerings = _networkOfferingDao.getOfferingIdsToUpgradeFrom(originalOffering);
         
-        //check if providers are upgradable
-        for (Long offering : offerings) {
-            if (canUpgradeProviders(originalOffering.getId(), offering.longValue())) {
-                offeringIdsToReturn.add(offering);
-            }
-        }
-        
-        return offeringIdsToReturn;
+        return offerings;
     }
 
 }
