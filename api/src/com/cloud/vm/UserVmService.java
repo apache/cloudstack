@@ -34,6 +34,7 @@ import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.RestoreVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
@@ -380,4 +381,6 @@ public interface UserVmService {
     UserVm moveVMToUser(MoveUserVMCmd moveUserVMCmd)  throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException ;
 
 	VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
+	
+	UserVm restoreVM(RestoreVMCmd cmd);
 }

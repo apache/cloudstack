@@ -496,6 +496,7 @@ fi
 %{_javadir}/vmware*.jar
 %{_javadir}/%{name}-jnetpcap.jar
 %{_javadir}/%{name}-junit.jar
+%{_javadir}/%{name}-jasypt-1.8.jar
 
 
 %files core

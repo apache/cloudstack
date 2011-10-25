@@ -217,5 +217,7 @@ public interface StorageManager extends Manager {
 
 	boolean stateTransitTo(Volume vol, Event event)
 			throws NoTransitionException;
+	
+	VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId);
 
 }

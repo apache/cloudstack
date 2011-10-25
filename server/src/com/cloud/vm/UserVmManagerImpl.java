@@ -67,6 +67,7 @@ import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.RestoreVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
@@ -3401,5 +3402,78 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         return vm;
+    }
+
+	@Override
+    public UserVm restoreVM(RestoreVMCmd cmd) {
+        // Input validation
+        Account caller = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
+        UserVO user = _userDao.findById(userId);
+        boolean needRestart = false;
+        
+        // if account is removed, return error
+        if (caller != null && caller.getRemoved() != null) {
+            throw new PermissionDeniedException("The account " + caller.getId() + " is removed");
+        }
+
+	    long vmId = cmd.getVmId();
+	    UserVmVO vm = _vmDao.findById(vmId);
+	    if (vm == null) {
+	    	throw new InvalidParameterValueException("Cann not find VM with ID " + vmId);
+	    }
+	    
+	    if (vm.getState() != VirtualMachine.State.Running && vm.getState() != VirtualMachine.State.Stopped) {
+	    	throw new CloudRuntimeException("Vm " + vmId + " currently in " + vm.getState() + " state, restore vm can only execute when VM in Running or Stopped");
+	    }
+	    
+	    if (vm.getState() == VirtualMachine.State.Running) {
+	    	needRestart = true;
+	    }
+	    
+	    List<VolumeVO> rootVols = _volsDao.findByInstance(vmId);
+	    if (rootVols.isEmpty()) {
+	    	throw new InvalidParameterValueException("Can not find root volume for VM " + vmId);
+	    }
+	    
+	    VolumeVO root = rootVols.get(0);
+	    long templateId = root.getTemplateId();
+	    VMTemplateVO template = _templateDao.findById(templateId);
+	    if (template == null) {
+	    	throw new InvalidParameterValueException("Cannot find template for volume " + root.getId() + " vm " + vmId);
+	    }
+	    
+		if (needRestart) {
+			try {
+				_itMgr.stop(vm, user, caller);
+			} catch (ResourceUnavailableException e) {
+				s_logger.debug("Stop vm " + vmId + " failed", e);
+				throw new CloudRuntimeException("Stop vm " + vmId + " failed");
+			}
+		}
+	    
+	    /* allocate a new volume from original template*/
+	    VolumeVO newVol = _storageMgr.allocateDuplicateVolume(root, null);
+	    _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
+	    
+	    /* Detach and destory the old root volume */
+	    try {
+		    _volsDao.detachVolume(root.getId());
+	        _storageMgr.destroyVolume(root);
+        } catch (ConcurrentOperationException e) {
+	       s_logger.debug("Unable to delete old root volume " + root.getId() + ", user may manually delete it", e);
+        }
+	    
+		if (needRestart) {
+			try {
+				_itMgr.start(vm, null, user, caller);
+			} catch (Exception e) {
+				s_logger.debug("Unable to start VM " + vmId, e);
+				throw new CloudRuntimeException("Unable to start VM " + vmId + " " + e.getMessage());
+			}
+		}
+	   
+	    s_logger.debug("Restore VM " + vmId + " with template " + root.getTemplateId() + " successfully");
+	    return vm;
     }
 }

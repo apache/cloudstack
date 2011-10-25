@@ -342,7 +342,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return true;
     }
 
-    VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId) {
+    @Override
+    public VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId) {
         VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(), oldVol.getSize());
         if(templateId != null){
             newVol.setTemplateId(templateId);
