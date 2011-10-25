@@ -217,9 +217,6 @@ public class ApiDispatcher {
                     s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8));
                 }
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + ", please pass dates in the format mentioned in the api documentation");
-            } catch (InvalidParameterValueException invEx){
-            	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length()-8) + " due to invalid value " + paramObj + " for parameter "
-                        + parameterAnnotation.name());
             } catch (CloudRuntimeException cloudEx) {
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically means
                 // there was
@@ -303,10 +300,6 @@ public class ApiDispatcher {
                 field.set(cmdObj, Short.valueOf(paramObj.toString()));
                 break;
             case STRING:
-            	if((paramObj != null) && paramObj.toString().length() > 256){
-            		s_logger.error("Value greater than max allowed length 256 for param: "+field.getName()+" Command: "+cmdObj.getCommandName().substring(0, cmdObj.getCommandName().length()-8));
-            		throw new InvalidParameterValueException("Value greater than max allowed length 256 for param: "+field.getName()+" Command: "+cmdObj.getCommandName().substring(0, cmdObj.getCommandName().length()-8));
-            	}
                 field.set(cmdObj, paramObj.toString());
                 break;
             case TZDATE:
