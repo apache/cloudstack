@@ -190,9 +190,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 		return zoneId + "-" + name + "-" + ip;
 	}
 	
-	protected HostVO getExternalNetworkAppliance(long zoneId, Host.Type type) {
+	protected HostVO getExternalNetworkAppliance(long zoneId, long networkOfferingId, Host.Type type) {
 		DataCenterVO zone = _dcDao.findById(zoneId);
-		if (!_networkMgr.zoneIsConfiguredForExternalNetworking(zoneId)) {
+		if (!_networkMgr.networkIsConfiguredForExternalNetworking(zoneId, networkOfferingId)) {
 			s_logger.debug("Zone " + zone.getName() + " is not configured for external networking.");
 			return null;
 		} else {
@@ -389,7 +389,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         // Find the external load balancer in this zone
         long zoneId = guestConfig.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalLoadBalancer = getExternalNetworkAppliance(zoneId, Host.Type.ExternalLoadBalancer);
+        HostVO externalLoadBalancer = getExternalNetworkAppliance(zoneId, guestConfig.getNetworkOfferingId(), Host.Type.ExternalLoadBalancer);
 
         if (externalLoadBalancer == null) {
             return false;
@@ -433,7 +433,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalLoadBalancer = getExternalNetworkAppliance(zoneId, Host.Type.ExternalLoadBalancer);
+        HostVO externalLoadBalancer = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalLoadBalancer);
 
         if (externalLoadBalancer == null) {
             return false;
@@ -443,7 +443,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         boolean externalLoadBalancerIsInline = externalLoadBalancerIsInline(externalLoadBalancer);
         HostVO externalFirewall = null;
         if (externalLoadBalancerIsInline) {
-        	externalFirewall = getExternalNetworkAppliance(zoneId, Host.Type.ExternalFirewall);
+        	externalFirewall = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
         	if (externalFirewall == null) {
         		String msg = "External load balancer in zone " + zone.getName() + " is inline, but no external firewall in this zone.";
         		s_logger.error(msg);
@@ -675,7 +675,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 
         Host externalFirewall = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
         if (externalFirewall != null) {
-            zone.setFirewallProvider(Network.Provider.JuniperSRX.getName());                      
+            /* With NAAS, we no longer store default global providers with Zone. 
+             * 
+             zone.setFirewallProvider(Network.Provider.JuniperSRX.getName());                      
             zone.setUserDataProvider(Network.Provider.DhcpServer.getName());
             zone.setVpnProvider(null);
             
@@ -695,7 +697,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
                 zone.setLoadBalancerProvider(Network.Provider.None.getName());
             }
 
-            _dcDao.update(zone.getId(), zone);
+            _dcDao.update(zone.getId(), zone);*/
             return externalFirewall;
         } else {
             return null;
@@ -717,7 +719,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 
         try {
             if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
-                DataCenterVO zone = _dcDao.findById(externalFirewall.getDataCenterId());
+                /* With NAAS, we do not have the concept of global providers stored with Zone
+                 * 
+                 * DataCenterVO zone = _dcDao.findById(externalFirewall.getDataCenterId());
                 zone.setFirewallProvider(Network.Provider.VirtualRouter.getName()); 
                 zone.setUserDataProvider(Network.Provider.VirtualRouter.getName());
                 zone.setVpnProvider(Network.Provider.VirtualRouter.getName());
@@ -742,7 +746,8 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
                     }
                 }
                 
-                return _dcDao.update(zone.getId(), zone);
+                return _dcDao.update(zone.getId(), zone);*/
+                return true;
             } else {
                 return false;
             }
@@ -796,7 +801,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         // Find the external firewall in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalFirewall = getExternalNetworkAppliance(zoneId, Host.Type.ExternalFirewall);
+        HostVO externalFirewall = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
 
         if (externalFirewall == null) {
             return false;
@@ -877,7 +882,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         // Find the external firewall in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalFirewall = getExternalNetworkAppliance(zoneId, Host.Type.ExternalFirewall);
+        HostVO externalFirewall = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
 
         if (externalFirewall == null) {
             return false;
@@ -947,7 +952,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     
     
     public boolean manageRemoteAccessVpn(boolean create, Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-    	HostVO externalFirewall = getExternalNetworkAppliance(network.getDataCenterId(), Host.Type.ExternalFirewall);
+    	HostVO externalFirewall = getExternalNetworkAppliance(network.getDataCenterId(), network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
 
         if (externalFirewall == null) {
             return false;
@@ -986,7 +991,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }  
     
     public boolean manageRemoteAccessVpnUsers(Network network, RemoteAccessVpn vpn, List<? extends VpnUser> vpnUsers) throws ResourceUnavailableException {
-    	HostVO externalFirewall = getExternalNetworkAppliance(network.getDataCenterId(), Host.Type.ExternalFirewall);
+    	HostVO externalFirewall = getExternalNetworkAppliance(network.getDataCenterId(), network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
 
         if (externalFirewall == null) {
             return false;
@@ -1271,14 +1276,20 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 			s_logger.debug("External network stats collector is running...");
 			for (DataCenterVO zone : _dcDao.listAll()) {				
 				// Make sure the zone is configured for external networking
-				if (!_networkMgr.zoneIsConfiguredForExternalNetworking(zone.getId())) {
+			    
+			    //FIXME: add another way to check if zone has external networking.
+				
+			    if (!_networkMgr.zoneIsConfiguredForExternalNetworking(zone.getId())) {
 					s_logger.debug("Zone " + zone.getName() + " is not configured for external networking, so skipping usage check.");
 					continue;
 				}
 				
 				// Only collect stats if there is an external firewall in this zone
-				HostVO externalFirewall = getExternalNetworkAppliance(zone.getId(), Host.Type.ExternalFirewall);
-				HostVO externalLoadBalancer = getExternalNetworkAppliance(zone.getId(), Host.Type.ExternalLoadBalancer);
+				
+				//FIXME: add another way to check if zone has external networking.
+				
+				HostVO externalFirewall = getExternalNetworkAppliance(zone.getId(), 0, Host.Type.ExternalFirewall);
+				HostVO externalLoadBalancer = getExternalNetworkAppliance(zone.getId(), 0,  Host.Type.ExternalLoadBalancer);
 				
 				if (externalFirewall == null) {
 					s_logger.debug("Skipping usage check for zone " + zone.getName());

@@ -187,10 +187,13 @@ public interface NetworkManager extends NetworkService {
     Nic getDefaultNic(long vmId);
 
     List<? extends PasswordServiceProvider> getPasswordResetElements();
-
+    
+    @Deprecated
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
+    
+    boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkOfferingId);
 
-    Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service);
+    Map<Capability, String> getServiceCapabilities(Long networkOfferingId, Service service);
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 

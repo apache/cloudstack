@@ -47,7 +47,6 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -79,7 +78,7 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
             return false;
         }   
         
-        return _networkManager.zoneIsConfiguredForExternalNetworking(zone.getId());
+        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getNetworkOfferingId());
     }
 
     @Override

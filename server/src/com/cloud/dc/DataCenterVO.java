@@ -165,7 +165,7 @@ public class DataCenterVO implements DataCenter {
     public void setFirewallProvider(String firewallProvider) {
         this.firewallProvider = firewallProvider;
     }
-
+    
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
         this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix);
         this.id = id;
@@ -221,7 +221,7 @@ public class DataCenterVO implements DataCenter {
     public void setUserDataProvider(String userDataProvider) {
         this.userDataProvider = userDataProvider;
     }
-
+    
     @Override
     public Long getDomainId() {
 		return domainId;

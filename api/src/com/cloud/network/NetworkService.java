@@ -74,8 +74,6 @@ public interface NetworkService {
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
-    Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
-
     Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId);
 
     boolean isNetworkAvailableInDomain(long networkId, long domainId);

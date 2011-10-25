@@ -88,7 +88,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
-        } else if (_networkMgr.zoneIsConfiguredForExternalNetworking(plan.getDataCenterId())) {
+        } else if (_networkMgr.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getNetworkOfferingId())) {
             config.setState(State.Allocated);
         }
 
@@ -103,7 +103,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        if (!_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (!_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getNetworkOfferingId())) {
             return super.implement(config, offering, dest, context);
         }
 
@@ -176,7 +176,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId()) && nic != null && nic.getRequestedIp() != null) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getNetworkOfferingId()) && nic != null && nic.getRequestedIp() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
         
@@ -204,7 +204,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
 
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getNetworkOfferingId())) {
             nic.setIp4Address(null);
             nic.setGateway(null);
             nic.setNetmask(null);
@@ -221,7 +221,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getNetworkOfferingId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
             nic.setIsolationUri(config.getBroadcastUri());
             nic.setDns1(dc.getDns1());
@@ -255,7 +255,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        if (network != null && _networkMgr.zoneIsConfiguredForExternalNetworking(network.getDataCenterId())) {
+        if (network != null && _networkMgr.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getNetworkOfferingId())) {
             return true;
         } else {
             return super.release(nic, vm, reservationId);

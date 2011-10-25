@@ -74,6 +74,7 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         }
     }
     
+   
     @Override
     public List<String> getServicesForProvider(long networkOfferingId, Provider provider) {
         List<String> services = new ArrayList<String>();

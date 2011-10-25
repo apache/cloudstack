@@ -41,10 +41,9 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
@@ -60,6 +59,7 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     @Inject NetworkManager _networkManager;
     @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject ConfigurationManager _configMgr;
+    @Inject NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
@@ -68,8 +68,8 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
             return false;
         }
         
-        return (_networkManager.zoneIsConfiguredForExternalNetworking(zone.getId()) && 
-                zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.NetscalerMPX.getName()));
+        return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getNetworkOfferingId()) && 
+                _ntwkOfferingSrvcDao.isProviderSupported(config.getNetworkOfferingId(), Service.Lb, Network.Provider.NetscalerMPX));
     }
 
     @Override

@@ -118,6 +118,7 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -139,6 +140,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
@@ -346,6 +348,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected FirewallManager _firewallMgr;
     @Inject
     protected ProjectManager _projectMgr;
+    @Inject 
+    protected NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -2691,6 +2695,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         NicVO guestNic = null;
+        NetworkVO guestNetwork = null;
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
@@ -2699,6 +2704,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIp4Address();
                 guestNic = nic;
+                guestNetwork = network;
             }
         }
         boolean ipChanged = false;
@@ -2717,7 +2723,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (ipChanged) {
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
             UserVmVO userVm = profile.getVirtualMachine();
-            if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
+            //dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
+            if (_ntwkOfferingSrvcDao.isProviderSupported(guestNetwork.getNetworkOfferingId(), Service.Dhcp, Provider.ExternalDhcpServer)){
                 _nicDao.update(guestNic.getId(), guestNic);
                 userVm.setPrivateIpAddress(guestNic.getIp4Address());
                 _vmDao.update(userVm.getId(), userVm);
