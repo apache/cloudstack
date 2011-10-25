@@ -34,7 +34,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -79,8 +78,8 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // This guru handles only non-system Guest network
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == GuestIpType.Virtual && !offering.isSystemOnly()) {
+        // This guru handles only non-system Guest Isolated network
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getType() == Network.Type.Isolated && !offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest Virtual networks in zone of type " + NetworkType.Advanced);
@@ -95,7 +94,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
@@ -140,8 +139,8 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
         long dcId = dest.getDataCenter().getId();
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
-                State.Allocated, network.getDataCenterId(), network.getPhysicalNetworkId());
+        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+                network.getDataCenterId(), network.getPhysicalNetworkId());
 
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, network.getPhysicalNetworkId(), network.getAccountId(), context.getReservationId());

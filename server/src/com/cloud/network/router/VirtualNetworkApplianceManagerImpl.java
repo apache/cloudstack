@@ -116,7 +116,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -723,7 +722,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         @Override
         public void run() {
             
-            final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, GuestIpType.Virtual, mgmtSrvrId);
+            final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, Network.Type.Isolated, mgmtSrvrId);
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
             for (DomainRouterVO router : routers) {

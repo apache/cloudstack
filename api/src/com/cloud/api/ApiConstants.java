@@ -209,7 +209,6 @@ public class ApiConstants {
     public static final String IS_SYSTEM = "issystem";
     public static final String AVAILABILITY = "availability";
     public static final String NETWORKRATE = "networkrate";
-    public static final String GUEST_IP_TYPE = "guestiptype";
     public static final String HOST_TAGS = "hosttags";
     public static final String SSH_KEYPAIR = "keypair";
     public static final String HOST_CPU_CAPACITY = "hostcpucapacity";

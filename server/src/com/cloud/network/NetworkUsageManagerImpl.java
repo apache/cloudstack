@@ -62,7 +62,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.resource.TrafficSentinelResource;
@@ -215,7 +214,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         AllocatedIpSearch.and("allocated", AllocatedIpSearch.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpSearch.and("dc", AllocatedIpSearch.entity().getDataCenterId(), Op.EQ);
         SearchBuilder<NetworkVO> networkJoin = _networksDao.createSearchBuilder();
-        networkJoin.and("guestType", networkJoin.entity().getGuestType(), Op.EQ);
+        networkJoin.and("type", networkJoin.entity().getType(), Op.EQ);
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
         
@@ -243,7 +242,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
     public List<IPAddressVO> listAllocatedDirectIps(long zoneId) {
         SearchCriteria<IPAddressVO> sc = AllocatedIpSearch.create();
         sc.setParameters("dc", zoneId);
-        sc.setJoinParameters("network", "guestType", GuestIpType.Direct);
+        sc.setJoinParameters("network", "type", Network.Type.Shared);
         return _ipAddressDao.search(sc, null);
     }
 

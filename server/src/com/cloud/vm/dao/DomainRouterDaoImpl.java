@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDaoImpl;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -75,14 +75,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), Op.EQ);
         HostUpSearch.and("states", HostUpSearch.entity().getState(), Op.NIN);
         SearchBuilder<NetworkVO> joinNetwork = _networksDao.createSearchBuilder();
-        joinNetwork.and("guestType", joinNetwork.entity().getGuestType(), Op.EQ);
+        joinNetwork.and("type", joinNetwork.entity().getType(), Op.EQ);
         HostUpSearch.join("network", joinNetwork, joinNetwork.entity().getId(), HostUpSearch.entity().getNetworkId(), JoinType.INNER);
         HostUpSearch.done();
         
         StateNetworkTypeSearch = createSearchBuilder();
         StateNetworkTypeSearch.and("state", StateNetworkTypeSearch.entity().getState(), Op.EQ);
         SearchBuilder<NetworkVO> joinStateNetwork = _networksDao.createSearchBuilder();
-        joinStateNetwork.and("guestType", joinStateNetwork.entity().getGuestType(), Op.EQ);
+        joinStateNetwork.and("type", joinStateNetwork.entity().getType(), Op.EQ);
         StateNetworkTypeSearch.join("network", joinStateNetwork, joinStateNetwork.entity().getId(), StateNetworkTypeSearch.entity().getNetworkId(), JoinType.INNER);
         SearchBuilder<HostVO> joinHost = _hostsDao.createSearchBuilder();
         joinHost.and("mgmtServerId", joinHost.entity().getManagementServerId(), Op.EQ);
@@ -158,7 +158,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if (hostId != null) {
             sc.setParameters("host", hostId);
         }
-        sc.setJoinParameters("network", "guestType", GuestIpType.Virtual);
+        sc.setJoinParameters("network", "type", Network.Type.Isolated);
         return listBy(sc);
     }
     
@@ -169,7 +169,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
             sc.setParameters("host", hostId);
         }
         sc.setParameters("states", State.Destroyed, State.Stopped, State.Expunging);
-        sc.setJoinParameters("network", "guestType", GuestIpType.Virtual);
+        sc.setJoinParameters("network", "type", Network.Type.Isolated);
         return listBy(sc);
     }
 
@@ -204,10 +204,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType, long mgmtSrvrId) {
+    public List<DomainRouterVO> listByStateAndNetworkType(State state, Network.Type type, long mgmtSrvrId) {
         SearchCriteria<DomainRouterVO> sc = StateNetworkTypeSearch.create();
         sc.setParameters("state", state);
-        sc.setJoinParameters("network", "guestType", ipType);
+        sc.setJoinParameters("network", "type", type);
         sc.setJoinParameters("host", "mgmtServerId", mgmtSrvrId);
         return listBy(sc);
     }

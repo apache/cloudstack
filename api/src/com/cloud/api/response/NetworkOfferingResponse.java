@@ -59,9 +59,6 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.AVAILABILITY) @Param(description="availability of the network offering")
     private String availability;
     
-    @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="guest ip type of the network offering")
-    private String guestIpType;
-    
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
     
@@ -123,10 +120,6 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setNetworkRate(Integer networkRate) {
         this.networkRate = networkRate;
-    }
-
-    public void setGuestIpType(String guestIpType) {
-        this.guestIpType = guestIpType;
     }
 
     public void setIsSecurityGroupEnabled(Boolean isSecurityGroupEnabled) {

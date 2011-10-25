@@ -23,7 +23,7 @@ package com.cloud.offerings.dao;
 
 import java.util.List;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -59,7 +59,7 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     
     List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem);
     
-    List<NetworkOfferingVO> listByTrafficTypeAndGuestType(boolean isSystem, TrafficType trafficType, GuestIpType guestType);
+    List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.Type type);
 
     List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering);
     

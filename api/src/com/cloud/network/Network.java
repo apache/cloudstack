@@ -38,12 +38,6 @@ import com.cloud.utils.fsm.StateMachine;
  * owned by an account. 
  */
 public interface Network extends ControlledEntity {
-
-    @Deprecated
-    public enum GuestIpType {
-        Virtual,
-        Direct,
-    }
     
     public enum Type {
         Shared,
@@ -259,9 +253,6 @@ public interface Network extends ControlledEntity {
     long getRelated();
 
     URI getBroadcastUri();
-
-    @Deprecated
-    GuestIpType getGuestType();
 
     String getDisplayText();
 

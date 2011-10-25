@@ -29,7 +29,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -203,7 +202,7 @@ public interface NetworkManager extends NetworkService {
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 
-    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault);
+    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.Type type, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
     

@@ -117,7 +117,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -2170,10 +2169,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // 2) If Availability=Optional, search for default networks for the account. If it's more than 1, throw an error.
             // If it's 0, and there are no default direct networks, create default Guest Virtual network
 
-            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndGuestType(false, TrafficType.Guest, GuestIpType.Virtual);
+            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndType(false, TrafficType.Guest, Network.Type.Isolated);
             if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
                 // get Virtual netowrks
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), GuestIpType.Virtual, true);
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.Type.Isolated, true);
 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
@@ -3333,7 +3332,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             for (NetworkVO oldNet: oldNetworks){
                 long networkOffering =  oldNet.getNetworkOfferingId();   
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), GuestIpType.Virtual, true);
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.Type.Isolated, true);
                 if (virtualNetworks.isEmpty()) {
                     Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
                             null, null, null, newAccount, false, null, null, false, null);

@@ -90,7 +90,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
@@ -367,12 +366,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Save usage event
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            long networkId = addr.getSourceNetworkId();
-            NetworkVO network = _networksDao.findByIdIncludingRemoved(networkId);
-            String guestType = "";
-            if( (network != null) && (network.getGuestType() != null) ){
-                guestType = network.getGuestType().toString();
-            }
+            VlanVO vlan = _vlanDao.findById(addr.getVlanId());
+                
+            String guestType = vlan.getVlanType().toString();
+
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat, guestType);
             _usageEventDao.persist(usageEvent);
             // don't increment resource count for direct ip addresses
@@ -556,7 +553,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner) {
 
-        return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
+        return _networksDao.listBy(owner.getId(), zoneId, Network.Type.Isolated);
     }
 
     @Override
@@ -1017,7 +1014,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
                         predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain(), offering.getType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
                 vo.setTags(tags);
-                networks.add(_networksDao.persist(vo, vo.getGuestType() != null));
+                networks.add(_networksDao.persist(vo, vo.getType() == Network.Type.Isolated));
 
                 if (domainId != null) {
                     _networksDao.addDomainToNetwork(id, domainId);
@@ -1691,10 +1688,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
 
-        // Regular user can create guest virtual network only
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != GuestIpType.Virtual)) {
-            throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and Guest Ip type "
-                    + GuestIpType.Virtual);
+        // Regular user can create Guest Isolated network only
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getType() != Network.Type.Isolated)) {
+            throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and network type "
+                    + Network.Type.Isolated);
         }
 
         // Don't allow to specify cidr if the caller is a regular user
@@ -1781,9 +1778,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
 
-        // Don't allow to create guest virtual network with Vlan specified
-        if (networkOffering.getGuestType() == GuestIpType.Virtual && vlanId != null) {
-            throw new InvalidParameterValueException("Can't specify vlan when create network with Guest IP Type " + GuestIpType.Virtual);
+        // Don't allow to create guest isolated network with Vlan specified
+        if (networkOffering.getType() == Network.Type.Isolated && vlanId != null) {
+            throw new InvalidParameterValueException("Can't specify vlan when create " + Network.Type.Isolated + " network");
         }
 
         // If networkDomain is not specified, take it from the global configuration
@@ -1825,12 +1822,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Cidr for Direct network can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges
         // with different Cidrs for the same Shared network
-        if (cidr == null && networkOffering.getTrafficType() == TrafficType.Guest && networkOffering.getGuestType() == GuestIpType.Direct) {
+        if (cidr == null && networkOffering.getTrafficType() == TrafficType.Guest && networkOffering.getType() == Network.Type.Shared) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required for Direct network creation");
         }
 
-        // Check if cidr is RFC1918 compliant if the network is Guest Virtual
-        if (cidr != null && networkOffering.getGuestType() == GuestIpType.Virtual && networkOffering.getTrafficType() == TrafficType.Guest) {
+        // Check if cidr is RFC1918 compliant if the network is Guest Isolated
+        if (cidr != null && networkOffering.getType() == Network.Type.Isolated && networkOffering.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
             }
@@ -2976,7 +2973,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId) {
 
-        List<NetworkVO> virtualNetworks = _networksDao.listBy(accountId, dataCenterId, GuestIpType.Virtual);
+        List<NetworkVO> virtualNetworks = _networksDao.listBy(accountId, dataCenterId, Network.Type.Isolated);
 
         if (virtualNetworks.isEmpty()) {
             s_logger.trace("Unable to find default Virtual network account id=" + accountId);
@@ -2996,7 +2993,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault) {
+    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.Type type, Boolean isDefault) {
         List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
         List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
 
@@ -3004,7 +3001,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
             if (!no.isSystemOnly()) {
                 if (network.getType() == Network.Type.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
-                    if ((guestType == null || guestType == network.getGuestType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
+                    if ((type == null || type == network.getType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
                         accountNetworks.add(network);
                     }
                 }
@@ -3038,10 +3035,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             // Save usage event
             if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 NetworkVO network = _networksDao.findByIdIncludingRemoved(ip.getSourceNetworkId());
-                String guestType = "";
-                if( (network != null) && (network.getGuestType() != null)){
-                    guestType = network.getGuestType().toString();
-                }
+                VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+                
+                String guestType = vlan.getVlanType().toString();
 
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), isSourceNat, guestType);
                 _usageEventDao.persist(usageEvent);
@@ -3217,7 +3213,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vm != null) {
             if (vm.getType() == Type.User && network.isDefault()) {
                 isUserVmsDefaultNetwork = true; 
-            } else if (vm.getType() == Type.DomainRouter && ((ntwkOff.getTrafficType() == TrafficType.Public && ntwkOff.getGuestType() == null) || (ntwkOff.getGuestType() != null && ntwkOff.getTrafficType() == TrafficType.Guest))) {
+            } else if (vm.getType() == Type.DomainRouter && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
                 isDomRGuestOrPublicNetwork = true;
             }    
         }

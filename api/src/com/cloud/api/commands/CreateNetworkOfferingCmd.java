@@ -33,7 +33,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
@@ -55,11 +54,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
     private String traffictype;
-    
-    @Deprecated
-    //this parameter is deprecated, we have to use "type" parameter instead
-    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
-    private String guestIpType;
     
     @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
@@ -186,19 +180,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public String getType() {
-        if (type != null) {
-            return type;
-        }
-        
-        if (guestIpType != null) {
-            // Verify guest ip type
-            for (GuestIpType gType : GuestIpType.values()) {
-                if (gType.name().equalsIgnoreCase(guestIpType)) {
-                    return guestIpType;
-                }
-            }
-        }
-        return null;
+        return type;
     }
 
     public Map<String, List<String>> getServiceProviders() {

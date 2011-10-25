@@ -24,7 +24,6 @@ import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
@@ -76,7 +75,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("offering", AllFieldsSearch.entity().getNetworkOfferingId(), Op.EQ);
         AllFieldsSearch.and("datacenter", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
-        AllFieldsSearch.and("guesttype", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);        
@@ -137,12 +135,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type) {
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.Type type) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("account", accountId);
         if (type != null) {
-            sc.setParameters("guesttype", type);
+            sc.setParameters("type", type);
         }
         return listBy(sc, null);
     }
@@ -165,12 +163,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         return listBy(sc);
     }
-
-    // @Override
-    // public void loadTags(NetworkVO network) {
-    // network.setTags(_tagDao.getTags(network.getId()));
-    // }
-
 
     @Override
     public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId) {

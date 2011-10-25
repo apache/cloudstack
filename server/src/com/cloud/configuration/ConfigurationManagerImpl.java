@@ -96,7 +96,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -1395,20 +1394,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     } else {
                         continue;
                     }
-                } /*else if (offering.getTrafficType() == TrafficType.Guest) {
+                } else if (offering.getTrafficType() == TrafficType.Guest) {
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
-                        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
-                    } else if (offering.getGuestType() == GuestIpType.Direct && isSecurityGroupEnabled) {
-                        isNetworkDefault = true;
-                        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
+                        userNetwork.setSecurityGroupEnabled(offering.isSecurityGroupEnabled());
                     } else {
                         continue;
                     }
                     
                     networkDomain = "cs" + Long.toHexString(Account.ACCOUNT_ID_SYSTEM) + _networkMgr.getGlobalGuestDomainSuffix();
-                }*/
+                }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
                 _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, null, true);
@@ -2885,12 +2881,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object specifyVlan = cmd.getSpecifyVlan();
         Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
-        Object guestIpType = cmd.getGuestIpType();
         Object sgEnabled = cmd.getSecurityGroupEnabled();
         Object state = cmd.getState();
         Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
         Long networkId = cmd.getNetworkId();
+        String type = cmd.getType();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -2906,13 +2902,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        if (guestIpType != null) {
-            sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
-        }
-
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
+        
+        if (type != null) {
+            sc.addAnd("type", SearchCriteria.Op.EQ, type);
+        }
+        
         if (displayText != null) {
             sc.addAnd("displayText", SearchCriteria.Op.LIKE, "%" + displayText + "%");
         }
@@ -2949,8 +2946,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (zone.getNetworkType() == NetworkType.Basic) {
                 // return empty list as we don't allow to create networks in basic zone, and shouldn't display networkOfferings
                 return new ArrayList<NetworkOffering>();
-            } else if (zone.isSecurityGroupEnabled()) {
-                sc.addAnd("guestType", SearchCriteria.Op.EQ, GuestIpType.Direct);
             }
         }
         

@@ -50,8 +50,6 @@ public class NetworkProfile implements Network {
     private boolean isSecurityGroupEnabled;
     private List<String> tags;
     private Network.Type type;
-    @Deprecated
-    private GuestIpType guestIpType;
     private boolean isShared;
     private Long physicalNetworkId;
 
@@ -76,7 +74,6 @@ public class NetworkProfile implements Network {
         this.domainId = network.getDomainId();
         this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
         this.type = network.getType();
-        this.guestIpType = network.getGuestType();
         this.isShared = network.getIsShared();
         this.physicalNetworkId = network.getPhysicalNetworkId();
     }
@@ -169,11 +166,6 @@ public class NetworkProfile implements Network {
     @Override
     public long getRelated() {
         return related;
-    }
-
-    @Override
-    public GuestIpType getGuestType() {
-        return guestIpType;
     }
 
     @Override

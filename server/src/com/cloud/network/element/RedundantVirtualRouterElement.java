@@ -14,15 +14,13 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Type;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.dao.VirtualRouterElementsDao;
-import com.cloud.network.element.RedundantVirtualRouterElementService;
 import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
@@ -42,7 +40,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     private boolean canHandle(Type networkType, long offeringId) {
         boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
         if (!result) {
-            s_logger.trace("Virtual router element only takes care of guest ip type " + GuestIpType.Virtual + " for provider " + Provider.VirtualRouter.getName());
+            s_logger.trace("Virtual router element only takes care of networktype " + Network.Type.Isolated + " for provider " + Provider.VirtualRouter.getName());
         }
         return result;
     }

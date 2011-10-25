@@ -19,7 +19,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.utils.db.GenericDao;
@@ -30,7 +30,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listByOwner(long ownerId);
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr);
-    List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type);
+    List<NetworkVO> listBy(long accountId, long dataCenterId, Network.Type type);
     NetworkVO persist(NetworkVO network, boolean gc);
     void addAccountToNetwork(long networkId, long accountId);
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();

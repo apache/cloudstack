@@ -29,7 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Type;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
@@ -81,10 +80,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="availability")
     @Enumerated(value=EnumType.STRING)
     Availability availability;
-    
-    @Deprecated
-    @Column(name="guest_type")
-    GuestIpType guestType;
     
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
@@ -199,11 +194,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
     
     @Override
-    public GuestIpType getGuestType() {
-        return guestType;
-    }
-    
-    @Override
     public String getUniqueName() {
         return uniqueName;
     }
@@ -248,11 +238,6 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.tags = tags;
         this.securityGroupEnabled = isSecurityGroupEnabled;
         this.type = type;
-        if (type == Type.Isolated) {
-            this.guestType = GuestIpType.Virtual;
-        } else if (type == Type.Shared){
-            this.guestType = GuestIpType.Direct;
-        }
     }
     
     public NetworkOfferingVO() {

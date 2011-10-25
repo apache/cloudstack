@@ -65,9 +65,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability;
     
-    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
-    private String guestIpType;
-    
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list netowrk offerings available for network creation in specific zone")
     private Long zoneId;
     
@@ -79,6 +76,9 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
     private Long networkId;
+    
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="list network offerings by type: Shared or Isolated")
+    private String type;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,10 +116,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
         return availability;
     }
 
-    public String getGuestIpType() {
-        return guestIpType;
-    }
-
     public Long getZoneId() {
         return zoneId;
     }
@@ -134,6 +130,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     public Long getNetworkId() {
         return networkId;
+    }
+
+    public String getType() {
+        return type;
     }
 
     /////////////////////////////////////////////////////

@@ -2113,10 +2113,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (offering.getType() != null) {
             response.setType(offering.getType().toString());
         }
-
-        if (offering.getGuestType() != null) {
-            response.setGuestIpType(offering.getGuestType().toString());
-        }
         
         response.setState(offering.getState().name());
         
@@ -2156,10 +2152,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (network.getTrafficType() != null) {
             response.setTrafficType(network.getTrafficType().name());
-        }
-
-        if (network.getGuestType() != null) {
-            response.setType(network.getGuestType().name());
         }
 
         // get start ip and end ip of corresponding vlan

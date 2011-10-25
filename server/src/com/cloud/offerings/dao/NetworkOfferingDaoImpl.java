@@ -27,7 +27,7 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -66,7 +66,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         
         TrafficTypeGuestTypeSearch = createSearchBuilder();
         TrafficTypeGuestTypeSearch.and("trafficType", TrafficTypeGuestTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.and("guestType", TrafficTypeGuestTypeSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
+        TrafficTypeGuestTypeSearch.and("type", TrafficTypeGuestTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
         TrafficTypeGuestTypeSearch.and("isSystem", TrafficTypeGuestTypeSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         TrafficTypeGuestTypeSearch.done();
 
@@ -130,10 +130,10 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public List<NetworkOfferingVO> listByTrafficTypeAndGuestType(boolean isSystem, TrafficType trafficType, GuestIpType guestType) {
+    public List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.Type type) {
         SearchCriteria<NetworkOfferingVO> sc = TrafficTypeGuestTypeSearch.create();
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("guestType", guestType);
+        sc.setParameters("type", type);
         sc.setParameters("isSystem", isSystem);
         return listBy(sc, null);
     }

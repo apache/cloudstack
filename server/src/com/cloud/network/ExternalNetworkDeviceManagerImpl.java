@@ -1204,7 +1204,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 			try {
 				txn.start();
 				
-				List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.GuestIpType.Virtual);
+				List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.Type.Isolated);
 				
 				for (NetworkVO network : networksForAccount) {
 				    String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();				

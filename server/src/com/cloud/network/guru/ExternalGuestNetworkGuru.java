@@ -108,8 +108,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         DataCenter zone = dest.getDataCenter();
-        NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getGuestType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(),
-                State.Allocated, config.getDataCenterId(), config.getPhysicalNetworkId());
+        NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
+                config.getDataCenterId(), config.getPhysicalNetworkId());
 
         // Get a vlan tag
         int vlanTag;

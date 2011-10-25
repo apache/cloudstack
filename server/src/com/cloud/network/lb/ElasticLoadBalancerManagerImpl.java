@@ -75,7 +75,6 @@ import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -119,7 +118,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
@@ -574,7 +572,7 @@ public class ElasticLoadBalancerManagerImpl implements
     @DB
     public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
         //TODO: this only works in the guest network. Handle the public network case also.
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndGuestType(true, _frontendTrafficType, GuestIpType.Direct);
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndType(true, _frontendTrafficType, Network.Type.Shared);
         if (offerings == null || offerings.size() == 0) {
             s_logger.warn("ELB: Could not find system offering for direct networks of type " + _frontendTrafficType);
             return null;

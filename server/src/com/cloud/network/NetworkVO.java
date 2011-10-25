@@ -66,10 +66,6 @@ public class NetworkVO implements Network {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
 
-    @Deprecated
-    @Column(name="guest_type")
-    GuestIpType guestType;
-
     @Column(name="name")
     String name;
 
@@ -172,7 +168,7 @@ public class NetworkVO implements Network {
      * @param dataCenterId
      * @param physicalNetworkId TODO
      */
-    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId, Long physicalNetworkId) {
+    public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId, Long physicalNetworkId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
@@ -185,11 +181,10 @@ public class NetworkVO implements Network {
             this.state = state;
         }
         this.id = -1;
-        this.guestType = guestType;
     }
 
     public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText,isDefault, isDomainSpecific, networkDomain, type, isShared, dcId, physicalNetworkId);
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, isDefault,isDomainSpecific, networkDomain, type, isShared, dcId, physicalNetworkId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -208,7 +203,6 @@ public class NetworkVO implements Network {
      * @param mode
      * @param broadcastDomainType
      * @param networkOfferingId
-     * @param dataCenterId
      * @param domainId
      * @param accountId
      * @param name
@@ -219,9 +213,10 @@ public class NetworkVO implements Network {
      * @param type TODO
      * @param isShared TODO
      * @param isShared
+     * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
-        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
+        this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
@@ -277,11 +272,6 @@ public class NetworkVO implements Network {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
-    }
-
-    @Override
-    public GuestIpType getGuestType() {
-        return guestType;
     }
 
     @Override
