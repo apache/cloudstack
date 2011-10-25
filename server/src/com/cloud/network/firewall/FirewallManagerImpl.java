@@ -420,7 +420,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             // load cidrs if any
             rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));  
         }
-        
 
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRuleVO[rules.size()]));
@@ -566,7 +565,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         // now send everything to the backend
         List<FirewallRuleVO> rulesToApply = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
-        applyFirewallRules(rulesToApply, true, caller);
+        boolean success = applyFirewallRules(rulesToApply, true, caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.Firewall));
@@ -575,7 +574,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             s_logger.debug("Successfully released firewall rules for network id=" + networkId + " and # of rules now = " + rules.size());
         }
 
-        return rules.size() == 0;
+        return success && rules.size() == 0;
     }
     
     @Override

@@ -917,11 +917,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             revokeStaticNatRuleInternal(rule.getId(), caller, userId, false);
         }
 
+        boolean success = true;
         // revoke all PF rules for the network
-        applyPortForwardingRulesForNetwork(networkId, true, caller);
+        success = success && applyPortForwardingRulesForNetwork(networkId, true, caller);
 
         // revoke all all static nat rules for the network
-        applyStaticNatRulesForNetwork(networkId, true, caller);
+        success = success && applyStaticNatRulesForNetwork(networkId, true, caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_forwardingDao.listByNetworkAndNotRevoked(networkId));
@@ -931,7 +932,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.debug("Successfully released rules for network id=" + networkId + " and # of rules now = " + rules.size());
         }
 
-        return rules.size() == 0;
+        return success && rules.size() == 0;
     }
 
     @Override
