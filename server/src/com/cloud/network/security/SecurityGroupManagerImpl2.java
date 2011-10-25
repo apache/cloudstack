@@ -172,7 +172,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
             Long agentId = vm.getHostId();
             if (agentId != null) {
                 if ( !_workTracker.canSend(agentId)) {
-                    s_logger.trace("SecurityGroupManager v2: not sending ruleset update: too many messages outstanding");
+                    s_logger.debug("SecurityGroupManager v2: not sending ruleset update for vm " + vm.getInstanceName() 
+                            + ": too many messages outstanding on host " + agentId);
                     return;
                 }
                 Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
