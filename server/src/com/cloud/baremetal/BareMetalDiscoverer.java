@@ -131,10 +131,10 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
 			BareMetalResourceBase resource = new BareMetalResourceBase();
 			resource.configure("Bare Metal Agent", params);
 			
-			String memCapacity = (String)params.get("memCapacity");
-			String cpuCapacity = (String)params.get("cpuCapacity");
-			String cpuNum = (String)params.get("cpuNum");
-			String mac = (String)params.get("mac");
+			String memCapacity = (String)params.get("memory");
+			String cpuCapacity = (String)params.get("cpuspeed");
+			String cpuNum = (String)params.get("cpunumber");
+			String mac = (String)params.get("hostmac");
 			if (hostTags != null && hostTags.size() != 0) {
 			    details.put("hostTag", hostTags.get(0));
 			}
