@@ -261,7 +261,7 @@ public class AlertManagerImpl implements AlertManager {
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
         try {
             if (_emailAlert != null) {
-                _emailAlert.sendAlert(alertType, dataCenterId, podId, subject, body);
+                _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
@@ -503,6 +503,8 @@ public class AlertManagerImpl implements AlertManager {
         String usedStr;
         String pctStr = formatPercent(usedCapacity/totalCapacity);
         short alertType = -1;
+        Long podId = pod == null ? null : pod.getId();
+        Long clusterId = cluster == null ? null : cluster.getId();
         
     	switch (capacityType) {
     	
@@ -584,7 +586,7 @@ public class AlertManagerImpl implements AlertManager {
         }
     	
     	try {
-			_emailAlert.sendAlert(alertType, dc.getId(), null, msgSubject, msgContent);
+			_emailAlert.sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
     	} catch (Exception ex) {
             s_logger.error("Exception in CapacityChecker", ex);        
 		}
@@ -683,7 +685,7 @@ public class AlertManagerImpl implements AlertManager {
         }
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
-        public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+        public void sendAlert(short alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
             AlertVO alert = null;
             if ((alertType != AlertManager.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.ALERT_TYPE_USERVM) &&
@@ -691,7 +693,7 @@ public class AlertManagerImpl implements AlertManager {
                 (alertType != AlertManager.ALERT_TYPE_CONSOLE_PROXY) &&
                 (alertType != AlertManager.ALERT_TYPE_STORAGE_MISC) &&
                 (alertType != AlertManager.ALERT_TYPE_MANAGMENT_NODE)) {
-                alert = _alertDao.getLastAlert(alertType, dataCenterId, podId);
+                alert = _alertDao.getLastAlert(alertType, dataCenterId, podId, clusterId);
             }
 
             if (alert == null) {
@@ -699,6 +701,7 @@ public class AlertManagerImpl implements AlertManager {
                 AlertVO newAlert = new AlertVO();
                 newAlert.setType(alertType);
                 newAlert.setSubject(subject);
+                newAlert.setClusterId(clusterId);
                 newAlert.setPodId(podId);
                 newAlert.setDataCenterId(dataCenterId);
                 newAlert.setSentCount(1); // initialize sent count to 1 since we are now sending an alert
@@ -737,7 +740,7 @@ public class AlertManagerImpl implements AlertManager {
 
         public void clearAlert(short alertType, long dataCenterId, Long podId) {
             if (alertType != -1) {
-                AlertVO alert = _alertDao.getLastAlert(alertType, dataCenterId, podId);
+                AlertVO alert = _alertDao.getLastAlert(alertType, dataCenterId, podId, null);
                 if (alert != null) {
                     AlertVO updatedAlert = _alertDao.createForUpdate();
                     updatedAlert.setResolved(new Date());

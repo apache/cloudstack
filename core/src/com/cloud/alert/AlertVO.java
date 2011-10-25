@@ -41,7 +41,10 @@ public class AlertVO implements Alert{
 
     @Column(name="type")
     private short type;
-
+    
+    @Column(name="cluster_id")
+    private Long clusterId = null;
+    
     @Column(name="pod_id")
     private Long podId = null;
 
@@ -92,7 +95,13 @@ public class AlertVO implements Alert{
         this.subject = subject;
     }
 
-    @Override
+    public Long getClusterId() {
+		return clusterId;
+	}
+	public void setClusterId(Long clusterId) {
+		this.clusterId = clusterId;
+	}
+	@Override
     public Long getPodId() {
         return podId;
     }

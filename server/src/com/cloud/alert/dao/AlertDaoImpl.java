@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value = { AlertDao.class })
 public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements AlertDao {
     @Override
-    public AlertVO getLastAlert(short type, long dataCenterId, Long podId) {
+    public AlertVO getLastAlert(short type, long dataCenterId, Long podId, Long clusterId) {
         Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(1), Long.valueOf(1));
         SearchCriteria<AlertVO> sc = createSearchCriteria();
 
@@ -39,6 +39,27 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if (podId != null) {
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
+        if (clusterId != null) {
+            sc.addAnd("clusterId", SearchCriteria.Op.EQ, clusterId);
+        }
+
+        List<AlertVO> alerts = listBy(sc, searchFilter);
+        if ((alerts != null) && !alerts.isEmpty()) {
+            return alerts.get(0);
+        }
+        return null;
+    }
+    
+    @Override
+    public AlertVO getLastAlert(short type, long dataCenterId, Long podId) {
+        Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(1), Long.valueOf(1));
+        SearchCriteria<AlertVO> sc = createSearchCriteria();
+
+        sc.addAnd("type", SearchCriteria.Op.EQ, Short.valueOf(type));
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, Long.valueOf(dataCenterId));
+        if (podId != null) {
+            sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        }        
 
         List<AlertVO> alerts = listBy(sc, searchFilter);
         if ((alerts != null) && !alerts.isEmpty()) {

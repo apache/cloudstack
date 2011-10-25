@@ -181,7 +181,7 @@ import com.cloud.vm.dao.UserVmData.SecurityGroupData;
 public class ApiResponseHelper implements ResponseGenerator {
 
     public final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
-
+    private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -760,7 +760,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        		capacityResponse.setCapacityUsed(capacity.getUsedCapacity() - c.get(0).getUsedCapacity());
 	        	}else{
 	        		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
-	        	}
+	        	}	        	
+	        	if (capacityResponse.getCapacityTotal() != 0) {
+	                capacityResponse.setPercentUsed(s_percentFormat.format((float) capacityResponse.getCapacityUsed() / (float) capacityResponse.getCapacityTotal() * 100f));
+	            } else {
+	                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
+	            }
 	        	capacityResponses.add(capacityResponse);
         	}
         	// Do it for stats as well.
@@ -810,6 +815,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        	}else{
 	        		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
 	        	}
+	        	if (capacityResponse.getCapacityTotal() != 0) {
+	                capacityResponse.setPercentUsed(s_percentFormat.format((float) capacityResponse.getCapacityUsed() / (float) capacityResponse.getCapacityTotal() * 100f));
+	            } else {
+	                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
+	            }
 	        	capacityResponses.add(capacityResponse);
         	}
         	// Do it for stats as well.
@@ -840,7 +850,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     		CapacityResponse capacityResponse = new CapacityResponse();   
     		capacityResponse.setCapacityType(capacity.getCapacityType());
         	capacityResponse.setCapacityUsed(capacity.getUsedCapacity());   
-    		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());    	
+    		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());  
+        	if (capacityResponse.getCapacityTotal() != 0) {
+                capacityResponse.setPercentUsed(s_percentFormat.format((float) capacityResponse.getCapacityUsed() / (float) capacityResponse.getCapacityTotal() * 100f));
+            } else {
+                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
+            }
     		capacityResponses.add(capacityResponse);
     	}
     	
@@ -1033,7 +1048,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        	}else{
 	        		capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
 	        	}
-	        	
+	        	if (capacityResponse.getCapacityTotal() != 0) {
+	                capacityResponse.setPercentUsed(s_percentFormat.format((float) capacityResponse.getCapacityUsed() / (float) capacityResponse.getCapacityTotal() * 100f));
+	            } else {
+	                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
+	            }
 	        	capacityResponses.add(capacityResponse);
         	}
         	// Do it for stats as well.

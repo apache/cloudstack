@@ -1110,6 +1110,7 @@ CREATE TABLE `cloud`.`op_host_capacity` (
 CREATE TABLE `cloud`.`alert` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` int(1) unsigned NOT NULL,
+  `cluster_id` bigint unsigned,
   `pod_id` bigint unsigned,
   `data_center_id` bigint unsigned NOT NULL,
   `subject` varchar(999) COMMENT 'according to SMTP spec, max subject length is 1000 including the CRLF character, so allow enough space to fit long pod/zone/host names',

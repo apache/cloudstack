@@ -22,5 +22,7 @@ import com.cloud.alert.AlertVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface AlertDao extends GenericDao<AlertVO, Long> {
+    AlertVO getLastAlert(short type, long dataCenterId, Long podId, Long clusterId);
+    // This is for backward compatibility
     AlertVO getLastAlert(short type, long dataCenterId, Long podId);
 }
