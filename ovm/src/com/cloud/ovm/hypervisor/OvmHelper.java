@@ -6,6 +6,7 @@ public class OvmHelper {
 	 private static final HashMap<String, String> _ovmMap = new HashMap<String, String>();
 	 
 	 public static final String ORACLE_LINUX = "Oracle Linux";
+	 public static final String ORACLE_SOLARIS = "Oracle Solaris";
 	 public static final String WINDOWS = "Windows";
 	 
 	 static {
@@ -34,6 +35,12 @@ public class OvmHelper {
 		_ovmMap.put("Windows Vista (32-bit)", WINDOWS);
 		_ovmMap.put("Windows XP SP2 (32-bit)", WINDOWS);
 		_ovmMap.put("Windows XP SP3 (32-bit)", WINDOWS);
+		_ovmMap.put("Sun Solaris 10(32-bit)", ORACLE_SOLARIS);
+		_ovmMap.put("Sun Solaris 10(64-bit)", ORACLE_SOLARIS);
+		_ovmMap.put("Sun Solaris 9(Experimental)", ORACLE_SOLARIS);
+		_ovmMap.put("Sun Solaris 8(Experimental)", ORACLE_SOLARIS);
+		_ovmMap.put("Sun Solaris 11 (32-bit)", ORACLE_SOLARIS);
+		_ovmMap.put("Sun Solaris 11 (64-bit)", ORACLE_SOLARIS);
 	}
 	 
 	public static String getOvmGuestType(String stdType) {

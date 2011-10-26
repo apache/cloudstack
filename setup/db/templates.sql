@@ -186,6 +186,8 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (154, 5, '
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (155, 5, 'SUSE Linux Enterprise Server 11 SP1 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (156, 10, 'Ubuntu 10.10 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (157, 10, 'Ubuntu 10.10 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (158, 9, 'Sun Solaris 11 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (159, 9, 'Sun Solaris 11 (32-bit)');
 
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (200, 1, 'Other CentOS (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (201, 1, 'Other CentOS (64-bit)');
