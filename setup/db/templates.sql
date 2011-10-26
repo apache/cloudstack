@@ -169,6 +169,8 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (137, 4, '
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (138, 7, 'None');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (139, 7, 'Other PV (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (140, 7, 'Other PV (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (141, 9, 'Sun Solaris 11 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (142, 9, 'Sun Solaris 11 (32-bit)');
 
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (200, 1, 'Other CentOS (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (201, 1, 'Other CentOS (64-bit)');

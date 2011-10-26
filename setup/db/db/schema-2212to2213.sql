@@ -12,6 +12,8 @@ INSERT IGNORE INTO guest_os(id, category_id, display_name) VALUES (200, 1, 'Othe
 INSERT IGNORE INTO guest_os(id, category_id, display_name) VALUES (201, 1, 'Other CentOS (64-bit)');
 INSERT IGNORE INTO guest_os(id, category_id, display_name) VALUES (202, 5, 'Other SUSE Linux(32-bit)');
 INSERT IGNORE INTO guest_os(id, category_id, display_name) VALUES (203, 5, 'Other SUSE Linux(64-bit)');
+INSERT IGNORE INTO guest_os(id, category_id, display_name) VALUES (141, 9, 'Sun Solaris 11 (64-bit)');
+INSERT IGNORE INTO guest_os(id, category_id, display_name) VALUES (142, 9, 'Sun Solaris 11 (32-bit)');
 
 INSERT IGNORE INTO guest_os_hypervisor(hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'CentOS (32-bit)', 200);
 INSERT IGNORE INTO guest_os_hypervisor(hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'CentOS (64-bit)', 201);

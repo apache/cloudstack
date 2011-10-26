@@ -499,7 +499,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 			String osType = OvmHelper.getOvmGuestType(spec.getOs());
 			if (OvmHelper.ORACLE_LINUX.equals(osType)) {
 				vm.type = OvmVm.PV;
-			} else if (OvmHelper.WINDOWS.equals(osType)) {
+			} else if (OvmHelper.WINDOWS.equals(osType) || OvmHelper.ORACLE_SOLARIS.equals(osType)) {
 				vm.type = OvmVm.HVM;
 			} else {
 				throw new CloudRuntimeException(spec.getOs() + " is not supported" + ",Oracle VM only supports Oracle Linux and Windows");
