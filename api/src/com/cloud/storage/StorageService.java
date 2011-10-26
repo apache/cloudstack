@@ -32,6 +32,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 
 public interface StorageService {
     /**
@@ -107,4 +108,5 @@ public interface StorageService {
     public StoragePool getStoragePool(long id);
 
 	Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
+
 }

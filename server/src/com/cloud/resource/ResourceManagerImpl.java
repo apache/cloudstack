@@ -957,6 +957,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
             _hostTagsDao.persist(hostId, hostTags);
         }
+        
+        String url = cmd.getUrl();
+        if (url != null) {
+        	_storageMgr.updateSecondaryStorage(cmd.getId(), cmd.getUrl());
+        }
 
         HostVO updatedHost = _hostDao.findById(hostId);
         return updatedHost;

@@ -220,4 +220,6 @@ public interface StorageManager extends Manager {
 	
 	VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId);
 
+	Host updateSecondaryStorage(long secStorageId, String newUrl);
+
 }

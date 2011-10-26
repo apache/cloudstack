@@ -151,6 +151,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -3184,4 +3185,47 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
     }
 
+    @Override
+    public Host updateSecondaryStorage(long secStorageId, String newUrl) {
+    	HostVO secHost = _hostDao.findById(secStorageId);
+    	if (secHost == null) {
+    		throw new InvalidParameterValueException("Can not find out the secondary storage id: " + secStorageId);
+    	}
+
+    	if (secHost.getType() != Host.Type.SecondaryStorage) {
+    		throw new InvalidParameterValueException("host: " + secStorageId + " is not a secondary storage");
+    	}
+    	
+    	URI uri = null;
+    	try {
+    		uri = new URI(UriUtils.encodeURIComponent(newUrl));
+    		if (uri.getScheme() == null) {
+    			throw new InvalidParameterValueException("uri.scheme is null " + newUrl + ", add nfs:// as a prefix");
+    		} else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+    			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+    				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+    			}
+    		}
+    	} catch (URISyntaxException e) {
+    		throw new InvalidParameterValueException(newUrl + " is not a valid uri");
+    	}
+
+    	String oldUrl = secHost.getStorageUrl();
+
+    	URI oldUri = null;
+    	try {
+    		oldUri = new URI(UriUtils.encodeURIComponent(oldUrl));
+    		if (!oldUri.getScheme().equalsIgnoreCase(uri.getScheme())) {
+    			throw new InvalidParameterValueException("can not change old scheme:" + oldUri.getScheme() + " to " + uri.getScheme());
+    		}
+    	} catch (URISyntaxException e) {
+    		s_logger.debug("Failed to get uri from " + oldUrl);
+    	}
+
+    	secHost.setStorageUrl(newUrl);
+    	secHost.setGuid(newUrl);
+    	secHost.setName(newUrl);
+    	_hostDao.update(secHost.getId(), secHost);
+    	return secHost;
+    }
 }

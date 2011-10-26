@@ -52,6 +52,9 @@ public class UpdateHostCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.HOST_TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="list of tags to be added to the host")
     private List<String> hostTags;
+    
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="the new uri for the secondary storage: nfs://host/path")
+    private String url;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,6 +75,10 @@ public class UpdateHostCmd extends BaseCmd {
     public List<String> getHostTags() {
         return hostTags;
     }    
+    
+    public String getUrl() {
+    	return url;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
