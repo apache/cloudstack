@@ -698,7 +698,7 @@ CREATE TABLE  `cloud`.`host` (
   `disconnected` datetime COMMENT 'Time this was disconnected',
   `created` datetime COMMENT 'date the host first signed on',
   `removed` datetime COMMENT 'date removed if not null',
-  `allocation_state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Is this host enabled for allocation for new resources',
+  `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'atomic increase count making status update operation atomical',
   `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources',
   PRIMARY KEY  (`id`),
   INDEX `i_host__removed`(`removed`),

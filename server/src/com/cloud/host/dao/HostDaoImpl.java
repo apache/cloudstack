@@ -591,6 +591,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 		SearchBuilder<HostVO> sb = createSearchBuilder();
 		sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 		sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+		sb.and("update", sb.entity().getUpdated(), SearchCriteria.Op.EQ);
 		if (newStatus.checkManagementServer()) {
 			sb.and("ping", sb.entity().getLastPinged(), SearchCriteria.Op.EQ);
 			sb.and().op("nullmsid", sb.entity().getManagementServerId(), SearchCriteria.Op.NULL);
@@ -603,11 +604,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
 		sc.setParameters("status", oldStatus);
 		sc.setParameters("id", host.getId());
+		sc.setParameters("update", host.getUpdated());
+		long oldUpdateCount = host.getUpdated();
 		if (newStatus.checkManagementServer()) {
 			sc.setParameters("ping", oldPingTime);
 			sc.setParameters("msid", host.getManagementServerId());
 		}
 
+		long newUpdateCount = host.incrUpdated();
 		UpdateBuilder ub = getUpdateBuilder(host);
 		ub.set(host, _statusAttr, newStatus);
 		if (newStatus.updateManagementServer()) {
@@ -636,16 +640,18 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 			str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(host.getManagementServerId()).append(":lastpinged=")
 			        .append(oldPingTime).append("]");
 			str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=")
-			        .append(vo.getLastPinged()).append("]");
+			        .append(vo.getLastPinged()).append(":old update count=").append(oldUpdateCount).append("]");
 			status_logger.debug(str.toString());
+		} else {
+			StringBuilder msg = new StringBuilder("Agent status update: [");
+			msg.append("hostId = " + host.getId());
+			msg.append("; old status = " + oldStatus);
+			msg.append("; event = " + event);
+			msg.append("; new status = " + newStatus);
+			msg.append("; old update count = " + oldUpdateCount);
+			msg.append("; new update count = " + newUpdateCount + "]");
+			status_logger.debug(msg.toString());
 		}
-		
-		StringBuilder msg = new StringBuilder("Agent status update: [");
-		msg.append("hostId = " + host.getId());
-		msg.append("; old status = " + oldStatus);
-		msg.append("; event = " + event);
-		msg.append("; new status = " + newStatus + "]");
-		status_logger.debug(msg.toString());
 		
 		return result > 0;
 	}

@@ -134,6 +134,9 @@ public class HostVO implements Host {
 
     @Column(name="hypervisor_version")
     private String hypervisorVersion;
+    
+    @Column(name="update_count", updatable = true, nullable=false)
+    protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -705,5 +708,14 @@ public class HostVO implements Host {
     public boolean isInMaintenanceStates() {
         return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
                 || getResourceState() == ResourceState.PrepareForMaintenance);
-    }	
+    }
+    
+    public long getUpdated() {
+    	return updated;
+    }
+    
+	public long incrUpdated() {
+		updated++;
+		return updated;
+	}
 }
