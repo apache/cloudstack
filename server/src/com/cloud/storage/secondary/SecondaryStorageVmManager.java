@@ -28,7 +28,7 @@ public interface SecondaryStorageVmManager extends Manager {
 
 	public static final int DEFAULT_SS_VM_RAMSIZE = 256;			// 256M
 	public static final int DEFAULT_SS_VM_CPUMHZ = 500;				// 500 MHz
-	
+	public static final int DEFAULT_SS_VM_MTUSIZE = 1500;			
     public static final int DEFAULT_SS_VM_CAPACITY = 50;			// max command execution session per SSVM
     public static final int DEFAULT_STANDBY_CAPACITY = 10;			// standy capacity to reserve per zone
 	

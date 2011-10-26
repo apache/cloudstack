@@ -194,6 +194,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     private int _secStorageVmRamSize;
     private int _secStorageVmCpuMHz;
+    private int _secStorageVmMtuSize;
 
     private String _instance;
     private boolean _useLocalStorage;
@@ -751,6 +752,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         _secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
         _secStorageVmCpuMHz = NumbersUtil.parseInt(configs.get("secstorage.vm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
+        _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
         String useServiceVM = configDao.getValue("secondary.storage.vm");
         boolean _useServiceVM = false;
         if ("true".equalsIgnoreCase(useServiceVM)) {
@@ -973,7 +975,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
         buf.append(" role=").append(profile.getVirtualMachine().getRole().toString());
-
+        buf.append(" mtu=").append(_secStorageVmMtuSize);
 
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");

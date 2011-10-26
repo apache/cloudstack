@@ -176,6 +176,7 @@ public enum Config {
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "15", "Events older than specified number days will be purged. Set this value to 0 to never delete events", null),
     UseLocalStorage("Advanced", ManagementServer.class, Boolean.class, "use.local.storage", "false", "Should we use the local storage if it's available?", null),
 	SecStorageVmRamSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.ram.size", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE), "RAM size (in MB) used to create new secondary storage vms", null),
+	SecStorageVmMTUSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.mtu.size", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_MTUSIZE), "MTU size (in Byte) of storage network in secondary storage vms", null),
 	SecStorageVmCpuMHz("Advanced", AgentManager.class, Integer.class, "secstorage.vm.cpu.mhz", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_CPUMHZ), "CPU speed (in MHz) used to create new secondary storage vms", null),
 	MaxTemplateAndIsoSize("Advanced",  ManagementServer.class, Long.class, "max.template.iso.size", "50", "The maximum size for a downloaded template or ISO (in GB).", null),
 	SecStorageAllowedInternalDownloadSites("Advanced", ManagementServer.class, String.class, "secstorage.allowed.internal.sites", null, "Comma separated list of cidrs internal to the datacenter that can host template download servers", null),

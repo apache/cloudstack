@@ -561,6 +561,7 @@ setup_secstorage() {
   log_it "Setting up secondary storage system vm"
   local hyp=$1
   setup_common eth0 eth1 eth2
+  [ -n "$MTU" ] && ifconfig eth1 mtu $MTU
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
@@ -788,6 +789,9 @@ for i in $CMDLINE
         ;;
       nic_macs)
         NIC_MACS=$VALUE
+        ;;
+      mtu)
+        MTU=$VALUE
         ;;
     esac
 done
