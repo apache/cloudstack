@@ -2623,8 +2623,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkElement element = getElementImplementingProvider(instance.getProvider());
             if(element != null){
                 Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
-                if (elementCapabilities != null && elementCapabilities.get(service) != null) {
-                    networkCapabilities.put(service, elementCapabilities.get(instance.getService()));
+                if (elementCapabilities != null) {
+                    networkCapabilities.put(service, elementCapabilities.get(service));
                 }
             }
         }

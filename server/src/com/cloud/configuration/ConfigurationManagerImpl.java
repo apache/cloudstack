@@ -1808,6 +1808,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
         String networkVlanId = null;
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
         
         //projectId and accountName can't be specified together
         String accountName = cmd.getAccountName();
