@@ -19,76 +19,108 @@
 
 package com.cloud.network;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
+import com.cloud.api.commands.AddNetworkDeviceCmd;
 import com.cloud.api.commands.DeleteExternalFirewallCmd;
 import com.cloud.api.commands.DeleteExternalLoadBalancerCmd;
+import com.cloud.api.commands.DeleteNetworkDeviceCmd;
 import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.api.commands.ListExternalLoadBalancersCmd;
+import com.cloud.api.commands.ListNetworkDeviceCmd;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.network.NetworkDeviceManager.NetworkDeviceType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import com.cloud.server.api.response.NetworkDeviceResponse;
 import com.cloud.utils.component.Manager;
 
 public interface ExternalNetworkDeviceManager extends Manager {
-	
-	// External Firewall methods
+    
+    public static class NetworkDevice {
+        private String _name;
+        private String _provider;
+        private static List<NetworkDevice> supportedNetworkDevices = new ArrayList<NetworkDevice>();
 
-	public Host addExternalFirewall(AddExternalFirewallCmd cmd);
+        public static final NetworkDevice ExternalDhcp = new NetworkDevice("ExternalDhcp", null);
+        public static final NetworkDevice PxeServer = new NetworkDevice("PxeServer", null);
+        public static final NetworkDevice NetscalerLoadBalancer = new NetworkDevice("NetscalerLoadBalancer", Network.Provider.Netscaler.getName());
+        public static final NetworkDevice F5BigIpLoadBalancer = new NetworkDevice("F5BigIpLoadBalancer", Network.Provider.F5BigIp.getName());
+        public static final NetworkDevice JuniperSRXFirewall = new NetworkDevice("JuniperSRXFirewall", Network.Provider.JuniperSRX.getName());
+        
+        public NetworkDevice(String deviceName, String ntwkServiceprovider) {
+            _name = deviceName;
+            _provider = ntwkServiceprovider;
+            supportedNetworkDevices.add(this);
+        }
+        
+        public String getName() {
+            return _name;
+        }
 
-	public Host addExternalFirewall(Long zoneId, Long physicalNetworkId, String deviceType, Map deviceParamList);
+        public String getNetworkServiceProvder() {
+            return _provider;
+        }
 
-	public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
-	
-    public boolean deleteExternalFirewall(Long hostId);
-	
-	public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
-	
-	public List<Host> listExternalFirewalls(Long zoneId, Long networkId, String deviceType);
+        public static NetworkDevice getNetworkDevice(String devicerName) {
+            for (NetworkDevice device : supportedNetworkDevices) {
+                if (device.getName().equalsIgnoreCase(devicerName)) {
+                    return device;
+                }
+            }
+            return null;
+        }
+    }
 
-	public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
-		
-	public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException;
-	
-	public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+    public Host addNetworkDevice(AddNetworkDeviceCmd cmd);
+    
+    public NetworkDeviceResponse getApiResponse(Host device);
+    
+    public List<Host> listNetworkDevice(ListNetworkDeviceCmd cmd);
+    
+    public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd);
+    
+    // External Firewall methods
 
-	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddresses) throws ResourceUnavailableException;
+    public Host addExternalFirewall(AddExternalFirewallCmd cmd);
 
-	public boolean manageRemoteAccessVpn(boolean create, Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
-	
-	public boolean manageRemoteAccessVpnUsers(Network network, RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
+    public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
+    
+    public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
 
-	// External Load balancer methods	
-	
-	public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd);
+    public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
+        
+    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException;
+    
+    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
 
-	public Host addExternalLoadBalancer(Long zoneId, Long physicalNetworkId, String deviceType, Map deviceParamList);
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddresses) throws ResourceUnavailableException;
 
-	public boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd);
+    public boolean manageRemoteAccessVpn(boolean create, Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
+    
+    public boolean manageRemoteAccessVpnUsers(Network network, RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
 
-	public boolean deleteExternalLoadBalancer(Long hostId);	
-	
-	public List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd);
-	
-    public List<Host> listExternalLoadBalancers(Long zoneId, Long networkId, String deviceType);
-	
-	public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer);
-	
-	public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException;
-	
-	public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
-	
-	// General methods
-	
-	public int getVlanOffset(long physicalNetworkId, int vlanTag);
-	
-	public int getGloballyConfiguredCidrSize();
+    // External Load balancer methods    
+    
+    public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd);
+
+    public boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd);
+
+    public List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd);
+    
+    public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer);
+    
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException;
+    
+    public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+    
+    // General methods
+    
+    public int getVlanOffset(long physicalNetworkId, int vlanTag);
+    
+    public int getGloballyConfiguredCidrSize();
 }

@@ -1825,4 +1825,13 @@ CREATE TABLE `cloud`.`physical_network_service_providers` (
   CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`physical_network_external_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_service_provider_id` bigint unsigned NOT NULL COMMENT 'id of physical network to service provider mapping',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_external_devices_network_service_provider_id` FOREIGN KEY (`physical_network_service_provider_id`) REFERENCES `physical_network_service_providers`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_physical_network_external_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks = 1;

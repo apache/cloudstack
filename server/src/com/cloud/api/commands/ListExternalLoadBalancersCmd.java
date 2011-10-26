@@ -49,12 +49,6 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="zone Id")
     private long zoneId;
 
-	@Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="Pyshical network in the zone from which which external load balancer appliance will be listed.")
-	private Long networkId;
-
-	@Parameter(name=ApiConstants.NETWORK_DEVICE_TYPE, type=CommandType.STRING, description="External load balancer type. Now supports NetscalerLoadBalancer, F5BigIpLoadBalancer.")
-	private String type;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,14 +56,6 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     public long getZoneId() {
         return zoneId;
     }
-
-	public Long getNetworkId() {
-		return networkId;
-	}
-
-	public String getDeviceType() {
-		return type;
-	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -2902,7 +2902,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	if (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) &&
                     zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName())) {
         		return true;
-        	} else if (zone.getGatewayProvider() != null && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.NetscalerMPX.getName())) {
+        	} else if (zone.getGatewayProvider() != null && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.Netscaler.getName())) {
         		return true;
         	} else {
                 return false;
@@ -2919,12 +2919,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         boolean usesJuniperForGatewayService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Gateway, Network.Provider.JuniperSRX);
         boolean usesJuniperForFirewallService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Firewall, Network.Provider.JuniperSRX);
-        boolean usesNetscalarForLBService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Lb, Network.Provider.NetscalerMPX);
+        boolean usesNetscalarForLBService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Lb, Network.Provider.Netscaler);
+        boolean usesF5ForLBService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Lb, Network.Provider.F5BigIp);
         
         if (zone.getNetworkType() == NetworkType.Advanced) {
             if (usesJuniperForGatewayService && usesJuniperForFirewallService) {
                 return true;
-            } else if (_ntwkOfferingSrvcDao.isServiceSupported(networkOfferingId, Service.Gateway) && usesNetscalarForLBService) {
+            } else if (_ntwkOfferingSrvcDao.isServiceSupported(networkOfferingId, Service.Gateway) && (usesF5ForLBService || usesNetscalarForLBService)) {
                 return true;
             } else {
                 return false;

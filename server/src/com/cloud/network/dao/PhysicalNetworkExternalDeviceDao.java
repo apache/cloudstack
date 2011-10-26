@@ -15,14 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+
 package com.cloud.network.dao;
 
 import java.util.List;
-
+import com.cloud.network.PhysicalNetworkExternalDeviceVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface PhysicalNetworkServiceProviderDao extends GenericDao<PhysicalNetworkServiceProviderVO, Long> {
-    List<PhysicalNetworkServiceProviderVO> listBy(long physicalNetworkId);
-    PhysicalNetworkServiceProviderVO findByServiceProvider(long physicalNetworkId, String providerType);
-    void deleteProviders(long physicalNetworkId);
+public interface PhysicalNetworkExternalDeviceDao extends GenericDao<PhysicalNetworkExternalDeviceVO, Long> {
+
+    List<PhysicalNetworkExternalDeviceVO> listByNetworkServiceProviderId(long networkServiceProviderId);
+
 }

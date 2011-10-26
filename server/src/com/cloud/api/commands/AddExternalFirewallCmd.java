@@ -48,9 +48,6 @@ public class AddExternalFirewallCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external firewall appliance.")
 	private Long zoneId;
 
-	@Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, required = false, description="Pyshical network in the zone to which external firewall appliance will be added.")
-	private Long networkId;
-
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external firewall appliance.")
 	private String url;	 
 	
@@ -60,18 +57,12 @@ public class AddExternalFirewallCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external firewall appliance.")
 	private String password;
 	
-	@Parameter(name=ApiConstants.NETWORK_DEVICE_TYPE, type=CommandType.STRING, required = false, description="External firewall type. Now supports JuniperSRXFirewall.")
-	private String type;
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
 	/////////////////////////////////////////////////////
 	 
 	public Long getZoneId() {
 		return zoneId;
-	}
-
-	public Long getNetworkId() {
-		return networkId;
 	}
 
 	public String getUrl() {
@@ -86,9 +77,6 @@ public class AddExternalFirewallCmd extends BaseCmd {
 		return password;
 	}
 	
-	public String getDeviceType() {
-		return type;
-	}
 
 	/////////////////////////////////////////////////////
 	/////////////// API Implementation///////////////////

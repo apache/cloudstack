@@ -30,6 +30,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value=PhysicalNetworkServiceProviderDao.class) @DB(txn=false)
 public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<PhysicalNetworkServiceProviderVO, Long> implements PhysicalNetworkServiceProviderDao {
     final SearchBuilder<PhysicalNetworkServiceProviderVO> physicalNetworkSearch;
+    final SearchBuilder<PhysicalNetworkServiceProviderVO> physicalNetworkServiceProviderSearch;
 
     protected PhysicalNetworkServiceProviderDaoImpl() {
         super();
@@ -37,6 +38,10 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
         physicalNetworkSearch.and("physicalNetworkId", physicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
         physicalNetworkSearch.done();
 
+        physicalNetworkServiceProviderSearch = createSearchBuilder();
+        physicalNetworkServiceProviderSearch.and("physicalNetworkId", physicalNetworkServiceProviderSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        physicalNetworkServiceProviderSearch.and("serviceProvderType", physicalNetworkServiceProviderSearch.entity().getProviderName(), Op.EQ);
+        physicalNetworkServiceProviderSearch.done();
     }
 
     @Override
@@ -46,6 +51,14 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
         return search(sc, null);
     }
 
+    @Override
+    public PhysicalNetworkServiceProviderVO findByServiceProvider(long physicalNetworkId, String providerType) {
+        SearchCriteria<PhysicalNetworkServiceProviderVO> sc = physicalNetworkServiceProviderSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("serviceProvderType", providerType);
+        return findOneBy(sc);
+    }
+    
     @Override
     public void deleteProviders(long physicalNetworkId) {
         SearchCriteria<PhysicalNetworkServiceProviderVO> sc = physicalNetworkSearch.create();

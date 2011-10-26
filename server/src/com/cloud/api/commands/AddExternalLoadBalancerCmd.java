@@ -47,9 +47,6 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external load balancer appliance.")
 	private Long zoneId;
 
-	@Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, required = false, description="Pyshical network in the zone to which external load balancer appliance will be added.")
-	private Long networkId;
-	
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external load balancer appliance.")
 	private String url;	 
 	
@@ -59,19 +56,12 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external load balancer appliance.")
 	private String password;	 
 
-	@Parameter(name=ApiConstants.NETWORK_DEVICE_TYPE, type=CommandType.STRING, required = false, description="External load balancer type. Now supports NetscalerLoadBalancer, F5BigIpLoadBalancer.")
-	private String type;
-
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
 	/////////////////////////////////////////////////////
 	 
 	public Long getZoneId() {
 		return zoneId;
-	}
-	
-	public Long getNetworkId() {
-		return networkId;
 	}
 	
 	public String getUrl() {
@@ -86,10 +76,6 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
 		return password;
 	}
 	
-	public String getDeviceType() {
-		return type;
-	}
-
 	/////////////////////////////////////////////////////
 	/////////////// API Implementation///////////////////
 	/////////////////////////////////////////////////////

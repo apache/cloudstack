@@ -68,7 +68,7 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
         }
         
         return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getNetworkOfferingId()) && 
-                _ntwkOfferingSrvcDao.isProviderSupported(config.getNetworkOfferingId(), Service.Lb, Network.Provider.NetscalerMPX));
+                _ntwkOfferingSrvcDao.isProviderSupported(config.getNetworkOfferingId(), Service.Lb, Network.Provider.Netscaler));
     }
 
     @Override
@@ -140,6 +140,6 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     
     @Override
     public Provider getProvider() {
-        return Provider.NetscalerMPX;
+        return Provider.Netscaler;
     }
 }

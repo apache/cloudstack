@@ -238,8 +238,6 @@ public class ApiConstants {
     public static final String PING_CIFS_PASSWORD = "pingcifspassword";
     public static final String CHECKSUM="checksum";
     public static final String NETWORK_DEVICE_TYPE = "networkdevicetype";
-    public static final String EXTERNAL_LB_TYPE = "externallbtype";
-    public static final String EXTERNAL_FIREWALL_TYPE = "externalfirewalltype";    
     public static final String NETWORK_DEVICE_PARAMETER_LIST = "networkdeviceparameterlist";
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
