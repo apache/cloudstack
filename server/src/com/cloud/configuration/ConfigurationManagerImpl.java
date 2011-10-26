@@ -1962,7 +1962,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId(), network);
             if (network == null) {
-                List<? extends Network> networks = _networkMgr.getVirtualNetworksOwnedByAccountInZone(zoneId, account);
+                List<? extends Network> networks = _networkMgr.getIsolatedNetworksOwnedByAccountInZone(zoneId, account);
                 network = networks.get(0);
             }
             if (network == null) {

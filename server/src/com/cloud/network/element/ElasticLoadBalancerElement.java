@@ -116,14 +116,8 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO kill all loadbalancer vms by calling the ElasticLoadBalancerManager
-        return false;
-    }
-
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // TODO restart all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }
 

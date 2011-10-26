@@ -91,22 +91,12 @@ public interface NetworkElement extends Adapter {
      * The network is being shutdown.
      * @param network
      * @param context
+     * @param cleanup TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
-    
-    /**
-     * The network is being restarted.
-     * @param network
-     * @param context
-     * @param cleanup If need to clean up old network elements
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     */
-    boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * The network is being destroyed.

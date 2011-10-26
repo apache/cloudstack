@@ -375,25 +375,27 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
     
     @Override
-    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException {
         boolean success = true;
         if (!_networkMgr.applyRules(rules, continueOnError)) {
             s_logger.warn("Rules are not completely applied");
             return false;
         } else {
-            for (FirewallRule rule : rules) {
-                if (rule.getState() == FirewallRule.State.Revoke) {
-                    FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
-                    if (relatedRule != null) {
-                        s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
-                        success = false;
-                    } else {
-                        _firewallDao.remove(rule.getId());
+            if (updateRulesInDB) {
+                for (FirewallRule rule : rules) {
+                    if (rule.getState() == FirewallRule.State.Revoke) {
+                        FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
+                        if (relatedRule != null) {
+                            s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+                            success = false;
+                        } else {
+                            _firewallDao.remove(rule.getId());
+                        }
+                    } else if (rule.getState() == FirewallRule.State.Add) {
+                        FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
+                        ruleVO.setState(FirewallRule.State.Active);
+                        _firewallDao.update(ruleVO.getId(), ruleVO);
                     }
-                } else if (rule.getState() == FirewallRule.State.Add) {
-                    FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
-                    ruleVO.setState(FirewallRule.State.Active);
-                    _firewallDao.update(ruleVO.getId(), ruleVO);
                 }
             }
         }
@@ -426,7 +428,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         try {
-            if (!applyRules(rules, continueOnError)) {
+            if (!applyRules(rules, continueOnError, true)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {

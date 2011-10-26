@@ -103,7 +103,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
         }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
-        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
+        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
         _routerMgr.deployDhcp(network, dest, _accountMgr.getAccount(network.getAccountId()), params);
         return true;
     }
@@ -119,7 +119,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
-            params.put(VirtualMachineProfile.Param.RestartNetwork, true);
+            params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
 
             List<DomainRouterVO> routers = _routerMgr.deployDhcp(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters());
             
@@ -145,7 +145,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
     }
     
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_USERDATA);
         if (routers == null || routers.isEmpty()) {
             return true;
@@ -191,50 +191,6 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
         capabilities.put(Service.Dhcp, null);
         
         return capabilities;
-    }
-    
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        DeployDestination dest = new DeployDestination(dc, null, null, null);
-        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-        
-        if (!canHandle(dest, offering.getTrafficType(), network.getType(), network.getNetworkOfferingId())) {
-            s_logger.trace("Dhcp element doesn't handle network restart for the network " + network);
-            return false;
-        } 
-        
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_USERDATA);
-        if (routers == null || routers.isEmpty()) {
-            s_logger.trace("Can't find dhcp element in network " + network.getId());
-            return true;
-        }
-        
-        /* Get the host_id in order to find the cluster */
-        Long host_id = new Long(0);
-        for (DomainRouterVO router : routers) {
-            if (host_id == null || host_id == 0) {
-                host_id = (router.getHostId() != null ? router.getHostId() : router.getLastHostId());
-            }
-            if (cleanup) {
-                /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
-                if (router.getState() != State.Stopped && _routerMgr.stopRouter(router.getId(), false) == null) {
-                    s_logger.warn("Failed to stop dhcp element " + router + " as a part of network " + network + " restart");
-                }
-                if (_routerMgr.destroyRouter(router.getId()) == null) {
-                    s_logger.warn("Failed to destroy dhcp element " + router + " as a part of network " + network + " restart");
-                }
-            }
-        }
-        if (host_id == null || host_id == 0) {
-            throw new ResourceUnavailableException("Fail to locate dhcp element in network " + network.getId(), this.getClass(), 0);
-        }
-        
-        /* The cluster here is only used to determine hypervisor type, not the real deployment */
-        Cluster cluster = _configMgr.getCluster(_hostDao.findById(host_id).getClusterId());
-        Pod pod = _configMgr.getPod(_hostDao.findById(host_id).getPodId());
-        dest = new DeployDestination(dc, pod, cluster, null);
-        return implement(network, offering, dest, context);
     }
     
     @Override

@@ -97,7 +97,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         
         DataCenter zone = _configService.getZone(getZoneId());
         if (zone.getNetworkType() == NetworkType.Advanced) {
-            List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
+            List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
             if (networks.size() == 0) {
                 String domain = _domainService.getDomain(getDomainId()).getName();
                 throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());

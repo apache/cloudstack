@@ -616,7 +616,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!_firewallMgr.applyRules(rules, continueOnError)) {
+            if (!_firewallMgr.applyRules(rules, continueOnError, true)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -664,7 +664,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!_firewallMgr.applyRules(staticNatRules, continueOnError)) {
+            if (!_firewallMgr.applyRules(staticNatRules, continueOnError, true)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -688,7 +688,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!_firewallMgr.applyRules(rules, continueOnError)) {
+            if (!_firewallMgr.applyRules(rules, continueOnError, true)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -718,7 +718,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            if (!_firewallMgr.applyRules(staticNatRules, continueOnError)) {
+            if (!_firewallMgr.applyRules(staticNatRules, continueOnError, true)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -894,7 +894,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean revokeAllRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
+    public boolean revokeAllPFStaticNatRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
         List<PortForwardingRuleVO> pfRules = _forwardingDao.listByNetwork(networkId);

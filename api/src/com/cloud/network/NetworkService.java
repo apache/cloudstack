@@ -34,14 +34,11 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 public interface NetworkService {
 
-    List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner);
-
-    List<? extends NetworkOffering> listNetworkOfferings();
+    List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
@@ -74,13 +71,13 @@ public interface NetworkService {
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
-    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId);
+    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
 
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, long networkOfferingId);
+    Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, Long networkOfferingId);
 
     Integer getNetworkRate(long networkId, Long vmId);
 
@@ -116,5 +113,5 @@ public interface NetworkService {
 
     PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
     
-    long translateZoneToPhysicalNetwork(long zoneId);
+    long translateZoneIdToPhysicalNetworkId(long zoneId);
 }

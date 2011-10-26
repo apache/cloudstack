@@ -217,7 +217,7 @@ public class ElasticLoadBalancerManagerImpl implements
         Pod pod = podId == null?null:_podDao.findById(podId);
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(
                 1);
-        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
+        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
         Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
         s_logger.debug("About to deploy ELB vm ");

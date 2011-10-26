@@ -60,7 +60,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 		DataCenter dc = dest.getDataCenter();
 		Pod pod = dest.getPod();
 		
-		if (pod.getExternalDhcp() && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
+		if ((pod != null && pod.getExternalDhcp()) && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
 				&& networkType == Network.Type.Shared) {
 			s_logger.debug("External DHCP can handle");
 			return true;
@@ -113,16 +113,11 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	}
 
 	@Override
-	public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+	public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
-
-	@Override
-	public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		return true;
-	}
-
+	
+	
 	@Override
 	public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;

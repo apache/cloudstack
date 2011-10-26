@@ -98,13 +98,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 	}
 
 	@Override
-	public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
+	public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
 

@@ -31,7 +31,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.ExternalNetworkDeviceManager;
@@ -93,7 +92,7 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdown(Network guestConfig, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException {
+    public boolean shutdown(Network guestConfig, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
         if (!canHandle(guestConfig)) {
             return false;
         }
@@ -142,10 +141,5 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     @Override
     public Provider getProvider() {
         return Provider.NetscalerMPX;
-    }
-    
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        return true;
     }
 }

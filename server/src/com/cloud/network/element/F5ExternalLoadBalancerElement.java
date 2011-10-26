@@ -93,7 +93,7 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
     }
 
     @Override
-    public boolean shutdown(Network guestConfig, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException {
+    public boolean shutdown(Network guestConfig, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
         if (!canHandle(guestConfig)) {
             return false;
         }
@@ -143,9 +143,5 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
     public Provider getProvider() {
         return Provider.F5BigIp;
     }
-    
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        return true;
-    }
+   
 }

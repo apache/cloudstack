@@ -109,7 +109,7 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         
@@ -231,10 +231,6 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         return capabilities;
     }
     
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        return true;
-    }
 }
 
 

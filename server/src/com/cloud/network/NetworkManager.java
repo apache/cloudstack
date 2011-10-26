@@ -128,11 +128,7 @@ public interface NetworkManager extends NetworkService {
 
     List<? extends Nic> getNics(long vmId);
 
-    List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm);
-
     List<NicProfile> getNicProfiles(VirtualMachine vm);
-
-    List<AccountVO> getAccountsUsingNetwork(long configurationId);
 
     AccountVO getNetworkOwner(long configurationId);
 
@@ -225,6 +221,8 @@ public interface NetworkManager extends NetworkService {
     
     boolean isProviderSupported(long networkOfferingId, Service service, Provider provider);
     
-    List<Long> listNetworkOfferingsForUpgrade(long networkId); 
+    List<Long> listNetworkOfferingsForUpgrade(long networkId);
+
+    PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId); 
 
 }

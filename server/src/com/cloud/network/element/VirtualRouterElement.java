@@ -46,6 +46,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterElementsDao;
+import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
@@ -53,11 +54,8 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.element.VirtualRouterElementService;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.org.Cluster;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -66,7 +64,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -108,7 +105,6 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
-        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
 
         _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, false);
 
@@ -136,50 +132,45 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         }
     }
     
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        if (!canHandle(network.getType(), network.getNetworkOfferingId())) {
-            s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
-            return false;
-        }
-
-        DeployDestination dest = new DeployDestination(dc, null, null, null);
-
-        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        
-        // We need to re-implement the network since the redundancy capability may changed
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
-        if (routers == null || routers.isEmpty()) {
-            s_logger.trace("Can't find virtual router element in network " + network.getId());
-            return true;
-        }
-
-        /* Get the host_id in order to find the cluster */
-        Long host_id = new Long(0);
-        for (DomainRouterVO router : routers) {
-            if (host_id == null || host_id == 0) {
-                host_id = (router.getHostId() != null ? router.getHostId() : router.getLastHostId());
-            }
-            if (cleanup) {
-                /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
-                if (router.getState() != State.Stopped && _routerMgr.stopRouter(router.getId(), false) == null) {
-                    s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
-                }
-                if (_routerMgr.destroyRouter(router.getId()) == null) {
-                    s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
-                }
-            }
-        }
-        if (host_id == null || host_id == 0) {
-            throw new ResourceUnavailableException("Fail to locate virtual router element in network " + network.getId(), this.getClass(), 0);
-        }
-        
-        /* The cluster here is only used to determine hypervisor type, not the real deployment */
-        Cluster cluster = _configMgr.getCluster(_hostDao.findById(host_id).getClusterId());
-        dest = new DeployDestination(dc, null, cluster, null);
-        return implement(network, networkOffering, dest, context);
-    }
+//    @Override
+//    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+//        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+//        if (!canHandle(network.getType(), network.getNetworkOfferingId())) {
+//            s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
+//            return false;
+//        }
+//
+//        DeployDestination dest = new DeployDestination(dc, null, null, null);
+//
+//        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+//        
+//        // We need to re-implement the network since the redundancy capability may changed
+//        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+//        if (routers == null || routers.isEmpty()) {
+//            s_logger.trace("Can't find virtual router element in network " + network.getId());
+//            return true;
+//        }
+//
+//        /* Get the host_id in order to find the cluster */
+//        Long host_id = new Long(0);
+//        for (DomainRouterVO router : routers) {
+//            if (host_id == null || host_id == 0) {
+//                host_id = (router.getHostId() != null ? router.getHostId() : router.getLastHostId());
+//            }
+//            if (cleanup) {
+//                /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
+//                if (router.getState() != State.Stopped && _routerMgr.stopRouter(router.getId(), false) == null) {
+//                    s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
+//                }
+//                if (_routerMgr.destroyRouter(router.getId()) == null) {
+//                    s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
+//                }
+//            }
+//        }
+//        if (host_id == null || host_id == 0) {
+//            throw new ResourceUnavailableException("Fail to locate virtual router element in network " + network.getId(), this.getClass(), 0);
+//        }
+//    }
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
@@ -339,13 +330,14 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     }
     
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
         if (routers == null || routers.isEmpty()) {
             return true;
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
+            //FIXME - Sheng, for your redundant router you have to destroy the domR here if clenaup=true - just the way you did in restart() method
             result = result && _routerMgr.stop(router, false, context.getCaller(), context.getAccount()) != null;
         }
         return result;

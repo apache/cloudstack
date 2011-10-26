@@ -32,6 +32,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 
 public interface ResourceService {
@@ -86,4 +87,6 @@ public interface ResourceService {
     Host getHost(long hostId);
 
     Cluster getCluster(Long clusterId);
+    
+    List<HypervisorType> getSupportedHypervisorTypes(long zoneId);
 }

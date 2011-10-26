@@ -116,9 +116,9 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -155,6 +155,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -314,6 +315,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     FirewallRulesCidrsDao _firewallCidrsDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
+    @Inject
+    ResourceManager _resourceMgr;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -551,7 +554,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
-    public VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account caller = UserContext.current().getCaller();
 
         // verify parameters
@@ -572,7 +575,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         s_logger.debug("Stopping and starting router " + router + " as a part of router reboot");
 
         if (stop(router, false, user, caller) != null) {
-            return startRouter(routerId, restartNetwork);
+            return startRouter(routerId, reprogramNetwork);
         } else {
             throw new CloudRuntimeException("Failed to reboot router " + router);
         }
@@ -1040,6 +1043,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 return routers;
             }
             
+            if (routers.size() >= 5) {
+                s_logger.error("Too much redundant routers!");
+            }
+            
             NicProfile defaultNic = new NicProfile();
             //if source nat service is supported by the network, get the source nat ip address
             if (_networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
@@ -1088,15 +1095,32 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
                 networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-
-                /* Before starting router, already know the hypervisor type */
-                VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
-                if (routers.size() >= 5) {
-                    s_logger.error("Too much redundant routers!");
+                
+                //Router is the network element, we don't know the hypervisor type yet.
+                //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
+                List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+                int retry = 0;
+                for (HypervisorType hType : supportedHypervisors) {
+                    try {
+                        s_logger.debug("Allocating the domR with the hypervisor type " + hType);
+                        VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
+                        
+                        router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
+                        router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+                        break;
+                    } catch (InsufficientCapacityException ex) {
+                        if (retry < 2) {
+                            s_logger.debug("Failed to allocate the domR with hypervisor type " + hType + ", retrying one more time");
+                        } else {
+                            throw ex;
+                        }
+                    } finally {
+                        retry++;
+                    }
                 }
-                router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
-                router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+                routers.add(router);
+                
                 // Creating stats entry for router
                 UserStatisticsVO stats = _userStatsDao.findBy(owner.getId(), dcId, router.getNetworkId(), null, router.getId(), router.getType().toString());
                 if (stats == null) {
@@ -1106,7 +1130,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
                     _userStatsDao.persist(stats);
                 }
-                routers.add(router);
+                
             }
         } finally {
             if (network != null) {
@@ -1276,13 +1300,32 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
-            /* Before starting router, already know the hypervisor type */
-            VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
+            //Router is the network element, we don't know the hypervisor type yet.
+            //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
+            List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+            int retry = 0;
+            for (HypervisorType hType : supportedHypervisors) {
+                try {
+                    s_logger.debug("Allocating the domR with the hypervisor type " + hType);
+                    /* Before starting router, already know the hypervisor type */
+                    VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
 
-            router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                    template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
-            router.setRole(Role.DHCP_USERDATA);
-            router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+                    router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                            template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
+                    router.setRole(Role.DHCP_USERDATA);
+                    router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+                    break;
+                } catch (InsufficientCapacityException ex) {
+                    if (retry < 2) {
+                        s_logger.debug("Failed to allocate the domR with hypervisor type " + hType + ", retrying one more time");
+                    } else {
+                        throw ex;
+                    }
+                } finally {
+                    retry++;
+                }
+            }
+            
             routers.add(router);
 
             // Creating stats entry for router
@@ -1556,12 +1599,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
         
         // restart network if restartNetwork = false is not specified in profile parameters
-        boolean restartNetwork = true;
-        if (profile.getParameter(Param.RestartNetwork) != null && (Boolean) profile.getParameter(Param.RestartNetwork) == false) {
-            restartNetwork = false;
+        boolean reprogramNetwork = true;
+        if (profile.getParameter(Param.ReProgramNetwork) != null && (Boolean) profile.getParameter(Param.ReProgramNetwork) == false) {
+            reprogramNetwork = false;
         }
         // The commands should be sent for domR only, skip for DHCP
-        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA && restartNetwork) {
+        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA && reprogramNetwork) {
             s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
             long networkId = router.getNetworkId();
             long ownerId = router.getAccountId();
@@ -2057,7 +2100,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     @Override
-    public VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+    public VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
 
@@ -2091,10 +2134,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         Map<Param, Object> params = new HashMap<Param, Object>();
-        if (restartNetwork) {
-            params.put(Param.RestartNetwork, true);
+        if (reprogramNetwork) {
+            params.put(Param.ReProgramNetwork, true);
         } else {
-            params.put(Param.RestartNetwork, false);
+            params.put(Param.ReProgramNetwork, false);
         }
         return startVirtualRouter(router, user, caller, params);
     }

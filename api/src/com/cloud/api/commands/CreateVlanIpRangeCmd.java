@@ -86,7 +86,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         if (physicalNetworkId != null) {
             return physicalNetworkId;
         } else if (zoneId != null) {
-            return _networkService.translateZoneToPhysicalNetwork(zoneId);
+            return _networkService.translateZoneIdToPhysicalNetworkId(zoneId);
         } else {
             throw new InvalidParameterValueException("Either zoneId or physicalNetworkId have to be specified");
         }

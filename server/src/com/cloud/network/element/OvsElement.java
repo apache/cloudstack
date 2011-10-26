@@ -116,16 +116,10 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 		_ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine());
 		return true;
 	}
-
+	
+	
 	@Override
-	public boolean restart(Network network, ReservationContext context, boolean cleanup)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		return true;
-	}
-
-	@Override
-	public boolean shutdown(Network network, ReservationContext context)
+	public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}

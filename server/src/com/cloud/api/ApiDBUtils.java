@@ -575,7 +575,7 @@ public class ApiDBUtils {
     }
 
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkOfferingId, long zoneId) {
-        return _networkMgr.getNetworkCapabilities(networkOfferingId, zoneId);
+        return _networkMgr.getNetworkCapabilities(networkOfferingId);
     }
 
     public static long getPublicNetworkIdByZone(long zoneId) {

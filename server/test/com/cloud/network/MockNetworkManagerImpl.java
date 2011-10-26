@@ -48,7 +48,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkService {
 
     @Override
-    public List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner) {
+    public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -126,7 +126,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
+    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -480,7 +480,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, long networkOfferingId) {
+    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, Long networkOfferingId) {
         // TODO Auto-generated method stub
         return null;
     }

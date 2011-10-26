@@ -88,7 +88,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     }
     
     private Long getNetworkOfferingId() {
-        return networkOfferingId == null ? 0 : networkOfferingId;
+        return networkOfferingId;
     }
     
     /////////////////////////////////////////////////////

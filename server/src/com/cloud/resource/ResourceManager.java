@@ -17,13 +17,12 @@
  */
 package com.cloud.resource;
 
-import com.cloud.host.Host;
 
 /**
  * ResourceManager manages how physical resources are organized within the
  * CloudStack. It also manages the life cycle of the physical resources.
  */
-public interface ResourceManager {
+public interface ResourceManager extends ResourceService{
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.

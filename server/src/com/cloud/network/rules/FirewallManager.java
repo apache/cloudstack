@@ -49,7 +49,7 @@ public interface FirewallManager extends FirewallService{
     
     void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose);
     
-    boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
+    boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException;
 
     boolean applyFirewallRules(List<FirewallRuleVO> rules, boolean continueOnError, Account caller);
 

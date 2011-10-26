@@ -58,7 +58,6 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
-        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
 
         _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, true);
 
