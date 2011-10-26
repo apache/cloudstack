@@ -71,6 +71,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -84,8 +85,10 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -1188,29 +1191,41 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     	VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
     	boolean migrationResult = false;
     	try {
-    		try {
-				migrationResult = _storageMgr.StorageMigration(profile, destPool);
-			} catch (ConcurrentOperationException e) {
-				
-			}
-    	} finally {
+    		migrationResult = _storageMgr.StorageMigration(profile, destPool);
+
     		if (migrationResult) {
-    			try {
-    				//when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
-    				vm.setLastHostId(null);
-    				stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-    			} catch (NoTransitionException e) {
-    				s_logger.debug("Failed to migrate vm: " + e.toString());
-    				throw new CloudRuntimeException("Failed to migrate vm: " + e.toString());
+    			//if the vm is migrated to different pod in basic mode, need to reallocate ip
+    			
+    			if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
+    				DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destPool.getPodId(), null, null, null);
+    				VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, null, null, null, null);
+    				_networkMgr.reallocate(vmProfile, plan);
     			}
+    			
+    			//when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
+    			vm.setLastHostId(null);
+    			vm.setPodId(destPool.getPodId());
     		} else {
-    			s_logger.debug("storage migration failed: ");
-    			try {
-    				stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-    			} catch (NoTransitionException e) {
-    				s_logger.debug("Failed to change vm state: " + e.toString());
-    				throw new CloudRuntimeException("Failed to change vm state: " + e.toString());
-    			}
+    			s_logger.debug("Storage migration failed");
+    		}
+    	} catch (ConcurrentOperationException e) {
+    		s_logger.debug("Failed to migration: " + e.toString());
+    		throw new CloudRuntimeException("Failed to migration: " + e.toString());
+    	} catch (InsufficientVirtualNetworkCapcityException e) {
+    		s_logger.debug("Failed to migration: " + e.toString());
+    		throw new CloudRuntimeException("Failed to migration: " + e.toString());
+		} catch (InsufficientAddressCapacityException e) {
+			s_logger.debug("Failed to migration: " + e.toString());
+    		throw new CloudRuntimeException("Failed to migration: " + e.toString());
+		} catch (InsufficientCapacityException e) {
+			s_logger.debug("Failed to migration: " + e.toString());
+    		throw new CloudRuntimeException("Failed to migration: " + e.toString());
+		} finally {
+    		try {
+    			stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+    		} catch (NoTransitionException e) {
+    			s_logger.debug("Failed to change vm state: " + e.toString());
+    			throw new CloudRuntimeException("Failed to change vm state: " + e.toString());
     		}
     	}
     	

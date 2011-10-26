@@ -3292,4 +3292,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return podVlanMaps.getPodId();
         }
     }
+    
+    @DB
+    @Override
+    public boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
+    	VMInstanceVO vmInstance = _vmDao.findById(vm.getId());
+    	DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+    	if (dc.getNetworkType() == NetworkType.Basic) {
+    		List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
+    		NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());
+    		Pair<NetworkVO, NicProfile> profile = new Pair<NetworkVO, NicProfile>(network, null);
+    		List<Pair<NetworkVO, NicProfile>> profiles = new ArrayList<Pair<NetworkVO, NicProfile>>();
+    		profiles.add(profile);
+    		
+    		Transaction txn = Transaction.currentTxn();
+    		txn.start();
+    		
+    		try {
+    			this.cleanupNics(vm);
+    			this.allocate(vm, profiles);
+    		} finally {
+    			txn.commit();
+    		}
+    	}
+    	return true;
+    }
 }

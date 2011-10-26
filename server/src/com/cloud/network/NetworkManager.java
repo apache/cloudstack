@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -219,5 +220,8 @@ public interface NetworkManager extends NetworkService {
     String getIpInNetworkIncludingRemoved(long vmId, long networkId);
     
     Long getPodIdForVlan(long vlanDbId);
+
+	boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm,
+			DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
 
 }

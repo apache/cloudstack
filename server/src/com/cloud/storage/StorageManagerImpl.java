@@ -2668,6 +2668,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     					volume.setPodId(destPool.getPodId());
     					volume.setPoolId(destPool.getId());
     					volume.setLastPoolId(oldPoolId);
+    					volume.setPodId(destPool.getPodId());
     					try {
 							stateTransitTo(volume, Volume.Event.OperationSucceeded);
 						} catch (NoTransitionException e) {
@@ -2715,12 +2716,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     			s_logger.debug("volume: " + volume.getId() + " is on the same storage pool: " + destPool.getId());
     			continue;
     		}
-    		
-    		//Only support migrate in the same pod at first.
-    		if (volume.getPodId() != destPool.getPodId()) {
-    			throw new InvalidParameterValueException("Can't migrate vm between different pods: volume: " + volume.getId() + " at pod: " 
-    														+ volume.getPodId() + ", while dest pool: " + destPool.getId() + " at pod: " + destPool.getPodId());
-    		} 
     		
     		volumesNeedToMigrate.add(volume);
     	}
