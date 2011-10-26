@@ -640,12 +640,6 @@ public class DownloadManagerImpl implements DownloadManager {
                 }
             } catch (IOException e) {
                 s_logger.warn("Unable to load template location " + path, e);
-                //loc.purge();
-                try {
-                    _storage.cleanup(path, templateDir);
-                } catch (IOException e1) {
-                    s_logger.warn("Unable to cleanup " + path, e1);
-                }
                 continue;
             }
 

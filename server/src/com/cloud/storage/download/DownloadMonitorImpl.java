@@ -41,6 +41,7 @@ import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -55,15 +56,19 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
@@ -99,6 +104,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
 	VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject
+    VMTemplateSwiftDao _vmTemplateSwiftlDao;
+    @Inject
     StoragePoolHostDao _poolHostDao;
     @Inject
     SecondaryStorageVmDao _secStorageVmDao;
@@ -125,6 +132,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     private ClusterDao _clusterDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private SwiftDao _swiftDao;
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
@@ -480,10 +489,19 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	}
 	
     @Override
-    public void handleTemplateSync(long dcId) {
-        List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
-        for ( HostVO ssHost : ssHosts ) {
-            handleTemplateSync(ssHost);
+    public void handleTemplateSync(Long dcId) {
+        if ( dcId != null ) {
+            List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
+            for ( HostVO ssHost : ssHosts ) {
+                handleTemplateSync(ssHost);
+            }
+        }
+        Boolean swiftEnable = Boolean.getBoolean(_configDao.getValue(Config.SwiftEnable.key()));
+        if (swiftEnable) {
+            List<SwiftVO> swifts = _swiftDao.listAll();
+            for (SwiftVO swift : swifts) {
+                handleTemplateSync(swift);
+            }
         }
     }
     
@@ -502,6 +520,53 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         return null;
     }
     
+    private Map<String, TemplateInfo> listTemplate(SwiftVO swift) {
+        if (swift == null) {
+            return null;
+        }
+        ListTemplateCommand cmd = new ListTemplateCommand(swift.toSwiftTO());
+        Answer answer = _agentMgr.sendToSSVM(null, cmd);
+        if (answer != null && answer.getResult()) {
+            ListTemplateAnswer tanswer = (ListTemplateAnswer) answer;
+            return tanswer.getTemplateInfo();
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("can not list template for swift " + swift);
+            }
+        }
+        return null;
+    }
+
+    public void handleTemplateSync(SwiftVO swift) {
+        if (swift == null) {
+            s_logger.warn("Huh? swift is null");
+            return;
+        }
+        Map<String, TemplateInfo> templateInfos = listTemplate(swift);
+        if (templateInfos == null) {
+            return;
+        }
+        List<VMTemplateVO> allTemplates = _templateDao.listAll();
+        for (VMTemplateVO tmplt : allTemplates) {
+            String uniqueName = tmplt.getUniqueName();
+            VMTemplateSwiftVO tmpltSwift = _vmTemplateSwiftlDao.findBySwiftTemplate(swift.getId(), tmplt.getId());
+            if (templateInfos.containsKey(uniqueName)) {
+                TemplateInfo tmpltInfo = templateInfos.remove(uniqueName);
+                if (tmpltSwift != null) {
+                    s_logger.info("Template Sync found " + uniqueName + " already in the template swift table");
+                    continue;
+                } else {
+                    tmpltSwift = new VMTemplateSwiftVO(swift.getId(), tmplt.getId(), new Date(), tmpltInfo.getSize(), tmpltInfo.getPhysicalSize());
+                    _vmTemplateSwiftlDao.persist(tmpltSwift);
+                    s_logger.info("Template Sync added " + uniqueName + " to the template swift table");
+                }
+            }
+        }
+
+        for (TemplateInfo tmpltInfo : templateInfos.values()) {
+            s_logger.warn("Template Sync found template " + tmpltInfo.getInstallPath() + " in Swift description, but not in template table, please");
+        }
+    }
 	
 	@Override
     public void handleTemplateSync(HostVO ssHost) {

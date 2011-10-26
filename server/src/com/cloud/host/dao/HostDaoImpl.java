@@ -311,10 +311,29 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public HostVO findSecondaryStorageHost(long dcId) {
+    public HostVO findSecondaryStorageHost(Long dcId) {
         SearchCriteria<HostVO> sc = TypeDcSearch.create();
         sc.setParameters("type", Host.Type.SecondaryStorage);
-        sc.setParameters("dc", dcId);
+        if (dcId != null) {
+            sc.setParameters("dc", dcId);
+        }
+        List<HostVO> storageHosts = listBy(sc);
+        if (storageHosts == null || storageHosts.size() < 1) {
+            return null;
+        } else {
+            Collections.shuffle(storageHosts);
+            return storageHosts.get(0);
+        }
+    }
+
+    @Override
+    public HostVO findSecondaryStorageVM(Long dcId) {
+        SearchCriteria<HostVO> sc = SecondaryStorageVMSearch.create();
+        sc.setParameters("type", Host.Type.SecondaryStorageVM);
+        sc.setParameters("status", Status.Up);
+        if (dcId != null) {
+            sc.setParameters("dc", dcId);
+        }
         List<HostVO> storageHosts = listBy(sc);
         if (storageHosts == null || storageHosts.size() < 1) {
             return null;

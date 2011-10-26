@@ -78,12 +78,14 @@ import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
@@ -112,6 +114,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	private String _eth1mask;
 	private String _eth1ip;
 	final private String _parent = "/mnt/SecStorage";
+	final private String _tmpltDir = "/var/cloudstack/template";
+    final private String _tmpltpp = "template.properties";
     @Override
     public void disconnected() {
     }
@@ -231,6 +235,28 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String errMsg = "swiftUpload failed , err=" + result;
             s_logger.warn(errMsg);
             return errMsg;
+        }
+        return null;
+    }
+
+    String[] swiftList(SwiftTO swift, String container, String rFilename) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K "
+                + swift.getKey() + " list " + container + " " + rFilename);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result == null && parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            return lines;
+        } else {
+            if (result != null) {
+                String errMsg = "swiftList failed , err=" + result;
+                s_logger.warn(errMsg);
+            } else {
+                String errMsg = "swiftList, no lines returns";
+                s_logger.warn(errMsg);
+            }
         }
         return null;
     }
@@ -374,7 +400,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
                 return new Answer(cmd, false, checksum);   
             }                        
-    }       
+        }
 
         return new Answer(cmd, true, checksum);
     }
@@ -451,14 +477,51 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
     
-
+    Map<String, TemplateInfo> swiftListTemplate(SwiftTO swift) {
+        String[] containers = swiftList(swift, "", "");
+        if (containers == null) {
+            return null;
+        }
+        Map<String, TemplateInfo> tmpltInfos = new HashMap<String, TemplateInfo>();
+        for( String container : containers) {
+            if ( container.startsWith("T-")) {
+                String ldir = _tmpltDir + "/" + UUID.randomUUID().toString();
+                createLocalDir(ldir);
+                String lFullPath = ldir + "/" + _tmpltpp;
+                swiftDownload(swift, container, _tmpltpp, lFullPath);
+                TemplateLocation loc = new TemplateLocation(_storage, ldir);
+                try {
+                    if (!loc.load()) {
+                        s_logger.warn("Can not parse template.properties file for template " + container);
+                        continue;
+                    }
+                } catch (IOException e) {
+                    s_logger.warn("Unable to load template location " + ldir + " due to " + e.toString(), e);
+                    continue;
+                }
+                TemplateInfo tInfo = loc.getTemplateInfo();
+                tInfo.setInstallPath(container);
+                tmpltInfos.put(tInfo.getTemplateName(), tInfo);
+                loc.purge();
+                deleteLocalDir(ldir);
+            }
+        }
+        return tmpltInfos;
+        
+    }
+    
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM){
             return new Answer(cmd, true, null);
         }
-        String root = getRootDir(cmd.getSecUrl());
-        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
-        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        if (cmd.getSwift() != null) {
+            Map<String, TemplateInfo> templateInfos = swiftListTemplate(cmd.getSwift());
+            return new ListTemplateAnswer(cmd.getSwift().toString(), templateInfos);
+        } else {
+            String root = getRootDir(cmd.getSecUrl());
+            Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+            return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        }
     }
     
     private Answer execute(SecStorageVMSetupCommand cmd) {
@@ -507,6 +570,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String result = command.execute();
         if (result != null) {
             String errMsg = "Create local path " + folder + " failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    private String deleteLocalDir(String folder) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("rmdir " + folder);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "Delete local path " + folder + " failed , err=" + result;
             s_logger.warn(errMsg);
             return errMsg;
         }

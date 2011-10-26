@@ -43,7 +43,8 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	List<HostVO> listByStatus(Status... status);
 	List<HostVO> listBy(Host.Type type, long dcId);
 	List<HostVO> listAllBy(Host.Type type, long dcId);
-	HostVO findSecondaryStorageHost(long dcId);
+
+    HostVO findSecondaryStorageHost(Long dcId);
 	List<HostVO> listByCluster(long clusterId);
 	/**
 	 * Lists all secondary storage hosts, across all zones
@@ -178,5 +179,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 
     List<HostVO> listByInAllStatus(Type type, Long clusterId, Long podId, long dcId);
 
-    List<HostVO> listByClusterStatus(long clusterId, Status status);    
+    List<HostVO> listByClusterStatus(long clusterId, Status status);
+
+    HostVO findSecondaryStorageVM(Long dcId);
 }

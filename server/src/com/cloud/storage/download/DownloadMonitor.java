@@ -18,7 +18,6 @@
 
 package com.cloud.storage.download;
 
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.exception.StorageUnavailableException;
@@ -46,7 +45,7 @@ public interface DownloadMonitor extends Manager{
 	/*When new host added, take a look at if there are templates needed to be downloaded for the same hypervisor as the host*/
     void handleSysTemplateDownload(HostVO hostId);
 
-    void handleTemplateSync(long dcId);
+    void handleTemplateSync(Long dcId);
 
     void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos);
 

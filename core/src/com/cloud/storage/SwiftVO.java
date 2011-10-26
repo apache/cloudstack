@@ -25,6 +25,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.agent.api.to.SwiftTO;
+
 @Entity
 @Table(name="swift")
 public class SwiftVO implements Swift {
@@ -75,4 +77,8 @@ public class SwiftVO implements Swift {
         return key;
     }
 
+    @Override
+    public SwiftTO toSwiftTO() {
+        return new SwiftTO(getId(), getUrl(), getAccount(), getUserName(), getKey());
+    }
 }

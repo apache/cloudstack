@@ -303,6 +303,149 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		return routerTmpltName;
 	}
 
+    @Override
+    public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
+            Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller) {
+
+        StringBuilder builder = new StringBuilder();
+        if (!permittedAccounts.isEmpty()) {
+            for (Account permittedAccount : permittedAccounts) {
+                builder.append(permittedAccount.getAccountId() + ",");
+            }
+        }
+
+        String permittedAccountsStr = builder.toString();
+
+        if (permittedAccountsStr.length() > 0) {
+            // chop the "," off
+            permittedAccountsStr = permittedAccountsStr.substring(0, permittedAccountsStr.length() - 1);
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long, Long>>();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        String sql = SELECT_TEMPLATE_HOST_REF;
+        String groupByClause = "";
+        try {
+            // short accountType;
+            // String accountId = null;
+            String guestOSJoin = "";
+            StringBuilder templateHostRefJoin = new StringBuilder();
+            String dataCenterJoin = "";
+
+            if (isIso && !hyperType.equals(HypervisorType.None)) {
+                guestOSJoin = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
+            }
+            if (onlyReady) {
+                templateHostRefJoin.append(" INNER JOIN  template_swift_ref tsr on (t.id = tsr.template_id)");
+            }
+
+            sql += guestOSJoin + templateHostRefJoin + dataCenterJoin;
+            String whereClause = "";
+
+            if (!isIso) {
+                if (hypers.isEmpty()) {
+                    return templateZonePairList;
+                } else {
+                    StringBuilder relatedHypers = new StringBuilder();
+                    for (HypervisorType hyper : hypers) {
+                        relatedHypers.append("'");
+                        relatedHypers.append(hyper.toString());
+                        relatedHypers.append("'");
+                        relatedHypers.append(",");
+                    }
+                    relatedHypers.setLength(relatedHypers.length() - 1);
+                    whereClause += " AND t.hypervisor_type IN (" + relatedHypers + ")";
+                }
+            }
+
+
+            if (templateFilter == TemplateFilter.featured) {
+                whereClause += " WHERE t.public = 1 AND t.featured = 1";
+            } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                    whereClause += " INNER JOIN account a on (t.account_id = a.id) INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
+                } else {
+                    whereClause += " WHERE t.account_id IN (" + permittedAccountsStr + ")";
+                }
+            } else if (templateFilter == TemplateFilter.sharedexecutable && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    whereClause += " LEFT JOIN launch_permission lp ON t.id = lp.template_id WHERE" + " (t.account_id IN (" + permittedAccountsStr + ") OR" + " lp.account_id IN ("
+                            + permittedAccountsStr + "))";
+                } else {
+                    whereClause += " INNER JOIN account a on (t.account_id = a.id) ";
+                }
+            } else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
+                whereClause += " WHERE (t.public = 1 OR t.account_id IN (" + permittedAccountsStr + "))";
+            } else if (templateFilter == TemplateFilter.community) {
+                whereClause += " WHERE t.public = 1 AND t.featured = 0";
+            } else if (templateFilter == TemplateFilter.all && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+                whereClause += " WHERE ";
+            } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                return templateZonePairList;
+            }
+
+            if (whereClause.equals("")) {
+                whereClause += " WHERE ";
+            } else if (!whereClause.equals(" WHERE ")) {
+                whereClause += " AND ";
+            }
+
+            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType, zoneId, onlyReady, showDomr) + groupByClause + getOrderByLimit(pageSize, startIndex);
+
+            pstmt = txn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Pair<Long, Long> templateZonePair = new Pair<Long, Long>(rs.getLong(1), rs.getLong(2));
+                templateZonePairList.add(templateZonePair);
+            }
+
+            // for now, defaulting pageSize to a large val if null; may need to
+            // revisit post 2.2RC2
+            if (isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) && templateFilter != TemplateFilter.community
+                    && !(templateFilter == TemplateFilter.self && !BaseCmd.isRootAdmin(caller.getType()))) { // evaluates
+                                                                                                             // to
+                                                                                                             // true
+                                                                                                             // If
+                                                                                                             // root
+                                                                                                             // admin
+                                                                                                             // and
+                                                                                                             // filter=self
+                List<VMTemplateVO> publicIsos = publicIsoSearch(bootable);
+                for (int i = 0; i < publicIsos.size(); i++) {
+                    if (keyword != null && publicIsos.get(i).getName().contains(keyword)) {
+                        templateZonePairList.add(new Pair<Long, Long>(publicIsos.get(i).getId(), null));
+                        continue;
+                    } else if (name != null && publicIsos.get(i).getName().contains(name)) {
+                        templateZonePairList.add(new Pair<Long, Long>(publicIsos.get(i).getId(), null));
+                        continue;
+                    } else if (keyword == null && name == null) {
+                        templateZonePairList.add(new Pair<Long, Long>(publicIsos.get(i).getId(), null));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error listing templates", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                txn.commit();
+            } catch (SQLException sqle) {
+                s_logger.warn("Error in cleaning up", sqle);
+            }
+        }
+
+        return templateZonePairList;
+    }
+
 	@Override
 	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts, Account caller) {
         
