@@ -1302,7 +1302,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 network.setState(Network.State.Shutdown);
                 _networksDao.update(networkId, network);
 
-                shutdownNetwork(networkId, context);
+                shutdownNetwork(networkId, context, false);
             }
             _networksDao.releaseFromLockTable(networkId);
         }
@@ -2133,7 +2133,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public void shutdownNetwork(long networkId, ReservationContext context) {
+    public void shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -2161,7 +2161,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     s_logger.debug("Sending network shutdown to " + element.getName());
                 }
 
-                element.shutdown(network, context, false);
+                element.shutdown(network, context, cleanupElements);
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
                 success = false;
@@ -2225,7 +2225,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Shutdown network first
-        shutdownNetwork(networkId, context);
+        shutdownNetwork(networkId, context, false);
 
         // get updated state for the network
         network = _networksDao.findById(networkId);
@@ -2438,7 +2438,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                             ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
 
-                            shutdownNetwork(networkId, context);
+                            shutdownNetwork(networkId, context, false);
                         } catch (Exception e) {
                             s_logger.warn("Unable to shutdown network: " + networkId);
                         }
@@ -2472,7 +2472,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _accountMgr.checkAccess(callerAccount, null, network);
 
-        boolean success = restartNetwork(networkId, callerAccount, null);
+        boolean success = restartNetwork(networkId, callerAccount, null, cleanup);
 
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
@@ -2503,7 +2503,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private boolean restartNetwork(long networkId, Account caller, Long newNetworkOfferingId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    private boolean restartNetwork(long networkId, Account caller, Long newNetworkOfferingId, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         NetworkVO network = _networksDao.findById(networkId);
 
@@ -2513,7 +2513,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ReservationContext context = new ReservationContextImpl(null, null, null, caller);
         s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
         
-        shutdownNetwork(networkId, context);
+        shutdownNetwork(networkId, context, cleanup);
         
         //check that the network was shutdown properly
         network = _networksDao.findById(networkId);
@@ -3198,7 +3198,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.info("Restarting network " + network + " as a part of update network call");
 
             try {
-                success = restartNetwork(networkId, caller, networkOfferingId);
+                success = restartNetwork(networkId, caller, networkOfferingId, true);
             } catch (Exception e) {
                 success = false;
             }

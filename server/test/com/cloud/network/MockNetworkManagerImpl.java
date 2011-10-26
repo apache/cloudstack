@@ -328,7 +328,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public void shutdownNetwork(long networkId, ReservationContext context) {
+    public void shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
         // TODO Auto-generated method stub
 
     }
