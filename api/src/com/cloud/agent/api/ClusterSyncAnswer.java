@@ -23,9 +23,11 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;
 
 public class ClusterSyncAnswer extends Answer {
-    long _clusterId;
-    HashMap<String, Pair<String, State>> _newStates;
-    int _type = -1; // 0 for full, 1 for delta
+    private long _clusterId;
+    private HashMap<String, Pair<String, State>> _newStates;
+    private int _type = -1; // 0 for full, 1 for delta
+    private boolean isExecuted=false;  // this is to avoidf double execution first time, due to framework ???
+    
     
     public static final int FULL_SYNC=0;
     public static final int DELTA_SYNC=1;
@@ -58,5 +60,13 @@ public class ClusterSyncAnswer extends Answer {
 
     public boolean isDelta(){
         return _type==1;
+    }
+    
+    public boolean execute(){
+        return !isExecuted;
+    }
+    
+    public void setExecuted(){
+        isExecuted = true;
     }
 }

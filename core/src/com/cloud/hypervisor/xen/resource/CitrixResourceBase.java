@@ -3895,20 +3895,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(conn, cmd);
-
-        Pool pool;
-        try {
-            pool = Pool.getByUuid(conn, _host.pool);
-            Pool.Record poolr = pool.getRecord(conn);
-
-            Host.Record hostr = poolr.master.getRecord(conn);
-            if (_host.uuid.equals(hostr.uuid)) {
-                s_logger.debug("Doing the initial cluster sync from the pool master  " + _host.ip); 
-                fullClusterSync(cmd, conn);
-            }
-        } catch (Exception e) {
-            s_logger.warn("Check for master failed, failing the probbaly initial Cluster sync ", e);
-        } 
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
@@ -6483,7 +6469,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
           return new ClusterSyncAnswer(cmd.getClusterId());
       } 
       HashMap<String, Pair<String, State>> newStates;
-      int sync_type;
+      int sync_type=-1;
       if (cmd.isRightStep()){
           // do full sync
           newStates=fullClusterSync(conn);
@@ -6500,41 +6486,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
       cmd.incrStep();
       return new ClusterSyncAnswer(cmd.getClusterId(), newStates, sync_type);
   }
-  
-
-  protected void fullClusterSync(StartupRoutingCommand cmd, Connection conn) {
-      try {
-          final HashMap<String, VmState> vmStates = new HashMap<String, VmState>();
-          Host lhost = Host.getByUuid(conn, _host.uuid);
-          Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);
-          for (VM.Record record: vm_map.values()) {
-              if (record.isControlDomain || record.isASnapshot || record.isATemplate) {
-                  continue; // Skip DOM0
-              }
-              String vm_name = record.nameLabel;
-              VmPowerState ps = record.powerState;
-              final State state = convertToState(ps);
-              Host host = record.residentOn;
-              String host_uuid = null;
-              if( ! isRefNull(host) ) {
-                  host_uuid = host.getUuid(conn);        
-                  VmState vm_state = new StartupRoutingCommand.VmState(state, host_uuid);
-                  vmStates.put(vm_name, vm_state);
-                  s_vms.put(_cluster, host_uuid, vm_name, state); 
-              }
-              if (s_logger.isTraceEnabled()) {
-                  s_logger.trace("VM " + vm_name + ": powerstate = " + ps + "; vm state=" + state.toString());
-              }  
-          }
-          cmd.setChanges(vmStates);
-      } catch (final Throwable e) {
-          String msg = "Unable to get vms through host " + _host.uuid + " due to to " + e.toString();      
-          s_logger.warn(msg, e);
-          throw new CloudRuntimeException(msg);
-      }
-  }
-
-  
 
   protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
       s_vms.clear(_cluster);
@@ -6589,6 +6540,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
               State newState = entry.getValue().second();
               String host_uuid = entry.getValue().first();
               final Pair<String, State> oldState = oldStates.remove(vm);
+              //check if host is changed
+              if (host_uuid != null){
+                  if (!host_uuid.equals(oldState.first())){
+                      changes.put(vm, new Pair<String, State>(host_uuid, newState));
+                      s_vms.put(_cluster, host_uuid, vm, newState);
+                  }
+              }
 
               if (newState == State.Stopped  && oldState != null && oldState.second() != State.Stopping && oldState.second() != State.Stopped) {
                   newState = getRealPowerState(conn, vm);
