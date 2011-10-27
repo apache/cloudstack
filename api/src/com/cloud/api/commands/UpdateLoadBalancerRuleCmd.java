@@ -43,7 +43,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, description="load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule", length=4096)
     private String description;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the load balancer rule to update")

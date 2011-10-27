@@ -34,7 +34,7 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if image is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the image")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the image", length=4096)
     private String displayText;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the image file")

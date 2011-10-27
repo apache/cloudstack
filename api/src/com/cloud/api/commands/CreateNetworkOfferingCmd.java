@@ -54,7 +54,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
     
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering.")
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering.", length=4096)
     private String tags; 
     
     @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="true is network offering supports vlans")

@@ -41,13 +41,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=false, description="size of the disk offering in GB")
     private Long diskSize;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="alternate display text of the disk offering")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="alternate display text of the disk offering", length=4096)
     private String displayText;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the disk offering")
     private String offeringName;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="tags for the disk offering")
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="tags for the disk offering", length=4096)
     private String tags;
 
     @Parameter(name=ApiConstants.CUSTOMIZED, type=CommandType.BOOLEAN, description="whether disk offering is custom or not")

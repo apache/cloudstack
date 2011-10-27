@@ -50,7 +50,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.BITS, type=CommandType.INTEGER, description="32 or 64 bits support. 64 by default")
     private Integer bits;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.", length=4096)
     private String displayText;
 
     @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, required=true, description="the format for the template. Possible values include QCOW2, RAW, and VHD.")

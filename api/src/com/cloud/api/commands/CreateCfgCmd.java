@@ -43,7 +43,7 @@ public class CreateCfgCmd extends BaseCmd {
     @Parameter(name=ApiConstants.COMPONENT, type=CommandType.STRING, required=true, description="the component of the configuration")
     private String component;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the configuration")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the configuration", length=1024)
     private String description;
 
     @Parameter(name=ApiConstants.INSTANCE, type=CommandType.STRING, required=true, description="the instance of the configuration")
@@ -52,7 +52,7 @@ public class CreateCfgCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the configuration")
     private String name;
 
-    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration")
+    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="the value of the configuration",length=4095)
     private String value;
 
 

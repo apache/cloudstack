@@ -37,7 +37,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="updates alternate display text of the disk offering with this value")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="updates alternate display text of the disk offering with this value", length=4096)
     private String displayText;
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="ID of the disk offering")
