@@ -91,9 +91,9 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     @Inject VirtualRouterElementsDao _vrElementsDao;
     
     private boolean canHandle(Type networkType, long offeringId) {
-        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
+        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
         if (!result) {
-            s_logger.trace("Virtual router element only takes care of type " + Network.Type.Isolated + " for provider " + Provider.VirtualRouter.getName());
+            s_logger.trace("Virtual router element only takes care of type " + Network.Type.Isolated + " for provider " + getProvider().getName());
         }
         return result;
     }
@@ -251,7 +251,6 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getType(), network.getNetworkOfferingId())) {
             
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);

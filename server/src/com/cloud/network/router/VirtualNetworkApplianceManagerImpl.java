@@ -2524,15 +2524,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (rules != null && !rules.isEmpty()) {
                     try {
                         if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                            // for load balancer we have to resend all lb rules for the network
-                            List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
-                            List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                            for (LoadBalancerVO lb : lbs) {
-                                List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                                lbRules.add(loadBalancing);
-                            }
-                            result = result && applyLBRules(router, lbRules);
+                            result = result && applyLBRules(router, (List<LoadBalancingRule>)rules);
                         } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
                             result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);
                         } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {

@@ -78,7 +78,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     String _name;
 
     @Inject
-    PortForwardingRulesDao _forwardingDao;
+    PortForwardingRulesDao _portForwardingDao;
     @Inject
     FirewallRulesCidrsDao _firewallCidrsDao;
     @Inject
@@ -204,7 +204,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
                 rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
-        newRule = _forwardingDao.persist(newRule);
+        newRule = _portForwardingDao.persist(newRule);
         
         //create firewallRule for 0.0.0.0/0 cidr
         if (openFirewall) {
@@ -229,7 +229,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 txn.start();
                 //no need to apply the rule as it wasn't programmed on the backend yet
                 _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _forwardingDao.remove(newRule.getId());
+                _portForwardingDao.remove(newRule.getId());
                 
                 txn.commit();
             }
@@ -300,7 +300,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 txn.start();
                 //no need to apply the rule as it wasn't programmed on the backend yet
                 _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _forwardingDao.remove(newRule.getId()); 
+                _portForwardingDao.remove(newRule.getId()); 
                 txn.commit();
             }
            
@@ -398,7 +398,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
 
-        PortForwardingRuleVO rule = _forwardingDao.findById(ruleId);
+        PortForwardingRuleVO rule = _portForwardingDao.findById(ruleId);
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
@@ -409,7 +409,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     private boolean revokePortForwardingRuleInternal(long ruleId, Account caller, long userId, boolean apply) {
-        PortForwardingRuleVO rule = _forwardingDao.findById(ruleId);
+        PortForwardingRuleVO rule = _portForwardingDao.findById(ruleId);
 
         _firewallMgr.revokeRule(rule, caller, userId, true);
 
@@ -464,7 +464,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return false;
         }
 
-        List<PortForwardingRuleVO> rules = _forwardingDao.listByVm(vmId);
+        List<PortForwardingRuleVO> rules = _portForwardingDao.listByVm(vmId);
         Set<Long> ipsToReprogram = new HashSet<Long>();
 
         if (rules == null || rules.isEmpty()) {
@@ -527,7 +527,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public List<? extends PortForwardingRule> listPortForwardingRulesForApplication(long ipId) {
-        return _forwardingDao.listForApplication(ipId);
+        return _portForwardingDao.listForApplication(ipId);
     }
 
     @Override
@@ -555,7 +555,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<PortForwardingRuleVO> sb = _forwardingDao.createSearchBuilder();
+        SearchBuilder<PortForwardingRuleVO> sb = _portForwardingDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), Op.IN);
@@ -593,7 +593,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
-        return _forwardingDao.search(sc, filter);
+        return _portForwardingDao.search(sc, filter);
     }
     
     @Override
@@ -603,7 +603,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public boolean applyPortForwardingRules(long ipId, boolean continueOnError, Account caller) {
-        List<PortForwardingRuleVO> rules = _forwardingDao.listForApplication(ipId);
+        List<PortForwardingRuleVO> rules = _portForwardingDao.listForApplication(ipId);
         
         if (rules.size() == 0) {
             s_logger.debug("There are no firwall rules to apply for ip id=" + ipId);
@@ -638,25 +638,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         for (FirewallRule rule : rules) {
-            IpAddress sourceIp = _ipAddressDao.findById(rule.getSourceIpAddressId());
-
-            UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
-
-            Long networkId = sourceIp.getAssociatedWithNetworkId();
-            if (networkId == null) {
-                throw new CloudRuntimeException("Ip address is not associated with any network");
-            }
-
-            Network network = _networkMgr.getNetwork(networkId);
-
-            if (network == null) {
-                throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
-            }
-
-            Nic guestNic = _networkMgr.getNicInNetworkIncludingRemoved(vm.getId(), networkId);
-            FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
-
-            staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
+            staticNatRules.add(buildStaticNatRule(rule));
         }
 
         if (caller != null) {
@@ -852,7 +834,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public boolean revokeAllPFAndStaticNatRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
-        List<PortForwardingRuleVO> pfRules = _forwardingDao.listByIpAndNotRevoked(ipId);
+        List<PortForwardingRuleVO> pfRules = _portForwardingDao.listByIpAndNotRevoked(ipId);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + pfRules.size() + " port forwarding rules for ip id=" + ipId);
         }
@@ -883,7 +865,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         applyStaticNatRules(ipId, true, caller);
 
         // Now we check again in case more rules have been inserted.
-        rules.addAll(_forwardingDao.listByIpAndNotRevoked(ipId));
+        rules.addAll(_portForwardingDao.listByIpAndNotRevoked(ipId));
         rules.addAll(_firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.StaticNat));
 
         if (s_logger.isDebugEnabled()) {
@@ -897,7 +879,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public boolean revokeAllPFStaticNatRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
         List<FirewallRule> rules = new ArrayList<FirewallRule>();
 
-        List<PortForwardingRuleVO> pfRules = _forwardingDao.listByNetwork(networkId);
+        List<PortForwardingRuleVO> pfRules = _portForwardingDao.listByNetwork(networkId);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + pfRules.size() + " port forwarding rules for network id=" + networkId);
         }
@@ -925,7 +907,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         success = success && applyStaticNatRulesForNetwork(networkId, true, caller);
 
         // Now we check again in case more rules have been inserted.
-        rules.addAll(_forwardingDao.listByNetworkAndNotRevoked(networkId));
+        rules.addAll(_portForwardingDao.listByNetworkAndNotRevoked(networkId));
         rules.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.StaticNat));
 
         if (s_logger.isDebugEnabled()) {
@@ -996,7 +978,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 txn.start();
 
                 for (FirewallRuleVO newRule : rules) {
-                    _forwardingDao.remove(newRule.getId());
+                    _portForwardingDao.remove(newRule.getId());
                 }
                 txn.commit();
             }
@@ -1014,7 +996,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 }
                 continue;
             }
-            allRules.addAll(_forwardingDao.listForApplication(addr.getId()));
+            allRules.addAll(_portForwardingDao.listForApplication(addr.getId()));
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -1026,7 +1008,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
-        return _forwardingDao.listByNetwork(networkId);
+        return _portForwardingDao.listByNetwork(networkId);
     }
 
     @Override
@@ -1060,7 +1042,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     public PortForwardingRule getPortForwardigRule(long ruleId) {
-        return _forwardingDao.findById(ruleId);
+        return _portForwardingDao.findById(ruleId);
     }
 
     @Override

@@ -97,6 +97,7 @@ import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -110,13 +111,19 @@ import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.SourceNATServiceProvider;
 import com.cloud.network.element.StaticNATServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.StaticNatRuleImpl;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -244,6 +251,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject PhysicalNetworkDao _physicalNetworkDao;
     @Inject PhysicalNetworkServiceProviderDao _pNSPDao;
+    @Inject PortForwardingRulesDao _portForwardingRulesDao;
+    @Inject LoadBalancerDao _lbDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -511,6 +520,32 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
+        boolean success = applyIpAssociations(network, continueOnError, publicIps);
+
+        if (success) {
+            for (IPAddressVO addr : userIps) {
+
+                if (addr.getState() == IpAddress.State.Allocating) {
+
+                    addr.setAssociatedWithNetworkId(network.getId());
+                    markPublicIpAsAllocated(addr);
+
+                } else if (addr.getState() == IpAddress.State.Releasing) {
+                    // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the system
+                    if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
+                        _ipAddressDao.unassignIpAddress(addr.getId());
+                    } else {
+                        success = false;
+                        s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
+                    }
+                }
+            }
+        }
+
+        return success;
+    }
+
+    protected boolean applyIpAssociations(Network network, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
         int found = 0;
         for (NetworkElement element : _networkElements) {
@@ -531,29 +566,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
-
-        if (success) {
-            for (IPAddressVO addr : userIps) {
-
-                if (addr.getState() == IpAddress.State.Allocating) {
-
-                    addr.setAssociatedWithNetworkId(network.getId());
-                    markPublicIpAsAllocated(addr);
-
-                } else if (addr.getState() == IpAddress.State.Releasing) {
-                    // Cleanup all the resources for ip address if there are any, and only then unassign ip in the system
-                    if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
-                        _ipAddressDao.unassignIpAddress(addr.getId());
-                    } else {
-                        success = false;
-                        s_logger.warn("Failed to release resources for ip address id=" + addr.getId());
-                    }
-                }
-            }
-        }
-
         return success;
     }
+    
+    
 
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
@@ -1287,7 +1303,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // reapply all the firewall/staticNat/lb rules
             s_logger.debug("Reprogramming network " + network + " as a part of network implement");
-            if (!reprogramNetwork(networkId, UserContext.current().getCaller(), network)) {
+            if (!reprogramNetworkRules(networkId, UserContext.current().getCaller(), network)) {
                 s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
                 throw new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
             } 
@@ -2151,7 +2167,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _networksDao.update(network.getId(), network);
         txn.commit();
 
-        //1) FIXME - Cleanup all the rules for the network
+        //1) Cleanup all the rules for the network. If it fails, just log the failure and proceed with shutting down the elements
+        boolean cleanupResult = true;
+        try {
+            cleanupResult = shutdownNetworkResources(networkId, context.getAccount(), context.getCaller().getId());
+        } catch (Exception ex) {
+            s_logger.warn("shutdownNetworkRules failed during the network " + network + " shutdown due to ", ex);
+        } finally {
+            if (!cleanupResult) {
+                s_logger.warn("Failed to cleanup network id=" + networkId + " resources as a part of shutdownNetwork");
+            }
+        }  
         
         //2) Shutdown all the network elements
         boolean success = true;
@@ -2285,66 +2311,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    private boolean cleanupNetworkResources(long networkId, Account caller, long callerUserId) {
-        boolean success = true;
-        Network network = getNetwork(networkId);
-
-        // remove all PF/Static Nat rules for the network
-        try {
-            if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, callerUserId, caller)) {
-                s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);
-            } else {
-                success = false;
-                s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup");
-            }
-        } catch (ResourceUnavailableException ex) {
-            success = false;
-            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
-            s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
-        }
-
-        // remove all LB rules for the network
-        if (_lbMgr.removeAllLoadBalanacersForNetwork(networkId, caller, callerUserId)) {
-            s_logger.debug("Successfully cleaned up load balancing rules for network id=" + networkId);
-        } else {
-            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
-            success = false;
-            s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
-        }
-        
-        //revoke all firewall rules for the network
-        try {
-            if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, callerUserId, caller)) {
-                s_logger.debug("Successfully cleaned up firewallRules rules for network id=" + networkId);
-            } else {
-                success = false;
-                s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup");
-            }
-        } catch (ResourceUnavailableException ex) {
-            success = false;
-            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
-            s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
-        }
-
-        // release all ip addresses
-        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
-        for (IPAddressVO ipToRelease : ipsToRelease) {
-            IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
-            assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
-        }
-
-        try {
-            if (!applyIpAssociations(network, true)) {
-                s_logger.warn("Unable to apply ip address associations for " + network);
-                success = false;
-            }
-        } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
-        }
-
-        return success;
-    }
-
     private boolean deleteVlansInNetwork(long networkId, long userId) {
         List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
         boolean result = true;
@@ -2456,8 +2422,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // This method restarts all network elements belonging to the network and re-applies all the rules
         Long networkId = cmd.getNetworkId();
 
-        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
-        Account callerAccount = _accountMgr.getActiveAccountById(caller.getAccountId());
+        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
 
         // Check if network exists
         NetworkVO network = _networksDao.findById(networkId);
@@ -2472,7 +2438,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _accountMgr.checkAccess(callerAccount, null, network);
 
-        boolean success = restartNetwork(networkId, callerAccount, null, cleanup);
+        boolean success = restartNetwork(networkId, callerAccount, callerUser, null, cleanup);
 
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
@@ -2503,14 +2469,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private boolean restartNetwork(long networkId, Account caller, Long newNetworkOfferingId, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    private boolean restartNetwork(long networkId, Account callerAccount, User callerUser, Long newNetworkOfferingId, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         NetworkVO network = _networksDao.findById(networkId);
 
         s_logger.debug("Restarting network " + networkId + "...");
         
         //shutdown the network
-        ReservationContext context = new ReservationContextImpl(null, null, null, caller);
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
         
         shutdownNetwork(networkId, context, cleanup);
@@ -2544,7 +2510,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     
     //This method re-programs the rules/ips for existing network
-    protected boolean reprogramNetwork(long networkId, Account caller, NetworkVO network) throws ResourceUnavailableException {
+    protected boolean reprogramNetworkRules(long networkId, Account caller, NetworkVO network) throws ResourceUnavailableException {
         boolean success = true;
         // associate all ip addresses
         if (!applyIpAssociations(network, false)) {
@@ -3199,7 +3165,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.info("Restarting network " + network + " as a part of update network call");
 
             try {
-                success = restartNetwork(networkId, caller, networkOfferingId, true);
+                success = restartNetwork(networkId, caller, null, networkOfferingId, true);
             } catch (Exception e) {
                 success = false;
             }
@@ -3960,8 +3926,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return pNtwks.get(0);
     }
     
-    
-    
     @Override
     public List<Long> listNetworkOfferingsForUpgrade(long networkId) {
         
@@ -3971,5 +3935,198 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         return offerings;
     }
+    
+    
+    private boolean cleanupNetworkResources(long networkId, Account caller, long callerUserId) {
+        boolean success = true;
+        Network network = getNetwork(networkId);
+
+        // remove all PF/Static Nat rules for the network
+        try {
+            if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, callerUserId, caller)) {
+                s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);
+            } else {
+                success = false;
+                s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup");
+            }
+        } catch (ResourceUnavailableException ex) {
+            success = false;
+            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+        }
+
+        // remove all LB rules for the network
+        if (_lbMgr.removeAllLoadBalanacersForNetwork(networkId, caller, callerUserId)) {
+            s_logger.debug("Successfully cleaned up load balancing rules for network id=" + networkId);
+        } else {
+            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            success = false;
+            s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
+        }
+        
+        //revoke all firewall rules for the network
+        try {
+            if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, callerUserId, caller)) {
+                s_logger.debug("Successfully cleaned up firewallRules rules for network id=" + networkId);
+            } else {
+                success = false;
+                s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup");
+            }
+        } catch (ResourceUnavailableException ex) {
+            success = false;
+            // shouldn't even come here as network is being cleaned up after all network elements are shutdown
+            s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+        }
+
+        // release all ip addresses
+        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
+        for (IPAddressVO ipToRelease : ipsToRelease) {
+            IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
+            assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+        }
+
+        try {
+            if (!applyIpAssociations(network, true)) {
+                s_logger.warn("Unable to apply ip address associations for " + network);
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
+        }
+
+        return success;
+    }
+    
+    
+    private boolean shutdownNetworkResources(long networkId, Account caller, long callerUserId) {
+        //This method cleans up network rules on the backend w/o touching them in the DB
+        boolean success = true;
+        
+        // Mark all PF rules as revoked and apply them on the backend (not in the DB)
+        List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(networkId);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + pfRules.size() + " port forwarding rules for network id=" + networkId + " as a part of shutdownNetworkRules");
+        }
+        
+        for (PortForwardingRuleVO pfRule : pfRules) {
+            s_logger.trace("Marking pf rule " + pfRule + " with Revoke state");
+            pfRule.setState(FirewallRule.State.Revoke);
+        }
+        
+        try {
+            if (!_firewallMgr.applyRules(pfRules, true, false)) {
+                s_logger.warn("Failed to cleanup pf rules as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup pf rules as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+        
+        // Mark all static  rules as revoked and apply them on the backend (not in the DB)
+        List<FirewallRuleVO> firewallStaticNatRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
+        List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + firewallStaticNatRules.size() + " static nat rules for network id=" + networkId + " as a part of shutdownNetworkRules");
+        }
+        
+        for (FirewallRuleVO firewallStaticNatRule : firewallStaticNatRules) {
+            s_logger.trace("Marking static nat rule " + firewallStaticNatRule + " with Revoke state");
+            IpAddress ip = _ipAddressDao.findById(firewallStaticNatRule.getSourceIpAddressId());
+            FirewallRuleVO ruleVO = _firewallDao.findById(firewallStaticNatRule.getId());
+
+            if (ip == null || !ip.isOneToOneNat() || ip.getAssociatedWithVmId() == null) {
+                throw new InvalidParameterValueException("Source ip address of the rule id=" + firewallStaticNatRule.getId() + " is not static nat enabled");
+            }
+
+            String dstIp = getIpInNetwork(ip.getAssociatedWithVmId(), firewallStaticNatRule.getNetworkId());
+            ruleVO.setState(FirewallRule.State.Revoke);
+            staticNatRules.add(new StaticNatRuleImpl(ruleVO, dstIp));
+        }
+        
+        try {
+            if (!_firewallMgr.applyRules(staticNatRules, true, false)) {
+                s_logger.warn("Failed to cleanup static nat rules as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup static nat rules as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+        
+        // remove all LB rules for the network
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+        for (LoadBalancerVO lb : lbs) {
+            s_logger.trace("Marking lb rule " + lb + " with Revoke state");
+            lb.setState(FirewallRule.State.Revoke);
+            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+            //mark all destination with revoke state
+            for (LbDestination dst : dstList) {
+                s_logger.trace("Marking lb destination " + dst + " with Revoke state");
+                dst.setRevoked(true);
+            }
+            
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            lbRules.add(loadBalancing);
+        }
+        
+        try {
+            if (!_firewallMgr.applyRules(lbRules, true, false)) {
+                s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+        
+        //revoke all firewall rules for the network w/o applying them on the DB
+        List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + firewallRules.size() + " firewall rules for network id=" + networkId + " as a part of shutdownNetworkRules");
+        }
+        
+        for (FirewallRuleVO firewallRule : firewallRules) {
+            s_logger.trace("Marking firewall rule " + firewallRule + " with Revoke state");
+            firewallRule.setState(FirewallRule.State.Revoke);
+        }
+        
+        try {
+            if (!_firewallMgr.applyRules(firewallRules, true, false)) {
+                s_logger.warn("Failed to cleanup firewall rules as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup firewall rules as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+
+        // Get all ip addresses, mark as releasing and release them on the backend (except for source nat) - DONE
+        Network network = getNetwork(networkId);
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
+        List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                if (!userIp.isSourceNat()) {
+                    userIp.setState(State.Releasing);
+                }
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                publicIpsToRelease.add(publicIp);
+            }
+        }
+
+        try {
+            if (!applyIpAssociations(network, true, publicIpsToRelease)) {
+                s_logger.warn("Unable to apply ip address associations for " + network + " as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
+        }
+
+        return success;
+    }
+    
 
 }

@@ -43,9 +43,9 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     }
     
     private boolean canHandle(Type networkType, long offeringId) {
-        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.VirtualRouter));
+        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
         if (!result) {
-            s_logger.trace("Virtual router element only takes care of networktype " + Network.Type.Isolated + " for provider " + Provider.VirtualRouter.getName());
+            s_logger.trace("Virtual router element only takes care of networktype " + Network.Type.Isolated + " for provider " + getProvider().getName());
         }
         return result;
     }
