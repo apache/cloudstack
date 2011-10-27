@@ -106,7 +106,6 @@ import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
@@ -165,11 +164,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject VolumeDao _volumeDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject
-    SnapshotManager _snapshotMgr;
-    @Inject
     SwiftDao _swiftDao;
     @Inject
     VMTemplateSwiftDao _tmpltSwiftDao;
+    @Inject
+    ConfigurationDao _configDao;
     @Inject DomainDao _domainDao;
     @Inject UploadDao _uploadDao;
     long _routerTemplateId = -1;
@@ -412,7 +411,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.warn(errMsg);
             return errMsg;
         }
-        SwiftTO swift = _snapshotMgr.getSwiftTO(tmpltSwift.getSwiftId());
+        SwiftTO swift = _swiftDao.getSwiftTO(tmpltSwift.getSwiftId());
         if ( swift == null ) {
             String errMsg = " Swift " + tmpltSwift.getSwiftId() + " doesn't exit ?";
             s_logger.warn(errMsg);
@@ -447,7 +446,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             return errMsg;
         }
 
-        SwiftTO swift = _snapshotMgr.getSwiftTO(null);
+        SwiftTO swift = _swiftDao.getSwiftTO(null);
         if (swift == null) {
             String errMsg = " There is no Swift in this setup ";
             s_logger.warn(errMsg);
@@ -808,6 +807,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
     
     void swiftTemplateSync() {
+        Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
+        if (!swiftEnable) {
+            return;
+        }
         GlobalLock swiftTemplateSyncLock = GlobalLock.getInternLock("templatemgr.swiftTemplateSync");
         try {
             if (swiftTemplateSyncLock.lock(3)) {
@@ -863,7 +866,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public boolean start() {
-        _swiftTemplateSyncExecutor.scheduleAtFixedRate(getSwiftTemplateSyncTask(), 120, 300, TimeUnit.SECONDS);
+        _swiftTemplateSyncExecutor.scheduleAtFixedRate(getSwiftTemplateSyncTask(), 60, 60, TimeUnit.SECONDS);
         return true;
     }
 
@@ -878,16 +881,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         _name = name;
         
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to find ConfigurationDao");
-        }
-        
-        final Map<String, String> configs = configDao.getConfiguration("AgentManager", params);
+        final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
 
-        String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
+        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
 
         HostTemplateStatesSearch = _tmpltHostDao.createSearchBuilder();
@@ -901,7 +899,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         HostSearch.done();
         HostTemplateStatesSearch.done();
         
-        _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
         _swiftTemplateSyncExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("swift-template-sync-Executor"));
         return false;

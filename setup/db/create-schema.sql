@@ -990,7 +990,7 @@ CREATE TABLE  `cloud`.`template_host_ref` (
   INDEX `i_template_host_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`swift_host_ref` (
+CREATE TABLE  `cloud`.`template_swift_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `swift_id` bigint unsigned NOT NULL,
   `template_id` bigint unsigned NOT NULL,
@@ -998,8 +998,8 @@ CREATE TABLE  `cloud`.`swift_host_ref` (
   `size` bigint unsigned,
   `physical_size` bigint unsigned DEFAULT 0,
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_template_swift_ref__swift_id` FOREIGN KEY `fk_template_swift_ref__swift_id` (`swift_id`) REFERENCES `swift (`id`) ON DELETE CASCADE,
-  INDEX `i_template_swift_ref__host_id`(`swift_id`),
+  CONSTRAINT `fk_template_swift_ref__swift_id` FOREIGN KEY `fk_template_swift_ref__swift_id` (`swift_id`) REFERENCES `swift` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_swift_ref__swift_id`(`swift_id`),
   CONSTRAINT `fk_template_swift_ref__template_id` FOREIGN KEY `fk_template_swift_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
   INDEX `i_template_swift_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

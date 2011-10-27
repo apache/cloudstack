@@ -292,7 +292,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     @Override
     public List<VMTemplateHostVO> listByState(VMTemplateHostVO.Status state) {
         SearchCriteria<VMTemplateHostVO> sc = createSearchCriteria();
-        sc.addAnd("download_state", SearchCriteria.Op.EQ, state);
+        sc.addAnd("downloadState", SearchCriteria.Op.EQ, state);
         return search(sc, null);
     }
 

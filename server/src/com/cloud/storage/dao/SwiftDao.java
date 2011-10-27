@@ -18,6 +18,7 @@
 
 package com.cloud.storage.dao;
 
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.SwiftVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -28,4 +29,6 @@ import com.cloud.utils.db.GenericDao;
  */
 
 public interface SwiftDao extends GenericDao<SwiftVO, Long> {
+
+    SwiftTO getSwiftTO(Long swiftId);
 }

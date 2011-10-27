@@ -37,7 +37,7 @@ public class SwiftVO implements Swift {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private long id = -1;
+    private long id;
     
     @Column(name="url")
     String url;

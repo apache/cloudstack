@@ -19,7 +19,6 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.SnapshotPolicyVO;
@@ -140,6 +139,4 @@ public interface SnapshotManager {
     void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId );
 
     void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
-
-    SwiftTO getSwiftTO(Long id);
 }
