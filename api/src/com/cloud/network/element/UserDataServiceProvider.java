@@ -6,6 +6,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-public interface PasswordServiceProvider extends NetworkElement {
+public interface UserDataServiceProvider extends NetworkElement {
     boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException;
 }

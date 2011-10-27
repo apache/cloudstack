@@ -33,7 +33,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.element.PasswordServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
@@ -182,7 +182,7 @@ public interface NetworkManager extends NetworkService {
 
     Nic getDefaultNic(long vmId);
 
-    List<? extends PasswordServiceProvider> getPasswordResetElements();
+    List<? extends UserDataServiceProvider> getPasswordResetElements();
     
     @Deprecated
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);

@@ -47,11 +47,13 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterElementsDao;
 import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
@@ -70,7 +72,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends DhcpElement implements VirtualRouterElementService, SourceNATServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, StaticNATServiceProvider, RemoteAccessVPNServiceProvider {
+public class VirtualRouterElement extends DhcpElement implements VirtualRouterElementService, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -173,7 +175,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
 //    }
 
     @Override
-    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
     
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
         if (canHandle(config.getType(), config.getNetworkOfferingId())) {
@@ -185,6 +187,25 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             
             if(!_routerMgr.applyFirewallRules(config, rules, routers)){
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + config.getId());
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+    
+    @Override
+    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
+                return true;
+            }
+            
+            if(!_routerMgr.applyFirewallRules(network, rules, routers)){
+                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
             } else {
                 return true;
             }
@@ -402,5 +423,24 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
                                         false, false, false, false, false, false, false);
         _vrElementsDao.persist(element);
         return true;
+    }
+
+    @Override
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
+                return true;
+            }
+            
+            if(!_routerMgr.applyFirewallRules(network, rules, routers)){
+                throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
     }
 }

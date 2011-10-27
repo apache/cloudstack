@@ -6,7 +6,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 
-public interface SourceNATServiceProvider extends NetworkElement {
+public interface SourceNatServiceProvider extends NetworkElement {
     /**
      * Apply ip addresses to this network
      * @param network

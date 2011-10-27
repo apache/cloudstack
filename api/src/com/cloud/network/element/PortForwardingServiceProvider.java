@@ -4,9 +4,9 @@ import java.util.List;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.PortForwardingRule;
 
-public interface LoadBalancingServiceProvider extends NetworkElement {
+public interface PortForwardingServiceProvider extends NetworkElement {
     /**
      * Apply rules
      * @param network
@@ -14,5 +14,5 @@ public interface LoadBalancingServiceProvider extends NetworkElement {
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
+    boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException;
 }

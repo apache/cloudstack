@@ -68,7 +68,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DhcpElement extends AdapterBase implements DhcpElementService, PasswordServiceProvider {
+public class DhcpElement extends AdapterBase implements DhcpElementService, UserDataServiceProvider {
     private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();

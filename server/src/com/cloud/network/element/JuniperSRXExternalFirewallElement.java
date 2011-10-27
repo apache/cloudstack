@@ -47,6 +47,8 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -58,7 +60,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class JuniperSRXExternalFirewallElement extends AdapterBase implements SourceNATServiceProvider, FirewallServiceProvider, RemoteAccessVPNServiceProvider {
+public class JuniperSRXExternalFirewallElement extends AdapterBase implements SourceNatServiceProvider, FirewallServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
     
@@ -142,7 +144,7 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
     
 
     @Override
-    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config)) {
             return false;
         }
@@ -231,6 +233,14 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         return capabilities;
     }
     
+    @Override
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+        if (!canHandle(network)) {
+            return false;
+        }
+    	
+    	return _externalNetworkManager.applyFirewallRules(network, rules);
+    }
 }
 
 

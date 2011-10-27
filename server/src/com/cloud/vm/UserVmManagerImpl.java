@@ -128,7 +128,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.element.PasswordServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
@@ -428,10 +428,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
-            List<? extends PasswordServiceProvider> elements = _networkMgr.getPasswordResetElements();
+            List<? extends UserDataServiceProvider> elements = _networkMgr.getPasswordResetElements();
 
             boolean result = true;
-            for (PasswordServiceProvider element : elements) {
+            for (UserDataServiceProvider element : elements) {
                 if (!element.savePassword(defaultNetwork, defaultNicProfile, vmProfile)) {
                     result = false;
                 }

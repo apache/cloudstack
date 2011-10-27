@@ -106,10 +106,11 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.PasswordServiceProvider;
+import com.cloud.network.element.PortForwardingServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.element.SourceNATServiceProvider;
-import com.cloud.network.element.StaticNATServiceProvider;
+import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -119,6 +120,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
@@ -550,10 +552,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         int found = 0;
         for (NetworkElement element : _networkElements) {
             try {
-                if (!(element instanceof SourceNATServiceProvider)) {
+                if (!(element instanceof SourceNatServiceProvider)) {
                     continue;
                 }
-                SourceNATServiceProvider e = (SourceNATServiceProvider)element;
+                SourceNatServiceProvider e = (SourceNatServiceProvider)element;
                 found ++;
                 s_logger.trace("Asking " + element + " to apply ip associations");
                 e.applyIps(network, publicIps);
@@ -2336,6 +2338,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    /* The rules here is only the same kind of rule, e.g. all load balancing rules or all port forwarding rules */
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {
             s_logger.debug("There are no rules to forward to the network elements");
@@ -2344,22 +2347,36 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
         Network network = _networksDao.findById(rules.get(0).getNetworkId());
-        int found = 0;
+        Purpose purpose = rules.get(0).getPurpose();
         for (NetworkElement ne : _networkElements) {
             try {
-                if (!(ne instanceof FirewallServiceProvider) && !(ne instanceof LoadBalancingServiceProvider)) {
-                    continue;
-                }
-                found ++;
                 boolean handled;
-                if (ne instanceof FirewallServiceProvider) {
-                    FirewallServiceProvider e = (FirewallServiceProvider)ne;
-                    handled = e.applyRules(network, rules);
-                } else {
-                	LoadBalancingServiceProvider e = (LoadBalancingServiceProvider) ne;
-                	handled = e.applyRules(network, rules);
+                switch (purpose) {
+                case LoadBalancing:
+                    if (!(ne instanceof LoadBalancingServiceProvider)) {
+                        continue;
+                    }
+                	handled = ((LoadBalancingServiceProvider)ne).applyLBRules(network, (List<LoadBalancingRule>)rules);
+                    break;
+                case PortForwarding:
+                    if (!(ne instanceof PortForwardingServiceProvider)) {
+                        continue;
+                    }
+                	handled = ((PortForwardingServiceProvider)ne).applyPFRules(network, (List<PortForwardingRule>)rules);
+                    break;
+                case StaticNat:
+                    /* It's firewall rule for static nat, not static nat rule */
+                    /* Fall through */
+                case Firewall: 
+                    if (!(ne instanceof FirewallServiceProvider)) {
+                        continue;
+                    }
+                    handled = ((FirewallServiceProvider)ne).applyFWRules(network, rules);
+                    break;
+                default:
+                    s_logger.debug("Unable to handle network rules for purpose: " + purpose.toString());
+                    handled = false;
                 }
-                
                 s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {
@@ -2857,11 +2874,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends PasswordServiceProvider> getPasswordResetElements() {
-        List<PasswordServiceProvider> elements = new ArrayList<PasswordServiceProvider>();
+    public List<? extends UserDataServiceProvider> getPasswordResetElements() {
+        List<UserDataServiceProvider> elements = new ArrayList<UserDataServiceProvider>();
         for (NetworkElement element : _networkElements) {
-            if (element instanceof PasswordServiceProvider) {
-                PasswordServiceProvider e = (PasswordServiceProvider)element;
+            if (element instanceof UserDataServiceProvider) {
+                UserDataServiceProvider e = (UserDataServiceProvider)element;
                 elements.add(e);
             }
         }
@@ -3329,15 +3346,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
         Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
-        int found = 0;
         for (NetworkElement ne : _networkElements) {
             try {
-                if (!(ne instanceof StaticNATServiceProvider)) {
+                if (!(ne instanceof StaticNatServiceProvider)) {
                     continue;
                 }
-                StaticNATServiceProvider e = (StaticNATServiceProvider)ne;
-                found ++;
-                boolean handled = e.applyStaticNats(network, staticNats);
+                boolean handled = ((StaticNatServiceProvider)ne).applyStaticNats(network, staticNats);
                 s_logger.debug("Static Nat for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {
