@@ -42,9 +42,11 @@ import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
+import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -61,6 +63,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -98,6 +101,8 @@ public class UploadMonitorImpl implements UploadMonitor {
     ConfigurationDao _configDao;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    SecondaryStorageVmManager _ssvmMgr;
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
@@ -153,13 +158,13 @@ public class UploadMonitorImpl implements UploadMonitor {
 		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj, this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
 		_listenerMap.put(uploadVolumeObj, ul);
 
-		long result = send(sserver.getId(), ucmd, ul);	
-		if (result == -1) {
-			s_logger.warn("Unable to start upload of volume " + volume.getName() + " from " + sserver.getName() + " to " +url);
+		try {
+	        send(sserver.getId(), ucmd, ul);
+        } catch (AgentUnavailableException e) {
+			s_logger.warn("Unable to start upload of volume " + volume.getName() + " from " + sserver.getName() + " to " +url, e);
 			ul.setDisconnected();
 			ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
-		}				
-		
+        }		
 	}
 
 	@Override
@@ -181,12 +186,13 @@ public class UploadMonitorImpl implements UploadMonitor {
 			UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadTemplateObj, this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);			
 			_listenerMap.put(uploadTemplateObj, ul);
 
-			long result = send(sserver.getId(), ucmd, ul);	
-			if (result == -1) {
-				s_logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + sserver.getName() + " to " +url);
+			try {
+	            send(sserver.getId(), ucmd, ul);
+            } catch (AgentUnavailableException e) {
+				s_logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + sserver.getName() + " to " +url, e);
 				ul.setDisconnected();
 				ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
-			}
+            }
 			return uploadTemplateObj.getId();
 		}		
 		return null;		
@@ -201,7 +207,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 	    
         //Check if ssvm is up
-        HostVO ssvm = _agentMgr.getSSAgent(ApiDBUtils.findHostById(vmTemplateHost.getHostId()));
+        HostVO ssvm = _ssvmMgr.pickSsvmHost(ApiDBUtils.findHostById(vmTemplateHost.getHostId()));
         if( ssvm == null ) {
             throw new CloudRuntimeException("There is no secondary storage VM for secondary storage host " + secStorage.getId());
         }
@@ -222,13 +228,14 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    	String path = vmTemplateHost.getInstallPath();
 	    	String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
 	    	CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(secStorage.getParent(), path, uuid);
-    	    long result = send(ssvm.getId(), cmd, null);
-    	    if (result == -1){
-    	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
-                s_logger.error(errorString);
+    	    try {
+	            send(ssvm.getId(), cmd, null);
+            } catch (AgentUnavailableException e) {
+    	        errorString = "Unable to create a link for " +type+ " id:"+template.getId() + "," + e.getMessage();
+                s_logger.error(errorString, e);
                 throw new CloudRuntimeException(errorString);
-    	    }
-    	    
+            }
+
     	    //Construct actual URL locally now that the symlink exists at SSVM
     	    List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
     	    if (ssVms.size() > 0) {
@@ -287,20 +294,21 @@ public class UploadMonitorImpl implements UploadMonitor {
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
             HostVO secStorage = ApiDBUtils.findHostById(ApiDBUtils.findUploadById(uploadId).getHostId());
-            HostVO ssvm = _agentMgr.getSSAgent(secStorage);
+            HostVO ssvm = _ssvmMgr.pickSsvmHost(secStorage);
             if( ssvm == null ) {
             	errorString = "There is no secondary storage VM for secondary storage host " + secStorage.getName();
             	throw new CloudRuntimeException(errorString);
             }
             
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(secStorage.getParent(), path, uuid);
-            long result = send(ssvm.getId(), cmd, null);
-            if (result == -1){
-                errorString = "Unable to create a link for " +type+ " id:"+entityId;
-                s_logger.warn(errorString);
+            try {
+	            send(ssvm.getId(), cmd, null);
+            } catch (AgentUnavailableException e) {
+                errorString = "Unable to create a link for " +type+ " id:"+entityId + "," + e.getMessage();
+                s_logger.warn(errorString, e);
                 throw new CloudRuntimeException(errorString);
             }
-            
+
             //Construct actual URL locally now that the symlink exists at SSVM
             String extractURL = generateCopyUrl(ssvm.getPublicIpAddress(), uuid);
             UploadVO vo = _uploadDao.createForUpdate();
@@ -335,8 +343,8 @@ public class UploadMonitorImpl implements UploadMonitor {
 	
 
 
-	public long send(Long hostId, Command cmd, Listener listener) {
-		return _agentMgr.gatherStats(hostId, cmd, listener);
+	public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
+		_agentMgr.send(hostId, new Commands(cmd), listener);
 	}
 
 	@Override
@@ -468,16 +476,17 @@ public class UploadMonitorImpl implements UploadMonitor {
                 s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
                 DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), secStorage.getParent());
-                HostVO ssvm = _agentMgr.getSSAgent(secStorage);
+                HostVO ssvm = _ssvmMgr.pickSsvmHost(secStorage);
                 if( ssvm == null ) {
                 	s_logger.warn("There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
                 	continue;
                 }
-                long result = send(ssvm.getId(), cmd, null);
-                if (result == -1){
-                    s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl());
-                }else{
+                
+                try {
+	                send(ssvm.getId(), cmd, null);
                     _uploadDao.remove(extractJob.getId());
+                } catch (AgentUnavailableException e) {
+                	s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl(), e);
                 }
             }
         }

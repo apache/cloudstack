@@ -48,6 +48,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.event.EventVO;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Upload.Status;
@@ -421,10 +422,12 @@ public class UploadListener implements Listener {
 			if (s_logger.isTraceEnabled()) {
 				log("Sending progress command ", Level.TRACE);
 			}
-			long sent = uploadMonitor.send(sserver.getId(), new UploadProgressCommand(getCommand(), getJobId(), reqType), this);
-			if (sent == -1) {
+			try {
+	            uploadMonitor.send(sserver.getId(), new UploadProgressCommand(getCommand(), getJobId(), reqType), this);
+            } catch (AgentUnavailableException e) {
+            	s_logger.debug("Send command failed", e);
 				setDisconnected();
-			}
+            }
 		}
 		
 	}

@@ -40,6 +40,7 @@ import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -48,6 +49,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -141,8 +143,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	final Map<VMTemplateHostVO, DownloadListener> _listenerMap = new ConcurrentHashMap<VMTemplateHostVO, DownloadListener>();
 
 
-	public long send(Long hostId, Command cmd, Listener listener) {
-		return _agentMgr.gatherStats(hostId, cmd, listener);
+	public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
+		_agentMgr.send(hostId, new Commands(cmd), listener);
 	}
 
 	@Override
@@ -243,7 +245,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
 	 		}
 			dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
-            HostVO ssAhost = _agentMgr.getSSAgent(destServer);
+            HostVO ssAhost = _ssvmMgr.pickSsvmHost(destServer);
             if( ssAhost == null ) {
                  s_logger.warn("There is no secondary storage VM for secondary storage host " + destServer.getName());
                  return false;
@@ -260,15 +262,17 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			    old.abandon();
 			}
 			
-	        long result = send(ssAhost.getId(), dcmd, dl);
-			if (result == -1) {
-				s_logger.warn("Unable to start /resume COPY of template " + template.getUniqueName() + " to " + destServer.getName());
+            try {
+	            send(ssAhost.getId(), dcmd, dl);
+	            return true;
+            } catch (AgentUnavailableException e) {
+				s_logger.warn("Unable to start /resume COPY of template " + template.getUniqueName() + " to " + destServer.getName(), e);
 				dl.setDisconnected();
 				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
-			} else {
-			    return true;
-			}
+	            e.printStackTrace();
+            }
 		}
+		
 		return false;
 	}
 	
@@ -327,7 +331,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			if (vmTemplateHost.isCopy()) {
 				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
 			}
-			HostVO ssAhost = _agentMgr.getSSAgent(sserver);
+			HostVO ssAhost = _ssvmMgr.pickSsvmHost(sserver);
 			if( ssAhost == null ) {
 	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
 	             return;
@@ -344,12 +348,13 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 old.abandon();
             }
 
-			long result = send(ssAhost.getId(), dcmd, dl);
-			if (result == -1) {
-				s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + sserver.getName());
+			try {
+	            send(ssAhost.getId(), dcmd, dl);
+            } catch (AgentUnavailableException e) {
+				s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + sserver.getName(), e);
 				dl.setDisconnected();
 				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
-			}
+            }
 		}
 	}
 
@@ -654,16 +659,17 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         for (String uniqueName : templateInfos.keySet()) {
             TemplateInfo tInfo = templateInfos.get(uniqueName);
             DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
-            long result = _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
-            if (result == -1) {
-                String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
-                s_logger.error(description);
+            try {
+	            _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+            } catch (AgentUnavailableException e) {
+                String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+                s_logger.error(err);
                 return;
             }
-            String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
+
+            String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
             s_logger.info(description);
         }
-        
     }
 
 	@Override

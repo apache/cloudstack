@@ -44,6 +44,7 @@ import com.cloud.agent.api.DirectNetworkUsageCommand;
 import com.cloud.agent.api.RecurringNetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AddTrafficMonitorCmd;
 import com.cloud.api.commands.DeleteTrafficMonitorCmd;
 import com.cloud.api.commands.ListTrafficMonitorsCmd;
@@ -485,7 +486,11 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
                 long agentId = agent.getId();
                 s_logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);
                 RecurringNetworkUsageCommand watch = new RecurringNetworkUsageCommand(_interval);
-                _agentMgr.gatherStats(agentId, watch, this);
+                try {
+	                _agentMgr.send(agentId, new Commands(watch), this);
+                } catch (AgentUnavailableException e) {
+	                s_logger.debug("Can not process connect for host " + agentId, e);
+                }
             }
             return;
         }

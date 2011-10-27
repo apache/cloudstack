@@ -19,18 +19,24 @@ package com.cloud.resource;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.host.HostStats;
 import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState.Event;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
 
 /**
@@ -106,4 +112,22 @@ public interface ResourceManager {
     public HostVO findHostByName(String name);
     
     public List<HostVO> listHostsByNameLike(String name);
+    
+    /**
+     * Find a pod based on the user id, template, and data center.
+     * 
+     * @param template
+     * @param dc
+     * @param userId
+     * @return
+     */
+    Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids);
+    
+    HostStats getHostStatistics(long hostId);
+    
+    Long getGuestOSCategoryId(long hostId);
+    
+    String getHostTags(long hostId);
+    
+    List<PodCluster> listByDataCenter(long dcId);
 }

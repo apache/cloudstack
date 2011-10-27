@@ -104,7 +104,7 @@ public abstract class AgentAttache {
     protected boolean _maintenance;
     protected long                                    _nextSequence;
 
-    protected AgentManager _agentMgr;
+    protected AgentManagerImpl _agentMgr;
 
     public final static String[] s_commandsAllowedInMaintenanceMode =
         new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString() };
@@ -116,7 +116,7 @@ public abstract class AgentAttache {
     }
 
 
-    protected AgentAttache(AgentManager agentMgr, final long id, boolean maintenance) {
+    protected AgentAttache(AgentManagerImpl agentMgr, final long id, boolean maintenance) {
         _id = id;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
         _currentSequence = null;

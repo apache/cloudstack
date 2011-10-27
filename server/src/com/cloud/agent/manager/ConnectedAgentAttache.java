@@ -37,7 +37,7 @@ public class ConnectedAgentAttache extends AgentAttache {
 
     protected Link _link;
 
-    public ConnectedAgentAttache(AgentManager agentMgr, final long id, final Link link, boolean maintenance) {
+    public ConnectedAgentAttache(AgentManagerImpl agentMgr, final long id, final Link link, boolean maintenance) {
         super(agentMgr, id, maintenance);
         _link = link;
     }

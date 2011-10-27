@@ -74,6 +74,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
@@ -129,7 +130,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
-    private static AgentManager _agentMgr;
     public static AsyncJobManager _asyncMgr;
     private static SecurityGroupManager _securityGroupMgr;
     private static StorageManager _storageMgr;
@@ -173,11 +173,11 @@ public class ApiDBUtils {
     private static VMInstanceDao _vmDao;
     private static ResourceLimitService _resourceLimitMgr;
     private static ProjectService _projectMgr;
+    private static ResourceManager _resourceMgr;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
          ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
@@ -220,6 +220,7 @@ public class ApiDBUtils {
         _vmDao = locator.getDao(VMInstanceDao.class);
         _resourceLimitMgr = locator.getManager(ResourceLimitService.class);
         _projectMgr = locator.getManager(ProjectService.class);
+        _resourceMgr = locator.getManager(ResourceManager.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -412,7 +413,7 @@ public class ApiDBUtils {
     }
 
     public static GuestOSCategoryVO getHostGuestOSCategory(long hostId) {
-        Long guestOSCategoryID = _agentMgr.getGuestOSCategoryId(hostId);
+        Long guestOSCategoryID = _resourceMgr.getGuestOSCategoryId(hostId);
 
         if (guestOSCategoryID != null) {
             return _guestOSCategoryDao.findById(guestOSCategoryID);
@@ -422,7 +423,7 @@ public class ApiDBUtils {
     }
 
     public static String getHostTags(long hostId) {
-        return _agentMgr.getHostTags(hostId);
+        return _resourceMgr.getHostTags(hostId);
     }
 
     public static LoadBalancerVO findLoadBalancerById(Long loadBalancerId) {

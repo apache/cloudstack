@@ -22,13 +22,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,38 +45,22 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetHostStatsAnswer;
-import com.cloud.agent.api.GetHostStatsCommand;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
-import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupExternalDhcpCommand;
-import com.cloud.agent.api.StartupExternalFirewallCommand;
-import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.StartupProxyCommand;
-import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
-import com.cloud.agent.api.UpdateHostPasswordCommand;
-import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.commands.UpdateHostPasswordCmd;
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.cluster.StackMaid;
@@ -88,7 +69,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -98,15 +78,11 @@ import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -116,52 +92,36 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
-import com.cloud.utils.time.InaccurateClock;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -206,8 +166,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected IPAddressDao _publicIPAddressDao = null;
     @Inject
     protected HostPodDao _podDao = null;
-    @Inject(adapter = PodAllocator.class)
-    protected Adapters<PodAllocator> _podAllocators = null;
     @Inject
     protected VMInstanceDao _vmDao = null;
     @Inject
@@ -330,16 +288,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public boolean isHostNativeHAEnabled(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
-        if (host.getClusterId() != null) {
-            ClusterDetailsVO detail = _clusterDetailsDao.findDetail(host.getClusterId(), "NativeHA");
-            return detail == null ? false : Boolean.parseBoolean(detail.getValue());
-        }
-        return false;
-    }
-
-    @Override
     public Task create(Task.Type type, Link link, byte[] data) {
         return new AgentHandler(type, link, data);
     }
@@ -416,7 +364,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
 
-    @Override
     public void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers) {
         for (Pair<Integer, Listener> listener : _cmdMonitors) {
             listener.second().processAnswers(agentId, seq, answers);
@@ -433,55 +380,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public Set<Long> getConnectedHosts() {
-        // make the returning set be safe for concurrent iteration
-        final HashSet<Long> result = new HashSet<Long>();
-
-        synchronized (_agents) {
-            final Set<Long> s = _agents.keySet();
-            for (final Long id : s) {
-                result.add(id);
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public List<PodCluster> listByDataCenter(long dcId) {
-        List<HostPodVO> pods = _podDao.listByDataCenterId(dcId);
-        ArrayList<PodCluster> pcs = new ArrayList<PodCluster>();
-        for (HostPodVO pod : pods) {
-            List<ClusterVO> clusters = _clusterDao.listByPodId(pod.getId());
-            if (clusters.size() == 0) {
-                pcs.add(new PodCluster(pod, null));
-            } else {
-                for (ClusterVO cluster : clusters) {
-                    pcs.add(new PodCluster(pod, cluster));
-                }
-            }
-        }
-        return pcs;
-    }
-
-    @Override
-    public List<PodCluster> listByPod(long podId) {
-        ArrayList<PodCluster> pcs = new ArrayList<PodCluster>();
-        HostPodVO pod = _podDao.findById(podId);
-        if (pod == null) {
-            return pcs;
-        }
-        List<ClusterVO> clusters = _clusterDao.listByPodId(pod.getId());
-        if (clusters.size() == 0) {
-            pcs.add(new PodCluster(pod, null));
-        } else {
-            for (ClusterVO cluster : clusters) {
-                pcs.add(new PodCluster(pod, cluster));
-            }
-        }
-        return pcs;
-    }
-
-    @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
             return  easySend(ssHost.getId(), cmd);
@@ -494,50 +392,28 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
 
-
     @Override
-    public HostVO getSSAgent(HostVO ssHost) {
+    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            return  ssHost;
+            send(ssHost.getId(), new Commands(cmd), listener);
         } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
-            Long dcId = ssHost.getDataCenterId();
-            List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
-            if (ssAHosts == null || ssAHosts.isEmpty() ) {
-                return null;
-            }
-            Collections.shuffle(ssAHosts);
-            return ssAHosts.get(0);
-        }
-        return null;
-    }
-    
-
-
-    @Override
-    public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
-        if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
-            return  gatherStats(ssHost.getId(), cmd, listener);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
-            return  sendToSSVM(ssHost.getDataCenterId(), cmd, listener);
+            sendToSSVM(ssHost.getDataCenterId(), cmd, listener);
         } else {
-            s_logger.warn("do not support Secondary Storage type " + ssHost.getType());
+        	String err = "do not support Secondary Storage type " + ssHost.getType();
+            s_logger.warn(err);
+            throw new CloudRuntimeException(err);
         }
-        return -1;
     }
 
 
-    private long sendToSSVM(final long dcId, final Command cmd, final Listener listener) {
+    private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
         List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
-            return -1;
+            throw new AgentUnavailableException("No ssvm host found", -1);
         }
         Collections.shuffle(ssAHosts);
         HostVO ssAhost = ssAHosts.get(0);
-        try {
-            return send(ssAhost.getId(), new Commands(cmd), listener);
-        } catch (final AgentUnavailableException e) {
-            return -1;
-        }
+        send(ssAhost.getId(), new Commands(cmd), listener);
     }
 
     private Answer sendToSSVM(final long dcId, final Command cmd) {
@@ -673,31 +549,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public long send(Long hostId, Commands commands, Listener listener) throws AgentUnavailableException {
         final AgentAttache agent = getAttache(hostId);
         if (agent.isClosed()) {
-            return -1;
+            throw new AgentUnavailableException("Agent " + agent.getId() + " is closed", agent.getId());
         }
 
         Command[] cmds = commands.toCommands();
 
         assert cmds.length > 0 : "Why are you sending zero length commands?";
         if (cmds.length == 0) {
-            return -1;
+        	throw new AgentUnavailableException("Empty command set for agent " + agent.getId(), agent.getId());
         }
         Request req = new Request(hostId, _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
         agent.send(req, listener);
         return req.getSequence();
-    }
-
-
-
-
-    @Override
-    public long gatherStats(Long hostId, Command cmd, Listener listener) {
-        try {
-            return send(hostId, new Commands(cmd), listener);
-        } catch (final AgentUnavailableException e) {
-            return -1;
-        }
     }
 
     public void removeAgent(AgentAttache attache, Status nextState) {
@@ -946,67 +810,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
         return true;
-    }
-
-    @Override
-    public Pair<HostPodVO, Long> findPod(final VirtualMachineTemplate template, ServiceOfferingVO offering, final DataCenterVO dc, final long accountId, Set<Long> avoids) {
-        final Enumeration en = _podAllocators.enumeration();
-        while (en.hasMoreElements()) {
-            final PodAllocator allocator = (PodAllocator) en.nextElement();
-            final Pair<HostPodVO, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
-            if (pod != null) {
-                return pod;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public HostStats getHostStatistics(long hostId) {
-        Answer answer = easySend(hostId, new GetHostStatsCommand(_hostDao.findById(hostId).getGuid(), _hostDao.findById(hostId).getName(), hostId));
-
-        if (answer != null && (answer instanceof UnsupportedAnswer)) {
-            return null;
-        }
-
-        if (answer == null || !answer.getResult()) {
-            String msg = "Unable to obtain host " + hostId + " statistics. ";
-            s_logger.warn(msg);
-            return null;
-        } else {
-
-            // now construct the result object
-            if (answer instanceof GetHostStatsAnswer) {
-                return ((GetHostStatsAnswer) answer).getHostStats();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Long getGuestOSCategoryId(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            return null;
-        } else {
-            _hostDao.loadDetails(host);
-            DetailVO detail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
-            if (detail == null) {
-                return null;
-            } else {
-                return Long.parseLong(detail.getValue());
-            }
-        }
-    }
-
-    @Override
-    public String getHostTags(long hostId) {
-        List<String> hostTags = _hostTagsDao.gethostTags(hostId);
-        if (hostTags == null) {
-            return null;
-        } else {
-            return StringUtils.listToCsvTags(hostTags);
-        }
     }
 
     @Override
@@ -1608,8 +1411,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
     
-    
-    @Override
     public boolean disconnectAgent(HostVO host, Status.Event e, long msId) {
         host.setDisconnectedOn(new Date());
         if (e.equals(Status.Event.Remove)) {
@@ -1651,7 +1452,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
     
-    @Override
     public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
         disconnectInternal(hostId, event, true);
     }

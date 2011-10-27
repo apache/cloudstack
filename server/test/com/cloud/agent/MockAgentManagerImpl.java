@@ -82,12 +82,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public long gatherStats(Long hostId, Command cmd, Listener listener) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
     public long send(Long hostId, Commands cmds, Listener listener) throws AgentUnavailableException {
         // TODO Auto-generated method stub
         return 0;
@@ -112,48 +106,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public Set<Long> getConnectedHosts() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public HostStats getHostStatistics(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Long getGuestOSCategoryId(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getHostTags(long hostId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<PodCluster> listByDataCenter(long dcId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<PodCluster> listByPod(long podId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -166,37 +118,17 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public boolean isHostNativeHAEnabled(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public Answer sendTo(Long dcId, HypervisorType type, Command cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
-        // TODO Auto-generated method stub
-        return 0;
+    public void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
     }
 
     @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public HostVO getSSAgent(HostVO ssHost) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -226,12 +158,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
 	@Override
-    public boolean disconnectAgent(HostVO host, Event e, long msId) {
-	    // TODO Auto-generated method stub
-	    return false;
-    }
-
-	@Override
     public void pullAgentToMaintenance(long hostId) {
 	    // TODO Auto-generated method stub
 	    
@@ -244,7 +170,7 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
 	@Override
-    public void disconnectWithInvestigation(long hostId, Event event) {
+    public void pullAgentOutMaintenance(long hostId) {
 	    // TODO Auto-generated method stub
 	    
     }

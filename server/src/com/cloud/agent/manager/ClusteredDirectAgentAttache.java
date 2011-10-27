@@ -29,7 +29,7 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
     private final ClusteredAgentManagerImpl _mgr;
     private final long _nodeId;
 
-    public ClusteredDirectAgentAttache(AgentManager agentMgr, long id, long mgmtId, ServerResource resource, boolean maintenance, ClusteredAgentManagerImpl mgr) {
+    public ClusteredDirectAgentAttache(AgentManagerImpl agentMgr, long id, long mgmtId, ServerResource resource, boolean maintenance, ClusteredAgentManagerImpl mgr) {
         super(agentMgr, id, resource, maintenance, mgr);
         _mgr = mgr;
         _nodeId = mgmtId;

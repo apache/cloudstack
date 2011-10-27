@@ -49,7 +49,7 @@ public class DirectAgentAttache extends AgentAttache {
     AgentManagerImpl _mgr;
     long _seq = 0;
 
-    public DirectAgentAttache(AgentManager agentMgr, long id, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
         super(agentMgr, id, maintenance);
         _resource = resource;
         _mgr = mgr;

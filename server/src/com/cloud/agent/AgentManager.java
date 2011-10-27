@@ -17,34 +17,19 @@
  */
 package com.cloud.agent;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.UpdateHostPasswordCmd;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResource;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -106,19 +91,6 @@ public interface AgentManager extends Manager {
      * 
      * @param hostId
      *            id of the agent on the host.
-     * @param cmd
-     *            Command to send.
-     * @param listener
-     *            the listener to process the answer.
-     * @return sequence number.
-     */
-    long gatherStats(Long hostId, Command cmd, Listener listener);
-
-    /**
-     * Asynchronous sending of a command to the agent.
-     * 
-     * @param hostId
-     *            id of the agent on the host.
      * @param cmds
      *            Commands to send.
      * @param stopOnError
@@ -160,44 +132,13 @@ public interface AgentManager extends Manager {
      */
     void unregisterForHostEvents(int id);
 
-    /**
-     * @return hosts currently connected.
-     */
-    Set<Long> getConnectedHosts();
-    
-    HostStats getHostStatistics(long hostId);
-
-    Long getGuestOSCategoryId(long hostId);
-
-    String getHostTags(long hostId);
-
-    List<PodCluster> listByDataCenter(long dcId);
-
-    List<PodCluster> listByPod(long podId);
-
-    /**
-     * Find a pod based on the user id, template, and data center.
-     * 
-     * @param template
-     * @param dc
-     * @param userId
-     * @return
-     */
-    Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
-
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
-
-    boolean isHostNativeHAEnabled(long hostId);
 
     Answer sendTo(Long dcId, HypervisorType type, Command cmd);
 
-    void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers);
-
-    long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener);
+    void sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) throws AgentUnavailableException;
 
     Answer sendToSecStorage(HostVO ssHost, Command cmd);
-
-    HostVO getSSAgent(HostVO ssHost);
     
     /* working as a lock while agent is being loaded */
     public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
@@ -209,10 +150,6 @@ public interface AgentManager extends Manager {
     public AgentAttache findAttache(long hostId);
     
     void disconnectWithoutInvestigation(long hostId, Status.Event event);
-    
-    void disconnectWithInvestigation(long hostId, Status.Event event);
-    
-    public boolean disconnectAgent(HostVO host, Status.Event e, long msId);
     
     public void pullAgentToMaintenance(long hostId);
     

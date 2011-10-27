@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.cloud.resource.ResourceManager;
 
 import org.apache.log4j.Logger;
 
@@ -87,6 +88,7 @@ public class StatsCollector {
 	private final StorageManager _storageManager;
     private final StoragePoolHostDao _storagePoolHostDao;
     private final SecondaryStorageVmManager _ssvmMgr;
+    private final ResourceManager _resourceMgr;
 
 	private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
 	private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -122,6 +124,7 @@ public class StatsCollector {
 		_storagePoolDao = locator.getDao(StoragePoolDao.class);
 		_storageManager = locator.getManager(StorageManager.class);
         _storagePoolHostDao  = locator.getDao(StoragePoolHostDao.class);
+        _resourceMgr = locator.getManager(ResourceManager.class);
 
 		_executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StatsCollector"));
 
@@ -171,7 +174,7 @@ public class StatsCollector {
 				List<HostVO> hosts = _hostDao.search(sc, null);
 				for (HostVO host : hosts)
 				{
-				    HostStatsEntry stats = (HostStatsEntry) _agentMgr.getHostStatistics(host.getId());
+				    HostStatsEntry stats = (HostStatsEntry) _resourceMgr.getHostStatistics(host.getId());
 				    if (stats != null)
 				    {
                         hostStats.put(host.getId(), stats);
@@ -278,7 +281,7 @@ public class StatsCollector {
                         continue;
                     }
                     GetStorageStatsCommand command = new GetStorageStatsCommand(host.getStorageUrl());
-                    HostVO ssAhost = _agentMgr.getSSAgent(host);
+                    HostVO ssAhost = _ssvmMgr.pickSsvmHost(host);
                     if (ssAhost == null) {
                         s_logger.debug("There is no secondary storage VM for secondary storage host " + host.getName());
                         continue;

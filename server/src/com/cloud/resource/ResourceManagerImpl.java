@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -34,12 +35,17 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.TapAgentsAction;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetHostStatsAnswer;
+import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
+import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddClusterCmd;
@@ -61,6 +67,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
@@ -74,6 +81,7 @@ import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -88,6 +96,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState.Event;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -99,11 +108,13 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -178,6 +189,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected StoragePoolHostDao             _storagePoolHostDao;
     @Inject
     protected HostDetailsDao                 _detailsDao;
+    @Inject(adapter = PodAllocator.class)
+    protected Adapters<PodAllocator> _podAllocators = null;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
@@ -1926,4 +1939,82 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		sc.addAnd(sc.getEntity().getName(), Op.LIKE, "%" + name + "%");
 	    return sc.list();
     }
+
+	@Override
+	public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long accountId, Set<Long> avoids) {
+        final Enumeration en = _podAllocators.enumeration();
+        while (en.hasMoreElements()) {
+            final PodAllocator allocator = (PodAllocator) en.nextElement();
+            final Pair<HostPodVO, Long> pod = allocator.allocateTo(template, offering, dc, accountId, avoids);
+            if (pod != null) {
+                return pod;
+            }
+        }
+        return null;
+	}
+
+	@Override
+	public HostStats getHostStatistics(long hostId) {
+		Answer answer = _agentMgr.easySend(hostId, new GetHostStatsCommand(_hostDao.findById(hostId).getGuid(), _hostDao.findById(hostId).getName(), hostId));
+
+		if (answer != null && (answer instanceof UnsupportedAnswer)) {
+			return null;
+		}
+
+		if (answer == null || !answer.getResult()) {
+			String msg = "Unable to obtain host " + hostId + " statistics. ";
+			s_logger.warn(msg);
+			return null;
+		} else {
+
+			// now construct the result object
+			if (answer instanceof GetHostStatsAnswer) {
+				return ((GetHostStatsAnswer) answer).getHostStats();
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Long getGuestOSCategoryId(long hostId) {
+		HostVO host = _hostDao.findById(hostId);
+		if (host == null) {
+			return null;
+		} else {
+			_hostDao.loadDetails(host);
+			DetailVO detail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
+			if (detail == null) {
+				return null;
+			} else {
+				return Long.parseLong(detail.getValue());
+			}
+		}
+	}
+
+	@Override
+	public String getHostTags(long hostId) {
+		List<String> hostTags = _hostTagsDao.gethostTags(hostId);
+		if (hostTags == null) {
+			return null;
+		} else {
+			return StringUtils.listToCsvTags(hostTags);
+		}
+	}
+
+	@Override
+	public List<PodCluster> listByDataCenter(long dcId) {
+		List<HostPodVO> pods = _podDao.listByDataCenterId(dcId);
+		ArrayList<PodCluster> pcs = new ArrayList<PodCluster>();
+		for (HostPodVO pod : pods) {
+			List<ClusterVO> clusters = _clusterDao.listByPodId(pod.getId());
+			if (clusters.size() == 0) {
+				pcs.add(new PodCluster(pod, null));
+			} else {
+				for (ClusterVO cluster : clusters) {
+					pcs.add(new PodCluster(pod, cluster));
+				}
+			}
+		}
+		return pcs;
+	}
 }

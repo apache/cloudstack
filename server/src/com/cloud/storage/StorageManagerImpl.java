@@ -528,7 +528,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         int retry = 0;
         // Determine what pod to store the volume in
-        while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
+        while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
             while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, poolsToAvoid)) != null) {

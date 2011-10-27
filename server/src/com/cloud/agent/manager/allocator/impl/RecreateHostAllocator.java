@@ -46,6 +46,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -61,10 +62,10 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject HostPodDao _podDao;
     @Inject StoragePoolDao _poolDao;
     @Inject ClusterDao _clusterDao;
-    @Inject AgentManager _agentMgr;
     @Inject VolumeDao _volsDao;
     @Inject DataCenterDao _dcDao;
     @Inject HostDao _hostDao;
+    @Inject ResourceManager _resourceMgr;
     
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vm,DeploymentPlan plan, Type type,
@@ -83,7 +84,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
         
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
-        List<PodCluster> pcs = _agentMgr.listByDataCenter(dc.getId());
+        List<PodCluster> pcs = _resourceMgr.listByDataCenter(dc.getId());
         //getting rid of direct.attached.untagged.vlan.enabled config param: Bug 7204
         //basic network type for zone maps to direct untagged case
         if (dc.getNetworkType().equals(NetworkType.Basic)) { 

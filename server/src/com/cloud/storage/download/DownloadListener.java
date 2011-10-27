@@ -39,6 +39,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
@@ -159,10 +160,12 @@ public class DownloadListener implements Listener {
 			if (s_logger.isTraceEnabled()) {
 				log("Sending progress command ", Level.TRACE);
 			}
-			long sent = downloadMonitor.send(ssAgent.getId(), new DownloadProgressCommand(getCommand(), getJobId(), reqType), this);
-			if (sent == -1) {
+			try {
+	            downloadMonitor.send(ssAgent.getId(), new DownloadProgressCommand(getCommand(), getJobId(), reqType), this);
+            } catch (AgentUnavailableException e) {
+            	s_logger.debug("Send command failed", e);
 				setDisconnected();
-			}
+            }			
 		}
 
 	}
