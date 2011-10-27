@@ -85,8 +85,6 @@ public interface NetworkOffering {
     boolean isSystemOnly();
     
     Availability getAvailability();
-    
-    boolean isSharedSourceNatService();
 
     String getUniqueName();
 

@@ -61,12 +61,11 @@ import com.cloud.api.commands.ListExternalLoadBalancersCmd;
 import com.cloud.api.commands.ListNetworkDeviceCmd;
 import com.cloud.baremetal.ExternalDhcpManager;
 import com.cloud.baremetal.PxeServerManager;
-import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
+import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
@@ -77,10 +76,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
@@ -1047,7 +1048,16 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         }
 
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());
-        boolean sharedSourceNat = offering.isSharedSourceNatService();
+        
+        boolean sharedSourceNat = false;
+        Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+        if (sourceNatCapabilities != null) {
+            String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+            if (supportedSourceNatTypes.contains("zone")) {
+                sharedSourceNat = true;
+            }
+        }
+        
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
             // Get the source NAT IP address for this network          
@@ -1452,9 +1462,17 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
                 
                 for (NetworkVO network : networksForAccount) {
                     String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();                
-                    NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     
-                    if (!offering.isSharedSourceNatService()) {
+                    boolean sharedSourceNat = false;
+                    Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+                    if (sourceNatCapabilities != null) {
+                        String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+                        if (supportedSourceNatTypes.contains("zone")) {
+                            sharedSourceNat = true;
+                        }
+                    }
+                    
+                    if (!sharedSourceNat) {
                         // Manage the entry for this network's source NAT IP address
                         List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
                         if (sourceNatIps.size() == 1) {

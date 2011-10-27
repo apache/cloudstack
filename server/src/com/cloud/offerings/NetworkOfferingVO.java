@@ -91,9 +91,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
     
-    @Column(name="shared_source_nat_service")
-    boolean sharedSourceNatService;
-    
     @Column(name="is_security_group_enabled")
     boolean securityGroupEnabled;
     
@@ -186,11 +183,6 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setAvailability(Availability availability) {
         this.availability = availability;
-    }
-    
-    @Override
-    public boolean isSharedSourceNatService() {
-        return sharedSourceNatService;
     }
     
     @Override

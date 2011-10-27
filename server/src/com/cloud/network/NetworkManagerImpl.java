@@ -661,8 +661,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             txn.start();
 
-            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            if (!offering.isSharedSourceNatService()) {
+            boolean sharedSourceNat = false;
+            Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+            if (sourceNatCapabilities != null) {
+                String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+                if (supportedSourceNatTypes.contains("zone")) {
+                    sharedSourceNat = true;
+                }
+            }
+            
+            if (!sharedSourceNat) {
                 // First IP address should be source nat when it's being associated with Guest Virtual network
                 List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
 
@@ -1305,7 +1313,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
         // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a Shared source NAT rule,
         // associate a source NAT IP (if one isn't already associated with the network)
-        if (network.getType() == Network.Type.Isolated && isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !offering.isSharedSourceNatService()) {
+        
+        boolean sharedSourceNat = false;
+        Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+        if (sourceNatCapabilities != null) {
+            String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+            if (supportedSourceNatTypes.contains("zone")) {
+                sharedSourceNat = true;
+            }
+        }
+        
+        if (network.getType() == Network.Type.Isolated && isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !sharedSourceNat) {
             List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
 
             if (ips.isEmpty()) {

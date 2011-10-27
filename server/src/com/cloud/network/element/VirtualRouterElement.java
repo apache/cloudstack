@@ -313,7 +313,6 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         firewallCapabilities.put(Capability.StaticNat, "true");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
-        firewallCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
         
         capabilities.put(Service.Firewall, firewallCapabilities);
         
@@ -329,6 +328,11 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
         capabilities.put(Service.Gateway, null);
+        
+        
+        Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
+        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
+        capabilities.put(Service.SourceNat, sourceNatCapabilities);
         
         return capabilities;
     }

@@ -212,10 +212,6 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         
         firewallCapabilities.put(Capability.MultipleIps, "true");
         
-        // Specifies that this element supports either one source NAT rule per account, or no source NAT rules at all; 
-        // in the latter case a shared interface NAT rule will be used 
-        firewallCapabilities.put(Capability.SupportedSourceNatTypes, "per account, per zone");
-        
         // Specifies that this element can measure network usage on a per public IP basis
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         
@@ -229,6 +225,13 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         
         capabilities.put(Service.Firewall, firewallCapabilities);
         capabilities.put(Service.Gateway, null);
+        
+        
+        Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
+        // Specifies that this element supports either one source NAT rule per account, or no source NAT rules at all; 
+        // in the latter case a shared interface NAT rule will be used 
+        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "per account, per zone");
+        capabilities.put(Service.SourceNat, sourceNatCapabilities);
 
         return capabilities;
     }
