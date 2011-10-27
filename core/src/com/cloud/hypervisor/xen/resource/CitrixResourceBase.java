@@ -3792,7 +3792,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private HashMap<String, Pair<Long,Long>> syncNetworkGroups(Connection conn, long id) {
     	HashMap<String, Pair<Long,Long>> states = new HashMap<String, Pair<Long,Long>>();
         
-        String result = callHostPlugin(conn, "vmops", "get_rule_logs_fors_vms", "host_uuid", _host.uuid);
+        String result = callHostPlugin(conn, "vmops", "get_rule_logs_for_vms", "host_uuid", _host.uuid);
         s_logger.trace("syncNetworkGroups: id=" + id + " got: " + result);
         String [] rulelogs = result != null ?result.split(";"): new String [0];
         for (String rulesforvm: rulelogs){
