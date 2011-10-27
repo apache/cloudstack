@@ -48,6 +48,21 @@ public enum Config {
 	AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
 	AlertSMTPUsername("Alert", ManagementServer.class, String.class, "alert.smtp.username", null, "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).", null),
 	AlertWait("Alert", AgentManager.class, Integer.class, "alert.wait", null, "Seconds to wait before alerting on a disconnected agent", null),
+	CapacityCheckPeriod("Alert", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
+	StorageAllocatedCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.storage.allocated.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", null),
+	StorageCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.storage.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", null),
+	CPUCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.cpu.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.", null),
+	MemoryCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.memory.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of memory utilization above which alerts will be sent about low memory available.", null),
+	PublicIpCapacityThreshold("Alert", ManagementServer.class, Float.class, "zone.virtualnetwork.publicip.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent.", null),
+	PrivateIpCapacityThreshold("Alert", ManagementServer.class, Float.class, "pod.privateip.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent.", null),
+	SecondaryStorageCapacityThreshold("Alert", ManagementServer.class, Float.class, "zone.secstorage.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.", null),
+	VlanCapacityThreshold("Alert", ManagementServer.class, Float.class, "zone.vlan.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.", null),
+	DirectNetworkPublicIpCapacityThreshold("Alert", ManagementServer.class, Float.class, "zone.directnetwork.publicip.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", null),
+	LocalStorageCapacityThreshold("Alert", ManagementServer.class, Float.class, "cluster.localStorage.capacity.notificationthreshold", "0.75", "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", null),
+	StorageAllocatedCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.storage.allocated.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the cluster for low storage available.", null),
+	CPUCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.cpu.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available.", null),
+	MemoryCapacityDisableThreshold("Alert", ManagementServer.class, Float.class, "cluster.memory.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low memory available.", null),
+
 	
 	// Storage
 	
@@ -90,24 +105,7 @@ public enum Config {
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
 	RemoteAccessVpnClientIpRange("Network", AgentManager.class, String.class, "remote.access.vpn.client.iprange", "10.1.2.1-10.1.2.8", "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", null),
-	RemoteAccessVpnUserLimit("Network", AgentManager.class, String.class, "remote.access.vpn.user.limit", "8", "The maximum number of VPN users that can be created per account", null),
-	
-	// Usage
-	CapacityCheckPeriod("Usage", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
-	StorageAllocatedCapacityThreshold("Usage", ManagementServer.class, Float.class, "cluster.storage.allocated.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", null),
-	StorageCapacityThreshold("Usage", ManagementServer.class, Float.class, "cluster.storage.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", null),
-	CPUCapacityThreshold("Usage", ManagementServer.class, Float.class, "cluster.cpu.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.", null),
-	MemoryCapacityThreshold("Usage", ManagementServer.class, Float.class, "cluster.memory.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of memory utilization above which alerts will be sent about low memory available.", null),
-	PublicIpCapacityThreshold("Usage", ManagementServer.class, Float.class, "zone.virtualnetwork.publicip.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent.", null),
-	PrivateIpCapacityThreshold("Usage", ManagementServer.class, Float.class, "pod.privateip.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent.", null),
-	SecondaryStorageCapacityThreshold("Usage", ManagementServer.class, Float.class, "zone.secstorage.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.", null),
-	VlanCapacityThreshold("Usage", ManagementServer.class, Float.class, "zone.vlan.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.", null),
-	DirectNetworkPublicIpCapacityThreshold("Usage", ManagementServer.class, Float.class, "zone.directnetwork.publicip.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", null),
-	LocalStorageCapacityThreshold("Usage", ManagementServer.class, Float.class, "cluster.localStorage.capacity.notificationthreshold", "0.85", "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.", null),
-	StorageAllocatedCapacityDisableThreshold("Usage", ManagementServer.class, Float.class, "cluster.storage.allocated.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the cluster for low storage available.", null),
-	CPUCapacityDisableThreshold("Usage", ManagementServer.class, Float.class, "cluster.cpu.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available.", null),
-	MemoryCapacityDisableThreshold("Usage", ManagementServer.class, Float.class, "cluster.memory.capacity.disablethreshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low memory available.", null),
-
+	RemoteAccessVpnUserLimit("Network", AgentManager.class, String.class, "remote.access.vpn.user.limit", "8", "The maximum number of VPN users that can be created per account", null),	
 	
 	// Console Proxy
 	ConsoleProxyCapacityStandby("Console Proxy", AgentManager.class, String.class, "consoleproxy.capacity.standby", "10", "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", null),
