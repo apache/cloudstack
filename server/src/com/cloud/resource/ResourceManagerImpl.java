@@ -1293,7 +1293,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 			host = new HostVO(startup.getGuid());
 			isNew = true;
 		}
-		// TODO: we don't allow to set ResourceState here?
 
 		String dataCenter = startup.getDataCenter();
 		String pod = startup.getPod();
@@ -1383,7 +1382,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 		}
 
 		host = (HostVO) dispatchToStateAdapters(stateEvent, true, host, cmds, resource, details, hostTags);
-		assert host != null : "No resource state adapter response";
+		if (host == null) {
+			throw new CloudRuntimeException("No resource state adapter response");
+		}
 		
 		if (isNew) {
 			host = _hostDao.persist(host);
