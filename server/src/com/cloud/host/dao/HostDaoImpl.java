@@ -69,6 +69,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao {
     private static final Logger s_logger = Logger.getLogger(HostDaoImpl.class);
     private static final Logger status_logger = Logger.getLogger(Status.class);
+    private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
     protected final SearchBuilder<HostVO> TypePodDcStatusSearch;
 
@@ -635,7 +636,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 			assert ho != null : "How how how? : " + host.getId();
 
 			StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
-			str.append(". New=[status=").append(newStatus.toString()).append(":msid=")
+			str.append(". Name=").append(host.getName());
+			str.append("; New=[status=").append(newStatus.toString()).append(":msid=")
 			        .append(newStatus.lostConnection() ? "null" : host.getManagementServerId()).append(":lastpinged=").append(host.getLastPinged()).append("]");
 			str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(host.getManagementServerId()).append(":lastpinged=")
 			        .append(oldPingTime).append("]");
@@ -644,7 +646,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 			status_logger.debug(str.toString());
 		} else {
 			StringBuilder msg = new StringBuilder("Agent status update: [");
-			msg.append("hostId = " + host.getId());
+			msg.append("id = " + host.getId());
+			msg.append("; name = " + host.getName());
 			msg.append("; old status = " + oldStatus);
 			msg.append("; event = " + event);
 			msg.append("; new status = " + newStatus);
@@ -674,20 +677,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
         
-        if (s_logger.isDebugEnabled() && result == 0) {
+        if (state_logger.isDebugEnabled() && result == 0) {
             HostVO ho = findById(host.getId());
             assert ho != null : "How how how? : " + host.getId();
 
-            StringBuilder str = new StringBuilder("Unable to update resource state for event:").append(event.toString());
-            /*TODO: add defbug info*/
+            StringBuilder str = new StringBuilder("Unable to update resource state: [");
+			str.append("m = " + host.getId());
+			str.append("; name = " + host.getName());
+			str.append("; old state = " + oldState);
+			str.append("; event = " + event);
+			str.append("; new state = " + newState + "]");
+			state_logger.debug(str.toString());
+        } else {
+			StringBuilder msg = new StringBuilder("Resource state update: [");
+			msg.append("id = " + host.getId());
+			msg.append("; name = " + host.getName());
+			msg.append("; old state = " + oldState);
+			msg.append("; event = " + event);
+			msg.append("; new state = " + newState + "]");
+			state_logger.debug(msg.toString());
         }
-        
-		StringBuilder msg = new StringBuilder("Resource state update: [");
-		msg.append("hostId = " + host.getId());
-		msg.append("; old state = " + oldState);
-		msg.append("; event = " + event);
-		msg.append("; new status = " + newState + "]");
-		s_logger.debug(msg.toString());
 		
         return result > 0;
     }
