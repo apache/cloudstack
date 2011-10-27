@@ -158,6 +158,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -319,6 +320,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     ClusterDao _clusterDao;
+    @Inject
+    ResourceManager _resourceMgr;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1028,7 +1031,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         		continue;
         	}
         	
-        	List<HostVO> hosts = _hostDao.listByCluster(cv.getId());
+        	List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cv.getId());
         	if (hosts == null || hosts.isEmpty()) {
         		continue;
         	}

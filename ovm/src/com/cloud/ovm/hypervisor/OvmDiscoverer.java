@@ -51,17 +51,12 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
 		_publicNetworkDevice = _params.get(Config.OvmPublicNetwork.key());
 		_privateNetworkDevice = _params.get(Config.OvmPrivateNetwork.key());
 		_guestNetworkDevice = _params.get(Config.OvmGuestNetwork.key());
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
 	
 	protected OvmDiscoverer() {
 	}
-	
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
-    	return super.configure(name, params);
-    }
     
     @Override
     public boolean stop() {

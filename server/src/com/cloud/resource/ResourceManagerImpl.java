@@ -177,10 +177,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Inject
     protected StoragePoolHostDao             _storagePoolHostDao;
     @Inject
-    protected StoragePoolDao                 _storagePoolDao;
-    @Inject
-    protected CapacityDao                    _capacityDao;
-    @Inject
     protected HostDetailsDao                 _detailsDao;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();

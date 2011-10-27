@@ -63,6 +63,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -101,6 +102,7 @@ public class AlertManagerImpl implements AlertManager {
     @Inject private DataCenterIpAddressDao _privateIPAddressDao;
     @Inject private StoragePoolDao _storagePoolDao;
     @Inject private ConfigurationDao _configDao;
+    @Inject private ResourceManager _resourceMgr;
     
     private Timer _timer = null;
     private float _cpuOverProvisioningFactor = 1;
@@ -283,7 +285,7 @@ public class AlertManagerImpl implements AlertManager {
         
         // Calculate CPU and RAM capacities
         // 	get all hosts...even if they are not in 'UP' state
-        List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
+        List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
         for (HostVO host : hosts) {
         	_capacityMgr.updateCapacityForHost(host);
         }

@@ -687,13 +687,6 @@ public class HostVO implements Host {
 	public Status getState() {
 		return status;
 	}
-
-	//FIXME: change the upper interface
-	@Override
-	public Long getHostId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
     @Override
     public ResourceState getResourceState() {

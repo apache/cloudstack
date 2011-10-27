@@ -3069,7 +3069,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if(hostId != null){
         	hosts.add(ApiDBUtils.findHostById(hostId));
         }else{
-        	hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        	hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         }
 
         CapacityVO capacity = new CapacityVO(hostId, zoneId, null, null, 0, 0, CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);        

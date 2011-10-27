@@ -1596,8 +1596,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             VMInstanceVO vm = info.vm;
             Command command = null;
             if (vm != null) {
-                String host_guid = info.getHostUuid();
-                Host host = _hostDao.findByGuid(host_guid);
+                String hostGuid = info.getHostUuid();
+                Host host = _resourceMgr.findHostByGuid(hostGuid);
                 long hId = host.getId();
                
                 HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
@@ -1631,8 +1631,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 hId = vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId();
             } else {
                 castedVm = info.vm;
-                String host_guid = info.getHostUuid();
-                Host host = _hostDao.findByGuid(host_guid);
+                String hostGuid = info.getHostUuid();
+                Host host = _resourceMgr.findHostByGuid(hostGuid);
                 if (host == null) {
                     infos.put(vm.getId(), info);
                     continue;

@@ -20,13 +20,14 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.resource.ResourceManager;
 
 @Local(value=FenceBuilder.class)
 public class OvmFencer implements FenceBuilder {
 	private static final Logger s_logger = Logger.getLogger(OvmFencer.class);
 	String _name;
-	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
+    @Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -63,7 +64,7 @@ public class OvmFencer implements FenceBuilder {
 			return null;
 		}
 		
-		List<HostVO> hosts = _hostDao.listByCluster(host.getClusterId());
+		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
 		FenceCommand fence = new FenceCommand(vm, host);
 		
 		for (HostVO h : hosts) {
