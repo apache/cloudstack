@@ -44,8 +44,8 @@ public class ListCapacityCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
  
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG,  required=true, description="lists capacity by the Zone ID")
-    private Long zoneId;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
+    private Long zoneId = 1L;
 
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
