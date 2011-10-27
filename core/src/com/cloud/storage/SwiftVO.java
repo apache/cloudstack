@@ -18,6 +18,8 @@
 
 package com.cloud.storage;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,6 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="swift")
@@ -47,6 +50,9 @@ public class SwiftVO implements Swift {
 
     @Column(name="key")
     String key;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
         
     public SwiftVO() { }
 
@@ -57,6 +63,7 @@ public class SwiftVO implements Swift {
         this.key = key;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -75,6 +82,10 @@ public class SwiftVO implements Swift {
     @Override
     public String getKey() {
         return key;
+    }
+
+    public Date getCreated() {
+        return created;
     }
 
     @Override

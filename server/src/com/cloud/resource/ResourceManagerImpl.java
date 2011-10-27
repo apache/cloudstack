@@ -37,6 +37,7 @@ import com.cloud.agent.manager.AgentAttache;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
+import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -44,6 +45,8 @@ import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.cluster.ManagementServerNode;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -70,7 +73,10 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.Swift;
+import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -110,7 +116,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Inject
     protected HostDao                        _hostDao;
     @Inject
+    protected SwiftDao _swiftDao;
+    @Inject
     protected HostDetailsDao                 _hostDetailsDao;
+    @Inject
+    protected ConfigurationDao _configDao;
     @Inject
     protected HostTagsDao                    _hostTagsDao;    
     @Inject
@@ -439,6 +449,19 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, null);
     }
     
+    @Override
+    public List<? extends Swift> discoverSwift(AddSwiftCmd cmd) throws DiscoveryException {
+        Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
+        if (!swiftEnable) {
+            throw new DiscoveryException("Swift is not enabled");
+        }
+        SwiftVO swift = new SwiftVO(cmd.getUrl(), cmd.getAccount(), cmd.getUsername(), cmd.getKey());
+        swift = _swiftDao.persist(swift);
+        List<SwiftVO> list = new ArrayList<SwiftVO>();
+        list.add(swift);
+        return list;
+    }
+
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
             Map<String, String> params, String allocationState) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         URI uri = null;

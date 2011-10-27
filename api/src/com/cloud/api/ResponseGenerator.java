@@ -55,6 +55,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.api.response.SwiftResponse;
 import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
@@ -99,6 +100,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Swift;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
@@ -232,5 +234,7 @@ public interface ResponseGenerator {
     ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite);
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
+
+    SwiftResponse createSwiftResponse(Swift swift);
 
 }

@@ -76,6 +76,7 @@ import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.api.response.SwiftResponse;
 import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
@@ -148,6 +149,7 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Swift;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -595,6 +597,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         hostResponse.setObjectName("host");
 
         return hostResponse;
+    }
+
+    @Override
+    public SwiftResponse createSwiftResponse(Swift swift) {
+        SwiftResponse swiftResponse = new SwiftResponse();
+        swiftResponse.setId(swift.getId());
+        swiftResponse.setUrl(swift.getUrl());
+        swiftResponse.setObjectName("Swift");
+        return swiftResponse;
     }
 
     @Override

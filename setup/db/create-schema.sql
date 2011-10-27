@@ -1662,6 +1662,7 @@ CREATE TABLE `cloud`.`swift` (
   `account` varchar(255) NOT NULL COMMENT ' account in swift',
   `username` varchar(255) NOT NULL COMMENT ' username in swift',
   `key` varchar(255) NOT NULL COMMENT 'token for this user',
+  `created` datetime COMMENT 'date the swift first signed on',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
