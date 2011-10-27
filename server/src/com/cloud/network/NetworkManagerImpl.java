@@ -549,14 +549,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     protected boolean applyIpAssociations(Network network, boolean continueOnError, List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
-        int found = 0;
         for (NetworkElement element : _networkElements) {
             try {
-                if (!(element instanceof SourceNatServiceProvider)) {
+                if (!(element instanceof FirewallServiceProvider)) {
                     continue;
                 }
-                SourceNatServiceProvider e = (SourceNatServiceProvider)element;
-                found ++;
+                FirewallServiceProvider e = (FirewallServiceProvider)element;
                 s_logger.trace("Asking " + element + " to apply ip associations");
                 e.applyIps(network, publicIps);
             } catch (ResourceUnavailableException e) {
