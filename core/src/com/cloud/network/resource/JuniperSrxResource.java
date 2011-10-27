@@ -161,7 +161,7 @@ public class JuniperSrxResource implements ServerResource {
         ROLLBACK("rollback.xml"), 
         TEST("test.xml");
 
-        private String scriptsDir = "premium-scripts/network/juniper";
+        private String scriptsDir = "scripts/network/juniper";
         private String xml;
 
         private SrxXml(String filename) {
@@ -669,6 +669,7 @@ public class JuniperSrxResource implements ServerResource {
     private Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {      
         StaticNatRuleTO[] allRules = cmd.getRules();
         Map<String, ArrayList<FirewallRuleTO>> activeRules = getActiveRules(allRules);
+        Map<String, String> vlanTagMap = getVlanTagMap(allRules);
 
         try {
             openConfiguration();
@@ -680,7 +681,7 @@ public class JuniperSrxResource implements ServerResource {
                 String privateIp = ipPairComponents[1];                                                                     
 
                 List<FirewallRuleTO> activeRulesForIpPair = activeRules.get(ipPair);      
-                Long publicVlanTag = getVlanTag(activeRulesForIpPair.get(0).getSrcVlanTag());
+                Long publicVlanTag = getVlanTag(vlanTagMap.get(publicIp));
 
                 // Delete the existing static NAT rule for this IP pair
                 removeStaticNatRule(publicVlanTag, publicIp, privateIp);
@@ -1089,6 +1090,16 @@ public class JuniperSrxResource implements ServerResource {
         }
 
         return activeRules;
+    }
+    
+    private Map<String, String> getVlanTagMap(FirewallRuleTO[] allRules) {
+    	Map<String, String> vlanTagMap = new HashMap<String, String>();
+    	
+    	for (FirewallRuleTO rule : allRules) {
+    		vlanTagMap.put(rule.getSrcIp(), rule.getSrcVlanTag());
+    	}
+    	
+    	return vlanTagMap;
     }
     
     /*
@@ -1535,17 +1546,16 @@ public class JuniperSrxResource implements ServerResource {
             return sendRequestAndCheckResponse(command, xml, "name", publicIp + "/32");
 
         case CHECK_IF_IN_USE:
-            // Check if any static or destination NAT rules use this proxy ARP entry
-            List<String[]> staticAndDestNatRules = getAllStaticAndDestNatRules();			
-
-            for (String[] rule : staticAndDestNatRules) {
-                String rulePublicIp = rule[0];
-                if (publicIp.equals(rulePublicIp)) {
-                    return true;
-                }
-            }
-
-            return false;
+        	// Check if any NAT rules are using this proxy ARP entry
+        	String poolName = genSourceNatPoolName(publicIp);
+               
+        	String allStaticNatRules = sendRequest(SrxXml.STATIC_NAT_RULE_GETALL.getXml());
+        	String allDestNatRules = sendRequest(replaceXmlValue(SrxXml.DEST_NAT_RULE_GETALL.getXml(), "rule-set", _publicZone));
+        	String allSrcNatRules = sendRequest(SrxXml.SRC_NAT_RULE_GETALL.getXml());
+    
+        	return (allStaticNatRules.contains(publicIp) ||
+        			allDestNatRules.contains(publicIp) ||
+        			allSrcNatRules.contains(poolName));
 
         case ADD:
             if (manageProxyArp(SrxCommand.CHECK_IF_EXISTS, publicVlanTag, publicIp)) {
