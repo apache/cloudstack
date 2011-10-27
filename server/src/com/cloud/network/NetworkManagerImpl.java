@@ -1282,31 +1282,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
 
-            // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a Shared source NAT rule,
-            // associate a source NAT IP (if one isn't already associated with the network)
-            if (network.getType() == Network.Type.Isolated && isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !offering.isSharedSourceNatService()) {
-                List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(networkId, true);
-
-                if (ips.isEmpty()) {
-                    s_logger.debug("Creating a source nat ip for " + network);
-                    Account owner = _accountMgr.getAccount(network.getAccountId());
-                    assignSourceNatIpAddress(owner, network, context.getCaller().getId()); 
-                }
-            }
-
-            for (NetworkElement element : _networkElements) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
-                }
-                element.implement(network, offering, dest, context);
-            }
-
-            // reapply all the firewall/staticNat/lb rules
-            s_logger.debug("Reprogramming network " + network + " as a part of network implement");
-            if (!reprogramNetworkRules(networkId, UserContext.current().getCaller(), network)) {
-                s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
-                throw new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
-            } 
+            //implement network elements and re-apply all the network rules
+            implementNetworkElementsAndResources(dest, context, network, offering); 
 
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
@@ -1321,6 +1298,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 shutdownNetwork(networkId, context, false);
             }
             _networksDao.releaseFromLockTable(networkId);
+        }
+    }
+
+    private void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, NetworkVO network, NetworkOfferingVO offering)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
+        // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a Shared source NAT rule,
+        // associate a source NAT IP (if one isn't already associated with the network)
+        if (network.getType() == Network.Type.Isolated && isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !offering.isSharedSourceNatService()) {
+            List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+
+            if (ips.isEmpty()) {
+                s_logger.debug("Creating a source nat ip for " + network);
+                Account owner = _accountMgr.getAccount(network.getAccountId());
+                assignSourceNatIpAddress(owner, network, context.getCaller().getId()); 
+            }
+        }
+
+        for (NetworkElement element : _networkElements) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
+            }
+            element.implement(network, offering, dest, context);
+        }
+
+        // reapply all the firewall/staticNat/lb rules
+        s_logger.debug("Reprogramming network " + network + " as a part of network implement");
+        if (!reprogramNetworkRules(network.getId(), UserContext.current().getCaller(), network)) {
+            s_logger.warn("Failed to re-program the network as a part of network " + network + " implement");
+            throw new ResourceUnavailableException("Unable to apply network rules as a part of network " + network + " implement", DataCenter.class, network.getDataCenterId());
         }
     }
 
@@ -2167,15 +2173,41 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _networksDao.update(network.getId(), network);
         txn.commit();
 
+        boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
+
+        txn.start();
+        if (success) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
+            }
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());
+            NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
+            guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+
+            applyProfileToNetwork(network, profile);
+
+            network.setState(Network.State.Allocated);
+            _networksDao.update(network.getId(), network);
+            _networksDao.clearCheckForGc(networkId);
+
+        } else {
+            network.setState(Network.State.Implemented);
+            _networksDao.update(network.getId(), network);
+        }
+        txn.commit();
+    }
+
+    private boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, NetworkVO network) {
         //1) Cleanup all the rules for the network. If it fails, just log the failure and proceed with shutting down the elements
         boolean cleanupResult = true;
         try {
-            cleanupResult = shutdownNetworkResources(networkId, context.getAccount(), context.getCaller().getId());
+            cleanupResult = shutdownNetworkResources(network.getId(), context.getAccount(), context.getCaller().getId());
         } catch (Exception ex) {
             s_logger.warn("shutdownNetworkRules failed during the network " + network + " shutdown due to ", ex);
         } finally {
+            //just warn the administrator that the network elements failed to shutdown
             if (!cleanupResult) {
-                s_logger.warn("Failed to cleanup network id=" + networkId + " resources as a part of shutdownNetwork");
+                s_logger.warn("Failed to cleanup network id=" + network.getId() + " resources as a part of shutdownNetwork");
             }
         }  
         
@@ -2199,27 +2231,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 success = false;
             }
         }
-
-        txn.start();
-        if (success) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
-            }
-            NetworkGuru guru = _networkGurus.get(network.getGuruName());
-            NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
-            guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
-
-            applyProfileToNetwork(network, profile);
-
-            network.setState(Network.State.Allocated);
-            _networksDao.update(network.getId(), network);
-            _networksDao.clearCheckForGc(networkId);
-
-        } else {
-            network.setState(Network.State.Implemented);
-            _networksDao.update(network.getId(), network);
-        }
-        txn.commit();
+        return success;
     }
 
     @Override
@@ -2479,33 +2491,32 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
         
-        shutdownNetwork(networkId, context, cleanup);
-        
-        //check that the network was shutdown properly
-        network = _networksDao.findById(networkId);
-        if (network.getState() != Network.State.Allocated && network.getState() != Network.State.Setup) {
-            s_logger.debug("Failed to shutdown the network as a part of network restart: " + network.getState());
+        if (!shutdownNetworkElementsAndResources(context, cleanup, network)) {
+            s_logger.debug("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
             return false;
         }
         
+        //Only after network was shutdown properly, change the network offering
         if (newNetworkOfferingId != null) {
             s_logger.debug("Updating network " + network + " with the new network offering id=" + newNetworkOfferingId + " as a part of network restart");
             network.setNetworkOfferingId(newNetworkOfferingId);
             _networksDao.update(networkId, network);
         }
         
-        //implement the network again
+        //implement the network elements and rules again
         DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
         
-        s_logger.debug("Implementing the network " + network + " as a part of network restart");
-        Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(networkId, dest, context);
+        s_logger.debug("Implementing the network " + network + " elements and resources as a part of network restart");
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         
-        if (implemented.first() == null) {
-            s_logger.warn("Failed to implement the network " + network + " as a part of network restart");
+        try {
+            implementNetworkElementsAndResources(dest, context, network, offering);
+        } catch (Exception ex) {
+            s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network restart due to ", ex);
             return false;
-        } else {
-            return true;
         }
+        
+        return true;
     }
 
     

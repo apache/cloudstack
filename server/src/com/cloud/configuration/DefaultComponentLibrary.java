@@ -81,6 +81,7 @@ import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkExternalDeviceDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VirtualRouterElementsDaoImpl;
@@ -297,6 +298,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
         addDao("PhysicalNetworkServiceProviderDao", PhysicalNetworkServiceProviderDaoImpl.class);
         addDao("VirtualRouterElementsDao", VirtualRouterElementsDaoImpl.class);
+        addDao("PhysicalNetworkExternalDeviceDao", PhysicalNetworkExternalDeviceDaoImpl.class);
     }
 
     @Override

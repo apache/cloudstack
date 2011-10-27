@@ -49,6 +49,9 @@ public class PhysicalNetworkExternalDeviceVO {
         this.networkServiceProviderId = networkServiceProviderId;
         this.hostId = hostId;
     }
+    
+    protected PhysicalNetworkExternalDeviceVO(){
+    }
 
     public long getId() {
         return id;
