@@ -198,6 +198,7 @@ createVolume=com.cloud.api.commands.CreateVolumeCmd;15
 deleteVolume=com.cloud.api.commands.DeleteVolumeCmd;15
 listVolumes=com.cloud.api.commands.ListVolumesCmd;15
 extractVolume=com.cloud.api.commands.ExtractVolumeCmd;15
+migrateVolume=com.cloud.api.commands.MigrateVolumeCmd;15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to

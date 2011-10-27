@@ -3,19 +3,17 @@ package com.cloud.api.commands;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 
+
+@Implementation(description="Migrate volume", responseObject=VolumeResponse.class)
 public class MigrateVolumeCmd extends BaseAsyncCmd {
 	private static final String s_name = "migratevolumeresponse";
 	
