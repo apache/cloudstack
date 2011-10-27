@@ -30,4 +30,5 @@ public @interface Implementation {
     Class<?> responseObject();
     String description() default "";
     boolean includeInApiDoc() default true;
+    String since() default "";
 }

@@ -25,6 +25,7 @@ public class Argument implements Comparable{
 	private String description;
 	private Boolean required;
 	private String type;
+	private String sinceVersion = null;
 	private List<Argument> arguments;
 	
 	public Argument(String name) {
@@ -76,6 +77,14 @@ public class Argument implements Comparable{
     public void setArguments(List<Argument> arguments) {
         this.arguments = arguments;
     }
+    
+	public String getSinceVersion() {
+		return sinceVersion;
+	}
+
+	public void setSinceVersion(String sinceVersion) {
+		this.sinceVersion = sinceVersion;
+	}
     
     public int compareTo(Object anotherAgrument) throws ClassCastException {
         if (!(anotherAgrument instanceof Argument))

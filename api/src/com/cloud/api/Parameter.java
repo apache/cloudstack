@@ -37,5 +37,6 @@ public @interface Parameter {
     boolean expose() default true;
     boolean includeInApiDoc() default true;
     int length() default 255;
+    String since() default "";
 }
 

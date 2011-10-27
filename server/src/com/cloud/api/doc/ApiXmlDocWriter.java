@@ -295,6 +295,11 @@ public class ApiXmlDocWriter {
             else
                 System.out.println("Command " + apiCommand.getName() + " misses description");
 
+            //Set version when the API is added
+            if(!impl.since().isEmpty()){
+            	apiCommand.setSinceVersion(impl.since());
+            }
+            
             // Set request parameters
             Field[] fields = clas.getDeclaredFields();
 
@@ -319,7 +324,7 @@ public class ApiXmlDocWriter {
             } else {
                 apiCommand.setAsync(false);
             }
-
+            
             // Get response parameters
             Class<?> responseClas = impl.responseObject();
             Field[] responseFields = responseClas.getDeclaredFields();
@@ -404,7 +409,11 @@ public class ApiXmlDocWriter {
                 if (parameterAnnotation.type() == BaseCmd.CommandType.LIST || parameterAnnotation.type() == BaseCmd.CommandType.MAP) {
                     reqArg.setType(parameterAnnotation.type().toString().toLowerCase());
                 }
-
+                
+                if(!parameterAnnotation.since().isEmpty()){
+                	reqArg.setSinceVersion(parameterAnnotation.since());
+                }
+                
                 if (reqArg.isRequired() == true) {
                     if (parameterAnnotation.name().equals("id")) {
                         id = reqArg;

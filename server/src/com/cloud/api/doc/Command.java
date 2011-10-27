@@ -25,6 +25,7 @@ public class Command {
 	private String name;
 	private String description;
 	private boolean isAsync;
+	private String sinceVersion = null;
 	private ArrayList<Argument> request;
 	private ArrayList<Argument> response;
 	
@@ -75,6 +76,14 @@ public class Command {
         this.isAsync = isAsync;
     }
 
+	public String getSinceVersion() {
+		return sinceVersion;
+	}
+
+	public void setSinceVersion(String sinceVersion) {
+		this.sinceVersion = sinceVersion;
+	}
+	
     public Argument getReqArgByName(String name){
 		for (Argument a : this.getRequest()) {
 			if (a.getName().equals(name)) {
