@@ -44,6 +44,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.DateUtil;
@@ -77,6 +78,8 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     VMInstanceDao _vmDao;
     @Inject
     AgentManager _agentManager;
+    @Inject
+    ResourceManager _resourceMgr;
 
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;

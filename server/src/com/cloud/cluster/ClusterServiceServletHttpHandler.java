@@ -38,6 +38,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentAnswer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PropagateResourceEventCommand;
 import com.cloud.agent.api.TransferAgentCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -240,7 +241,28 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
             Answer[] answers = new Answer[1];
             answers[0] = new Answer(cmd, result, null);
             return gson.toJson(answers);
-        }
+		} else if (cmds.length == 1 && cmds[0] instanceof PropagateResourceEventCommand) {
+			PropagateResourceEventCommand cmd = (PropagateResourceEventCommand) cmds[0];
+
+			if (s_logger.isDebugEnabled()) {
+				s_logger.debug("Intercepting command for resource event: host " + cmd.getHostId() + " event: " + cmd.getEvent());
+			}
+			boolean result = false;
+			try {
+				result = manager.executeResourceUserRequest(cmd.getHostId(), cmd.getEvent());
+				if (s_logger.isDebugEnabled()) {
+					s_logger.debug("Result is " + result);
+				}
+
+			} catch (AgentUnavailableException e) {
+				s_logger.warn("Agent is unavailable", e);
+				return null;
+			}
+
+			Answer[] answers = new Answer[1];
+			answers[0] = new Answer(cmd, result, null);
+			return gson.toJson(answers);
+		}
 
         try {
             long startTick = System.currentTimeMillis();

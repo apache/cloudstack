@@ -171,6 +171,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -310,6 +311,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private final Adapters<HostAllocator> _hostAllocators;
     @Inject ProjectManager _projectMgr;
+    private final ResourceManager _resourceMgr;
     
     private final KeystoreManager _ksMgr;
 
@@ -375,6 +377,7 @@ public class ManagementServerImpl implements ManagementServer {
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
+        _resourceMgr = locator.getManager(ResourceManager.class);
         
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
         
@@ -1378,7 +1381,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         List<HypervisorType> hypers = null;
         if( ! isIso ) {
-            hypers =  _hostDao.getAvailHypervisorInZone(null, null);
+            hypers =  _resourceMgr.listAvailHypervisorInZone(null, null);
         }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
 
@@ -3412,7 +3415,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
-        List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
+        List<HostVO> storageServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
@@ -3867,7 +3870,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         } else {
             // get all the hosts in this cluster
-            List<HostVO> hosts = _hostDao.listByCluster(cmd.getClusterId());
+            List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
             Transaction txn = Transaction.currentTxn();
             txn.start();
             for (HostVO h : hosts) {

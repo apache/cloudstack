@@ -44,6 +44,8 @@ import com.cloud.network.ovs.dao.OvsWorkDao;
 import com.cloud.network.ovs.dao.OvsWorkVO.Step;
 import com.cloud.network.ovs.dao.VlanMappingDao;
 import com.cloud.network.ovs.dao.VlanMappingVO;
+import com.cloud.resource.ResourceManager;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 
 public class OvsListener implements Listener {
@@ -53,6 +55,7 @@ public class OvsListener implements Listener {
 	GreTunnelDao _tunnelDao;
 	VlanMappingDao _mappingDao;
 	HostDao _hostDao;
+	ResourceManager _resourceMgr;
 	
 	public OvsListener(OvsNetworkManager ovsMgr, OvsWorkDao workDao, GreTunnelDao tunnelDao,
 			VlanMappingDao mappingDao, HostDao hostDao) {
@@ -61,6 +64,8 @@ public class OvsListener implements Listener {
 		this._tunnelDao = tunnelDao;
 		this._mappingDao = mappingDao;
 		this._hostDao = hostDao;
+		ComponentLocator locator = ComponentLocator.getLocator("management-server");
+		_resourceMgr = locator.getManager(ResourceManager.class);
 	}
 	
 	@Override
@@ -131,7 +136,7 @@ public class OvsListener implements Listener {
 		}
 		
 		try {
-			List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
+			List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
 			for (HostVO h : hosts) {
 				if (h.getId() == host.getId()) {
 					continue;

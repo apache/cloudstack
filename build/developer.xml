@@ -242,11 +242,11 @@
   </target>
   
   <target name="deploydb-simulator">
-    <condition property="server-setup.file" value="override/server-setup.xml" else="server-setup.xml">
+      <condition property="server-setup.file" value="${setup.db.dir}/override/server-setup.xml" else="server-setup.xml">
       <available file="${setup.db.dir}/override/server-setup.xml" />
     </condition>
 
-    <condition property="templates.file" value="override/templates.sql" else="templates.sql" >
+    <condition property="templates.file" value="${setup.db.dir}/override/templates.sql" else="templates.sql" >
     	<available file="${setup.db.dir}/override/templates.sql" />
     </condition>
   	
@@ -362,11 +362,6 @@
           <include name="**/${test}.java"/>
         </fileset>
       </batchtest>
-      <junitreport todir="${unittest.dir}">
-        <fileset dir="${unittest.dir}"/>
-        <report todir="${unittest.dir}/test-reports"/>
-      </junitreport>
-      <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
     </junit>
     <junitreport todir="${unittest.dir}">
       <fileset dir="${unittest.dir}"/>

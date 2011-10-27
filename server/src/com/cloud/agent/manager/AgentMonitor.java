@@ -42,15 +42,21 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class AgentMonitor extends Thread implements Listener {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
+    private static Logger status_Logger = Logger.getLogger(Status.class);
     private long _pingTimeout;
     private HostDao _hostDao;
     private boolean _stop;
@@ -63,6 +69,9 @@ public class AgentMonitor extends Thread implements Listener {
     private ConnectionConcierge _concierge;
     @Inject
     ClusterDao _clusterDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    
     // private ConnectionConcierge _concierge;
     private Map<Long, Long> _pingMap;
 
@@ -130,13 +139,26 @@ public class AgentMonitor extends Thread implements Listener {
             }
 
             try {
-
                 List<Long> behindAgents = findAgentsBehindOnPing();
                 for (Long agentId : behindAgents) {
-                    _agentMgr.disconnect(agentId, Event.PingTimeout, true);
+                	SearchCriteriaService<HostVO, ResourceState> sc = SearchCriteria2.create(HostVO.class, ResourceState.class);
+                	sc.selectField(sc.getEntity().getResourceState());
+                	sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
+                	ResourceState resourceState = sc.find();
+                	if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.Unmanaged || resourceState == ResourceState.ErrorInMaintenance) {
+                		/* Host is in non-operation state, so no investigation and direct put agent to Disconnected */
+                		status_Logger.debug("Ping timeout but host " + agentId + " is in resource state of " + resourceState + ", so no investigation");
+                		_agentMgr.disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
+                	} else {
+                		status_Logger.debug("Ping timeout for host " + agentId + ", do invstigation");
+                		_agentMgr.disconnectWithInvestigation(agentId, Event.PingTimeout);
+                	}
                 }
 
-                List<HostVO> hosts = _hostDao.listByStatus(Status.PrepareForMaintenance, Status.ErrorInMaintenance);
+                SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+                sc.addAnd(sc.getEntity().getResourceState(), Op.IN, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+                List<HostVO> hosts = sc.list();
+                
                 for (HostVO host : hosts) {
                     long hostId = host.getId();
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
@@ -148,7 +170,7 @@ public class AgentMonitor extends Thread implements Listener {
                         List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
                         if (vos.isEmpty() && vosMigrating.isEmpty()) {
                             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host [" + hostDesc + "] is ready for maintenance");
-                            _hostDao.updateStatus(host, Event.PreparationComplete, _msId);
+                            _resourceMgr.resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _msId);   
                         }
                     }
                 }
@@ -227,7 +249,7 @@ public class AgentMonitor extends Thread implements Listener {
                     s_logger.info("Asking agent mgr to investgate why host " + host.getId() +
                             " is behind on ping. last ping time: " + host.getLastPinged());
                 }
-                _agentMgr.disconnect(host.getId(), Event.PingTimeout, true);
+                _agentMgr.disconnectWithInvestigation(host.getId(), Event.PingTimeout);
             }
         }
 

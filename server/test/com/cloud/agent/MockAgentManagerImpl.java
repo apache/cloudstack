@@ -9,6 +9,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
@@ -16,6 +17,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -116,12 +118,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public void disconnect(long hostId, Event event, boolean investigate) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
     public HostStats getHostStatistics(long hostId) {
         // TODO Auto-generated method stub
         return null;
@@ -152,39 +148,9 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids) {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean maintain(long hostId) throws AgentUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean maintenanceFailed(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean cancelMaintenance(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
     }
 
     @Override
@@ -194,7 +160,7 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public boolean reconnect(long hostId) throws AgentUnavailableException {
+    public boolean reconnect(long hostId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -218,19 +184,6 @@ public class MockAgentManagerImpl implements AgentManager {
     }
 
     @Override
-    public AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance)
-            throws IllegalArgumentException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener) {
         // TODO Auto-generated method stub
         return 0;
@@ -248,16 +201,52 @@ public class MockAgentManagerImpl implements AgentManager {
         return null;
     }
 
-    @Override
-    public void updateStatus(HostVO host, Event event) {
-        // TODO Auto-generated method stub
-        
+	@Override
+    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
+	    // TODO Auto-generated method stub
+	    return false;
     }
 
-    @Override
-    public boolean disconnect(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
+	@Override
+    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public boolean agentStatusTransitTo(HostVO host, Event e, long msId) {
+	    // TODO Auto-generated method stub
+	    return false;
+    }
+
+	@Override
+    public AgentAttache findAttache(long hostId) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public boolean disconnectAgent(HostVO host, Event e, long msId) {
+	    // TODO Auto-generated method stub
+	    return false;
+    }
+
+	@Override
+    public void pullAgentToMaintenance(long hostId) {
+	    // TODO Auto-generated method stub
+	    
+    }
+
+	@Override
+    public void disconnectWithoutInvestigation(long hostId, Event event) {
+	    // TODO Auto-generated method stub
+	    
+    }
+
+	@Override
+    public void disconnectWithInvestigation(long hostId, Event event) {
+	    // TODO Auto-generated method stub
+	    
     }
 
 }

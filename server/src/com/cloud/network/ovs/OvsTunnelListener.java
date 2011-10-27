@@ -38,15 +38,20 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.ovs.dao.GreTunnelVO;
 import com.cloud.network.ovs.dao.OvsTunnelDao;
 import com.cloud.network.ovs.dao.OvsTunnelVO;
+import com.cloud.resource.ResourceManager;
+import com.cloud.utils.component.ComponentLocator;
 
 public class OvsTunnelListener implements Listener {
 	public static final Logger s_logger = Logger.getLogger(OvsListener.class.getName());
 	HostDao _hostDao;
 	OvsTunnelDao _tunnelDao;
+	ResourceManager _resourceMgr;
 	
 	public OvsTunnelListener(OvsTunnelDao tunnelDao, HostDao hostDao) {
 		this._hostDao = hostDao;
 		this._tunnelDao = tunnelDao;
+		ComponentLocator locator = ComponentLocator.getLocator("management-server");
+		_resourceMgr = locator.getManager(ResourceManager.class);
 	}
 	
 	@Override
@@ -76,7 +81,7 @@ public class OvsTunnelListener implements Listener {
 		}
 		
 		try {
-			List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
+			List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
 			for (HostVO h : hosts) {
 				if (h.getId() == host.getId()) {
 					continue;

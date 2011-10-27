@@ -37,6 +37,9 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalFirewallCommand;
+import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -93,7 +96,10 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
@@ -121,7 +127,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Local(value = {ExternalNetworkManager.class})
-public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
+public class ExternalNetworkManagerImpl implements ExternalNetworkManager, ResourceStateAdapter {
 	public enum ExternalNetworkResourceName {
 		JuniperSrx,
 		F5BigIp,
@@ -147,6 +153,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     @Inject VpnUserDao _vpnUsersDao;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject AccountManager _accountMgr;
+	@Inject ResourceManager _resourceMgr;
 
 	ScheduledExecutorService _executor;
 	int _externalNetworkStatsInterval;
@@ -161,6 +168,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 		if (_externalNetworkStatsInterval > 0){
 			_executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));		
 		}
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
     	return true;
     }
 	
@@ -174,6 +182,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 
 	@Override
     public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
     	return true;
     }
 
@@ -192,7 +201,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 			s_logger.debug("Zone " + zone.getName() + " is not configured for external networking.");
 			return null;
 		} else {
-			List<HostVO> externalNetworkAppliancesInZone = _hostDao.listBy(type, zoneId);
+			List<HostVO> externalNetworkAppliancesInZone = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(type, zoneId);
 			if (externalNetworkAppliancesInZone.size() != 1) {
 				return null;
 			} else {
@@ -216,7 +225,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             zoneName = zone.getName();
         }
 
-        List<HostVO> externalLoadBalancersInZone = _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+        List<HostVO> externalLoadBalancersInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalLoadBalancer, zoneId);
         if (externalLoadBalancersInZone.size() != 0) {
             throw new InvalidParameterValueException("Already found an external load balancer in zone: " + zoneName);
         }
@@ -285,7 +294,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host host = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
+        Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
         if (host != null) {
         	if (deviceType.equalsIgnoreCase(ExternalNetworkDeviceType.F5BigIP.getName())) {
                 zone.setLoadBalancerProvider(Network.Provider.F5BigIp.getName());
@@ -309,7 +318,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
         }
 
         try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
+            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
                 DataCenterVO zone = _dcDao.findById(externalLoadBalancer.getDataCenterId());
                 
                 if (zone.getNetworkType().equals(NetworkType.Advanced)) {
@@ -331,7 +340,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     @Override
     public List<HostVO> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalLoadBalancer, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalLoadBalancer, zoneId);
     }
 
     @Override
@@ -533,7 +542,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             zoneName = zone.getName();
         }
 
-        List<HostVO> externalFirewallsInZone = _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+        List<HostVO> externalFirewallsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalFirewall, zoneId);
         if (externalFirewallsInZone.size() != 0) {
             throw new InvalidParameterValueException("Already added an external firewall in zone: " + zoneName);
         }
@@ -630,7 +639,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host externalFirewall = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
+        Host externalFirewall = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalFirewall, hostDetails);
         if (externalFirewall != null) {
             zone.setFirewallProvider(Network.Provider.JuniperSRX.getName());                      
             zone.setUserDataProvider(Network.Provider.DhcpServer.getName());
@@ -669,7 +678,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
         }
 
         try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
+            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
                 DataCenterVO zone = _dcDao.findById(externalFirewall.getDataCenterId());
                 zone.setFirewallProvider(Network.Provider.VirtualRouter.getName()); 
                 zone.setUserDataProvider(Network.Provider.VirtualRouter.getName());
@@ -708,7 +717,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
     @Override
     public List<HostVO> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.ExternalFirewall, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.ExternalFirewall, zoneId);
     }
 
     @Override
@@ -1285,4 +1294,30 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
             }
 		}
 	}
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+	public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+	        List<String> hostTags) {
+		if (startup[0] instanceof StartupExternalFirewallCommand) {
+			host.setType(Host.Type.ExternalFirewall);
+			return host;
+		} else if (startup[0] instanceof StartupExternalLoadBalancerCommand) {
+			host.setType(Host.Type.ExternalLoadBalancer);
+			return host;
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
 }

@@ -31,6 +31,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
@@ -40,6 +41,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(XenServerInvestigator.class);
     @Inject HostDao _hostDao;
     @Inject AgentManager _agentMgr;
+    @Inject ResourceManager _resourceMgr;
     
     protected XenServerInvestigator() {
     }
@@ -51,7 +53,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
         }
         
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
-        List<HostVO> neighbors = _hostDao.listByCluster(agent.getClusterId());
+        List<HostVO> neighbors = _resourceMgr.listAllHostsInCluster(agent.getClusterId());
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != HypervisorType.XenServer) {
                 continue;

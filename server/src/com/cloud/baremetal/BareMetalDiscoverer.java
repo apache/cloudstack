@@ -27,14 +27,17 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -42,18 +45,38 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=Discoverer.class)
-public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
+public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
 	private static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);
 	@Inject ClusterDao _clusterDao;
 	@Inject protected HostDao _hostDao;
 	@Inject DataCenterDao _dcDao;
+    @Inject VMInstanceDao _vmDao = null;
+    @Inject ResourceManager _resourceMgr;
 	
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+    	return super.configure(name, params);
+    }
+    
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
+    
 	@Override
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
 			throws DiscoveryException {
@@ -178,5 +201,35 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
 	public HypervisorType getHypervisorType() {
 		return Hypervisor.HypervisorType.BareMetal;
 	}
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+		if (host.getType() != Host.Type.Routing || host.getHypervisorType() != HypervisorType.BareMetal) {
+            return null;
+        }
+        
+        List<VMInstanceVO> deadVms = _vmDao.listByLastHostId(host.getId());
+        for (VMInstanceVO vm : deadVms) {
+            if (vm.getState() == State.Running || vm.getHostId() != null) {
+                throw new CloudRuntimeException("VM " + vm.getId() + "is still running on host " + host.getId());
+            }
+            _vmDao.remove(vm.getId());
+        }
+        
+        return new DeleteHostAnswer(true);
+    }
 
 }

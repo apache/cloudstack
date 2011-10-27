@@ -64,6 +64,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
@@ -108,7 +109,8 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
 	private static final Logger s_logger = Logger.getLogger(BareMetalVmManagerImpl.class); 
 	private ConfigurationDao _configDao;
-	@Inject PxeServerManager _pxeMgr; 
+	@Inject PxeServerManager _pxeMgr;
+	@Inject ResourceManager _resourceMgr;
 	
     @Inject (adapter=TemplateAdapter.class)
     protected Adapters<TemplateAdapter> _adapters;
@@ -161,7 +163,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
             throw new InvalidParameterValueException("Cannot find host with id " + hostId);
         }
 
-        List<HostVO> pxes = _hostDao.listBy(Host.Type.PxeServer, null, host.getPodId(), host.getDataCenterId());
+        List<HostVO> pxes = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, host.getPodId(), host.getDataCenterId());
         if (pxes.size() == 0) {
             throw new CloudRuntimeException("Please add PXE server in Pod before taking image");
         }
@@ -400,7 +402,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);
 	    
-		List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
 	    if (servers.size() == 0) {
 	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
 	    }
@@ -469,7 +471,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    }
 	    s_logger.debug("This is a PXE start, prepare PXE server first");
 	    
-	    List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+	    List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, dest.getDataCenter().getId()); 
 	    if (servers.size() == 0) {
 	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
 	    }

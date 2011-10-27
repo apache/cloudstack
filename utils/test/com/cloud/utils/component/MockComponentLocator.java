@@ -84,7 +84,9 @@ public class MockComponentLocator extends ComponentLocator {
         s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback()};
         s_callbackFilter = new DatabaseCallbackFilter();
         s_interceptors.clear();
-        resetInterceptors(interceptors);
+        if (interceptors != null) {
+        	resetInterceptors(interceptors);
+        }
         s_tl.set(this);
         parse("fake file");
     }

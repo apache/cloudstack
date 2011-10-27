@@ -47,7 +47,11 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveredWithErrorException;
@@ -69,7 +73,10 @@ import com.cloud.hypervisor.xen.resource.XenServer600Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -88,7 +95,7 @@ import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.XenAPIException;
 
 @Local(value=Discoverer.class)
-public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener {
+public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(XcpServerDiscoverer.class);
     protected String _publicNic;
     protected String _privateNic;
@@ -108,6 +115,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject ClusterDao _clusterDao;
     @Inject protected ConfigurationDao _configDao;
+    @Inject ResourceManager _resourceMgr;
+    @Inject HostPodDao _podDao;
+    @Inject DataCenterDao _dcDao;
     
     protected XcpServerDiscoverer() {
     }
@@ -141,7 +151,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 		
         try {
-            List<HostVO> eHosts = _hostDao.listByCluster(clusterId);
+            List<HostVO> eHosts = _resourceMgr.listAllHostsInCluster(clusterId);
             if( eHosts.size() > 0 ) {
             	HostVO eHost = eHosts.get(0);
             	_hostDao.loadDetails(eHost);
@@ -170,7 +180,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if ( clu.getGuid()== null ) {
             	clu.setGuid(poolUuid);
             } else {
-                List<HostVO> clusterHosts = _hostDao.listByCluster(clusterId);
+                List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clusterId);
                 if( clusterHosts != null && clusterHosts.size() > 0) {
                     if (!clu.getGuid().equals(poolUuid)) {
                         if (hosts.size() == 1) {
@@ -233,7 +243,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 String hostOSVer = prodVersion;
                 String hostKernelVer = record.softwareVersion.get("linux");
 
-                if (_hostDao.findByGuid(record.uuid) != null) {
+                if (_resourceMgr.findHostByGuid(record.uuid) != null) {
                     s_logger.debug("Skipping " + record.address + " because " + record.uuid + " is already in the database.");
                     continue;
                 }                
@@ -338,7 +348,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected boolean addHostsToPool(Connection conn, String hostIp, Long clusterId) throws XenAPIException, XmlRpcException, DiscoveryException {
         
         List<HostVO> hosts;
-        hosts = _hostDao.listByCluster(clusterId);
+        hosts = _resourceMgr.listAllHostsInCluster(clusterId);
 
         String masterIp = null;
         String username = null;
@@ -454,6 +464,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         _agentMgr.registerForHostEvents(this, true, false, true);
         
         createXsToolsISO();
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
     
@@ -617,5 +628,43 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
-    }    
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+		StartupCommand firstCmd = startup[0];
+		if (!(firstCmd instanceof StartupRoutingCommand)) {
+			return null;
+		}
+
+		StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+		if (ssCmd.getHypervisorType() != HypervisorType.XenServer) {
+			return null;
+		}
+
+		HostPodVO pod = _podDao.findById(host.getPodId());
+		DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
+		s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + HypervisorType.XenServer + ". Checking CIDR...");
+		_resourceMgr.checkCIDR(pod, dc, ssCmd.getPrivateIpAddress(), ssCmd.getPrivateNetmask());
+		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.XenServer, details, hostTags);
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+	
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
+    }
 }

@@ -70,6 +70,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host.Type;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -88,6 +89,10 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
+import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
@@ -112,7 +117,10 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -149,7 +157,7 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long> {
+public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -199,6 +207,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     StoragePoolDao _storagePoolDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
+    @Inject
+    ResourceManager _resourceMgr;
 
     private ConsoleProxyListener _listener;
 
@@ -1000,6 +1010,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         this._loadScanner.stop();
         _allocProxyLock.releaseRef();
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
@@ -1267,6 +1278,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         _loadScanner = new SystemVmLoadScanner<Long>(this);
         _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
+    	_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Console Proxy Manager is configured.");
@@ -1459,7 +1471,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             long proxyVmId = startupCmd.getProxyVmId();
             ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(proxyVmId);
             assert (consoleProxy != null);
-            HostVO consoleProxyHost = _hostDao.findConsoleProxyHost(consoleProxy.getHostName(), Type.ConsoleProxy);
+            HostVO consoleProxyHost = findConsoleProxyHostByName(consoleProxy.getHostName());
 
             Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
@@ -1656,5 +1668,35 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public void onScanEnd() {
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+        if (!(cmd[0] instanceof StartupProxyCommand)) {
+            return null;
+        }
+        
+        host.setType(com.cloud.host.Host.Type.ConsoleProxy);
+        return host;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+    protected HostVO findConsoleProxyHostByName(String name) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.ConsoleProxy);
+		sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+	    return sc.find();
     }
 }

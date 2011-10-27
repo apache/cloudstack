@@ -16,6 +16,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -35,7 +37,10 @@ import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -48,7 +53,7 @@ import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
 
 @Local(value=Discoverer.class)
-public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer {
+public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
 	private static final Logger s_logger = Logger.getLogger(VmwareServerDiscoverer.class);
 	
 	@Inject ClusterDao _clusterDao;
@@ -57,6 +62,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     @Inject VMTemplateDao _tmpltDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject HostDao _hostDao;
+    @Inject ResourceManager _resourceMgr;
     
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
@@ -78,7 +84,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     		return null;
         }
         
-        List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         if(hosts.size() >= _vmwareMgr.getMaxHostsPerCluster()) {
         	String msg = "VMware cluster " + cluster.getName() + " is too big to add new host now. (current configured cluster size: " + _vmwareMgr.getMaxHostsPerCluster() + ")";
         	s_logger.error(msg);
@@ -224,8 +230,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         
         createVmwareToolsIso();
 
-		if(s_logger.isInfoEnabled())
+		if(s_logger.isInfoEnabled()) {
 			s_logger.info("VmwareServerDiscoverer has been successfully configured");
+		}
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
     
@@ -245,6 +253,40 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             tmplt.setUrl(null);
             _tmpltDao.update(id, tmplt);
         }
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+		StartupCommand firstCmd = startup[0];
+		if (!(firstCmd instanceof StartupRoutingCommand)) {
+			return null;
+		}
+
+		StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+		if (ssCmd.getHypervisorType() != HypervisorType.VMware) {
+			return null;
+		}
+
+		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.VMware, details, hostTags);
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+	
+    @Override
+    public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        return super.stop();
     }
 }
 

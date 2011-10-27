@@ -38,6 +38,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -126,13 +127,16 @@ public class HostVO implements Host {
 
     @Column(name="setup")
     private boolean setup = false;
-
-    @Column(name="allocation_state", nullable=false)
+    
+    @Column(name="resource_state", nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private HostAllocationState hostAllocationState;
+    private ResourceState resourceState;
 
     @Column(name="hypervisor_version")
     private String hypervisorVersion;
+    
+    @Column(name="update_count", updatable = true, nullable=false)
+    protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -356,10 +360,10 @@ public class HostVO implements Host {
 
     public HostVO(String guid) {
         this.guid = guid;
-        this.status = Status.Up;
+        this.status = Status.Creating;
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
-        this.hostAllocationState = Host.HostAllocationState.Enabled;
+        this.resourceState = ResourceState.Creating;
     }
 
     protected HostVO() {
@@ -396,7 +400,6 @@ public class HostVO implements Host {
         this.parent = parent;
         this.totalSize = totalSize;
         this.fsType = fsType;
-        this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
 
     public HostVO(long id,
@@ -454,7 +457,6 @@ public class HostVO implements Host {
         this.disconnectedOn = disconnectedOn;
         this.dom0MinMemory = dom0MinMemory;
         this.storageUrl = url;
-        this.hostAllocationState = Host.HostAllocationState.Enabled;
     }
 
     public void setPodId(Long podId) {
@@ -671,16 +673,6 @@ public class HostVO implements Host {
         return hypervisorType;
     }
 
-    @Override
-    public HostAllocationState getHostAllocationState() {
-        return hostAllocationState;
-    }
-
-    public void setHostAllocationState(HostAllocationState hostAllocationState) {
-        this.hostAllocationState = hostAllocationState;
-    }
-
-
     public void setHypervisorVersion(String hypervisorVersion) {
         this.hypervisorVersion = hypervisorVersion;
     }
@@ -688,5 +680,42 @@ public class HostVO implements Host {
     @Override
     public String getHypervisorVersion() {
         return hypervisorVersion;
-    }	
+    }
+
+	@Override
+	@Transient
+	public Status getState() {
+		return status;
+	}
+
+	//FIXME: change the upper interface
+	@Override
+	public Long getHostId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+    @Override
+    public ResourceState getResourceState() {
+        return resourceState;
+    }
+    
+    public void setResourceState(ResourceState state) {
+    	resourceState = state;
+    }
+    
+    @Override
+    public boolean isInMaintenanceStates() {
+        return (getResourceState() == ResourceState.Maintenance || getResourceState() == ResourceState.ErrorInMaintenance
+                || getResourceState() == ResourceState.PrepareForMaintenance);
+    }
+    
+    public long getUpdated() {
+    	return updated;
+    }
+    
+	public long incrUpdated() {
+		updated++;
+		return updated;
+	}
 }

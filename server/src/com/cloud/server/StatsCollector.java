@@ -46,6 +46,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
@@ -55,6 +56,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -84,6 +86,7 @@ public class StatsCollector {
 	private final StoragePoolDao _storagePoolDao;
 	private final StorageManager _storageManager;
     private final StoragePoolHostDao _storagePoolHostDao;
+    private final SecondaryStorageVmManager _ssvmMgr;
 
 	private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
 	private final ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -112,6 +115,7 @@ public class StatsCollector {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 		_agentMgr = locator.getManager(AgentManager.class);
 		_userVmMgr = locator.getManager(UserVmManager.class);
+		_ssvmMgr = locator.getManager(SecondaryStorageVmManager.class);
 		_hostDao = locator.getDao(HostDao.class);
 		_userVmDao = locator.getDao(UserVmDao.class);
 		_volsDao = locator.getDao(VolumeDao.class);
@@ -154,6 +158,7 @@ public class StatsCollector {
 				
 				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
+				sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.Storage.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ConsoleProxy.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.SecondaryStorage.toString());
@@ -193,6 +198,7 @@ public class StatsCollector {
 				
 				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
+				sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.Storage.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ConsoleProxy.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.SecondaryStorage.toString());
@@ -265,7 +271,7 @@ public class StatsCollector {
 	            	s_logger.debug("StorageCollector is running...");
 	            }
 				
-                List<HostVO> hosts = _hostDao.listSecondaryStorageHosts();
+                List<HostVO> hosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
                 ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
                 for (HostVO host : hosts) {
                     if ( host.getStorageUrl() == null ) {

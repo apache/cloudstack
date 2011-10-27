@@ -23,6 +23,7 @@ import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
@@ -30,6 +31,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -53,6 +55,12 @@ public interface AgentManager extends Manager {
         Continue, Stop
     }
 
+    public enum TapAgentsAction {
+        Add,
+        Del,
+        Contains,
+    }
+    
     /**
      * easy send method that returns null if there's any errors. It handles all exceptions.
      * 
@@ -156,26 +164,6 @@ public interface AgentManager extends Manager {
      * @return hosts currently connected.
      */
     Set<Long> getConnectedHosts();
-
-    /**
-     * Disconnect the agent.
-     * 
-     * @param hostId
-     *            host to disconnect.
-     * @param reason
-     *            the reason why we're disconnecting.
-     * 
-     */
-    void disconnect(long hostId, Status.Event event, boolean investigate);
-
-    /**
-     * Obtains statistics for a host; vCPU utilisation, memory utilisation, and network utilisation
-     * 
-     * @param hostId
-     * @return HostStat
-     */
-    
-    boolean disconnect(long hostId);
     
     HostStats getHostStatistics(long hostId);
 
@@ -188,29 +176,6 @@ public interface AgentManager extends Manager {
     List<PodCluster> listByPod(long podId);
 
     /**
-     * Adds a new host
-     * 
-     * @param zoneId
-     * @param resource
-     * @param hostType
-     * @param hostDetails
-     * @return new Host
-     */
-    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
-
-    /**
-     * Deletes a host
-     * 
-     * @param hostId
-     * @param isForced
-     *            TODO
-     * @param caller
-     *            TODO
-     * @param true if deleted, false otherwise
-     */
-    boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller);
-
-    /**
      * Find a pod based on the user id, template, and data center.
      * 
      * @param template
@@ -220,29 +185,7 @@ public interface AgentManager extends Manager {
      */
     Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
 
-    /**
-     * Put the agent in maintenance mode.
-     * 
-     * @param hostId
-     *            id of the host to put in maintenance mode.
-     * @return true if it was able to put the agent into maintenance mode. false if not.
-     */
-    boolean maintain(long hostId) throws AgentUnavailableException;
-
-    boolean maintenanceFailed(long hostId);
-
-    /**
-     * Cancel the maintenance mode.
-     * 
-     * @param hostId
-     *            host id
-     * @return true if it's done. false if not.
-     */
-    boolean cancelMaintenance(long hostId);
-
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
-
-    public boolean reconnect(final long hostId) throws AgentUnavailableException;
 
     boolean isHostNativeHAEnabled(long hostId);
 
@@ -250,16 +193,30 @@ public interface AgentManager extends Manager {
 
     void notifyAnswersToMonitors(long agentId, long seq, Answer[] answers);
 
-    AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance) throws IllegalArgumentException;
-
-    boolean updateHostPassword(UpdateHostPasswordCmd upasscmd);
-
     long sendToSecStorage(HostVO ssHost, Command cmd, Listener listener);
 
     Answer sendToSecStorage(HostVO ssHost, Command cmd);
 
     HostVO getSSAgent(HostVO ssHost);
+    
+    /* working as a lock while agent is being loaded */
+    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action);
+    
+    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException;
+    
+    public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId);
+    
+    public AgentAttache findAttache(long hostId);
+    
+    void disconnectWithoutInvestigation(long hostId, Status.Event event);
+    
+    void disconnectWithInvestigation(long hostId, Status.Event event);
+    
+    public boolean disconnectAgent(HostVO host, Status.Event e, long msId);
+    
+    public void pullAgentToMaintenance(long hostId);
+    
+    public void pullAgentOutMaintenance(long hostId);
 
-    void updateStatus(HostVO host, Event event);
-
+	boolean reconnect(long hostId);
 }

@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -104,7 +105,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.Host.HostAllocationState;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -118,6 +118,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
@@ -131,6 +133,7 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -148,6 +151,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nio.HandlerFactory;
@@ -179,6 +184,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 @Local(value = { AgentManager.class })
 public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
+    private static final Logger status_logger = Logger.getLogger(Status.class);
 
     protected ConcurrentHashMap<Long, AgentAttache> _agents = new ConcurrentHashMap<Long, AgentAttache>(10007);
     protected List<Pair<Integer, Listener>> _hostMonitors = new ArrayList<Pair<Integer, Listener>>(17);
@@ -241,7 +247,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
-    
+
+    @Inject SecondaryStorageVmManager _ssvmMgr;
 
     protected int _retry = 2;
 
@@ -260,6 +267,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected AgentMonitor _monitor = null;
 
     protected ExecutorService _executor;
+    
+    protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
+    
+    @Inject ResourceManager _resourceMgr;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -412,6 +423,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
     }
 
+    @Override
     public AgentAttache findAttache(long hostId) {
         AgentAttache attache = null;
         synchronized (_agents) {
@@ -469,32 +481,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return pcs;
     }
 
-    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance)
-    throws ConnectionException {
-        
-        if (startup == null) {
-            return null;
-        }
-        HostVO server = createHost(startup, resource, details, old, hostTags, allocationState);
-        if (server == null) {
-            return null;
-        }
-
-        long id = server.getId();
-
-        AgentAttache attache = createAttache(id, server, resource);
-        StartupAnswer[] answers = new StartupAnswer[startup.length];
-        for (int i = 0; i < answers.length; i++) {
-            answers[i] = new StartupAnswer(startup[i], attache.getId(), _pingInterval);
-        }
-
-        attache.process(answers);
-
-        attache = notifyMonitorsOfConnection(attache, startup, forRebalance);
-
-        return attache;
-    }
-
     @Override
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
@@ -515,7 +501,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return  ssHost;
         } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
             Long dcId = ssHost.getDataCenterId();
-            List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
+            List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
             if (ssAHosts == null || ssAHosts.isEmpty() ) {
                 return null;
             }
@@ -541,7 +527,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
 
     private long sendToSSVM(final long dcId, final Command cmd, final Listener listener) {
-        List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
+        List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return -1;
         }
@@ -555,7 +541,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     private Answer sendToSSVM(final long dcId, final Command cmd) {
-        List<HostVO> ssAHosts = _hostDao.listSecondaryStorageVM(dcId);
+        List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return new Answer(cmd, false, "can not find secondary storage VM agent for data center " + dcId);
         }
@@ -569,7 +555,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         List<ClusterVO> clusters = _clusterDao.listByDcHyType(dcId, type.toString());
         int retry = 0;
         for (ClusterVO cluster : clusters) {
-            List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), null, dcId);
+            List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), null, dcId);
             for (HostVO host : hosts) {
                 retry++;
                 if (retry > _retry) {
@@ -588,213 +574,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
         return null;
-    }
-
-    @Override
-    @DB
-    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy, User caller) {
-
-        // Check if the host exists
-        HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host: " + hostId + " does not even exist.  Delete call is ignored.");
-            }
-            return true;
-        }
-
-        AgentAttache attache = findAttache(hostId);
-        // Get storage pool host mappings here because they can be removed as a part of handleDisconnect later
-        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
-
-        try {
-
-            if (host.getType() == Type.Routing) {
-                // Check if host is ready for removal
-                Status currentState = host.getStatus();
-                Status nextState = currentState.getNextStatus(Status.Event.Remove);
-                if (nextState == null) {
-                    s_logger.debug("There is no transition from state " + currentState + " to state " + Status.Event.Remove);
-                    return false;
-                }
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Deleting Host: " + hostId + " Guid:" + host.getGuid());
-                }
-
-                if (forceDestroy) {
-                    //put local storage into mainenance mode, will set all the VMs on this local storage into stopped state
-                    StoragePool storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
-                    if (storagePool != null) {
-                        if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
-                            try {
-                                storagePool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
-                                if (storagePool == null) {
-                                    s_logger.debug("Failed to set primary storage into maintenance mode");
-                                    return false;
-                                }
-                            } catch (Exception e) {
-                                s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
-                                return false;
-                            }
-                        }
-                        List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
-                        for (VMInstanceVO vm : vmsOnLocalStorage) {
-                            if(!_vmMgr.destroy(vm, caller, _accountMgr.getAccount(vm.getAccountId()))) {
-                                String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + hostId;
-                                s_logger.warn(errorMsg);
-                                throw new CloudRuntimeException(errorMsg);
-                            }
-                        }
-                    }
-                } else {
-                    // Check if there are vms running/starting/stopping on this host
-                    List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
-                    if (!vms.isEmpty()) {
-                        if (isForced) {
-                            // Stop HA disabled vms and HA enabled vms in Stopping state
-                            // Restart HA enabled vms
-                            for (VMInstanceVO vm : vms) {
-                                if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
-                                    s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + hostId);
-                                    if (!_vmMgr.advanceStop(vm, true, caller, _accountMgr.getAccount(vm.getAccountId()))) {
-                                        String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + hostId;
-                                        s_logger.warn(errorMsg);
-                                        throw new CloudRuntimeException(errorMsg);
-                                    }
-                                } else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
-                                    s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + hostId);
-                                    _haMgr.scheduleRestart(vm, false);
-                                }
-                            }
-                        } else {
-                            throw new CloudRuntimeException("Unable to delete the host as there are vms in " + vms.get(0).getState() + " state using this host and isForced=false specified");
-                        }
-                    }
-                }
-
-                if (host.getHypervisorType() == HypervisorType.XenServer) {
-                    if (host.getClusterId() != null) {
-                        List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
-                        hosts.add(host);
-                        boolean success = true;
-                        for (HostVO thost : hosts) {
-                            long thostId = thost.getId();
-                            PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
-                            Answer answer = easySend(thostId, eject);
-                            if (answer != null && answer.getResult()) {
-                                s_logger.debug("Eject Host: " + hostId + " from " + thostId + " Succeed");
-                                success = true;
-                                break;
-                            } else {
-                                success = false;
-                                s_logger.warn("Eject Host: " + hostId + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
-                            }
-                        }
-                        if (!success) {
-                            String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" + host.getGuid()
-                                    + "in this host " + host.getPrivateIpAddress();
-                            s_logger.warn(msg);
-                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
-                        }
-                    }
-                } else if (host.getHypervisorType() == HypervisorType.KVM) {
-                    try {
-                        ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null);
-                        send(host.getId(), cmd);
-                    } catch (AgentUnavailableException e) {
-                        s_logger.warn("Sending ShutdownCommand failed: ", e);
-                    } catch (OperationTimedoutException e) {
-                        s_logger.warn("Sending ShutdownCommand failed: ", e);
-                    }
-                } else if (host.getHypervisorType() == HypervisorType.BareMetal) {
-                    List<VMInstanceVO> deadVms = _vmDao.listByLastHostId(hostId);
-                    for (VMInstanceVO vm : deadVms) {
-                        if (vm.getState() == State.Running || vm.getHostId() != null) {
-                            throw new CloudRuntimeException("VM " + vm.getId() + "is still running on host " + hostId);
-                        }
-                        _vmDao.remove(vm.getId());
-                    }
-                }
-            }
-
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
-            _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
-            if (attache != null) {
-                handleDisconnect(attache, Status.Event.Remove, false);
-            }
-            // delete host details
-            _hostDetailsDao.deleteDetails(hostId);
-
-            host.setGuid(null);
-            Long clusterId = host.getClusterId();
-            host.setClusterId(null);
-            _hostDao.update(host.getId(), host);
-
-            _hostDao.remove(hostId);
-            if (clusterId != null) {
-                List<HostVO> hosts = _hostDao.listByCluster(clusterId);
-                if (hosts.size() == 0) {
-                    ClusterVO cluster = _clusterDao.findById(clusterId);
-                    cluster.setGuid(null);
-                    _clusterDao.update(clusterId, cluster);
-                }
-            }
-
-            // Delete the associated entries in host ref table
-            _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
-
-            // For pool ids you got, delete local storage host entries in pool table where
-            for (StoragePoolHostVO pool : pools) {
-                Long poolId = pool.getPoolId();
-                StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
-                if (storagePool.isLocal() && forceDestroy) {
-                    storagePool.setUuid(null);
-                    storagePool.setClusterId(null);
-                    _storagePoolDao.update(poolId, storagePool);
-                    _storagePoolDao.remove(poolId);
-                    _capacityDao.removeBy(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, null, null, null, poolId);        
-                    s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
-                }
-            }
-            
-            //Delete op_host_capacity entries
-            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_MEMORY, null, null, null, hostId);
-            _capacityDao.removeBy(Capacity.CAPACITY_TYPE_CPU, null, null, null, hostId);
-            txn.commit();
-            return true;
-        } catch (Throwable t) {
-            s_logger.error("Unable to delete host: " + hostId, t);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd upasscmd) {
-        if (upasscmd.getClusterId() == null) {
-            //update agent attache password
-            AgentAttache agent = this.findAttache(upasscmd.getHostId());
-            if (!(agent instanceof DirectAgentAttache)) {
-                return false;
-            }
-            UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(upasscmd.getUsername(), upasscmd.getPassword());
-            agent.updatePassword(cmd);
-        }
-        else {
-            // get agents for the cluster
-            List<HostVO> hosts = _hostDao.listByCluster(upasscmd.getClusterId());
-            for (HostVO h : hosts) {
-                AgentAttache agent = this.findAttache(h.getId());
-                if (!(agent instanceof DirectAgentAttache)) {
-                    continue;
-                }
-                UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(upasscmd.getUsername(), upasscmd.getPassword());
-                agent.updatePassword(cmd);
-            }
-        }
-        return true;
     }
 
     protected int getPingInterval() {
@@ -946,174 +725,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             removed.disconnect(nextState);
         }
     }
-
-    @Override
-    public void disconnect(final long hostId, final Status.Event event, final boolean investigate) {
-        AgentAttache attache = findAttache(hostId);
-
-        if (attache != null) {
-            disconnect(attache, event, investigate);
-        } else {
-            synchronized (_loadingAgents) {
-                if (_loadingAgents.contains(hostId)) {
-                    s_logger.info("Host " + hostId + " is being loaded so no disconnects needed.");
-                    return;
-                }
-            }
-
-            HostVO host = _hostDao.findById(hostId);
-            if (host != null && host.getRemoved() == null) {
-                if (event != null && event.equals(Event.Remove)) {
-                    host.setGuid(null);
-                    host.setClusterId(null);
-                }
-                _hostDao.updateStatus(host, event, _nodeId);
-            }
-        }
-    }
     
-    @Override
-    public boolean disconnect(final long hostId) {
-        disconnect(hostId, Event.PrepareUnmanaged, false);
-        return true;
-    }
-
-    @Override
-    public void updateStatus(HostVO host, Status.Event event) {
-        _hostDao.updateStatus(host, event, _nodeId);
-    }
-    public void disconnect(AgentAttache attache, final Status.Event event, final boolean investigate) {
-        _executor.submit(new DisconnectTask(attache, event, investigate));
-    }
-
-    protected boolean handleDisconnect(AgentAttache attache, Status.Event event, boolean investigate) {
-        if (attache == null) {
-            return true;
-        }
-
-        long hostId = attache.getId();
-
-        s_logger.info("Host " + hostId + " is disconnecting with event " + event);
-
-        HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            s_logger.warn("Can't find host with " + hostId);
-            removeAgent(attache, Status.Removed);
-            return true;
-
-        }
-        final Status currentState = host.getStatus();
-        if (currentState == Status.Down || currentState == Status.Alert || currentState == Status.Removed) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host " + hostId + " is already " + currentState);
-            }
-            if (currentState != Status.PrepareForMaintenance) {
-                removeAgent(attache, currentState);
-            }
-            return true;
-        }
-        Status nextState = currentState.getNextStatus(event);
-        if (nextState == null) {
-            if (!(attache instanceof DirectAgentAttache)) {
-                return false;
-            }
-
-            s_logger.debug("There is no transition from state " + currentState + " and event " + event);
-            assert false : "How did we get here.  Look at the FSM";
-            return false;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("The next state is " + nextState + ", current state is " + currentState);
-        }
-
-        // Now we go and correctly diagnose what the actual situation is
-        if (nextState == Status.Alert && investigate) {
-            s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
-
-            final Status determinedState = investigate(attache);
-            s_logger.info("The state determined is " + determinedState);
-
-            if (determinedState == null || determinedState == Status.Down) {
-                s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
-
-                event = Event.HostDown;
-            } else if (determinedState == Status.Up) {
-                // we effectively pinged from the server here.
-                s_logger.info("Agent is determined to be up and running");
-                _monitor.pingBy(host.getId());
-                // _hostDao.updateStatus(host, Event.Ping, _nodeId);
-                return false;
-            } else if (determinedState == Status.Disconnected) {
-                s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
-                if (currentState == Status.Disconnected) {
-                    Long hostPingTime = _monitor.getAgentPingTime(host.getId());
-                    if (hostPingTime == null) {
-                        s_logger.error("Host is not on this management server any more: " + host);
-                        return false;
-                    }
-                    if ((InaccurateClock.getTimeInSeconds() - hostPingTime) > _alertWait) {
-                        s_logger.warn("Host " + host.getId() + " has been disconnected pass the time it should be disconnected.");
-                        event = Event.WaitedTooLong;
-                    } else {
-                        s_logger.debug("Host has been determined to be disconnected but it hasn't passed the wait time yet.");
-                        return false;
-                    }
-                } else if (currentState == Status.Updating) {
-                    Long hostPingTime = _monitor.getAgentPingTime(host.getId());
-                    if (hostPingTime == null) {
-                        s_logger.error("Host is not on this management server any more: " + host);
-                        return false;
-                    }
-                    if ((InaccurateClock.getTimeInSeconds() - hostPingTime) > _updateWait) {
-                        s_logger.warn("Host " + host.getId() + " has been updating for too long");
-
-                        event = Event.WaitedTooLong;
-                    } else {
-                        s_logger.debug("Host has been determined to be disconnected but it hasn't passed the wait time yet.");
-                        return false;
-                    }
-                } else if (currentState == Status.Up) {
-                    DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
-                    HostPodVO podVO = _podDao.findById(host.getPodId());
-                    String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                    if ((host.getType() != Host.Type.SecondaryStorage) && (host.getType() != Host.Type.ConsoleProxy)) {
-                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc, "If the agent for host [" + hostDesc
-                                + "] is not restarted within " + _alertWait + " seconds, HA will begin on the VMs");
-                    }
-                    event = Event.AgentDisconnected;
-                }
-            } else {
-                // if we end up here we are in alert state, send an alert
-                DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
-                HostPodVO podVO = _podDao.findById(host.getPodId());
-                String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc, "In availability zone " + host.getDataCenterId()
-                        + ", host is in alert state: " + host.getId() + "-" + host.getName());
-            }
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deregistering link for " + hostId + " with state " + nextState);
-        }
-        removeAgent(attache, nextState);
-        _hostDao.disconnect(host, event, _nodeId);
-
-        host = _hostDao.findById(host.getId());
-        if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
-            _haMgr.scheduleRestartForVmsOnHost(host, investigate);
-        }
-
-        for (Pair<Integer, Listener> monitor : _hostMonitors) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Sending Disconnect to listener: " + monitor.second().getClass().getName());
-            }
-            monitor.second().processDisconnect(hostId, nextState);
-        }
-
-        return true;
-    }
-
     protected AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd, boolean forRebalance) throws ConnectionException {
         long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
@@ -1129,19 +741,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
                             s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnect(attache, Event.AgentDisconnected, false);
+                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
                             throw ce;
                         } else {
                             s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnect(attache, Event.ShutdownRequested, false);
+                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                        handleDisconnect(attache, Event.HypervisorVersionChanged, false);
+                    	handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnect(attache, Event.AgentDisconnected, false);
+                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
@@ -1155,10 +767,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             // this is tricky part for secondary storage
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
-            handleDisconnect(attache, Event.AgentDisconnected, false);
+        	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
         }
 
-        _hostDao.updateStatus(host, Event.Ready, _nodeId);
+        agentStatusTransitTo(host, Event.Ready, _nodeId);
         attache.ready();
         return attache;
     }
@@ -1193,7 +805,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     public void startDirectlyConnectedHosts() {
-        List<HostVO> hosts = _hostDao.findDirectlyConnectedHosts();
+        List<HostVO> hosts = _resourceMgr.findDirectlyConnectedHosts();
         for (HostVO host : hosts) {
             loadDirectlyConnectedHost(host, false);
         }
@@ -1277,88 +889,40 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     	} finally {
     		if(!initialized) {
                 if (host != null) {
-                    _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
+                    agentStatusTransitTo(host, Event.AgentDisconnected, _nodeId);
                 }
     		}	
     	}
 
         if (forRebalance) {
-            AgentAttache attache = simulateStart(host.getId(), resource, host.getDetails(), false, null, null, true);
-            if (attache == null) {
-                return false;
-            } else {
-                return true;
-            }
+            Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, true);
+            return (h == null ? false : true);
         } else {
             _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), null));
             return true;
         }
     }
 
-    @Override
-    public AgentAttache simulateStart(Long id, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, String allocationState, boolean forRebalance) throws IllegalArgumentException {
-        HostVO host = null;
-        if (id != null) {
-            synchronized (_loadingAgents) {
-                s_logger.debug("Adding to loading agents " + id);
-                _loadingAgents.add(id);
-            }
+    protected AgentAttache createAttacheForDirectConnect(HostVO host, ServerResource resource)
+            throws ConnectionException {
+        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
+            return new DummyAttache(this, host.getId(), false);
         }
-        AgentAttache attache = null;
-        StartupCommand[] cmds = null;
-        try {
-            if (id != null) {
-                host = _hostDao.findById(id);
-                if (!_hostDao.directConnect(host, _nodeId)) {
-                    s_logger.info("MS " + host.getManagementServerId() + " is loading " + host);
-                    return null;
-                }
-            }
-
-            cmds = resource.initialize();
-            if (cmds == null) {
-                s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
-                return null;
-            }
-
-            if (host != null) {
-                if (!_hostDao.directConnect(host, _nodeId)) {
-                    host = _hostDao.findById(id);
-                    s_logger.info("MS " + host.getManagementServerId() + " is loading " + host + " after it has been initialized.");
-                    return null;
-                }
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
-            }
-            try {
-                attache = handleDirectConnect(resource, cmds, details, old, hostTags, allocationState, forRebalance);
-            } catch (IllegalArgumentException ex) {
-                s_logger.warn("Unable to connect due to ", ex);
-                throw ex;
-            } catch (Exception e) {
-                s_logger.warn("Unable to connect due to ", e);
-            }
-
-        } finally {
-            if (id != null) {
-                synchronized (_loadingAgents) {
-                    _loadingAgents.remove(id);
-                }
-            }
-            if (attache == null) {
-                if (cmds != null) {
-                    resource.disconnected();
-                }
-                if (host != null) {
-                    _hostDao.updateStatus(host, Event.AgentDisconnected, _nodeId);
-                }
-            }
+        
+        s_logger.debug("create DirectAgentAttache for " + host.getId());
+        DirectAgentAttache attache = new DirectAgentAttache(this, host.getId(), resource, host.isInMaintenanceStates(), this);
+        
+        AgentAttache old = null;
+        synchronized (_agents) {
+            old = _agents.put(host.getId(), attache);
         }
+        if (old != null) {
+            old.disconnect(Status.Removed);
+        }
+
         return attache;
     }
-
+    
     @Override
     public boolean stop() {
         if (_monitor != null) {
@@ -1377,7 +941,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         s_logger.debug("Cant not find host " + agent.getId());
                     }
                 } else {
-                    _hostDao.updateStatus(host, Event.ManagementServerDown, _nodeId);
+                    agentStatusTransitTo(host, Event.ManagementServerDown, _nodeId);
                 }
             }
         }
@@ -1449,6 +1013,126 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public String getName() {
         return _name;
     }
+   
+    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event) {
+        long hostId = attache.getId();
+
+        s_logger.info("Host " + hostId + " is disconnecting with event " + event);
+        Status nextStatus = null;
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn("Can't find host with " + hostId);
+            nextStatus = Status.Removed;
+        } else {
+            final Status currentStatus = host.getStatus();
+            if (currentStatus == Status.Down || currentStatus == Status.Alert || currentStatus == Status.Removed) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host " + hostId + " is already " + currentStatus);
+                }
+                nextStatus = currentStatus;
+            } else {
+                try {
+                    nextStatus = currentStatus.getNextStatus(event);
+                } catch (NoTransitionException e) {
+                    String err = "Cannot find next status for " + event + " as current status is " + currentStatus + " for agent " + hostId;
+                    s_logger.debug(err);
+                    throw new CloudRuntimeException(err);
+                }
+                
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
+                }
+            }
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
+        }
+
+        removeAgent(attache, nextStatus);
+        disconnectAgent(host, event, _nodeId);
+
+        for (Pair<Integer, Listener> monitor : _hostMonitors) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending Disconnect to listener: " + monitor.second().getClass().getName());
+            }
+            monitor.second().processDisconnect(hostId, nextStatus);
+        }
+        return true;
+    }
+    
+    protected boolean handleDisconnectWithInvestigation(AgentAttache attache, Status.Event event) {
+        long hostId = attache.getId();
+        HostVO host = _hostDao.findById(hostId);
+        if (host != null) {
+            Status nextStatus = null;
+            try {
+                nextStatus = host.getStatus().getNextStatus(event);
+            } catch (NoTransitionException ne) {
+                /* Agent may be currently in status of Down, Alert, Removed, namely there is no next status for some events.
+                 * Why this can happen? Ask God not me. I hate there was no piece of comment for code handling race condition.
+                 * God knew what race condition the code dealt with! 
+                 */
+            }
+            
+            if (nextStatus == Status.Alert) {
+                /* OK, we are going to the bad status, let's see what happened */
+                s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
+
+                final Status determinedState = investigate(attache);
+                final Status currentStatus = host.getStatus();
+                s_logger.info("The state determined is " + determinedState);
+
+                if (determinedState == null || determinedState == Status.Down) {
+                    s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
+                    event = Status.Event.HostDown;
+                } else if (determinedState == Status.Up) {
+                    /* Got ping response from host, bring it back*/
+                    s_logger.info("Agent is determined to be up and running");
+                    agentStatusTransitTo(host, Status.Event.Ping, _nodeId);
+                    return false;
+                } else if (determinedState == Status.Disconnected) {
+                    s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
+                    if (currentStatus == Status.Disconnected) {
+                        if (((System.currentTimeMillis() >> 10) - host.getLastPinged()) > _alertWait) {
+                            s_logger.warn("Host " + host.getId() + " has been disconnected pass the time it should be disconnected.");
+                            event = Status.Event.WaitedTooLong;
+                        } else {
+                            s_logger.debug("Host has been determined to be disconnected but it hasn't passed the wait time yet.");
+                            return false;
+                        }
+                    } else if (currentStatus == Status.Up) {
+                        DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                        HostPodVO podVO = _podDao.findById(host.getPodId());
+                        String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                        if ((host.getType() != Host.Type.SecondaryStorage) && (host.getType() != Host.Type.ConsoleProxy)) {
+                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc, "If the agent for host [" + hostDesc
+                                    + "] is not restarted within " + _alertWait + " seconds, HA will begin on the VMs");
+                        }
+                        event = Status.Event.AgentDisconnected;
+                    }
+                } else {
+                    // if we end up here we are in alert state, send an alert
+                    DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                    HostPodVO podVO = _podDao.findById(host.getPodId());
+                    String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc, "In availability zone " + host.getDataCenterId()
+                            + ", host is in alert state: " + host.getId() + "-" + host.getName());
+                }
+            } else {
+                s_logger.debug("The next status of Agent " + host.getId() + " is not Alert, no need to investigate what happened");
+            }
+        }
+        
+        handleDisconnectWithoutInvestigation(attache, event);
+        /*TODO: call HA manager in monitors
+         *         host = _hostDao.findById(host.getId());
+        if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
+            _haMgr.scheduleRestartForVmsOnHost(host, investigate);
+        }
+         * */
+        return true;
+    }
 
     protected class DisconnectTask implements Runnable {
         AgentAttache _attache;
@@ -1463,8 +1147,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         @Override
         public void run() {
-            try {
-                handleDisconnect(_attache, _event, _investigate);
+        	try {
+                if (_investigate == true) {
+                    handleDisconnectWithInvestigation(_attache, _event);
+                } else {
+                	handleDisconnectWithoutInvestigation(_attache, _event);
+                }
             } catch (final Exception e) {
                 s_logger.error("Exception caught while handling disconnect: ", e);
             } finally {
@@ -1521,7 +1209,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     @Override
-    public boolean reconnect(final long hostId) throws AgentUnavailableException {
+    public boolean reconnect(final long hostId) {
         HostVO host;
 
         host = _hostDao.findById(hostId);
@@ -1541,627 +1229,57 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return false;
         }
 
-        disconnect(attache, Event.ShutdownRequested, false);
-        return true;
-    }
-
-    @Override
-    public boolean cancelMaintenance(final long hostId) {
-
-        HostVO host;
-        host = _hostDao.findById(hostId);
-        if (host == null || host.getRemoved() != null) {
-            s_logger.warn("Unable to find host " + hostId);
-            return true;
-        }
-
-        if (host.getStatus() != Status.PrepareForMaintenance && host.getStatus() != Status.Maintenance && host.getStatus() != Status.ErrorInMaintenance) {
-            return true;
-        }
-
-        _haMgr.cancelScheduledMigrations(host);
-        List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
-        for (VMInstanceVO vm : vms) {
-            if (vm.getHostId() != null && vm.getHostId() == hostId) {
-                s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm);
-                return false;
-            }
-        }
-        disconnect(hostId, Event.ResetRequested, false);
+        disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
         return true;
     }
 
     @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
-        if (event == Event.MaintenanceRequested) {
-            return maintain(hostId);
-        } else if (event == Event.ResetRequested) {
-            return cancelMaintenance(hostId);
-        } else if (event == Event.PrepareUnmanaged) {
-            return disconnect(hostId);
-        } else if (event == Event.Remove) {
-            User caller = _accountMgr.getActiveUser(User.UID_SYSTEM);
-            return deleteHost(hostId, false, false, caller);
-        } else if (event == Event.AgentDisconnected) {
+         if (event == Event.AgentDisconnected) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Received agent disconnect event for host " + hostId);
             }
             AgentAttache attache = null;
             attache = findAttache(hostId);
             if (attache != null) {
-                handleDisconnect(attache, Event.AgentDisconnected, false);
+            	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
             }
             return true;
         } else if (event == Event.ShutdownRequested) {
             return reconnect(hostId);
         }
-        else if (event == Event.UpdatePassword) {
-            AgentAttache attache = findAttache(hostId);
-            if (attache != null) {
-                DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
-                String username = nv.getValue();
-                nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
-                String password = nv.getValue();
-                UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
-                attache.updatePassword(cmd);
-                return true;
-            }
-        }
         return false;
     }
 
-    @Override
-    public boolean maintain(final long hostId) throws AgentUnavailableException {
-        HostVO host = _hostDao.findById(hostId);
-        Status state;
-
-        MaintainAnswer answer = (MaintainAnswer) easySend(hostId, new MaintainCommand());
-        if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to put host in maintainance mode: " + hostId);
-            return false;
-        }
-
-        // Let's put this guy in maintenance state
-        do {
-            host = _hostDao.findById(hostId);
-            if (host == null) {
-                s_logger.debug("Unable to find host " + hostId);
-                return false;
-            }
-            state = host.getStatus();
-            if (state == Status.Disconnected || state == Status.Updating) {
-                s_logger.debug("Unable to put host " + hostId + " in matinenance mode because it is currently in " + state);
-                throw new AgentUnavailableException("Agent is in " + state + " state.  Please wait for it to become Alert state try again.", hostId);
-            }
-        } while (!_hostDao.updateStatus(host, Event.MaintenanceRequested, _nodeId));
-
-        AgentAttache attache = findAttache(hostId);
-        if (attache != null) {
-            attache.setMaintenanceMode(true);
-        }
-
-        if (attache != null) {
-            // Now cancel all of the commands except for the active one.
-            attache.cancelAllCommands(Status.PrepareForMaintenance, false);
-        }
-
-        final Host.Type type = host.getType();
-
-        if (type == Host.Type.Routing) {
-
-            final List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
-            if (vms.size() == 0) {
-                return true;
-            }
-
-            List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());
-            List<Long> upHosts = _hostDao.listBy( host.getDataCenterId(), host.getPodId(), host.getClusterId(), Host.Type.Routing, Status.Up);
-            for (final VMInstanceVO vm : vms) {
-                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate() || upHosts == null || upHosts.size() == 0) {
-                    // for the last valid host in this cluster, stop all the VMs
-                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
-                } else {
-                    _haMgr.scheduleMigration(vm);
-                }
-            }
-        }
-
-        return true;
-    }
-
-
-    public boolean checkCIDR(Host.Type type, HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {
-        if (serverPrivateIP == null) {
-            return true;
-        }
-        // Get the CIDR address and CIDR size
-        String cidrAddress = pod.getCidrAddress();
-        long cidrSize = pod.getCidrSize();
-
-        // If the server's private IP address is not in the same subnet as the
-        // pod's CIDR, return false
-        String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
-        String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
-        if (!cidrSubnet.equals(serverSubnet)) {
-            return false;
-        }
-
-        // If the server's private netmask is less inclusive than the pod's CIDR
-        // netmask, return false
-        String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
-        long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
-        long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
-        if (serverNetmaskNumeric > cidrNetmaskNumeric) {
-            return false;
-        }
-        return true;
-    }
-
-    protected void checkCIDR(Host.Type type, HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) throws IllegalArgumentException {
-        // Skip this check for Storage Agents and Console Proxies
-        if (type == Host.Type.Storage || type == Host.Type.ConsoleProxy) {
-            return;
-        }
-
-        if (serverPrivateIP == null) {
-            return;
-        }
-        // Get the CIDR address and CIDR size
-        String cidrAddress = pod.getCidrAddress();
-        long cidrSize = pod.getCidrSize();
-
-        // If the server's private IP address is not in the same subnet as the
-        // pod's CIDR, return false
-        String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
-        String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
-        if (!cidrSubnet.equals(serverSubnet)) {
-            s_logger.warn("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " + dc.getName());
-            throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " + dc.getName());
-        }
-
-        // If the server's private netmask is less inclusive than the pod's CIDR
-        // netmask, return false
-        String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
-        long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
-        long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
-        if (serverNetmaskNumeric > cidrNetmaskNumeric) {
-            throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName() + " and zone: " + dc.getName());
-        }
-
-    }
-
-    public void checkIPConflicts(Host.Type type, HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask, String serverPublicIP, String serverPublicNetmask) {
-        // If the server's private IP is the same as is public IP, this host has
-        // a host-only private network. Don't check for conflicts with the
-        // private IP address table.
-        if (serverPrivateIP != serverPublicIP) {
-            if (!_privateIPAddressDao.mark(dc.getId(), pod.getId(), serverPrivateIP)) {
-                // If the server's private IP address is already in the
-                // database, return false
-                List<DataCenterIpAddressVO> existingPrivateIPs = _privateIPAddressDao.listByPodIdDcIdIpAddress(pod.getId(), dc.getId(), serverPrivateIP);
-
-                assert existingPrivateIPs.size() <= 1 : " How can we get more than one ip address with " + serverPrivateIP;
-                if (existingPrivateIPs.size() > 1) {
-                    throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
-                }
-                if (existingPrivateIPs.size() == 1) {
-                    DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
-                    if (vo.getInstanceId() != null) {
-                        throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
-                    }
-                }
-            }
-        }
-
-        if (serverPublicIP != null && !_publicIPAddressDao.mark(dc.getId(), new Ip(serverPublicIP))) {
-            // If the server's public IP address is already in the database,
-            // return false
-            List<IPAddressVO> existingPublicIPs = _publicIPAddressDao.listByDcIdIpAddress(dc.getId(), serverPublicIP);
-            if (existingPublicIPs.size() > 0) {
-                throw new IllegalArgumentException("The public ip address of the server (" + serverPublicIP + ") is already in use in zone: " + dc.getName());
-            }
-        }
-    }
-
-    @Override
-    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
-        // Check if the zone exists in the system
-        if (_dcDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException("Can't find zone with id " + zoneId);
-        }
-
-        Map<String, String> details = hostDetails;
-        String guid = details.get("guid");
-        List<HostVO> currentHosts = _hostDao.listBy(hostType, zoneId);
-        for (HostVO currentHost : currentHosts) {
-            if (currentHost.getGuid().equals(guid)) {
-                return currentHost;
-            }
-        }
-
-        AgentAttache attache = simulateStart(null, resource, hostDetails, true, null, null, false);
-        return _hostDao.findById(attache.getId());
-    }
-
-    public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
-            throws IllegalArgumentException {
-        Host.Type type = null;
-
-        if (startup instanceof StartupStorageCommand) {
-            StartupStorageCommand ssCmd = ((StartupStorageCommand) startup);
-            if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
-                type = ssCmd.getHostType();
-            } else {
-                if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-                    type = Host.Type.SecondaryStorage;
-                    if (resource != null && resource instanceof DummySecondaryStorageResource) {
-                        resource = null;
-                    }
-                }else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
-                    type = Host.Type.LocalSecondaryStorage;
-
-                } else {
-                    type = Host.Type.Storage;
-                }
-
-                final Map<String, String> hostDetails = ssCmd.getHostDetails();
-                if (hostDetails != null) {
-                    if (details != null) {
-                        details.putAll(hostDetails);
-                    } else {
-                        details = hostDetails;
-                    }
-                }
-            }
-        } else if (startup instanceof StartupRoutingCommand) {
-            StartupRoutingCommand ssCmd = ((StartupRoutingCommand) startup);
-            type = Host.Type.Routing;
-            final Map<String, String> hostDetails = ssCmd.getHostDetails();
-            if (hostDetails != null) {
-                if (details != null) {
-                    details.putAll(hostDetails);
-                } else {
-                    details = hostDetails;
-                }
-            }
-        } else if (startup instanceof StartupSecondaryStorageCommand) {
-            type = Host.Type.SecondaryStorageVM;
-        } else if (startup instanceof StartupProxyCommand) {
-            type = Host.Type.ConsoleProxy;
-        } else if (startup instanceof StartupExternalFirewallCommand) {
-            type = Host.Type.ExternalFirewall;
-        } else if (startup instanceof StartupExternalLoadBalancerCommand) {
-            type = Host.Type.ExternalLoadBalancer;
-        } else if (startup instanceof StartupPxeServerCommand) {
-            type = Host.Type.PxeServer;
-        } else if (startup instanceof StartupExternalDhcpCommand) {
-            type = Host.Type.ExternalDhcp;
-        } else if (startup instanceof StartupTrafficMonitorCommand) {
-            type = Host.Type.TrafficMonitor;
-        } else {
-            assert false : "Did someone add a new Startup command?";
-        }
-
-        Long id = null;
-        HostVO server = _hostDao.findByGuid(startup.getGuid());
-        if (server == null) {
-            server = _hostDao.findByGuid(startup.getGuidWithoutResource());
-        }
-        if (server != null && server.getRemoved() == null) {
-            id = server.getId();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found the host " + id + " by guid: " + startup.getGuid());
-            }
-            if (directFirst) {
-                s_logger.debug("Old host reconnected as new");
-                return null;
-            }
-        } else {
-            server = new HostVO(startup.getGuid());
-        }
-
-        server.setDetails(details);
-        server.setHostTags(hostTags);
-
-        if (allocationState != null) {
-            try {
-                HostAllocationState hostAllocationState = Host.HostAllocationState.valueOf(allocationState);
-                if (hostAllocationState != null) {
-                    server.setHostAllocationState(hostAllocationState);
-                }
-            } catch (IllegalArgumentException ex) {
-                s_logger.error("Unable to resolve " + allocationState + " to a valid supported host allocation State, defaulting to 'Enabled'");
-                server.setHostAllocationState(Host.HostAllocationState.Enabled);
-            }
-        } else {
-            server.setHostAllocationState(Host.HostAllocationState.Enabled);
-        }
-
-        updateHost(server, startup, type, _nodeId);
-        if (resource != null) {
-            server.setResource(resource.getClass().getName());
-        }
-        if (id == null) {
-            /*
-             * // ignore integrity check for agent-simulator if(!"0.0.0.0".equals(startup.getPrivateIpAddress()) &&
-             * !"0.0.0.0".equals(startup.getStorageIpAddress())) { if (_hostDao.findByPrivateIpAddressInDataCenter
-             * (server.getDataCenterId(), startup.getPrivateIpAddress()) != null) { throw newIllegalArgumentException(
-             * "The private ip address is already in used: " + startup.getPrivateIpAddress()); }
-             *
-             * if (_hostDao.findByPrivateIpAddressInDataCenter(server.getDataCenterId (), startup.getStorageIpAddress()) !=
-             * null) { throw new IllegalArgumentException ("The private ip address is already in used: " +
-             * startup.getStorageIpAddress()); } }
-             */
-
-            if (startup instanceof StartupProxyCommand) {
-                server.setProxyPort(((StartupProxyCommand) startup).getProxyPort());
-            }
-
-            server = _hostDao.persist(server);
-            id = server.getId();
-
-            s_logger.info("New " + server.getType() + " host connected w/ guid " + startup.getGuid() + " and id is " + id);
-        } else {
-            if (!_hostDao.connect(server, _nodeId)) {
-                throw new CloudRuntimeException("Agent cannot connect because the current state is " + server.getStatus());
-            }
-            s_logger.info("Old " + server.getType() + " host reconnected w/ id =" + id);
-        }
-
-        return server;
-    }
-
-    public HostVO createHost(final StartupCommand[] startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags, String allocationState)
-            throws IllegalArgumentException {
-        StartupCommand firstCmd = startup[0];
-        HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags, allocationState);
-        if (result == null) {
-            return null;
-        }
-        return result;
-    }
-
-    public AgentAttache handleConnect(final Link link,
-            final StartupCommand[] startup) throws IllegalArgumentException,
-            ConnectionException {
-        HostVO server = null;
-        boolean handled = notifyCreatorsOfConnection(startup);
-        if (!handled) {
-            server = createHost(startup, null, null, false, null, null);
-        } else {
-            server = _hostDao.findByGuid(startup[0].getGuid());
-        }
-
-        if (server == null) {
-            return null;
-        }
-        long id = server.getId();
-
-        AgentAttache attache = createAttache(id, server, link);
-
-        attache = notifyMonitorsOfConnection(attache, startup, false);
-
-        return attache;
-    }
-
-    protected AgentAttache createAttache(long id, HostVO server, Link link) {
-        s_logger.debug("create ConnectedAgentAttache for " + id);
-        final AgentAttache attache = new ConnectedAgentAttache(this, id, link, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
-                || server.getStatus() == Status.PrepareForMaintenance);
+    protected AgentAttache createAttacheForConnect(HostVO host, Link link) throws ConnectionException {
+        s_logger.debug("create ConnectedAgentAttache for " + host.getId());
+        AgentAttache attache = new ConnectedAgentAttache(this, host.getId(), link, host.isInMaintenanceStates());
         link.attach(attache);
+        
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.put(id, attache);
+            old = _agents.put(host.getId(), attache);
         }
         if (old != null) {
             old.disconnect(Status.Removed);
         }
+
         return attache;
     }
-
-    protected AgentAttache createAttache(long id, HostVO server, ServerResource resource) {
-        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
-            return new DummyAttache(this, id, false);
+    
+    //TODO: handle mycloud specific
+    private AgentAttache handleConnectedAgent(final Link link, final StartupCommand[] startup) throws ConnectionException {
+        AgentAttache attache = null;
+        HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
+        if (host != null) {
+            attache = createAttacheForConnect(host, link);
         }
-        s_logger.debug("create DirectAgentAttache for " + id);
-        final DirectAgentAttache attache = new DirectAgentAttache(this, id, resource, server.getStatus() == Status.Maintenance || server.getStatus() == Status.ErrorInMaintenance
-                || server.getStatus() == Status.PrepareForMaintenance, this);
-        AgentAttache old = null;
-        synchronized (_agents) {
-            old = _agents.put(id, attache);
-        }
-        if (old != null) {
-            old.disconnect(Status.Removed);
-        }
+        
+        attache = notifyMonitorsOfConnection(attache, startup, false);
+        
         return attache;
     }
-
-    @Override
-    public boolean maintenanceFailed(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Cant not find host " + hostId);
-            }
-            return false;
-        } else {
-            return _hostDao.updateStatus(host, Event.UnableToMigrate, _nodeId);
-        }
-    }
-
-
-    protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {
-        s_logger.debug("updateHost() called");
-
-        String dataCenter = startup.getDataCenter();
-        String pod = startup.getPod();
-        String cluster = startup.getCluster();
-
-        if (pod != null && dataCenter != null && pod.equalsIgnoreCase("default") && dataCenter.equalsIgnoreCase("default")) {
-            List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
-            for (HostPodVO hpv : pods) {
-                if (checkCIDR(type, hpv, startup.getPrivateIpAddress(), startup.getPrivateNetmask())) {
-                    pod = hpv.getName();
-                    dataCenter = _dcDao.findById(hpv.getDataCenterId()).getName();
-                    break;
-                }
-            }
-        }
-        long dcId = -1;
-        DataCenterVO dc = _dcDao.findByName(dataCenter);
-        if (dc == null) {
-            try {
-                dcId = Long.parseLong(dataCenter);
-                dc = _dcDao.findById(dcId);
-            } catch (final NumberFormatException e) {
-            }
-        }
-        if (dc == null) {
-            throw new IllegalArgumentException("Host " + startup.getPrivateIpAddress() + " sent incorrect data center: " + dataCenter);
-        }
-        dcId = dc.getId();
-
-        HostPodVO p = _podDao.findByName(pod, dcId);
-        if (p == null) {
-            try {
-                final long podId = Long.parseLong(pod);
-                p = _podDao.findById(podId);
-            } catch (final NumberFormatException e) {
-            }
-        }
-        Long podId = null;
-        if (p == null) {
-            if (type != Host.Type.SecondaryStorage && type != Host.Type.ExternalFirewall && type != Host.Type.ExternalLoadBalancer && type != Host.Type.TrafficMonitor) {
-
-                /*
-                 * s_logger.info("Unable to find the pod so we are creating one." ); p = createPod(pod, dcId,
-                 * startup.getPrivateIpAddress(), NetUtils.getCidrSize(startup.getPrivateNetmask())); podId = p.getId();
-                 */
-                s_logger.error("Host " + startup.getPrivateIpAddress() + " sent incorrect pod: " + pod + " in " + dataCenter);
-                throw new IllegalArgumentException("Host " + startup.getPrivateIpAddress() + " sent incorrect pod: " + pod + " in " + dataCenter);
-            }
-        } else {
-            podId = p.getId();
-        }
-
-        Long clusterId = null;
-        if (cluster != null) {
-            try {
-                clusterId = Long.valueOf(cluster);
-            } catch (NumberFormatException e) {
-                ClusterVO c = _clusterDao.findBy(cluster, podId);
-                if (c == null) {
-                    c = new ClusterVO(dcId, podId, cluster);
-                    c = _clusterDao.persist(c);
-                }
-                clusterId = c.getId();
-            }
-        }
-
-        if (type == Host.Type.Routing) {
-            StartupRoutingCommand scc = (StartupRoutingCommand) startup;
-
-            HypervisorType hypervisorType = scc.getHypervisorType();
-            boolean doCidrCheck = true;
-
-            ClusterVO clusterVO = _clusterDao.findById(clusterId);
-            if(clusterVO == null){
-                throw new IllegalArgumentException("Cluster with id " + clusterId + " does not exist, cannot add host with this clusterId");                
-            }
-            if (clusterVO.getHypervisorType() != scc.getHypervisorType()) {
-                throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + scc.getHypervisorType() + " into cluster: " + clusterId + " whose hypervisor type is: "
-                        + clusterVO.getHypervisorType());
-            }
-
-            /*
-             * KVM:Enforcement that all the hosts in the cluster have the same os type, for migration
-             */
-            if (scc.getHypervisorType() == HypervisorType.KVM) {
-                List<HostVO> hostsInCluster = _hostDao.listByCluster(clusterId);
-                if (!hostsInCluster.isEmpty()) {
-                    HostVO oneHost = hostsInCluster.get(0);
-                    _hostDao.loadDetails(oneHost);
-                    String hostOsInCluster = oneHost.getDetail("Host.OS");
-                    String hostOs = scc.getHostDetails().get("Host.OS");
-                    if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
-                        throw new IllegalArgumentException("Can't add host: " + startup.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster," + "in which there are "
-                                + hostOsInCluster + " hosts added");
-                    }
-                }
-            }
-
-            // If this command is from the agent simulator, don't do the CIDR
-            // check
-            if (scc.getAgentTag() != null && startup.getAgentTag().equalsIgnoreCase("vmops-simulator")) {
-                doCidrCheck = false;
-            }
-
-            // If this command is from a KVM agent, or from an agent that has a
-            // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal
-                    || hypervisorType == HypervisorType.Simulator || hypervisorType == HypervisorType.Ovm) {
-                doCidrCheck = false;
-            }
-
-            if (doCidrCheck) {
-                s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + hypervisorType + ". Checking CIDR...");
-            } else {
-                s_logger.info("Host: " + host.getName() + " connected with hypervisor type: " + hypervisorType + ". Skipping CIDR check...");
-            }
-
-            if (doCidrCheck) {
-                checkCIDR(type, p, dc, scc.getPrivateIpAddress(), scc.getPrivateNetmask());
-            }
-
-            // Check if the private/public IPs of the server are already in the
-            // private/public IP address tables
-            checkIPConflicts(type, p, dc, scc.getPrivateIpAddress(), scc.getPublicIpAddress(), scc.getPublicIpAddress(), scc.getPublicNetmask());
-        }
-
-        host.setDataCenterId(dc.getId());
-        host.setPodId(podId);
-        host.setClusterId(clusterId);
-        host.setPrivateIpAddress(startup.getPrivateIpAddress());
-        host.setPrivateNetmask(startup.getPrivateNetmask());
-        host.setPrivateMacAddress(startup.getPrivateMacAddress());
-        host.setPublicIpAddress(startup.getPublicIpAddress());
-        host.setPublicMacAddress(startup.getPublicMacAddress());
-        host.setPublicNetmask(startup.getPublicNetmask());
-        host.setStorageIpAddress(startup.getStorageIpAddress());
-        host.setStorageMacAddress(startup.getStorageMacAddress());
-        host.setStorageNetmask(startup.getStorageNetmask());
-        host.setVersion(startup.getVersion());
-        host.setName(startup.getName());
-        host.setType(type);
-        host.setManagementServerId(msId);
-        host.setStorageUrl(startup.getIqn());
-        host.setLastPinged(System.currentTimeMillis() >> 10);
-        if (startup instanceof StartupRoutingCommand) {
-            final StartupRoutingCommand scc = (StartupRoutingCommand) startup;
-            host.setCaps(scc.getCapabilities());
-            host.setCpus(scc.getCpus());
-            host.setTotalMemory(scc.getMemory());
-            host.setSpeed(scc.getSpeed());
-            HypervisorType hyType = scc.getHypervisorType();
-            host.setHypervisorType(hyType);
-            host.setHypervisorVersion(scc.getHypervisorVersion());
-        } else if (startup instanceof StartupStorageCommand) {
-            final StartupStorageCommand ssc = (StartupStorageCommand) startup;
-            host.setParent(ssc.getParent());
-            host.setTotalSize(ssc.getTotalSize());
-            host.setHypervisorType(HypervisorType.None);
-            if (ssc.getNfsShare() != null) {
-                host.setStorageUrl(ssc.getNfsShare());
-            }
-        }
-        if (startup.getStorageIpAddressDeux() != null) {
-            host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
-            host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());
-            host.setStorageNetmaskDeux(startup.getStorageNetmaskDeux());
-        }
-
-    }
-
+       
     // protected void upgradeAgent(final Link link, final byte[] request, final
     // String reason) {
     //
@@ -2212,7 +1330,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
-                simulateStart(id, resource, details, false, null, null, false);
+                
+                _resourceMgr.createHostAndAgent(id, resource, details, false, null, false);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {
@@ -2263,7 +1382,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     for (int i = 0; i < cmds.length; i++) {
                         startups[i] = (StartupCommand) cmds[i];
                     }
-                    attache = handleConnect(link, startups);
+                    attache = handleConnectedAgent(link, startups);
                 } catch (final IllegalArgumentException e) {
                     _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, 0, new Long(0), "Agent from " + startup.getPrivateIpAddress() + " is unable to connect due to " + e.getMessage(), "Agent from "
                             + startup.getPrivateIpAddress() + " is unable to connect with " + request + " because of " + e.getMessage());
@@ -2336,9 +1455,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         final String reason = shutdown.getReason();
                         s_logger.info("Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " + shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
-                            disconnect(attache, Event.UpdateNeeded, false);
+                            //disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
+                            throw new CloudRuntimeException("Agent update not implemented");
                         } else if (reason.equals(ShutdownCommand.Requested)) {
-                            disconnect(attache, Event.ShutdownRequested, false);
+                            disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
                         }
                         return;
                     } else if (cmd instanceof AgentControlCommand) {
@@ -2435,7 +1555,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                     final Link link = task.getLink();
                     final AgentAttache attache = (AgentAttache) link.attachment();
                     if (attache != null) {
-                        disconnect(attache, Event.AgentDisconnected, true);
+                        disconnectWithInvestigation(attache, Event.AgentDisconnected);
                     } else {
                         s_logger.info("Connection from " + link.getIpAddress() + " closed but no cleanup was done.");
                         link.close();
@@ -2452,4 +1572,125 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected AgentManagerImpl() {
     }
 
+	@Override
+    public boolean tapLoadingAgents(Long hostId, TapAgentsAction action) {
+        synchronized (_loadingAgents) {
+            if (action == TapAgentsAction.Add) {
+                _loadingAgents.add(hostId);
+            } else if (action == TapAgentsAction.Del) {
+                _loadingAgents.remove(hostId);
+            } else if (action == TapAgentsAction.Contains) {
+                return _loadingAgents.contains(hostId);
+            } else {
+                throw new CloudRuntimeException("Unkonwn TapAgentsAction " + action);
+            }
+        }  
+        return true;
+    }
+    
+    @Override
+    public boolean agentStatusTransitTo(HostVO host, Status.Event e, long msId) {
+        if (status_logger.isDebugEnabled()) {
+            ResourceState state = host.getResourceState();
+            StringBuilder msg = new StringBuilder("Transition:");
+            msg.append("[Resource state = ").append(state);
+            msg.append(", Agent event = ").append(e.toString());
+            msg.append(", Host id = ").append(host.getId()).append(", name = " + host.getName()).append("]");
+            status_logger.debug(msg);
+        }
+        
+        host.setManagementServerId(msId);
+        try {
+            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+        } catch (NoTransitionException e1) {
+        	status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName()+ ", mangement server id is " + msId);
+            throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId + "," + e1.getMessage());
+        }
+    }
+    
+    
+    @Override
+    public boolean disconnectAgent(HostVO host, Status.Event e, long msId) {
+        host.setDisconnectedOn(new Date());
+        if (e.equals(Status.Event.Remove)) {
+            host.setGuid(null);
+            host.setClusterId(null);
+        }
+        
+        return agentStatusTransitTo(host, e, msId);
+    }
+    
+    protected void disconnectWithoutInvestigation(AgentAttache attache, final Status.Event event) {
+        _executor.submit(new DisconnectTask(attache, event, false));
+    }
+    
+    protected void disconnectWithInvestigation(AgentAttache attache, final Status.Event event) {
+        _executor.submit(new DisconnectTask(attache, event, true));
+    }
+    
+    private void disconnectInternal(final long hostId, final Status.Event event, boolean invstigate) {
+        AgentAttache attache = findAttache(hostId);
+
+        if (attache != null) {
+            if (!invstigate) {
+            	disconnectWithoutInvestigation(attache, event);
+            } else {
+                disconnectWithInvestigation(attache, event);
+            }
+        } else {
+            /* Agent is still in connecting process, don't allow to disconnect right away */
+            if (tapLoadingAgents(hostId, TapAgentsAction.Contains)) {
+                s_logger.info("Host " + hostId + " is being loaded so no disconnects needed.");
+                return;
+            }
+
+            HostVO host = _hostDao.findById(hostId);
+            if (host != null && host.getRemoved() == null) {
+               disconnectAgent(host, event, _nodeId);
+            }
+        }
+    }
+    
+    @Override
+    public void disconnectWithInvestigation(final long hostId, final Status.Event event) {
+        disconnectInternal(hostId, event, true);
+    }
+    
+    @Override
+    public void disconnectWithoutInvestigation(final long hostId, final Status.Event event) {
+        disconnectInternal(hostId, event, false);
+    }
+
+	@Override
+    public AgentAttache handleDirectConnectAgent(HostVO host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance) throws ConnectionException {
+		AgentAttache attache;
+		
+		attache = createAttacheForDirectConnect(host, resource);
+        StartupAnswer[] answers = new StartupAnswer[cmds.length];
+        for (int i = 0; i < answers.length; i++) {
+            answers[i] = new StartupAnswer(cmds[i], attache.getId(), _pingInterval);
+        }
+        attache.process(answers);
+		attache = notifyMonitorsOfConnection(attache, cmds, forRebalance);
+		
+		return attache;
+    }
+	
+    @Override
+    public void pullAgentToMaintenance(long hostId) {
+        AgentAttache attache = findAttache(hostId);
+        if (attache != null) {
+            attache.setMaintenanceMode(true);
+            // Now cancel all of the commands except for the active one.
+            attache.cancelAllCommands(Status.Disconnected, false);
+        }        
+    }
+    
+    @Override
+    public void pullAgentOutMaintenance(long hostId) {
+        AgentAttache attache = findAttache(hostId);
+        if (attache != null) {
+        	attache.setMaintenanceMode(false);
+        }
+    }
 }

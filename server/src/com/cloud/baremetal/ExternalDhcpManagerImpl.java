@@ -39,6 +39,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalDhcpCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.baremetal.ExternalDhcpEntryListener.DhcpEntryState;
@@ -59,7 +60,10 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -73,7 +77,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = {ExternalDhcpManager.class})
-public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
+public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDhcpManagerImpl.class);
 	protected String _name;
 	@Inject DataCenterDao _dcDao;
@@ -81,9 +85,11 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 	@Inject AgentManager _agentMgr;
 	@Inject HostPodDao _podDao;
 	@Inject UserVmDao _userVmDao;
+	@Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
 
@@ -94,6 +100,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 
 	@Override
 	public boolean stop() {
+		_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
 		return true;
 	}
 
@@ -119,7 +126,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			throw new InvalidParameterValueException("Could not find pod with ID: " + podId);
 		} 
 		
-		List<HostVO> dhcps = _hostDao.listBy(Host.Type.ExternalDhcp, null, podId, zoneId);
+		List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.ExternalDhcp, null, podId, zoneId);
 		if (dhcps.size() != 0) {
 			throw new InvalidParameterValueException("Already had a DHCP server in Pod: " + podId + " zone: " + zoneId);
 		}
@@ -159,7 +166,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			throw new CloudRuntimeException(e.getMessage());
 		}
 		
-		Host dhcpServer = _agentMgr.addHost(zoneId, resource, Host.Type.ExternalDhcp, params);
+		Host dhcpServer = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalDhcp, params);
 		if (dhcpServer == null) {
 			throw new CloudRuntimeException("Cannot add external Dhcp server as a host");
 		}
@@ -187,7 +194,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			return;
 		}
 		
-		List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterIdToDeployIn());
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterIdToDeployIn());
 		if (servers.size() != 1) {
 			throw new CloudRuntimeException("Wrong number of PXE server found in zone " + vm.getDataCenterIdToDeployIn()
 					+ " Pod " + vm.getPodIdToDeployIn() + ", number is " + servers.size());
@@ -202,7 +209,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			ReservationContext context) throws ResourceUnavailableException {
 		Long zoneId = profile.getVirtualMachine().getDataCenterIdToDeployIn();
 		Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
-		List<HostVO> hosts = _hostDao.listBy(Type.ExternalDhcp, null, podId, zoneId);
+		List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.ExternalDhcp, null, podId, zoneId);
 		if (hosts.size() == 0) {
 			throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId + " pod " + podId);
 		}
@@ -235,4 +242,27 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager {
 			throw new ResourceUnavailableException(errMsg + e.getMessage(), DataCenter.class, zoneId);
 		}
 	}
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+        if (!(startup[0] instanceof StartupExternalDhcpCommand)) {
+            return null;
+        }
+        
+        host.setType(Host.Type.ExternalDhcp);
+        return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
 }

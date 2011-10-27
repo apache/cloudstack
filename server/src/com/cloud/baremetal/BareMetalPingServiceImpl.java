@@ -39,8 +39,10 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -51,6 +53,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value=PxeServerService.class)
 public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements PxeServerService {
 	private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);
+	@Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public Host addPxeServer(PxeServerProfile profile) {
@@ -62,7 +65,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 			throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
 		} 
 		
-		List<HostVO> pxeServers = _hostDao.listBy(Host.Type.PxeServer, null, podId, zoneId);
+		List<HostVO> pxeServers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, podId, zoneId);
 		if (pxeServers.size() != 0) {
 			throw new InvalidParameterValueException("Already had a PXE server in Pod: " + podId + " zone: " + zoneId);
 		}
@@ -122,7 +125,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 			throw new CloudRuntimeException("Unsupport PXE server type:" + profile.getType());
 		}
 		
-		Host pxeServer = _agentMgr.addHost(zoneId, resource, Host.Type.PxeServer, params);
+		Host pxeServer = _resourceMgr.addHost(zoneId, resource, Host.Type.PxeServer, params);
 		if (pxeServer == null) {
 			throw new CloudRuntimeException("Cannot add PXE server as a host");
 		}

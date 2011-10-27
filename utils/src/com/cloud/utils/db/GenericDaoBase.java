@@ -851,9 +851,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         assert results.size() <= 1 : "Didn't the limiting worked?";
         return results.size() == 0 ? null : results.get(0);
     }
-
+    
+    @Override
     @DB(txn=false)
-    protected T findOneBy(final SearchCriteria<T> sc) {
+    public T findOneBy(final SearchCriteria<T> sc) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
@@ -1726,5 +1727,22 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         SearchBuilder<T> builder = createSearchBuilder();
         return builder.create();
     }
-
+    
+    @Override @DB(txn=false)
+    public <K> SearchCriteria2 createSearchCriteria2(Class<K> resultType) {
+    	 final T entity = (T)_searchEnhancer.create();
+         final Factory factory = (Factory)entity;
+         SearchCriteria2 sc = new SearchCriteria2(entity, resultType, _allAttributes, this);
+         factory.setCallback(0, sc);
+         return sc;
+    }
+    
+    @Override @DB(txn=false)
+    public SearchCriteria2 createSearchCriteria2() {
+    	 final T entity = (T)_searchEnhancer.create();
+         final Factory factory = (Factory)entity;
+         SearchCriteria2 sc = new SearchCriteria2(entity, (Class<T>)entity.getClass(), _allAttributes, this);
+         factory.setCallback(0, sc);
+         return sc;
+    }
 }

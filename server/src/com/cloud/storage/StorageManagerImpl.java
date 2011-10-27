@@ -117,6 +117,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -289,6 +290,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     protected OCFS2Manager _ocfs2Mgr;
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
+    @Inject
+    protected SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    protected ResourceManager _resourceMgr;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -361,7 +366,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<StoragePoolVO> pools = _storagePoolDao.listAll();
 
         // if no pools or 1 pool which is in maintenance
-        if (pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(Status.Maintenance))) {
+        if (pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(StoragePoolStatus.Maintenance))) {
             return false;
         } else {
             return true;
@@ -965,7 +970,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId) {
         String isoPath = null;
 
-        List<HostVO> storageHosts = _hostDao.listAllBy(Host.Type.SecondaryStorage, dataCenterId);
+        List<HostVO> storageHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
         if (storageHosts != null) {
             for (HostVO storageHost : storageHosts) {
                 VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
@@ -993,7 +998,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public HostVO getSecondaryStorageHost(long zoneId, long tmpltId) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
             return null;
         }
@@ -1008,7 +1013,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId, boolean readyOnly) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
             return null;
         }
@@ -1034,9 +1039,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public HostVO getSecondaryStorageHost(long zoneId) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
-            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            hosts = _ssvmMgr.listLocalSecondaryStorageHostsInOneZone(zoneId);
             if (hosts.isEmpty()) {
                 return null;
             }
@@ -1050,9 +1055,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public List<HostVO> getSecondaryStorageHosts(long zoneId) {
-        List<HostVO>  hosts = _hostDao.listSecondaryStorageHosts(zoneId);
+        List<HostVO>  hosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
         if( hosts == null || hosts.size() == 0) {
-            hosts = _hostDao.listLocalSecondaryStorageHosts(zoneId);
+            hosts = _ssvmMgr.listLocalSecondaryStorageHostsInOneZone(zoneId);
             if (hosts.isEmpty()) {
                 return new ArrayList<HostVO>();
             }
@@ -1132,7 +1137,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         // Check if there is host up in this cluster
-        List<HostVO> allHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, zoneId);
+        List<HostVO> allHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, zoneId);
         if (allHosts.isEmpty()) {
             throw new ResourceUnavailableException("No host up to associate a storage pool with in cluster " + clusterId, HostPodVO.class, podId);
         }
@@ -1686,9 +1691,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         // Check that there is at least one host in the specified zone
-        List<HostVO> hosts = _hostDao.listByDataCenter(zoneId);
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, zoneId);
         if (hosts.isEmpty()) {
-            throw new InvalidParameterValueException("Please add a host in the specified zone before creating a new volume.");
+            throw new InvalidParameterValueException("There is no workable host in data center id " + zoneId + ", please check hosts' agent status and see if they are disabled");
         }
 
         if (!sharedPoolExists) {
@@ -1934,7 +1939,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 	}
 
                     // Cleanup secondary storage hosts
-                    List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+                    List<HostVO> secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
                     for (HostVO secondaryStorageHost : secondaryStorageHosts) {
                         try {
                             long hostId = secondaryStorageHost.getId();
@@ -2031,7 +2036,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             
-            List<HostVO> hosts = _hostDao.listByClusterStatus(primaryStorage.getClusterId(), Status.Up);
+            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(primaryStorage.getClusterId(), Status.Up);
             if( hosts == null || hosts.size() == 0 ) {
                 primaryStorage.setStatus(StoragePoolStatus.Maintenance);
                 _storagePoolDao.update(primaryStorageId, primaryStorage);
@@ -2260,7 +2265,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             primaryStorage.setStatus(StoragePoolStatus.Up);
             _storagePoolDao.update(primaryStorageId, primaryStorage);
             txn.commit();
-            List<HostVO> hosts = _hostDao.listByClusterStatus(primaryStorage.getClusterId(), Status.Up);
+            List<HostVO> hosts = _resourceMgr.listHostsInClusterByStatus(primaryStorage.getClusterId(), Status.Up);
             if( hosts == null || hosts.size() == 0 ) {
                 return _storagePoolDao.findById(primaryStorageId);
             } 
@@ -3131,7 +3136,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         long dcId = pool.getDataCenterId();
         Long podId = pool.getPodId();
 
-        List<HostVO> secHosts = _hostDao.listSecondaryStorageHosts(dcId);
+        List<HostVO> secHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
 
         //FIXME, for cloudzone, the local secondary storoge
         if (pool.isLocal() && pool.getPoolType() == StoragePoolType.Filesystem && secHosts.isEmpty()) {

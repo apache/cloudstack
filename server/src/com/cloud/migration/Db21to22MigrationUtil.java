@@ -43,6 +43,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
+import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PropertiesUtil;
@@ -68,6 +69,7 @@ public class Db21to22MigrationUtil {
     private InstanceGroupVMMapDao _groupVMMapDao;
     private ConfigurationDao _configurationDao;
     private DataCenterDao _zoneDao;
+    private ResourceManager _resourceMgr;
     
     private void doMigration() {
         setupComponents();
@@ -88,7 +90,7 @@ public class Db21to22MigrationUtil {
         XenServerConnectionPool _connPool = XenServerConnectionPool.getInstance();
         List<ClusterVO> clusters = _clusterDao.listByHyTypeWithoutGuid(HypervisorType.XenServer.toString());
         for (ClusterVO cluster : clusters) {
-            List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
+            List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
             for (HostVO host : hosts) {
                 String ip = host.getPrivateIpAddress();
                 String username = host.getDetail("username");
@@ -179,6 +181,7 @@ public class Db21to22MigrationUtil {
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _configurationDao = locator.getDao(ConfigurationDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
+        _resourceMgr = locator.getManager(ResourceManager.class);
     }
     
     private void setupInstanceGroups() {

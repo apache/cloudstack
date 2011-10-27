@@ -18,6 +18,8 @@
 package com.cloud.storage.secondary;
 
 import java.util.ArrayList;
+
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,6 +40,8 @@ import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -69,6 +73,10 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
+import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
@@ -79,6 +87,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -90,6 +99,9 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -110,6 +122,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.storage.Storage;
 
 //
 // Possible secondary storage vm state transition cases
@@ -130,7 +143,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long> {
+public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -189,6 +202,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     protected CapacityDao                         _capacityDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
+    @Inject 
+    protected ResourceManager _resourceMgr;
+    @Inject
+    protected SecondaryStorageVmManager _ssvmMgr;
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
@@ -248,7 +265,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 return false;
             }
 
-            List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(zoneId);
+            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
             for( HostVO ssHost : ssHosts ) {
                 String secUrl = ssHost.getStorageUrl();
                 SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl);
@@ -273,7 +290,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             String secUrl = cssHost.getStorageUrl();
             SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl);
             for ( SecondaryStorageVmVO ssVm : alreadyRunning ) {
-                HostVO host = _hostDao.findByName(ssVm.getInstanceName());
+                HostVO host = _resourceMgr.findHostByName(ssVm.getInstanceName());
                 Answer answer = _agentMgr.easySend(host.getId(), setupCmd);
                 if (answer != null && answer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
@@ -394,7 +411,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 continue;
             }
             String instanceName = ssVm.getInstanceName();
-            HostVO host = _hostDao.findByName(instanceName);
+            HostVO host = _resourceMgr.findHostByName(instanceName);
             if ( host == null ) {
                 continue;
             }
@@ -479,7 +496,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     }
 
     protected Map<String, Object> createSecStorageVmInstance(long dataCenterId, SecondaryStorageVm.Role role) {
-        HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
+        HostVO secHost = findSecondaryStorageHost(dataCenterId);
         if (secHost == null) {
             String msg = "No secondary storage available in zone " + dataCenterId + ", cannot create secondary storage vm";
             s_logger.warn(msg);
@@ -665,7 +682,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
             VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
-            HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
+            HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dataCenterId);
             if (secHost == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("No secondary storage available in zone " + dataCenterId + ", wait until it is ready to launch secondary storage vm");
@@ -731,6 +748,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public boolean stop() {
         _loadScanner.stop();
         _allocLock.releaseRef();
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
@@ -807,6 +825,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Secondary storage vm Manager is configured.");
         }
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
@@ -949,7 +968,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
     	
-        HostVO secHost = _hostDao.findSecondaryStorageHost(dest.getDataCenter().getId());
+        HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dest.getDataCenter().getId());
         assert (secHost != null);
 
         StringBuilder buf = profile.getBootArgsBuilder();
@@ -1158,7 +1177,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating,
                 State.Starting,  State.Stopped, State.Stopping );
         int vmSize = (ssVms == null)? 0 : ssVms.size();
-        List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dataCenterId);        
+        List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dataCenterId);        
         int hostSize = (ssHosts == null)? 0 : ssHosts.size();
         if ( hostSize > vmSize ) {
             s_logger.info("No secondary storage vms found in datacenter id=" + dataCenterId + ", starting a new one");
@@ -1182,4 +1201,125 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public void onScanEnd() {
     }
 
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+		/* Called when Secondary Storage VM connected */
+		StartupCommand firstCmd = cmd[0];
+	    if (!(firstCmd instanceof StartupSecondaryStorageCommand)) {
+	    	return null;
+	    }
+	    
+		host.setType( com.cloud.host.Host.Type.SecondaryStorageVM);
+		return host;	
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+		/* Called when add secondary storage on UI */
+		StartupCommand firstCmd = startup[0];
+		if (!(firstCmd instanceof StartupStorageCommand)) {
+			return null;
+		}
+
+		com.cloud.host.Host.Type type = null;
+		StartupStorageCommand ssCmd = ((StartupStorageCommand) firstCmd);
+		if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
+			type = ssCmd.getHostType();
+		} else {
+			if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
+				type = Host.Type.SecondaryStorage;
+				if (resource != null && resource instanceof DummySecondaryStorageResource) {
+					host.setResource(null);
+				}
+			} else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
+				type = Host.Type.LocalSecondaryStorage;
+			} else {
+				type = Host.Type.Storage;
+			}
+
+			final Map<String, String> hostDetails = ssCmd.getHostDetails();
+			if (hostDetails != null) {
+				if (details != null) {
+					details.putAll(hostDetails);
+				} else {
+					details = hostDetails;
+				}
+			}
+
+			host.setDetails(details);
+			host.setParent(ssCmd.getParent());
+			host.setTotalSize(ssCmd.getTotalSize());
+			host.setHypervisorType(HypervisorType.None);
+			host.setType(type);
+			if (ssCmd.getNfsShare() != null) {
+				host.setStorageUrl(ssCmd.getNfsShare());
+			}
+		}
+		
+		return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        if (host.getType() == Host.Type.SecondaryStorage) {
+            deleteHost(host.getId());
+            return new DeleteHostAnswer(false);
+        }
+        return null;
+    }
+
+	@Override
+    public HostVO findSecondaryStorageHost(long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
+	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+	    List<HostVO> storageHosts = sc.list();
+	    if (storageHosts == null || storageHosts.size() < 1) {
+            return null;
+        } else {
+            Collections.shuffle(storageHosts);
+            return storageHosts.get(0);
+        }
+    }
+
+	@Override
+    public List<HostVO> listSecondaryStorageHostsInAllZones() {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listLocalSecondaryStorageHostsInOneZone(long dataCenterId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.LocalSecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
+		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listUpSecondaryStorageVmHost(long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, com.cloud.host.Status.Up);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+	    return sc.list();
+    }
 }

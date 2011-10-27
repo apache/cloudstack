@@ -66,6 +66,10 @@ import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.resource.TrafficSentinelResource;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
+import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.server.api.response.TrafficMonitorResponse;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
@@ -87,7 +91,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
 @Local(value = {NetworkUsageManager.class})
-public class NetworkUsageManagerImpl implements NetworkUsageManager {
+public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceStateAdapter {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
@@ -104,6 +108,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
     @Inject HostDetailsDao _detailsDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkDao _networksDao = null;
+	@Inject ResourceManager _resourceMgr;
     ScheduledExecutorService _executor;
     int _networkStatsInterval;
     protected SearchBuilder<IPAddressVO> AllocatedIpSearch;
@@ -122,7 +127,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         }
 
 
-        List<HostVO> trafficMonitorsInZone = _hostDao.listByTypeDataCenter(Host.Type.TrafficMonitor, zoneId);
+        List<HostVO> trafficMonitorsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
         if (trafficMonitorsInZone.size() != 0) {
             throw new InvalidParameterValueException("Already added an traffic monitor in zone: " + zoneName);
         }
@@ -161,7 +166,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         hostDetails.put("url", cmd.getUrl());
         hostDetails.put("last_collection", ""+System.currentTimeMillis());
 
-        Host trafficMonitor = _agentMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
+        Host trafficMonitor = _resourceMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
         return trafficMonitor;
     }
 
@@ -178,9 +183,9 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
             throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);
         }
 
-        try {
-            if (_agentMgr.maintain(hostId) && _agentMgr.deleteHost(hostId, false, false, caller)) {
-                return true;
+		try {
+			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
+				return true;
             } else {
                 return false;
             }
@@ -193,7 +198,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
     @Override
     public List<HostVO> listTrafficMonitors(ListTrafficMonitorsCmd cmd) {
         long zoneId = cmd.getZoneId();
-        return _hostDao.listByTypeDataCenter(Host.Type.TrafficMonitor, zoneId);
+        return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
     }
 
     @Override
@@ -221,6 +226,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         
         _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
         _agentMgr.registerForHostEvents(new DirectNetworkStatsListener( _networkStatsInterval), true, false, false);
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
@@ -231,6 +237,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
 
     @Override
     public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
@@ -497,6 +504,29 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         }
         
 
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+        if (!(startup[0] instanceof StartupTrafficMonitorCommand)) {
+            return null;
+        }
+        
+        host.setType(Host.Type.TrafficMonitor);
+        return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
     }
 
 }

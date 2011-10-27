@@ -68,6 +68,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Snapshot.Type;
@@ -90,6 +91,7 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -171,7 +173,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private SwiftDao _swiftDao;
     @Inject
     private ProjectManager _projectMgr;
-    
+    @Inject 
+    private SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    private ResourceManager _resourceMgr;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -389,7 +394,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (_volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
                 StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
                 ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
-                List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
+                List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
                 if (hosts != null && !hosts.isEmpty()) {
                     HostVO host = hosts.get(0);
                     if (!hostSupportSnapsthot(host)) {
@@ -1026,7 +1031,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 continue;
             }
             
-            List<HostVO> ssHosts = _hostDao.listSecondaryStorageHosts(dcId);
+            List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
             for ( HostVO ssHost : ssHosts ) {           
                 DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, ssHost.getStorageUrl(), dcId, accountId, volumeId, volume.getPath());
                 Answer answer = null;

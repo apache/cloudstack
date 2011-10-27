@@ -590,7 +590,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             hostResponse.setEvents(events);
         }
 
-        hostResponse.setAllocationState(host.getHostAllocationState().toString());
+        hostResponse.setAllocationState(host.getResourceState().toString());
 
         hostResponse.setObjectName("host");
 

@@ -20,6 +20,7 @@
 package com.cloud.baremetal;
 
 
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -27,12 +28,18 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceStateAdapter;
+import com.cloud.resource.ServerResource;
+import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -43,20 +50,21 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Local(value = {PxeServerManager.class})
-public class PxeServerManagerImpl implements PxeServerManager {
+public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(PxeServerManagerImpl.class);
 	protected String _name;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
 	@Inject ExternalDhcpManager exDhcpMgr;
-	
+	@Inject ResourceManager _resourceMgr;
 	@Inject(adapter=PxeServerService.class)
 	protected Adapters<PxeServerService> _services;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
+		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
 
@@ -67,6 +75,7 @@ public class PxeServerManagerImpl implements PxeServerManager {
 
 	@Override
 	public boolean stop() {
+    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
 		return true;
 	}
 
@@ -114,5 +123,28 @@ public class PxeServerManagerImpl implements PxeServerManager {
         } else {
             throw new CloudRuntimeException("Unkown PXE server resource " + host.getResource());
         }
+    }
+
+	@Override
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
+	    // TODO Auto-generated method stub
+	    return null;
+    }
+
+	@Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
+            List<String> hostTags) {
+        if (!(startup[0] instanceof StartupPxeServerCommand)) {
+            return null;
+        }
+        
+        host.setType(Host.Type.PxeServer);
+        return host;
+    }
+
+	@Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+	    // TODO Auto-generated method stub
+	    return null;
     }
 }

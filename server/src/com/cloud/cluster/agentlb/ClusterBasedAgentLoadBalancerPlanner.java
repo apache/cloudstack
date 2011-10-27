@@ -30,10 +30,14 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteriaService;
 
 
 @Local(value=AgentLoadBalancerPlanner.class)
@@ -66,14 +70,21 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
     
     @Override
     public List<HostVO> getHostsToRebalance(long msId, int avLoad) {
-        List<HostVO> allHosts = _hostDao.listRoutingHostsByManagementServer(msId);
+    	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+    	sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+    	sc.addAnd(sc.getEntity().getManagementServerId(), Op.EQ, msId);
+        List<HostVO> allHosts = sc.list();
  
         if (allHosts.size() <= avLoad) {
             s_logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad + "; so it doesn't participate in agent rebalancing process");
             return null;
         }
         
-        List<HostVO> directHosts = _hostDao.listDirectHostsBy(msId, Status.Up);
+        sc = SearchCriteria2.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getManagementServerId(), Op.EQ, msId);
+        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+        List<HostVO> directHosts = sc.list();
+        
         if (directHosts.isEmpty()) {
             s_logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId + "; so it doesn't participate in agent rebalancing process");
             return null;

@@ -57,6 +57,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -135,6 +136,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     VirtualMachineManager _itMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    ResourceManager _resourceMgr;
 
     String _instance;
     ScheduledExecutorService _executor;
@@ -548,16 +551,16 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
 
             if (!_itMgr.migrateAway(work.getType(), vmId, srcHostId)) {
                 s_logger.warn("Unable to migrate vm from " + srcHostId);
-                _agentMgr.maintenanceFailed(srcHostId);
+                _resourceMgr.maintenanceFailed(srcHostId);
             }
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");
-            _agentMgr.maintenanceFailed(srcHostId);
+            _resourceMgr.maintenanceFailed(srcHostId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         } catch (VirtualMachineMigrationException e) {
             s_logger.warn("Looks like VM is still starting, we need to retry migrating the VM later.");
-            _agentMgr.maintenanceFailed(srcHostId);
+            _resourceMgr.maintenanceFailed(srcHostId);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         }
     }

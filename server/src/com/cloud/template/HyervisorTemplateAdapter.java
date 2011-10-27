@@ -29,6 +29,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -38,6 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class HyervisorTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(HyervisorTemplateAdapter.class);
 	@Inject DownloadMonitor _downloadMonitor;
+	@Inject SecondaryStorageVmManager _ssvmMgr;
 	
 	private String validateUrl(String url) {
 		try {
@@ -133,10 +135,10 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
     	if (!template.isCrossZones() && zoneId != null) {
     		DataCenterVO zone = _dcDao.findById(zoneId);
     		zoneName = zone.getName();
-    		secondaryStorageHosts = _hostDao.listSecondaryStorageHosts(zoneId);
+    		secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(zoneId);
     	} else {
     		zoneName = "(all zones)";
-    		secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+    		secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
     	}
     	
     	s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
@@ -237,7 +239,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 			throw new InvalidParameterValueException("The DomR template cannot be deleted.");
 		}
 
-		if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+		if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
 			throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
 		}
 		
@@ -248,7 +250,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 		TemplateProfile profile = super.prepareDelete(cmd);
 		Long zoneId = profile.getZoneId();
 		
-		if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+		if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
 		

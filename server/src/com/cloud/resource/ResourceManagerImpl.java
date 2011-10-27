@@ -33,7 +33,15 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.TapAgentsAction;
+import com.cloud.agent.api.MaintainAnswer;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
+import com.cloud.agent.transport.Request;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -43,21 +51,29 @@ import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerNode;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.Host.HostAllocationState;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -66,26 +82,46 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.network.IPAddressVO;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.resource.ResourceState.Event;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local({ ResourceManager.class, ResourceService.class })
 public class ResourceManagerImpl implements ResourceManager, ResourceService, Manager {
@@ -122,11 +158,34 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected GuestOSCategoryDao             _guestOSCategoryDao;
     @Inject 
     protected StoragePoolDao                _storagePoolDao;
-
+    @Inject
+    protected DataCenterIpAddressDao         _privateIPAddressDao;
+    @Inject
+    protected IPAddressDao                   _publicIPAddressDao;
+    @Inject
+    protected VirtualMachineManager          _vmMgr; 
+    @Inject
+    protected VMInstanceDao                  _vmDao;  
+    @Inject
+    protected HighAvailabilityManager        _haMgr;
+    @Inject 
+    protected StorageService                 _storageSvr;
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
+    @Inject
+    protected ClusterManager                 _clusterMgr;
+    @Inject
+    protected StoragePoolHostDao             _storagePoolHostDao;
+    @Inject
+    protected StoragePoolDao                 _storagePoolDao;
+    @Inject
+    protected CapacityDao                    _capacityDao;
+    @Inject
+    protected HostDetailsDao                 _detailsDao;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
+    
+    protected HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<String, ResourceStateAdapter>();
 
     protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
 
@@ -225,11 +284,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             s_logger.debug("Sent resource event " + eventName + " to listener " + l.getClass().getSimpleName());
         }
         
-    }
-
-    @Override
-    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
-        return _agentMgr.updateHostPassword(cmd);
     }
 
     @Override
@@ -367,9 +421,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         break;
                     }
 
-                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, null, null, false);
-                    if (attache != null) {
-                        hosts.add(_hostDao.findById(attache.getId()));
+                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, null, false);
+                    if (host != null) {
+                        hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
                 }
@@ -423,7 +477,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 throw new InvalidParameterValueException("can not fine cluster for clusterId " + clusterId);
             } else {
                 if (cluster.getGuid() == null) {
-                    List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+                    List<HostVO> hosts = listAllHostsInCluster(clusterId);
                     if (!hosts.isEmpty()) {
                         throw new CloudRuntimeException("Guid is not updated for cluster " + clusterId + " need to wait hosts in this cluster up");
                     }
@@ -431,23 +485,18 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
-        String allocationState = cmd.getAllocationState();
-        if (allocationState == null) {
-            allocationState = Host.HostAllocationState.Enabled.toString();
-        }
-
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), allocationState);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams());
     }
 
     @Override
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, null);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null);
     }
     
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
-            Map<String, String> params, String allocationState) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+            Map<String, String> params) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         URI uri = null;
 
         // Check if the zone exists in the system
@@ -573,7 +622,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     if (resource instanceof KvmDummyResourceBase) {
                         Map<String, String> details = entry.getValue();
                         String guid = details.get("guid");
-                        List<HostVO> kvmHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
+                        List<HostVO> kvmHosts = listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, podId, dcId);
                         for (HostVO host : kvmHosts) {
                             if (host.getGuid().equalsIgnoreCase(guid)) {
                                 if(hostTags != null){
@@ -588,9 +637,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         }
                         return null;
                     }
-                    AgentAttache attache = _agentMgr.simulateStart(null, resource, entry.getValue(), true, hostTags, allocationState, false);
-                    if (attache != null) {
-                        hosts.add(_hostDao.findById(attache.getId()));
+                    
+                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, false);
+                    if (host != null) {
+                        hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
 
@@ -613,8 +663,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         return _hostDao.findById(hostId);
     }
 
-    @Override
-    public boolean deleteHost(long hostId, boolean isForced, boolean forceDestroy) {
+    @DB
+    private boolean doDeleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
@@ -623,16 +673,94 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), host.getDataCenterId());
         
-        processResourceEvent(ResourceListener.EVENT_DELETE_HOST_BEFORE, host);
-        boolean res = false;
-        if (Host.Type.SecondaryStorage.equals(host.getType())) {
-            _secondaryStorageMgr.deleteHost(hostId);
-            res = true;
-        } else {
-            res = _agentMgr.deleteHost(hostId, isForced, forceDestroy, caller);
+        /*
+         * TODO: check current agent status and updateAgentStatus to removed. If it was already removed, that means
+         * someone is deleting host concurrently, return. And consider the situation of CloudStack shutdown during delete.
+         * A global lock?
+         * 
+         */
+        AgentAttache attache = _agentMgr.findAttache(hostId);
+        // Get storage pool host mappings here because they can be removed as a part of handleDisconnect later
+        //TODO: find out the bad boy, what's a buggy logic!
+        List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
+        
+        ResourceStateAdapter.DeleteHostAnswer answer = (ResourceStateAdapter.DeleteHostAnswer) dispatchToStateAdapters(ResourceStateAdapter.Event.DELETE_HOST, false, host, new Boolean(isForced), new Boolean(isForceDeleteStorage));
+        if (answer.getIsException()) {
+            return false;
         }
-        processResourceEvent(ResourceListener.EVENT_DELETE_HOST_AFTER, host);
-        return res;
+        
+        if (!answer.getIsContinue()) {
+            return true;
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
+        _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
+
+        // delete host details
+        _hostDetailsDao.deleteDetails(hostId);
+
+        host.setGuid(null);
+        Long clusterId = host.getClusterId();
+        host.setClusterId(null);
+        _hostDao.update(host.getId(), host);
+
+        _hostDao.remove(hostId);
+        if (clusterId != null) {
+            List<HostVO> hosts = listAllHostsInCluster(clusterId);
+            if (hosts.size() == 0) {
+                ClusterVO cluster = _clusterDao.findById(clusterId);
+                cluster.setGuid(null);
+                _clusterDao.update(clusterId, cluster);
+            }
+        }
+
+		try {
+			resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+		}
+        
+        // Delete the associated entries in host ref table
+        _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
+
+        // For pool ids you got, delete local storage host entries in pool table where
+        for (StoragePoolHostVO pool : pools) {
+            Long poolId = pool.getPoolId();
+            StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
+            if (storagePool.isLocal() && isForceDeleteStorage) {
+                storagePool.setUuid(null);
+                storagePool.setClusterId(null);
+                _storagePoolDao.update(poolId, storagePool);
+                _storagePoolDao.remove(poolId);
+                s_logger.debug("Local storage id=" + poolId + " is removed as a part of host removal id=" + hostId);
+            }
+        }
+
+        // delete the op_host_capacity entry
+        Object[] capacityTypes = { Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY };
+        SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
+        hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
+        hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
+        _capacityDao.remove(hostCapacitySC);
+        txn.commit();
+        return true;
+    }
+    
+    @Override
+    public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
+        try {
+            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        
+        return doDeleteHost(hostId, isForced, isForceDeleteStorage);
     }
 
     @Override
@@ -650,8 +778,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return true;
             }
 
-            //don't allow to remove the cluster if it has non-removed hosts
-            List<HostVO> hosts = _hostDao.listByCluster(cmd.getId());
+            List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
             if (hosts.size() > 0) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
@@ -771,7 +898,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     cluster.setManagedState(Managed.ManagedState.PrepareUnmanaged);
                     _clusterDao.update(cluster.getId(), cluster);
                     txn.commit();
-                    List<HostVO>  hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
+                    List<HostVO>  hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());                  
                     for( HostVO host : hosts ) {
                         if(host.getType().equals(Host.Type.Routing) && !host.getStatus().equals(Status.Down) &&  !host.getStatus().equals(Status.Disconnected) 
                                 && !host.getStatus().equals(Status.Up) && !host.getStatus().equals(Status.Alert) ) {
@@ -782,7 +909,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     
                     for( HostVO host : hosts ) {
                         if ( host.getStatus().equals(Status.Up )) {
-                            _agentMgr.disconnect(host.getId());
+                        	umanageHost(host.getId());
                         }
                     }
                     int retry = 10;
@@ -793,7 +920,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                             Thread.sleep(20 * 1000);
                         } catch (Exception e) {
                         }
-                        hosts = _hostDao.listBy(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
+                        hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
                         for( HostVO host : hosts ) {
                             if ( !host.getStatus().equals(Status.Down) && !host.getStatus().equals(Status.Disconnected) 
                                     && !host.getStatus().equals(Status.Alert)) {
@@ -838,7 +965,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
 
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, hostId);
-        boolean success = _agentMgr.cancelMaintenance(hostId);
+        boolean success = cancelMaintenance(hostId);
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
         if (!success) {
             throw new CloudRuntimeException("Internal error cancelling maintenance.");
@@ -847,7 +974,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @Override
-    public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
+    public Host reconnectHost(ReconnectHostCmd cmd) {
         Long hostId = cmd.getId();
 
         HostVO host = _hostDao.findById(hostId);
@@ -855,13 +982,69 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
 
-        boolean result = _agentMgr.reconnect(hostId);
-        if (result) {
-            return host;
-        }
-        throw new CloudRuntimeException("Failed to reconnect host with id " + hostId.toString() + ", internal error.");
+        return (_agentMgr.reconnect(hostId) ? host : null);
     }
+    
+    @Override
+    public boolean resourceStateTransitTo(Host host, ResourceState.Event event, long msId) throws NoTransitionException {
+        ResourceState currentState = host.getResourceState();
+        ResourceState nextState = currentState.getNextState(event);
+        if (nextState == null) {
+            throw new NoTransitionException("No next resource state found for current state =" + currentState + " event =" + event);
+        }
+        
+        return _hostDao.updateResourceState(currentState, event, nextState, host);
+    }
+    
+    private boolean doMaintain(final long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        MaintainAnswer answer = (MaintainAnswer) _agentMgr.easySend(hostId, new MaintainCommand());
+        if (answer == null || !answer.getResult()) {
+            s_logger.warn("Unable to put host in maintainance mode: " + hostId);
+            return false;
+        }
+        
+        try {
+        	resourceStateTransitTo(host, ResourceState.Event.AdminAskMaintenace, _nodeId);
+        } catch (NoTransitionException e) {
+            String err = "Cannot transimit resource state of host " + host.getId() + " to " + ResourceState.Maintenance;
+            s_logger.debug(err, e);
+            throw new CloudRuntimeException(err + e.getMessage());
+        }
+        
+        _agentMgr.pullAgentToMaintenance(hostId);
+        
+        /*TODO: move below to listener */
+        if (host.getType() == Host.Type.Routing) {
 
+            final List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
+            if (vms.size() == 0) {
+                return true;
+            }
+
+            List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+            for (final VMInstanceVO vm : vms) {
+                if (hosts == null || hosts.size() <= 1 || !answer.getMigrate()) {
+                    // for the last host in this cluster, stop all the VMs
+                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                } else {
+                    _haMgr.scheduleMigration(vm);
+                }
+            }
+        }
+
+        return true;
+    }
+    
+    public boolean maintain(final long hostId) throws AgentUnavailableException {
+        Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminAskMaintenace);
+        if (result != null) {
+            return result;
+        }
+        
+        return doMaintain(hostId);
+    }
+    
     @Override
     public Host maintain(PrepareForMaintenanceCmd cmd) {
         Long hostId = cmd.getId();
@@ -872,7 +1055,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
 
-        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance) > 0) {
+        if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance) > 0) {
             throw new InvalidParameterValueException("There are other servers in PrepareForMaintenance OR ErrorInMaintenance STATUS in cluster " + host.getClusterId());
         }
 
@@ -882,7 +1065,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         try {
             processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, hostId);
-            if (_agentMgr.maintain(hostId)) {
+            if (maintain(hostId)) {
                 processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
                 return _hostDao.findById(hostId);
             } else {
@@ -926,6 +1109,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             _hostDetailsDao.persist(hostId, hostDetails);
         }
 
+        /*
         String allocationState = cmd.getAllocationState();
         if (allocationState != null) {
             // Verify that the host exists
@@ -949,6 +1133,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             _hostDao.update(hostId, host);
         }
+        */
         
         List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
@@ -998,4 +1183,751 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         return _name;
     }
 
+	@Override
+	public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter) {
+		if (_resourceStateAdapters.get(name) != null) {
+			throw new CloudRuntimeException(name + " has registered");
+		}
+		
+		synchronized (_resourceStateAdapters) {
+			_resourceStateAdapters.put(name, adapter);
+		}
+	}
+
+	@Override
+    public void unregisterResourceStateAdapter(String name) {
+        synchronized (_resourceStateAdapters) {
+            _resourceStateAdapters.remove(name);
+        }   
+    }
+	
+	private Object dispatchToStateAdapters(ResourceStateAdapter.Event event, boolean singleTaker, Object... args) {
+		synchronized (_resourceStateAdapters) {
+			Iterator it = _resourceStateAdapters.entrySet().iterator();
+			Object result = null;
+			while (it.hasNext()) {
+				Map.Entry<String, ResourceStateAdapter> item = (Map.Entry<String, ResourceStateAdapter>) it.next();
+				ResourceStateAdapter adapter = item.getValue();
+				
+				String msg = new String("Dispatching resource state event " + event + " to " + item.getKey());
+				s_logger.debug(msg);
+				
+				if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED) {
+					result = adapter.createHostVOForConnectedAgent((HostVO) args[0], (StartupCommand[]) args[1]);
+					if (result != null && singleTaker) {
+						break;
+					}
+				} else if (event == ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT) {
+					result = adapter.createHostVOForDirectConnectAgent((HostVO) args[0], (StartupCommand[]) args[1], (ServerResource) args[2],
+					        (Map<String, String>) args[3], (List<String>) args[4]);
+					if (result != null && singleTaker) {
+						break;
+					}
+				} else if (event == ResourceStateAdapter.Event.DELETE_HOST) {
+					try {
+						result = adapter.deleteHost((HostVO) args[0], (Boolean) args[1], (Boolean) args[2]);
+						if (result != null) {
+							break;
+						}
+					} catch (UnableDeleteHostException e) {
+						s_logger.debug("Adapter " + adapter.getName() + " says unable to delete host", e);
+						result = new ResourceStateAdapter.DeleteHostAnswer(false, true);
+					}
+				} else {
+					throw new CloudRuntimeException("Unknown resource state event:" + event);
+				}
+			}
+
+			return result;
+		}
+	}
+
+	@Override
+	public void checkCIDR(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask) throws IllegalArgumentException {
+		if (serverPrivateIP == null) {
+			return;
+		}
+		// Get the CIDR address and CIDR size
+		String cidrAddress = pod.getCidrAddress();
+		long cidrSize = pod.getCidrSize();
+
+		// If the server's private IP address is not in the same subnet as the
+		// pod's CIDR, return false
+		String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
+		String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
+		if (!cidrSubnet.equals(serverSubnet)) {
+			s_logger.warn("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: " + pod.getName()
+			        + " and zone: " + dc.getName());
+			throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: "
+			        + pod.getName() + " and zone: " + dc.getName());
+		}
+
+		// If the server's private netmask is less inclusive than the pod's CIDR
+		// netmask, return false
+		String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
+		long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
+		long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
+		if (serverNetmaskNumeric > cidrNetmaskNumeric) {
+			throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is not compatible with the CIDR of pod: "
+			        + pod.getName() + " and zone: " + dc.getName());
+		}
+
+	}
+
+	private boolean checkCIDR(HostPodVO pod, String serverPrivateIP, String serverPrivateNetmask) {
+		if (serverPrivateIP == null) {
+			return true;
+		}
+		// Get the CIDR address and CIDR size
+		String cidrAddress = pod.getCidrAddress();
+		long cidrSize = pod.getCidrSize();
+
+		// If the server's private IP address is not in the same subnet as the
+		// pod's CIDR, return false
+		String cidrSubnet = NetUtils.getCidrSubNet(cidrAddress, cidrSize);
+		String serverSubnet = NetUtils.getSubNet(serverPrivateIP, serverPrivateNetmask);
+		if (!cidrSubnet.equals(serverSubnet)) {
+			return false;
+		}
+
+		// If the server's private netmask is less inclusive than the pod's CIDR
+		// netmask, return false
+		String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);
+		long cidrNetmaskNumeric = NetUtils.ip2Long(cidrNetmask);
+		long serverNetmaskNumeric = NetUtils.ip2Long(serverPrivateNetmask);
+		if (serverNetmaskNumeric > cidrNetmaskNumeric) {
+			return false;
+		}
+		return true;
+	}
+	 
+	protected HostVO createHostVO(StartupCommand[] cmds, ServerResource resource, Map<String, String> details, List<String> hostTags,
+	        ResourceStateAdapter.Event stateEvent) {
+		StartupCommand startup = cmds[0];
+		HostVO host = findHostByGuid(startup.getGuid());
+		boolean isNew = false;
+		if (host == null) {
+			host = findHostByGuid(startup.getGuidWithoutResource());
+		}
+		if (host == null) {
+			host = new HostVO(startup.getGuid());
+			isNew = true;
+		}
+
+		String dataCenter = startup.getDataCenter();
+		String pod = startup.getPod();
+		String cluster = startup.getCluster();
+
+		if (pod != null && dataCenter != null && pod.equalsIgnoreCase("default") && dataCenter.equalsIgnoreCase("default")) {
+			List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
+			for (HostPodVO hpv : pods) {
+				if (checkCIDR(hpv, startup.getPrivateIpAddress(), startup.getPrivateNetmask())) {
+					pod = hpv.getName();
+					dataCenter = _dcDao.findById(hpv.getDataCenterId()).getName();
+					break;
+				}
+			}
+		}
+
+		long dcId = -1;
+		DataCenterVO dc = _dcDao.findByName(dataCenter);
+		if (dc == null) {
+			try {
+				dcId = Long.parseLong(dataCenter);
+				dc = _dcDao.findById(dcId);
+			} catch (final NumberFormatException e) {
+			}
+		}
+		if (dc == null) {
+			throw new IllegalArgumentException("Host " + startup.getPrivateIpAddress() + " sent incorrect data center: " + dataCenter);
+		}
+		dcId = dc.getId();
+
+		HostPodVO p = _podDao.findByName(pod, dcId);
+		if (p == null) {
+			try {
+				final long podId = Long.parseLong(pod);
+				p = _podDao.findById(podId);
+			} catch (final NumberFormatException e) {
+			}
+		}
+		/*
+		 * ResourceStateAdapter is responsible for throwing Exception if Pod is
+		 * null and non-null is required. for example, XcpServerDiscoever.
+		 * Others, like PxeServer, ExternalFireware don't require Pod
+		 */
+		Long podId = (p == null ? null : p.getId());
+
+		Long clusterId = null;
+		if (cluster != null) {
+			try {
+				clusterId = Long.valueOf(cluster);
+			} catch (NumberFormatException e) {
+				ClusterVO c = _clusterDao.findBy(cluster, podId);
+				if (c == null) {
+					c = new ClusterVO(dcId, podId, cluster);
+					c = _clusterDao.persist(c);
+				}
+				clusterId = c.getId();
+			}
+		}
+
+		host.setDataCenterId(dc.getId());
+		host.setPodId(podId);
+		host.setClusterId(clusterId);
+		host.setPrivateIpAddress(startup.getPrivateIpAddress());
+		host.setPrivateNetmask(startup.getPrivateNetmask());
+		host.setPrivateMacAddress(startup.getPrivateMacAddress());
+		host.setPublicIpAddress(startup.getPublicIpAddress());
+		host.setPublicMacAddress(startup.getPublicMacAddress());
+		host.setPublicNetmask(startup.getPublicNetmask());
+		host.setStorageIpAddress(startup.getStorageIpAddress());
+		host.setStorageMacAddress(startup.getStorageMacAddress());
+		host.setStorageNetmask(startup.getStorageNetmask());
+		host.setVersion(startup.getVersion());
+		host.setName(startup.getName());
+		host.setManagementServerId(_nodeId);
+		host.setStorageUrl(startup.getIqn());
+		host.setLastPinged(System.currentTimeMillis() >> 10);
+		host.setHostTags(hostTags);
+		host.setDetails(details);
+		if (startup.getStorageIpAddressDeux() != null) {
+			host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
+			host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());
+			host.setStorageNetmaskDeux(startup.getStorageNetmaskDeux());
+		}
+		if (resource != null) {
+			/* null when agent is connected agent */
+			host.setResource(resource.getClass().getName());
+		}
+
+		host = (HostVO) dispatchToStateAdapters(stateEvent, true, host, cmds, resource, details, hostTags);
+		if (host == null) {
+			throw new CloudRuntimeException("No resource state adapter response");
+		}
+		
+		if (isNew) {
+			host = _hostDao.persist(host);
+		} else {
+			_hostDao.update(host.getId(), host);
+		}
+
+		try {
+			resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
+			/* Agent goes to Connecting status */
+			_agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
+		} catch (Exception e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + " to Creating state", e);
+			_agentMgr.agentStatusTransitTo(host, Status.Event.Error, _nodeId);
+			try {
+				resourceStateTransitTo(host, ResourceState.Event.Error, _nodeId);
+            } catch (NoTransitionException e1) {
+            	s_logger.debug("Cannot transmit host " + host.getId() + "to Error state", e);
+            }
+		}
+		
+		return host;
+	}
+	 
+	private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
+	        boolean forRebalance) {
+		HostVO host = null;
+		AgentAttache attache = null;
+		StartupCommand[] cmds = null;
+
+		try {
+			cmds = resource.initialize();
+			if (cmds == null) {
+				s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
+				return null;
+			}
+
+			if (s_logger.isDebugEnabled()) {
+				new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
+			}
+
+			if (old) {
+				StartupCommand firstCmd = cmds[0];
+				host = findHostByGuid(firstCmd.getGuid());
+				if (host == null) {
+					host = findHostByGuid(firstCmd.getGuidWithoutResource());
+				}
+				if (host != null && host.getRemoved() == null) {
+					s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
+					return null;
+				}
+			}
+
+			host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
+			if (host != null) {
+				attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
+				/* reload myself from database */
+				host = _hostDao.findById(host.getId());
+			}
+		} catch (Exception e) {
+			s_logger.warn("Unable to connect due to ", e);
+		} finally {
+			if (attache == null) {
+				if (cmds != null) {
+					resource.disconnected();
+				}
+
+				if (host != null) {
+					/* Change agent status to Alert */
+					_agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+					/* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
+				}
+			}
+		}
+
+		return host;
+	}
+	 
+	@Override
+	public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance) {
+		_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Add);
+		Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
+		_agentMgr.tapLoadingAgents(hostId, TapAgentsAction.Del);
+		return host;
+	}
+	
+    @Override
+    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
+        // Check if the zone exists in the system
+        if (_dcDao.findById(zoneId) == null) {
+            throw new InvalidParameterValueException("Can't find zone with id " + zoneId);
+        }
+
+        Map<String, String> details = hostDetails;
+        String guid = details.get("guid");
+        List<HostVO> currentHosts = this.listAllUpAndEnabledHostsInOneZoneByType(hostType, zoneId);
+        for (HostVO currentHost : currentHosts) {
+            if (currentHost.getGuid().equals(guid)) {
+                return currentHost;
+            }
+        }
+
+        return createHostAndAgent(resource, hostDetails, true, null, false);
+    }
+    
+    @Override
+    public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds) {
+        return createHostVO(cmds, null, null, null, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_CONNECTED);
+    }
+    
+    private void checkIPConflicts(HostPodVO pod, DataCenterVO dc, String serverPrivateIP, String serverPrivateNetmask, String serverPublicIP, String serverPublicNetmask) {
+        // If the server's private IP is the same as is public IP, this host has
+        // a host-only private network. Don't check for conflicts with the
+        // private IP address table.
+        if (serverPrivateIP != serverPublicIP) {
+            if (!_privateIPAddressDao.mark(dc.getId(), pod.getId(), serverPrivateIP)) {
+                // If the server's private IP address is already in the
+                // database, return false
+                List<DataCenterIpAddressVO> existingPrivateIPs = _privateIPAddressDao.listByPodIdDcIdIpAddress(pod.getId(), dc.getId(), serverPrivateIP);
+
+                assert existingPrivateIPs.size() <= 1 : " How can we get more than one ip address with " + serverPrivateIP;
+                if (existingPrivateIPs.size() > 1) {
+                    throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
+                }
+                if (existingPrivateIPs.size() == 1) {
+                    DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
+                    if (vo.getInstanceId() != null) {
+                        throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() + " and zone: " + dc.getName());
+                    }
+                }
+            }
+        }
+
+        if (serverPublicIP != null && !_publicIPAddressDao.mark(dc.getId(), new Ip(serverPublicIP))) {
+            // If the server's public IP address is already in the database,
+            // return false
+            List<IPAddressVO> existingPublicIPs = _publicIPAddressDao.listByDcIdIpAddress(dc.getId(), serverPublicIP);
+            if (existingPublicIPs.size() > 0) {
+                throw new IllegalArgumentException("The public ip address of the server (" + serverPublicIP + ") is already in use in zone: " + dc.getName());
+            }
+        }
+    }
+    
+    @Override
+    public HostVO fillRoutingHostVO(HostVO host, StartupRoutingCommand ssCmd, HypervisorType hyType, Map<String, String> details, List<String> hostTags) {
+        if (host.getPodId() == null) {
+            s_logger.error("Host " + ssCmd.getPrivateIpAddress() + " sent incorrect pod, pod id is null");
+            throw new IllegalArgumentException("Host " + ssCmd.getPrivateIpAddress() + " sent incorrect pod, pod id is null");
+        }
+
+        ClusterVO clusterVO = _clusterDao.findById(host.getClusterId());
+        if (clusterVO.getHypervisorType() != hyType) {
+            throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + hyType + " into cluster: " + clusterVO.getId() + " whose hypervisor type is: "
+                    + clusterVO.getHypervisorType());
+        }
+        
+        final Map<String, String> hostDetails = ssCmd.getHostDetails();
+        if (hostDetails != null) {
+            if (details != null) {
+                details.putAll(hostDetails);
+            } else {
+                details = hostDetails;
+            }
+        }
+        
+        HostPodVO pod = _podDao.findById(host.getPodId());
+        DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
+        checkIPConflicts(pod, dc, ssCmd.getPrivateIpAddress(), ssCmd.getPublicIpAddress(), ssCmd.getPublicIpAddress(), ssCmd.getPublicNetmask());
+        host.setType(com.cloud.host.Host.Type.Routing);
+        host.setDetails(details);
+        host.setCaps(ssCmd.getCapabilities());
+        host.setCpus(ssCmd.getCpus());
+        host.setTotalMemory(ssCmd.getMemory());
+        host.setSpeed(ssCmd.getSpeed());
+        host.setHypervisorType(hyType);        
+        return host;
+    }
+    
+	@Override
+	public void deleteRoutingHost(HostVO host, boolean isForced, boolean forceDestroyStorage) throws UnableDeleteHostException {
+		if (host.getType() != Host.Type.Routing) {
+			throw new CloudRuntimeException("Non-Routing host gets in deleteRoutingHost, id is " + host.getId());
+		}
+
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Deleting Host: " + host.getId() + " Guid:" + host.getGuid());
+		}
+
+		User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+		if (forceDestroyStorage) {
+			// put local storage into mainenance mode, will set all the VMs on
+			// this local storage into stopped state
+			StoragePool storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
+			if (storagePool != null) {
+				if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
+					try {
+						storagePool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
+						if (storagePool == null) {
+							s_logger.debug("Failed to set primary storage into maintenance mode");
+							throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");
+						}
+					} catch (Exception e) {
+						s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+						throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+					}
+				}
+
+				List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
+				for (VMInstanceVO vm : vmsOnLocalStorage) {
+					try {
+						if (!_vmMgr.destroy(vm, caller, _accountMgr.getAccount(vm.getAccountId()))) {
+							String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+							s_logger.warn(errorMsg);
+							throw new UnableDeleteHostException(errorMsg);
+						}
+					} catch (Exception e) {
+						String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+						s_logger.debug(errorMsg, e);
+						throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
+					}
+				}
+			}
+		} else {
+			// Check if there are vms running/starting/stopping on this host
+			List<VMInstanceVO> vms = _vmDao.listByHostId(host.getId());
+			if (!vms.isEmpty()) {
+				if (isForced) {
+					// Stop HA disabled vms and HA enabled vms in Stopping state
+					// Restart HA enabled vms
+					for (VMInstanceVO vm : vms) {
+						if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
+							s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + host.getId());
+							try {
+								if (!_vmMgr.advanceStop(vm, true, caller, _accountMgr.getAccount(vm.getAccountId()))) {
+									String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+									s_logger.warn(errorMsg);
+									throw new UnableDeleteHostException(errorMsg);
+								}
+							} catch (Exception e) {
+								String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+								s_logger.debug(errorMsg, e);
+								throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
+							}
+						} else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
+							s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + host.getId());
+							_haMgr.scheduleRestart(vm, false);
+						}
+					}
+				} else {
+					throw new UnableDeleteHostException("Unable to delete the host as there are vms in " + vms.get(0).getState()
+					        + " state using this host and isForced=false specified");
+				}
+			}
+		}
+	}
+	
+    private boolean doCancelMaintenance(long hostId) {
+        HostVO host;
+        host = _hostDao.findById(hostId);
+        if (host == null || host.getRemoved() != null) {
+            s_logger.warn("Unable to find host " + hostId);
+            return true;
+        }
+        
+        /*TODO: think twice about returning true or throwing out exception, I really prefer to exception that always exposes bugs */
+        if (host.getResourceState() != ResourceState.PrepareForMaintenance && host.getResourceState() != ResourceState.Maintenance && host.getResourceState() != ResourceState.ErrorInMaintenance) {
+            throw new CloudRuntimeException("Cannot perform cancelMaintenance when resource state is " + host.getResourceState() + ", hostId = " + hostId);
+        }
+        
+        /*TODO: move to listener */
+        _haMgr.cancelScheduledMigrations(host);
+        List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
+        for (VMInstanceVO vm : vms) {
+            if (vm.getHostId() != null && vm.getHostId() == hostId) {
+                s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm);
+                return false;
+            }
+        }
+        
+		try {
+			resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
+			_agentMgr.pullAgentOutMaintenance(hostId);
+			return true;
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + host.getId() + "to Enabled state", e);
+			return false;
+		}        
+    }
+    
+    private boolean cancelMaintenance(long hostId) {
+        try {
+            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.AdminCancelMaintenance);
+
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        
+        return doCancelMaintenance(hostId);
+    }
+    
+    @Override
+    public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException {
+        if (event == ResourceState.Event.AdminAskMaintenace) {
+            return doMaintain(hostId);
+        } else if (event == ResourceState.Event.AdminCancelMaintenance) {
+            return doCancelMaintenance(hostId);
+        } else if (event == ResourceState.Event.DeleteHost) {
+            /*TODO: Ask alex why we assume the last two parameters are false*/
+            return doDeleteHost(hostId, false, false);
+        } else if (event == ResourceState.Event.Unmanaged) {
+            return doUmanageHost(hostId);
+        } else if (event == ResourceState.Event.UpdatePassword) {
+            return doUpdateHostPassword(hostId);
+        } else {
+            throw new CloudRuntimeException("Received an resource event we are not handling now, " + event);
+        }
+    }
+    
+    private boolean doUmanageHost(long hostId) {
+    	try {
+    		HostVO host = _hostDao.findById(hostId);
+    		if (host == null) {
+    			s_logger.debug("Cannot find host " + hostId + ", assuming it has been deleted, skip umanage");
+    			return true;
+    		}
+    		
+    		resourceStateTransitTo(host, ResourceState.Event.Unmanaged, _nodeId);
+			return true;
+		} catch (NoTransitionException e) {
+			s_logger.debug("Cannot transmit host " + hostId + "to Enabled state", e);
+			return false;
+		}        
+    }
+    
+    
+    @Override
+    public boolean umanageHost(long hostId) {
+        try {
+            Boolean result = _clusterMgr.propagateResourceEvent(hostId, ResourceState.Event.Unmanaged);
+
+            if (result != null) {
+                return result;
+            }
+        } catch (AgentUnavailableException e) {
+            return false;
+        }
+        
+        return doUmanageHost(hostId);
+    }
+    
+    private boolean doUpdateHostPassword(long hostId) {
+        AgentAttache attache = _agentMgr.findAttache(hostId);
+        if (attache == null) {
+            return false;
+        }
+        
+        DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
+        String username = nv.getValue();
+        nv = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
+        String password = nv.getValue();
+        UpdateHostPasswordCommand cmd = new UpdateHostPasswordCommand(username, password);
+        attache.updatePassword(cmd);
+        return true;
+    }
+    
+    @Override
+    public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
+        if (cmd.getClusterId() == null) {
+            // update agent attache password
+            try {
+                Boolean result = _clusterMgr.propagateResourceEvent(cmd.getHostId(), ResourceState.Event.UpdatePassword);
+                if (result != null) {
+                    return result;
+                }
+            } catch (AgentUnavailableException e) {
+            }
+            
+            return doUpdateHostPassword(cmd.getHostId());
+        } else {
+            // get agents for the cluster
+            List<HostVO> hosts = this.listAllHostsInCluster(cmd.getClusterId());
+            for (HostVO h : hosts) {
+                try {
+                    /*FIXME: this is a buggy logic, check with alex. Shouldn't return if propagation return non null*/
+                    Boolean result = _clusterMgr.propagateResourceEvent(h.getId(), ResourceState.Event.UpdatePassword);
+                    if (result != null) {
+                        return result;
+                    }
+                    
+                    doUpdateHostPassword(cmd.getHostId());
+                } catch (AgentUnavailableException e) {
+                }
+            }
+            
+            return true;
+        }
+    }
+    
+    @Override
+    public boolean maintenanceFailed(long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Cant not find host " + hostId);
+            }
+            return false;
+        } else {
+            try {
+                return resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
+            } catch (NoTransitionException e) {
+                s_logger.debug("No next resource state for host " + host.getId() + " while current state is " + host.getResourceState() + " with event " + ResourceState.Event.UnableToMigrate, e);
+                return false;
+            }
+        }
+    }
+
+	@Override
+    public List<HostVO> findDirectlyConnectedHosts() {
+		/* The resource column is not null for direct connected resource */
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+	    sc.addAnd(sc.getEntity().getResource(), Op.NNULL);
+	    sc.addAnd(sc.getEntity().getResourceState(), Op.NIN, ResourceState.Disabled);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllUpAndEnabledHosts(Type type, Long clusterId, Long podId, long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		if (type != null) {
+			sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		}
+		if (clusterId != null) {
+			sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+		}
+		if (podId != null) {
+			sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
+		}
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+		return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllHostsInCluster(long clusterId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, clusterId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, status);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Type type, long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+		sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ, ResourceState.Enabled);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllHostsInOneZoneByType(Type type, long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HostVO> listAllHostsInAllZonesByType(Type type) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, type);
+	    return sc.list();
+    }
+
+	@Override
+    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		if (zoneId != null) {
+			sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+		}
+		if (hostId != null) {
+			sc.addAnd(sc.getEntity().getId(), Op.EQ, hostId);
+		}
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.Routing);
+		List<HostVO> hosts = sc.list();
+		
+		List<HypervisorType> hypers = new ArrayList<HypervisorType>(5);
+        for (HostVO host : hosts) {
+            hypers.add(host.getHypervisorType());
+        }
+        return hypers;
+    }
+
+	@Override
+    public HostVO findHostByGuid(String guid) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getGuid(), Op.EQ, guid);
+	    return sc.find();
+    }
+
+	@Override
+    public HostVO findHostByName(String name) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
+	    return sc.find();
+    }
+
+	@Override
+    public List<HostVO> listHostsByNameLike(String name) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+		sc.addAnd(sc.getEntity().getName(), Op.LIKE, "%" + name + "%");
+	    return sc.list();
+    }
 }

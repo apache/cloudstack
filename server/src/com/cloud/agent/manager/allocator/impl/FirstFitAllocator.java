@@ -41,6 +41,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
@@ -77,7 +78,8 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject GuestOSDao _guestOSDao = null; 
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao = null;
-    @Inject VMInstanceDao _vmInstanceDao = null;  
+    @Inject VMInstanceDao _vmInstanceDao = null;
+    @Inject ResourceManager _resourceMgr;
     float _factor = 1;
     protected String _allocationAlgorithm = "random";
     @Inject CapacityManager _capacityMgr;
@@ -115,7 +117,7 @@ public class FirstFitAllocator implements HostAllocator {
 
         List<HostVO> clusterHosts = new ArrayList<HostVO>();
         if(hostTagOnOffering == null && hostTagOnTemplate == null){
-            clusterHosts = _hostDao.listBy(type, clusterId, podId, dcId);
+            clusterHosts = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
         }else{
             List<HostVO> hostsMatchingOfferingTag = new ArrayList<HostVO>();
             List<HostVO> hostsMatchingTemplateTag = new ArrayList<HostVO>();
@@ -193,14 +195,7 @@ public class FirstFitAllocator implements HostAllocator {
                 }
                 continue;
             }
-            
-            if(host.getHostAllocationState() != Host.HostAllocationState.Enabled){
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" is in " + host.getHostAllocationState().name() + " state, skipping this and trying other available hosts");
-                }
-                continue;
-            }
-            
+                        
             //find number of guest VMs occupying capacity on this host.
             Long vmCount = _vmInstanceDao.countRunningByHostId(host.getId());
             Long maxGuestLimit = getHostMaxGuestLimit(host);

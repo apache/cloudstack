@@ -20,12 +20,14 @@ package com.cloud.host;
 import java.util.Date;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
+import com.cloud.utils.fsm.StateObject;
 
 
 /**
  *  Host represents one particular host server.
  */
-public interface Host {
+public interface Host extends StateObject<Status> {
     public enum Type {
         Storage(false),
         Routing(false),
@@ -57,11 +59,6 @@ public interface Host {
             return strs;
         }
     }
-
-    public enum HostAllocationState {
-        Disabled,
-        Enabled;
-    }    
 
     /**
      * @return id of the host.
@@ -197,8 +194,9 @@ public interface Host {
 
     String getStorageMacAddressDeux();
 
-    HostAllocationState getHostAllocationState();
-
     String getHypervisorVersion();
 
+    boolean isInMaintenanceStates();
+    
+    ResourceState getResourceState(); 
 }

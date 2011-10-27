@@ -36,6 +36,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 
@@ -46,6 +47,7 @@ public class KVMFencer implements FenceBuilder {
 
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
+	@Inject ResourceManager _resourceMgr;
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
@@ -82,7 +84,7 @@ public class KVMFencer implements FenceBuilder {
 			return null;
 		}
 
-		List<HostVO> hosts = _hostDao.listByCluster(host.getClusterId());
+		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
 		FenceCommand fence = new FenceCommand(vm, host);
 
 		for (HostVO h : hosts) {

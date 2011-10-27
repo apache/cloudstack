@@ -145,6 +145,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -349,6 +350,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected FirewallManager _firewallMgr;
     @Inject
     protected ProjectManager _projectMgr;
+    @Inject
+    protected ResourceManager _resourceMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -3150,7 +3153,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sc.setParameters("hostIdEQ", hostId);
         } else {
             if (hostName != null) {
-                List<HostVO> hosts = _hostDao.findHostsLike((String) hostName);
+                List<HostVO> hosts = _resourceMgr.listHostsByNameLike((String) hostName);
                 if (hosts != null & !hosts.isEmpty()) {
                     Long[] hostIds = new Long[hosts.size()];
                     for (int i = 0; i < hosts.size(); i++) {
