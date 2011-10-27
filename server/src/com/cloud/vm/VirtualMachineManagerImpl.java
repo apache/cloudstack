@@ -1584,18 +1584,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     public Commands deltaSync(Map<String, Pair<String, State>> newStates) {
-        Map<Long, AgentVmInfo> states = convertDeltaToInfos(newStates);
+        Map<Long, AgentVmInfo> states = convertToInfos(newStates);
         Commands commands = new Commands(OnError.Continue);
 
         for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
             AgentVmInfo info = entry.getValue();
-
             VMInstanceVO vm = info.vm;
-
             Command command = null;
             if (vm != null) {
+                String host_guid = info.getHostUuid();
+                Host host = _hostDao.findByGuid(host_guid);
+                long hId = host.getId();
+               
                 HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-                command = compareState(vm.hostId, vm, info, false, hvGuru.trackVmHostChange());
+                command = compareState(hId, vm, info, false, hvGuru.trackVmHostChange());
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cleaning up a VM that is no longer found: " + info.name);
@@ -1646,36 +1648,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         return commands;
     }
 
-    protected Map<Long, AgentVmInfo> convertDeltaToInfos(final Map<String, Pair<String, State>> states) {
-        final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
-
-        if (states == null) {
-            return map;
-        }
-
-        Collection<VirtualMachineGuru<? extends VMInstanceVO>> vmGurus = _vmGurus.values();
-
-        for (Map.Entry<String, Pair<String, State>> entry : states.entrySet()) {
-            for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
-                String name = entry.getKey();
-
-                VMInstanceVO vm = vmGuru.findByName(name);
-
-                if (vm != null) {
-                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue().second()));
-                    break;
-                }
-
-                Long id = vmGuru.convertToId(name);
-                if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue().second()));
-                    break;
-                }
-            }
-        }
-
-        return map;
-    }
 
     protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, Pair<String, State>> newStates) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
@@ -1750,7 +1722,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     return null;
                 }
             }
-
             if (vm.getHostId() == null || hostId != vm.getHostId()) {
                 try {
                     stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
@@ -1946,11 +1917,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         for (final Answer answer : answers) {
             if (answer instanceof ClusterSyncAnswer) {
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
-                if (hs.isFull()) {
-                    fullSync(hs.getClusterId(), hs.getNewStates());
-                } else {
-                    deltaSync(hs.getNewStates());
+                if (hs.execute()){
+                    if (hs.isFull()) {
+                        fullSync(hs.getClusterId(), hs.getNewStates());
+                    } else if (hs.isDelta()){
+                        deltaSync(hs.getNewStates());
+                    }
                 }
+                hs.setExecuted();
             } else if (!answer.getResult()) {
                 s_logger.warn("Cleanup failed due to " + answer.getDetails());
             } else {
@@ -2002,9 +1976,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             s_logger.debug("Not processing listener " + this + " as connect happens on rebalance process");
             return;
         }
-
-        long agentId = agent.getId();
+        
         Long clusterId = agent.getClusterId();
+        long agentId = agent.getId();
         ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()),
                 Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
         try {
