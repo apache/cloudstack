@@ -77,7 +77,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         UpgradeSearch.and("trafficType", UpgradeSearch.entity().getTrafficType(), Op.EQ);
         UpgradeSearch.and("type", UpgradeSearch.entity().getType(), Op.EQ);
         UpgradeSearch.and("state", UpgradeSearch.entity().getState(), Op.EQ);
-        UpgradeSearch.and("securityGroupEnabled", UpgradeSearch.entity().isSecurityGroupEnabled(), Op.EQ);
         UpgradeSearch.done();
     }
     
@@ -155,9 +154,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         //list only non-system offerings
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
         
-        //security group property should be the same
-        sc.addAnd("securityGroupEnabled", SearchCriteria.Op.EQ, originalOffering.isSecurityGroupEnabled());
-        
         //Type of the network should be the same
         sc.addAnd("type", SearchCriteria.Op.EQ, originalOffering.getType());
         
@@ -165,7 +161,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.addAnd("trafficType", SearchCriteria.Op.EQ, originalOffering.getTrafficType());
         
         sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
-
+        
         return customSearch(sc, null);
     }
 }

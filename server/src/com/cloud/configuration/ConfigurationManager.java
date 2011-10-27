@@ -117,11 +117,12 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param zoneType
      * @param allocationState
      * @param networkDomain TODO
+     * @param isSecurityGroupEnabled TODO
      * @return
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState, String networkDomain);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled);
 
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -177,7 +178,6 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param networkRate TODO
 	 * @param serviceProviderMap TODO
 	 * @param isDefault TODO
-	 * @param isSecurityGroupEnabled TODO
 	 * @param type TODO
 	 * @param systemOnly TODO
 	 * @param id
@@ -185,7 +185,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type, boolean systemOnly);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.Type type, boolean systemOnly);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     

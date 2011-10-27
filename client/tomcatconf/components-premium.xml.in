@@ -30,8 +30,7 @@
             <adapter name="ExternalDhcp" class="com.cloud.network.element.ExternalDhcpElement"/>
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
             <adapter name="ElasticLoadBalancer" class="com.cloud.network.element.ElasticLoadBalancerElement"/>
-            
-           
+            <adapter name="SecurityGroup" class="com.cloud.network.element.SecurityGroupElement"/>
         </adapters>
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>

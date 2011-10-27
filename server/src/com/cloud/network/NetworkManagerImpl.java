@@ -826,6 +826,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         defaultDirectNetworkOfferingProviders.put(Service.Dns, defaultProviders);
         defaultDirectNetworkOfferingProviders.put(Service.UserData, defaultProviders);
         
+        
+        Map<Network.Service, Set<Network.Provider>> defaultDirectBasicZoneNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.UserData, defaultProviders);
+        Set<Provider> sgProviders = new HashSet<Provider>();
+        sgProviders.add(Provider.SecurityGroupProvider);
+        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
+        
         Map<Network.Service, Set<Network.Provider>> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
         defaultProviders.add(Network.Provider.VirtualRouter);
@@ -845,19 +854,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //check that offering already exists
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, true, Network.Type.Shared, true);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.Type.Shared, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, false, Network.Type.Isolated, false);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, Network.Type.Isolated, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultDirectNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, false, Network.Type.Shared, false);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.Type.Shared, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1050,7 +1059,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
-                        predefined.isSecurityGroupEnabled(), (domainId != null), predefined.getNetworkDomain(), offering.getType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+                        (domainId != null), predefined.getNetworkDomain(), offering.getType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
                 vo.setTags(tags);
                 networks.add(_networksDao.persist(vo, vo.getType() == Network.Type.Isolated));
 
@@ -1149,7 +1158,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             nics.add(vo);
 
             Integer networkRate = getNetworkRate(config.getId(), vm.getId());
-            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate));
+            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network.first())));
         }
 
         if (nics.size() != networks.size()) {
@@ -1397,7 +1406,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 URI isolationUri = nic.getIsolationUri();
 
-                profile = new NicProfile(nic, network, broadcastUri, isolationUri, networkRate);
+                profile = new NicProfile(nic, network, broadcastUri, isolationUri, networkRate, isSecurityGroupSupportedInNetwork(network));
                 guru.reserve(profile, network, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setAddressFormat(profile.getFormat());
@@ -1416,7 +1425,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 updateNic(nic, network.getId(), 1);
             } else {
-                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
+                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network));
                 guru.updateNicProfile(profile, network);
                 nic.setState(Nic.State.Reserved);
                 updateNic(nic, network.getId(), 1);
@@ -1428,7 +1437,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 element.prepare(network, profile, vmProfile, dest, context);
             }
-            profile.setSecurityGroupEnabled(network.isSecurityGroupEnabled());
+            
+            profile.setSecurityGroupEnabled(isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup));
             guru.updateNicProfile(profile, network);
             vmProfile.addNic(profile);
         }
@@ -1442,7 +1452,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
-            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network));
             guru.updateNicProfile(profile, network);
             vm.addNic(profile);
         }
@@ -1459,7 +1469,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     NetworkGuru guru = _networkGurus.get(network.getGuruName());
                     nic.setState(Nic.State.Releasing);
                     _nicDao.update(nic.getId(), nic);
-                    NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null);
+                    NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, isSecurityGroupSupportedInNetwork(network));
                     if (guru.release(profile, vmProfile, nic.getReservationId())) {
                         applyProfileToNicForRelease(nic, profile);
                         nic.setState(Nic.State.Allocated);
@@ -1493,7 +1503,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
                 NetworkGuru guru = _networkGurus.get(network.getGuruName());
-                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }
@@ -1595,7 +1605,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             nic.setState(Nic.State.Deallocating);
             _nicDao.update(nic.getId(), nic);
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            NicProfile profile = new NicProfile(nic, network, null, null, null);
+            NicProfile profile = new NicProfile(nic, network, null, null, null, isSecurityGroupSupportedInNetwork(network));
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             guru.deallocate(network, profile, vm);
             _nicDao.remove(nic.getId());
@@ -1876,7 +1886,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null, physicalNetwork.getId());
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
-        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
 
         if (cidr != null && gateway != null) {
             userNetwork.setCidr(cidr);
@@ -3420,8 +3429,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOffering oldNetworkOffering = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
         NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
         
-        //security group property should be the same
-        if (oldNetworkOffering.isSecurityGroupEnabled() != newNetworkOffering.isSecurityGroupEnabled()) {
+        //security group service should be the same
+        if (isServiceSupportedByNetworkOffering(oldNetworkOfferingId, Service.SecurityGroup) != isServiceSupportedByNetworkOffering(newNetworkOfferingId, Service.SecurityGroup)) {
             s_logger.debug("Offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different securityGroupProperty, can't upgrade");
             return false;
         }
@@ -3506,6 +3515,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         int vnetStart = 0;
         int vnetEnd = 0;
         if (vnetRange != null) {
+            
+            //Verify zone type
+            if (zone.getNetworkType() == NetworkType.Basic && vnetRange != null) {
+                vnetRange = null;
+            }
+            
             String[] tokens = vnetRange.split("-");
             try {
                 vnetStart = Integer.parseInt(tokens[0]);
@@ -3969,12 +3984,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public List<Long> listNetworkOfferingsForUpgrade(long networkId) {
-        
+        List<Long> offeringsToReturn = new ArrayList<Long>();
         NetworkOffering originalOffering = _configMgr.getNetworkOffering(getNetwork(networkId).getNetworkOfferingId());
+        
+        boolean securityGroupSupportedByOriginalOff = isServiceSupportedByNetworkOffering(originalOffering.getId(), Service.SecurityGroup);
+       
+        //security group supported property should be the same
         
         List<Long> offerings = _networkOfferingDao.getOfferingIdsToUpgradeFrom(originalOffering);
         
-        return offerings;
+        for (Long offeringId : offerings) {
+            if (isServiceSupportedByNetworkOffering(offeringId, Service.SecurityGroup) == securityGroupSupportedByOriginalOff) {
+                offeringsToReturn.add(offeringId);
+            }
+        }
+        
+        return offeringsToReturn;
     }
     
     
@@ -4169,5 +4194,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
     
+    @Override
+    public boolean isSecurityGroupSupportedInNetwork(Network network) {
+        boolean supported = isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup);
+        
+        return supported;
+    }
 
 }

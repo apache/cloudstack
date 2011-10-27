@@ -38,8 +38,6 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is supported")
     private boolean isSecurityGroupEnabled;
 
-
-
     @Override
     public Long getObjectId() {
         return getId();

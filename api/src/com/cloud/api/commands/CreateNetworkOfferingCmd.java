@@ -97,9 +97,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
     
-    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true is security group is enabled for the network offering")
-    private Boolean securityGroupEnabled;
-    
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network offering: Shared or Isolated")
     private String type;
 
@@ -205,10 +202,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         }
         
         return serviceProviderMap;
-    }
-
-    public Boolean getSecurityGroupEnabled() {
-        return securityGroupEnabled == null ? false : securityGroupEnabled;
     }
 
     /////////////////////////////////////////////////////

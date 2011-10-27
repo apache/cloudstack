@@ -29,7 +29,6 @@ import com.cloud.api.commands.ConfigureDhcpElementCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -45,13 +44,11 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterElementsDao;
+import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.element.DhcpElementService;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.org.Cluster;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
@@ -126,7 +123,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
             //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
             Long podId = dest.getPod().getId();
             DataCenter dc = dest.getDataCenter();
-            boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || network.isSecurityGroupEnabled()) && network.getTrafficType() == TrafficType.Guest;
+            boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) && network.getTrafficType() == TrafficType.Guest;
             if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
                 List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
                 routers.addAll(allRunningRoutersOutsideThePod);

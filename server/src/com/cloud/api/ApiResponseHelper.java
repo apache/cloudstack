@@ -2109,7 +2109,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setIsSecurityGroupEnabled(offering.isSecurityGroupEnabled());
         if (offering.getType() != null) {
             response.setType(offering.getType().toString());
         }
@@ -2190,7 +2189,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
 
-        response.setIsSecurityGroupEnabled(network.isSecurityGroupEnabled());
         response.setTags(network.getTags());
 
         // populate capability

@@ -424,7 +424,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null);
+            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork));
             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
@@ -2079,7 +2079,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
             }
 
-            if (!network.isSecurityGroupEnabled()) {
+            if (!_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
                 throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
             }
 
@@ -2096,11 +2096,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
-                if (network.isSecurityGroupEnabled() && networkIdList.size() > 1) {
+                boolean isSecurityGroupEnabled = _networkMgr.isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup);
+                if (isSecurityGroupEnabled && networkIdList.size() > 1) {
                     throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
                 }
 
-                if (network.getTrafficType() != TrafficType.Guest || network.getType() != Network.Type.Shared || (network.getType() == Network.Type.Shared && !network.isSecurityGroupEnabled())) {
+                if (network.getTrafficType() != TrafficType.Guest || network.getType() != Network.Type.Shared || (network.getType() == Network.Type.Shared && !isSecurityGroupEnabled)) {
                     throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
                 }
 

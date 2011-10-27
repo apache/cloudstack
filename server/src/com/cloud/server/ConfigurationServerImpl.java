@@ -35,9 +35,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -838,6 +840,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultDirectNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
         defaultDirectNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
         
+        Map<Network.Service, Network.Provider> defaultDirectGuestNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultDirectGuestNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
+        defaultDirectGuestNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
+        defaultDirectGuestNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        defaultDirectGuestNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
+        
         Map<Network.Service, Network.Provider> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultVirtualNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultVirtualNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -853,14 +861,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "System-Guest-Network", 
                 TrafficType.Guest, 
                 true, false, null, null, null, true, 
-                Availability.Optional, null, true, Network.Type.Shared);
+                Availability.Optional, null, Network.Type.Shared);
         
         guestNetworkOffering.setState(NetworkOffering.State.Enabled);
 
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
-        for (Service service : defaultDirectNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(guestNetworkOffering.getId(), service, defaultDirectNetworkOfferingProviders.get(service));
+        for (Service service : defaultDirectGuestNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(guestNetworkOffering.getId(), service, defaultDirectGuestNetworkOfferingProviders.get(service));
             _offeringServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -870,7 +878,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Virtual Vlan", 
                 TrafficType.Guest, 
                 false, false, null, null, null, true, 
-                Availability.Required, null, false, Network.Type.Isolated);
+                Availability.Required, null, Network.Type.Isolated);
         
         defaultGuestNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
@@ -887,7 +895,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Direct", 
                 TrafficType.Guest, 
                 false, true, null, null, null, true, 
-                Availability.Optional, null, false, Network.Type.Shared);
+                Availability.Optional, null, Network.Type.Shared);
         
         defaultGuestDirectNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);

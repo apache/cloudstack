@@ -121,6 +121,9 @@ public class DataCenterVO implements DataCenter {
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
     
+    @Column(name="is_security_group_enabled")
+    boolean securityGroupEnabled;
+    
     @Override
     public String getDnsProvider() {
         return dnsProvider;
@@ -167,12 +170,12 @@ public class DataCenterVO implements DataCenter {
     }
     
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix);
+        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -184,6 +187,8 @@ public class DataCenterVO implements DataCenter {
         this.domainId = domainId;
         this.networkType = zoneType;
         this.allocationState = Grouping.AllocationState.Enabled;
+        this.securityGroupEnabled = securityGroupEnabled;
+        
         
         if (zoneType == NetworkType.Advanced) {
             loadBalancerProvider = Provider.VirtualRouter.getName();

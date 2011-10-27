@@ -47,7 +47,6 @@ public class NetworkProfile implements Network {
     private String reservationId;
     private boolean isDefault;
     private String networkDomain;
-    private boolean isSecurityGroupEnabled;
     private List<String> tags;
     private Network.Type type;
     private boolean isShared;
@@ -72,7 +71,6 @@ public class NetworkProfile implements Network {
         this.isDefault = network.isDefault();
         this.networkDomain = network.getNetworkDomain();
         this.domainId = network.getDomainId();
-        this.isSecurityGroupEnabled = network.isSecurityGroupEnabled();
         this.type = network.getType();
         this.isShared = network.getIsShared();
         this.physicalNetworkId = network.getPhysicalNetworkId();
@@ -191,11 +189,6 @@ public class NetworkProfile implements Network {
     @Override
     public long getDomainId() {
         return domainId;
-    }
-
-    @Override
-    public boolean isSecurityGroupEnabled() {
-        return isSecurityGroupEnabled;
     }
     
     @Override

@@ -78,7 +78,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         // this guru handles only non-system network with type=Shared and serviceNat service disabled
         //TODO - after broadCastDomainType + physical network are introduced, don't rely on network type of the dc
         if (dc.getNetworkType() == NetworkType.Advanced && offering.getType() == Network.Type.Shared && !_networkMgr.isServiceSupportedByNetworkOffering(offering.getId(), Service.SourceNat)&& offering.getTrafficType() == TrafficType.Guest) {
-            if (offering.isSecurityGroupEnabled()) {
+            if (_networkMgr.isServiceSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup)) {
                 return true;
             } else if (!offering.isSystemOnly()) {
                 return true;
@@ -110,8 +110,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
             }
 
-            config.setSecurityGroupEnabled(userSpecified.isSecurityGroupEnabled());
-
             if (userSpecified.getCidr() != null) {
                 config.setCidr(userSpecified.getCidr());
                 config.setGateway(userSpecified.getGateway());
@@ -128,7 +126,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             
         }
 
-        if (config.isSecurityGroupEnabled()) {
+        boolean isSecurityGroupEnabled = _networkMgr.isServiceSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
+        if (isSecurityGroupEnabled) {
             config.setName("SecurityGroupEnabledNetwork");
             config.setDisplayText("SecurityGroupEnabledNetwork");
         }

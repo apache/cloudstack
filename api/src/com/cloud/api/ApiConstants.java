@@ -153,7 +153,6 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
     public static final String SECURITY_GROUP_ID = "securitygroupid";
-    public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
@@ -283,4 +282,5 @@ public class ApiConstants {
     public static final String SERVICE_NAME = "servicename";
     public static final String DHCP_RANGE = "dhcprange";
     public static final String UUID = "uuid";
+    public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
 }

@@ -68,9 +68,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list netowrk offerings available for network creation in specific zone")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="list network offerings that have security group feature enabled")
-    private Boolean securityGroupEnabled;
-    
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
     private String state;
     
@@ -118,10 +115,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public Boolean getSecurityGroupEnabled() {
-        return securityGroupEnabled;
     }
 
     public String getState() {

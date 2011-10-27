@@ -62,9 +62,6 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
     
-    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")
-    private Boolean isSecurityGroupEnabled;
-    
     @SerializedName(ApiConstants.STATE) @Param(description="state of the network offering. Can be Disabled/Enabled/Inactive")
     private String state;
     
@@ -120,10 +117,6 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setNetworkRate(Integer networkRate) {
         this.networkRate = networkRate;
-    }
-
-    public void setIsSecurityGroupEnabled(Boolean isSecurityGroupEnabled) {
-        this.isSecurityGroupEnabled = isSecurityGroupEnabled;
     }
 
     public void setServices(List<ServiceResponse> services) {

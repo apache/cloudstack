@@ -1311,7 +1311,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, String allocationStateStr, String networkDomain) {
+            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled) {
 
         // checking the following params outside checkzoneparams method as we do not use these params for updatezone
         // hence the method below is generic to check for common params
@@ -1336,7 +1336,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
@@ -1386,7 +1386,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
-                        userNetwork.setSecurityGroupEnabled(offering.isSecurityGroupEnabled());
                     } else {
                         continue;
                     }
@@ -1415,6 +1414,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean isBasic = false;
         String allocationState = cmd.getAllocationState();
         String networkDomain = cmd.getDomain();
+        boolean isSecurityGroupEnabled = cmd.getSecuritygroupenabled();
         
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
@@ -1428,12 +1428,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
 
-        /*Guest cidr is required for Advanced zone creation; error out when the parameter specified for Basic zone
-        if (zoneType == NetworkType.Advanced && guestCidr == null && !securityGroupEnabled) {
+        //Guest cidr is required for Advanced zone creation; error out when the parameter specified for Basic zone
+        if (zoneType == NetworkType.Advanced && guestCidr == null && !isSecurityGroupEnabled) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is required for Advanced zone creation");
         } else if (zoneType == NetworkType.Basic && guestCidr != null) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
-        }*/
+        }
 
         DomainVO domainVO = null;
 
@@ -1445,16 +1445,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             domainVO = _domainDao.findById(domainId);
         }
 
-        /* Verify zone type
-        if (zoneType == NetworkType.Basic && vnetRange != null) {
-            vnetRange = null;
+        if (zoneType == NetworkType.Basic) {
+            isSecurityGroupEnabled = true;
         }
 
-        if (zoneType == NetworkType.Basic) {
-            securityGroupEnabled = true;
-        }*/
-
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain);
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain, isSecurityGroupEnabled);
     }
 
     @Override
@@ -1904,7 +1899,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Vlan doesn't match vlan of the network");
         }
 
-        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || network.isSecurityGroupEnabled()) {
+        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || zone.isSecurityGroupEnabled()) {
             if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
                 throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
             }
@@ -2714,7 +2709,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
-        Boolean isSecurityGroupEnabled = cmd.getSecurityGroupEnabled();
+
 
         Integer networkRate = cmd.getNetworkRate();
 
@@ -2820,19 +2815,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, isSecurityGroupEnabled, type, false);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, type, false);
     }
 
     @Override @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, 
-            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, boolean isSecurityGroupEnabled, Network.Type type, boolean systemOnly) {
+            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.Type type, boolean systemOnly) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, isSecurityGroupEnabled, type);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -2870,7 +2865,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object specifyVlan = cmd.getSpecifyVlan();
         Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
-        Object sgEnabled = cmd.getSecurityGroupEnabled();
         Object state = cmd.getState();
         Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
@@ -2925,10 +2919,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         if (state != null) {
             sc.addAnd("state", SearchCriteria.Op.EQ, state);
-        }
-        
-        if (sgEnabled != null) {
-            sc.addAnd("securityGroupEnabled", SearchCriteria.Op.EQ, sgEnabled);
         }
 
         if (zone != null) {
@@ -3005,7 +2995,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String name = cmd.getNetworkOfferingName();
         String availabilityStr = cmd.getAvailability();
         Availability availability = null;
-        Boolean sgEnabled = cmd.getSecurityGroupEnabled();
         String state = cmd.getState();
         UserContext.current().setEventDetails(" Id: "+id);
         
@@ -3060,13 +3049,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //All parameters below can be updated only when there are no networks using this offering
         Long networks = _networkDao.getNetworkCountByOfferingId(id);
         boolean networksExist = (networks != null && networks.longValue() > 0);
-        
-        if (sgEnabled != null) {
-            if (networksExist) {
-                throw new InvalidParameterValueException("Unable to reset securityGroupEnabled property as there are existing networks using this network offering");
-            }
-            offering.setSecurityGroupEnabled(sgEnabled);
-        }
         
         //configure service provider map
         Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();

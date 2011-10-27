@@ -143,9 +143,6 @@ public class NetworkVO implements Network {
     @Column(name="is_default")
     boolean isDefault;
 
-    @Column(name="is_security_group_enabled")
-    boolean securityGroupEnabled;
-
     @ElementCollection(targetClass = String.class, fetch=FetchType.EAGER)
     @Column(name="tag")
     @CollectionTable(name="network_tags", joinColumns=@JoinColumn(name="network_id"))
@@ -183,7 +180,7 @@ public class NetworkVO implements Network {
         this.id = -1;
     }
 
-    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, Type type, boolean isShared, long dcId, Long physicalNetworkId) {
         this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, isDefault,isDomainSpecific, networkDomain, type, isShared, dcId, physicalNetworkId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
@@ -191,7 +188,6 @@ public class NetworkVO implements Network {
         this.broadcastDomainType = that.getBroadcastDomainType();
         this.guruName = guruName;
         this.state = that.getState();
-        this.securityGroupEnabled = isSecurityGroupEnabled;
         if (state == null) {
             state = State.Allocated;
         }
@@ -428,15 +424,6 @@ public class NetworkVO implements Network {
     @Override
     public boolean isDefault() {
         return isDefault;
-    }
-
-    @Override
-    public boolean isSecurityGroupEnabled() {
-        return securityGroupEnabled;
-    }
-
-    public void setSecurityGroupEnabled(boolean enabled) {
-        this.securityGroupEnabled = enabled;
     }
 
     public void setShared(boolean isShared) {

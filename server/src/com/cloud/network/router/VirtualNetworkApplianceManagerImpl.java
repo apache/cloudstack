@@ -1253,7 +1253,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterDeployment plan = null;
         DataCenter dc = dest.getDataCenter();
         long dcId = dc.getId();
-        boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || guestNetwork.isSecurityGroupEnabled()) && guestNetwork.getTrafficType() == TrafficType.Guest;
+        boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
         DomainRouterVO router = null;
         
         List<DomainRouterVO> routers = null;

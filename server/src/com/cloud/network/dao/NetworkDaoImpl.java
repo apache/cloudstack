@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
@@ -31,6 +32,8 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -60,6 +63,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
+    NetworkOfferingServiceMapDaoImpl _ntwkOffSvcMap = ComponentLocator.inject(NetworkOfferingServiceMapDaoImpl.class);
 
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
@@ -112,7 +116,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         ZoneSecurityGroupSearch = createSearchBuilder();
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
-        ZoneSecurityGroupSearch.and("securityGroup", ZoneSecurityGroupSearch.entity().isSecurityGroupEnabled(), Op.EQ);
+        SearchBuilder<NetworkOfferingServiceMapVO> join1 = _ntwkOffSvcMap.createSearchBuilder();
+        join1.and("service", join1.entity().getService(), Op.EQ);
+        ZoneSecurityGroupSearch.join("services", join1, ZoneSecurityGroupSearch.entity().getNetworkOfferingId(), join1.entity().getNetworkOfferingId(), JoinBuilder.JoinType.INNER);
         ZoneSecurityGroupSearch.done();
         
         CountByOfferingId = createSearchBuilder(Long.class);
@@ -127,7 +133,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         PhysicalNetworkSearch.done();
         
         securityGroupSearch = createSearchBuilder();
-        securityGroupSearch.and("isSgEnabled", securityGroupSearch.entity().isSecurityGroupEnabled(), SearchCriteria.Op.EQ);
+        SearchBuilder<NetworkOfferingServiceMapVO> join3 = _ntwkOffSvcMap.createSearchBuilder();
+        join3.and("service", join3.entity().getService(), Op.EQ);
+        securityGroupSearch.join("services", join3, securityGroupSearch.entity().getNetworkOfferingId(), join3.entity().getNetworkOfferingId(), JoinBuilder.JoinType.INNER);
         securityGroupSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
@@ -267,7 +275,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        sc.setParameters("securityGroup", true);
+        sc.setJoinParameters("services", "service", Service.SecurityGroup.toString());
         return search(sc, null);
     }
 
@@ -344,7 +352,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     public List<NetworkVO> listSecurityGroupEnabledNetworks() {
         SearchCriteria<NetworkVO> sc = securityGroupSearch.create();
-        sc.setParameters("isSgEnabled", true);
+        sc.setJoinParameters("services", "service", Service.SecurityGroup.toString());
         return listBy(sc);
     }
 

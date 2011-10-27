@@ -88,9 +88,6 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
     private String state;
-    
-    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true is security group is enabled for the network offering")
-    private Boolean securityGroupEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -170,10 +167,6 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     public String getState() {
         return state;
-    }
-
-    public Boolean getSecurityGroupEnabled() {
-        return securityGroupEnabled;
     }
 
     /////////////////////////////////////////////////////

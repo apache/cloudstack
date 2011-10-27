@@ -88,13 +88,9 @@ public interface NetworkOffering {
 
     String getUniqueName();
 
-    boolean isSecurityGroupEnabled();
-
     void setState(State state);
 
     State getState();
-
-    void setSecurityGroupEnabled(boolean securityGroupEnabled);
-
+    
     Type getType();
 }

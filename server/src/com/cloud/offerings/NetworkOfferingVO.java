@@ -90,10 +90,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
-    
-    @Column(name="is_security_group_enabled")
-    boolean securityGroupEnabled;
-    
+
     @Column(name="type")
     @Enumerated(value=EnumType.STRING)
     Network.Type type;
@@ -189,11 +186,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     public String getUniqueName() {
         return uniqueName;
     }
-
-    @Override
-    public boolean isSecurityGroupEnabled() {
-        return securityGroupEnabled;
-    }
     
     @Override
     public void setState(State state) {
@@ -204,18 +196,13 @@ public class NetworkOfferingVO implements NetworkOffering {
     public State getState() {
         return state;
     }
-   
-    @Override
-    public void setSecurityGroupEnabled(boolean securityGroupEnabled) {
-        this.securityGroupEnabled = securityGroupEnabled;
-    }
     
     @Override
     public Network.Type getType() {
         return type;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, String tags, boolean isSecurityGroupEnabled, Network.Type type) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, String tags, Network.Type type) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -228,7 +215,6 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.availability = availability;
         this.uniqueName = name;
         this.tags = tags;
-        this.securityGroupEnabled = isSecurityGroupEnabled;
         this.type = type;
     }
     
@@ -241,7 +227,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, false, null);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null);
         this.state = State.Enabled;
         this.type = Type.Shared;
     }

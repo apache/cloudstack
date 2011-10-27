@@ -55,6 +55,7 @@ public interface Network extends ControlledEntity {
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat");
+        public static final Service SecurityGroup = new Service("SecurityGroup");
 
         private String name;
         private Capability[] caps;
@@ -118,9 +119,11 @@ public interface Network extends ControlledEntity {
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
         public static final Provider RedundantVirtualRouter = new Provider("RedundantVirtualRouter", false);
-        public static final Provider defaultProvider = VirtualRouter;
-
+        public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
         public static final Provider None = new Provider("None", false);
+        
+        //the default provider
+        public static final Provider defaultProvider = VirtualRouter;
 
         private String name;
         private boolean isExternal;
@@ -265,8 +268,6 @@ public interface Network extends ControlledEntity {
     boolean isDefault();
 
     String getNetworkDomain();
-
-    boolean isSecurityGroupEnabled();
 
     List<String> getTags();
 
