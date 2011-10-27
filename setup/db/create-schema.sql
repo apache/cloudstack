@@ -1738,17 +1738,8 @@ CREATE TABLE `cloud`.`virtual_router_elements` (
   `source_nat_provided` int(1) NOT NULL,
   `load_balance_provided` int(1) NOT NULL,
   `vpn_provided` int(1) NOT NULL,
-  `service_offering_id` bigint unsigned NOT NULL,
-  `dhcp_range` varchar(255),
-  `default_domain_name` varchar(255),
-  `dns1` varchar(255),
-  `dns2` varchar(255),
-  `internal_dns1` varchar(255),
-  `internal_dns2` varchar(255),
-  `gateway_ip` varchar(255),
   `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_virtual_router_elements__service_offering_id` FOREIGN KEY `fk_virtual_router_elements__service_offering_id` (`service_offering_id`) REFERENCES `service_offering`(`id`)
+  PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

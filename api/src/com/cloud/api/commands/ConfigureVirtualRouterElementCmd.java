@@ -76,27 +76,6 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is vpn service would be enabled")
     private Boolean vpnService;
     
-    @Parameter(name=ApiConstants.DHCP_RANGE, type=CommandType.STRING, description="the dhcp range for the DHCP service ")
-    private String dhcpRange;
-
-    @Parameter(name=ApiConstants.DNS1, type=CommandType.STRING, description="the first DNS")
-    private String dns1;
-
-    @Parameter(name=ApiConstants.DNS2, type=CommandType.STRING, description="the second DNS")
-    private String dns2;
-
-    @Parameter(name=ApiConstants.INTERNAL_DNS1, type=CommandType.STRING, description="the first internal DNS")
-    private String internalDns1;
-
-    @Parameter(name=ApiConstants.INTERNAL_DNS2, type=CommandType.STRING, description="the second internal DNS")
-    private String internalDns2;
-
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway ip")
-    private String gateway;
-    
-    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="the gateway ip")
-    private String domainName;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -135,34 +114,6 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     public Boolean getVpnService() {
         return vpnService;
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-    
-    public String getDhcpRange() {
-        return dhcpRange;
-    }
-
-    public String getDns1() {
-        return dns1;
-    }
-
-    public String getDns2() {
-        return dns2;
-    }
-
-    public String getInternalDns1() {
-        return internalDns1;
-    }
-
-    public String getInternalDns2() {
-        return internalDns2;
-    }
-
-    public String getGateway() {
-        return gateway;
     }
 
     /////////////////////////////////////////////////////

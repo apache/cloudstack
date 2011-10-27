@@ -7,4 +7,5 @@ public interface DhcpElementService extends PluggableService{
     boolean configure(ConfigureDhcpElementCmd cmd);
     boolean addElement(Long nspId, String uuid);
     Long getIdByUUID(String uuid);
+    boolean isReady(String uuid);
 }

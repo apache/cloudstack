@@ -97,31 +97,21 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
             s_logger.trace("Can't find element with UUID " + cmd.getUUID());
             return false;
         }
-        if (cmd.getDhcpService() && cmd.getDhcpRange() == null) {
+        if (cmd.getDhcpService() == null) {
             s_logger.trace("DHCP service is provided, but no specific DHCP range!");
             return false;
         }
-        if (cmd.getDnsService() && (cmd.getDns1() == null || cmd.getDomainName() == null)) {
+        if (cmd.getDnsService() == null) {
             s_logger.trace("DNS service is provided, but no domain name or dns server!");
             return false;
         }
-        if (cmd.getGatewayService() && cmd.getGateway() == null) {
+        if (cmd.getGatewayService() == null) {
             s_logger.trace("Gateway service is provided, but no gateway IP specific!");
             return false;
         }
         element.setIsDhcpProvided(cmd.getDhcpService());
-        element.setDhcpRange(cmd.getDhcpRange());
-        
         element.setIsDnsProvided(cmd.getDnsService());
-        element.setDefaultDomainName(cmd.getDomainName());
-        element.setDns1(cmd.getDns1());
-        element.setDns2(cmd.getDns2());
-        element.setInternalDns1(cmd.getInternalDns1());
-        element.setInternalDns2(cmd.getInternalDns2());
-        
         element.setIsGatewayProvided(cmd.getGatewayService());
-        element.setGatewayIp(cmd.getGateway());
-        
         element.setIsFirewallProvided(cmd.getFirewallService());
         element.setIsLoadBalanceProvided(cmd.getLbService());
         element.setIsSourceNatProvided(cmd.getSourceNatService());
@@ -135,11 +125,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean addElement(Long nspId, String uuid) {
-        long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
-        if (serviceOfferingId == 0) {
-            return false;
-        }
-        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, serviceOfferingId, false, VirtualRouterElementsType.RedundantVirtualRouterElement, 
+        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, VirtualRouterElementsType.RedundantVirtualRouterElement, 
                                         false, false, false, false, false, false, false);
         _vrElementsDao.persist(element);
         return true;

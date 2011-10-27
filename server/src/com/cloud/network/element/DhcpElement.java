@@ -220,29 +220,16 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
             s_logger.trace("Can't find element with UUID " + cmd.getUUID());
             return false;
         }
-        if (cmd.getDhcpService() && cmd.getDhcpRange() == null) {
-            s_logger.trace("DHCP service is provided, but no specific DHCP range!");
-            return false;
-        }
-        if (cmd.getDnsService() && (cmd.getDns1() == null || cmd.getDomainName() == null)) {
-            s_logger.trace("DNS service is provided, but no domain name or dns server!");
-            return false;
-        }
         element.setIsDhcpProvided(cmd.getDhcpService());
-        element.setDhcpRange(cmd.getDhcpRange());
-        
         element.setIsDnsProvided(cmd.getDnsService());
-        element.setDefaultDomainName(cmd.getDomainName());
-        element.setDns1(cmd.getDns1());
-        element.setDns2(cmd.getDns2());
-        element.setInternalDns1(cmd.getInternalDns1());
-        element.setInternalDns2(cmd.getInternalDns2());
         
         element.setIsGatewayProvided(false);
         element.setIsFirewallProvided(false);
         element.setIsLoadBalanceProvided(false);
         element.setIsSourceNatProvided(false);
         element.setIsVpnProvided(false);
+        
+        element.setIsReady(true);
         
         _vrElementsDao.persist(element);
         
@@ -255,7 +242,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
         if (serviceOfferingId == 0) {
             return false;
         }
-        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, serviceOfferingId, false, VirtualRouterElementsType.DhcpElement, 
+        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, VirtualRouterElementsType.DhcpElement, 
                                         false, false, false, false, false, false, false);
         _vrElementsDao.persist(element);
         return true;
@@ -268,5 +255,14 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, Pass
             return new Long(0);
         }
         return element.getId();
+    }
+    
+    @Override
+    public boolean isReady(String uuid) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(uuid);
+        if (element == null) {
+            return false;
+        }
+        return element.getIsReady();
     }
 }
