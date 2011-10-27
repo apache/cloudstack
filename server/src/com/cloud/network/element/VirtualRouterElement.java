@@ -357,8 +357,16 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            //FIXME - Sheng, for your redundant router you have to destroy the domR here if clenaup=true - just the way you did in restart() method
             result = result && _routerMgr.stop(router, false, context.getCaller(), context.getAccount()) != null;
+            if (cleanup) {
+                if (!result) {
+                    s_logger.warn("Failed to stop virtual router element " + router + ", but would try to process clean up anyway.");
+                }
+                result = (_routerMgr.destroyRouter(router.getId()) != null);
+                if (!result) {
+                    s_logger.warn("Failed to clean up virtual router element " + router);
+                }
+            }
         }
         return result;
     }
