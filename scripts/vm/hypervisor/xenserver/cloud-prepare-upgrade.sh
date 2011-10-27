@@ -33,15 +33,15 @@ done
 
 fake_pv_driver() {
   local vm=$1
-  res=$(xe vm-param-get uuid=$vm param-name=PV-drivers-version)
-  if [ ! "$res" = "<not in database>" ]; then
-    return 1
-  fi
-  res=$(xe vm-param-get uuid=$vm param-name=HVM-boot-policy)
-  if [ ! -z $res ]; then
-    echo "Warning VM $vm is HVM, but PV driver is not installed, you may need to stop it manually"
-    return 0
-  fi
+  #res=$(xe vm-param-get uuid=$vm param-name=PV-drivers-version)
+  #if [ ! "$res" = "<not in database>" ]; then
+  #  return 1
+  #fi
+  #res=$(xe vm-param-get uuid=$vm param-name=HVM-boot-policy)
+  #if [ ! -z $res ]; then
+  #  echo "Warning VM $vm is HVM, but PV driver is not installed, you may need to stop it manually"
+  #  return 0
+  #fi
   host=$(xe vm-param-get uuid=$vm param-name=resident-on)
   xe host-call-plugin host-uuid=$host plugin=vmops fn=preparemigration args:uuid=$vm
 }
