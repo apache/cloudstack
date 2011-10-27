@@ -48,7 +48,7 @@ public class NetworkProfile implements Network {
     private boolean isDefault;
     private String networkDomain;
     private List<String> tags;
-    private Network.Type type;
+    private Network.GuestType guestType;
     private boolean isShared;
     private Long physicalNetworkId;
 
@@ -71,7 +71,7 @@ public class NetworkProfile implements Network {
         this.isDefault = network.isDefault();
         this.networkDomain = network.getNetworkDomain();
         this.domainId = network.getDomainId();
-        this.type = network.getType();
+        this.guestType = network.getGuestType();
         this.isShared = network.getIsShared();
         this.physicalNetworkId = network.getPhysicalNetworkId();
     }
@@ -192,8 +192,8 @@ public class NetworkProfile implements Network {
     }
     
     @Override
-    public Network.Type getType(){
-        return type;
+    public Network.GuestType getGuestType(){
+        return guestType;
     }
 
     @Override

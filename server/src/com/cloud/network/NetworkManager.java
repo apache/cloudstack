@@ -201,7 +201,7 @@ public interface NetworkManager extends NetworkService {
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 
-    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.Type type, Boolean isDefault);
+    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
     

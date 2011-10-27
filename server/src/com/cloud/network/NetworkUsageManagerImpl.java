@@ -214,7 +214,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
         AllocatedIpSearch.and("allocated", AllocatedIpSearch.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpSearch.and("dc", AllocatedIpSearch.entity().getDataCenterId(), Op.EQ);
         SearchBuilder<NetworkVO> networkJoin = _networksDao.createSearchBuilder();
-        networkJoin.and("type", networkJoin.entity().getType(), Op.EQ);
+        networkJoin.and("guestType", networkJoin.entity().getGuestType(), Op.EQ);
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
         
@@ -242,7 +242,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager {
     public List<IPAddressVO> listAllocatedDirectIps(long zoneId) {
         SearchCriteria<IPAddressVO> sc = AllocatedIpSearch.create();
         sc.setParameters("dc", zoneId);
-        sc.setJoinParameters("network", "type", Network.Type.Shared);
+        sc.setJoinParameters("network", "guestType", Network.GuestType.Shared);
         return _ipAddressDao.search(sc, null);
     }
 

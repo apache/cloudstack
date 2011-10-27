@@ -74,8 +74,8 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
     private Long networkId;
     
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="list network offerings by type: Shared or Isolated")
-    private String type;
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="list network offerings by guest type: Shared or Isolated")
+    private String guestIpType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -125,8 +125,8 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
         return networkId;
     }
 
-    public String getType() {
-        return type;
+    public String getGuestIpType() {
+        return guestIpType;
     }
 
     /////////////////////////////////////////////////////

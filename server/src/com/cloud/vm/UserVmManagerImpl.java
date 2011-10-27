@@ -2101,12 +2101,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
                 }
 
-                if (network.getTrafficType() != TrafficType.Guest || network.getType() != Network.Type.Shared || (network.getType() == Network.Type.Shared && !isSecurityGroupEnabled)) {
+                if (network.getTrafficType() != TrafficType.Guest || network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && !isSecurityGroupEnabled)) {
                     throw new InvalidParameterValueException("Can specify only Direct Guest Account specific networks when deploy vm in Security Group enabled zone");
                 }
 
                 // Perform account permission check
-                if (network.getType() != Network.Type.Shared) {
+                if (network.getGuestType() != Network.GuestType.Shared) {
                     // Check account permissions
                     List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
                     if (networkMap == null || networkMap.isEmpty()) {
@@ -2175,11 +2175,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // 2) If Availability=Optional, search for default networks for the account. If it's more than 1, throw an error.
             // If it's 0, and there are no default direct networks, create default Guest Virtual network
 
-            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndType(false, TrafficType.Guest, Network.Type.Isolated);
+            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndType(false, TrafficType.Guest, Network.GuestType.Isolated);
             PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
             if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
                 // get Virtual netowrks
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.Type.Isolated, true);
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated, true);
                 
 
                 if (virtualNetworks.isEmpty()) {
@@ -2238,7 +2238,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
 
                 // Perform account permission check
-                if (network.getType() != Network.Type.Shared) {
+                if (network.getGuestType() != Network.GuestType.Shared) {
                     List<NetworkVO> networkMap = _networkDao.listBy(owner.getId(), network.getId());
                     if (networkMap == null || networkMap.isEmpty()) {
                         throw new PermissionDeniedException("Unable to create a vm using network with id " + network.getId() + ", permission denied");
@@ -3334,7 +3334,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             for (NetworkVO network : zoneNetworks) { // get the default networks for the account
                 NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
                 if (!no.isSystemOnly()) {
-                    if (network.getType() == Network.Type.Shared || !_networkDao.listBy(oldAccount.getId(), network.getId()).isEmpty()) {
+                    if (network.getGuestType() == Network.GuestType.Shared || !_networkDao.listBy(oldAccount.getId(), network.getId()).isEmpty()) {
                         if (network.isDefault()) {
                             oldNetworks.add(network);
                         }
@@ -3344,7 +3344,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             for (NetworkVO oldNet: oldNetworks){
                 long networkOffering =  oldNet.getNetworkOfferingId();
                 PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.Type.Isolated, true);
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated, true);
                 if (virtualNetworks.isEmpty()) {
                     Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
                             null, null, null, newAccount, false, null, null, false, physicalNetwork);

@@ -65,8 +65,8 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.STATE) @Param(description="state of the network offering. Can be Disabled/Enabled/Inactive")
     private String state;
     
-    @SerializedName(ApiConstants.TYPE) @Param(description="type of the network offering, can be Shared or Isolated")
-    private String type;
+    @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="guest type of the network offering, can be Shared or Isolated")
+    private String guestIpType;
    
     @SerializedName("service") @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
@@ -127,7 +127,7 @@ public class NetworkOfferingResponse extends BaseResponse{
         this.state = state;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setGuestIpType(String type) {
+        this.guestIpType = type;
     }
 }

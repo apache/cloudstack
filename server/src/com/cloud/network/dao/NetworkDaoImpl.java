@@ -80,7 +80,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("datacenter", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
-        AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
+        AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);        
         AllFieldsSearch.done();
 
@@ -143,12 +143,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.Type type) {
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("account", accountId);
         if (type != null) {
-            sc.setParameters("type", type);
+            sc.setParameters("guestType", type);
         }
         return listBy(sc, null);
     }
@@ -320,9 +320,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public List<NetworkVO> listNetworksBy(boolean isShared) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         if (isShared) {
-            sc.setParameters("type", Network.Type.Shared);
+            sc.setParameters("guestType", Network.GuestType.Shared);
          } else {
-             sc.setParameters("type", Network.Type.Isolated);
+             sc.setParameters("guestType", Network.GuestType.Isolated);
          }
         
         return listBy(sc);

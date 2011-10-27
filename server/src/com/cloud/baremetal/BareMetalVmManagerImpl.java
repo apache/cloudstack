@@ -321,7 +321,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
             if (network == null) {
                 throw new InvalidParameterValueException("Unable to find network by id " + networkId);
             } else {
-                if (network.getType() != Network.Type.Shared) {
+                if (network.getGuestType() != Network.GuestType.Shared) {
                     //Check account permissions
                     List<NetworkVO> networkMap = _networkDao.listBy(accountId, networkId);
                     if (networkMap == null || networkMap.isEmpty()) {

@@ -39,7 +39,7 @@ import com.cloud.utils.fsm.StateMachine;
  */
 public interface Network extends ControlledEntity {
     
-    public enum Type {
+    public enum GuestType {
         Shared,
         Isolated
     }
@@ -271,7 +271,7 @@ public interface Network extends ControlledEntity {
 
     List<String> getTags();
 
-    Type getType();
+    GuestType getGuestType();
     
     boolean getIsShared();
 

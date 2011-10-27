@@ -283,4 +283,5 @@ public class ApiConstants {
     public static final String DHCP_RANGE = "dhcprange";
     public static final String UUID = "uuid";
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
+    public static final String GUEST_IP_TYPE = "guestiptype";
 }

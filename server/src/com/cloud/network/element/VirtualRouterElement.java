@@ -38,7 +38,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.Type;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
@@ -92,17 +92,17 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     @Inject ConfigurationDao _configDao;
     @Inject VirtualRouterElementsDao _vrElementsDao;
     
-    private boolean canHandle(Type networkType, long offeringId) {
-        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
+    private boolean canHandle(GuestType networkType, long offeringId) {
+        boolean result = (networkType == Network.GuestType.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
         if (!result) {
-            s_logger.trace("Virtual router element only takes care of type " + Network.Type.Isolated + " for provider " + getProvider().getName());
+            s_logger.trace("Virtual router element only takes care of type " + Network.GuestType.Isolated + " for provider " + getProvider().getName());
         }
         return result;
     }
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getType(), offering.getId())) {
+        if (!canHandle(guestConfig.getGuestType(), offering.getId())) {
             return false;
         }
         
@@ -116,7 +116,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -178,7 +178,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
     
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
-        if (canHandle(config.getType(), config.getNetworkOfferingId())) {
+        if (canHandle(config.getGuestType(), config.getNetworkOfferingId())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + config.getId());
@@ -197,7 +197,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
@@ -226,7 +226,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             return null;
         }
         
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             return _routerMgr.applyVpnUsers(network, users, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle applyVpnUsers command");
@@ -244,7 +244,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             return true;
         }
         
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             return _routerMgr.startRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle createVpn command");
@@ -262,7 +262,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             return true;
         }
         
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle removeVpn command");
@@ -272,7 +272,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
@@ -340,7 +340,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
-        if (canHandle(config.getType(), config.getNetworkOfferingId())) {
+        if (canHandle(config.getGuestType(), config.getNetworkOfferingId())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual router doesn't exist in the network " + config.getId());
@@ -439,7 +439,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
 
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());

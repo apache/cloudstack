@@ -726,7 +726,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         @Override
         public void run() {
             
-            final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, Network.Type.Isolated, mgmtSrvrId);
+            final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, Network.GuestType.Isolated, mgmtSrvrId);
             s_logger.debug("Found " + routers.size() + " running routers. ");
 
             for (DomainRouterVO router : routers) {
@@ -1351,7 +1351,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public List<DomainRouterVO> deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException, StorageUnavailableException,
             ConcurrentOperationException, ResourceUnavailableException {
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-        if (offering.isSystemOnly() || guestNetwork.getType() == Network.Type.Shared) {
+        if (offering.isSystemOnly() || guestNetwork.getGuestType() == Network.GuestType.Shared) {
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
         
@@ -1508,11 +1508,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" dnssearchorder=").append(domain_suffix);
         }
        
-        if (!network.isDefault() && network.getType() == Network.Type.Shared) {
+        if (!network.isDefault() && network.getGuestType() == Network.GuestType.Shared) {
             buf.append(" defaultroute=false");
 
             String virtualNetworkElementNicIP = _networkMgr.getIpOfNetworkElementInVirtualNetwork(network.getAccountId(), network.getDataCenterId());
-            if (network.getType() != Network.Type.Shared && virtualNetworkElementNicIP != null) {
+            if (network.getGuestType() != Network.GuestType.Shared && virtualNetworkElementNicIP != null) {
                 defaultDns1 = virtualNetworkElementNicIP;
             } else {
                 s_logger.debug("No Virtual network found for account id=" + network.getAccountId() + " so setting dns to the dns of the network id=" + network.getId());
@@ -1955,7 +1955,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (cmds.size() > 0) {
                 boolean podLevelException = false;
                 //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
-                if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getType() == Network.Type.Shared) {
+                if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared) {
                     podLevelException = true;
                 }
                 try {

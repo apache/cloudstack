@@ -29,7 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network;
-import com.cloud.network.Network.Type;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
@@ -91,9 +91,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name="type")
+    @Column(name="guest_type")
     @Enumerated(value=EnumType.STRING)
-    Network.Type type;
+    Network.GuestType guestType;
     
     @Override
     public String getDisplayText() {
@@ -198,11 +198,11 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
     
     @Override
-    public Network.Type getType() {
-        return type;
+    public Network.GuestType getGuestType() {
+        return guestType;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, String tags, Network.Type type) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, String tags, Network.GuestType guestType) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -215,7 +215,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.availability = availability;
         this.uniqueName = name;
         this.tags = tags;
-        this.type = type;
+        this.guestType = guestType;
     }
     
     public NetworkOfferingVO() {
@@ -229,7 +229,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO(String name, TrafficType trafficType) {
         this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null);
         this.state = State.Enabled;
-        this.type = Type.Shared;
     }
     
     @Override

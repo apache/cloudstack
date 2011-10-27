@@ -2109,8 +2109,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        if (offering.getType() != null) {
-            response.setType(offering.getType().toString());
+        if (offering.getGuestType() != null) {
+            response.setGuestIpType(offering.getGuestType().toString());
         }
         
         response.setState(offering.getState().name());

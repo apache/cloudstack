@@ -16,7 +16,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.Type;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.VirtualRouterElementsDao;
 import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
@@ -42,10 +42,10 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         return Provider.RedundantVirtualRouter;
     }
     
-    private boolean canHandle(Type networkType, long offeringId) {
-        boolean result = (networkType == Network.Type.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
+    private boolean canHandle(GuestType networkType, long offeringId) {
+        boolean result = (networkType == Network.GuestType.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
         if (!result) {
-            s_logger.trace("Virtual router element only takes care of networktype " + Network.Type.Isolated + " for provider " + getProvider().getName());
+            s_logger.trace("Virtual router element only takes care of networktype " + Network.GuestType.Isolated + " for provider " + getProvider().getName());
         }
         return result;
     }
@@ -53,7 +53,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getType(), offering.getId())) {
+        if (!canHandle(guestConfig.getGuestType(), offering.getId())) {
             return false;
         }
         
@@ -67,7 +67,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }

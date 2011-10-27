@@ -66,7 +66,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         
         TrafficTypeGuestTypeSearch = createSearchBuilder();
         TrafficTypeGuestTypeSearch.and("trafficType", TrafficTypeGuestTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.and("type", TrafficTypeGuestTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TrafficTypeGuestTypeSearch.and("guestType", TrafficTypeGuestTypeSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
         TrafficTypeGuestTypeSearch.and("isSystem", TrafficTypeGuestTypeSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         TrafficTypeGuestTypeSearch.done();
 
@@ -75,7 +75,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         UpgradeSearch.and("physicalNetworkId", UpgradeSearch.entity().getId(), Op.NEQ);
         UpgradeSearch.and("physicalNetworkId", UpgradeSearch.entity().isSystemOnly(), Op.EQ);
         UpgradeSearch.and("trafficType", UpgradeSearch.entity().getTrafficType(), Op.EQ);
-        UpgradeSearch.and("type", UpgradeSearch.entity().getType(), Op.EQ);
+        UpgradeSearch.and("guestType", UpgradeSearch.entity().getGuestType(), Op.EQ);
         UpgradeSearch.and("state", UpgradeSearch.entity().getState(), Op.EQ);
         UpgradeSearch.done();
     }
@@ -129,10 +129,10 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.Type type) {
+    public List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.GuestType type) {
         SearchCriteria<NetworkOfferingVO> sc = TrafficTypeGuestTypeSearch.create();
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("type", type);
+        sc.setParameters("guestType", type);
         sc.setParameters("isSystem", isSystem);
         return listBy(sc, null);
     }
@@ -155,7 +155,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
         
         //Type of the network should be the same
-        sc.addAnd("type", SearchCriteria.Op.EQ, originalOffering.getType());
+        sc.addAnd("guestType", SearchCriteria.Op.EQ, originalOffering.getGuestType());
         
         //Traffic types should be the same 
         sc.addAnd("trafficType", SearchCriteria.Op.EQ, originalOffering.getTrafficType());

@@ -40,7 +40,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.Type;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
@@ -56,12 +56,12 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	@Inject ExternalDhcpManager _dhcpMgr;
 	private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 	
-	private boolean canHandle(DeployDestination dest, TrafficType trafficType, Type networkType) {
+	private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
 		DataCenter dc = dest.getDataCenter();
 		Pod pod = dest.getPod();
 		
 		if ((pod != null && pod.getExternalDhcp()) && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
-				&& networkType == Network.Type.Shared) {
+				&& networkType == Network.GuestType.Shared) {
 			s_logger.debug("External DHCP can handle");
 			return true;
 		}
@@ -88,7 +88,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	@Override
 	public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-		if (!canHandle(dest, offering.getTrafficType(), network.getType())) {
+		if (!canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
 			return false;
 		}
 		return true;
@@ -98,7 +98,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
 			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 		Host host = dest.getHost();
-		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getType())) {
+		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
 			//BareMetalElement or DhcpElement handle this
 			return false;
 		}

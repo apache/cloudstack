@@ -97,8 +97,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
     
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network offering: Shared or Isolated")
-    private String type;
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, required=true, description="guest type of the network offering: Shared or Isolated")
+    private String guestIptype;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -176,8 +176,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return vpnService == null ? false : vpnService;
     }
 
-    public String getType() {
-        return type;
+    public String getGuestIpType() {
+        return guestIptype;
     }
 
     public Map<String, List<String>> getServiceProviders() {

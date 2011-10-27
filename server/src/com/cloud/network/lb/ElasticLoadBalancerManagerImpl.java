@@ -459,7 +459,7 @@ public class ElasticLoadBalancerManagerImpl implements
         try {
 
             NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-            if (offering.isSystemOnly() || guestNetwork.getType() == Network.Type.Shared) {
+            if (offering.isSystemOnly() || guestNetwork.getGuestType() == Network.GuestType.Shared) {
                 owner = _accountService.getSystemAccount();
             }
 
@@ -572,7 +572,7 @@ public class ElasticLoadBalancerManagerImpl implements
     @DB
     public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
         //TODO: this only works in the guest network. Handle the public network case also.
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndType(true, _frontendTrafficType, Network.Type.Shared);
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndType(true, _frontendTrafficType, Network.GuestType.Shared);
         if (offerings == null || offerings.size() == 0) {
             s_logger.warn("ELB: Could not find system offering for direct networks of type " + _frontendTrafficType);
             return null;
@@ -611,8 +611,8 @@ public class ElasticLoadBalancerManagerImpl implements
         NetworkVO network=_networkDao.findById(networkId);
 
 
-        if (network.getType() != Network.Type.Shared) {
-            s_logger.info("ELB: not handling traffic for network of type " + network.getType());
+        if (network.getGuestType() != Network.GuestType.Shared) {
+            s_logger.info("ELB: not handling traffic for network of type " + network.getGuestType());
             return null;
         }
         return network;

@@ -66,8 +66,8 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     TrafficType _frontEndTrafficType = TrafficType.Guest;
     
     private boolean canHandle(Network network) {
-        if (network.getType() != Network.Type.Shared|| network.getTrafficType() != TrafficType.Guest) {
-            s_logger.debug("Not handling network with type  " + network.getType() + " and traffic type " + network.getTrafficType());
+        if (network.getGuestType() != Network.GuestType.Shared|| network.getTrafficType() != TrafficType.Guest) {
+            s_logger.debug("Not handling network with type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
         }
         

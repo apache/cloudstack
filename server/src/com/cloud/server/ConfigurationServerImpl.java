@@ -861,7 +861,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "System-Guest-Network", 
                 TrafficType.Guest, 
                 true, false, null, null, null, true, 
-                Availability.Optional, null, Network.Type.Shared);
+                Availability.Optional, null, Network.GuestType.Shared);
         
         guestNetworkOffering.setState(NetworkOffering.State.Enabled);
 
@@ -878,7 +878,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Virtual Vlan", 
                 TrafficType.Guest, 
                 false, false, null, null, null, true, 
-                Availability.Required, null, Network.Type.Isolated);
+                Availability.Required, null, Network.GuestType.Isolated);
         
         defaultGuestNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
@@ -895,7 +895,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Direct", 
                 TrafficType.Guest, 
                 false, true, null, null, null, true, 
-                Availability.Optional, null, Network.Type.Shared);
+                Availability.Optional, null, Network.GuestType.Shared);
         
         defaultGuestDirectNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
@@ -962,7 +962,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.Type.Shared, true, zoneId, null);
+                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.GuestType.Shared, true, zoneId, null);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

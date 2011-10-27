@@ -45,7 +45,7 @@ public interface HostAllocator extends Adapter {
 	* 
 	* @param VirtualMachineProfile vmProfile
 	* @param DeploymentPlan plan
-	* @param Type type
+	* @param GuestType type
 	* @param ExcludeList avoid
 	* @param int returnUpTo (use -1 to return all possible hosts)
 	* @return List<Host> List of hosts that are suitable for VM allocation
@@ -59,7 +59,7 @@ public interface HostAllocator extends Adapter {
     * 
     * @param VirtualMachineProfile vmProfile
     * @param DeploymentPlan plan
-    * @param Type type
+    * @param GuestType type
     * @param ExcludeList avoid
     * @param int returnUpTo (use -1 to return all possible hosts)
     * @param boolean considerReservedCapacity (default should be true, set to false if host capacity calculation should not look at reserved capacity)

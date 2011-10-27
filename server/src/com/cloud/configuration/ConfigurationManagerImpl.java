@@ -1862,7 +1862,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (network == null) {
                 // find default public network in the zone
                 networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
-            } else if (network.getType() != null || network.getTrafficType() != TrafficType.Public) {
+            } else if (network.getGuestType() != null || network.getTrafficType() != TrafficType.Public) {
                 throw new InvalidParameterValueException("Can't find Public network by id=" + networkId);
             }
         } else {
@@ -1876,8 +1876,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     networkId = network.getId();
                 }
-            } else if (network.getType() == null || network.getType()== Network.Type.Isolated) {
-                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getType());
+            } else if (network.getGuestType() == null || network.getGuestType()== Network.GuestType.Isolated) {
+                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
             }
         }
 
@@ -2715,7 +2715,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         TrafficType trafficType = null;
         Availability availability = null;
-        Network.Type type = null;
+        Network.GuestType type = null;
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -2730,8 +2730,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         
         //Verify offering type
-        for (Network.Type offType : Network.Type.values()) {
-            if (offType.name().equalsIgnoreCase(cmd.getType())){
+        for (Network.GuestType offType : Network.GuestType.values()) {
+            if (offType.name().equalsIgnoreCase(cmd.getGuestIpType())){
                 type = offType;
                 break;
             }
@@ -2820,7 +2820,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, 
-            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.Type type, boolean systemOnly) {
+            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -2869,7 +2869,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
         Long networkId = cmd.getNetworkId();
-        String type = cmd.getType();
+        String guestIpType = cmd.getGuestIpType();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -2889,8 +2889,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
         
-        if (type != null) {
-            sc.addAnd("type", SearchCriteria.Op.EQ, type);
+        if (guestIpType != null) {
+            sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
         }
         
         if (displayText != null) {

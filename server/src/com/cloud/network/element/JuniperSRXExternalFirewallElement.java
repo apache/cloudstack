@@ -75,8 +75,8 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && config.getType() != Network.Type.Isolated) || (zone.getNetworkType() == NetworkType.Basic && config.getType() != Network.Type.Shared)) {
-            s_logger.trace("Not handling network type = " + config.getType());
+        if ((zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() != Network.GuestType.Shared)) {
+            s_logger.trace("Not handling network type = " + config.getGuestType());
             return false;
         }   
         

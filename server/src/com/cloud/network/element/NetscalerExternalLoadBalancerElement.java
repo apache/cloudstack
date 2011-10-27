@@ -63,8 +63,8 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if (config.getType() != Network.Type.Isolated || config.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("Not handling network with Type  " + config.getType() + " and traffic type " + config.getTrafficType());
+        if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
+            s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
         

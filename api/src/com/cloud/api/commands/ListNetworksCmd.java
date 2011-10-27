@@ -52,8 +52,8 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the network")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network")
-    private String type;
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest type of the network")
+    private String guestIpType;
     
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
     private Boolean isSystem;
@@ -93,8 +93,8 @@ public class ListNetworksCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getType() {
-        return type;
+    public String getGuestIpType() {
+        return guestIpType;
     }
 
     public Boolean getIsSystem() {

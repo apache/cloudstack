@@ -39,7 +39,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.Type;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
@@ -82,20 +82,20 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     @Inject HostDao _hostDao;
     @Inject VirtualRouterElementsDao _vrElementsDao;
      
-    private boolean canHandle(DeployDestination dest, TrafficType trafficType, Type networkType, long offeringId) {
-        if (_networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.JuniperSRX) && networkType == Network.Type.Isolated) {
+    private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType, long offeringId) {
+        if (_networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.JuniperSRX) && networkType == Network.GuestType.Isolated) {
             return true;
         } else if (dest.getPod() != null && dest.getPod().getExternalDhcp()){
         	//This pod is using external DHCP server
         	return false;
         } else {
-            return (networkType == Network.Type.Shared);
+            return (networkType == Network.GuestType.Shared);
         } 
     }
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(dest, offering.getTrafficType(), network.getType(), network.getNetworkOfferingId())) {
+        if (!canHandle(dest, offering.getTrafficType(), network.getGuestType(), network.getNetworkOfferingId())) {
             return false;
         }
         
@@ -107,7 +107,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(dest, network.getTrafficType(), network.getType(), network.getNetworkOfferingId())) {
+        if (canHandle(dest, network.getTrafficType(), network.getGuestType(), network.getNetworkOfferingId())) {
             
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;

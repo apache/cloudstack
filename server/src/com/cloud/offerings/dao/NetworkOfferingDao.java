@@ -59,7 +59,7 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     
     List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem);
     
-    List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.Type type);
+    List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.GuestType type);
 
     List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering);
     

@@ -17,7 +17,7 @@
  */
 package com.cloud.offering;
 
-import com.cloud.network.Network.Type;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 
 /**
@@ -92,5 +92,5 @@ public interface NetworkOffering {
 
     State getState();
     
-    Type getType();
+    GuestType getGuestType();
 }
