@@ -1805,11 +1805,11 @@ CREATE TABLE `cloud`.`physical_network_external_devices` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`virtual_router_elements` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `nsp_id` bigint unsigned NOT NULL,
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
   `uuid` varchar(255) UNIQUE,
-  `type` varchar(255) NOT NULL,
-  `ready` int(1) NOT NULL,
+  `type` varchar(255) NOT NULL COMMENT 'DHCP element, or Virtual router, or redundant virtual router',
+  `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_virtual_router_elements__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE

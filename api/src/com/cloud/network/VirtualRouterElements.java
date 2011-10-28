@@ -16,7 +16,7 @@
  * 
  */
 
-package com.cloud.network.element;
+package com.cloud.network;
 
 public interface VirtualRouterElements {
     public enum VirtualRouterElementsType {
@@ -25,4 +25,7 @@ public interface VirtualRouterElements {
         RedundantVirtualRouterElement,
     }
     public VirtualRouterElementsType getType();
+    public long getId();
+    public boolean isEnabled();
+    public long getNspId();
 }

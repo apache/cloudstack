@@ -14,12 +14,12 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.VirtualRouterElements;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.VirtualRouterElementsDao;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
@@ -88,16 +88,37 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
             s_logger.trace("Can't find element with UUID " + cmd.getNspId());
             return false;
         }
-        element.setIsReady(cmd.getEnabled());
+        element.setEnabled(cmd.getEnabled());
         _vrElementsDao.persist(element);
         
         return true;
     }
     
     @Override
-    public boolean addElement(Long nspId) {
-        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.RedundantVirtualRouterElement);
+    public VirtualRouterElements addElement(Long nspId) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.RedundantVirtualRouterElement);
+        if (element != null) {
+            s_logger.trace("There is already a redundant virtual router element with service provider id " + nspId);
+            return null;
+        }
+        element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.RedundantVirtualRouterElement);
         _vrElementsDao.persist(element);
-        return true;
+        return element;
     }
+    
+    @Override
+    public boolean isReady(long nspId) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.RedundantVirtualRouterElement);
+        if (element == null) {
+            return false;
+        }
+        return element.isEnabled();
+    }
+    
+    @Override
+    public Long getIdByNspId(Long nspId) {
+        VirtualRouterElementsVO vr = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.RedundantVirtualRouterElement);
+        return vr.getId();
+    }
+    
 }

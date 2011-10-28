@@ -20,7 +20,7 @@ package com.cloud.network.dao;
 import javax.ejb.Local;
 
 import com.cloud.network.element.VirtualRouterElementsVO;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

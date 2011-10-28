@@ -28,6 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.VirtualRouterElements;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -42,8 +43,8 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     @Enumerated(EnumType.STRING)
     private VirtualRouterElementsType type;
     
-    @Column(name="ready")
-    private boolean isReady;
+    @Column(name="enabled")
+    private boolean enabled;
     
     @Column(name="nsp_id")
     private long nspId;
@@ -63,6 +64,7 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         this.type = type;
     }
 
+    @Override
     public long getNspId() {
         return nspId;
     }
@@ -71,6 +73,7 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         return uuid;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -88,12 +91,13 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         this.removed = removed;
     }
 
-    public void setIsReady(boolean isReady) {
-        this.isReady = isReady;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
-    public boolean getIsReady() {
-        return isReady;
+    @Override
+    public boolean isEnabled() {
+        return this.enabled;
     }
 
     public void setId(long id) {

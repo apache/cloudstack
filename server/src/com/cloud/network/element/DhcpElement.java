@@ -36,6 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.VirtualRouterElements;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -45,7 +46,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterElementsDao;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -218,7 +219,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
             s_logger.trace("Can't find element with network service provider ID " + cmd.getNspId());
             return false;
         }
-        element.setIsReady(cmd.getEnabled());
+        element.setEnabled(cmd.getEnabled());
         
         _vrElementsDao.persist(element);
         
@@ -226,14 +227,19 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     }
     
     @Override
-    public boolean addElement(Long nspId) {
+    public VirtualRouterElements addElement(Long nspId) {
         long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
         if (serviceOfferingId == 0) {
-            return false;
+            return null;
         }
-        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.DhcpElement);
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.DhcpElement);
+        if (element != null) {
+            s_logger.trace("There is already a dhcp element with service provider id " + nspId);
+            return null;
+        }
+        element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.DhcpElement);
         _vrElementsDao.persist(element);
-        return true;
+        return element;
     }
     
     @Override
@@ -248,7 +254,12 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
         if (element == null) {
             return false;
         }
-        return element.getIsReady();
+        return element.isEnabled();
+    }
+
+    @Override
+    public VirtualRouterElements getCreatedElement(long id) {
+        return _vrElementsDao.findById(id);
     }
 
     @Override

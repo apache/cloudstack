@@ -43,11 +43,12 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VirtualRouterElements;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterElementsDao;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -408,17 +409,22 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             return false;
         }
         
-        element.setIsReady(cmd.getEnabled());
+        element.setEnabled(cmd.getEnabled());
         _vrElementsDao.persist(element);
         
         return true;
     }
     
     @Override
-    public boolean addElement(Long nspId) {
-        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.VirtualRouterElement);
+    public VirtualRouterElements addElement(Long nspId) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.VirtualRouterElement);
+        if (element != null) {
+            s_logger.trace("There is already a virtual router element with service provider id " + nspId);
+            return null;
+        }
+        element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.VirtualRouterElement);
         _vrElementsDao.persist(element);
-        return true;
+        return element;
     }
 
     @Override
@@ -446,7 +452,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         if (element == null) {
             return false;
         }
-        return element.getIsReady();
+        return element.isEnabled();
     }
 
     @Override

@@ -18,7 +18,7 @@
 package com.cloud.network.dao;
 
 import com.cloud.network.element.VirtualRouterElementsVO;
-import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.utils.db.GenericDao;
 
 public interface VirtualRouterElementsDao extends GenericDao<VirtualRouterElementsVO, Long> {
