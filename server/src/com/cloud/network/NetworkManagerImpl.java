@@ -103,14 +103,15 @@ import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PortForwardingServiceProvider;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
-import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -119,8 +120,8 @@ import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
@@ -255,6 +256,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject PhysicalNetworkServiceProviderDao _pNSPDao;
     @Inject PortForwardingRulesDao _portForwardingRulesDao;
     @Inject LoadBalancerDao _lbDao;
+    @Inject PhysicalNetworkTrafficTypeDao _pNTrafficTypeDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -4201,4 +4203,109 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return supported;
     }
 
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", create = true)    
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel) {
+
+        // verify input parameters
+        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Physical Network id=" + physicalNetworkId + "doesn't exist in the system");
+        }
+
+
+        Networks.TrafficType trafficType = null;
+        if (trafficTypeStr != null && !trafficTypeStr.isEmpty()) {
+            try {
+                trafficType = Networks.TrafficType.valueOf(trafficTypeStr);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve trafficType '" + trafficTypeStr + "' to a supported value");
+            }
+        }
+        
+        //For Storage, Control, Management, Public check if the zone has any other physical network with this traffictype already present
+        //If yes, we cant add these traffics to one more physical network in the zone.
+        
+        if(TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType)){
+            if(!_physicalNetworkDao.listByZoneAndTrafficType(network.getDataCenterId(), trafficType).isEmpty()){
+                throw new CloudRuntimeException("Fail to add the traffic type to physical network because Zone already has a physical network with this traffic type: "+trafficType);
+            }
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            // Create the new traffic type in the database
+            PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel);
+            pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
+
+            txn.commit();
+            return pNetworktrafficType;
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.warn("Exception: ", ex);
+            throw new CloudRuntimeException("Fail to add a traffic type to physical network");
+        } finally {
+            txn.close();
+        }
+        
+    }
+    
+    @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", async = true)    
+    public PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id){
+        return _pNTrafficTypeDao.findById(id);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_UPDATE, eventDescription = "Updating physical network TrafficType", async = true)
+    public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel) {
+        
+        PhysicalNetworkTrafficTypeVO trafficType = _pNTrafficTypeDao.findById(id);
+        
+        if(trafficType == null){
+            throw new InvalidParameterValueException("Traffic Type with id=" + id + "doesn't exist in the system");
+        }
+        
+        if(xenLabel != null){
+            trafficType.setXenNetworkLabel(xenLabel);
+        }
+        if(kvmLabel != null){
+            trafficType.setKvmNetworkLabel(kvmLabel);
+        }
+        if(vmwareLabel != null){
+            trafficType.setVmwareNetworkLabel(vmwareLabel);
+        }
+        _pNTrafficTypeDao.update(id, trafficType);
+        
+        return trafficType;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_DELETE, eventDescription = "Deleting physical network TrafficType", async = true)
+    public boolean deletePhysicalNetworkTrafficType(Long id) {
+        PhysicalNetworkTrafficTypeVO trafficType = _pNTrafficTypeDao.findById(id);
+        
+        if(trafficType == null){
+            throw new InvalidParameterValueException("Traffic Type with id=" + id + "doesn't exist in the system");
+        }
+        
+        //check if there are any networks associated to this physical network with this traffic type
+        if(TrafficType.Guest.equals(trafficType.getTrafficType())){
+            if(!_networksDao.listByPhysicalNetworkTrafficType(trafficType.getPhysicalNetworkId(), trafficType.getTrafficType()).isEmpty()){
+                throw new CloudRuntimeException("The Traffic Type is not deletable because there are existing networks with this traffic type:"+trafficType.getTrafficType());
+            }
+        }        
+        return _pNTrafficTypeDao.remove(id);
+    }
+    
+    @Override
+    public List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId) {
+        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Physical Network id=" + physicalNetworkId + "doesn't exist in the system");
+        }
+        
+        return _pNTrafficTypeDao.listBy(physicalNetworkId);
+    }    
 }

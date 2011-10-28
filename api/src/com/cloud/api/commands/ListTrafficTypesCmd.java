@@ -29,14 +29,15 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProviderResponse;
-import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.api.response.TrafficTypeResponse;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
 
-@Implementation(description="Lists network serviceproviders for a given physical network.", responseObject=ProviderResponse.class)
-public class ListNetworkServiceProvidersCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
-    private static final String _name = "listnetworkserviceprovidersresponse";
+@Implementation(description="Lists traffic types of a given physical network.", responseObject=ProviderResponse.class)
+public class ListTrafficTypesCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListTrafficTypesCmd.class.getName());
+    private static final String _name = "listtraffictypesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,15 +73,15 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends PhysicalNetworkServiceProvider> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId());
-        ListResponse<ProviderResponse> response = new ListResponse<ProviderResponse>();
-        List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
-        for (PhysicalNetworkServiceProvider serviceProvider : serviceProviders) {
-            ProviderResponse serviceProviderResponse = _responseGenerator.createNetworkServiceProviderResponse(serviceProvider);
-            serviceProvidersResponses.add(serviceProviderResponse);
+        List<? extends PhysicalNetworkTrafficType> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());
+        ListResponse<TrafficTypeResponse> response = new ListResponse<TrafficTypeResponse>();
+        List<TrafficTypeResponse> trafficTypesResponses = new ArrayList<TrafficTypeResponse>();
+        for (PhysicalNetworkTrafficType trafficType : trafficTypes) {
+            TrafficTypeResponse trafficTypeResponse = _responseGenerator.createTrafficTypeResponse(trafficType);
+            trafficTypesResponses.add(trafficTypeResponse);
         }
 
-        response.setResponses(serviceProvidersResponses);
+        response.setResponses(trafficTypesResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

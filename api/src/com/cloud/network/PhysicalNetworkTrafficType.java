@@ -15,16 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.dao;
 
-import java.util.List;
+/**
+ * 
+ */
+package com.cloud.network;
 
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetworkVO;
-import com.cloud.utils.db.GenericDao;
 
-public interface PhysicalNetworkDao extends GenericDao<PhysicalNetworkVO, Long> {
-    List<PhysicalNetworkVO> listByZone(long zoneId);
-    List<PhysicalNetworkVO> listByZoneIncludingRemoved(long zoneId);
-    List<PhysicalNetworkVO> listByZoneAndTrafficType(long dataCenterId, TrafficType trafficType);
+
+
+/**
+ * This defines the specifics of a physical network traffic type
+ *  
+ */
+public interface PhysicalNetworkTrafficType {
+
+    long getId();
+
+    long getPhysicalNetworkId();
+    
+    TrafficType getTrafficType();
+
+    String getXenNetworkLabel();
+
+    String getKvmNetworkLabel();
+    
+    String getVmwareNetworkLabel();
 }

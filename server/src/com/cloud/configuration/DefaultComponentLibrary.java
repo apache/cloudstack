@@ -70,7 +70,6 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -83,14 +82,15 @@ import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkExternalDeviceDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VirtualRouterElementsDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.element.DhcpElement;
-import com.cloud.network.element.RedundantVirtualRouterElement;
-import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.DhcpElementService;
+import com.cloud.network.element.RedundantVirtualRouterElement;
 import com.cloud.network.element.RedundantVirtualRouterElementService;
+import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
@@ -299,6 +299,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("PhysicalNetworkServiceProviderDao", PhysicalNetworkServiceProviderDaoImpl.class);
         addDao("VirtualRouterElementsDao", VirtualRouterElementsDaoImpl.class);
         addDao("PhysicalNetworkExternalDeviceDao", PhysicalNetworkExternalDeviceDaoImpl.class);
+        addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
     }
 
     @Override

@@ -114,4 +114,16 @@ public interface NetworkService {
     PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
     
     long translateZoneIdToPhysicalNetworkId(long zoneId);
+
+    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel);
+
+    PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
+
+    PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel);
+
+    boolean deletePhysicalNetworkTrafficType(Long id);
+
+    List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId);
+
+
 }

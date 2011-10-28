@@ -29,7 +29,6 @@ import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
@@ -79,19 +78,6 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the network id")
     private Long networkID;
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
-    private Long physicalNetworkId;
-    
-    public Long getPhysicalNetworkId() {
-        if (physicalNetworkId != null) {
-            return physicalNetworkId;
-        } else if (zoneId != null) {
-            return _networkService.translateZoneIdToPhysicalNetworkId(zoneId);
-        } else {
-            throw new InvalidParameterValueException("Either zoneId or physicalNetworkId have to be specified");
-        }
-    }
-    
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

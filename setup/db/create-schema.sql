@@ -1791,18 +1791,12 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
+  `xen_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
+  `kvm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
+  `vmware_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_physical_network_traffic_types__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
   UNIQUE KEY(`physical_network_id`, `traffic_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`traffic_type_details` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `traffic_type_id` bigint unsigned NOT NULL COMMENT 'traffic_type id',
-  `name` varchar(255) NOT NULL,
-  `value` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_traffic_type_details__traffic_type_id` FOREIGN KEY (`traffic_type_id`) REFERENCES `physical_network_traffic_types`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`physical_network_service_providers` (

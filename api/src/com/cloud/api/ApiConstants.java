@@ -284,4 +284,8 @@ public class ApiConstants {
     public static final String UUID = "uuid";
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
+    public static final String XEN_NETWORK_LABEL = "xennetworklabel";
+    public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
+    public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
+    
 }

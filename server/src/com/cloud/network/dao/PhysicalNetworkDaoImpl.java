@@ -21,9 +21,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -31,7 +34,9 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value=PhysicalNetworkDao.class) @DB(txn=false)
 public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Long> implements PhysicalNetworkDao {
     final SearchBuilder<PhysicalNetworkVO> ZoneSearch;
-
+    
+    protected final PhysicalNetworkTrafficTypeDaoImpl _trafficTypeDao = ComponentLocator.inject(PhysicalNetworkTrafficTypeDaoImpl.class);
+    
     protected PhysicalNetworkDaoImpl() {
         super();
         ZoneSearch = createSearchBuilder();
@@ -52,6 +57,25 @@ public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Lo
         SearchCriteria<PhysicalNetworkVO> sc = ZoneSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<PhysicalNetworkVO> listByZoneAndTrafficType(long dataCenterId, TrafficType trafficType) {
+        
+        SearchBuilder<PhysicalNetworkTrafficTypeVO> trafficTypeSearch = _trafficTypeDao.createSearchBuilder();
+        PhysicalNetworkTrafficTypeVO trafficTypeEntity = trafficTypeSearch.entity();
+        trafficTypeSearch.and("trafficType", trafficTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<PhysicalNetworkVO> dcSearch = createSearchBuilder();
+        dcSearch.and("dataCenterId", dcSearch.entity().getDataCenterId(), Op.EQ);
+        dcSearch.join("trafficTypeSearch", trafficTypeSearch, dcSearch.entity().getId(), trafficTypeEntity.getPhysicalNetworkId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<PhysicalNetworkVO> sc = dcSearch.create();
+        sc.setJoinParameters("trafficTypeSearch", "trafficType", trafficType);
+        sc.setParameters("dataCenterId", dataCenterId);
+
+        return listBy(sc);
+        
     }
     
     

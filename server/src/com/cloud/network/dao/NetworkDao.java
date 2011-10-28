@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 
@@ -72,4 +73,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listByPhysicalNetworkIncludingRemoved(long physicalNetworkId);
     
     List<NetworkVO> listSecurityGroupEnabledNetworks();
+    
+    List<NetworkVO> listByPhysicalNetworkTrafficType(long physicalNetworkId, TrafficType trafficType);
 }

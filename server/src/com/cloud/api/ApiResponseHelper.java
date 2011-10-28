@@ -82,6 +82,7 @@ import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
@@ -123,6 +124,7 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -2588,6 +2590,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDestinationPhysicalNetworkId(result.getDestinationPhysicalNetworkId());
         response.setState(result.getState().toString());
         response.setObjectName("networkserviceprovider");
+        return response;
+    }
+
+    @Override
+    public TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result) {
+        TrafficTypeResponse response = new TrafficTypeResponse();
+        response.setId(result.getId());
+        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        response.setTrafficType(result.getTrafficType().toString());
+        response.setXenLabel(result.getXenNetworkLabel());
+        response.setKvmLabel(result.getKvmNetworkLabel());
+        response.setVmwareLabel(result.getVmwareNetworkLabel());
+        
+        response.setObjectName("traffictype");
         return response;
     }
 }

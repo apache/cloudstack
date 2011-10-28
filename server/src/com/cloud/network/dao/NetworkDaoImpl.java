@@ -363,4 +363,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return listIncludingRemovedBy(sc);
     }
     
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkTrafficType(long physicalNetworkId, TrafficType trafficType){
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return listBy(sc);
+    }
+    
+    
 }
