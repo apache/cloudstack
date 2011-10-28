@@ -124,6 +124,7 @@ public abstract class BaseCmd {
     public static FirewallService _firewallService;
     public static DomainService _domainService;
     public static ResourceLimitService _resourceLimitService;
+    public static IdentityService _identityService;
     
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -149,6 +150,7 @@ public abstract class BaseCmd {
         _firewallService = locator.getManager(FirewallService.class);
         _domainService = locator.getManager(DomainService.class);
         _resourceLimitService = locator.getManager(ResourceLimitService.class);
+        _identityService = locator.getManager(IdentityService.class);
     }
     
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException;

@@ -31,6 +31,7 @@ public class AsyncJobResult {
 	private int processStatus;
 	private int resultCode;
 	private String result;
+	private String uuid;
 
 	public AsyncJobResult(long jobId) {
 		this.jobId = jobId;
@@ -54,6 +55,14 @@ public class AsyncJobResult {
 	
 	public void setJobId(long jobId) {
 		this.jobId = jobId;
+	}
+	
+	public String getUuid() {
+		return this.uuid;
+	}
+	
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 	
 	public int getJobStatus() {

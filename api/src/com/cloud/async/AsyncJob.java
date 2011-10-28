@@ -19,7 +19,9 @@ package com.cloud.async;
 
 import java.util.Date;
 
-public interface AsyncJob {
+import com.cloud.api.Identity;
+
+public interface AsyncJob extends Identity{
 	public enum Type {
         None,
 		VirtualMachine,

@@ -30,8 +30,6 @@ import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.Identity.dao.IdentityDao;
-import com.cloud.Identity.dao.IdentityDaoImpl;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
@@ -42,6 +40,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.identity.dao.IdentityDao;
+import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

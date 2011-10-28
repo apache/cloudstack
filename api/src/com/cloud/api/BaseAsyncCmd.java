@@ -56,7 +56,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
 
     public ResponseObject getResponse(long jobId) {
         AsyncJobResponse response = new AsyncJobResponse();
-        response.setId(jobId);
+
+        response.setId(_identityService.getIdentityUuid("async_job", String.valueOf(jobId)));
         response.setResponseName(getCommandName());
         return response;
     }
@@ -129,6 +130,4 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         }
         return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description, startEvent);
     }
-    
-    
 }

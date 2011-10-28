@@ -19,6 +19,7 @@
 package com.cloud.async;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -110,6 +111,9 @@ public class AsyncJobVO implements AsyncJob {
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
+    
+    @Column(name="uuid")
+    private String uuid;
 
     @Transient
     private SyncQueueItemVO syncSource = null;
@@ -118,6 +122,7 @@ public class AsyncJobVO implements AsyncJob {
     private boolean fromPreviousSession = false;
 
     public AsyncJobVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo) {
@@ -125,7 +130,8 @@ public class AsyncJobVO implements AsyncJob {
     	this.accountId = accountId;
     	this.cmd = cmd;
     	this.cmdInfo = cmdInfo;
-    	callbackType = CALLBACK_POLLING;
+    	this.callbackType = CALLBACK_POLLING;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
@@ -134,6 +140,7 @@ public class AsyncJobVO implements AsyncJob {
     	this(userId, accountId, cmd, cmdInfo);
     	this.callbackType = callbackType;
     	this.callbackAddress = callbackAddress;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     @Override
@@ -350,6 +357,15 @@ public class AsyncJobVO implements AsyncJob {
     
     public void setFromPreviousSession(boolean fromPreviousSession) {
         this.fromPreviousSession = fromPreviousSession;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
     
 	@Override

@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.Identity.dao.IdentityDaoImpl;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
@@ -66,6 +65,8 @@ import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl;
+import com.cloud.identity.IdentityServiceImpl;
+import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.keystore.KeystoreDaoImpl;
 import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
@@ -332,6 +333,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
         addManager("ResourceManager", ResourceManagerImpl.class);
+        addManager("IdentityManager", IdentityServiceImpl.class);
 
         addManager("OCFS2Manager", OCFS2ManagerImpl.class);
         addManager("FirewallManager", FirewallManagerImpl.class);

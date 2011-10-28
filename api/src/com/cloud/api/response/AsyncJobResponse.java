@@ -20,13 +20,14 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
     @SerializedName(ApiConstants.JOB_ID) @Param(description="async job ID")
-    private Long id;
+    private String id;
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private Long accountId;
@@ -56,16 +57,17 @@ public class AsyncJobResponse extends BaseResponse {
     private String jobInstanceType;
 
     @SerializedName("jobinstanceid") @Param(description="the unique ID of the instance/entity object related to the job")
-    private Long jobInstanceId;
+    // private Long jobInstanceId;
+    IdentityProxy jobInstanceIdProxy = new IdentityProxy();
 
     @SerializedName(ApiConstants.CREATED) @Param(description="	the created date of the job")
     private Date created;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -139,14 +141,26 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setJobInstanceType(String jobInstanceType) {
         this.jobInstanceType = jobInstanceType;
+        if(jobInstanceType != null) {
+        	if(jobInstanceType.equalsIgnoreCase("volume")) {
+        		this.jobInstanceIdProxy.setTableName("volumes");
+        	} else if(jobInstanceType.equalsIgnoreCase("template")) {
+        		this.jobInstanceIdProxy.setTableName("vm_template");
+        	} else if(jobInstanceType.equalsIgnoreCase("iso")) {
+        		this.jobInstanceIdProxy.setTableName("vm_template");
+        	} else {
+        		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
+        		assert(false);
+        	}
+        }
     }
 
     public Long getJobInstanceId() {
-        return jobInstanceId;
+        return jobInstanceIdProxy.getValue();
     }
 
     public void setJobInstanceId(Long jobInstanceId) {
-        this.jobInstanceId = jobInstanceId;
+        this.jobInstanceIdProxy.setValue(jobInstanceId);
     }
 
     public Date getCreated() {

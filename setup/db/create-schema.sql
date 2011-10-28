@@ -1161,6 +1161,7 @@ CREATE TABLE `cloud`.`async_job` (
   `last_updated` datetime COMMENT 'date created',
   `last_polled` datetime COMMENT 'date polled',
   `removed` datetime COMMENT 'date removed',
+  `uuid` varchar(255),
   PRIMARY KEY (`id`),
   INDEX `i_async_job__removed`(`removed`),
   INDEX `i_async__user_id`(`user_id`),
@@ -1169,7 +1170,8 @@ CREATE TABLE `cloud`.`async_job` (
   INDEX `i_async__job_cmd`(`job_cmd`),
   INDEX `i_async__created`(`created`),
   INDEX `i_async__last_updated`(`last_updated`),
-  INDEX `i_async__last_poll`(`last_polled`)
+  INDEX `i_async__last_poll`(`last_polled`),
+  CONSTRAINT `uc_async__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`sync_queue` (

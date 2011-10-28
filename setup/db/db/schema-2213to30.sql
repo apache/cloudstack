@@ -119,3 +119,6 @@ ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint uns
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(255); 
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `uc_vm_instance_uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `uuid` varchar(255); 
+ALTER TABLE `cloud`.`async_job` ADD CONSTRAINT `uc_async__uuid` UNIQUE (`uuid`);

@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,12 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.api;
 
-package com.cloud.Identity.dao;
+public class IdentityProxy {
+	private String _tableName;
+	private Long _value;
 
-import com.cloud.api.IdentityMapper;
-import com.cloud.utils.db.GenericDao;
-
-public interface IdentityDao extends GenericDao<IdentityVO, Long> {
-	Long getIdentityId(IdentityMapper mapper, String identityString);
+	public IdentityProxy() {
+	}
+	
+	public IdentityProxy(String tableName) {
+		_tableName = tableName;
+	}
+	
+	public String getTableName() {
+		return _tableName;
+	}
+	
+	public void setTableName(String tableName) {
+		_tableName = tableName;
+	}
+	
+	public Long getValue() {
+		return _value;
+	}
+	
+	public void setValue(Long value) {
+		_value = value;
+	}
 }
+

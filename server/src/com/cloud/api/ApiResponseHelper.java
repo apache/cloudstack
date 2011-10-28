@@ -1189,6 +1189,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         return vmResponses;
     }
 
+            userVmResponse.setId(userVm.getId());
+            userVmResponse.setName(userVm.getInstanceName());
+            userVmResponse.setDisplayName(userVm.getDisplayName());
+            userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
+            userVmResponse.setHaEnable(userVm.isHaEnabled());
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
@@ -1868,11 +1873,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         jobResponse.setAccountId(job.getAccountId());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
-        jobResponse.setId(job.getId());
+        
+        if(job.getUuid() != null && !job.getUuid().isEmpty())
+        	jobResponse.setId(job.getUuid());
+        else
+        	jobResponse.setId(String.valueOf(job.getId()));
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
-            jobResponse.setJobInstanceId(job.getInstanceId());
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
+            jobResponse.setJobInstanceId(job.getInstanceId());
         }
         jobResponse.setJobProcStatus(job.getProcessStatus());
         jobResponse.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(job.getResult()));
@@ -2154,7 +2163,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) {
         AsyncJobResult result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
         AsyncJobResponse response = new AsyncJobResponse();
-        response.setId(result.getJobId());
+        
+        if(result.getUuid() != null && !result.getUuid().isEmpty())
+        	response.setId(result.getUuid());
+        else
+        	response.setId(String.valueOf(result.getJobId()));
         response.setJobStatus(result.getJobStatus());
         response.setJobProcStatus(result.getProcessStatus());
         response.setJobResultCode(result.getResultCode());

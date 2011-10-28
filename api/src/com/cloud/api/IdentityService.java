@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,13 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.Identity.dao;
+package com.cloud.api;
 
-import javax.persistence.Entity;
-
-/**
- * This is a dummy class to fit for CloudStack Dao framework
- */
-@Entity
-public class IdentityVO {
+public interface IdentityService {
+	Long getIdentityId(IdentityMapper mapper, String identityString);
+	String getIdentityUuid(String tableName, String identityString);
 }

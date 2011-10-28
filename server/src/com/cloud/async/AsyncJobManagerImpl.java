@@ -331,6 +331,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     			jobResult.setProcessStatus(job.getProcessStatus());
     			jobResult.setResult(job.getResult());
     			jobResult.setResultCode(job.getResultCode());
+    			jobResult.setUuid(job.getUuid());
     			
     			if(job.getStatus() == AsyncJobResult.STATUS_SUCCEEDED ||
     				job.getStatus() == AsyncJobResult.STATUS_FAILED) {
