@@ -333,7 +333,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     int _routerStatsInterval = 300;
     int _checkRouterInterval = 30;
     private ServiceOfferingVO _offering;
-    private String trafficSentinelHostname;
     private String _dnsBasicZoneUpdates = "all";
     
     private boolean _disable_rp_filter = false;
@@ -646,8 +645,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _systemAcct = _accountService.getSystemAccount();
         
-        trafficSentinelHostname = configs.get("traffic.sentinel.hostname");
-
         _agentMgr.registerForHostEvents(this, true, false, false);
 
         s_logger.info("DomainRouterManager is configured.");
