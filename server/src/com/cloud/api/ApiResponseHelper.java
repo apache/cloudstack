@@ -1169,6 +1169,44 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         return vmResponses;
     }
+    
+
+    @Override
+    public List<UserVmResponse> createUserVmSummaryResponse(String objectName, UserVm... userVms) {
+        Account caller = UserContext.current().getCaller();
+        boolean caller_is_admin = ((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN));
+        //initialize vmresponse from vmdatalist
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
+        for (UserVm userVm : userVms) {
+            UserVmResponse userVmResponse = new UserVmResponse();
+            userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+            userVmResponse.setId(userVm.getId());
+            userVmResponse.setName(userVm.getInstanceName());
+            userVmResponse.setDisplayName(userVm.getDisplayName());
+            userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
+            userVmResponse.setHaEnable(userVm.isHaEnabled());
+
+            populateAccount(userVmResponse, userVm.getAccountId());
+            populateDomain(userVmResponse, userVm.getDomainId());
+            
+            userVmResponse.setCreated(userVm.getCreated());
+            userVmResponse.setState(userVm.getState().toString());
+            userVmResponse.setZoneId(userVm.getDataCenterIdToDeployIn());
+            if (caller_is_admin){
+                userVmResponse.setHostId(userVm.getHostId());
+                //userVmResponse.setHostName(userVm.getHostName());
+            }
+            userVmResponse.setTemplateId(userVm.getTemplateId());
+            userVmResponse.setIsoId(userVm.getIsoId());
+            userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
+            userVmResponse.setPassword(userVm.getPassword());
+            
+            userVmResponse.setObjectName(objectName);
+            vmResponses.add(userVmResponse);
+        }
+        return vmResponses;
+    }
+
 
 
     @Override
