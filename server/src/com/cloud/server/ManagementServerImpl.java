@@ -1383,23 +1383,31 @@ public class ManagementServerImpl implements ManagementServer {
             hypers =  _hostDao.getAvailHypervisorInZone(null, null);
         }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
-
-        if (template == null) {
-            Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
-            if (swiftEnable) {
+        Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
+        if (swiftEnable) {
+            if (template == null) {
                 templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller);
             } else {
-                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller);
+                // if template is not public, perform permission check here
+                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    Account owner = _accountMgr.getAccount(template.getAccountId());
+                    _accountMgr.checkAccess(caller, null, owner);
+                }
+                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), 0L));
             }
         } else {
-            // if template is not public, perform permission check here
-            if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                Account owner = _accountMgr.getAccount(template.getAccountId());
-                _accountMgr.checkAccess(caller, null, owner);
+            if (template == null) {
+                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller);
+            } else {
+                // if template is not public, perform permission check here
+                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    Account owner = _accountMgr.getAccount(template.getAccountId());
+                    _accountMgr.checkAccess(caller, null, owner);
+                }
+                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
             }
-            templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
         }
 
         return templateZonePairSet;

@@ -196,13 +196,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
             if (!_storage.isFile(lPath + "/template.properties")) {
                 String errMsg = cmd + " Command failed due to template doesn't exist ";
-                s_logger.warn(errMsg);
+                s_logger.debug(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
             String result = swiftUpload(swift, "T-" + templateId.toString(), lPath, "*");
             if (result != null) {
                 String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
-                s_logger.warn(errMsg);
+                s_logger.debug(errMsg);
                 return new Answer(cmd, false, errMsg);
             }
             return new Answer(cmd, true, "success");

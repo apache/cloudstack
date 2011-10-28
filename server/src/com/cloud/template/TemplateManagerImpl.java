@@ -59,6 +59,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -169,6 +170,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     VMTemplateSwiftDao _tmpltSwiftDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ClusterDao _clusterDao;
     @Inject DomainDao _domainDao;
     @Inject UploadDao _uploadDao;
     long _routerTemplateId = -1;
@@ -446,6 +449,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             return errMsg;
         }
 
+        if (template.getTemplateType() == TemplateType.PERHOST) {
+            return null;
+        }
+
         SwiftTO swift = _swiftDao.getSwiftTO(null);
         if (swift == null) {
             String errMsg = " There is no Swift in this setup ";
@@ -466,14 +473,17 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         try {
             answer = _agentMgr.sendToSSVM(secHost.getDataCenterId(), cmd);
             if (answer == null || !answer.getResult()) {
-                String errMsg = "Failed to upload template to Swift from secondary storage due to " + ((answer == null) ? "null" : answer.getDetails());
-                s_logger.warn(errMsg);
-                throw new CloudRuntimeException(errMsg);
+                if (template.getTemplateType() != TemplateType.SYSTEM) {
+                    String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + ((answer == null) ? "null" : answer.getDetails());
+                    s_logger.warn(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+                return null;
             }
-            VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), secHost.getId(), new Date(), templateHostRef.getSize(), templateHostRef.getPhysicalSize());
+            VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), templateHostRef.getTemplateId(), new Date(), templateHostRef.getSize(), templateHostRef.getPhysicalSize());
             _tmpltSwiftDao.persist(tmpltSwift);
         } catch (Exception e) {
-            String errMsg = "Failed to upload template to Swift from secondary storage due to " + e.toString();
+            String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + e.toString();
             s_logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -807,17 +817,26 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	}
     
     void swiftTemplateSync() {
-        Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
-        if (!swiftEnable) {
-            return;
-        }
         GlobalLock swiftTemplateSyncLock = GlobalLock.getInternLock("templatemgr.swiftTemplateSync");
         try {
+            Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
+            if (!swiftEnable) {
+                return;
+            }
+            List<HypervisorType> hypers = _clusterDao.getAvailableHypervisorInZone(null);
+            List<VMTemplateVO> templates = _tmpltDao.listByHypervisorType(hypers);
+            List<Long> templateIds = new ArrayList<Long>();
+            for (VMTemplateVO template : templates) {
+                templateIds.add(template.getId());
+            }
             if (swiftTemplateSyncLock.lock(3)) {
                 try {
                     List<VMTemplateHostVO> templtHostRefs = _tmpltHostDao.listByState(VMTemplateHostVO.Status.DOWNLOADED);
                     List<VMTemplateSwiftVO> templtSwiftRefs = _tmpltSwiftDao.listAll();
                     for (VMTemplateHostVO templtHostRef : templtHostRefs) {
+                        if (!templateIds.contains(templtHostRef.getId())) {
+                            continue;
+                        }
                         boolean found = false;
                         for (VMTemplateSwiftVO templtSwiftRef : templtSwiftRefs) {
                             if (templtHostRef.getTemplateId() == templtSwiftRef.getTemplateId()) {
@@ -839,6 +858,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                     swiftTemplateSyncLock.unlock();
                 }
             }
+        } catch (Throwable e) {
+            s_logger.error("Problem with sync swift template due to " + e.toString(), e);
         } finally {
             swiftTemplateSyncLock.releaseRef();
         }

@@ -153,6 +153,7 @@ import com.cloud.storage.Swift;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -1375,8 +1376,79 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+    private List<TemplateResponse> createSwiftTemplateResponses(long templateId) {
+        VirtualMachineTemplate template = findTemplateById(templateId);
+        List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
+        VMTemplateSwiftVO templateSwiftRef = ApiDBUtils.findTemplateSwiftRef(templateId);
+        if (templateSwiftRef == null) {
+            return responses;
+        }
+
+        TemplateResponse templateResponse = new TemplateResponse();
+        templateResponse.setId(template.getId());
+        templateResponse.setName(template.getName());
+        templateResponse.setDisplayText(template.getDisplayText());
+        templateResponse.setPublic(template.isPublicTemplate());
+        templateResponse.setCreated(templateSwiftRef.getCreated());
+
+        templateResponse.setReady(true);
+        templateResponse.setFeatured(template.isFeatured());
+        templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM));
+        templateResponse.setPasswordEnabled(template.getEnablePassword());
+        templateResponse.setCrossZones(template.isCrossZones());
+        templateResponse.setFormat(template.getFormat());
+        if (template.getTemplateType() != null) {
+            templateResponse.setTemplateType(template.getTemplateType().toString());
+        }
+        templateResponse.setHypervisor(template.getHypervisorType().toString());
+
+        GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+        if (os != null) {
+            templateResponse.setOsTypeId(os.getId());
+            templateResponse.setOsTypeName(os.getDisplayName());
+        } else {
+            templateResponse.setOsTypeId(-1L);
+            templateResponse.setOsTypeName("");
+        }
+
+        Account account = ApiDBUtils.findAccountByIdIncludingRemoved(template.getAccountId());
+        populateAccount(templateResponse, account.getId());
+        populateDomain(templateResponse, account.getDomainId());
+
+        Account caller = UserContext.current().getCaller();
+        boolean isAdmin = false;
+        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+            isAdmin = true;
+        }
+
+        // If the user is an Admin, add the template download status
+        if (isAdmin || caller.getId() == template.getAccountId()) {
+            // add download status
+            templateResponse.setStatus("Successfully Installed");
+        }
+
+        Long templateSize = templateSwiftRef.getSize();
+        if (templateSize > 0) {
+            templateResponse.setSize(templateSize);
+        }
+
+        templateResponse.setChecksum(template.getChecksum());
+        templateResponse.setSourceTemplateId(template.getSourceTemplateId());
+
+        templateResponse.setChecksum(template.getChecksum());
+
+        templateResponse.setTemplateTag(template.getTemplateTag());
+
+        templateResponse.setObjectName("template");
+        responses.add(templateResponse);
+        return responses;
+    }
+
     @Override
     public List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly) {
+        if (zoneId == 0) {
+            return createSwiftTemplateResponses(templateId);
+        }
         VirtualMachineTemplate template = findTemplateById(templateId);
         List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
         VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(templateId, zoneId, readyOnly);
@@ -2437,8 +2509,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
      
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
-        response.setDomainId(domain.getId());
-        response.setDomainName(domain.getName());
+        if (domain != null) {
+            response.setDomainId(domain.getId());
+            response.setDomainName(domain.getName());
+        }
     }
     
     private void populateAccount(ControlledEntityResponse response, long accountId) {
