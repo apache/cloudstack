@@ -87,22 +87,21 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			}
 		}
 		
-		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());
-		if (clusters.size() != 1) {
-			throw new CloudRuntimeException("Invaild baremetal cluster number " + clusters.size());
-		}
-		Cluster cluster = clusters.get(0);
-		
+		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());		
 		int cpu_requested;
 		long ram_requested;
 		HostVO target = null;
-		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
-		if (hostTag != null) {
-			for (HostVO h : hosts) {
-				_hostDao.loadDetails(h);
-				if (h.getDetail("hostTag") != null && h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
-					target = h;
-					break;
+        List<HostVO> hosts;
+		for (ClusterVO cluster : clusters) {
+            hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
+			if (hostTag != null) {
+				for (HostVO h : hosts) {
+					_hostDao.loadDetails(h);
+					if (h.getDetail("hostTag") != null
+							&& h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
+						target = h;
+						break;
+					}
 				}
 			}
 		}
