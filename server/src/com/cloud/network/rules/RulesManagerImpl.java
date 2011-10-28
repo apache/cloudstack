@@ -367,7 +367,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(vmId);
 
         if (ip != null) {
-            throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + " is already associated with ip id=" + ip.getId());
+            throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + vmId + " is already associated with ip id=" + ip.getId());
         }
 
         ipAddress.setOneToOneNat(true);
