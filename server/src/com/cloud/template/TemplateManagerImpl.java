@@ -827,29 +827,28 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             List<VMTemplateVO> templates = _tmpltDao.listByHypervisorType(hypers);
             List<Long> templateIds = new ArrayList<Long>();
             for (VMTemplateVO template : templates) {
-                templateIds.add(template.getId());
+                if (template.getTemplateType() != TemplateType.PERHOST) {
+                    templateIds.add(template.getId());
+                }
+            }
+            List<VMTemplateSwiftVO> templtSwiftRefs = _tmpltSwiftDao.listAll();
+            for (VMTemplateSwiftVO templtSwiftRef : templtSwiftRefs) {
+                templateIds.remove((Long) templtSwiftRef.getTemplateId());
+            }
+            if (templateIds.size() < 1) {
+                return;
             }
             if (swiftTemplateSyncLock.lock(3)) {
                 try {
                     List<VMTemplateHostVO> templtHostRefs = _tmpltHostDao.listByState(VMTemplateHostVO.Status.DOWNLOADED);
-                    List<VMTemplateSwiftVO> templtSwiftRefs = _tmpltSwiftDao.listAll();
                     for (VMTemplateHostVO templtHostRef : templtHostRefs) {
-                        if (!templateIds.contains(templtHostRef.getId())) {
+                        if (!templateIds.contains(templtHostRef.getTemplateId())) {
                             continue;
                         }
-                        boolean found = false;
-                        for (VMTemplateSwiftVO templtSwiftRef : templtSwiftRefs) {
-                            if (templtHostRef.getTemplateId() == templtSwiftRef.getTemplateId()) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            try {
-                                uploadTemplateToSwiftFromSecondaryStorage(templtHostRef);
-                            } catch (Exception e) {
-                                s_logger.debug("failed to upload template " + templtHostRef.getTemplateId() + " to Swift due to " + e.toString());
-                            }
+                        try {
+                            uploadTemplateToSwiftFromSecondaryStorage(templtHostRef);
+                        } catch (Exception e) {
+                            s_logger.debug("failed to upload template " + templtHostRef.getTemplateId() + " to Swift due to " + e.toString());
                         }
                     }
                 } catch (Throwable e) {
