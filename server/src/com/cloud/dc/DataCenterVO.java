@@ -333,10 +333,11 @@ public class DataCenterVO implements DataCenter {
     
     @Override 
     public boolean isSecurityGroupEnabled() {
-        return false;
+        return securityGroupEnabled;
     }
     
     public void setSecurityGroupEnabled(boolean enabled) {
+        this.securityGroupEnabled = enabled;
     }
     
     @Override

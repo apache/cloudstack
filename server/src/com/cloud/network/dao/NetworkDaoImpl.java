@@ -275,7 +275,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        sc.setJoinParameters("services", "service", Service.SecurityGroup.toString());
+        sc.setJoinParameters("services", "service", Service.SecurityGroup.getName());
         return search(sc, null);
     }
 
@@ -352,7 +352,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     @Override
     public List<NetworkVO> listSecurityGroupEnabledNetworks() {
         SearchCriteria<NetworkVO> sc = securityGroupSearch.create();
-        sc.setJoinParameters("services", "service", Service.SecurityGroup.toString());
+        sc.setJoinParameters("services", "service", Service.SecurityGroup.getName());
         return listBy(sc);
     }
 
