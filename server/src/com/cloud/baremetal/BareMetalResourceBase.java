@@ -123,10 +123,10 @@ public class BareMetalResourceBase implements ServerResource {
 		_zone = (String) params.get("zone");
 		_pod = (String) params.get("pod");
 		_cluster = (String) params.get("cluster");
-		_ip = (String)params.get("agentIp");
+		_ip = (String)params.get(ApiConstants.PRIVATE_IP);
 		_mac = (String)params.get(ApiConstants.HOST_MAC);
-		_username = (String)params.get("username");
-		_password = (String)params.get("password");
+		_username = (String)params.get(ApiConstants.USERNAME);
+		_password = (String)params.get(ApiConstants.PASSWORD);
 		_vmName = (String)params.get("vmName");
 		
 		if (_pod == null) {
