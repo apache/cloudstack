@@ -1263,7 +1263,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
             // SystemVm vm = (SystemVm) systemVM;
 
-            vmResponse.setId(vm.getId());
+        	if(vm.getUuid() != null && !vm.getUuid().isEmpty())
+        		vmResponse.setId(vm.getUuid());
+        	else
+        		vmResponse.setId(String.valueOf(vm.getId()));
+            vmResponse.setObjectId(vm.getId());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setZoneId(vm.getDataCenterIdToDeployIn());
 

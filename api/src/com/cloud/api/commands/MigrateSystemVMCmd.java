@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -50,6 +51,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=true, description="destination Host ID to migrate VM to")
     private Long hostId;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine")
     private Long virtualMachineId;
 

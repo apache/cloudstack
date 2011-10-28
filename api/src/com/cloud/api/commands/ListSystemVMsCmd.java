@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -44,6 +45,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the system VM")
     private Long hostId;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the system VM")
     private Long id;
 

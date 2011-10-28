@@ -25,7 +25,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class SystemVmResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the system VM")
-    private Long id;
+    private String id;
 
     @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
@@ -105,15 +105,22 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("activeviewersessions") @Param(description="the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
     
+    private Long objectId;
+    
     public Long getObjectId() {
-    	return getId();
+    	// return getId();
+    	return objectId;
+    }
+    
+    public void setObjectId(Long objectId) {
+    	this.objectId = objectId;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
