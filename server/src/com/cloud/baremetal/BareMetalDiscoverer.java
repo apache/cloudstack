@@ -15,6 +15,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -77,8 +78,8 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
 		try {
 			String hostname = url.getHost();
 			InetAddress ia = InetAddress.getByName(hostname);
-			String agentIp = ia.getHostAddress();
-			String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
+			String ipmiIp = ia.getHostAddress();
+			String guid = UUID.nameUUIDFromBytes(ipmiIp.getBytes()).toString();
 			
 			String injectScript = "scripts/util/ipmi.py";
 			String scriptPath = Script.findScript("", injectScript);
@@ -89,12 +90,12 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
 
 			final Script command = new Script(scriptPath, s_logger);
 			command.add("ping");
-			command.add("hostname="+agentIp);
+			command.add("hostname="+ipmiIp);
 			command.add("usrname="+username);
 			command.add("password="+password);
 			final String result = command.execute();
 			if (result != null) {
-				s_logger.warn(String.format("Can not set up ipmi connection(ip=%1$s, username=%2$s, password=%3$s, args) because %4$s", agentIp, username, password, result));
+				s_logger.warn(String.format("Can not set up ipmi connection(ip=%1$s, username=%2$s, password=%3$s, args) because %4$s", ipmiIp, username, password, result));
 				return null;
 			}
 			
@@ -110,27 +111,27 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
 			params.put("pod", Long.toString(podId));
 			params.put("cluster",  Long.toString(clusterId));
 			params.put("guid", guid); 
-			params.put("agentIp", agentIp);
-			params.put("username", username);
-			params.put("password", password);
+			params.put(ApiConstants.PRIVATE_IP, ipmiIp);
+			params.put(ApiConstants.USERNAME, username);
+			params.put(ApiConstants.PASSWORD, password);
 			BareMetalResourceBase resource = new BareMetalResourceBase();
 			resource.configure("Bare Metal Agent", params);
 			
-			String memCapacity = (String)params.get("memory");
-			String cpuCapacity = (String)params.get("cpuspeed");
-			String cpuNum = (String)params.get("cpunumber");
-			String mac = (String)params.get("hostmac");
+			String memCapacity = (String)params.get(ApiConstants.MEMORY);
+			String cpuCapacity = (String)params.get(ApiConstants.CPU_SPEED);
+			String cpuNum = (String)params.get(ApiConstants.CPU_NUMBER);
+			String mac = (String)params.get(ApiConstants.HOST_MAC);
 			if (hostTags != null && hostTags.size() != 0) {
 			    details.put("hostTag", hostTags.get(0));
 			}
-			details.put("memCapacity", memCapacity);
-			details.put("cpuCapacity", cpuCapacity);
-			details.put("cpuNum", cpuNum);
-			details.put("mac", mac);
-			details.put("username", username);
-			details.put("password", password);
-			details.put("agentIp", agentIp);
-			
+			details.put(ApiConstants.MEMORY, memCapacity);
+			details.put(ApiConstants.CPU_SPEED, cpuCapacity);
+			details.put(ApiConstants.CPU_NUMBER, cpuNum);
+			details.put(ApiConstants.HOST_MAC, mac);
+			details.put(ApiConstants.USERNAME, username);
+			details.put(ApiConstants.PASSWORD, password);
+			details.put(ApiConstants.PRIVATE_IP, ipmiIp);
+
 			resources.put(resource, details);
 			resource.start();
 			
@@ -140,7 +141,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer {
 			_dcDao.update(zone.getId(), zone);
 			
 			s_logger.debug(String.format("Discover Bare Metal host successfully(ip=%1$s, username=%2$s, password=%3%s," +
-					"cpuNum=%4$s, cpuCapacity-%5$s, memCapacity=%6$s)", agentIp, username, password, cpuNum, cpuCapacity, memCapacity));
+					"cpuNum=%4$s, cpuCapacity-%5$s, memCapacity=%6$s)", ipmiIp, username, password, cpuNum, cpuCapacity, memCapacity));
 			return resources;
 		} catch (Exception e) {
 			s_logger.warn("Can not set up bare metal agent", e);
