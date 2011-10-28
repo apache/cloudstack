@@ -139,7 +139,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 			
 			ClusterVO clu = _clusterDao.findById(clusterId);
 			if (clu.getGuid() == null) {
-				clu.setGuid("/root");
+				clu.setGuid(UUID.randomUUID().toString());
 				_clusterDao.update(clusterId, clu);
 			}
 			
