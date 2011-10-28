@@ -54,5 +54,11 @@ UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.6(32-bi
 UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.7(32-bit)' WHERE hypervisor_type='VmWare' AND guest_os_id=28;
 UPDATE guest_os_hypervisor SET guest_os_name='Red Hat Enterprise Linux 4.8(32-bit)' WHERE hypervisor_type='VmWare' AND guest_os_id=29;
 
+update host_details set name='cpuspeed' where host_id in (select id from host where hypervisor_type='BareMetal') and name='cpuCapacity';
+update host_details set name='cpunumber' where host_id in (select id from host where hypervisor_type='BareMetal') and name='cpuNum';
+update host_details set name='hostmac' where host_id in (select id from host where hypervisor_type='BareMetal') and name='mac';
+update host_details set name='memory' where host_id in (select id from host where hypervisor_type='BareMetal') and name='memCapacity';
+update host_details set name='privateip' where host_id in (select id from host where hypervisor_type='BareMetal') and name='agentIp';
+
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.root.disk.controller', 'ide', 'Specify the default disk controller for root volumes, valid values are scsi, ide');
 
