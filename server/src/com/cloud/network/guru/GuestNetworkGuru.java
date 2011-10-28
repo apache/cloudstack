@@ -150,7 +150,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
-            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assignbed Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
+            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
