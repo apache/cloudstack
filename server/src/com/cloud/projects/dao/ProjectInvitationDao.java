@@ -29,5 +29,6 @@ public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Lo
     boolean isActive(long id, long timeout);
     ProjectInvitationVO findPendingByEmailAndProjectId(String email, long projectId);
     ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId);
-    void cleanupInvitations(long projectId);
+    void cleanupInvitations(long projectId); 
+    ProjectInvitationVO findPendingById(long id);
 }

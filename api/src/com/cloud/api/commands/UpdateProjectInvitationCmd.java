@@ -30,10 +30,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Makes account to join the project", responseObject=SuccessResponse.class)
-public class JoinProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(JoinProjectCmd.class.getName());
-    private static final String s_name = "joinprojectresponse";
+@Implementation(description="Accepts or declines project invitation", responseObject=SuccessResponse.class)
+public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdateProjectInvitationCmd.class.getName());
+    private static final String s_name = "updateprojectinvitationresponse";
+
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -41,11 +42,14 @@ public class JoinProjectCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, required=true, type=CommandType.LONG, description="id of the project to join")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="account that is joining the project")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account that is joining the project")
     private String accountName;
     
     @Parameter(name=ApiConstants.TOKEN, type=CommandType.STRING, description="list invitations for specified account; this parameter has to be specified with domainId")
     private String token;
+    
+    @Parameter(name=ApiConstants.ACCEPT, type=CommandType.BOOLEAN, description="if true, accept the invitation, decline if false. True by default")
+    private Boolean accept;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -67,10 +71,17 @@ public class JoinProjectCmd extends BaseAsyncCmd {
         return token;
     }
     
+    public Boolean getAccept() {
+        if (accept == null) {
+            return true;
+        }
+        return accept;
+    }
+    
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    
     @Override
     public long getEntityOwnerId() {
         //TODO - return project entity ownerId
@@ -80,8 +91,8 @@ public class JoinProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName);
-        boolean result = _projectService.joinProject(projectId, accountName, token);
+        UserContext.current().setEventDetails("Project id: "+ projectId + "; accountName " + accountName + "; accept " + getAccept());
+        boolean result = _projectService.updateInvitation(projectId, accountName, token, getAccept());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -92,11 +103,11 @@ public class JoinProjectCmd extends BaseAsyncCmd {
     
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_PROJECT_JOIN;
+        return EventTypes.EVENT_PROJECT_INVITATION_UPDATE;
     }
     
     @Override
     public String getEventDescription() {
-        return  "Account " + accountName + " joining the project: " + projectId;
+        return  "Updating project invitation for projectId " + projectId;
     }
 }

@@ -52,6 +52,9 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list invitations by state")
     private String state;
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list invitations by id")
+    private Long id;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,6 +78,10 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
         return state;
     }
     
+    public Long getId() {
+        return id;
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -86,7 +93,7 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(projectId, accountName, domainId, state, activeOnly, this.getStartIndex(), this.getPageSizeVal());
+        List<? extends ProjectInvitation> invites = _projectService.listProjectInvitations(id, projectId, accountName, domainId, state, activeOnly, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
         List<ProjectInvitationResponse> projectInvitationResponses = new ArrayList<ProjectInvitationResponse>();
         for (ProjectInvitation invite : invites) {

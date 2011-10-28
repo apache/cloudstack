@@ -6,6 +6,9 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ProjectInvitationResponse extends BaseResponse implements ControlledEntityResponse{
+    @SerializedName(ApiConstants.ID) @Param(description="the id of the invitation")
+    private Long id;
+    
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the id of the project")
     private Long projectId;
     
@@ -26,6 +29,10 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     
     @SerializedName(ApiConstants.STATE) @Param(description="the invitation state")
     private String invitationState;
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public void setProjectId(Long projectId) {
         this.projectId = projectId;

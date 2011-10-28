@@ -58,13 +58,15 @@ public interface ProjectService {
     
     List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
     
-    List<? extends ProjectInvitation> listProjectInvitations(Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal);
+    List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal);
     
-    boolean joinProject(long projectId, String accountName, String token);
+    boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
     
     Project activateProject(long projectId);
     
     Project suspendProject(long projectId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     Project enableProject(long projectId);
+    
+    boolean deleteProjectInvitation(long invitationId);
 }

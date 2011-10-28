@@ -2540,6 +2540,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ProjectInvitationResponse createProjectInvitationResponse(ProjectInvitation invite) {
         ProjectInvitationResponse response = new ProjectInvitationResponse();
+        response.setId(invite.getId());
         response.setProjectId(invite.getProjectId());
         response.setProjectName(ApiDBUtils.findProjectById(invite.getProjectId()).getName());
         response.setInvitationState(invite.getState().toString());

@@ -28,6 +28,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("email", AllFieldsSearch.entity().getEmail(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("token", AllFieldsSearch.entity().getToken(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
         
         InactiveSearch = createSearchBuilder();
@@ -113,6 +114,15 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
         sc.setParameters("token", token);
         sc.setParameters("projectId", projectId);
+        sc.setParameters("state", State.Pending);
+        
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public ProjectInvitationVO findPendingById(long id) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+        sc.setParameters("id", id);
         sc.setParameters("state", State.Pending);
         
         return findOneBy(sc);

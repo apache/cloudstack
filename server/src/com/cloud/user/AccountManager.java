@@ -42,7 +42,7 @@ public interface AccountManager extends AccountService {
     
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
     
-    void checkAccess(Account account, Domain domain, AccessType accessType) throws PermissionDeniedException;
+    void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
     
     void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException;
 

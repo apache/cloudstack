@@ -2299,9 +2299,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new CloudRuntimeException("Unable to find the domain " + zone.getDomainId() + " for the zone: " + zone);
             }
             // check that caller can operate with domain
-            _accountMgr.checkAccess(caller, domain, null);
+            _accountMgr.checkAccess(caller, domain);
             // check that vm owner can create vm in the domain
-            _accountMgr.checkAccess(owner, domain, null);
+            _accountMgr.checkAccess(owner, domain);
         }
 
         // check if account/domain is with in resource limits to create a new vm
@@ -2906,7 +2906,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (domain == null) {
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
             }
-            _accountMgr.checkAccess(caller, domain, null);
+            _accountMgr.checkAccess(caller, domain);
         }
 
         boolean isAdmin = false;
@@ -3331,7 +3331,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // VV 5: check that vm owner can create vm in the domain
         DomainVO domain = _domainDao.findById(oldAccount.getDomainId());
-        _accountMgr.checkAccess(newAccount, domain, null);
+        _accountMgr.checkAccess(newAccount, domain);
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
         VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());

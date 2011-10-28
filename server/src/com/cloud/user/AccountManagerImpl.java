@@ -266,7 +266,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void checkAccess(Account caller, Domain domain, AccessType accessType) throws PermissionDeniedException {
+    public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(caller, domain)) {
                 if (s_logger.isDebugEnabled()) {
@@ -619,7 +619,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         
         //Check permissions
-        checkAccess(UserContext.current().getCaller(), domain, null);
+        checkAccess(UserContext.current().getCaller(), domain);
 
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
@@ -670,7 +670,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
         }
         
-        checkAccess(UserContext.current().getCaller(), domain, null);
+        checkAccess(UserContext.current().getCaller(), domain);
         
         Account account = _accountDao.findActiveAccount(accountName, domainId);
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -1045,7 +1045,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         // Check if user performing the action is allowed to modify this account
-        checkAccess(UserContext.current().getCaller(), _domainMgr.getDomain(account.getDomainId()), null);
+        checkAccess(UserContext.current().getCaller(), _domainMgr.getDomain(account.getDomainId()));
 
         // check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findAccount(newAccountName, domainId);
@@ -1252,7 +1252,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (owner == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
             }
-            checkAccess(caller, domain, null);
+            checkAccess(caller, domain);
 
             return owner;
         } else if (!isAdmin(caller.getType()) && accountName != null && domainId != null) {
@@ -1320,7 +1320,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
                 }
 
-                checkAccess(caller, domain, null);
+                checkAccess(caller, domain);
 
                 if (accountName != null) {
                     Account owner = getActiveAccountByName(accountName, domainId);

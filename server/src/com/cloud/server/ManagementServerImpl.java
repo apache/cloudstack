@@ -601,7 +601,7 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
             }
             
-            _accountMgr.checkAccess(caller, domain, null);
+            _accountMgr.checkAccess(caller, domain);
         } else {
             // default domainId to the admin's domain
             domainId = caller.getDomainId();
@@ -1431,7 +1431,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (domain == null) {
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
             }
-            _accountMgr.checkAccess(caller, domain, null);
+            _accountMgr.checkAccess(caller, domain);
 
             if (accountName != null) {
                 Account account = _accountDao.findActiveAccount(accountName, domainId);
@@ -2007,7 +2007,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
                 }
-                _accountMgr.checkAccess(caller, domain, null);
+                _accountMgr.checkAccess(caller, domain);
 
                 if (accountName != null) {
                     Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
@@ -2371,7 +2371,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         // check permissions
         Account caller = UserContext.current().getCaller();
-        _accountMgr.checkAccess(caller, domain, null);
+        _accountMgr.checkAccess(caller, domain);
         
         //domain name is unique in the cloud
         if (domainName != null) {
@@ -2691,7 +2691,7 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
                 }
 
-                _accountMgr.checkAccess(caller, domain, null);
+                _accountMgr.checkAccess(caller, domain);
 
                 if (acctName != null) {
                     Account userAccount = _accountDao.findActiveAccount(acctName, domainId);

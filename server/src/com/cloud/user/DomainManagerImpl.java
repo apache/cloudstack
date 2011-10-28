@@ -135,7 +135,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             throw new CloudRuntimeException("The domain cannot be created as the parent domain " + parentDomain.getName() + " is being deleted");
         }
         
-        _accountMgr.checkAccess(caller, parentDomain, null);
+        _accountMgr.checkAccess(caller, parentDomain);
 
        
         return createDomain(name, parentId, caller.getId(), networkDomain);
@@ -208,7 +208,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             throw new PermissionDeniedException("Can't delete ROOT domain");
         }
         
-        _accountMgr.checkAccess(caller, domain, null);
+        _accountMgr.checkAccess(caller, domain);
         
        return deleteDomain(domain, cleanup);
     }

@@ -179,7 +179,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public void checkAccess(Account account, Domain domain, AccessType accessType) throws PermissionDeniedException {
+    public void checkAccess(Account account, Domain domain) throws PermissionDeniedException {
         // TODO Auto-generated method stub
 
     }
