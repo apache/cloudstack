@@ -383,7 +383,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
             return  easySend(ssHost.getId(), cmd);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
+        } else if ( ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.SecondaryStorageVM) {
             return  sendToSSVM(ssHost.getDataCenterId(), cmd);
         } else {
             String msg = "do not support Secondary Storage type " + ssHost.getType();
@@ -407,7 +407,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
 
     private void sendToSSVM(final long dcId, final Command cmd, final Listener listener) throws AgentUnavailableException {
-        List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
+        List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             throw new AgentUnavailableException("No ssvm host found", -1);
         }
@@ -417,7 +417,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     }
 
     private Answer sendToSSVM(final long dcId, final Command cmd) {
-        List<HostVO> ssAHosts = _ssvmMgr.listUpSecondaryStorageVmHost(dcId);
+        List<HostVO> ssAHosts = _ssvmMgr.listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty() ) {
             return new Answer(cmd, false, "can not find secondary storage VM agent for data center " + dcId);
         }
