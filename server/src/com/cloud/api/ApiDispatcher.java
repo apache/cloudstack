@@ -30,6 +30,8 @@ import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.Identity.dao.IdentityDao;
+import com.cloud.Identity.dao.IdentityDaoImpl;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
@@ -55,6 +57,7 @@ public class ApiDispatcher {
 
     ComponentLocator _locator;
     AsyncJobManager _asyncMgr;
+    IdentityDao _identityDao;
 
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
@@ -66,6 +69,7 @@ public class ApiDispatcher {
     private ApiDispatcher() {
         _locator = ComponentLocator.getLocator(ManagementServer.Name);
         _asyncMgr = _locator.getManager(AsyncJobManager.class);
+        _identityDao = _locator.getDao(IdentityDao.class);
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -194,6 +198,8 @@ public class ApiDispatcher {
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
             }
+            
+            IdentityMapper identityMapper = field.getAnnotation(IdentityMapper.class);
 
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
@@ -205,7 +211,7 @@ public class ApiDispatcher {
 
             // marshall the parameter into the correct type and set the field value
             try {
-                setFieldValue(field, cmd, paramObj, parameterAnnotation);
+                setFieldValue(field, cmd, paramObj, parameterAnnotation, identityMapper);
             } catch (IllegalArgumentException argEx) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
@@ -229,7 +235,7 @@ public class ApiDispatcher {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
+    private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation, IdentityMapper identityMapper) throws IllegalArgumentException, ParseException {
         try {
             field.setAccessible(true);
             CommandType fieldType = annotation.type();
@@ -296,7 +302,10 @@ public class ApiDispatcher {
                 field.set(cmdObj, listParam);
                 break;
             case LONG:
-                field.set(cmdObj, Long.valueOf(paramObj.toString()));
+            	if(identityMapper != null)
+            		field.set(cmdObj, s_instance._identityDao.getIdentityId(identityMapper, paramObj.toString()));
+            	else
+            		field.set(cmdObj, Long.valueOf(paramObj.toString()));
                 break;
             case SHORT:
                 field.set(cmdObj, Short.valueOf(paramObj.toString()));

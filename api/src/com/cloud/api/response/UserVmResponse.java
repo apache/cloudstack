@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
-    private Long id;
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
     private String name;
@@ -160,11 +160,11 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 		this.hypervisor = hypervisor;
 	}
     
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

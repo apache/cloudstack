@@ -27,6 +27,7 @@ import com.cloud.api.response.IngressRuleResponse;
 public class UserVmData {
     private Long id;
     private String name;
+    private String uuid;
     private String displayName;
     private String ipAddress;
     private String accountName;
@@ -118,6 +119,14 @@ public class UserVmData {
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 
     public String getDisplayName() {

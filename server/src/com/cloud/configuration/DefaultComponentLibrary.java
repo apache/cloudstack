@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.Identity.dao.IdentityDaoImpl;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
@@ -281,6 +282,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
         addDao("ProjectsAccountDao", ProjectAccountDaoImpl.class);
         addDao("ProjectInvitationDao", ProjectInvitationDaoImpl.class);
+        addDao("IdentityDao", IdentityDaoImpl.class);
         info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
         info.addParameter("cache.size", "100");
         info.addParameter("cache.time.to.live", "600");

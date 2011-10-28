@@ -1169,7 +1169,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             
             // stats calculation
             String cpuUsed = null;
-            VmStats vmStats = ApiDBUtils.getVmStatistics(userVmResponse.getId());
+            // VmStats vmStats = ApiDBUtils.getVmStatistics(userVmResponse.getId());
+            VmStats vmStats = ApiDBUtils.getVmStatistics(uvd.getId());
             if (vmStats != null) {
                 float cpuUtil = (float) vmStats.getCPUUtilization();
                 cpuUsed = decimalFormat.format(cpuUtil) + "%";
@@ -2525,7 +2526,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserVmResponse newUserVmResponse(UserVmData userVmData, boolean caller_is_admin){
         UserVmResponse userVmResponse = new UserVmResponse();
         userVmResponse.setHypervisor(userVmData.getHypervisor());
-        userVmResponse.setId(userVmData.getId());
+        if(userVmData.getUuid() != null && !userVmData.getUuid().isEmpty())
+            userVmResponse.setId(userVmData.getUuid());
+        else
+        	userVmResponse.setId(String.valueOf(userVmData.getId()));
         userVmResponse.setName(userVmData.getName());
         userVmResponse.setDisplayName(userVmData.getDisplayName());
         userVmResponse.setIpAddress(userVmData.getIpAddress());

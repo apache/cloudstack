@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -25,6 +26,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
 	private static final String s_name = "restorevmresponse";
 	
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="Virtual Machine ID")
     private Long vmId;
     

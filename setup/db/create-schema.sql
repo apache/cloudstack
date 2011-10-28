@@ -870,6 +870,7 @@ CREATE TABLE  `cloud`.`vm_template` (
 CREATE TABLE  `cloud`.`vm_instance` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL,
+  `uuid` varchar(255),
   `instance_name` varchar(255) NOT NULL COMMENT 'name of the vm instance running on the hosts',
   `state` varchar(32) NOT NULL,
   `vm_template_id` bigint unsigned,
@@ -912,7 +913,8 @@ CREATE TABLE  `cloud`.`vm_instance` (
   CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`),
   INDEX `i_vm_instance__account_id`(`account_id`),
   CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`),
-  INDEX `i_vm_instance__service_offering_id`(`service_offering_id`)
+  INDEX `i_vm_instance__service_offering_id`(`service_offering_id`),
+  CONSTRAINT `uc_vm_instance_uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`user_vm` (

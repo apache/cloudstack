@@ -21,6 +21,7 @@ package com.cloud.vm;
 import java.util.Date;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -144,6 +145,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Transient
     Map<String, String> details;
+
+    @Column(name="uuid")
+    protected String uuid;
     
     public VMInstanceVO(long id,
                         long serviceOfferingId,
@@ -172,6 +176,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
         this.limitCpuUse = false;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public VMInstanceVO(long id,
@@ -219,6 +224,15 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	@Override
     public long getId() {
 		return id;
+	}
+	
+	@Override
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 	
 	@Override

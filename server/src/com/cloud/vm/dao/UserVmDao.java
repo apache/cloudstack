@@ -21,8 +21,6 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;

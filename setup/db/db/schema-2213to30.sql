@@ -109,10 +109,6 @@ update configuration set name = 'zone.virtualnetwork.publicip.capacity.notificat
 update configuration set name = 'pod.privateip.capacity.notificationthreshold' , category = 'Alert' where name = 'private.ip.capacity.threshold' ;
 
 
-
-
-
-
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `template_version` varchar(100) COMMENT 'template version' AFTER role;
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `scripts_version` varchar(100) COMMENT 'scripts version' AFTER template_version;
 ALTER TABLE `cloud`.`alert` ADD `cluster_id` bigint unsigned;
@@ -121,3 +117,5 @@ DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
 
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(255); 
+ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `uc_vm_instance_uuid` UNIQUE (`uuid`);
