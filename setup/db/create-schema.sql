@@ -709,7 +709,6 @@ CREATE TABLE  `cloud`.`host` (
   INDEX `i_host__last_ping`(`last_ping`),
   INDEX `i_host__status`(`status`),
   INDEX `i_host__data_center_id`(`data_center_id`),
-  INDEX `i_host__allocation_state`(`allocation_state`),
   CONSTRAINT `fk_host__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
   INDEX `i_host__pod_id`(`pod_id`),
   CONSTRAINT `fk_host__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`)
