@@ -19,6 +19,7 @@
 
 package com.cloud.network.element;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -41,15 +42,24 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
 public class SecurityGroupElement extends AdapterBase implements NetworkElement {
+    private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
-        return null;
+        return capabilities;
     }
 
     @Override
     public Provider getProvider() {
-        return null;
+        return Provider.SecurityGroupProvider;
+    }
+    
+    private static Map<Service, Map<Capability, String>> setCapabilities() {
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+
+        capabilities.put(Service.SecurityGroup, null);
+       
+        return capabilities;
     }
 
     @Override
