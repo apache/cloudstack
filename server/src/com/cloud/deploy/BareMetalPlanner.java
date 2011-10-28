@@ -36,6 +36,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -87,18 +88,17 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			}
 		}
 		
-		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());		
+		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());
 		int cpu_requested;
 		long ram_requested;
 		HostVO target = null;
-        List<HostVO> hosts;
+		List<HostVO> hosts;
 		for (ClusterVO cluster : clusters) {
-            hosts = _resourceMgr.listAllHostsInCluster(cluster.getId());
+			hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
 			if (hostTag != null) {
 				for (HostVO h : hosts) {
 					_hostDao.loadDetails(h);
-					if (h.getDetail("hostTag") != null
-							&& h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
+					if (h.getDetail("hostTag") != null && h.getDetail("hostTag").equalsIgnoreCase(hostTag)) {
 						target = h;
 						break;
 					}
@@ -115,9 +115,10 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			ram_requested = target.getTotalMemory();
 		}
 		
-		for (HostVO h : hosts) {
-			if (h.getStatus() == Status.Up) {
-				if(_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor, true)){
+		for (ClusterVO cluster : clusters) {
+			hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+			for (HostVO h : hosts) {
+				if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor, true)) {
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");
 					DataCenter dc = _dcDao.findById(h.getDataCenterId());
 					Pod pod = _podDao.findById(h.getPodId());
@@ -125,7 +126,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 				}
 			}
 		}
-		
+
 		s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, ram_requested));
 		return null;
 	}
