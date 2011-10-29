@@ -20,6 +20,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.ovm.object.Connection;
 import com.cloud.ovm.object.OvmHost;
@@ -27,6 +28,8 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
@@ -38,6 +41,7 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer {
 	protected String _guestNetworkDevice;
 	
 	@Inject ClusterDao _clusterDao;
+	@Inject HostDao _hostDao;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -49,6 +53,20 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer {
 	}
 	
 	protected OvmDiscoverer() {
+	}
+	
+	private boolean checkIfExisted(String guid) {
+		SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
+		sb.and("guid", sb.entity().getGuid(), SearchCriteria.Op.EQ);
+		sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+		sb.done();
+		
+		SearchCriteria<HostVO> sc = sb.create();
+		sc.setParameters("guid", guid);
+		sc.setParameters("hypervisorType", HypervisorType.Ovm);
+		List<HostVO> hosts = _hostDao.search(sc, null);
+		
+		return !hosts.isEmpty();
 	}
 	
 	@Override
@@ -97,6 +115,11 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer {
             String hostIp = ia.getHostAddress();
             String guid = UUID.nameUUIDFromBytes(hostIp.getBytes()).toString();
 
+            if (checkIfExisted(guid)) {
+            	throw new CloudRuntimeException("The host " + hostIp + " has been added before");
+            }
+            
+            s_logger.debug("Ovm discover is going to disover host having guid " + guid);
             
             ClusterVO clu = _clusterDao.findById(clusterId);
 			if (clu.getGuid() == null) {
