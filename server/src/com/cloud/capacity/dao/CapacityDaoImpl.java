@@ -101,10 +101,12 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         SummedCapacitySearch.select("sumReserved", Func.SUM, SummedCapacitySearch.entity().getReservedCapacity());
         SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());
         SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());        
-        
-        SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
+                
         SummedCapacitySearch.groupBy(SummedCapacitySearch.entity().getCapacityType());
         
+        if (zoneId != null){
+        	SummedCapacitySearch.and("dcId", SummedCapacitySearch.entity().getDataCenterId(), Op.EQ);
+        }
         if (podId != null){
         	SummedCapacitySearch.and("podId", SummedCapacitySearch.entity().getPodId(), Op.EQ);
         }
@@ -119,7 +121,9 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         
         
         SearchCriteria<SummedCapacity> sc = SummedCapacitySearch.create();
-        sc.setParameters("dcId", zoneId);
+        if (zoneId != null){
+        	sc.setParameters("dcId", zoneId);
+        }
         if (podId != null){
         	sc.setParameters("podId", podId);
         }

@@ -30,9 +30,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
@@ -43,6 +46,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -338,8 +342,71 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
         return disabledClusters;
     }
+    
+    private Map<Short,Float> getCapacityThresholdMap(){
+    	// Lets build this real time so that the admin wont have to restart MS if he changes these values
+    	Map<Short,Float> disableThresholdMap = new HashMap<Short, Float>();
+    	
+    	String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
+        float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
+        disableThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, cpuDisableThreshold);
+        
+        String memoryDisableThresholdString = _configDao.getValue(Config.MemoryCapacityDisableThreshold.key());
+        float memoryDisableThreshold = NumbersUtil.parseFloat(memoryDisableThresholdString, 0.85F);
+        disableThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, memoryDisableThreshold);
+        
+    	return disableThresholdMap;
+    }
 
-
+    private List<Short> getCapacitiesForCheckingThreshold(){
+    	List<Short> capacityList = new ArrayList<Short>();    	
+    	capacityList.add(Capacity.CAPACITY_TYPE_CPU);
+    	capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);    	
+    	return capacityList;
+    }
+    
+    private void removeClustersCrossingThreshold(List<Long> clusterList, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile){
+    	        
+    	Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
+    	List<Short> capacityList = getCapacitiesForCheckingThreshold();
+    	List<Long> clustersCrossingThreshold = new ArrayList<Long>();
+    	
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        int cpu_requested = offering.getCpu() * offering.getSpeed();
+        long ram_requested = offering.getRamSize() * 1024L * 1024L;
+    	
+    	// Iterate over the cluster List and check for each cluster whether it breaks disable threshold for any of the capacity types
+    	for (Long clusterId : clusterList){
+    		for(short capacity : capacityList){
+    			
+    			List<SummedCapacity> summedCapacityList = _capacityDao.findCapacityBy(new Integer(capacity), null, null, clusterId);    			
+    	    	if (summedCapacityList != null && summedCapacityList.size() != 0  && summedCapacityList.get(0).getTotalCapacity() != 0){
+    	    		
+    	    		double used = (double)(summedCapacityList.get(0).getUsedCapacity() + summedCapacityList.get(0).getReservedCapacity());
+    	    		double total = summedCapacityList.get(0).getTotalCapacity();
+    	    		
+    	    		if (capacity == Capacity.CAPACITY_TYPE_CPU){
+    	    			total = total * ApiDBUtils.getCpuOverprovisioningFactor();
+    	    			used = used + cpu_requested;
+    	    		}else{
+    	    			used = used + ram_requested;
+    	    		}
+    	    		
+    	    		double usedPercentage = used/total;
+    	    		if ( usedPercentage > capacityThresholdMap.get(capacity)){    	    			
+    	    			avoid.addCluster(clusterId);
+    	    			clustersCrossingThreshold.add(clusterId);
+						s_logger.debug("Cannot allocate cluster " + clusterId + " for vm creation since its allocated percentage: " +usedPercentage + 
+								" will cross the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping this cluster");    	    			
+    	    			break;
+    	    		}    	    				
+    	    	}    	    	
+        	}	    			
+    	}
+    	
+    	clusterList.removeAll(clustersCrossingThreshold);	    	
+    	
+    }
 
     private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
             DeploymentPlan plan, ExcludeList avoid, DataCenter dc, String _allocationAlgorithm){
@@ -348,6 +415,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             s_logger.trace("ClusterId List to consider: " + clusterList);
         }
 
+        removeClustersCrossingThreshold(clusterList, avoid, vmProfile);
+        
         for(Long clusterId : clusterList){
             Cluster clusterVO = _clusterDao.findById(clusterId);
 
@@ -356,7 +425,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 avoid.addCluster(clusterVO.getId());
                 continue;
             }
-
+            
             s_logger.debug("Checking resources in Cluster: "+clusterId + " under Pod: "+clusterVO.getPodId());
             //search for resources(hosts and storage) under this zone, pod, cluster.
             DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId());

@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -80,6 +81,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     Random _rand;
     boolean _dontMatter;
     double _storageUsedThreshold = 1.0d;
+    double _storageAllocatedThreshold = 1.0d;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -92,11 +94,17 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         
         _extraBytesPerVolume = 0;
         
-        String storageUsedThreshold = configs.get("storage.capacity.threshold");
+        
+        String storageUsedThreshold = _configDao.getValue(Config.StorageCapacityDisableThreshold.key());        
         if (storageUsedThreshold != null) {
             _storageUsedThreshold = Double.parseDouble(storageUsedThreshold);
         }
 
+        String storageAllocatedThreshold = _configDao.getValue(Config.StorageAllocatedCapacityDisableThreshold.key());
+        if (storageAllocatedThreshold != null) {
+            _storageAllocatedThreshold = Double.parseDouble(storageAllocatedThreshold);
+        }
+        
         _rand = new Random(System.currentTimeMillis());
         
         _dontMatter = Boolean.parseBoolean(configs.get("storage.overwrite.provisioning"));
@@ -192,11 +200,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 			if (stats != null) {
 				double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
 				if (s_logger.isDebugEnabled()) {
-					s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage + ", threshold: " + _storageUsedThreshold);
+					s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage + ", disable threshold: " + _storageUsedThreshold);
 				}
 				if (usedPercentage >= _storageUsedThreshold) {
 					if (s_logger.isDebugEnabled()) {
-						s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage since its usage percentage: " +usedPercentage + " has crossed the storage.capacity.threshold: " + _storageUsedThreshold + ", skipping this pool");
+						s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage since its usage percentage: " +usedPercentage + " has crossed the pool.storage.capacity.disablethreshold: " + _storageUsedThreshold + ", skipping this pool");
 					}
 					return false;
 				}
@@ -250,7 +258,15 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		}
 
 		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize);
+			s_logger.debug("Attempting to look for pool " + pool.getId() + " for storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize + ", allocated disable threshold: " + _storageAllocatedThreshold);
+		}
+
+		double usedPercentage = (totalAllocatedSize + askingSize) / (double)(pool.getCapacityBytes() * storageOverprovisioningFactor);
+		if (usedPercentage > _storageAllocatedThreshold){
+			if (s_logger.isDebugEnabled()) {
+				s_logger.debug("Cannot allocate this pool " + pool.getId() + " for storage since its allocated percentage: " +usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + _storageAllocatedThreshold + ", skipping this pool");
+			}
+			return false;
 		}
 
 		if ((pool.getCapacityBytes() * storageOverprovisioningFactor) < (totalAllocatedSize + askingSize)) {

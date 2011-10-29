@@ -92,20 +92,21 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'project.smtp.useAuth', null, 'If true, use SMTP authentication when sending emails');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'project.smtp.username', null, 'Username for SMTP authentication (applies only if project.smtp.useAuth is true)');
 
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.memory.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of memory utilization above which allocators will disable using the cluster for low memory available.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.cpu.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.storage.allocated.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the cluster for low allocated storage available.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'zone.vlan.capacity.notificationthreshold' , .85, 'Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.localStorage.capacity.notificationthreshold' , .85, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'zone.directnetwork.publicip.capacity.notificationthreshold' , .85, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'zone.secstorage.capacity.notificationthreshold' , .85, 'Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'cluster.memory.allocated.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of memory utilization above which allocators will disable using the cluster for low memory available.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'cluster.cpu.allocated.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'pool.storage.allocated.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the cluster for low allocated storage available.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'pool.storage.capacity.disablethreshold' , .85, 'Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the cluster for low allocated storage available.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.vlan.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'cluster.localStorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.directnetwork.publicip.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
+INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.secstorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.');
 
-update configuration set name = 'cluster.storage.allocated.capacity.notificationthreshold' where name = 'storage.allocated.capacity.threshold' ;
-update configuration set name = 'cluster.storage.capacity.notificationthreshold' where name = 'storage.capacity.threshold' ;
-update configuration set name = 'cluster.cpu.capacity.notificationthreshold' where name = 'cpu.capacity.threshold' ;
-update configuration set name = 'cluster.memory.capacity.notificationthreshold' where name = 'memory.capacity.threshold' ;
-update configuration set name = 'zone.virtualnetwork.publicip.capacity.notificationthreshold' where name = 'public.ip.capacity.threshold' ;
-update configuration set name = 'pod.privateip.capacity.notificationthreshold' where name = 'private.ip.capacity.threshold' ;
+update configuration set name = 'cluster.storage.allocated.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.allocated.capacity.threshold' ;
+update configuration set name = 'cluster.storage.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.capacity.threshold' ;
+update configuration set name = 'cluster.cpu.capacity.notificationthreshold' , category = 'Alert' where name = 'cpu.capacity.threshold' ;
+update configuration set name = 'cluster.memory.capacity.notificationthreshold' , category = 'Alert' where name = 'memory.capacity.threshold' ;
+update configuration set name = 'zone.virtualnetwork.publicip.capacity.notificationthreshold' , category = 'Alert' where name = 'public.ip.capacity.threshold' ;
+update configuration set name = 'pod.privateip.capacity.notificationthreshold' , category = 'Alert' where name = 'private.ip.capacity.threshold' ;
 
 
 

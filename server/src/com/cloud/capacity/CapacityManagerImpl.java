@@ -410,6 +410,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
     }
     
+    @DB
     @Override
 	public void updateCapacityForHost(HostVO host){
     	// prep the service offerings
@@ -489,7 +490,8 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 	
 	        }
         }else {
-        	
+        	Transaction txn = Transaction.currentTxn();
+        	txn.start();
         	CapacityVO capacity = new CapacityVO(host.getId(),
                     host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedMemory,
                     host.getTotalMemory(),
@@ -507,6 +509,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                     CapacityVO.CAPACITY_TYPE_CPU);
             capacity.setReservedCapacity(reservedCpu);
             _capacityDao.persist(capacity);
+            txn.commit();
             
         }
         
