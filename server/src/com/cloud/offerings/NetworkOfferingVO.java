@@ -29,7 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;

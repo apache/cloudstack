@@ -446,9 +446,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             }
         }
 
-        PhysicalNetworkServiceProviderVO ntwkSvcProider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (ntwkSvcProider.getState() != PhysicalNetworkServiceProvider.State.Enabled) { //TODO: check for other states: Shutdown?
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProider.getProviderName() + 
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        if (!_networkMgr.isProviderEnabled(ntwkSvcProvider)) { //TODO: check for other states: Shutdown?
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + 
                     " is not in enabled state in the physical network: " + physicalNetworkId + "to add this device" );
         }
 
@@ -514,7 +514,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (host != null) {
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            PhysicalNetworkExternalDeviceVO device = new PhysicalNetworkExternalDeviceVO(ntwkSvcProider.getId(), host.getId());
+            PhysicalNetworkExternalDeviceVO device = new PhysicalNetworkExternalDeviceVO(ntwkSvcProvider.getId(), host.getId());
             _physicalNetworkExternalDeviceDao.persist(device);
             txn.commit();
             return host;
@@ -583,11 +583,11 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (physicalNetworkId == null) {
             return lbHostsInZone;
         }
-        PhysicalNetworkServiceProviderVO ntwkSvcProider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (ntwkSvcProider == null) {
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        if (ntwkSvcProvider == null) {
             return null; 
         }
-        List<PhysicalNetworkExternalDeviceVO> providerInstances = _physicalNetworkExternalDeviceDao.listByNetworkServiceProviderId(ntwkSvcProider.getId());
+        List<PhysicalNetworkExternalDeviceVO> providerInstances = _physicalNetworkExternalDeviceDao.listByNetworkServiceProviderId(ntwkSvcProvider.getId());
         for (PhysicalNetworkExternalDeviceVO provderInstance : providerInstances) {
             lbHosts.add(_hostDao.findById(provderInstance.getHostId()));
         }
@@ -835,9 +835,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             }
         }
 
-        PhysicalNetworkServiceProviderVO ntwkSvcProider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (ntwkSvcProider.getState() != PhysicalNetworkServiceProvider.State.Enabled) { //TODO: check for other states: Shutdown?
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProider.getProviderName() + 
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        if (!_networkMgr.isProviderEnabled(ntwkSvcProvider)) {
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + 
                     " is not in enabled state in the physical network: " + physicalNetworkId + "to add this device" );
         }
 
@@ -935,7 +935,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             Transaction txn = Transaction.currentTxn();
             txn.start();
             _dcDao.update(zone.getId(), zone);
-            PhysicalNetworkExternalDeviceVO device = new PhysicalNetworkExternalDeviceVO(ntwkSvcProider.getId(), externalFirewall.getId());
+            PhysicalNetworkExternalDeviceVO device = new PhysicalNetworkExternalDeviceVO(ntwkSvcProvider.getId(), externalFirewall.getId());
             _physicalNetworkExternalDeviceDao.persist(device);
             txn.commit();
             return externalFirewall;
@@ -1003,11 +1003,11 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (physicalNetworkId == null) {
             return firewallhostsInZone;
         }
-        PhysicalNetworkServiceProviderVO ntwkSvcProider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (ntwkSvcProider == null) {
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        if (ntwkSvcProvider == null) {
             return null; 
         }
-        List<PhysicalNetworkExternalDeviceVO> providerInstances = _physicalNetworkExternalDeviceDao.listByNetworkServiceProviderId(ntwkSvcProider.getId());
+        List<PhysicalNetworkExternalDeviceVO> providerInstances = _physicalNetworkExternalDeviceDao.listByNetworkServiceProviderId(ntwkSvcProvider.getId());
         for (PhysicalNetworkExternalDeviceVO provderInstance : providerInstances) {
             firewallHosts.add(_hostDao.findById(provderInstance.getHostId()));
         }

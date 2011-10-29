@@ -371,10 +371,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                                 displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
                     }
                 } else {
-                    if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
+                    if (zone.isSecurityGroupEnabled())  {
                         vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
                                 owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
                     } else {
+                        if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
+                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+                        }
                         vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
                                 diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
                     }

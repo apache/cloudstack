@@ -33,6 +33,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
@@ -225,6 +226,12 @@ public interface NetworkManager extends NetworkService {
 
     PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId);
 
-    boolean isSecurityGroupSupportedInNetwork(Network network); 
+    boolean isSecurityGroupSupportedInNetwork(Network network);
+    
+    boolean isProviderEnabled(PhysicalNetworkServiceProvider provider);
+    
+    boolean isProviderAvailable(long physicalNetowrkId, String providerName);
+    
+    boolean isServiceEnabled(Long physicalNetworkId, long networkOfferingId, Service service);
 
 }

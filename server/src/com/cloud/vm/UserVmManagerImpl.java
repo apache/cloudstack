@@ -2008,7 +2008,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (securityGroupIdList != null && isVmWare) {
             throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else if (!isVmWare) {
+        } else if (!isVmWare && _networkMgr.isServiceSupportedByNetworkOffering(defaultNetwork.getNetworkOfferingId(), Service.SecurityGroup)) {
             if (securityGroupIdList == null) {
                 securityGroupIdList = new ArrayList<Long>();
             }
@@ -2063,6 +2063,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             networkList.add(networkWithSecurityGroup);
+            isSecurityGroupEnabledNetworkUsed = true;
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
@@ -2495,7 +2496,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         } catch (Exception ex) {
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
-
 
         _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
 

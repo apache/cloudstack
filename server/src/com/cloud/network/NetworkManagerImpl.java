@@ -854,13 +854,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //there is only 1 diff between offering #1 and #3 - securityGroup is enabled for the first, and disabled for the third
         //TODO - networkOffering 1 should probably become non-system
         //check that offering already exists
-        NetworkOfferingVO offering = null;
-        if (_networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, true);
-            offering.setState(NetworkOffering.State.Enabled);
-            _networkOfferingDao.update(offering.getId(), offering);
-        }
         
+        NetworkOfferingVO defaultGuestOffering = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork);
+        if (defaultGuestOffering == null) {
+            defaultGuestOffering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, true);
+            defaultGuestOffering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(defaultGuestOffering.getId(), defaultGuestOffering);
+        } 
+        _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, defaultGuestOffering);
+        
+        NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, Network.GuestType.Isolated, false);
             offering.setState(NetworkOffering.State.Enabled);
@@ -1440,7 +1443,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 element.prepare(network, profile, vmProfile, dest, context);
             }
             
-            profile.setSecurityGroupEnabled(isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup));
+            profile.setSecurityGroupEnabled(isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup));
             guru.updateNicProfile(profile, network);
             vmProfile.addNic(profile);
         }
@@ -1674,6 +1677,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 isDomainSpecific = true;
             }
         }
+        
+        
+        //FIXME - need to check if all providers are supported by the physical network
+        //FIXME - need to check that the traffic type is supported
 
         Account owner = null;
         if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
@@ -4360,6 +4367,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _pNTrafficTypeDao.listBy(physicalNetworkId);
     }
 
+
     @Override
     public PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
         PhysicalNetworkVO network = null;
@@ -4376,4 +4384,42 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         return networkList.get(0);
     }    
+
+    
+    @Override
+    public boolean isProviderEnabled(PhysicalNetworkServiceProvider provider) {
+        if (provider == null || provider.getState() != PhysicalNetworkServiceProvider.State.Enabled) { //TODO: check for other states: Shutdown?
+            return false;
+        }
+        return true;
+    }
+    
+    @Override 
+    public boolean isProviderAvailable(long physicalNetowrkId, String providerName) {
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _pNSPDao.findByServiceProvider(physicalNetowrkId, providerName);
+        return isProviderEnabled(ntwkSvcProvider);
+    }
+    
+    @Override
+    public boolean isServiceEnabled(Long physicalNetworkId, long networkOfferingId, Service service) {
+        //check if the service is supported by the network offering
+        if (!isServiceSupportedByNetworkOffering(networkOfferingId, service)) {
+            s_logger.debug("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
+            return false;
+        }
+        
+        //get providers for the service and check if all of them are supported
+        if (physicalNetworkId != null) {
+            List<String> providers = _ntwkOfferingSrvcDao.getProvidersForService(networkOfferingId, service);
+            for (String provider : providers) {
+                if (!isProviderAvailable(physicalNetworkId, provider)) {
+                    s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
 }

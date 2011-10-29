@@ -911,7 +911,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @Override
     @DB
     public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
-        if (!isVmSecurityGroupEnabled(userVmId)) {
+        if (!isVmNetworkOffSupportsSecurityGroup(userVmId)) {
             s_logger.trace("User vm " + userVmId + " is not security group enabled, not adding it to security group");
             return false;
         }
@@ -1281,7 +1281,20 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
         for (NicProfile nic : nics) {
             Network network = _networkMgr.getNetwork(nic.getNetworkId());
-            if (_networkMgr.isSecurityGroupSupportedInNetwork(network) && vm.getHypervisorType() != HypervisorType.VMware) {
+            if (_networkMgr.isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup) && vm.getHypervisorType() != HypervisorType.VMware) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    
+    protected boolean isVmNetworkOffSupportsSecurityGroup(Long vmId) {
+        VirtualMachine vm = _vmDao.findByIdIncludingRemoved(vmId);
+        List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
+        for (NicProfile nic : nics) {
+            Network network = _networkMgr.getNetwork(nic.getNetworkId());
+            if (_networkMgr.isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup) && vm.getHypervisorType() != HypervisorType.VMware) {
                 return true;
             }
         }
