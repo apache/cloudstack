@@ -32,6 +32,8 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
@@ -63,6 +65,14 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
     	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return super.stop();
     }
+	
+	private boolean checkIfExisted(String guid) {
+		SearchCriteria2<HostVO, Long> sc = SearchCriteria2.create(HostVO.class, Long.class);
+		sc.addAnd(sc.getEntity().getGuid(), SearchCriteria.Op.EQ, guid);
+		sc.addAnd(sc.getEntity().getHypervisorType(), SearchCriteria.Op.EQ, HypervisorType.Ovm);
+		List<Long> hosts = sc.list();
+		return !hosts.isEmpty();
+	}
 	
 	@Override
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
@@ -110,6 +120,11 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
             String hostIp = ia.getHostAddress();
             String guid = UUID.nameUUIDFromBytes(hostIp.getBytes()).toString();
 
+            if (checkIfExisted(guid)) {
+            	throw new CloudRuntimeException("The host " + hostIp + " has been added before");
+            }
+            
+            s_logger.debug("Ovm discover is going to disover host having guid " + guid);
             
             ClusterVO clu = _clusterDao.findById(clusterId);
 			if (clu.getGuid() == null) {
