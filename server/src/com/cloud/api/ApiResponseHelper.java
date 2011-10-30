@@ -1128,9 +1128,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("ipforwardingrule");
         return response;
     }
+    
 
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
+        return createUserVmResponse(objectName, 0, userVms);
+    }
+
+    @Override
+    public List<UserVmResponse> createUserVmResponse(String objectName, int details, UserVm... userVms) {
         Account caller = UserContext.current().getCaller();
         boolean caller_is_admin = ((caller == null) || (caller.getType() == Account.ACCOUNT_TYPE_ADMIN));
         
@@ -1141,7 +1147,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmDataList.put(userVm.getId(), userVmData);
         }
         
-        vmDataList = ApiDBUtils.listVmDetails(vmDataList);
+        vmDataList = ApiDBUtils.listVmDetails(vmDataList, details);
         
         //initialize vmresponse from vmdatalist
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();

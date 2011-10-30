@@ -84,6 +84,9 @@ public class ListVMsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list vms by project")
     private Long projectId;
+    
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.INTEGER, description="bits for querying required vm details")
+    private Integer details_mask;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -153,6 +156,9 @@ public class ListVMsCmd extends BaseListCmd {
         return projectId;
     }
 
+    public int getDetailsMask() {
+        return details_mask == null ? 0 : details_mask;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -169,7 +175,7 @@ public class ListVMsCmd extends BaseListCmd {
     public void execute(){
         List<? extends UserVm> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.toArray(new UserVm[result.size()]));
+        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetailsMask(), result.toArray(new UserVm[result.size()]));
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
