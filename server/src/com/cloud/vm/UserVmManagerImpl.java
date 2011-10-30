@@ -71,7 +71,6 @@ import com.cloud.api.commands.RestoreVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.api.commands.VMsSummaryCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -2885,119 +2884,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }
-    
-    @Override
-    public List<UserVmVO> searchForUserVMs(VMsSummaryCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Boolean isRecursive = cmd.isRecursive();
-        String hypervisor = cmd.getHypervisor();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        String path = null;
-        Long projectId = cmd.getProjectId();
-
-        if (isRecursive != null && isRecursive && domainId == null) {
-            throw new InvalidParameterValueException("Please enter a parent domain id for listing vms recursively");
-        }
-
-        if (domainId != null) {
-            // Verify if user is authorized to see instances belonging to the domain
-            DomainVO domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-            _accountMgr.checkAccess(caller, domain);
-        }
-
-        boolean isAdmin = false;
-
-        if (_accountMgr.isAdmin(caller.getType())) {
-            isAdmin = true;
-            if (accountName != null && domainId != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null) {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                }
-                permittedAccounts.add(caller.getId());
-            }
-
-            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                if (isRecursive == null) {
-                    DomainVO domain = _domainDao.findById(caller.getDomainId());
-                    path = domain.getPath();
-                }
-            }
-        } else {
-            //regular user can't specify any other domain rather than his own
-            if (domainId != null && domainId.longValue() != caller.getDomainId()) {
-                throw new PermissionDeniedException("Caller is not authorised to see domain id=" + domainId + " entries");
-            }
-            permittedAccounts.add(caller.getId());
-        }
-
-        if (isRecursive != null && isRecursive && isAdmin) {
-            if (isRecursive) {
-                DomainVO domain = _domainDao.findById(domainId);
-                path = domain.getPath();
-                domainId = null;
-            }
-        }
-        
-        //set project information
-        if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else {
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        } 
-
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.NAME, cmd.getInstanceName());
-        c.addCriteria(Criteria.STATE, cmd.getState());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
-        c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
-        c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
-        c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
-
-        if (domainId != null) {
-            c.addCriteria(Criteria.DOMAINID, domainId);
-        }
-
-        if (path != null) {
-            c.addCriteria(Criteria.PATH, path);
-        }
-
-        if (HypervisorType.getType(hypervisor) != HypervisorType.None) {
-            c.addCriteria(Criteria.HYPERVISOR, hypervisor);
-        } else if (hypervisor != null) {
-            throw new InvalidParameterValueException("Invalid HypervisorType " + hypervisor);
-        }
-
-        // ignore these search requests if it's not an admin
-        if (isAdmin) {
-            c.addCriteria(Criteria.PODID, cmd.getPodId());
-            c.addCriteria(Criteria.HOSTID, cmd.getHostId());
-            c.addCriteria(Criteria.STORAGE_ID, cmd.getStorageId());
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            c.addCriteria(Criteria.ACCOUNTID, permittedAccounts.toArray());
-        }
-        c.addCriteria(Criteria.ISADMIN, isAdmin);
-
-        return searchForUserVMs(c);
-    }
-
 
     @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) {
@@ -3593,5 +3479,4 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    s_logger.debug("Restore VM " + vmId + " with template " + root.getTemplateId() + " successfully");
 	    return vm;
     }
-
 }

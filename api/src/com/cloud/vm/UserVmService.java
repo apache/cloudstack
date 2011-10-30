@@ -38,7 +38,6 @@ import com.cloud.api.commands.RestoreVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.api.commands.VMsSummaryCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -350,7 +349,6 @@ public interface UserVmService {
      * @return List of UserVMs.
      */
     List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
-    List<? extends UserVm> searchForUserVMs(VMsSummaryCmd cmd);
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 
