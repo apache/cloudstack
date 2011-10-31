@@ -53,5 +53,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	IPAddressVO findByAssociatedVmId(long vmId);
 	
 	IPAddressVO findByIpAndSourceNetworkId(long networkId, String ipAddress);
+	
+	List<IPAddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 
 }

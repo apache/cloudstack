@@ -155,7 +155,7 @@ public class DatabaseConfig {
     	fieldNames.add("tags");
     	fieldNames.add("networktype");
         fieldNames.add("clusterId");
-
+        fieldNames.add("physicalNetworkId");
     	
         s_configurationDescriptions.put("host.stats.interval", "the interval in milliseconds when host stats are retrieved from agents");
         s_configurationDescriptions.put("storage.stats.interval", "the interval in milliseconds when storage stats (per host) are retrieved from agents");
@@ -665,12 +665,14 @@ public class DatabaseConfig {
     
     private void saveVlan() {
     	String zoneId = _currentObjectParams.get("zoneId");
+    	String physicalNetworkIdStr = _currentObjectParams.get("physicalNetworkId");
     	String vlanId = _currentObjectParams.get("vlanId");
     	String gateway = _currentObjectParams.get("gateway");
         String netmask = _currentObjectParams.get("netmask");
         String publicIpRange = _currentObjectParams.get("ipAddressRange");
         String vlanType = _currentObjectParams.get("vlanType");
         String vlanPodName = _currentObjectParams.get("podName");
+        
         
         String ipError = "Please enter a valid IP address for the field: ";
         if (!IPRangeConfig.validOrBlankIP(gateway)) {
@@ -716,11 +718,13 @@ public class DatabaseConfig {
     	long zoneDbId = Long.parseLong(zoneId);
     	String zoneName = PodZoneConfig.getZoneName(zoneDbId);
     	
+    	long physicalNetworkId = Long.parseLong(physicalNetworkIdStr);
+    	
     	//Set networkId to be 0, the value will be updated after management server starts up
-    	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange, 0);
+    	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange, 0, physicalNetworkId);
     	
     	long vlanDbId = pzc.getVlanDbId(zoneName, vlanId);
-    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP, null);
+    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP, null, physicalNetworkId);
         
     }
 
@@ -786,7 +790,7 @@ public class DatabaseConfig {
     	
 		if (privateIpRange != null) {
 			// Save the IP address range
-			iprc.saveIPRange("private", id, dataCenterId, -1, startIP, endIP, null);
+			iprc.saveIPRange("private", id, dataCenterId, -1, startIP, endIP, null, -1);
 		}
 
     }

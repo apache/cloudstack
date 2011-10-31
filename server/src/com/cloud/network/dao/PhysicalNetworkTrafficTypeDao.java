@@ -19,10 +19,10 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.GenericDao;
 
 public interface PhysicalNetworkTrafficTypeDao extends GenericDao<PhysicalNetworkTrafficTypeVO, Long> {
     List<PhysicalNetworkTrafficTypeVO> listBy(long physicalNetworkId);
-   
-
+    boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType);
 }

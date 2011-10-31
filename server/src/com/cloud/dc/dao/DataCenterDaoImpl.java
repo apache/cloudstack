@@ -115,8 +115,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
     
     @Override
-    public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
-    	return _vnetAllocDao.findVnet(dcId, vnet);
+    public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet) {
+    	return _vnetAllocDao.findVnet(dcId, physicalNetworkId, vnet);
     }
 
     @Override

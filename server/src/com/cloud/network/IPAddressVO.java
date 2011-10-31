@@ -86,6 +86,9 @@ public class IPAddressVO implements IpAddress {
 	
 	@Column(name="network_id")
 	private Long associatedWithNetworkId;
+	
+    @Column(name="physical_network_id")
+    private Long physicalNetworkId;
 
 	protected IPAddressVO() {
 	}
@@ -228,6 +231,14 @@ public class IPAddressVO implements IpAddress {
 
     public void setSourceNetworkId(Long sourceNetworkId) {
         this.sourceNetworkId = sourceNetworkId;
+    }
+    
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
 }

@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -35,6 +36,7 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         super();
         physicalNetworkSearch = createSearchBuilder();
         physicalNetworkSearch.and("physicalNetworkId", physicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        physicalNetworkSearch.and("trafficType", physicalNetworkSearch.entity().getTrafficType(), Op.EQ);
         physicalNetworkSearch.done();
 
     }
@@ -46,4 +48,15 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         return search(sc, null);
     }
     
+    @Override
+    public boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType){
+        SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("trafficType", trafficType);
+        if (findOneBy(sc) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

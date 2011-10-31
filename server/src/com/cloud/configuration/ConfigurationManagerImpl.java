@@ -103,8 +103,10 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -210,7 +212,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     ProjectManager _projectMgr;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
-
+    @Inject PhysicalNetworkDao _physicalNetworkDao;
+    
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
 
@@ -1830,8 +1833,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
         String networkVlanId = null;
-
-        // projectId and accountName can't be specified together
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        //projectId and accountName can't be specified together
         String accountName = cmd.getAccountName();
         Long projectId = cmd.getProjectId();
         Long domainId = cmd.getDomainId();
@@ -1855,7 +1858,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Please specify a valid account.");
             }
         }
-
+        
         // Verify that network exists
         Network network = null;
         if (networkId != null) {
@@ -1864,15 +1867,50 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Unable to find network by id " + networkId);
             } else {
                 zoneId = network.getDataCenterId();
+                physicalNetworkId = network.getPhysicalNetworkId();
             }
         }
 
+        //verify that physical network exists
+        PhysicalNetworkVO pNtwk = null;
+        if(physicalNetworkId != null){
+            pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
+            if (pNtwk == null) {
+                throw new InvalidParameterValueException("Unable to find Physical Network with id=" + physicalNetworkId);
+            }
+        }
+        if(zoneId == null && pNtwk != null){
+            zoneId = pNtwk.getDataCenterId();
+        }
         // Verify that zone exists
         DataCenterVO zone = _zoneDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
-
+        
+        if(physicalNetworkId == null){
+            //deduce physicalNetworkFrom Zone or Network.
+            if(network != null && network.getPhysicalNetworkId() != null){
+                physicalNetworkId = network.getPhysicalNetworkId();
+            }else{
+                if (forVirtualNetwork) {
+                    //default physical network with public traffic in the zone
+                    physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
+                }else{
+                    if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
+                        //default physical network with guest traffic in the zone
+                        physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
+                    }else if(zone.getNetworkType() == DataCenter.NetworkType.Advanced) {
+                        if(zone.isSecurityGroupEnabled()){
+                            physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
+                        }else{
+                            throw new InvalidParameterValueException("Physical Network Id is null, please provide the Network id for Direct vlan creation ");
+                        }
+                    }
+                }
+            }
+        }
+        
         // Check if zone is disabled
         Account caller = UserContext.current().getCaller();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
@@ -1984,7 +2022,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Vlan vlan = createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId);
+        Vlan vlan = createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId, physicalNetworkId);
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId(), network);
@@ -2016,7 +2054,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId,
-            Account account, Long networkId) {
+            Account account, Long networkId, Long physicalNetworkId) {
         // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
@@ -2034,6 +2072,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
+        
+        PhysicalNetworkVO pNtwk;
+        if (physicalNetworkId == null || ((pNtwk = _physicalNetworkDao.findById(physicalNetworkId)) == null)) {
+            throw new InvalidParameterValueException("Please specify a valid physical network.");
+        }
+        
 
         // Allow adding untagged direct vlan only for Basic zone
         if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && (!forVirtualNetwork || zone.isSecurityGroupEnabled())) {
@@ -2042,15 +2086,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Only Direct Untagged and Virtual networks are supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
         }
 
-        // TODO
-        /*
-         * don't allow to create a virtual vlan when zone's vnet is NULL in
-         * Advanced zone if ((zone.getNetworkType() == NetworkType.Advanced &&
-         * zone.getVnet() == null) && forVirtualNetwork) { throw new
-         * InvalidParameterValueException
-         * ("Can't add virtual network to the zone id=" + zone.getId() +
-         * " as zone doesn't have guest vlan configured"); }
-         */
+        //  don't allow to create a virtual vlan when physical networks's vnet is NULL in Advanced zone
+        if ((zone.getNetworkType() == NetworkType.Advanced && pNtwk.getVnet() == null) && forVirtualNetwork) {
+            throw new InvalidParameterValueException("Can't add virtual network to the physical Network id="+pNtwk.getId() +" in zone id=" + zone.getId() + " as there is no guest vlan configured");
+        }
 
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
 
@@ -2178,7 +2217,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Check if a guest VLAN is using the same tag
-        if (_zoneDao.findVnet(zoneId, vlanId).size() > 0) {
+        if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for the guest network in zone " + zone.getName());
         }
 
@@ -2206,16 +2245,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId);
+        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId);
         vlan = _vlanDao.persist(vlan);
 
-        if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId)) {
-            throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); // It
-                                                                                                       // can
-                                                                                                       // be
-                                                                                                       // Direct
-                                                                                                       // IP
-                                                                                                       // or
+        if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
+            throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); // It can be Direct IP or
             // Public IP.
         }
 
@@ -2376,13 +2410,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @DB
-    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid) {
+    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid, long physicalNetworkId) {
         long startIPLong = NetUtils.ip2Long(startIP);
         long endIPLong = NetUtils.ip2Long(endIP);
         Transaction txn = Transaction.currentTxn();
         txn.start();
         IPRangeConfig config = new IPRangeConfig();
-        List<String> problemIps = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid);
+        List<String> problemIps = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId);
         txn.commit();
         return problemIps != null && problemIps.size() == 0;
     }

@@ -125,5 +125,6 @@ public interface NetworkService {
 
     List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId);
 
-
+    PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+    
 }

@@ -446,9 +446,11 @@ CREATE TABLE `cloud`.`vlan` (
   `vlan_type` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
   PRIMARY KEY (`id`),
   #CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
-  CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`)
+  CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_vlan__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`pod_vlan_map` (
@@ -799,6 +801,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address of this ip',
   `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to',
   `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
   PRIMARY KEY (`id`),
   UNIQUE (`public_ip_address`, `source_network_id`),
   CONSTRAINT `fk_user_ip_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
@@ -807,6 +810,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   CONSTRAINT `fk_user_ip_address__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`),
   CONSTRAINT `fk_user_ip_address__vlan_db_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_ip_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
   INDEX `i_user_ip_address__allocated`(`allocated`),
   INDEX `i_user_ip_address__source_nat`(`source_nat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

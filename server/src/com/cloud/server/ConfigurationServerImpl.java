@@ -35,11 +35,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -250,7 +248,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     IPRangeConfig config = new IPRangeConfig();
                     long startIPLong = NetUtils.ip2Long(startIp);
                     long endIPLong = NetUtils.ip2Long(endIp);
-                    config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId());
+                    config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId(), vlan.getPhysicalNetworkId());
                     txn.commit();
                 }
             }

@@ -636,7 +636,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateAccount(vlanResponse, owner.getId());
             populateDomain(vlanResponse, owner.getDomainId());
         }
-
+        
+        vlanResponse.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
+        
         vlanResponse.setObjectName("vlan");
         return vlanResponse;
     }

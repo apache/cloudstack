@@ -41,5 +41,7 @@ public interface Vlan {
 	public VlanType getVlanType();
 	
 	public Long getNetworkId();
+	
+	public Long getPhysicalNetworkId();
 
 }

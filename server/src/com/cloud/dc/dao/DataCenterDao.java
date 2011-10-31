@@ -50,7 +50,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     void addPrivateIpAddress(long dcId,long podId, String start, String end);
     void addLinkLocalIpAddress(long dcId,long podId, String start, String end);
     
-    List<DataCenterVnetVO> findVnet(long dcId, String vnet);
+    List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet);
 
     String allocatePodVlan(long podId, long accountId);
 

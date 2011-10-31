@@ -1776,7 +1776,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == Network.GuestType.Shared && defineNetworkConfig) {
             // Create vlan ip range
-            _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
+            _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId(), physicalNetworkId);
         }
 
         txn.commit();
@@ -3519,8 +3519,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vnetRange != null) {
             
             //Verify zone type
-            if (zone.getNetworkType() == NetworkType.Basic && vnetRange != null) {
-                vnetRange = null;
+            if (zone.getNetworkType() == NetworkType.Basic
+                    || (zone.getNetworkType() == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
+                throw new InvalidParameterValueException("Can't add vnet range to the physical network in the zone that supports " + zone.getNetworkType() + " network, Security Group enabled: "+ zone.isSecurityGroupEnabled());
             }
             
             String[] tokens = vnetRange.split("-");
@@ -3599,8 +3600,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Network id=" + id + "doesn't exist in the system");
+            throw new InvalidParameterValueException("Physical Network id=" + id + "doesn't exist in the system");
         }
+        
+        // if zone is of Basic type, don't allow to add vnet range
+        DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        if (zone == null) {
+            throw new InvalidParameterValueException("Zone with id=" + network.getDataCenterId() + " doesn't exist in the system");
+        }
+        if(newVnetRangeString != null){
+            if (zone.getNetworkType() == NetworkType.Basic
+                    || (zone.getNetworkType() == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
+                throw new InvalidParameterValueException("Can't add vnet range to the physical network in the zone that supports " + zone.getNetworkType() + " network, Security Group enabled: "+ zone.isSecurityGroupEnabled());
+            }
+        }
+        
 
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
@@ -3626,7 +3640,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if(networkSpeed != null){
             network.setSpeed(networkSpeed);
         }
-            
+
         // Vnet range can be extended only
         boolean replaceVnet = false;
         ArrayList<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>(2); 
@@ -4224,6 +4238,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        if(_pNTrafficTypeDao.isTrafficTypeSupported(physicalNetworkId, trafficType)){
+            throw new CloudRuntimeException("This physical network already supports the traffic type: "+trafficType);
+        }
         //For Storage, Control, Management, Public check if the zone has any other physical network with this traffictype already present
         //If yes, we cant add these traffics to one more physical network in the zone.
         
@@ -4307,5 +4324,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return _pNTrafficTypeDao.listBy(physicalNetworkId);
+    }
+
+    @Override
+    public PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
+        PhysicalNetworkVO network = null;
+        
+        List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
+        
+        if (networkList.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType +" in zone id=" + zoneId);
+        }
+        
+        if (networkList.size() > 1) {
+            throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type="+trafficType);
+        }
+        
+        return networkList.get(0);
     }    
 }
