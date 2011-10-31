@@ -379,7 +379,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public Answer sendToSecStorage(HostVO ssHost, Command cmd) {
         if( ssHost.getType() == Host.Type.LocalSecondaryStorage ) {
             return  easySend(ssHost.getId(), cmd);
-        } else if ( ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.SecondaryStorageVM) {
+        } else if ( ssHost.getType() == Host.Type.SecondaryStorage) {
             return  sendToSSVM(ssHost.getDataCenterId(), cmd);
         } else {
             String msg = "do not support Secondary Storage type " + ssHost.getType();

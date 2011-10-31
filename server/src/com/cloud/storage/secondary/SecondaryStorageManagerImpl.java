@@ -1275,7 +1275,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	@Override
     public HostVO findSecondaryStorageHost(long dcId) {
 		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-	    sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
 	    sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
 	    List<HostVO> storageHosts = sc.list();
 	    if (storageHosts == null || storageHosts.size() < 1) {
@@ -1289,7 +1289,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	@Override
     public List<HostVO> listSecondaryStorageHostsInAllZones() {
 		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
-	    sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+	    sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
 	    return sc.list();
     }
 
@@ -1297,7 +1297,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public List<HostVO> listSecondaryStorageHostsInOneZone(long dataCenterId) {
 		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
-		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+		sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorage);
 	    return sc.list();
     }
 
@@ -1313,7 +1313,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public List<HostVO> listAllTypesSecondaryStorageHostsInOneZone(long dataCenterId) {
 		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
 		sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dataCenterId);
-		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+		sc.addAnd(sc.getEntity().getType(), Op.IN, Host.Type.LocalSecondaryStorage, Host.Type.SecondaryStorage);
 	    return sc.list();
     }
 

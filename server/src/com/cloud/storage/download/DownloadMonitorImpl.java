@@ -585,7 +585,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         }
         long sserverId = ssHost.getId();
         long zoneId = ssHost.getDataCenterId();
-        if (!(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage || ssHost.getType() == Host.Type.SecondaryStorageVM)) {
+        if (!(ssHost.getType() == Host.Type.SecondaryStorage || ssHost.getType() == Host.Type.LocalSecondaryStorage)) {
             s_logger.warn("Huh? Agent id " + sserverId + " is not secondary storage host");
             return;
         }
