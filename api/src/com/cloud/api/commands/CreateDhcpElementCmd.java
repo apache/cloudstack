@@ -28,7 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.network.VirtualRouterElements;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.DhcpElementService;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -79,7 +79,7 @@ public class CreateDhcpElementCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("DHCP element Id: "+getEntityId());
-        VirtualRouterElements result = _service.getCreatedElement(getEntityId());
+        VirtualRouterProvider result = _service.getCreatedElement(getEntityId());
         if (result != null) {
             SuccessResponse response = new SuccessResponse();
             response.setResponseName(getCommandName());
@@ -92,7 +92,7 @@ public class CreateDhcpElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualRouterElements result = _service.addElement(getNspId());
+        VirtualRouterProvider result = _service.addElement(getNspId());
         if (result != null) {
             setEntityId(result.getId());
         } else {

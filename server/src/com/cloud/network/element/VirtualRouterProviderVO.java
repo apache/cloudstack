@@ -28,12 +28,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.VirtualRouterElements;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name=("virtual_router_elements"))
-public class VirtualRouterElementsVO implements VirtualRouterElements {
+@Table(name=("virtual_router_providers"))
+public class VirtualRouterProviderVO implements VirtualRouterProvider {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -41,7 +41,7 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     
     @Column(name="type")
     @Enumerated(EnumType.STRING)
-    private VirtualRouterElementsType type;
+    private VirtualRouterProviderType type;
     
     @Column(name="enabled")
     private boolean enabled;
@@ -55,10 +55,10 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    public VirtualRouterElementsVO() {
+    public VirtualRouterProviderVO() {
     }
     
-    public VirtualRouterElementsVO(long nspId, String uuid, VirtualRouterElementsType type) {
+    public VirtualRouterProviderVO(long nspId, String uuid, VirtualRouterProviderType type) {
         this.nspId = nspId;
         this.uuid = uuid;
         this.type = type;
@@ -79,7 +79,7 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     }
 
     @Override
-    public VirtualRouterElementsType getType() {
+    public VirtualRouterProviderType getType() {
         return this.type;
     }
     
@@ -104,7 +104,7 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         this.id = id;
     }
 
-    public void setType(VirtualRouterElementsType type) {
+    public void setType(VirtualRouterProviderType type) {
         this.type = type;
     }
 

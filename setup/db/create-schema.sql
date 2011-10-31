@@ -1804,7 +1804,7 @@ CREATE TABLE `cloud`.`physical_network_external_devices` (
   CONSTRAINT `fk_physical_network_external_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`virtual_router_elements` (
+CREATE TABLE `cloud`.`virtual_router_providers` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
   `uuid` varchar(255) UNIQUE,
@@ -1812,7 +1812,7 @@ CREATE TABLE `cloud`.`virtual_router_elements` (
   `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_virtual_router_elements__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_virtual_router_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

@@ -18,13 +18,13 @@
 
 package com.cloud.network;
 
-public interface VirtualRouterElements {
-    public enum VirtualRouterElementsType {
+public interface VirtualRouterProvider {
+    public enum VirtualRouterProviderType {
         DhcpElement,
         VirtualRouterElement,
         RedundantVirtualRouterElement,
     }
-    public VirtualRouterElementsType getType();
+    public VirtualRouterProviderType getType();
     public long getId();
     public boolean isEnabled();
     public long getNspId();

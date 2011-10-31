@@ -75,7 +75,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.VirtualRouterElementsDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.guru.ControlNetworkGuru;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
 import com.cloud.network.guru.PodBasedNetworkGuru;
@@ -121,7 +121,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final AccountDao _accountDao;
     private final ResourceCountDao _resourceCountDao;
     private final NetworkOfferingServiceMapDao _offeringServiceMapDao;
-    private final VirtualRouterElementsDao _virtualRouterElementsDao;
+    private final VirtualRouterProviderDao _virtualRouterProviderDao;
 
     
     public ConfigurationServerImpl() {
@@ -139,7 +139,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _accountDao = locator.getDao(AccountDao.class);
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
         _offeringServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
-        _virtualRouterElementsDao = locator.getDao(VirtualRouterElementsDao.class);
+        _virtualRouterProviderDao = locator.getDao(VirtualRouterProviderDao.class);
     }
 
     @Override @DB

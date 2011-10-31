@@ -36,7 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
-import com.cloud.network.VirtualRouterElements;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -45,8 +45,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.VirtualRouterElementsDao;
-import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -82,7 +82,7 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     @Inject HostPodDao _podDao;
     @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
-    @Inject VirtualRouterElementsDao _vrElementsDao;
+    @Inject VirtualRouterProviderDao _vrProviderDao;
      
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType, long offeringId) {
         if (_networkMgr.isProviderSupported(offeringId, Service.Gateway, Provider.JuniperSRX) && networkType == Network.GuestType.Isolated) {
@@ -214,43 +214,43 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     
     @Override
     public boolean configure(ConfigureDhcpElementCmd cmd) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(cmd.getNspId(), VirtualRouterElementsType.DhcpElement);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(cmd.getNspId(), VirtualRouterProviderType.DhcpElement);
         if (element == null) {
             s_logger.trace("Can't find element with network service provider ID " + cmd.getNspId());
             return false;
         }
         element.setEnabled(cmd.getEnabled());
         
-        _vrElementsDao.persist(element);
+        _vrProviderDao.persist(element);
         
         return true;
     }
     
     @Override
-    public VirtualRouterElements addElement(Long nspId) {
+    public VirtualRouterProvider addElement(Long nspId) {
         long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
         if (serviceOfferingId == 0) {
             return null;
         }
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.DhcpElement);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.DhcpElement);
         if (element != null) {
             s_logger.trace("There is already a dhcp element with service provider id " + nspId);
             return null;
         }
-        element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.DhcpElement);
-        _vrElementsDao.persist(element);
+        element = new VirtualRouterProviderVO(nspId, null, VirtualRouterProviderType.DhcpElement);
+        _vrProviderDao.persist(element);
         return element;
     }
     
     @Override
     public Long getIdByNspId(Long nspId) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.DhcpElement);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.DhcpElement);
         return element.getId();
     }
     
     @Override
-    public boolean isReady(long nspId) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.DhcpElement);
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.DhcpElement);
         if (element == null) {
             return false;
         }
@@ -258,14 +258,8 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     }
 
     @Override
-    public VirtualRouterElements getCreatedElement(long id) {
-        return _vrElementsDao.findById(id);
-    }
-
-    @Override
-    public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        // TODO Auto-generated method stub
-        return true;
+    public VirtualRouterProvider getCreatedElement(long id) {
+        return _vrProviderDao.findById(id);
     }
 
     @Override

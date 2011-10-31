@@ -17,10 +17,10 @@
  */
 package com.cloud.network.dao;
 
-import com.cloud.network.element.VirtualRouterElementsVO;
-import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.element.VirtualRouterProviderVO;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.utils.db.GenericDao;
 
-public interface VirtualRouterElementsDao extends GenericDao<VirtualRouterElementsVO, Long> {
-    public VirtualRouterElementsVO findByNspIdAndType(long nspId, VirtualRouterElementsType type);
+public interface VirtualRouterProviderDao extends GenericDao<VirtualRouterProviderVO, Long> {
+    public VirtualRouterProviderVO findByNspIdAndType(long nspId, VirtualRouterProviderType type);
 }

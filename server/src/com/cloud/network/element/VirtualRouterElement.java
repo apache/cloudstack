@@ -43,12 +43,12 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VirtualRouterElements;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.VirtualRouterElementsDao;
-import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -92,7 +92,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     @Inject LoadBalancerDao _lbDao;
     @Inject HostDao _hostDao;
     @Inject ConfigurationDao _configDao;
-    @Inject VirtualRouterElementsDao _vrElementsDao;
+    @Inject VirtualRouterProviderDao _vrProviderDao;
     
     protected boolean canHandle(GuestType networkType, long offeringId, Service service) {
         boolean result = (networkType == Network.GuestType.Isolated && _networkMgr.isProviderSupported(offeringId, service, getProvider()));
@@ -403,27 +403,27 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean configure(ConfigureVirtualRouterElementCmd cmd) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(cmd.getNspId(), VirtualRouterElementsType.VirtualRouterElement);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(cmd.getNspId(), VirtualRouterProviderType.VirtualRouterElement);
         if (element == null) {
             s_logger.trace("Can't find element with network service provider id " + cmd.getNspId());
             return false;
         }
         
         element.setEnabled(cmd.getEnabled());
-        _vrElementsDao.persist(element);
+        _vrProviderDao.persist(element);
         
         return true;
     }
     
     @Override
-    public VirtualRouterElements addElement(Long nspId) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.VirtualRouterElement);
+    public VirtualRouterProvider addElement(Long nspId) {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.VirtualRouterElement);
         if (element != null) {
             s_logger.trace("There is already a virtual router element with service provider id " + nspId);
             return null;
         }
-        element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.VirtualRouterElement);
-        _vrElementsDao.persist(element);
+        element = new VirtualRouterProviderVO(nspId, null, VirtualRouterProviderType.VirtualRouterElement);
+        _vrProviderDao.persist(element);
         return element;
     }
 
@@ -448,7 +448,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(provider.getId(), VirtualRouterElementsType.VirtualRouterElement);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.VirtualRouterElement);
         if (element == null) {
             return false;
         }
@@ -464,7 +464,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
 
     @Override
     public Long getIdByNspId(Long nspId) {
-        VirtualRouterElementsVO vr = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.VirtualRouterElement);
+        VirtualRouterProviderVO vr = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.VirtualRouterElement);
         return vr.getId();
     }
 }

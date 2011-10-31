@@ -19,18 +19,18 @@ package com.cloud.network.dao;
 
 import javax.ejb.Local;
 
-import com.cloud.network.element.VirtualRouterElementsVO;
-import com.cloud.network.VirtualRouterElements.VirtualRouterElementsType;
+import com.cloud.network.element.VirtualRouterProviderVO;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Local(value=VirtualRouterElementsDao.class) @DB(txn=false)
-public class VirtualRouterElementsDaoImpl extends GenericDaoBase<VirtualRouterElementsVO, Long> implements VirtualRouterElementsDao {
-    final SearchBuilder<VirtualRouterElementsVO> AllFieldsSearch;
+@Local(value=VirtualRouterProviderDao.class) @DB(txn=false)
+public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterProviderVO, Long> implements VirtualRouterProviderDao {
+    final SearchBuilder<VirtualRouterProviderVO> AllFieldsSearch;
     
-    public VirtualRouterElementsDaoImpl() {
+    public VirtualRouterProviderDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("nsp_id", AllFieldsSearch.entity().getNspId(), SearchCriteria.Op.EQ);
@@ -40,8 +40,8 @@ public class VirtualRouterElementsDaoImpl extends GenericDaoBase<VirtualRouterEl
     }
 
     @Override
-    public VirtualRouterElementsVO findByNspIdAndType(long nspId, VirtualRouterElementsType type) {
-        SearchCriteria<VirtualRouterElementsVO> sc = AllFieldsSearch.create();
+    public VirtualRouterProviderVO findByNspIdAndType(long nspId, VirtualRouterProviderType type) {
+        SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
         sc.setParameters("nsp_id", nspId);
         sc.setParameters("type", type);
         return findOneBy(sc);
