@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.naming.InsufficientResourcesException;
 
+import com.cloud.api.commands.AssignVMCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
@@ -30,7 +31,6 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.ListVMsCmd;
-import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -378,7 +378,7 @@ public interface UserVmService {
      */
     VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
-    UserVm moveVMToUser(MoveUserVMCmd moveUserVMCmd)  throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException ;
+    UserVm moveVMToUser(AssignVMCmd moveUserVMCmd)  throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException ;
 
 	VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 	

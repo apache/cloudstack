@@ -48,7 +48,7 @@ recoverVirtualMachine=com.cloud.api.commands.RecoverVMCmd;7
 listVirtualMachines=com.cloud.api.commands.ListVMsCmd;15
 getVMPassword=com.cloud.api.commands.GetVMPasswordCmd;15
 migrateVirtualMachine=com.cloud.api.commands.MigrateVMCmd;1
-moveVirtualMachine=com.cloud.api.commands.MoveUserVMCmd;15
+assignVirtualMachine=com.cloud.api.commands.AssignVMCmd;15
 restoreVm=com.cloud.api.commands.RestoreVMCmd;15
 
 #### snapshot commands

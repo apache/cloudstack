@@ -63,7 +63,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.ListVMsCmd;
-import com.cloud.api.commands.MoveUserVMCmd;
+import com.cloud.api.commands.AssignVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -3290,17 +3290,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return migratedVm;
     }
 
-
+    @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MOVE, eventDescription = "move VM to another user", async = false)
-    public UserVm moveVMToUser(MoveUserVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm moveVMToUser(AssignVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // VERIFICATIONS and VALIDATIONS
 
         //VV 1: verify the two users
         Account oldAccount = UserContext.current().getCaller();
         Account newAccount = _accountService.getAccount(cmd.getAccountId());
         if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account " + newAccount + " in domain " + oldAccount.getDomainId());
+            throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountId() + " in domain " + oldAccount.getDomainId());
         }
         
         //don't allow to move the vm from the project
@@ -3314,8 +3314,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //get the VM
         UserVmVO vm = _vmDao.findById(cmd.getVmId());
 
-        // VV 3: check if vm is running
-        if (vm.getState() == State.Running) {
+        if (vm == null){
+            throw new InvalidParameterValueException("There is no vm by that id " + cmd.getVmId());
+        } else if (vm.getState() == State.Running) {  // VV 3: check if vm is running
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is Running, unable to move the vm " + vm);
             }
@@ -3334,21 +3335,41 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(newAccount, domain);
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+        
+        //check is zone networking is advanced
+        if (zone.getNetworkType() != NetworkType.Advanced) { 
+            throw new InvalidParameterValueException("Assing virtual machine to another account is only available for advanced networking " + vm);
+        }
+        
         VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
         VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
 
-
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //generate destory vm event for usage
+        _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), 
+                vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString()));
+        // update resource counts
+        _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+        
         // OWNERSHIP STEP 1: update the vm owner
         vm.setAccountId(newAccount.getAccountId());
-        vm.setAccountId(newAccount.getId());
         _vmDao.persist(vm);
-
         // OS 2: update volume
         List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
             volume.setAccountId(cmd.getAccountId());
+            _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume, new Long(volumes.size()));
             _volsDao.persist(volume);
+            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, new Long(volumes.size()));
         }
+        
+        _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+        //generate usage evenst to account for this change
+        _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), 
+                vm.getHostName(), vm.getServiceOfferingId(),  vm.getTemplateId(), vm.getHypervisorType().toString()));
+        
+        
 
         // OS 3: update the network
         if (zone.getNetworkType() == NetworkType.Advanced) { 
@@ -3404,6 +3425,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
+        txn.commit();
+        
         return vm;
     }
 
