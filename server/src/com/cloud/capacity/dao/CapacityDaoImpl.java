@@ -249,10 +249,20 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 	    public long sumReserved;
 	    public long sumTotal;
 	    public short capacityType;
-	    public long clusterId;
-	    public long podId;
+	    public Long clusterId;
+	    public Long podId;
 	    public SummedCapacity() {
 	    }
+		public SummedCapacity(long sumUsed, long sumReserved, long sumTotal,
+				short capacityType, Long clusterId, Long podId) {
+			super();
+			this.sumUsed = sumUsed;
+			this.sumReserved = sumReserved;
+			this.sumTotal = sumTotal;
+			this.capacityType = capacityType;
+			this.clusterId = clusterId;
+			this.podId = podId;
+		}
 		public Short getCapacityType() {				
 			return capacityType;
 		}

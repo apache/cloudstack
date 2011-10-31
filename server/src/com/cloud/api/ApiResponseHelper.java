@@ -1056,7 +1056,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 	        	capacityResponses.add(capacityResponse);
         	}
         	// Do it for stats as well.
-        	capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
+        	capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
         	clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
         clusterResponse.setObjectName("cluster");

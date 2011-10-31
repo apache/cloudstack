@@ -74,6 +74,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
+import com.gargoylesoftware.htmlunit.html.xpath.IsDescendantOfContextualFormFunction;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
@@ -155,16 +156,16 @@ public class AlertManagerImpl implements AlertManager {
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
          
-        String storageCapacityThreshold = _configDao.getValue(Config.StorageCapacityThreshold.key());configs.get("storage.capacity.notificationThreshold");
-        String cpuCapacityThreshold = _configDao.getValue(Config.CPUCapacityThreshold.key());configs.get("cpu.capacity.notificationThreshold");
-        String memoryCapacityThreshold = _configDao.getValue(Config.MemoryCapacityThreshold.key());configs.get("memory.capacity.notificationThreshold");
-        String storageAllocCapacityThreshold = _configDao.getValue(Config.StorageAllocatedCapacityThreshold.key());configs.get("storage.allocated.capacity.notificationThreshold");
-        String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());configs.get("public.ip.capacity.notificationThreshold");
-        String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());configs.get("private.ip.capacity.notificationThreshold");
-        String secondaryStorageCapacityThreshold = _configDao.getValue(Config.SecondaryStorageCapacityThreshold.key());configs.get("secondarystorage.capacity.notificationThreshold");
-        String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());configs.get("vlan.capacity.notificationThreshold");
-        String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());configs.get("directnetwork.public.ip.capacity.notificationThreshold");
-        String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());configs.get("directnetwork.public.ip.capacity.notificationThreshold");
+        String storageCapacityThreshold = _configDao.getValue(Config.StorageCapacityThreshold.key());
+        String cpuCapacityThreshold = _configDao.getValue(Config.CPUCapacityThreshold.key());
+        String memoryCapacityThreshold = _configDao.getValue(Config.MemoryCapacityThreshold.key());
+        String storageAllocCapacityThreshold = _configDao.getValue(Config.StorageAllocatedCapacityThreshold.key());
+        String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());
+        String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());
+        String secondaryStorageCapacityThreshold = _configDao.getValue(Config.SecondaryStorageCapacityThreshold.key());
+        String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());
+        String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
+        String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
         
         if (storageCapacityThreshold != null) {
             _storageCapacityThreshold = Double.parseDouble(storageCapacityThreshold);
@@ -451,7 +452,12 @@ public class AlertManagerImpl implements AlertManager {
         // Generate Alerts for Zone Level capacities
         for(DataCenterVO dc : dataCenterList){
         	for (Short capacityType : dataCenterCapacityTypes){
-        		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
+        		List<SummedCapacity> capacity = new ArrayList<SummedCapacity>();
+        		capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
+        		
+        		if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE){
+        			capacity.add(getUsedStats(capacityType, dc.getId(), null, null));
+        		}
         		if (capacity == null || capacity.size() == 0){
         			continue;
         		}
@@ -482,12 +488,22 @@ public class AlertManagerImpl implements AlertManager {
         // Generate Alerts for Cluster Level capacities
         for( ClusterVO cluster : clusterList){
         	for (Short capacityType : clusterCapacityTypes){
-        		List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
+        		List<SummedCapacity> capacity = new ArrayList<SummedCapacity>();
+        		float overProvFactor = 1f;
+        		capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
+        		
+        		if (capacityType == Capacity.CAPACITY_TYPE_STORAGE){
+        			capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
+        		}
         		if (capacity == null || capacity.size() == 0){
         			continue;
+        		}        		
+        		if (capacityType == Capacity.CAPACITY_TYPE_CPU){
+        			overProvFactor = ApiDBUtils.getCpuOverprovisioningFactor();
         		}
-        		double totalCapacity = capacity.get(0).getTotalCapacity(); 
-                double usedCapacity =  capacity.get(0).getUsedCapacity();
+        		
+        		double totalCapacity = capacity.get(0).getTotalCapacity() * overProvFactor; 
+                double usedCapacity =  capacity.get(0).getUsedCapacity() + capacity.get(0).getReservedCapacity();
                 if (totalCapacity != 0 && usedCapacity/totalCapacity > _capacityTypeThresholdMap.get(capacityType)){
                 	generateEmailAlert(ApiDBUtils.findZoneById(cluster.getDataCenterId()), ApiDBUtils.findPodById(cluster.getPodId()), cluster,
                 			totalCapacity, usedCapacity, capacityType);
@@ -495,6 +511,21 @@ public class AlertManagerImpl implements AlertManager {
         	}
         }
         
+    }
+    
+    private SummedCapacity getUsedStats(short capacityType, long zoneId, Long podId, Long clusterId){
+    	CapacityVO capacity;
+    	if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE){
+    		capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
+    	}else{
+    		capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
+    	}
+    	if (capacity != null){
+    		return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);	
+    	}else{
+    		return null;
+    	}
+    	
     }
     
     private void generateEmailAlert(DataCenterVO dc, HostPodVO pod, ClusterVO cluster, double totalCapacity, double usedCapacity, short capacityType){
@@ -558,7 +589,7 @@ public class AlertManagerImpl implements AlertManager {
         
         //Zone Level
         case CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE:        	
-        	msgSubject = "System Alert: Low Available Storage in availablity zone " + dc.getName();
+        	msgSubject = "System Alert: Low Available Secondary Storage in availablity zone " + dc.getName();
         	totalStr = formatBytesToMegabytes(totalCapacity);
             usedStr = formatBytesToMegabytes(usedCapacity);
         	msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
@@ -588,6 +619,10 @@ public class AlertManagerImpl implements AlertManager {
         }
     	
     	try {
+    		if (s_logger.isDebugEnabled()){
+    			s_logger.debug(msgSubject);
+    			s_logger.debug(msgContent);
+    		}
 			_emailAlert.sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
     	} catch (Exception ex) {
             s_logger.error("Exception in CapacityChecker", ex);        
