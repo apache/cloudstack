@@ -5,7 +5,7 @@ import com.cloud.utils.component.PluggableService;
 
 public interface DhcpElementService extends PluggableService{
     boolean configure(ConfigureDhcpElementCmd cmd);
-    boolean addElement(Long nspId, String uuid);
-    Long getIdByUUID(String uuid);
-    boolean isReady(String uuid);
+    boolean addElement(Long nspId);
+    Long getIdByNspId(Long nspId);
+    boolean isReady(long nspId);
 }

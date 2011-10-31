@@ -17,13 +17,10 @@
  */
 package com.cloud.network.dao;
 
-import java.util.List;
-
 import com.cloud.network.element.VirtualRouterElementsVO;
 import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
 import com.cloud.utils.db.GenericDao;
 
 public interface VirtualRouterElementsDao extends GenericDao<VirtualRouterElementsVO, Long> {
-    public List<VirtualRouterElementsVO> findByNspIdAndType(long nspId, VirtualRouterElementsType type);
-    public VirtualRouterElementsVO findByUUID(String uuid);
+    public VirtualRouterElementsVO findByNspIdAndType(long nspId, VirtualRouterElementsType type);
 }

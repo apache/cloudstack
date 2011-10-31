@@ -49,71 +49,30 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.UUID, type=CommandType.STRING, required=true, description="the UUID of the virtual router element")
-    private String uuid;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the network service provider ID of the virtual router element")
+    private Long nspId;
 
-    @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is dhcp service would be enabled")
-    private Boolean dhcpService; 
-    
-    @Parameter(name=ApiConstants.DNS_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is dns service would be enabled")
-    private Boolean dnsService; 
-    
-    @Parameter(name=ApiConstants.GATEWAY_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is gateway service would be enabled")
-    private Boolean gatewayService; 
-    
-    @Parameter(name=ApiConstants.FIREWALL_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is firewall service would be enabled")
-    private Boolean firewallService; 
-    
-    @Parameter(name=ApiConstants.LB_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is lb service would be enabled")
-    private Boolean lbService; 
-    
-    @Parameter(name=ApiConstants.USERDATA_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is user data service would be enabled")
-    private Boolean userdataService;
-    
-    @Parameter(name=ApiConstants.SOURCE_NAT_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is source nat service would be enabled")
-    private Boolean sourceNatService;
-    
-    @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, required=true, description="true is vpn service would be enabled")
-    private Boolean vpnService;
+    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enabled/Disabled the service provider")
+    private Boolean enabled;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getUUID() {
-        return uuid;
+    public void setNspId(Long nspId) {
+        this.nspId = nspId;
     }
 
-    public Boolean getDhcpService() {
-        return dhcpService;
+    public Long getNspId() {
+        return nspId;
     }
 
-    public Boolean getDnsService() {
-        return dnsService;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
-    public Boolean getGatewayService() {
-        return gatewayService;
-    }
-
-    public Boolean getFirewallService() {
-        return firewallService;
-    }
-
-    public Boolean getLbService() {
-        return lbService;
-    }
-
-    public Boolean getUserdataService() {
-        return userdataService;
-    }
-
-    public Boolean getSourceNatService() {
-        return sourceNatService;
-    }
-
-    public Boolean getVpnService() {
-        return vpnService;
+    public Boolean getEnabled() {
+        return enabled;
     }
 
     /////////////////////////////////////////////////////
@@ -141,7 +100,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "configuring virtual router element: " + getUUID();
+        return  "configuring virtual router element: " + _service.getIdByNspId(nspId);
     }
     
     public AsyncJob.Type getInstanceType() {
@@ -149,12 +108,12 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     }
     
     public Long getInstanceId() {
-        return _service.getIdByUUID(uuid);
+        return _service.getIdByNspId(getNspId());
     }
 	
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Virtual router element: " + getUUID());
+        UserContext.current().setEventDetails("Virtual router element: " + _service.getIdByNspId(nspId));
         Boolean result = _service.configure(this);
         if (result){
             SuccessResponse response = new SuccessResponse();

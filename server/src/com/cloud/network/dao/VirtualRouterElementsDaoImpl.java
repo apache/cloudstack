@@ -17,8 +17,6 @@
  */
 package com.cloud.network.dao;
 
-import java.util.List;
-
 import javax.ejb.Local;
 
 import com.cloud.network.element.VirtualRouterElementsVO;
@@ -42,17 +40,10 @@ public class VirtualRouterElementsDaoImpl extends GenericDaoBase<VirtualRouterEl
     }
 
     @Override
-    public List<VirtualRouterElementsVO> findByNspIdAndType(long nspId, VirtualRouterElementsType type) {
+    public VirtualRouterElementsVO findByNspIdAndType(long nspId, VirtualRouterElementsType type) {
         SearchCriteria<VirtualRouterElementsVO> sc = AllFieldsSearch.create();
         sc.setParameters("nsp_id", nspId);
         sc.setParameters("type", type);
-        return listBy(sc);
-    }
-
-    @Override
-    public VirtualRouterElementsVO findByUUID(String uuid) {
-        SearchCriteria<VirtualRouterElementsVO> sc = AllFieldsSearch.create();
-        sc.setParameters("uuid", uuid);
         return findOneBy(sc);
     }
 }

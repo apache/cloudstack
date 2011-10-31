@@ -213,21 +213,12 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     
     @Override
     public boolean configure(ConfigureDhcpElementCmd cmd) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(cmd.getNspId(), VirtualRouterElementsType.DhcpElement);
         if (element == null) {
-            s_logger.trace("Can't find element with UUID " + cmd.getUUID());
+            s_logger.trace("Can't find element with network service provider ID " + cmd.getNspId());
             return false;
         }
-        element.setIsDhcpProvided(cmd.getDhcpService());
-        element.setIsDnsProvided(cmd.getDnsService());
-        
-        element.setIsGatewayProvided(false);
-        element.setIsFirewallProvided(false);
-        element.setIsLoadBalanceProvided(false);
-        element.setIsSourceNatProvided(false);
-        element.setIsVpnProvided(false);
-        
-        element.setIsReady(true);
+        element.setIsReady(cmd.getEnabled());
         
         _vrElementsDao.persist(element);
         
@@ -235,29 +226,25 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
     }
     
     @Override
-    public boolean addElement(Long nspId, String uuid) {
+    public boolean addElement(Long nspId) {
         long serviceOfferingId = _routerMgr.getDefaultVirtualRouterServiceOfferingId();
         if (serviceOfferingId == 0) {
             return false;
         }
-        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, uuid, VirtualRouterElementsType.DhcpElement, 
-                                        false, false, false, false, false, false, false);
+        VirtualRouterElementsVO element = new VirtualRouterElementsVO(nspId, null, VirtualRouterElementsType.DhcpElement);
         _vrElementsDao.persist(element);
         return true;
     }
     
     @Override
-    public Long getIdByUUID(String uuid) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(uuid);
-        if (element == null) {
-            return new Long(0);
-        }
+    public Long getIdByNspId(Long nspId) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.DhcpElement);
         return element.getId();
     }
     
     @Override
-    public boolean isReady(String uuid) {
-        VirtualRouterElementsVO element = _vrElementsDao.findByUUID(uuid);
+    public boolean isReady(long nspId) {
+        VirtualRouterElementsVO element = _vrElementsDao.findByNspIdAndType(nspId, VirtualRouterElementsType.DhcpElement);
         if (element == null) {
             return false;
         }

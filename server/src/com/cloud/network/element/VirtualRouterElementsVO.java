@@ -51,45 +51,16 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
     @Column(name="uuid")
     private String uuid;
     
-    @Column(name="dhcp_provided")
-    private boolean isDhcpProvided;
-    
-    @Column(name="dns_provided")
-    private boolean isDnsProvided;
-    
-    @Column(name="gateway_provided")
-    private boolean isGatewayProvided;
-    
-    @Column(name="firewall_provided")
-    private boolean isFirewallProvided;
-    
-    @Column(name="source_nat_provided")
-    private boolean isSourceNatProvided;
-    
-    @Column(name="load_balance_provided")
-    private boolean isLoadBalanceProvided;
-    
-    @Column(name="vpn_provided")
-    private boolean isVpnProvided;
-    
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
 
     public VirtualRouterElementsVO() {
     }
     
-    public VirtualRouterElementsVO(long nspId, String uuid, VirtualRouterElementsType type, boolean isDhcpProvided, boolean isDnsProvided,
-            boolean isGatewayProvided, boolean isFirewallProvided, boolean isSourceNatProvided, boolean isLoadBalanceProvided, boolean isVpnProvided) {
+    public VirtualRouterElementsVO(long nspId, String uuid, VirtualRouterElementsType type) {
         this.nspId = nspId;
         this.uuid = uuid;
         this.type = type;
-        this.isDhcpProvided = isDhcpProvided;
-        this.isDnsProvided = isDnsProvided;
-        this.isGatewayProvided = isGatewayProvided;
-        this.isFirewallProvided = isFirewallProvided;
-        this.isSourceNatProvided = isSourceNatProvided;
-        this.isLoadBalanceProvided = isLoadBalanceProvided;
-        this.isVpnProvided = isVpnProvided;
     }
 
     public long getNspId() {
@@ -104,62 +75,6 @@ public class VirtualRouterElementsVO implements VirtualRouterElements {
         return id;
     }
 
-    public boolean getIsDhcpProvided() {
-        return isDhcpProvided;
-    }
-
-    public boolean getIsDnsProvided() {
-        return isDnsProvided;
-    }
-
-    public boolean getIsGatewayProvided() {
-        return isGatewayProvided;
-    }
-
-    public boolean getIsFirewallProvided() {
-        return isFirewallProvided;
-    }
-
-    public boolean getIsSourceNatProvided() {
-        return isSourceNatProvided;
-    }
-
-    public boolean getIsLoadBalanceProvided() {
-        return isLoadBalanceProvided;
-    }
-
-    public boolean getIsVpnProvided() {
-        return isVpnProvided;
-    }
-    
-    public void setIsDhcpProvided(boolean isDhcpProvided) {
-        this.isDhcpProvided = isDhcpProvided;
-    }
-
-    public void setIsDnsProvided(boolean isDnsProvided) {
-        this.isDnsProvided = isDnsProvided;
-    }
-
-    public void setIsGatewayProvided(boolean isGatewayProvided) {
-        this.isGatewayProvided = isGatewayProvided;
-    }
-
-    public void setIsFirewallProvided(boolean isFirewallProvided) {
-        this.isFirewallProvided = isFirewallProvided;
-    }
-
-    public void setIsSourceNatProvided(boolean isSourceNatProvided) {
-        this.isSourceNatProvided = isSourceNatProvided;
-    }
-
-    public void setIsLoadBalanceProvided(boolean isLoadBalanceProvided) {
-        this.isLoadBalanceProvided = isLoadBalanceProvided;
-    }
-
-    public void setIsVpnProvided(boolean isVpnProvided) {
-        this.isVpnProvided = isVpnProvided;
-    }
-    
     @Override
     public VirtualRouterElementsType getType() {
         return this.type;

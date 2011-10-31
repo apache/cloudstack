@@ -1728,24 +1728,6 @@ CREATE TABLE `cloud`.`elastic_lb_vm_map` (
   CONSTRAINT `fk_elastic_lb_vm_map__lb_id` FOREIGN KEY `fk_elastic_lb_vm_map__lb_id` (`lb_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`virtual_router_elements` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `nsp_id` bigint unsigned NOT NULL,
-  `uuid` varchar(255) UNIQUE,
-  `ready` int(1) NOT NULL,
-  `type` varchar(255) NOT NULL,
-  `dhcp_provided` int(1) NOT NULL,
-  `dns_provided` int(1) NOT NULL,
-  `gateway_provided` int(1) NOT NULL,
-  `firewall_provided` int(1) NOT NULL,
-  `source_nat_provided` int(1) NOT NULL,
-  `load_balance_provided` int(1) NOT NULL,
-  `vpn_provided` int(1) NOT NULL,
-  `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
 CREATE TABLE  `ntwk_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
@@ -1820,6 +1802,17 @@ CREATE TABLE `cloud`.`physical_network_external_devices` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_physical_network_external_devices_network_service_provider_id` FOREIGN KEY (`physical_network_service_provider_id`) REFERENCES `physical_network_service_providers`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_physical_network_external_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`virtual_router_elements` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `nsp_id` bigint unsigned NOT NULL,
+  `uuid` varchar(255) UNIQUE,
+  `type` varchar(255) NOT NULL,
+  `ready` int(1) NOT NULL,
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_virtual_router_elements__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
