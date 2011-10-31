@@ -19,10 +19,7 @@
 
 package com.cloud.agent.resource.computing;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -85,9 +82,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
@@ -891,10 +885,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((ManageSnapshotCommand) cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
                 return execute((BackupSnapshotCommand) cmd);
-            } else if (cmd instanceof DeleteSnapshotBackupCommand) {
-            	return execute((DeleteSnapshotBackupCommand) cmd);
-            } else if (cmd instanceof DeleteSnapshotsDirCommand) {
-                return execute((DeleteSnapshotsDirCommand) cmd);
             } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
                 return execute((CreateVolumeFromSnapshotCommand) cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
@@ -1226,7 +1216,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	 Long dcId = cmd.getDataCenterId();
          Long accountId = cmd.getAccountId();
          Long volumeId = cmd.getVolumeId();
-         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStoragePoolUrl = cmd.getSecondaryStorageUrl();
          String snapshotName = cmd.getSnapshotName();
          String snapshotPath = cmd.getVolumePath();
          String snapshotDestPath = null;
@@ -1234,7 +1224,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
          try {
         	 Connect conn = LibvirtConnection.getConnection();
-			StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStoragePoolURL));
+            StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(secondaryStoragePoolUrl));
 			LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
 			String ssPmountPath = spd.getTargetPath();
 			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
@@ -1293,58 +1283,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return new BackupSnapshotAnswer(cmd, true, null, snapshotDestPath + File.separator + snapshotName, true);
     }
     
-    protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
-    	 Long dcId = cmd.getDataCenterId();
-         Long accountId = cmd.getAccountId();
-         Long volumeId = cmd.getVolumeId();
-    	try {
-    		Connect conn = LibvirtConnection.getConnection();
-    		StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStoragePoolURL()));
-    		LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
-			String ssPmountPath = spd.getTargetPath();
-			String snapshotDestPath = ssPmountPath + File.separator + "snapshots"  + File.separator + dcId + File.separator + accountId + File.separator + volumeId;
-			
-			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-			command.add("-d", snapshotDestPath);
-			command.add("-n", cmd.getSnapshotName());
-			
-			command.execute();
-    	} catch (LibvirtException e) {
-    		return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
-    	} catch (URISyntaxException e) {
-    		return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
-		}
-    	return new DeleteSnapshotBackupAnswer(cmd, true, null);
-    }
-    
-    protected Answer execute(DeleteSnapshotsDirCommand cmd) {
-    	 Long dcId = cmd.getDataCenterId();
-         Long accountId = cmd.getAccountId();
-         Long volumeId = cmd.getVolumeId();
-    	try {
-    		Connect conn = LibvirtConnection.getConnection();
-    		StoragePool secondaryStoragePool = _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStoragePoolURL()));
-    		LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
-			String ssPmountPath = spd.getTargetPath();
-			String snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId;
-			
-			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-			command.add("-d", snapshotDestPath);
-			command.add("-f");
-			command.execute();
-    	} catch (LibvirtException e) {
-    		return new Answer(cmd, false, e.toString());
-    	} catch (URISyntaxException e) {
-    		return new Answer(cmd, false, e.toString());
-		}
-    	return new Answer(cmd, true, null);
-    }
     
     protected CreateVolumeFromSnapshotAnswer execute(final CreateVolumeFromSnapshotCommand cmd) {
     	try {
     		Connect conn = LibvirtConnection.getConnection();
     		/*Make sure secondary storage is mounted*/
-    		_storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStoragePoolURL()));
+            _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStorageUrl()));
 
     		String snapshotPath = cmd.getSnapshotUuid();
     		String primaryUuid = cmd.getPrimaryStoragePoolNameLabel();
@@ -1382,7 +1326,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	 StoragePool secondaryPool;
     	 try {
     		 Connect conn = LibvirtConnection.getConnection();
-    		 secondaryPool = _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStoragePoolURL()));
+            secondaryPool = _storageResource.getStoragePoolbyURI(conn, new URI(cmd.getSecondaryStorageUrl()));
     		 LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryPool);
     		 String templatePath = spd.getTargetPath() + File.separator + templateInstallFolder;	 
     		 _storage.mkdirs(templatePath);
@@ -1452,7 +1396,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     protected CreatePrivateTemplateAnswer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
-    	 String secondaryStorageURL = cmd.getSecondaryStorageURL();
+        String secondaryStorageURL = cmd.getSecondaryStorageUrl();
 
          StoragePool secondaryStorage = null;
          try {

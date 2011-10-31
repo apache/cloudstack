@@ -50,9 +50,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -352,12 +349,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((ManageSnapshotCommand) cmd);
             } else if (cmd instanceof BackupSnapshotCommand) {
                 answer = execute((BackupSnapshotCommand) cmd);
-            } else if (cmd instanceof DeleteSnapshotBackupCommand) {
-                answer = execute((DeleteSnapshotBackupCommand) cmd);
             } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
                 answer = execute((CreateVolumeFromSnapshotCommand) cmd);
-            } else if (cmd instanceof DeleteSnapshotsDirCommand) {
-                answer = execute((DeleteSnapshotsDirCommand) cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
                 answer = execute((CreatePrivateTemplateFromVolumeCommand) cmd);
             } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
@@ -2435,25 +2428,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    protected Answer execute(DeleteSnapshotBackupCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DeleteSnapshotBackupCommand: " + _gson.toJson(cmd));
-        }
-
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            return mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String details = "DeleteSnapshotBackupCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
-            return new DeleteSnapshotBackupAnswer(cmd, false, details);
-        }
-    }
 
     protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
         if (s_logger.isInfoEnabled()) {
@@ -2479,26 +2453,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
-    }
-
-    protected Answer execute(DeleteSnapshotsDirCommand cmd) {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Executing resource DeleteSnapshotsDirCommand: " + _gson.toJson(cmd));
-        }
-
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            return mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String details = "DeleteSnapshotDirCommand failed due to " + VmwareHelper.getExceptionMessage(e);
-            s_logger.error(details);
-            return new Answer(cmd, false, details);
-        }
     }
 
     protected Answer execute(CreatePrivateTemplateFromVolumeCommand cmd) {

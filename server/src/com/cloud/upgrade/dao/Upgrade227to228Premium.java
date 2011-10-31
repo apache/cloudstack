@@ -1,7 +1,6 @@
 /**
-<<<<<<< HEAD
  * *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
-*
+ *
  *
  * This software is licensed under the GNU General Public License v3 or later.
  *
@@ -18,7 +17,6 @@
  *
 =======
  *  Copyright (C) 2011 Cloud.com, Inc.  All rights reserved.
->>>>>>> 2.2.y
  */
 package com.cloud.upgrade.dao;
 

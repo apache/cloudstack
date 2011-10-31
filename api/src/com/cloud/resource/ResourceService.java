@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
+import com.cloud.api.commands.AddSwiftCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -33,6 +34,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
+import com.cloud.storage.Swift;
 
 public interface ResourceService {
     /**
@@ -86,4 +88,6 @@ public interface ResourceService {
     Host getHost(long hostId);
 
     Cluster getCluster(Long clusterId);
+
+    List<? extends Swift> discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
 }

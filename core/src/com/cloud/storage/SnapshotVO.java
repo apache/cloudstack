@@ -89,14 +89,11 @@ public class SnapshotVO implements Snapshot {
     String backupSnapshotId;
     
     @Column(name="swift_id")
-    long swiftId;
+    Long swiftId;
     
     @Column(name="sechost_id")
     Long secHostId;
-    
-    @Column(name="swift_name")
-    String swiftName;
-    
+
     @Column(name="prev_snap_id")
     long prevSnapshotId;
 
@@ -185,11 +182,11 @@ public class SnapshotVO implements Snapshot {
         return Type.values()[snapshotType];
     }
     
-    public long getSwiftId() {
+    public Long getSwiftId() {
         return swiftId;
     }
 
-    public void setSwiftId(long swiftId) {
+    public void setSwiftId(Long swiftId) {
         this.swiftId = swiftId;
     }
 
@@ -199,14 +196,6 @@ public class SnapshotVO implements Snapshot {
 
     public void setSecHostId(Long secHostId) {
         this.secHostId = secHostId;
-    }
-
-    public String getSwiftName() {
-        return swiftName;
-    }
-
-    public void setSwiftName(String swiftName) {
-        this.swiftName = swiftName;
     }
 
     @Override

@@ -71,16 +71,17 @@ import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.ClusterSyncAnswer;
+import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -89,11 +90,7 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.HostStatsEntry;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -105,7 +102,6 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -447,12 +443,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((ManageSnapshotCommand) cmd);
         } else if (clazz == BackupSnapshotCommand.class) {
             return execute((BackupSnapshotCommand) cmd);
-        } else if (clazz == DeleteSnapshotBackupCommand.class) {
-            return execute((DeleteSnapshotBackupCommand) cmd);
         } else if (clazz == CreateVolumeFromSnapshotCommand.class) {
             return execute((CreateVolumeFromSnapshotCommand) cmd);
-        } else if (clazz == DeleteSnapshotsDirCommand.class) {
-            return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
             return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromSnapshotCommand.class) {
@@ -2932,13 +2924,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
     
-    boolean swiftDownload(Connection conn, SwiftTO swift, String rfilename, String lfilename) {
+    boolean swiftDownload(Connection conn, SwiftTO swift, String container, String rfilename, String dir, String lfilename, Boolean remote) {
         String result = null;
         try {
-            result = callHostPluginAsync(conn, "swift", "swift", 60 * 60,
-                "op", "download", "hostname", swift.getHostName(), "account", swift.getAccount(),
-                "username", swift.getUserName(), "token", swift.getToken(), "rfilename", rfilename,
-                "lfilename", lfilename);
+            result = callHostPluginAsync(conn, "swiftxen", "swift", 60 * 60,
+                "op", "download", "url", swift.getUrl(), "account", swift.getAccount(),
+                "username", swift.getUserName(), "key", swift.getKey(), "rfilename", rfilename,
+                "dir", dir, "lfilename", lfilename, "remote", remote.toString());
             if( result != null && result.equals("true")) {
                 return true;
             }
@@ -2948,18 +2940,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
     
-    boolean swiftUpload(Connection conn, SwiftTO swift, String rfilename, String lfilename) {
+    boolean swiftUpload(Connection conn, SwiftTO swift, String container, String ldir, String lfilename, Boolean isISCSI, int wait) {
         String result = null;
         try {
-            result = callHostPluginAsync(conn, "swift", "swift", 60 * 60,
-                "op", "upload", "hostname", swift.getHostName(), "account", swift.getAccount(),
-                "username", swift.getUserName(), "token", swift.getToken(), "rfilename", rfilename,
-                "lfilename", lfilename);
+            result = callHostPluginAsync(conn, "swiftxen", "swift", wait,
+                "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(),
+                "username", swift.getUserName(), "key", swift.getKey(), "container", container,
+                "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
             if( result != null && result.equals("true")) {
                 return true;
             }
         } catch (Exception e) {
-            s_logger.warn("swift download failed due to ", e);
+            s_logger.warn("swift upload failed due to " + e.toString(), e);
         }
         return false;
     }
@@ -2967,9 +2959,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     boolean swiftDelete(Connection conn, SwiftTO swift, String rfilename) {
         String result = null;
         try {
-            result = callHostPlugin(conn, "swift", "swift",
-                "op", "delete", "hostname", swift.getHostName(), "account", swift.getAccount(),
-                "username", swift.getUserName(), "token", swift.getToken(), "rfilename", rfilename);
+            result = callHostPlugin(conn, "swiftxen", "swift",
+                "op", "delete", "url", swift.getUrl(), "account", swift.getAccount(),
+                "username", swift.getUserName(), "key", swift.getKey(), "rfilename", rfilename);
             if( result != null && result.equals("true")) {
                 return true;
             }
@@ -2979,8 +2971,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
     
-    private void swiftBackupSnapshot(SwiftTO swift, String srUuid, String snapshotUuid, String name, Boolean isISCSI) {
-        
+    private void swiftBackupSnapshot(Connection conn, SwiftTO swift, String srUuid, String snapshotUuid, String container, Boolean isISCSI, int wait)  {
+        String lfilename;
+        String ldir;
+        if ( isISCSI ) {
+            ldir = "/dev/VG_XenStorage-" + srUuid;
+            lfilename = "VHD-" + snapshotUuid;
+        } else {
+            ldir = "/var/run/sr-mount/" + srUuid;
+            lfilename = snapshotUuid + ".vhd";
+        }
+        swiftUpload(conn, swift, container, ldir, lfilename, isISCSI, wait);
     }
     
 
@@ -5691,7 +5692,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromVolumeCommand cmd) {
         Connection conn = getConnection();
-        String secondaryStoragePoolURL = cmd.getSecondaryStorageURL();
+        String secondaryStoragePoolURL = cmd.getSecondaryStorageUrl();
         String volumeUUID = cmd.getVolumePath();
         Long accountId = cmd.getAccountId();
         String userSpecifiedName = cmd.getTemplateName();
@@ -5751,7 +5752,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     protected Answer execute(final UpgradeSnapshotCommand cmd) {
         
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         Long volumeId = cmd.getVolumeId();
         Long accountId = cmd.getAccountId();
@@ -5764,7 +5765,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         try {
             Connection conn = getConnection();
-            URI uri = new URI(secondaryStoragePoolURL);
+            URI uri = new URI(secondaryStorageUrl);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             String snapshotPath = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/" + backedUpSnapshotUuid + ".vhd";
             String templatePath = secondaryStorageMountPath + "/template/tmpl/" + tmpltAcountId + "/" + templateId;
@@ -5782,7 +5783,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         Long newTemplateId = cmd.getNewTemplateId();
         String userSpecifiedName = cmd.getTemplateName();
@@ -5791,7 +5792,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String details = null;
         boolean result = false;
         try {
-            URI uri = new URI(secondaryStoragePoolURL);
+            URI uri = new URI(secondaryStorageUrl);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             String installPath = "template/tmpl/" + accountId + "/" + newTemplateId;
             if( !createSecondaryStorageFolder(conn, secondaryStorageMountPath, installPath)) {
@@ -5801,7 +5802,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             String templatePath = secondaryStorageMountPath + "/" + installPath;
             // create snapshot SR
-            String snapshotPath = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/" + backedUpSnapshotUuid + ".vhd";
+            String filename = backedUpSnapshotUuid;
+            if ( !filename.startsWith("VHD-") && !filename.endsWith(".vhd")) {
+                filename = backedUpSnapshotUuid + ".vhd";
+            }
+            String snapshotPath = secondaryStorageMountPath + "/snapshots/" + accountId + "/" + volumeId + "/" + filename;
             String results = createTemplateFromSnapshot(conn, templatePath, snapshotPath, wait);
             String[] tmp = results.split("#");
             String tmpltUuid = tmp[1];
@@ -5859,7 +5864,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Long dcId = cmd.getDataCenterId();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
         String prevBackupUuid = cmd.getPrevBackupUuid();
         String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
@@ -5876,12 +5881,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             String psUuid = primaryStorageSR.getUuid(conn);
             Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
-            URI uri = new URI(secondaryStoragePoolURL);
+            URI uri = new URI(secondaryStorageUrl);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
+            String snapshotPaUuid = null;
             if ( prevBackupUuid != null ) {
                 try {
-                    String snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
+                    snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
                     if( snapshotPaUuid != null ) {
                         String snashotPaPaPaUuid = getVhdParent(conn, psUuid, snapshotPaUuid, isISCSI);
                         String prevSnashotPaUuid = getVhdParent(conn, psUuid, prevSnapshotUuid, isISCSI);
@@ -5892,7 +5898,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (Exception e) {
                 }
             }
-            String filename = volumeId + "_" + cmd.getSnapshotId() + "_" + cmd.getSnapshotUuid();
 
             if (fullbackup) {
                 // the first snapshot is always a full snapshot
@@ -5902,7 +5907,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.warn(details);
                     return new BackupSnapshotAnswer(cmd, false, details, null, false);
                 }
-                String snapshotMountpoint = secondaryStoragePoolURL + "/" + folder;
+                String snapshotMountpoint = secondaryStorageUrl + "/" + folder;
                 SR snapshotSr = null;
                 try {
                     snapshotSr = createNfsSRbyURI(conn, new URI(snapshotMountpoint), false);
@@ -5910,12 +5915,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     snapshotBackupUuid = backedVdi.getUuid(conn);
                     if( cmd.getSwift() != null ) {
                         try {
-                            swiftBackupSnapshot(cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, filename, false);
-                            snapshotBackupUuid = filename;
+                            swiftBackupSnapshot(conn, cmd.getSwift(), snapshotSr.getUuid(conn), snapshotBackupUuid, "S-" + volumeId.toString(), false, wait);
                         } finally {
                             deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotBackupUuid);
                         }
                     }
+                    snapshotBackupUuid = snapshotBackupUuid + ".vhd";
                     success = true;
                 } finally {
                     if( snapshotSr != null) {
@@ -5925,18 +5930,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
                 if( cmd.getSwift() != null ) {
-                    swiftBackupSnapshot(cmd.getSwift(), primaryStorageSRUuid, snapshotUuid, filename, isISCSI);
-                    snapshotBackupUuid = filename;
+                    swiftBackupSnapshot(conn, cmd.getSwift(), primaryStorageSRUuid, snapshotPaUuid, "S-" + volumeId.toString(), isISCSI, wait);
+                    if ( isISCSI ) {
+                        snapshotBackupUuid = "VHD-" + snapshotPaUuid;
+                    } else {
+                        snapshotBackupUuid = snapshotPaUuid + ".vhd";
+                    }
                     success = true;
                 } else {
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
                     success = (snapshotBackupUuid != null);
                 }
             }
+            String volumeUuid = cmd.getVolumePath();
+            destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
             if (success) {
                 details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-                String volumeUuid = cmd.getVolumePath();
-                destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
+
             }
         } catch (XenAPIException e) {
             details = "BackupSnapshot Failed due to " + e.toString();
@@ -5954,7 +5964,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
         int wait = cmd.getWait();
         boolean result = false;
@@ -5963,8 +5973,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String volumeUUID = null;
         SR snapshotSR = null;
         
-        if (secondaryStoragePoolURL == null) {
-            details += " because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
+        if (secondaryStorageUrl == null) {
+            details += " because the URL passed: " + secondaryStorageUrl + " is invalid.";
             return new CreateVolumeFromSnapshotAnswer(cmd, result, details, volumeUUID);
         }
         try {
@@ -5974,8 +5984,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         + primaryStorageNameLabel);
             }
             // Get the absolute path of the snapshot on the secondary storage.
-            URI snapshotURI = new URI(secondaryStoragePoolURL + "/snapshots/" + accountId + "/" + volumeId );
-            String snapshotPath = snapshotURI.getHost() + ":" + snapshotURI.getPath() + "/" + backedUpSnapshotUuid + ".vhd";
+            URI snapshotURI = new URI(secondaryStorageUrl + "/snapshots/" + accountId + "/" + volumeId);
+            String filename = backedUpSnapshotUuid;
+            if ( !filename.startsWith("VHD-") && !filename.endsWith(".vhd")) {
+                filename = backedUpSnapshotUuid + ".vhd";
+            }
+            String snapshotPath = snapshotURI.getHost() + ":" + snapshotURI.getPath() + "/" + filename;
             String srUuid = primaryStorageSR.getUuid(conn);
             volumeUUID = copy_vhd_from_secondarystorage(conn, snapshotPath, srUuid, wait);
             result = true;
@@ -6000,91 +6014,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new CreateVolumeFromSnapshotAnswer(cmd, result, details, volumeUUID);
     }
 
-    protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
-        Connection conn = getConnection();
-        Long dcId = cmd.getDataCenterId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
-        String backupUUID = cmd.getSnapshotUuid();
-        String details = null;
-        boolean success = false;
-
-        URI uri = null;
-        try {
-            uri = new URI(secondaryStoragePoolURL);
-        } catch (URISyntaxException e) {
-            details = "Error finding the secondary storage URL" + e.getMessage();
-            s_logger.error(details, e);
-        }
-        if (uri != null) {
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-     
-            details = deleteSnapshotBackup(conn, dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID);
-            success = (details != null && details.equals("1"));
-            if (success) {
-                s_logger.debug("Successfully deleted snapshot backup " + backupUUID);
-            }
-        }
-        return new DeleteSnapshotBackupAnswer(cmd, true, details);
-    }
-
-    protected Answer execute(DeleteSnapshotsDirCommand cmd) {
-        Connection conn = getConnection();
-        Long dcId = cmd.getDataCenterId();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
-        String snapshotUUID = cmd.getSnapshotUuid();
-        String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-
-        String details = null;
-        boolean success = false;
-
-        SR primaryStorageSR = null;
-        try {
-            primaryStorageSR = getSRByNameLabelandHost(conn, primaryStorageNameLabel);
-            if (primaryStorageSR == null) {
-                details = "Primary Storage SR could not be created from the name label: " + primaryStorageNameLabel;
-            }
-        } catch (XenAPIException e) {
-            details = "Couldn't determine primary SR type " + e.getMessage();
-            s_logger.error(details, e);
-        } catch (Exception e) {
-            details = "Couldn't determine primary SR type " + e.getMessage();
-            s_logger.error(details, e);
-        }
-
-        if (primaryStorageSR != null) {
-            if (snapshotUUID != null) {
-                VDI snapshotVDI = getVDIbyUuid(conn, snapshotUUID);
-                if (snapshotVDI != null) {
-                    destroyVDI(conn, snapshotVDI);
-                }
-            }
-        }
-        URI uri = null;
-        try {
-            uri = new URI(secondaryStoragePoolURL);
-        } catch (URISyntaxException e) {
-            details = "Error finding the secondary storage URL" + e.getMessage();
-            s_logger.error(details, e);
-        }
-        if (uri != null) {
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-
-            success = deleteSnapshotsDir(conn, dcId, accountId, volumeId, secondaryStorageMountPath);
-            if (success) {
-                details = "Successfully deleted snapshotsDir for volume: " + volumeId;
-                s_logger.debug(details);
-            } else {
-                details = "Failed to delete snapshotsDir for volume: " + volumeId;
-                s_logger.warn(details);
-            }
-        }
-
-        return new Answer(cmd, success, details);
-    }
 
     protected VM getVM(Connection conn, String vmName) {
         // Look up VMs with the specified name

@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -17,32 +17,42 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.SwiftTO;
+
 /**
- * This command encapsulates a primitive operation which enables coalescing the backed up VHD snapshots on the secondary server
- * This currently assumes that the secondary storage are mounted on the XenServer.  
+ * 
+ * @author Anthony Xu
+ * 
  */
-public class DeleteSnapshotsDirCommand extends Command {
-    String secondaryStorageUrl;
-    Long dcId;
-    Long accountId;
-    Long volumeId;
-    
-    protected DeleteSnapshotsDirCommand() {
+
+public class uploadTemplateToSwiftFromSecondaryStorageCommand extends Command {
+    private SwiftTO swift;
+    private String secondaryStorageUrl;
+
+    private Long dcId;
+    private Long accountId;
+    private Long templateId;
+
+    protected uploadTemplateToSwiftFromSecondaryStorageCommand() {
         
     }
-    
-    public DeleteSnapshotsDirCommand(String secondaryStorageUrl,
- Long dcId, Long accountId, Long volumeId)
-    {
+   
+    public uploadTemplateToSwiftFromSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, int wait) {
+
+        this.swift = swift;
         this.secondaryStorageUrl = secondaryStorageUrl;
         this.dcId = dcId;
         this.accountId = accountId;
-        this.volumeId = volumeId;
+        this.templateId = templateId;
+        setWait(wait);
     }
 
-    @Override
-    public boolean executeInSequence() {
-        return true;
+    public SwiftTO getSwift() {
+        return this.swift;
+    }
+
+    public void setSwift(SwiftTO swift) {
+        this.swift = swift;
     }
 
     public String getSecondaryStorageUrl() {
@@ -57,8 +67,14 @@ public class DeleteSnapshotsDirCommand extends Command {
         return accountId;
     }
 
-    public Long getVolumeId() {
-        return volumeId;
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        // TODO Auto-generated method stub
+        return true;
     }
 
 }

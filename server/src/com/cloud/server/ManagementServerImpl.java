@@ -197,6 +197,7 @@ import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -312,6 +313,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final Adapters<HostAllocator> _hostAllocators;
     @Inject ProjectManager _projectMgr;
     private final ResourceManager _resourceMgr;
+    @Inject
+    SnapshotManager _snapshotMgr;
     
     private final KeystoreManager _ksMgr;
 
@@ -1384,16 +1387,31 @@ public class ManagementServerImpl implements ManagementServer {
             hypers =  _resourceMgr.listAvailHypervisorInZone(null, null);
         }
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
-
-        if (template == null) {
-            templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr, permittedAccounts, caller);
-        } else {
-            // if template is not public, perform permission check here
-            if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                Account owner = _accountMgr.getAccount(template.getAccountId());
-                _accountMgr.checkAccess(caller, null, owner);
+        Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
+        if (swiftEnable) {
+            if (template == null) {
+                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller);
+            } else {
+                // if template is not public, perform permission check here
+                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    Account owner = _accountMgr.getAccount(template.getAccountId());
+                    _accountMgr.checkAccess(caller, null, owner);
+                }
+                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), 0L));
             }
-            templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
+        } else {
+            if (template == null) {
+                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller);
+            } else {
+                // if template is not public, perform permission check here
+                if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    Account owner = _accountMgr.getAccount(template.getAccountId());
+                    _accountMgr.checkAccess(caller, null, owner);
+                }
+                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
+            }
         }
 
         return templateZonePairSet;

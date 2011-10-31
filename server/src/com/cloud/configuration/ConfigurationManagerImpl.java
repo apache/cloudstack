@@ -93,6 +93,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
@@ -115,7 +117,10 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.SwiftVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SwiftDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -163,6 +168,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Inject
     DomainDao _domainDao;
     @Inject
+    HostDao _hostDao;
+    @Inject
+    SwiftDao _swiftDao;
+    @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
     DiskOfferingDao _diskOfferingDao;
@@ -206,6 +215,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     ResourceLimitService _resourceLimitMgr;
     @Inject
     ProjectManager _projectMgr;
+
+    @Inject
+    SecondaryStorageVmManager _ssvmMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -440,6 +452,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (!(value.equals("true") || value.equals("false"))) {
                 s_logger.error("Configuration variable " + name + " is expecting true or false in stead of " + value);
                 return "Please enter either 'true' or 'false'.";
+            }
+            if (Config.SwiftEnable.key().equals(name)) {
+                List<HostVO> hosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
+                if (hosts != null && hosts.size() > 0) {
+                    return " can not change " + Config.SwiftEnable.key() + " after you have added secondary storage";
+                }
+                SwiftVO swift = _swiftDao.findById(1L);
+                if (swift != null) {
+                    return " can not change " + Config.SwiftEnable.key() + " after you have added Swift";
+                }
             }
             return null;
         }

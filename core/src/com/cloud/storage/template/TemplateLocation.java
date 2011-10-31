@@ -27,8 +27,8 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.utils.NumbersUtil;
 
@@ -192,7 +192,7 @@ public class TemplateLocation {
     }
     
     protected boolean checkFormatValidity(FormatInfo info) {
-        return (info.format != null && info.size > 0 && info.virtualSize > 0 && info.filename != null && _storage.exists(_templatePath + info.filename) && _storage.getSize(_templatePath + info.filename) == info.size);
+        return (info.format != null && info.size > 0 && info.virtualSize > 0 && info.filename != null);
     }
     
     protected FormatInfo deleteFormat(ImageFormat format) {

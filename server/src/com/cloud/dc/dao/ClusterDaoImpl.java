@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -39,12 +38,9 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=ClusterDao.class)
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -130,9 +126,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
     
     @Override
-    public List<HypervisorType> getAvailableHypervisorInZone(long zoneId) {
+    public List<HypervisorType> getAvailableHypervisorInZone(Long zoneId) {
         SearchCriteria<ClusterVO> sc = AvailHyperSearch.create();
-        sc.setParameters("zoneId", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
         List<ClusterVO> clusters = listBy(sc);
         List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
         for (ClusterVO cluster : clusters) {

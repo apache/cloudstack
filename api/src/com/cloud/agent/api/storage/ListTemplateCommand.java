@@ -17,16 +17,25 @@
  */
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.to.SwiftTO;
+
 public class ListTemplateCommand extends StorageCommand {
     private String secUrl;
+    private SwiftTO swift;
     
     public ListTemplateCommand() {
     }
     
 	public ListTemplateCommand(String secUrl) {
 	    this.secUrl = secUrl;
+        this.swift = null;
 	}
 	
+    public ListTemplateCommand(SwiftTO swift) {
+        this.secUrl = null;
+        this.swift = swift;
+    }
+
     @Override
     public boolean executeInSequence() {
         return true;
@@ -36,8 +45,8 @@ public class ListTemplateCommand extends StorageCommand {
         return secUrl;
     }
 
-    public void setSecUrl(String secUrl) {
-        this.secUrl = secUrl;
+    public SwiftTO getSwift() {
+        return swift;
     }
 
 }

@@ -156,4 +156,5 @@ public interface AgentManager extends Manager {
     public void pullAgentOutMaintenance(long hostId);
 
 	boolean reconnect(long hostId);
+    Answer sendToSSVM(Long dcId, final Command cmd);
 }

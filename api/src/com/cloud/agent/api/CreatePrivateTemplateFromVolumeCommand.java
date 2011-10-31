@@ -19,23 +19,23 @@
 package com.cloud.agent.api;
 
 public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
-	private String _vmName;
+    private String _vmName;
     private String _volumePath;
     private String _userSpecifiedName;
     private String _uniqueName;
     private long _templateId;
     private long _accountId;
     // For XenServer
-    private String _secondaryStorageURL;
+    private String _secondaryStorageUrl;
 
+    public CreatePrivateTemplateFromVolumeCommand() {
+    }
 
-    public CreatePrivateTemplateFromVolumeCommand() {}
-
-    public CreatePrivateTemplateFromVolumeCommand(String secondaryStorageURL, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName, int wait) {
-    	_secondaryStorageURL = secondaryStorageURL;
-    	_templateId = templateId;
-    	_accountId = accountId;
-    	_userSpecifiedName = userSpecifiedName;
+    public CreatePrivateTemplateFromVolumeCommand(String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName, int wait) {
+        _secondaryStorageUrl = secondaryStorageUrl;
+        _templateId = templateId;
+        _accountId = accountId;
+        _userSpecifiedName = userSpecifiedName;
         _uniqueName = uniqueName;
         _volumePath = volumePath;
         _vmName = vmName;
@@ -43,12 +43,12 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     }
 
     @Override
-    public boolean executeInSequence() { 
+    public boolean executeInSequence() {
         return false;
     }
-    
-    public String getSecondaryStorageURL() {
-    	return _secondaryStorageURL;
+
+    public String getSecondaryStorageUrl() {
+        return _secondaryStorageUrl;
     }
 
     public String getTemplateName() {
@@ -60,13 +60,13 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     }
 
     public long getTemplateId() {
-    	return _templateId;
+        return _templateId;
     }
-    
+
     public String getVmName() {
-    	return _vmName;
+        return _vmName;
     }
-    
+
     public void setVolumePath(String _volumePath) {
         this._volumePath = _volumePath;
     }
@@ -76,10 +76,10 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     }
 
     public Long getAccountId() {
-    	return _accountId;
+        return _accountId;
     }
-    
+
     public void setTemplateId(long templateId) {
-    	_templateId = templateId;
+        _templateId = templateId;
     }
 }

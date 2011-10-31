@@ -82,6 +82,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private final String SELECT_TEMPLATE_ZONE_REF = "SELECT t.id, tzr.zone_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, " +
 									"t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t INNER JOIN template_zone_ref tzr on (t.id = tzr.template_id) ";
     
+    private final String SELECT_TEMPLATE_SWIFT_REF = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
+            + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
+
     protected SearchBuilder<VMTemplateVO> TemplateNameSearch;
     protected SearchBuilder<VMTemplateVO> UniqueNameSearch;
     protected SearchBuilder<VMTemplateVO> tmpltTypeSearch;
@@ -209,9 +212,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 	
 	@Override
-	public List<VMTemplateVO> listByHypervisorType(HypervisorType hyperType) {
+    public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes) {
 		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
-		sc.addAnd("hypervisor_type", SearchCriteria.Op.EQ, hyperType.toString());
+        hyperTypes.add(HypervisorType.None);
+        sc.addAnd("hypervisorType", SearchCriteria.Op.IN, hyperTypes.toArray());
 		return listBy(sc);
 	}
 
@@ -302,6 +306,127 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	public String getRoutingTemplateUniqueName() {
 		return routerTmpltName;
 	}
+
+    @Override
+    public Set<Pair<Long, Long>> searchSwiftTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain,
+            Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller) {
+
+        StringBuilder builder = new StringBuilder();
+        if (!permittedAccounts.isEmpty()) {
+            for (Account permittedAccount : permittedAccounts) {
+                builder.append(permittedAccount.getAccountId() + ",");
+            }
+        }
+
+        String permittedAccountsStr = builder.toString();
+
+        if (permittedAccountsStr.length() > 0) {
+            // chop the "," off
+            permittedAccountsStr = permittedAccountsStr.substring(0, permittedAccountsStr.length() - 1);
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long, Long>>();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        String sql = SELECT_TEMPLATE_SWIFT_REF;
+        try {
+            String joinClause = "";
+            String whereClause = " WHERE t.removed IS NULL";
+
+            if (isIso) {
+                whereClause += " AND t.format = 'ISO'";
+                if (!hyperType.equals(HypervisorType.None)) {
+                    joinClause = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
+                    whereClause += " AND goh.hypervisor_type = '" + hyperType.toString() + "'";
+                }
+            } else {
+                whereClause += " AND t.format <> 'ISO'";
+                if (hypers.isEmpty()) {
+                    return templateZonePairList;
+                } else {
+                    StringBuilder relatedHypers = new StringBuilder();
+                    for (HypervisorType hyper : hypers) {
+                        relatedHypers.append("'");
+                        relatedHypers.append(hyper.toString());
+                        relatedHypers.append("'");
+                        relatedHypers.append(",");
+                    }
+                    relatedHypers.setLength(relatedHypers.length() - 1);
+                    whereClause += " AND t.hypervisor_type IN (" + relatedHypers + ")";
+                }
+            }
+            if (onlyReady) {
+                joinClause += " INNER JOIN  template_swift_ref tsr on (t.id = tsr.template_id)";
+            }
+
+            if (keyword != null) {
+                whereClause += " AND t.name LIKE \"%" + keyword + "%\"";
+            } else if (name != null) {
+                whereClause += " AND t.name LIKE \"%" + name + "%\"";
+            }
+
+            if (bootable != null) {
+                whereClause += " AND t.bootable = " + bootable;
+            }
+
+            if (!showDomr) {
+                whereClause += " AND t.type != '" + Storage.TemplateType.SYSTEM.toString() + "'";
+            }
+
+            if (templateFilter == TemplateFilter.featured) {
+                whereClause += " AND t.public = 1 AND t.featured = 1";
+            } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                    joinClause += " INNER JOIN account a on (t.account_id = a.id) INNER JOIN domain d on (a.domain_id = d.id)";
+                    whereClause += "  AND d.path LIKE '" + domain.getPath() + "%'";
+                } else {
+                    whereClause += " AND t.account_id IN (" + permittedAccountsStr + ")";
+                }
+            } else if (templateFilter == TemplateFilter.sharedexecutable && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    joinClause += " LEFT JOIN launch_permission lp ON t.id = lp.template_id WHERE" + " (t.account_id IN (" + permittedAccountsStr + ") OR" + " lp.account_id IN ("
+                            + permittedAccountsStr + "))";
+                } else {
+                    joinClause += " INNER JOIN account a on (t.account_id = a.id) ";
+                }
+            } else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
+                whereClause += " AND (t.public = 1 OR t.account_id IN (" + permittedAccountsStr + "))";
+            } else if (templateFilter == TemplateFilter.community) {
+                whereClause += " AND t.public = 1 AND t.featured = 0";
+            } else if (templateFilter == TemplateFilter.all && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                return templateZonePairList;
+            }
+
+            sql += joinClause + whereClause;
+            pstmt = txn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Pair<Long, Long> templateZonePair = new Pair<Long, Long>(rs.getLong(1), 0L);
+                templateZonePairList.add(templateZonePair);
+            }
+
+        } catch (Exception e) {
+            s_logger.warn("Error listing templates", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                txn.commit();
+            } catch (SQLException sqle) {
+                s_logger.warn("Error in cleaning up", sqle);
+            }
+        }
+
+        return templateZonePairList;
+    }
 
 	@Override
 	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts, Account caller) {

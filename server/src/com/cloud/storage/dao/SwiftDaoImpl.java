@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -17,13 +17,44 @@
  */
 
 package com.cloud.storage.dao;
+
+import java.util.Collections;
+import java.util.List;
+
 import javax.ejb.Local;
-import com.cloud.storage.SwiftVO;
+
 import org.apache.log4j.Logger;
+
+import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.storage.SwiftVO;
 import com.cloud.utils.db.GenericDaoBase;
+
+/**
+ * 
+ * @author Anthony Xu
+ * 
+ */
 
 @Local (value={SwiftDao.class})
 public class SwiftDaoImpl extends GenericDaoBase<SwiftVO, Long> implements SwiftDao {
     public static final Logger s_logger = Logger.getLogger(SwiftDaoImpl.class.getName());
-}
 
+    @Override
+    public SwiftTO getSwiftTO(Long swiftId) {
+        if (swiftId != null) {
+            SwiftVO swift = findById(swiftId);
+            if (swift != null) {
+                return swift.toSwiftTO();
+            }
+            return null;
+        }
+
+        List<SwiftVO> swiftVOs = listAll();
+        if (swiftVOs == null || swiftVOs.size() < 1) {
+            return null;
+        } else {
+            Collections.shuffle(swiftVOs);
+            return swiftVOs.get(0).toSwiftTO();
+        }
+    }
+}

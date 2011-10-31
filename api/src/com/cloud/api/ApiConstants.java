@@ -150,6 +150,7 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
     public static final String SECRET_KEY = "usersecretkey";
+    public static final String KEY = "key";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";

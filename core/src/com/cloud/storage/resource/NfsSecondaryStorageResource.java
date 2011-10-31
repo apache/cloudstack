@@ -23,14 +23,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
@@ -42,6 +41,8 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.PingCommand;
@@ -49,36 +50,42 @@ import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
-import com.cloud.agent.api.StartupSecondaryStorageCommand;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
+import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
+import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.ListTemplateAnswer;
-import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.UploadCommand;
+import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
+import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
-import com.cloud.storage.template.DownloadManagerImpl.ZfsPathParser;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.net.NfsUtils;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
@@ -107,6 +114,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	private String _eth1mask;
 	private String _eth1ip;
 	final private String _parent = "/mnt/SecStorage";
+	final private String _tmpltDir = "/var/cloudstack/template";
+    final private String _tmpltpp = "template.properties";
     @Override
     public void disconnected() {
     }
@@ -140,12 +149,208 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } else if (cmd instanceof ComputeChecksumCommand){
             return execute((ComputeChecksumCommand)cmd);
         } else if (cmd instanceof ListTemplateCommand){
-            return execute((ListTemplateCommand)cmd);    
+            return execute((ListTemplateCommand)cmd);
+        } else if (cmd instanceof downloadSnapshotFromSwiftCommand){
+            return execute((downloadSnapshotFromSwiftCommand)cmd);
+        } else if (cmd instanceof DeleteSnapshotsDirCommand){
+            return execute((DeleteSnapshotsDirCommand)cmd);
+        } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
+            return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
+            return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
     
+
+    private Answer execute(downloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
+        SwiftTO swift = cmd.getSwift();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long templateId = cmd.getTemplateId();
+        try {
+            String parent = getRootDir(secondaryStorageUrl);
+            String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
+            String result = swiftDownload(swift, "T-" + templateId.toString(), "", lPath);
+            if (result != null) {
+                String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
+
+    private Answer execute(uploadTemplateToSwiftFromSecondaryStorageCommand cmd) {
+        SwiftTO swift = cmd.getSwift();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long templateId = cmd.getTemplateId();
+        try {
+            String parent = getRootDir(secondaryStorageUrl);
+            String lPath = parent + "/template/tmpl/" + accountId.toString() + "/" + templateId.toString();
+            if (!_storage.isFile(lPath + "/template.properties")) {
+                String errMsg = cmd + " Command failed due to template doesn't exist ";
+                s_logger.debug(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            String result = swiftUpload(swift, "T-" + templateId.toString(), lPath, "*");
+            if (result != null) {
+                String errMsg = "failed to download template from Swift to secondary storage " + lPath + " , err=" + result;
+                s_logger.debug(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
+
+    String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
+                + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
+                + " download " + container + " " + rfilename + " -o " + lFullPath);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "swiftDownload failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+
+    }
+
+    String swiftUpload(SwiftTO swift, String container, String lDir, String lFilename) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
+                + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
+                + " upload " + container + " " + lFilename);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "swiftUpload failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    String[] swiftList(SwiftTO swift, String container, String rFilename) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K "
+                + swift.getKey() + " list " + container + " " + rFilename);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result == null && parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            return lines;
+        } else {
+            if (result != null) {
+                String errMsg = "swiftList failed , err=" + result;
+                s_logger.warn(errMsg);
+            } else {
+                String errMsg = "swiftList, no lines returns";
+                s_logger.warn(errMsg);
+            }
+        }
+        return null;
+    }
+
+    String swiftDelete(SwiftTO swift, String container, String rFilename) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A "
+                + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey()
+                + " delete " + container + " " + rFilename);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "swiftDelete failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+
+    public Answer execute(DeleteSnapshotsDirCommand cmd){
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long volumeId = cmd.getVolumeId();
+        try {
+            String parent = getRootDir(secondaryStorageUrl);
+            String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/*";
+            String result = deleteLocalFile(lPath);
+            if (result != null) {
+                String errMsg = "failed to delete all snapshots " + lPath + " , err=" + result;
+                s_logger.warn(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
+
+    public Answer execute(downloadSnapshotFromSwiftCommand cmd){
+        SwiftTO swift = cmd.getSwift();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long volumeId = cmd.getVolumeId();
+        String rFilename = cmd.getSnapshotUuid();
+        String sParent = cmd.getParent();
+        String errMsg = "";
+        try {
+            String parent = getRootDir(secondaryStorageUrl);
+            String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId);
+
+            String result = createLocalDir(lPath);
+            if ( result != null ) {
+                errMsg = "downloadSnapshotFromSwiftCommand failed due to Create local path failed";
+                s_logger.warn(errMsg);
+                throw new InternalErrorException(errMsg);
+            }
+            String lFilename = rFilename;
+            if ( rFilename.startsWith("VHD-") ) {
+                lFilename = rFilename.replace("VHD-", "") + ".vhd";
+            }
+            String lFullPath = lPath + "/" + lFilename;
+            result = swiftDownload(swift, "S-" + volumeId.toString(), rFilename, lFullPath);
+            if (result != null) {
+                return new Answer(cmd, false, result);
+            }
+            if (sParent != null) {
+                if (sParent.startsWith("VHD-") || sParent.endsWith(".vhd")) {
+                    String pFilename = sParent;
+                    if (sParent.startsWith("VHD-")) {
+                        pFilename = pFilename.replace("VHD-", "") + ".vhd";
+                    }
+                    String pFullPath = lPath + "/" + pFilename;
+                    result = setVhdParent(lFullPath, pFullPath);
+                    if (result != null) {
+                        return new Answer(cmd, false, result);
+                    }
+                }
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
     private Answer execute(ComputeChecksumCommand cmd) {
         
         String relativeTemplatePath = cmd.getTemplatePath();
@@ -200,7 +405,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
                 return new Answer(cmd, false, checksum);   
             }                        
-    }       
+        }
 
         return new Answer(cmd, true, checksum);
     }
@@ -232,14 +437,96 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
     
+    protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        Long accountId = cmd.getAccountId();
+        Long volumeId = cmd.getVolumeId();
+        String name = cmd.getSnapshotUuid();
+        try {
+            SwiftTO swift = cmd.getSwift();
+            if (swift == null) {
+                String parent = getRootDir(secondaryStorageUrl);
+                String filename;
+                if (cmd.isAll()) {
+                    filename = "*";
+
+                } else {
+                    filename = "*" + name + "*";
+                }
+                String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/" + filename;
+                String result = deleteLocalFile(lPath);
+                if (result != null) {
+                    String errMsg = "failed to delete snapshot " + lPath + " , err=" + result;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+            } else {
+                String filename;
+                if (cmd.isAll()) {
+                    filename = "";
+                } else {
+                    filename = name;
+                }
+                String result = swiftDelete(swift, volumeId.toString(), filename);
+                if (result != null) {
+                    String errMsg = "failed to delete snapshot " + filename + " , err=" + result;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+            }
+            return new Answer(cmd, true, "success");
+        } catch (Exception e) {
+            String errMsg = cmd + " Command failed due to " + e.toString();
+            s_logger.warn(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+        }
+    }
+    
+    Map<String, TemplateInfo> swiftListTemplate(SwiftTO swift) {
+        String[] containers = swiftList(swift, "", "");
+        if (containers == null) {
+            return null;
+        }
+        Map<String, TemplateInfo> tmpltInfos = new HashMap<String, TemplateInfo>();
+        for( String container : containers) {
+            if ( container.startsWith("T-")) {
+                String ldir = _tmpltDir + "/" + UUID.randomUUID().toString();
+                createLocalDir(ldir);
+                String lFullPath = ldir + "/" + _tmpltpp;
+                swiftDownload(swift, container, _tmpltpp, lFullPath);
+                TemplateLocation loc = new TemplateLocation(_storage, ldir);
+                try {
+                    if (!loc.load()) {
+                        s_logger.warn("Can not parse template.properties file for template " + container);
+                        continue;
+                    }
+                } catch (IOException e) {
+                    s_logger.warn("Unable to load template location " + ldir + " due to " + e.toString(), e);
+                    continue;
+                }
+                TemplateInfo tInfo = loc.getTemplateInfo();
+                tInfo.setInstallPath(container);
+                tmpltInfos.put(tInfo.getTemplateName(), tInfo);
+                loc.purge();
+                deleteLocalDir(ldir);
+            }
+        }
+        return tmpltInfos;
+        
+    }
     
     private Answer execute(ListTemplateCommand cmd) {
         if (!_inSystemVM){
             return new Answer(cmd, true, null);
         }
-        String root = getRootDir(cmd.getSecUrl());
-        Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
-        return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        if (cmd.getSwift() != null) {
+            Map<String, TemplateInfo> templateInfos = swiftListTemplate(cmd.getSwift());
+            return new ListTemplateAnswer(cmd.getSwift().toString(), templateInfos);
+        } else {
+            String root = getRootDir(cmd.getSecUrl());
+            Map<String, TemplateInfo> templateInfos = _dlMgr.gatherTemplateInfo(root);
+            return new ListTemplateAnswer(cmd.getSecUrl(), templateInfos);
+        }
     }
     
     private Answer execute(SecStorageVMSetupCommand cmd) {
@@ -267,7 +554,59 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		return new Answer(cmd, success, result.toString());
 
 	}
-    
+
+    private String setVhdParent(String lFullPath, String pFullPath) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("/bin/vhd-util modify -n " + lFullPath + " -p " + pFullPath);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "failed to set vhd parent, child " + lFullPath + " parent " + pFullPath + ", err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    private String createLocalDir(String folder) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("mkdir -p " + folder);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "Create local path " + folder + " failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    private String deleteLocalDir(String folder) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("rmdir " + folder);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "Delete local path " + folder + " failed , err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
+    private String deleteLocalFile(String fullPath) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("rm -f " + fullPath);
+        String result = command.execute();
+        if (result != null) {
+            String errMsg = "Failed to delete file " + fullPath + ", err=" + result;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        return null;
+    }
+
     public String allowOutgoingOnPrivate(String destCidr) {
     	
     	Script command = new Script("/bin/bash", s_logger);

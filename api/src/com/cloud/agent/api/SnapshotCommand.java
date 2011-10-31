@@ -28,7 +28,7 @@ public class SnapshotCommand extends Command {
     private String primaryStoragePoolNameLabel;
     private String snapshotUuid;
     private String snapshotName;
-    private String secondaryStoragePoolURL;
+    private String secondaryStorageUrl;
     private Long   dcId;
     private Long   accountId;
     private Long   volumeId;
@@ -46,7 +46,7 @@ public class SnapshotCommand extends Command {
      *                                 If you have better ideas on how to get it, you are welcome.
      */
     public SnapshotCommand(String primaryStoragePoolNameLabel,
-                           String secondaryStoragePoolURL,
+ String secondaryStorageUrl,
                            String snapshotUuid,
                            String snapshotName,
                            Long   dcId,
@@ -55,7 +55,7 @@ public class SnapshotCommand extends Command {
     {
         this.primaryStoragePoolNameLabel = primaryStoragePoolNameLabel;
         this.snapshotUuid = snapshotUuid;
-        this.secondaryStoragePoolURL = secondaryStoragePoolURL;
+        this.secondaryStorageUrl = secondaryStorageUrl;
         this.dcId = dcId;
         this.accountId = accountId;
         this.volumeId = volumeId;
@@ -83,8 +83,8 @@ public class SnapshotCommand extends Command {
     /**
      * @return the secondaryStoragePoolURL
      */
-    public String getSecondaryStoragePoolURL() {
-        return secondaryStoragePoolURL;
+    public String getSecondaryStorageUrl() {
+        return secondaryStorageUrl;
     }
 
     

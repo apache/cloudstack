@@ -27,7 +27,6 @@ import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
@@ -1171,7 +1170,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 	}
 	
 	protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromVolumeCommand cmd) {
-		String secondaryStoragePoolURL = cmd.getSecondaryStorageURL();
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
 		String volumePath = cmd.getVolumePath();
 		Long accountId = cmd.getAccountId();
 		Long templateId = cmd.getTemplateId();
@@ -1183,7 +1182,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		 
 		try {
 			URI uri;
-			uri = new URI(secondaryStoragePoolURL);
+            uri = new URI(secondaryStorageUrl);
 			String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
 			String installPath = "template/tmpl/" + accountId + "/" + templateId;
 			Map<String, String> res = OvmStoragePool.createTemplateFromVolume(_conn, secondaryStorageMountPath, installPath, volumePath, wait);

@@ -79,6 +79,7 @@
         <dao name="UserAccount" class="com.cloud.user.dao.UserAccountDaoImpl"/>
         <dao name="Usage IPAddress" class="com.cloud.usage.dao.UsageIPAddressDaoImpl"/>
         <dao name="VM Template Host" class="com.cloud.storage.dao.VMTemplateHostDaoImpl"/>
+        <dao name="VM Template Swift" class="com.cloud.storage.dao.VMTemplateSwiftDaoImpl"/>
         <dao name="Upload" class="com.cloud.storage.dao.UploadDaoImpl"/>
         <dao name="VM Template Pool" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl"/>
         <dao name="Launch Permission" class="com.cloud.storage.dao.LaunchPermissionDaoImpl"/>

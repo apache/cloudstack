@@ -23,10 +23,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -36,9 +39,12 @@ import org.apache.log4j.Logger;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
+import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
@@ -53,6 +59,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -85,15 +92,18 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
@@ -117,6 +127,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -154,6 +165,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject UserVmDao _userVmDao;
     @Inject VolumeDao _volumeDao;
     @Inject SnapshotDao _snapshotDao;
+    @Inject
+    SwiftDao _swiftDao;
+    @Inject
+    VMTemplateSwiftDao _tmpltSwiftDao;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    ClusterDao _clusterDao;
     @Inject DomainDao _domainDao;
     @Inject UploadDao _uploadDao;
     long _routerTemplateId = -1;
@@ -170,7 +189,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     int _storagePoolMaxWaitSeconds = 3600;
     ExecutorService _preloadExecutor;
+    ScheduledExecutorService _swiftTemplateSyncExecutor;
     
+
     @Inject (adapter=TemplateAdapter.class)
     protected Adapters<TemplateAdapter> _adapters;
     
@@ -382,12 +403,102 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     }
     
+    String downloadTemplateFromSwiftToSecondaryStorage(long dcId, long templateId){
+        VMTemplateVO template = _tmpltDao.findById(templateId);
+        if ( template == null ) {
+            String errMsg = " Can not find template " + templateId;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        VMTemplateSwiftVO tmpltSwift = _tmpltSwiftDao.findOneByTemplateId(templateId);
+        if ( tmpltSwift == null ) {
+            String errMsg = " Template " + templateId + " doesn't exist in swift";
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+        SwiftTO swift = _swiftDao.getSwiftTO(tmpltSwift.getSwiftId());
+        if ( swift == null ) {
+            String errMsg = " Swift " + tmpltSwift.getSwiftId() + " doesn't exit ?";
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+
+        HostVO secHost = _ssvmMgr.findSecondaryStorageHost(dcId);
+        if ( secHost == null ) {
+            String errMsg = "Can not find secondary storage in data center " + dcId;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+
+        downloadTemplateFromSwiftToSecondaryStorageCommand cmd = new downloadTemplateFromSwiftToSecondaryStorageCommand(swift, secHost.getName(), dcId, template.getAccountId(), templateId,
+                _primaryStorageDownloadWait);
+        try {
+            _agentMgr.sendToSSVM(dcId, cmd);
+        } catch (Exception e) {
+            String errMsg = "Failed to download template from Swift to secondary storage due to " + e.toString();
+            s_logger.warn(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+        return null;
+    }
+
+    String uploadTemplateToSwiftFromSecondaryStorage(VMTemplateHostVO templateHostRef) {
+        Long templateId = templateHostRef.getTemplateId();
+        VMTemplateVO template = _tmpltDao.findById(templateId);
+        if (template == null) {
+            String errMsg = " Can not find template " + templateId;
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+
+        if (template.getTemplateType() == TemplateType.PERHOST) {
+            return null;
+        }
+
+        SwiftTO swift = _swiftDao.getSwiftTO(null);
+        if (swift == null) {
+            String errMsg = " There is no Swift in this setup ";
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+
+        HostVO secHost = _hostDao.findById(templateHostRef.getHostId());
+        if (secHost == null) {
+            String errMsg = "Can not find secondary storage " + templateHostRef.getHostId();
+            s_logger.warn(errMsg);
+            return errMsg;
+        }
+
+        uploadTemplateToSwiftFromSecondaryStorageCommand cmd = new uploadTemplateToSwiftFromSecondaryStorageCommand(swift, secHost.getName(), secHost.getDataCenterId(), template.getAccountId(),
+                templateId, _primaryStorageDownloadWait);
+        Answer answer = null;
+        try {
+            answer = _agentMgr.sendToSSVM(secHost.getDataCenterId(), cmd);
+            if (answer == null || !answer.getResult()) {
+                if (template.getTemplateType() != TemplateType.SYSTEM) {
+                    String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + ((answer == null) ? "null" : answer.getDetails());
+                    s_logger.warn(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+                return null;
+            }
+            VMTemplateSwiftVO tmpltSwift = new VMTemplateSwiftVO(swift.getId(), templateHostRef.getTemplateId(), new Date(), templateHostRef.getSize(), templateHostRef.getPhysicalSize());
+            _tmpltSwiftDao.persist(tmpltSwift);
+        } catch (Exception e) {
+            String errMsg = "Failed to upload template " + templateId + " to Swift from secondary storage due to " + e.toString();
+            s_logger.warn(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+        return null;
+    }
+
     @Override @DB
     public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool) {
     	template = _tmpltDao.findById(template.getId(), true);
     	
         long poolId = pool.getId();
         long templateId = template.getId();
+        long dcId = pool.getDataCenterId();
         VMTemplateStoragePoolVO templateStoragePoolRef = null;
         VMTemplateHostVO templateHostRef = null;
         long templateStoragePoolRefId;
@@ -410,8 +521,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         templateHostRef = _storageMgr.findVmTemplateHost(templateId, pool);
         
         if (templateHostRef == null) {
-            s_logger.debug("Unable to find a secondary storage host who has completely downloaded the template.");
-            return null;
+            String result = downloadTemplateFromSwiftToSecondaryStorage(dcId, templateId);
+            if (result != null) {
+                s_logger.error("Unable to find a secondary storage host who has completely downloaded the template.");
+                return null;
+            }
         }
         
         HostVO sh = _hostDao.findById(templateHostRef.getHostId());
@@ -704,18 +818,83 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
 	}
     
+    void swiftTemplateSync() {
+        GlobalLock swiftTemplateSyncLock = GlobalLock.getInternLock("templatemgr.swiftTemplateSync");
+        try {
+            Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
+            if (!swiftEnable) {
+                return;
+            }
+            List<HypervisorType> hypers = _clusterDao.getAvailableHypervisorInZone(null);
+            List<VMTemplateVO> templates = _tmpltDao.listByHypervisorType(hypers);
+            List<Long> templateIds = new ArrayList<Long>();
+            for (VMTemplateVO template : templates) {
+                if (template.getTemplateType() != TemplateType.PERHOST) {
+                    templateIds.add(template.getId());
+                }
+            }
+            List<VMTemplateSwiftVO> templtSwiftRefs = _tmpltSwiftDao.listAll();
+            for (VMTemplateSwiftVO templtSwiftRef : templtSwiftRefs) {
+                templateIds.remove((Long) templtSwiftRef.getTemplateId());
+            }
+            if (templateIds.size() < 1) {
+                return;
+            }
+            if (swiftTemplateSyncLock.lock(3)) {
+                try {
+                    List<VMTemplateHostVO> templtHostRefs = _tmpltHostDao.listByState(VMTemplateHostVO.Status.DOWNLOADED);
+                    for (VMTemplateHostVO templtHostRef : templtHostRefs) {
+                        if (!templateIds.contains(templtHostRef.getTemplateId())) {
+                            continue;
+                        }
+                        try {
+                            uploadTemplateToSwiftFromSecondaryStorage(templtHostRef);
+                        } catch (Exception e) {
+                            s_logger.debug("failed to upload template " + templtHostRef.getTemplateId() + " to Swift due to " + e.toString());
+                        }
+                    }
+                } catch (Throwable e) {
+                    s_logger.error("Problem with sync swift template due to " + e.toString(), e);
+                } finally {
+                    swiftTemplateSyncLock.unlock();
+                }
+            }
+        } catch (Throwable e) {
+            s_logger.error("Problem with sync swift template due to " + e.toString(), e);
+        } finally {
+            swiftTemplateSyncLock.releaseRef();
+        }
+    }
+
     @Override
     public String getName() {
         return _name;
     }
 
+    private Runnable getSwiftTemplateSyncTask() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.trace("Start Swift Template sync at" + (new Date()));
+                }
+                swiftTemplateSync();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Finish Swift Template sync at" + (new Date()));
+                }
+            }
+        };
+    }
+
     @Override
     public boolean start() {
+        _swiftTemplateSyncExecutor.scheduleAtFixedRate(getSwiftTemplateSyncTask(), 60, 60, TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean stop() {
+        _swiftTemplateSyncExecutor.shutdownNow();
         return true;
     }
 
@@ -724,16 +903,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         _name = name;
         
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to find ConfigurationDao");
-        }
-        
-        final Map<String, String> configs = configDao.getConfiguration("AgentManager", params);
+        final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
 
-        String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
+        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
 
         HostTemplateStatesSearch = _tmpltHostDao.createSearchBuilder();
@@ -747,8 +921,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         HostSearch.done();
         HostTemplateStatesSearch.done();
         
-        _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        _storagePoolMaxWaitSeconds = NumbersUtil.parseInt(_configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         _preloadExecutor = Executors.newFixedThreadPool(8, new NamedThreadFactory("Template-Preloader"));
+        _swiftTemplateSyncExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("swift-template-sync-Executor"));
         return false;
     }
     

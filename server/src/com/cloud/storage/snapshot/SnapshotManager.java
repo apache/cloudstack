@@ -20,6 +20,7 @@ package com.cloud.storage.snapshot;
 import java.util.List;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
@@ -131,5 +132,11 @@ public interface SnapshotManager {
 
     void downloadSnapshotsFromSwift(SnapshotVO ss);
 
+    HostVO getSecondaryStorageHost(SnapshotVO snapshot);
+
     String getSecondaryStorageURL(SnapshotVO snapshot);
+
+    void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId );
+
+    void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 }

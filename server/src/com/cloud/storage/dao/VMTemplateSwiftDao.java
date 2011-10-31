@@ -18,8 +18,9 @@
 
 package com.cloud.storage.dao;
 
-import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.storage.SwiftVO;
+import java.util.List;
+
+import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.utils.db.GenericDao;
 
 /**
@@ -28,7 +29,12 @@ import com.cloud.utils.db.GenericDao;
  * 
  */
 
-public interface SwiftDao extends GenericDao<SwiftVO, Long> {
+public interface VMTemplateSwiftDao extends GenericDao<VMTemplateSwiftVO, Long> {
+    List<VMTemplateSwiftVO> listBySwiftId(long id);
 
-    SwiftTO getSwiftTO(Long swiftId);
+    List<VMTemplateSwiftVO> listByTemplateId(long templateId);
+
+    VMTemplateSwiftVO findBySwiftTemplate(long swiftId, long templateId);
+
+    VMTemplateSwiftVO findOneByTemplateId(long templateId);
 }

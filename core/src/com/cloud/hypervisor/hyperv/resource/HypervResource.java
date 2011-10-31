@@ -48,8 +48,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
@@ -209,12 +207,8 @@ public class HypervResource extends ServerResourceBase implements ServerResource
             //return execute((ManageSnapshotCommand) cmd);
         } else if (cmd instanceof BackupSnapshotCommand) {
             //return execute((BackupSnapshotCommand) cmd);
-        } else if (cmd instanceof DeleteSnapshotBackupCommand) {
-            //return execute((DeleteSnapshotBackupCommand) cmd);
         } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
             //return execute((CreateVolumeFromSnapshotCommand) cmd);
-        } else if (cmd instanceof DeleteSnapshotsDirCommand) {
-            //return execute((DeleteSnapshotsDirCommand) cmd);
         } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
             //return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {

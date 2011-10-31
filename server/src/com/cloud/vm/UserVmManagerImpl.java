@@ -1435,22 +1435,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         StoragePoolVO pool = null;
         HostVO secondaryStorageHost = null;
-        long zoneId;
+        Long zoneId = null;
         Long accountId = null;
-
+        SnapshotVO snapshot = null;
+        String secondaryStorageURL = null;
         try {
             if (snapshotId != null) { // create template from snapshot
-                SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+                snapshot = _snapshotDao.findById(snapshotId);
                 if (snapshot == null) {
                     throw new CloudRuntimeException("Unable to find Snapshot for Id " + snapshotId);
                 }
                 zoneId = snapshot.getDataCenterId();
-                secondaryStorageHost = _hostDao.findById(snapshot.getSecHostId());
-                if (secondaryStorageHost == null) {
-                    throw new CloudRuntimeException("Secondary storage " + snapshot.getSecHostId() + " doesn't exist");
-                }
-                String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
-
+                secondaryStorageHost = _snapshotMgr.getSecondaryStorageHost(snapshot);
+                secondaryStorageURL = _snapshotMgr.getSecondaryStorageURL(snapshot);
                 String name = command.getTemplateName();
                 String backupSnapshotUUID = snapshot.getBackupSnapshotId();
                 if (backupSnapshotUUID == null) {
@@ -1504,7 +1501,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         }
                     }
                 }
-                if( snapshot.getSwiftName() != null ) {
+                if( snapshot.getSwiftId() != null ) {
                     _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
                 }
                 cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
@@ -1526,7 +1523,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (secondaryStorageHost == null) {
                     throw new CloudRuntimeException("Can not find the secondary storage for zoneId " + zoneId);
                 }
-                String secondaryStorageURL = secondaryStorageHost.getStorageUrl();
+                secondaryStorageURL = secondaryStorageHost.getStorageUrl();
 
                 pool = _storagePoolDao.findById(volume.getPoolId());
                 cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
@@ -1601,14 +1598,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 txn.commit();
             }
         } finally {
+            if (snapshot != null && snapshot.getSwiftId() != null && secondaryStorageURL != null && zoneId != null && accountId != null && volumeId != null) {
+                _snapshotMgr.deleteSnapshotsForVolume (secondaryStorageURL, zoneId, accountId, volumeId);
+            }
             if (privateTemplate == null) {
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
                 // Remove the template record
-                _templateDao.remove(templateId);
+                _templateDao.expunge(templateId);
 
                 // decrement resource count
-                _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                if (accountId != null) {
+                    _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                }
                 txn.commit();
             }
         }

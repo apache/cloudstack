@@ -17,14 +17,33 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.SwiftTO;
+
 /**
  * This command encapsulates a primitive operation which enables coalescing the backed up VHD snapshots on the secondary server
  * This currently assumes that the secondary storage are mounted on the XenServer.  
  */
 public class DeleteSnapshotBackupCommand extends SnapshotCommand {
+    private SwiftTO swift;
+    private Boolean all;
+
+    public SwiftTO getSwift() {
+        return swift;
+    }
+
+    public Boolean isAll() {
+        return all;
+    }
+
+    public void setAll(Boolean all) {
+        this.all = all;
+    }
+
+    public void setSwift(SwiftTO swift) {
+        this.swift = swift;
+    }
 
     protected DeleteSnapshotBackupCommand() {
-        
     }
     
     /**
@@ -52,14 +71,15 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
      * @param backupUUID                  The VHD which has to be deleted    
      * @param childUUID                   The child VHD file of the backup whose parent is reset to its grandparent.  
      */
-    public DeleteSnapshotBackupCommand(String primaryStoragePoolNameLabel,
+    public DeleteSnapshotBackupCommand(SwiftTO swift,
                                        String secondaryStoragePoolURL,
                                        Long   dcId,
                                        Long   accountId,
                                        Long   volumeId,
-                                       String backupUUID, 
-                                       String backupName) 
+ String backupUUID, Boolean all)
     {
-        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backupUUID, backupName, dcId, accountId, volumeId);
+        super(null, secondaryStoragePoolURL, backupUUID, null, dcId, accountId, volumeId);
+        setSwift(swift);
+        setAll(all);
     }
 }

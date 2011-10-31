@@ -438,7 +438,6 @@ CREATE TABLE `cloud`.`snapshots` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
   `swift_id` bigint unsigned COMMENT 'which swift',
-  `swift_name` varchar(255) COMMENT 'Back up name in swift',
   `sechost_id` bigint unsigned COMMENT 'secondary storage host id',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
@@ -995,6 +994,20 @@ CREATE TABLE  `cloud`.`template_host_ref` (
   INDEX `i_template_host_ref__host_id`(`host_id`),
   CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
   INDEX `i_template_host_ref__template_id`(`template_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`template_swift_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `swift_id` bigint unsigned NOT NULL,
+  `template_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `size` bigint unsigned,
+  `physical_size` bigint unsigned DEFAULT 0,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_template_swift_ref__swift_id` FOREIGN KEY `fk_template_swift_ref__swift_id` (`swift_id`) REFERENCES `swift` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_swift_ref__swift_id`(`swift_id`),
+  CONSTRAINT `fk_template_swift_ref__template_id` FOREIGN KEY `fk_template_swift_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_swift_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`template_zone_ref` (
@@ -1652,10 +1665,11 @@ CREATE TABLE `cloud`.`keystore` (
 
 CREATE TABLE `cloud`.`swift` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `hostname` varchar(255),
-  `account` varchar(255) COMMENT ' account in swift',
-  `username` varchar(255) COMMENT ' username in swift',
-  `token` varchar(255) COMMENT 'token for this user',
+  `url` varchar(255) NOT NULL,
+  `account` varchar(255) NOT NULL COMMENT ' account in swift',
+  `username` varchar(255) NOT NULL COMMENT ' username in swift',
+  `key` varchar(255) NOT NULL COMMENT 'token for this user',
+  `created` datetime COMMENT 'date the swift first signed on',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
