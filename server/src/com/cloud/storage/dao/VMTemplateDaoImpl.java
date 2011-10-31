@@ -214,6 +214,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	@Override
     public List<VMTemplateVO> listByHypervisorType(List<HypervisorType> hyperTypes) {
 		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
+        hyperTypes.add(HypervisorType.None);
         sc.addAnd("hypervisorType", SearchCriteria.Op.IN, hyperTypes.toArray());
 		return listBy(sc);
 	}

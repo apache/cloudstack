@@ -873,7 +873,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         return new Runnable() {
             @Override
             public void run() {
-                if (s_logger.isTraceEnabled()) {
+                if (s_logger.isDebugEnabled()) {
                     s_logger.trace("Start Swift Template sync at" + (new Date()));
                 }
                 swiftTemplateSync();

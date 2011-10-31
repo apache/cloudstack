@@ -1544,6 +1544,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     @Override
     public List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly) {
+
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         VirtualMachineTemplate iso = findTemplateById(isoId);
         if ( iso.getTemplateType() == TemplateType.PERHOST) {
@@ -1581,8 +1582,64 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+    private List<TemplateResponse> createSwiftIsoResponses(VirtualMachineTemplate iso) {
+        long isoId = iso.getId();
+        List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
+        VMTemplateSwiftVO isoSwift = ApiDBUtils.findTemplateSwiftRef(isoId);
+        if (isoSwift == null) {
+            return isoResponses;
+        }
+        TemplateResponse isoResponse = new TemplateResponse();
+        isoResponse.setId(iso.getId());
+        isoResponse.setName(iso.getName());
+        isoResponse.setDisplayText(iso.getDisplayText());
+        isoResponse.setPublic(iso.isPublicTemplate());
+        isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
+        isoResponse.setCreated(isoSwift.getCreated());
+        isoResponse.setReady(true);
+        isoResponse.setBootable(iso.isBootable());
+        isoResponse.setFeatured(iso.isFeatured());
+        isoResponse.setCrossZones(iso.isCrossZones());
+        isoResponse.setPublic(iso.isPublicTemplate());
+        isoResponse.setChecksum(iso.getChecksum());
+
+        // TODO: implement
+        GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
+        if (os != null) {
+            isoResponse.setOsTypeId(os.getId());
+            isoResponse.setOsTypeName(os.getDisplayName());
+        } else {
+            isoResponse.setOsTypeId(-1L);
+            isoResponse.setOsTypeName("");
+        }
+
+        populateOwner(isoResponse, iso);
+
+        Account account = UserContext.current().getCaller();
+        boolean isAdmin = false;
+        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+            isAdmin = true;
+        }
+
+        // If the user is an admin, add the template download status
+        if (isAdmin || account.getId() == iso.getAccountId()) {
+            // add download status
+            isoResponse.setStatus("Successfully Installed");
+        }
+        Long isoSize = isoSwift.getSize();
+        if (isoSize > 0) {
+            isoResponse.setSize(isoSize);
+        }
+        isoResponse.setObjectName("iso");
+        isoResponses.add(isoResponse);
+        return isoResponses;
+    }
+
     @Override
     public List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly) {
+        if (zoneId == 0) {
+            return createSwiftIsoResponses(iso);
+        }
         long isoId = iso.getId();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         VMTemplateHostVO isoHost = ApiDBUtils.findTemplateHostRef(isoId, zoneId, readyOnly);
