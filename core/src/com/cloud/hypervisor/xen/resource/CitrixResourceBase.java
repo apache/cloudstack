@@ -1909,10 +1909,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (param.contains("cpu")) {
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
                     vmStatsAnswer.setCPUUtilization(((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))));
-                } else if (param.equals("vif_0_rx")) {
-                	vmStatsAnswer.setNetworkReadKBs(getDataAverage(dataNode, col, numRows)/(8*2));
-                } else if (param.equals("vif_0_tx")) {
-                	vmStatsAnswer.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows)/(8*2));
+                } else if (param.matches("vif_\\d_rx")) {
+                	vmStatsAnswer.setNetworkReadKBs(vmStatsAnswer.getNetworkReadKBs() + (getDataAverage(dataNode, col, numRows)/(8*2)));
+                } else if (param.matches("vif_\\d_tx")) {
+                	vmStatsAnswer.setNetworkWriteKBs(vmStatsAnswer.getNetworkWriteKBs() + (getDataAverage(dataNode, col, numRows)/(8*2)));
                 }
             }
 
