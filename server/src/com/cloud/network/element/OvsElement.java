@@ -18,7 +18,6 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -28,17 +27,14 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.Networks;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.element.NetworkElement;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -123,4 +119,15 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) 
+    throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
 }

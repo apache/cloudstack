@@ -32,6 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
@@ -87,6 +88,16 @@ public class SecurityGroupElement extends AdapterBase implements NetworkElement 
 
     @Override
     public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 }

@@ -101,7 +101,7 @@ public interface NetworkService {
 
     List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId);
 
-    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, Boolean enabled);
+    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, boolean forcedShutdown) throws ConcurrentOperationException, ResourceUnavailableException;
 
     boolean deleteNetworkServiceProvider(Long id);
 

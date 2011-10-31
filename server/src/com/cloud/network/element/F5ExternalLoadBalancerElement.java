@@ -31,7 +31,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.ExternalNetworkDeviceManager;
@@ -41,8 +40,8 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.component.AdapterBase;
@@ -143,6 +142,19 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
     @Override
     public Provider getProvider() {
         return Provider.F5BigIp;
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
     }
    
 }

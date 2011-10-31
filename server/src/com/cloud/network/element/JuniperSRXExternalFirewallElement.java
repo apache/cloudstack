@@ -32,7 +32,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
@@ -42,13 +41,13 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -243,6 +242,19 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         }
     	
     	return _externalNetworkManager.applyFirewallRules(network, rules);
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
     }
 }
 

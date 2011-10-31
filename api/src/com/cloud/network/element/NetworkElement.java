@@ -32,6 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
@@ -105,4 +106,22 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      */
     boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    /**
+     * Check if the instances of this Element are configured to be used on the physical network referred by this provider.
+     * @param provider
+     * @return boolean true/false
+     */
+    boolean isReady(PhysicalNetworkServiceProvider provider);
+    
+    /**
+     * The network service provider is being shutdown. This should shutdown all instances of this element deployed for this provider.
+     * @param networkServiceProvider
+     * @param context
+     * @param forceShutdown 
+     * @return boolean success/failure
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException;    
 }

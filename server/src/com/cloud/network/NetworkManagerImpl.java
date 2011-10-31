@@ -3910,7 +3910,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_UPDATE, eventDescription = "Updating physical network ServiceProvider", async = true)
-    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, Boolean enabled) {
+    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String stateStr, boolean forcedShutdown) throws ConcurrentOperationException, ResourceUnavailableException {
         
         PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
         
@@ -3918,17 +3918,51 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network Service Provider id=" + id + "doesn't exist in the system");
         }
         
-        if(enabled){
-            //TODO: need to check if the provider element is ready for the physical network.
-            NetworkElement element = getElementImplementingProvider(provider.getProviderName());
-            //element.isReady();
-            provider.setState(PhysicalNetworkServiceProvider.State.Enabled);
-        }else{
-            //do we need to do anything for the provider instances before disabling?
-            provider.setState(PhysicalNetworkServiceProvider.State.Disabled);
+        PhysicalNetworkServiceProvider.State state = null;
+        if (stateStr != null && !stateStr.isEmpty()) {
+            try {
+                state = PhysicalNetworkServiceProvider.State.valueOf(stateStr);
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("Unable to resolve state '" + stateStr + "' to a supported value {Enabled or Disabled or Shutdown}");
+            }
         }
         
-        _pNSPDao.update(id, provider);
+        if(state != null){
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("updating state of the service provider id=" + id + " on physical network: "+provider.getPhysicalNetworkId() + " to state: "+stateStr);
+            }
+            NetworkElement element = getElementImplementingProvider(provider.getProviderName());
+            if(element == null){
+                throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getProviderName() + "'");
+            }
+            switch(state) {
+                case Enabled:
+                    if(element != null && element.isReady(provider)){
+                        provider.setState(PhysicalNetworkServiceProvider.State.Enabled);
+                        _pNSPDao.update(id, provider);
+                    }
+                    break;
+                case Disabled:
+                    //do we need to do anything for the provider instances before disabling?
+                    provider.setState(PhysicalNetworkServiceProvider.State.Disabled);
+                    _pNSPDao.update(id, provider);
+                    break;
+                case Shutdown:
+                    User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+                    Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
+                    //shutdown the network
+                    ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
+                    if(s_logger.isDebugEnabled()){
+                        s_logger.debug("Shutting down the service provider id=" + id + " on physical network: "+provider.getPhysicalNetworkId());
+                    }
+                    if(element != null && element.shutdownProviderInstances(provider, context, forcedShutdown)){
+                        provider.setState(PhysicalNetworkServiceProvider.State.Shutdown);
+                        _pNSPDao.update(id, provider);
+                    }
+                    break;
+            }
+        }
+        
         
         return provider;
     }

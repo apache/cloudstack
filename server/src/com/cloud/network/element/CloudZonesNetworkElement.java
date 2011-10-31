@@ -60,6 +60,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.NetworkOffering;
@@ -211,5 +212,17 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
     }
 }

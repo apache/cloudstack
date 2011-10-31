@@ -28,6 +28,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProviderResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 
@@ -40,24 +42,29 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, description="true/false enable/disable the physical network service provider")
-    private Boolean enabled;
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled/Shutdown the physical network service provider")
+    private String state;
     
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="network service provider id")
     private Long id;    
 
+    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force shutdown the service provider.")
+    private Boolean forcedShutdown;    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Boolean isEnabled() {
-        return enabled;
+    public String getState() {
+        return state;
     }
     
     private Long getId() {
         return id;
     }    
     
+    public boolean isForcedShutdown() {
+        return (forcedShutdown != null) ? forcedShutdown : false;
+    }    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -74,14 +81,23 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        PhysicalNetworkServiceProvider result = _networkService.updateNetworkServiceProvider(getId(), isEnabled());
-        if (result != null) {
-            ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
-        }
+        PhysicalNetworkServiceProvider result;
+        try {
+            result = _networkService.updateNetworkServiceProvider(getId(), getState(), isForcedShutdown());
+            if (result != null) {
+                ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            }else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        }  catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } 
     }
 
     @Override

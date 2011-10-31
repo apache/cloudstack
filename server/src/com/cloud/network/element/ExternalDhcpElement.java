@@ -38,10 +38,11 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -122,4 +123,16 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }
 }

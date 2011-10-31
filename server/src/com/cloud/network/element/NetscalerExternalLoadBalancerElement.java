@@ -40,8 +40,8 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.component.AdapterBase;
@@ -142,5 +142,18 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     @Override
     public Provider getProvider() {
         return Provider.Netscaler;
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
     }
 }

@@ -37,11 +37,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterElementsDao;
 import com.cloud.network.element.VirtualRouterElements.VirtualRouterElementsType;
@@ -261,5 +262,18 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
             return false;
         }
         return element.getIsReady();
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
     }
 }

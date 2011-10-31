@@ -31,7 +31,8 @@ public interface PhysicalNetworkServiceProvider {
 
     public enum State {
         Disabled,
-        Enabled;
+        Enabled,
+        Shutdown;
     }
     
     long getId();

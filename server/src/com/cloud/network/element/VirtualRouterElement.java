@@ -36,10 +36,11 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
@@ -455,4 +456,17 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             return true;
         }
     }
+    
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }    
 }
