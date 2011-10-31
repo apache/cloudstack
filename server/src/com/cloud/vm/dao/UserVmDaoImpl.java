@@ -321,7 +321,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash, int details){
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
-        DetailSql sql = new DetailSql(); 
+        DetailSql sql = new DetailSql(details); 
        
         
         try {
@@ -330,7 +330,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             List<UserVmData> userVmDataList = new ArrayList(userVmDataHash.values()); 
             
             if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE){
-                pstmt = txn.prepareStatement(sql.getSql(details) + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
+                pstmt = txn.prepareStatement(sql.getSql() + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
                 while ( (curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()){
                     // set the vars value
                     for (int k=1,j=curr_index;j<curr_index+VM_DETAILS_BATCH_SIZE;j++,k++){
@@ -356,7 +356,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             
             if (curr_index < userVmDataList.size()){
                 int batch_size = (userVmDataList.size() - curr_index);
-                pstmt = txn.prepareStatement(sql.getSql(details) + getQueryBatchAppender(batch_size));
+                pstmt = txn.prepareStatement(sql.getSql() + getQueryBatchAppender(batch_size));
                 // set the vars value
                 for (int k=1,j=curr_index;j<curr_index+batch_size;j++,k++){
                     pstmt.setLong(k, userVmDataList.get(j).getId());
@@ -379,9 +379,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             if (pstmt!=null)pstmt.close();
             return userVmDataHash;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + sql.getSql(details), e);
+            throw new CloudRuntimeException("DB Exception on: " + sql.getSql(), e);
         } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + sql.getSql(details), e);
+            throw new CloudRuntimeException("Caught: " + sql.getSql(), e);
         }
     }
     
@@ -519,7 +519,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
 
     public static class DetailSql {
-        private String VM_DETAILS = "select vm_instance.id, " +
+        private DetailsMask _details;
+        
+        private static String VM_DETAILS = "select vm_instance.id, " +
         "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
         "data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
         "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
@@ -546,11 +548,15 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         "left join networks on nics.network_id=networks.id " +
         "where vm_instance.id in (";
         
-        public DetailSql(){
-            
+        
+        
+        
+        
+        public DetailSql(int details){
+            _details = new DetailsMask(details);
         }
         
-        public String getSql(int details){
+        public String getSql(){
             return VM_DETAILS;
         }
         
