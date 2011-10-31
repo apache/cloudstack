@@ -35,8 +35,7 @@ import com.cloud.utils.db.Transaction;
 @Local(value={UsageNetworkDao.class})
 public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> implements UsageNetworkDao {
 	private static final Logger s_logger = Logger.getLogger(UsageVMInstanceDaoImpl.class.getName());
-	private static final String SELECT_LATEST_STATS = "SELECT u.account_id, u.zone_id, u.host_id, u.host_type, u.network_id, u.bytes_sent, u.bytes_received, u.net_bytes_received, u.net_bytes_sent, " +
-	                                                         "u.current_bytes_received, u.current_bytes_sent, u.event_time_millis " +
+	private static final String SELECT_LATEST_STATS = "SELECT u.account_id, u.zone_id, u.host_id, u.host_type, u.network_id, u.bytes_sent, u.bytes_received, u.agg_bytes_received, u.agg_bytes_sent, u.event_time_millis " +
 	                                                    "FROM cloud_usage.usage_network u INNER JOIN (SELECT netusage.account_id as acct_id, netusage.zone_id as z_id, max(netusage.event_time_millis) as max_date " +
 	                                                                                                 "FROM cloud_usage.usage_network netusage " +
 	                                                                                                 "GROUP BY netusage.account_id, netusage.zone_id " +
@@ -63,17 +62,13 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
                 Long networkId = rs.getLong(5);
                 long bytesSent = rs.getLong(6);
                 long bytesReceived = rs.getLong(7);
-                long netBytesReceived = rs.getLong(8);
-                long netBytesSent = rs.getLong(9);
-                long currentBytesReceived = rs.getLong(10);
-                long currentBytesSent = rs.getLong(11);
-                long eventTimeMillis = rs.getLong(12);
+                long aggBytesReceived = rs.getLong(8);
+                long aggBytesSent = rs.getLong(9);
+                long eventTimeMillis = rs.getLong(10);
                 if(hostId != 0){
-                    returnMap.put(zoneId + "-" + accountId+ "-Host-" + hostId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent, bytesReceived, netBytesReceived, netBytesSent, 
-                            currentBytesReceived, currentBytesSent, eventTimeMillis));
+                    returnMap.put(zoneId + "-" + accountId+ "-Host-" + hostId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent, bytesReceived, aggBytesReceived, aggBytesSent, eventTimeMillis));
                 } else {
-                    returnMap.put(zoneId + "-" + accountId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent, bytesReceived, netBytesReceived, netBytesSent, currentBytesReceived, 
-                            currentBytesSent, eventTimeMillis));
+                    returnMap.put(zoneId + "-" + accountId, new UsageNetworkVO(accountId, zoneId, hostId, hostType, networkId, bytesSent, bytesReceived, aggBytesReceived, aggBytesSent, eventTimeMillis));
                 }
             }
             return returnMap;

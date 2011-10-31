@@ -266,7 +266,9 @@ public class UsageManagerImpl implements UsageManager, Runnable {
 	public boolean stop() {
 	    m_heartbeat.cancel(true);
 	    m_scheduledFuture.cancel(true);
-	    m_sanity.cancel(true);
+	    if(m_sanity != null){
+	    	m_sanity.cancel(true);
+	    }
 		return true;
 	}
 
@@ -539,10 +541,8 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                                             userStat.getDeviceId(), userStat.getDeviceType(), userStat.getNetworkId());
                                 }
                                 
-                                hostAggregatedStat.setNetBytesSent(hostAggregatedStat.getNetBytesSent() + userStat.getNetBytesSent());
-                                hostAggregatedStat.setNetBytesReceived(hostAggregatedStat.getNetBytesReceived() + userStat.getNetBytesReceived());
-                                hostAggregatedStat.setCurrentBytesSent(hostAggregatedStat.getCurrentBytesSent() + userStat.getCurrentBytesSent());
-                                hostAggregatedStat.setCurrentBytesReceived(hostAggregatedStat.getCurrentBytesReceived() + userStat.getCurrentBytesReceived());
+                                hostAggregatedStat.setAggBytesSent(hostAggregatedStat.getAggBytesSent() + userStat.getAggBytesSent());
+                                hostAggregatedStat.setAggBytesReceived(hostAggregatedStat.getAggBytesReceived() + userStat.getAggBytesReceived());
                                 aggregatedStats.put(hostKey, hostAggregatedStat);
                             }
                         }                                                
@@ -565,11 +565,6 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("created network stats helper entries for " + numAcctsProcessed + " accts");
                 }
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("deleting old network stats helper entries older than " + deleteOldStatsTimeMillis);
-                }
-                m_usageNetworkDao.deleteOldStats(deleteOldStatsTimeMillis);
 
                 // commit the helper records, then start a new transaction
                 usageTxn.commit();
@@ -952,21 +947,21 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         long currentAccountedBytesReceived = 0L;
         if (usageNetworkStats != null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("getting current accounted bytes for... accountId: " + usageNetworkStats.getAccountId() + " in zone: " + userStat.getDataCenterId() + "; cbr: " + usageNetworkStats.getCurrentBytesReceived() +
-                        "; cbs: " + usageNetworkStats.getCurrentBytesSent() + "; nbr: " + usageNetworkStats.getNetBytesReceived() + "; nbs: " + usageNetworkStats.getNetBytesSent());
+                s_logger.debug("getting current accounted bytes for... accountId: " + usageNetworkStats.getAccountId() + " in zone: " + userStat.getDataCenterId() + "; abr: " + usageNetworkStats.getAggBytesReceived() +
+                        "; abs: " + usageNetworkStats.getAggBytesSent());
             }
-            currentAccountedBytesSent = (usageNetworkStats.getCurrentBytesSent() + usageNetworkStats.getNetBytesSent());
-            currentAccountedBytesReceived = (usageNetworkStats.getCurrentBytesReceived() + usageNetworkStats.getNetBytesReceived());
+            currentAccountedBytesSent = usageNetworkStats.getAggBytesSent();
+            currentAccountedBytesReceived = usageNetworkStats.getAggBytesReceived();
         }
-        long bytesSent = (userStat.getCurrentBytesSent() + userStat.getNetBytesSent()) - currentAccountedBytesSent;
-        long bytesReceived = (userStat.getCurrentBytesReceived() + userStat.getNetBytesReceived()) - currentAccountedBytesReceived;
+        long bytesSent = userStat.getAggBytesSent()  - currentAccountedBytesSent;
+        long bytesReceived = userStat.getAggBytesReceived() - currentAccountedBytesReceived;
 
         if (bytesSent < 0) {
-            s_logger.warn("Calculated negative value for bytes sent: " + bytesSent + ", user stats say: " + (userStat.getCurrentBytesSent() + userStat.getNetBytesSent()) + ", previous network usage was: " + currentAccountedBytesSent);
+            s_logger.warn("Calculated negative value for bytes sent: " + bytesSent + ", user stats say: " + userStat.getAggBytesSent() + ", previous network usage was: " + currentAccountedBytesSent);
             bytesSent = 0;
         }
         if (bytesReceived < 0) {
-            s_logger.warn("Calculated negative value for bytes received: " + bytesReceived + ", user stats say: " + (userStat.getCurrentBytesReceived() + userStat.getNetBytesReceived()) + ", previous network usage was: " + currentAccountedBytesReceived);
+            s_logger.warn("Calculated negative value for bytes received: " + bytesReceived + ", user stats say: " + userStat.getAggBytesReceived() + ", previous network usage was: " + currentAccountedBytesReceived);
             bytesReceived = 0;
         }
 
@@ -977,11 +972,10 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         }
         
         UsageNetworkVO usageNetworkVO = new UsageNetworkVO(userStat.getAccountId(), userStat.getDataCenterId(), hostId, userStat.getDeviceType(), userStat.getNetworkId(), bytesSent, bytesReceived,
-                userStat.getNetBytesReceived(), userStat.getNetBytesSent(),
-                userStat.getCurrentBytesReceived(), userStat.getCurrentBytesSent(), timestamp);
+                userStat.getAggBytesReceived(), userStat.getAggBytesSent(), timestamp);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("creating networkHelperEntry... accountId: " + userStat.getAccountId() + " in zone: " + userStat.getDataCenterId() + "; cbr: " + userStat.getCurrentBytesReceived() + "; cbs: " + userStat.getCurrentBytesSent() +
-                    "; nbr: " + userStat.getNetBytesReceived() + "; nbs: " + userStat.getNetBytesSent() + "; curABS: " + currentAccountedBytesSent + "; curABR: " + currentAccountedBytesReceived + "; ubs: " + bytesSent + "; ubr: " + bytesReceived);
+            s_logger.debug("creating networkHelperEntry... accountId: " + userStat.getAccountId() + " in zone: " + userStat.getDataCenterId() + "; abr: " + userStat.getAggBytesReceived() + "; abs: " + userStat.getAggBytesSent() +
+                    "; curABS: " + currentAccountedBytesSent + "; curABR: " + currentAccountedBytesReceived + "; ubs: " + bytesSent + "; ubr: " + bytesReceived);
         }
         m_usageNetworkDao.persist(usageNetworkVO);
     }

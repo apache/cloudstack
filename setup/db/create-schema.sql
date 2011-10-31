@@ -833,6 +833,8 @@ CREATE TABLE  `cloud`.`user_statistics` (
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
   `current_bytes_received` bigint unsigned NOT NULL default '0',
   `current_bytes_sent` bigint unsigned NOT NULL default '0',
+  `agg_bytes_received` bigint unsigned NOT NULL default '0',
+  `agg_bytes_sent` bigint unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`account_id`, `data_center_id`, `public_ip_address`, `device_id`, `device_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

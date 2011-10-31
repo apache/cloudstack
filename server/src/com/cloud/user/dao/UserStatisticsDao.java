@@ -32,4 +32,6 @@ public interface UserStatisticsDao extends GenericDao<UserStatisticsVO, Long> {
     List<UserStatisticsVO> listBy(long accountId);
 
     List<UserStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit);
+
+	boolean updateAggStats();
 }

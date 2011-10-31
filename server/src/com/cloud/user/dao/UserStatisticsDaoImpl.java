@@ -39,10 +39,11 @@ import com.cloud.utils.db.Transaction;
 @Local(value={UserStatisticsDao.class})
 public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long> implements UserStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(UserStatisticsDaoImpl.class);
-    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.device_id, us.device_type, us.network_id, us.net_bytes_received, us.net_bytes_sent, us.current_bytes_received, us.current_bytes_sent " +
+    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.device_id, us.device_type, us.network_id, us.agg_bytes_received, us.agg_bytes_sent " +
                                                                      "FROM user_statistics us, account a " +
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";
+    private static final String UPDATE_AGG_STATS = "UPDATE user_statistics set agg_bytes_received = net_bytes_received + current_bytes_received , agg_bytes_sent = net_bytes_sent + current_bytes_sent";
     private final SearchBuilder<UserStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<UserStatisticsVO> AccountSearch;
     
@@ -111,5 +112,19 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
             s_logger.error("error saving user stats to cloud_usage db", ex);
         }
         return userStats;
+    }
+    
+    @Override
+    public boolean updateAggStats(){
+    	Transaction txn = Transaction.currentTxn();
+        try {
+            String sql = UPDATE_AGG_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            return pstmt.executeUpdate() > 0;
+        } catch (Exception ex) {
+            s_logger.error("error updating agg user stats", ex);
+        }
+        return false;
     }
 }

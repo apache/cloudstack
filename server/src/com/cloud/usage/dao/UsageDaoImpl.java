@@ -47,10 +47,11 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 	private static final String DELETE_ALL = "DELETE FROM cloud_usage";
 	private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
 	    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?)";
-    private static final String INSERT_USER_STATS = "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received, net_bytes_sent, current_bytes_received, current_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?)";
+    private static final String INSERT_USER_STATS = "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received," +
+    												" net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
 
     private static final String UPDATE_ACCOUNT = "UPDATE cloud_usage.account SET account_name=?, removed=? WHERE id=?";
-    private static final String UPDATE_USER_STATS = "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=? WHERE id=?";
+    private static final String UPDATE_USER_STATS = "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
 
     private static final String GET_LAST_ACCOUNT = "SELECT id FROM cloud_usage.account ORDER BY id DESC LIMIT 1";
     private static final String GET_LAST_USER_STATS = "SELECT id FROM cloud_usage.user_statistics ORDER BY id DESC LIMIT 1";
@@ -177,6 +178,8 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setLong(9, userStat.getNetBytesSent());
                 pstmt.setLong(10, userStat.getCurrentBytesReceived());
                 pstmt.setLong(11, userStat.getCurrentBytesSent());
+                pstmt.setLong(12, userStat.getAggBytesReceived());
+                pstmt.setLong(13, userStat.getAggBytesSent());
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
@@ -201,7 +204,9 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setLong(2, userStat.getNetBytesSent());
                 pstmt.setLong(3, userStat.getCurrentBytesReceived());
                 pstmt.setLong(4, userStat.getCurrentBytesSent());
-                pstmt.setLong(5, userStat.getId());
+                pstmt.setLong(5, userStat.getAggBytesReceived());
+                pstmt.setLong(6, userStat.getAggBytesSent());
+                pstmt.setLong(7, userStat.getId());
                 pstmt.addBatch();
             }
             pstmt.executeBatch();

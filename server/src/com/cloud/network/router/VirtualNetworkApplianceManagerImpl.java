@@ -18,13 +18,16 @@
 package com.cloud.network.router;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -337,10 +340,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     private boolean _disable_rp_filter = false;
     int _routerExtraPublicNics = 2;
+    private int _usageAggregationRange = 1440;
+    private String _usageTimeZone = "GMT";
     private long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
+    ScheduledExecutorService _networkStatsUpdateExecutor;
 
     Account _systemAcct;
 
@@ -592,6 +598,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
+        _networkStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NetworkStatsUpdater"));
 
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
 
@@ -645,6 +652,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _systemAcct = _accountService.getSystemAccount();
         
+        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
+        _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
+        _usageTimeZone = configs.get("usage.aggregation.timezone");
+        if(_usageTimeZone == null){
+        	_usageTimeZone = "GMT";
+        }
+        
         _agentMgr.registerForHostEvents(this, true, false, false);
 
         s_logger.info("DomainRouterManager is configured.");
@@ -661,10 +675,41 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean start() {
     	if (_routerStatsInterval > 0){
     		_executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
+    		
+    		//Schedule Network stats update task
+    		TimeZone usageTimezone = TimeZone.getTimeZone(_usageTimeZone);
+    		Calendar cal = Calendar.getInstance(usageTimezone);
+	        cal.setTime(new Date());
+	        long endDate = 0;
+	        int HOURLY_TIME = 60;
+	    	final int DAILY_TIME = 60 * 24;
+	        if (_usageAggregationRange == DAILY_TIME) {
+	            cal.roll(Calendar.DAY_OF_YEAR, false);
+	            cal.set(Calendar.HOUR_OF_DAY, 0);
+	            cal.set(Calendar.MINUTE, 0);
+	            cal.set(Calendar.SECOND, 0);
+	            cal.set(Calendar.MILLISECOND, 0);
+	            cal.roll(Calendar.DAY_OF_YEAR, true);
+	            cal.add(Calendar.MILLISECOND, -1);
+	            endDate = cal.getTime().getTime();
+	        } else if (_usageAggregationRange == HOURLY_TIME) {
+	            cal.roll(Calendar.HOUR_OF_DAY, false);
+	            cal.set(Calendar.MINUTE, 0);
+	            cal.set(Calendar.SECOND, 0);
+	            cal.set(Calendar.MILLISECOND, 0);
+	            cal.roll(Calendar.HOUR_OF_DAY, true);
+	            cal.add(Calendar.MILLISECOND, -1);
+	            endDate = cal.getTime().getTime();
+	        } else {
+	            endDate = cal.getTime().getTime();
+	        }
+
+	        _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()), (_usageAggregationRange * 60 * 1000), TimeUnit.MILLISECONDS);
     	}else{
     		s_logger.debug("router.stats.interval - " + _routerStatsInterval+ " so not scheduling the router stats thread");
     	}
-    	_checkExecutor.scheduleAtFixedRate(new CheckRouterTask(), _checkRouterInterval, _checkRouterInterval, TimeUnit.SECONDS);    	
+    	_checkExecutor.scheduleAtFixedRate(new CheckRouterTask(), _checkRouterInterval, _checkRouterInterval, TimeUnit.SECONDS);
+    
         return true;
     }
 
@@ -791,6 +836,27 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
+    protected class NetworkStatsUpdateTask implements Runnable {
+
+        public NetworkStatsUpdateTask() {
+        }
+
+        @Override
+        public void run() {
+        	try{
+        		if(_statsDao.updateAggStats()){
+        			s_logger.debug("Succussfully updated aggregate network stats");
+        		} else {
+        			s_logger.debug("Failed to update aggregate network stats");
+        		}
+        	} catch (Exception e){
+        		s_logger.debug("Failed to update aggregate network stats", e);
+        	}
+        }
+            
+    }
+
+    
     protected void updateRoutersRedundantState(List<DomainRouterVO> routers) {
         boolean updated = false;
         for (DomainRouterVO router : routers) {

@@ -66,10 +66,8 @@ CREATE TABLE  `cloud_usage`.`usage_network` (
   `network_id` bigint unsigned,
   `bytes_sent` bigint unsigned NOT NULL default '0',
   `bytes_received` bigint unsigned NOT NULL default '0',
-  `net_bytes_received` bigint unsigned NOT NULL default '0',
-  `net_bytes_sent` bigint unsigned NOT NULL default '0',
-  `current_bytes_received` bigint unsigned NOT NULL default '0',
-  `current_bytes_sent` bigint unsigned NOT NULL default '0',
+  `agg_bytes_received` bigint unsigned NOT NULL default '0',
+  `agg_bytes_sent` bigint unsigned NOT NULL default '0',
   `event_time_millis` bigint unsigned NOT NULL default '0',
   PRIMARY KEY (`account_id`, `zone_id`, `host_id`, `event_time_millis`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -134,6 +132,8 @@ CREATE TABLE  `cloud_usage`.`user_statistics` (
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
   `current_bytes_received` bigint unsigned NOT NULL default '0',
   `current_bytes_sent` bigint unsigned NOT NULL default '0',
+  `agg_bytes_received` bigint unsigned NOT NULL default '0',
+  `agg_bytes_sent` bigint unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`account_id`, `data_center_id`, `public_ip_address`, `device_id`, `device_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

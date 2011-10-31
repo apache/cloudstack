@@ -64,6 +64,12 @@ public class UserStatisticsVO {
 	@Column(name="current_bytes_sent")
 	private long currentBytesSent;
 	
+	@Column(name="agg_bytes_received")
+	private long aggBytesReceived;
+	
+	@Column(name="agg_bytes_sent")
+	private long aggBytesSent;
+	
 	protected UserStatisticsVO() {
 	}
 	
@@ -77,7 +83,7 @@ public class UserStatisticsVO {
 		this.netBytesReceived = 0;
 		this.netBytesSent = 0;
 		this.currentBytesReceived = 0;
-		this.currentBytesSent = 0;		
+		this.currentBytesSent = 0;
 	}
 
 	public long getAccountId() {
@@ -138,6 +144,22 @@ public class UserStatisticsVO {
 
 	public void setNetBytesSent(long netBytesSent) {
 		this.netBytesSent = netBytesSent;
+	}
+
+	public long getAggBytesReceived() {
+		return aggBytesReceived;
+	}
+
+	public void setAggBytesReceived(long aggBytesReceived) {
+		this.aggBytesReceived = aggBytesReceived;
+	}
+
+	public long getAggBytesSent() {
+		return aggBytesSent;
+	}
+
+	public void setAggBytesSent(long aggBytesSent) {
+		this.aggBytesSent = aggBytesSent;
 	}
 
 }

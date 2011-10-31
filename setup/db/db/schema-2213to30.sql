@@ -1,5 +1,5 @@
 --;
--- Schema upgrade from 2.2.x to 3.0;
+-- Schema upgrade from 2.2.13 to 3.0;
 --;
 
 ALTER TABLE `cloud`.`template_host_ref` DROP COLUMN `pool_id`;
@@ -116,4 +116,8 @@ update configuration set name = 'pod.privateip.capacity.notificationthreshold' ,
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `template_version` varchar(100) COMMENT 'template version' AFTER role;
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `scripts_version` varchar(100) COMMENT 'scripts version' AFTER template_version;
 ALTER TABLE `cloud`.`alert` ADD `cluster_id` bigint unsigned;
+
 DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
+
+ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
+ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';

@@ -50,26 +50,19 @@ public class UsageNetworkVO {
     @Column(name="bytes_received")
     private long bytesReceived;
 
-    @Column(name="net_bytes_received")
-    private long netBytesReceived;
+    @Column(name="agg_bytes_received")
+    private long aggBytesReceived;
     
-    @Column(name="net_bytes_sent")
-    private long netBytesSent;
+    @Column(name="agg_bytes_sent")
+    private long aggBytesSent;
     
-    @Column(name="current_bytes_received")
-    private long currentBytesReceived;
-    
-    @Column(name="current_bytes_sent")
-    private long currentBytesSent;
-
 	@Column(name="event_time_millis")
 	private long eventTimeMillis = 0;
 	
 	protected UsageNetworkVO() {
 	}
 
-	public UsageNetworkVO(Long accountId, long zoneId, long hostId, String hostType, Long networkId, long bytesSent, long bytesReceived, long netBytesReceived, long netBytesSent, long currentBytesReceived, 
-	        long currentBytesSent, long eventTimeMillis) {
+	public UsageNetworkVO(Long accountId, long zoneId, long hostId, String hostType, Long networkId, long bytesSent, long bytesReceived, long aggBytesReceived, long aggBytesSent, long eventTimeMillis) {
 		this.accountId = accountId;
 		this.zoneId = zoneId;
 		this.hostId = hostId;
@@ -77,10 +70,8 @@ public class UsageNetworkVO {
 		this.networkId = networkId;
 		this.bytesSent = bytesSent;
         this.bytesReceived = bytesReceived;
-		this.netBytesReceived = netBytesReceived;
-		this.netBytesSent = netBytesSent;
-		this.currentBytesReceived = currentBytesReceived;
-		this.currentBytesSent = currentBytesSent;
+		this.aggBytesReceived = aggBytesReceived;
+		this.aggBytesSent = aggBytesSent;
 		this.eventTimeMillis = eventTimeMillis;
 	}
 
@@ -115,22 +106,6 @@ public class UsageNetworkVO {
         this.bytesReceived = bytesReceived;
     }
 
-    public long getCurrentBytesReceived() {
-        return currentBytesReceived;
-    }
-
-    public long getCurrentBytesSent() {
-        return currentBytesSent;
-    }
-
-    public long getNetBytesReceived() {
-        return netBytesReceived;
-    }
-
-    public long getNetBytesSent() {
-        return netBytesSent;
-    }
-
     public long getEventTimeMillis() {
 	    return eventTimeMillis;
 	}
@@ -153,4 +128,20 @@ public class UsageNetworkVO {
     public Long getNetworkId() {
         return networkId;
     }
+
+	public long getAggBytesReceived() {
+		return aggBytesReceived;
+	}
+
+	public void setAggBytesReceived(long aggBytesReceived) {
+		this.aggBytesReceived = aggBytesReceived;
+	}
+
+	public long getAggBytesSent() {
+		return aggBytesSent;
+	}
+
+	public void setAggBytesSent(long aggBytesSent) {
+		this.aggBytesSent = aggBytesSent;
+	}
 }
