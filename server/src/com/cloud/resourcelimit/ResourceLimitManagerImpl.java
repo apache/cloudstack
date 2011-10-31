@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -58,8 +61,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -108,7 +113,9 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     private ProjectDao _projectDao;
     
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
-    
+    ScheduledExecutorService _rcExecutor;
+    long _resourceCountCheckInterval=0;
+
     @Override
     public String getName() {
         return _name;
@@ -116,6 +123,9 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
 
     @Override
     public boolean start() {
+        if (_resourceCountCheckInterval > 0){
+        	_rcExecutor.scheduleAtFixedRate(new ResourceCountCheckTask(), _resourceCountCheckInterval, _resourceCountCheckInterval, TimeUnit.SECONDS);
+        }
         return true;
     }
 
@@ -134,6 +144,10 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
         ResourceCountSearch.and("domainId", ResourceCountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ResourceCountSearch.done();
 
+        _resourceCountCheckInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ResourceCountCheckInterval.key()), 0);
+        if (_resourceCountCheckInterval > 0){
+            _rcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ResourceCountChecker"));
+        }
         return true;
     }
     
@@ -607,7 +621,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     
     @DB
     protected long recalculateDomainResourceCount(long domainId, ResourceType type) {
-        long count=0;
+        long newCount=0;
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -618,19 +632,22 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
             SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
             sc.setParameters("id", rowIdsToLock.toArray());
             _resourceCountDao.lockRows(sc, null, true);
-            
+
+            ResourceCountVO domainRC = _resourceCountDao.findByOwnerAndType(domainId, ResourceOwnerType.Domain, type);
+            long oldCount = domainRC.getCount();
+
             List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
             // for each child domain update the resource count
             if (type.supportsOwner(ResourceOwnerType.Domain)) {
                 
                 //calculate project count here
                 if (type == ResourceType.project) {
-                    count = count + _projectDao.countProjectsForDomain(domainId);
+                    newCount = newCount + _projectDao.countProjectsForDomain(domainId);
                 }
                 
                 for (DomainVO domainChild : domainChildren) {
                     long domainCount = recalculateDomainResourceCount(domainChild.getId(), type);
-                    count = count + domainCount; // add the child domain count to parent domain count
+                    newCount = newCount + domainCount; // add the child domain count to parent domain count
                 }
             }
             
@@ -638,22 +655,27 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
                 List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
                 for (AccountVO account : accounts) {
                     long accountCount = recalculateAccountResourceCount(account.getId(), type);
-                    count = count + accountCount; // add account's resource count to parent domain count
+                    newCount = newCount + accountCount; // add account's resource count to parent domain count
                 }
             }
-            _resourceCountDao.setResourceCount(domainId, ResourceOwnerType.Domain, type, count);
+            _resourceCountDao.setResourceCount(domainId, ResourceOwnerType.Domain, type, newCount);
+
+            if (oldCount != newCount) {
+                s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + 
+                        newCount + ") for type " + type + " for domain ID " + domainId + " is fixed during resource count recalculation." );
+            }
        } catch (Exception e) {
            throw new CloudRuntimeException("Failed to update resource count for domain with Id " + domainId);
        } finally {
           txn.commit();
        }
 
-       return count;
+       return newCount;
     }
     
     @DB
     protected long recalculateAccountResourceCount(long accountId, ResourceType type) {
-        Long count=null;
+        Long newCount=null;
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -663,28 +685,34 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
         SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
         sc.setParameters("accountId", accountId);
         _resourceCountDao.lockRows(sc, null, true);
-        
+
+        ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
+        long oldCount = accountRC.getCount();
+
         if (type == Resource.ResourceType.user_vm) {
-            count = _userVmDao.countAllocatedVMsForAccount(accountId);
+            newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
         } else if (type == Resource.ResourceType.volume) {
-            count = _volumeDao.countAllocatedVolumesForAccount(accountId);
+            newCount = _volumeDao.countAllocatedVolumesForAccount(accountId);
             long virtualRouterCount = _vmDao.countAllocatedVirtualRoutersForAccount(accountId);
-            count = count - virtualRouterCount;  // don't count the volumes of virtual router
+            newCount = newCount - virtualRouterCount;  // don't count the volumes of virtual router
         } else if (type == Resource.ResourceType.snapshot) {
-            count = _snapshotDao.countSnapshotsForAccount(accountId);
+            newCount = _snapshotDao.countSnapshotsForAccount(accountId);
         } else if (type == Resource.ResourceType.public_ip) {
-            count = _ipAddressDao.countAllocatedIPsForAccount(accountId);
+            newCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
         } else if (type == Resource.ResourceType.template) {
-            count = _vmTemplateDao.countTemplatesForAccount(accountId);
+            newCount = _vmTemplateDao.countTemplatesForAccount(accountId);
         } else {
             throw new InvalidParameterValueException("Unsupported resource type " + type);
         }
-        
-        _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (count == null) ? 0 : count.longValue());
-   
+        _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount.longValue());
+
+        if (oldCount != newCount) {
+            s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + 
+                    newCount + ") for type " + type + " for account ID " + accountId + " is fixed during resource count recalculation." );
+        }
         txn.commit();
   
-        return (count == null) ? 0 : count.longValue();
+        return (newCount == null) ? 0 : newCount.longValue();
     }
     
     @Override
@@ -692,4 +720,35 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
         return _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
     }
     
+    protected class ResourceCountCheckTask implements Runnable {
+        public ResourceCountCheckTask() {
+            
+        }
+
+        @Override
+        public void run() {
+            s_logger.info("Running resource count check periodic task");
+            List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(DomainVO.ROOT_DOMAIN);
+
+            // recalculateDomainResourceCount will take care of re-calculation of resource counts for sub-domains
+            // and accounts of the sub-domains also. so just loop through immediate children of root domain
+            for (Domain domain : domains ) {
+                for (ResourceType type : ResourceCount.ResourceType.values()) {
+                    if (type.supportsOwner(ResourceOwnerType.Domain)) {
+                        recalculateDomainResourceCount(domain.getId(), type);
+                    }
+                }
+            }
+
+            // run through the accounts in the root domain
+            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(DomainVO.ROOT_DOMAIN);
+            for (AccountVO account : accounts) {
+                for (ResourceType type : ResourceCount.ResourceType.values()) {
+                    if (type.supportsOwner(ResourceOwnerType.Account)) {
+                        recalculateAccountResourceCount(account.getId(), type);
+                    }
+                }
+            }
+        }
+    }
 }
