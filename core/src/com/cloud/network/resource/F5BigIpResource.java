@@ -47,6 +47,7 @@ import iControl.SystemConfigSyncSaveMode;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -907,6 +908,7 @@ public class F5BigIpResource implements ServerResource {
 		ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
 		
 		try {
+			
 			LocalLBVirtualServerVirtualServerStatistics stats = _virtualServerApi.get_all_statistics();
 			for (LocalLBVirtualServerVirtualServerStatisticEntry entry : stats.getStatistics()) {
 				String virtualServerIp = entry.getVirtual_server().getAddress();
@@ -920,15 +922,23 @@ public class F5BigIpResource implements ServerResource {
 				if (bytesSentAndReceived == null) {
 				    bytesSentAndReceived = new long[]{0, 0};
 				}
-				
+								
 				for (CommonStatistic stat : entry.getStatistics()) {										
-					if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_OUT)) {			
+					int index;
+					if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_OUT)) {		
 						// Add to the outgoing bytes
-						bytesSentAndReceived[0] += stat.getValue().getLow();
+						index = 0;
 					} else if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_IN)) {
 						// Add to the incoming bytes
-						bytesSentAndReceived[1] += stat.getValue().getLow();
+						index = 1;
+					} else {
+						continue;
 					}
+					
+					long high = stat.getValue().getHigh() & 0x0000ffff;
+					long low = stat.getValue().getLow() & 0x0000ffff;
+					long full = (high << 32) | low;
+					bytesSentAndReceived[index] += full;
 				}
 				
 				if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
