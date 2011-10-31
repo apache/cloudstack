@@ -42,18 +42,9 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         return Provider.RedundantVirtualRouter;
     }
     
-    private boolean canHandle(GuestType networkType, long offeringId) {
-        boolean result = (networkType == Network.GuestType.Isolated && _networkMgr.isProviderSupported(offeringId, Service.Gateway, getProvider()));
-        if (!result) {
-            s_logger.trace("Virtual router element only takes care of networktype " + Network.GuestType.Isolated + " for provider " + getProvider().getName());
-        }
-        return result;
-    }
-
-
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getGuestType(), offering.getId())) {
+        if (!canHandle(guestConfig.getGuestType(), offering.getId(), Service.Gateway)) {
             return false;
         }
         
@@ -67,7 +58,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId())) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Gateway)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -95,18 +86,6 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         VirtualRouterElementsVO element = _vrElementsDao.findByUUID(cmd.getUUID());
         if (element == null) {
             s_logger.trace("Can't find element with UUID " + cmd.getUUID());
-            return false;
-        }
-        if (cmd.getDhcpService() == null) {
-            s_logger.trace("DHCP service is provided, but no specific DHCP range!");
-            return false;
-        }
-        if (cmd.getDnsService() == null) {
-            s_logger.trace("DNS service is provided, but no domain name or dns server!");
-            return false;
-        }
-        if (cmd.getGatewayService() == null) {
-            s_logger.trace("Gateway service is provided, but no gateway IP specific!");
             return false;
         }
         element.setIsDhcpProvided(cmd.getDhcpService());
