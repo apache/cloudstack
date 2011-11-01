@@ -25,41 +25,33 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade2213to30Premium implements DbUpgrade {
+public class Upgrade2213to30Premium extends Upgrade2213to30 {
     final static Logger s_logger = Logger.getLogger(Upgrade2213to30Premium.class);
 
     @Override
-    public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.13", "3.0.0"};
-    }
-
-    @Override
-    public String getUpgradedVersion() {
-        return "3.0.0";
-    }
-
-    @Override
-    public boolean supportsRollingUpgrade() {
-        return true;
-    }
-
-    @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/db/schema-2213to30-premium.sql");
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-2213to30-premium.sql");
-        }
-        
-        return new File[] { new File(script) };
+    	 File[] scripts = super.getPrepareScripts();
+         File[] newScripts = new File[2]; 
+         newScripts[0] = scripts[0];
+
+         String script = Script.findScript("", "db/db/schema-2213to30-premium.sql");
+         if (script == null) {
+             throw new CloudRuntimeException("Unable to find db/schema-2213to30-premium.sql");
+         }
+         
+         newScripts[1] = new File(script);
+         
+         return newScripts;
     }
 
     @Override
     public void performDataMigration(Connection conn) {
+    	super.performDataMigration(conn);
     }
 
     @Override
     public File[] getCleanupScripts() {
-        return null;
+        return super.getCleanupScripts();
     }
  
 }
