@@ -33,15 +33,13 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -130,10 +128,6 @@ public interface NetworkManager extends NetworkService {
     List<? extends Nic> getNics(long vmId);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
-
-    AccountVO getNetworkOwner(long configurationId);
-
-    List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId);
 
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 

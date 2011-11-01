@@ -37,10 +37,13 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
- * NetworkGuru takes a network offering requested and figures
- * out the correct network configuration needed to add
- * to the account in order to support this network. 
- *
+ * NetworkGuru has the following functionalities
+ *   - Issues the ip address for the network that it is responsible for.
+ *   - Designs a virtual network depending on the network offering.
+ *   - Implements the virtual network when a virtual machine requires the network to be started.
+ *   
+ * NetworkManager is responsible for figuring which NetworkGuru to use when 
+ * networks are created and nics are designed.
  */
 public interface NetworkGuru extends Adapter {
     /**

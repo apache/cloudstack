@@ -1559,7 +1559,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return releasePublicIpAddress(ipAddressId, userId, caller);
     }
 
-    @Override
+    @Deprecated // No one is using this method.
     public AccountVO getNetworkOwner(long networkId) {
         SearchCriteria<AccountVO> sc = AccountsUsingNetworkSearch.create();
         sc.setJoinParameters("nc", "config", networkId);
@@ -1568,7 +1568,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return accounts.size() != 0 ? accounts.get(0) : null;
     }
 
-    @Override
+    @Deprecated // No one is using this method.
     public List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId) {
         return _networksDao.getNetworksForOffering(offeringId, dataCenterId, accountId);
     }
@@ -4339,6 +4339,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
     }
     
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", async = true)    
     public PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id){
         return _pNTrafficTypeDao.findById(id);
