@@ -58,6 +58,6 @@ public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru 
 	
 	@Override
     public boolean trackVmHostChange() {
-    	return false;
+    	return true;
     }
 }
