@@ -2799,7 +2799,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         TrafficType trafficType = null;
         Availability availability = null;
-        Network.GuestType type = null;
+        Network.GuestType guestType = null;
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -2815,12 +2815,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Verify offering type
         for (Network.GuestType offType : Network.GuestType.values()) {
             if (offType.name().equalsIgnoreCase(cmd.getGuestIpType())) {
-                type = offType;
+                guestType = offType;
                 break;
             }
         }
 
-        if (type == null) {
+        if (guestType == null) {
             throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
 
@@ -2873,6 +2873,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (cmd.getVpnService()) {
             serviceProviderMap.put(Network.Service.Vpn, defaultProviders);
         }
+        
+        if (cmd.getSecurityGroupService()) {
+            //allow security group service for Shared networks only
+            if (guestType != GuestType.Shared) {
+                throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+            }
+            Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
+            sgProviders.add(Provider.SecurityGroupProvider);
+            serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
+        }
 
         // populate providers
         Map<String, List<String>> svcPrv = (Map<String, List<String>>) cmd.getServiceProviders();
@@ -2898,7 +2908,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, type, false);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false);
     }
 
     @Override
@@ -3172,6 +3182,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (cmd.getVpnService()) {
             serviceProviderMap.put(Network.Service.Vpn, defaultProviders);
+        }
+        
+        if (cmd.getSecurityGroupService()) {
+            //allow security group service for Shared networks only
+            if (offering.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+            }
+            Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
+            sgProviders.add(Provider.SecurityGroupProvider);
+            serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
         }
 
         // populate providers

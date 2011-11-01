@@ -83,6 +83,9 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports vpn service")
     private Boolean vpnService;
     
+    @Parameter(name=ApiConstants.SECURITY_GROUP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports security service")
+    private Boolean securityGroupService;
+    
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
     
@@ -139,6 +142,10 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getVpnService() {
         return vpnService == null ? false : vpnService;
+    }
+    
+    public Boolean getSecurityGroupService() {
+        return securityGroupService == null ? false : securityGroupService;
     }
 
     public Map<String, List<String>> getServiceProviders() {

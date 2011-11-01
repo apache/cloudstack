@@ -150,8 +150,6 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         } catch (InterruptedException e1) {
            s_logger.warn("SG work: caught InterruptException", e1);
         }
-
-
     }
     
     public void sendRulesetUpdates(SecurityGroupWork work){

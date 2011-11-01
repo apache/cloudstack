@@ -4253,7 +4253,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean isSecurityGroupSupportedInNetwork(Network network) {
-        boolean supported = isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup);
+        boolean supported = isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup);
         
         return supported;
     }
@@ -4370,7 +4370,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
-        PhysicalNetworkVO network = null;
         
         List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
         

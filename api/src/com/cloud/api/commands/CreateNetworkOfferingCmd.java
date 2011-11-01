@@ -61,7 +61,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering.")
     private String tags; 
     
-    @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
+    @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="true if network offering supports vlans")
     private Boolean specifyVlan; 
     
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
@@ -70,29 +70,32 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
     
-    @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports dhcp service")
+    @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports dhcp service")
     private Boolean dhcpService; 
     
-    @Parameter(name=ApiConstants.DNS_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports dns service")
+    @Parameter(name=ApiConstants.DNS_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports dns service")
     private Boolean dnsService; 
     
-    @Parameter(name=ApiConstants.GATEWAY_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports gateway service")
+    @Parameter(name=ApiConstants.GATEWAY_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports gateway service")
     private Boolean gatewayService; 
     
-    @Parameter(name=ApiConstants.FIREWALL_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports firewall service")
+    @Parameter(name=ApiConstants.FIREWALL_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports firewall service")
     private Boolean firewallService; 
     
-    @Parameter(name=ApiConstants.LB_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports lb service")
+    @Parameter(name=ApiConstants.LB_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports lb service")
     private Boolean lbService; 
     
-    @Parameter(name=ApiConstants.USERDATA_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports user data service")
+    @Parameter(name=ApiConstants.USERDATA_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports user data service")
     private Boolean userdataService;
     
-    @Parameter(name=ApiConstants.SOURCE_NAT_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports source nat service")
+    @Parameter(name=ApiConstants.SOURCE_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
     private Boolean sourceNatService;
     
-    @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports vpn service")
+    @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports vpn service")
     private Boolean vpnService;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports security service")
+    private Boolean securityGroupService;
     
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
@@ -174,6 +177,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getVpnService() {
         return vpnService == null ? false : vpnService;
+    }
+
+    public Boolean getSecurityGroupService() {
+        return securityGroupService == null ? false : securityGroupService;
     }
 
     public String getGuestIpType() {

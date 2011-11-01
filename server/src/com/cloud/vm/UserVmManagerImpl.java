@@ -2008,7 +2008,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (securityGroupIdList != null && isVmWare) {
             throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else if (!isVmWare && _networkMgr.isServiceSupportedByNetworkOffering(defaultNetwork.getNetworkOfferingId(), Service.SecurityGroup)) {
+        } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork)) {
             if (securityGroupIdList == null) {
                 securityGroupIdList = new ArrayList<Long>();
             }
@@ -2097,7 +2097,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
-                boolean isSecurityGroupEnabled = _networkMgr.isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SecurityGroup);
+                boolean isSecurityGroupEnabled = _networkMgr.isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup);
                 if (isSecurityGroupEnabled && networkIdList.size() > 1) {
                     throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
                 }
@@ -2381,6 +2381,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
+        //check if the user data is correct
         validateUserData(userData);
 
         // Find an SSH public key corresponding to the key pair name, if one is given
@@ -2394,11 +2395,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sshPublicKey = pair.getPublicKey();
         }
 
-        DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-        s_logger.debug("Allocating in the DB for vm");
-
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
         short defaultNetworkNumber = 0;
+        boolean securityGroupEnabled = false;
         for (NetworkVO network : networkList) {
 
             if (network.getDataCenterId() != zone.getId()) {
@@ -2421,6 +2420,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             networks.add(new Pair<NetworkVO, NicProfile>(network, profile));
+            
+            if (_networkMgr.isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup)) {
+                securityGroupEnabled = true;
+            }
+        }
+        
+        if (securityGroupIdList != null && !securityGroupIdList.isEmpty() && !securityGroupEnabled) {
+            throw new InvalidParameterValueException("Unable to deploy vm with security groups as SecurityGroup service is not enabled for the vm's network");
         }
 
         // Verify network information - network default network has to be set; and vm can't have more than one default network
@@ -2468,6 +2475,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         s_logger.debug("Allocating in the DB for vm");
+        DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
         if (_itMgr.allocate(vm, _templateDao.findById(template.getId()), offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, hypervisorType, owner) == null) {
             return null;
