@@ -88,6 +88,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
@@ -3202,6 +3203,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
             }
             
+            // Network offering upgrade is allowed for isolated networks only
+            if (network.getGuestType() != GuestType.Isolated) {
+                throw new InvalidParameterValueException("Network offering upgrade is allowed only for networks with guest type " + GuestType.Isolated);
+            }
+            
             //network offering should be in Enabled state
             if (networkOffering.getState() != NetworkOffering.State.Enabled) {
                 throw new InvalidParameterValueException("Network offering " + networkOffering + " is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it");
@@ -3216,7 +3222,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (!canUpgrade(oldNetworkOfferingId, networkOfferingId)) {
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
                 }
-            
                 restartNetwork = true;
             }
         }   
