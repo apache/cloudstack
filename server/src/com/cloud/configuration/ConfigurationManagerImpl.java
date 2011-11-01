@@ -135,6 +135,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
@@ -320,7 +321,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, value);
+                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "guest.network.device");
 
                 pstmt.executeUpdate();
@@ -333,7 +334,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, value);
+                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "private.network.device");
 
                 pstmt.executeUpdate();
@@ -346,7 +347,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, value);
+                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "public.network.device");
 
                 pstmt.executeUpdate();
@@ -359,7 +360,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, value);
+                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "storage.network.device1");
 
                 pstmt.executeUpdate();
@@ -372,7 +373,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
-                pstmt.setString(1, value);
+                pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "storage.network.device2");
 
                 pstmt.executeUpdate();

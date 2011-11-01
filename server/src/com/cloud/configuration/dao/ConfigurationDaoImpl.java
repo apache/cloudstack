@@ -31,7 +31,6 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -50,7 +49,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     final SearchBuilder<ConfigurationVO> NameSearch;
     
     public static final String UPDATE_CONFIGURATION_SQL = "UPDATE configuration SET value = ? WHERE name = ?";
-    public static final String GET_CONFIGURATION_VALUE_SQL = "SELECT * FROM configuration WHERE name = ?";
 
     public ConfigurationDaoImpl () {
         InstanceSearch = createSearchBuilder();
@@ -168,7 +166,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 				returnValue =  rs.getString(1);
 				if(returnValue != null) {
 					txn.commit();
-					return returnValue;
+					return DBEncryptionUtil.decrypt(returnValue);
 				} else {
 					// restore init value
 					returnValue = initValue;
@@ -179,8 +177,8 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
 			stmtInsert = txn.prepareAutoCloseStatement(
 				"INSERT INTO configuration(instance, name, value, description) VALUES('DEFAULT', ?, ?, '') ON DUPLICATE KEY UPDATE value=?");
 			stmtInsert.setString(1, name);
-			stmtInsert.setString(2, initValue);
-			stmtInsert.setString(3, initValue);
+			stmtInsert.setString(2, DBEncryptionUtil.encrypt(initValue));
+			stmtInsert.setString(3, DBEncryptionUtil.encrypt(initValue));
 			if(stmtInsert.executeUpdate() < 1) {
 				throw new CloudRuntimeException("Unable to init configuration variable: " + name); 
 			}

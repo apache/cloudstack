@@ -92,6 +92,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -575,9 +576,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             String publicKey  = new String(arr2).trim();
 
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-                                "VALUES ('Hidden','DEFAULT', 'management-server','ssh.privatekey', '"+privateKey+"','Private key for the entire CloudStack')";
+                                "VALUES ('Hidden','DEFAULT', 'management-server','ssh.privatekey', '"+DBEncryptionUtil.encrypt(privateKey)+"','Private key for the entire CloudStack')";
             String insertSql2 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-                                "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '"+publicKey+"','Public key for the entire CloudStack')";
+                                "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '"+DBEncryptionUtil.encrypt(publicKey)+"','Public key for the entire CloudStack')";
 
             Transaction txn = Transaction.currentTxn();
             try {
@@ -689,7 +690,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             String password = PasswordGenerator.generateRandomPassword(12);
 
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-            "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + password + "','Password used to authenticate zone-to-zone template copy requests')";
+            "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + DBEncryptionUtil.encrypt(password) + "','Password used to authenticate zone-to-zone template copy requests')";
 
             Transaction txn = Transaction.currentTxn();
             try {

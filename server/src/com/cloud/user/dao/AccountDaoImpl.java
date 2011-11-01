@@ -33,6 +33,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -111,14 +112,14 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         try {
             String sql = FIND_USER_ACCOUNT_BY_API_KEY;
             pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setString(1, apiKey);
+            pstmt.setString(1, DBEncryptionUtil.encrypt(apiKey));
             ResultSet rs = pstmt.executeQuery();
             // TODO:  make sure we don't have more than 1 result?  ApiKey had better be unique
             if (rs.next()) {
                 User u = new UserVO(rs.getLong(1));
                 u.setUsername(rs.getString(2));
                 u.setAccountId(rs.getLong(3));
-                u.setSecretKey(rs.getString(4));
+                u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(4)));
                 u.setState(State.valueOf(rs.getString(5)));
 
                 AccountVO a = new AccountVO(rs.getLong(6));
