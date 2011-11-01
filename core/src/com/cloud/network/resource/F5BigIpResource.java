@@ -923,7 +923,7 @@ public class F5BigIpResource implements ServerResource {
 				    bytesSentAndReceived = new long[]{0, 0};
 				}
 								
-				for (CommonStatistic stat : entry.getStatistics()) {										
+				for (CommonStatistic stat : entry.getStatistics()) {	
 					int index;
 					if (stat.getType().equals(CommonStatisticType.STATISTIC_CLIENT_SIDE_BYTES_OUT)) {		
 						// Add to the outgoing bytes
@@ -935,9 +935,23 @@ public class F5BigIpResource implements ServerResource {
 						continue;
 					}
 					
-					long high = stat.getValue().getHigh() & 0x0000ffff;
-					long low = stat.getValue().getLow() & 0x0000ffff;
-					long full = (high << 32) | low;
+					long high = stat.getValue().getHigh(); 
+					long low = stat.getValue().getLow(); 
+					long full;
+					long rollOver = 0x7fffffff + 1;
+					
+					if (high >= 0) { 
+						full = (high << 32) & 0xffff0000; 
+					} else {
+						full = ((high & 0x7fffffff) << 32) + (0x80000000 << 32); 
+					}
+
+					if (low >= 0) {
+						full += low;
+					} else {
+						full += (low & 0x7fffffff) + rollOver;
+					}
+					
 					bytesSentAndReceived[index] += full;
 				}
 				
@@ -989,7 +1003,7 @@ public class F5BigIpResource implements ServerResource {
 	private static String[] genStringArray(String s) {
 		return new String[]{s};
 	}				
-	
+
 }
 
 
