@@ -221,6 +221,7 @@ public interface ManagementService {
      * @return list of GuestOS
      */
     List<? extends GuestOS> listGuestOSByCriteria(ListGuestOsCmd cmd);
+    List<? extends GuestOS> listGuestOSByHypervisor(ListGuestOsCmd listGuestOsCmd);
 
     /**
      * Obtains a list of all guest OS categories.
@@ -489,5 +490,5 @@ public interface ManagementService {
 
 
     String[] listEventTypes();
-    
+
 }

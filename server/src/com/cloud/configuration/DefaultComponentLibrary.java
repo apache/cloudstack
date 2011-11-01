@@ -115,6 +115,7 @@ import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.GuestOSCategoryDaoImpl;
 import com.cloud.storage.dao.GuestOSDaoImpl;
+import com.cloud.storage.dao.GuestOSHypervisorDaoImpl;
 import com.cloud.storage.dao.LaunchPermissionDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.SnapshotPolicyDaoImpl;
@@ -234,6 +235,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("SyncQueueDao", SyncQueueDaoImpl.class);
         addDao("SyncQueueItemDao", SyncQueueItemDaoImpl.class);
         addDao("GuestOSDao", GuestOSDaoImpl.class);
+        addDao("GuestOSHypervisorDao", GuestOSHypervisorDaoImpl.class);
         addDao("GuestOSCategoryDao", GuestOSCategoryDaoImpl.class);
         addDao("StoragePoolDao", StoragePoolDaoImpl.class);
         addDao("StoragePoolHostDao", StoragePoolHostDaoImpl.class);

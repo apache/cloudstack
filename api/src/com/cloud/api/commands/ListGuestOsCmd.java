@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.GuestOSResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.storage.GuestOS;
@@ -47,6 +48,8 @@ public class ListGuestOsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
     private Long osCategoryId;
 
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
+    private String hypervisor;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -60,7 +63,9 @@ public class ListGuestOsCmd extends BaseListCmd {
         return osCategoryId;
     }
 
-
+    public String getHypervisor() {
+        return hypervisor;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -72,7 +77,14 @@ public class ListGuestOsCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends GuestOS> result = _mgr.listGuestOSByCriteria(this);
+        List<? extends GuestOS> result = null;
+        if (getHypervisor() == null){
+            result = _mgr.listGuestOSByCriteria(this);
+        }
+        else {
+            result = _mgr.listGuestOSByHypervisor(this);
+        }
+
         ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
         List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
         for (GuestOS guestOS : result) {
