@@ -38,6 +38,7 @@ public class UsageTypes {
     public static final int LOAD_BALANCER_POLICY = 11;
     public static final int PORT_FORWARDING_RULE = 12;
     public static final int NETWORK_OFFERING = 13;
+    public static final int VPN_USERS = 14;
     
     public static List<UsageTypeResponse> listUsageTypes(){
     	List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
@@ -54,6 +55,7 @@ public class UsageTypes {
     	responseList.add(new UsageTypeResponse(LOAD_BALANCER_POLICY, "Load Balancer Usage"));
     	responseList.add(new UsageTypeResponse(PORT_FORWARDING_RULE, "Port Forwarding Usage"));
     	responseList.add(new UsageTypeResponse(NETWORK_OFFERING, "Network Offering Usage"));
+    	responseList.add(new UsageTypeResponse(VPN_USERS, "VPN users usage"));
     	return responseList;
     }
 }

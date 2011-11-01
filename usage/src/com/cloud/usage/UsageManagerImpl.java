@@ -52,6 +52,7 @@ import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
+import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.usage.parser.IPAddressUsageParser;
 import com.cloud.usage.parser.LoadBalancerUsageParser;
@@ -60,6 +61,7 @@ import com.cloud.usage.parser.NetworkUsageParser;
 import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -101,6 +103,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     private final UsageLoadBalancerPolicyDao m_usageLoadBalancerPolicyDao = _locator.getDao(UsageLoadBalancerPolicyDao.class);
     private final UsagePortForwardingRuleDao m_usagePortForwardingRuleDao = _locator.getDao(UsagePortForwardingRuleDao.class);
     private final UsageNetworkOfferingDao m_usageNetworkOfferingDao = _locator.getDao(UsageNetworkOfferingDao.class);
+    private final UsageVPNUserDao m_usageVPNUserDao = _locator.getDao(UsageVPNUserDao.class);
     private final UsageJobDao m_usageJobDao = _locator.getDao(UsageJobDao.class);
     @Inject protected AlertManager _alertMgr;
     @Inject protected UsageEventDao _usageEventDao;
@@ -743,7 +746,12 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 s_logger.debug("IPAddress usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
-        
+        parsed = VPNUserUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VPN user usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
 	}
 
@@ -767,6 +775,8 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             createPortForwardingHelperEvent(event);
         } else if (isNetworkOfferingEvent(eventType)) {
             createNetworkOfferingEvent(event);
+        } else if (isVPNUserEvent(eventType)) {
+            createVPNUserEvent(event);
         }
 	}
 
@@ -822,6 +832,11 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_DELETE) ||
                 eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN) ||
                 eventType.equals(EventTypes.EVENT_NETWORK_OFFERING_REMOVE));
+    }
+    
+    private boolean isVPNUserEvent(String eventType) {
+        if (eventType == null) return false;
+        return eventType.startsWith("VPN.USER");
     }
     
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1293,7 +1308,39 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             }
         }
     }
+    
+    private void createVPNUserEvent(UsageEventVO event) {
 
+        long zoneId = 0L;
+
+        long userId = event.getResourceId();
+
+        if (EventTypes.EVENT_VPN_USER_ADD.equals(event.getType())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating VPN user: "+ userId + " for account: " + event.getAccountId());
+            }
+            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            String userName = event.getResourceName();
+            UsageVPNUserVO vpnUser = new UsageVPNUserVO(zoneId, event.getAccountId(), acct.getDomainId(), userId, userName, event.getCreateDate(), null);
+            m_usageVPNUserDao.persist(vpnUser);
+        } else if (EventTypes.EVENT_VPN_USER_REMOVE.equals(event.getType())) {
+            SearchCriteria<UsageVPNUserVO> sc = m_usageVPNUserDao.createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("userId", SearchCriteria.Op.EQ, userId);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageVPNUserVO> vuVOs = m_usageVPNUserDao.search(sc, null);
+            if (vuVOs.size() > 1) {
+                s_logger.warn("More that one usage entry for vpn user: "+ userId +" assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+            }
+            for (UsageVPNUserVO vuVO : vuVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting vpn user: " + vuVO.getUserId());
+                }
+                vuVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                m_usageVPNUserDao.update(vuVO);
+            }
+        }
+    }
     
     private class Heartbeat implements Runnable {
         public void run() {

@@ -15,3 +15,17 @@ ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_sent`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_received`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
 
+CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
+  `zone_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `user_id` bigint unsigned NOT NULL,
+  `user_name` varchar(32),
+  `created` DATETIME NOT NULL,
+  `deleted` DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
+

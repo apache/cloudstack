@@ -33,6 +33,9 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -93,6 +96,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject DomainDao _domainDao;
     @Inject FirewallRulesDao _rulesDao;
     @Inject FirewallManager _firewallMgr;
+    @Inject UsageEventDao _usageEventDao;
     
     int _userLimit;
     int _pskLength;
@@ -305,13 +309,15 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (userCount >= _userLimit) {
             throw new AccountLimitException("Cannot add more than " + _userLimit + " remote access vpn users");
         }
-
+        
         VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
+        _usageEventDao.persist(usageEvent);
         txn.commit();
         return user;
     }
 
-    @Override
+    @DB @Override
     public boolean removeVpnUser(long vpnOwnerId, String username) {
         Account caller = UserContext.current().getCaller();
 
@@ -320,9 +326,13 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             throw new InvalidParameterValueException("Could not find vpn user " + username);
         }
         _accountMgr.checkAccess(caller, null, user);
-
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         user.setState(State.Revoke);
         _vpnUsersDao.update(user.getId(), user);
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
+        _usageEventDao.persist(usageEvent);
+        txn.commit();
         return true;
     }
 
