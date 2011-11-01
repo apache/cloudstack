@@ -524,7 +524,16 @@ public class BareMetalResourceBase implements ServerResource {
 	
 	protected HashMap<String, State> deltaSync() {
         final HashMap<String, State> changes = new HashMap<String, State>();
-        
+  /*    
+   *    Disable sync until we find a way that only tracks status but not does action
+   *    
+   *    The scenario is: Baremetal will reboot host when creating template. Given most 
+   *    servers take a long time to boot up, there would be a period that mgmt server finds
+   *    the host is stopped through fullsync. Then mgmt server updates database with marking the host as
+   *    stopped, after that, the host comes up and full sync then indicates it's running. Because
+   *    in database the host is already stopped, mgmt server sends out a stop command.
+   *    As a result, creating image gets never happened.
+   *      
         if (_vmName == null) {
             return null;
         }
@@ -557,7 +566,7 @@ public class BareMetalResourceBase implements ServerResource {
             changeVmState(_vmName, newState);
             changes.put(_vmName, newState);
         }
-        
+       */
         return changes;
        
 	}
