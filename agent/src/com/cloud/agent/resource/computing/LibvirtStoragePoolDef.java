@@ -22,6 +22,7 @@ public class LibvirtStoragePoolDef {
 	public enum poolType {
 		ISCSI("iscsi"),
 		NETFS("netfs"),
+		LOGICAL("logical"),
 		DIR("dir");
 		String _poolType;
 		poolType(String poolType) {

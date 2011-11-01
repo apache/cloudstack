@@ -97,6 +97,7 @@ public class Storage {
         Iscsi(true), //for e.g., ZFS Comstar
         ISO(false),    // for iso image
         LVM(false),    // XenServer local LVM SR
+        CLVM(true),
         SharedMountPoint(true),
         VMFS(true),		// VMware VMFS storage
         PreSetup(true),  // for XenServer, Storage Pool is set up by customers. 

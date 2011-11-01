@@ -22,6 +22,8 @@ import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
+import com.cloud.agent.kvm.KVMConnection;
+
 public class LibvirtConnection {
 	private static final Logger s_logger = Logger.getLogger(LibvirtConnection.class);
 	static private Connect _connection;
