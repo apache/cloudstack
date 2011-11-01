@@ -36,6 +36,7 @@ do
   local_vif=$(xe vif-list vm-uuid=$dom0 network-name-label=$local_networkname | grep ^uuid | awk '{print $NF}')
   if [ -z $local_vif ]; then
       local_vif=$(xe vif-create network-uuid=$local_network vm-uuid=$dom0 device=0)
+      xe vif-param-set uuid=$local_vif other-config:nameLabel=link_local_network_vif
       xe vif-plug uuid=$local_vif
   fi
 done
