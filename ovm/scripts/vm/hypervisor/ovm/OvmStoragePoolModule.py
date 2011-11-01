@@ -354,7 +354,7 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             #This prevent us deleting whole secondary in case we got a wrong installPath
             if destPath == secMountPoint: raise Exception("Install path equals to root of secondary storage(%s)"%destPath)
             if exists(destPath):
-                logger.warning("%s is already here, delete it since it is most likely stale"%destPath)
+                logger.warning(OvmStoragePool.createTemplateFromVolume, "%s is already here, delete it since it is most likely stale"%destPath)
                 doCmd(['rm', '-rf', destPath])
             OvmStoragePool()._checkDirSizeForImage(secMountPoint, volumePath)
             
@@ -402,7 +402,7 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             #This prevent us deleting whole secondary in case we got a wrong volumeFolderOnSecStorage
             if destPath == secMountPoint: raise Exception("volume path equals to root of secondary storage(%s)"%destPath)
             if exists(destPath):
-                logger.warning("%s already exists, delete it first"%destPath)
+                logger.warning(OvmStoragePool.copyVolume, "%s already exists, delete it first"%destPath)
                 doCmd(['rm', '-rf', destPath])
             os.makedirs(destPath)
             newName = get_uuid() + ".raw"
