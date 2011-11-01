@@ -18,8 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -54,9 +52,6 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the new display text for the network")
     private String displayText;
     
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="tags for the network")
-    private List<String> tags;
-    
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
@@ -77,10 +72,6 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     
     public String getDisplayText() {
         return displayText;
-    }
-    
-    public List<String> getTags() {
-        return tags;
     }
     
     private String getNetworkDomain() {
@@ -112,7 +103,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
-        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller(), getNetworkDomain(), getNetworkOfferingId());
+        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), UserContext.current().getCaller(), getNetworkDomain(), getNetworkOfferingId());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

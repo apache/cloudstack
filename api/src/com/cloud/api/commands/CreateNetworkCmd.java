@@ -32,6 +32,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a network", responseObject=NetworkResponse.class)
@@ -89,9 +91,6 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
     private Boolean isShared;
     
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the network")
-    private List<String> tags;
-    
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
@@ -100,10 +99,6 @@ public class CreateNetworkCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     public Long getNetworkOfferingId() {
         return networkOfferingId;
-    }
-    
-    public List<String> getTags() {
-        return tags;
     }
 
     public String getGateway() {
@@ -158,13 +153,38 @@ public class CreateNetworkCmd extends BaseCmd {
         return isShared == null ? false : isShared;
     }
     
+    public Long getZoneId() {
+        Long physicalNetworkId = getPhysicalNetworkId();
+        
+        if (physicalNetworkId == null && zoneId == null) {
+            throw new InvalidParameterValueException("Zone id is required");
+        }
+        
+        return zoneId;
+    }
+    
+    public List<String> getTags() {
+        //FIXME - remove this method
+        return null;
+    }
+    
     public Long getPhysicalNetworkId() {
-        if (physicalNetworkId != null) {
-            return physicalNetworkId;
-        } else if (zoneId != null) {
-            return _networkService.translateZoneIdToPhysicalNetworkId(zoneId);
+        NetworkOffering offering = _configService.getNetworkOffering(networkOfferingId);
+        if (offering == null) {
+            throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
+        }
+        if (offering.getGuestType() == GuestType.Shared) {
+            if (physicalNetworkId != null) {
+                return physicalNetworkId;
+            } else if (zoneId != null) {
+                return _networkService.findPhysicalNetworkId(zoneId, offering.getTags());
+            } else {
+                throw new InvalidParameterValueException("Either zoneId or physicalNetworkId have to be specified for the network of type " + GuestType.Shared);
+            }
+        } else if (physicalNetworkId != null) {
+            throw new InvalidParameterValueException("Physical network id can be specified for networks of guest ip type " + GuestType.Shared + " only.");
         } else {
-            throw new InvalidParameterValueException("Either zoneId or physicalNetworkId have to be specified");
+            return null;
         }
     }
 

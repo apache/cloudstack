@@ -378,7 +378,8 @@ public class NetworkVO implements Network {
         return physicalNetworkId;
     }
     
-    public void setPhysicalNetworkId(long physicalNetworkId) {
+    @Override
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
 

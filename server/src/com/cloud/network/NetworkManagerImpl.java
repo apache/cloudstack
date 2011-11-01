@@ -1235,6 +1235,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         network.setBroadcastUri(profile.getBroadcastUri());
         network.setDns1(profile.getDns1());
         network.setDns2(profile.getDns2());
+        network.setPhysicalNetworkId(profile.getPhysicalNetworkId());
     }
 
     protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkVO config) {
@@ -1303,6 +1304,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setBroadcastUri(result.getBroadcastUri());
             network.setGateway(result.getGateway());
             network.setMode(result.getMode());
+            network.setPhysicalNetworkId(result.getPhysicalNetworkId());
             _networksDao.update(networkId, network);
 
             //implement network elements and re-apply all the network rules
@@ -1645,7 +1647,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<String> tags = cmd.getTags();
         boolean isDomainSpecific = false;
         Boolean isShared = cmd.getIsShared();
-        long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long zoneId = cmd.getZoneId();
 
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Only one tag can be specified for a network at this time");
@@ -1698,17 +1701,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Check if physical network exists
-        PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
-        if (pNtwk == null) {
-            throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
+        PhysicalNetwork pNtwk = null;
+        if (physicalNetworkId != null) {
+            pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
+            if (pNtwk == null) {
+                throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
+            }
+            
+            //check that the physical network is enabled
+            if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
+                throw new InvalidParameterValueException("Physical network id " + physicalNetworkId + " is in incorrect state: " + pNtwk.getState());
+            }
         }
-        
-        //check that the physical network is enabled
-        if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
-            throw new InvalidParameterValueException("Physical network id " + physicalNetworkId + " is in incorrect state: " + pNtwk.getState());
-        }
-        
-        DataCenter zone = _dcDao.findById(pNtwk.getDataCenterId());
+
+        DataCenter zone = _dcDao.findById(zoneId);
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
@@ -1774,7 +1780,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             domainId = cmd.getDomainId();
         }
 
-        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags, isShared, pNtwk);
+        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, domainId, tags, isShared, pNtwk, zoneId);
 
         // Don't pass owner to create vlan when network offering is of type Shared - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
@@ -1795,11 +1801,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
-            boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared, PhysicalNetwork physicalNetwork) throws ConcurrentOperationException, InsufficientCapacityException {
+            boolean isSecurityGroupEnabled, Long domainId, List<String> tags, Boolean isShared, PhysicalNetwork pNtwk, long zoneId) throws ConcurrentOperationException, InsufficientCapacityException {
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
-        DataCenterVO zone = _dcDao.findById(physicalNetwork.getDataCenterId());
-        long zoneId = zone.getId();
+        DataCenterVO zone = _dcDao.findById(zoneId);
 
         // allow isDefault to be set only for Shared network
         if (networkOffering.getGuestType() == Network.GuestType.Isolated) {
@@ -1893,7 +1898,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null, physicalNetwork.getId());
+        Long physicalNetworkId = null;
+        if (pNtwk != null) {
+            physicalNetworkId = pNtwk.getId();
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null, null, physicalNetworkId);
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
 
@@ -2811,7 +2820,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
             PhysicalNetwork physicalNetwork = translateZoneIdToPhysicalNetwork(zoneId);
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, null, owner, false, null, null, false, physicalNetwork);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, null, owner, false, null, null, false, physicalNetwork, zoneId);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -3143,7 +3152,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, Long networkOfferingId) {
+    public Network updateNetwork(long networkId, String name, String displayText, Account caller, String domainSuffix, Long networkOfferingId) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -3152,9 +3161,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         }
 
-        if (tags != null && tags.size() > 1) {
-            throw new InvalidParameterException("Unable to support more than one tag on network yet");
-        }
         _accountMgr.checkAccess(caller, null, network);
         
         // Don't allow to update system network
@@ -3190,10 +3196,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (displayText != null) {
             network.setDisplayText(displayText);
-        }
-
-        if (tags != null) {
-            network.setTags(tags);
         }
         
         long oldNetworkOfferingId = network.getNetworkOfferingId();
@@ -3452,6 +3454,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //Type of the network should be the same
         if (oldNetworkOffering.getGuestType() != newNetworkOffering.getGuestType()){
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " are of different types, can't upgrade");
+            return false;
+        }
+        
+        //tags should be the same
+        if (!oldNetworkOffering.getTags().equalsIgnoreCase(newNetworkOffering.getTags())) {
+            s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different tags, can't upgrade");
             return false;
         }
         
@@ -4017,17 +4025,33 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     
     @Override
-    public long translateZoneIdToPhysicalNetworkId(long zoneId) {
+    public long findPhysicalNetworkId(long zoneId, String tag) {
         List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZone(zoneId);
         if (pNtwks.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find physical network in zone id=" + zoneId);
         }
         
         if (pNtwks.size() > 1) {
-            throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId);
+            if (tag == null) {
+                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " and no tags are specified in order to make a choice");
+            }
+            
+            Long pNtwkId = null;
+            for (PhysicalNetwork pNtwk : pNtwks) {
+                if (pNtwk.getTags().contains(tag)) {
+                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
+                    pNtwkId = pNtwk.getId();
+                    break;
+                }
+            }
+            if (pNtwkId == null) {
+                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
+            }
+            
+            return pNtwkId;
+        } else {
+            return pNtwks.get(0).getId();
         }
-        
-        return pNtwks.get(0).getId();
     }
     
     @Override

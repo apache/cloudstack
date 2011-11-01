@@ -205,4 +205,9 @@ public class NetworkProfile implements Network {
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
+
+    @Override
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
 }

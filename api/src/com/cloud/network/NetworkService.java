@@ -77,7 +77,7 @@ public interface NetworkService {
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, Long networkOfferingId);
+    Network updateNetwork(long networkId, String name, String displayText, Account caller, String domainSuffix, Long networkOfferingId);
 
     Integer getNetworkRate(long networkId, Long vmId);
 
@@ -113,7 +113,7 @@ public interface NetworkService {
 
     PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
     
-    long translateZoneIdToPhysicalNetworkId(long zoneId);
+    long findPhysicalNetworkId(long zoneId, String tag);
 
     PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel);
 

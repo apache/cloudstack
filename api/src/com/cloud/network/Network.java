@@ -276,4 +276,6 @@ public interface Network extends ControlledEntity {
     boolean getIsShared();
 
     Long getPhysicalNetworkId();
+
+    void setPhysicalNetworkId(Long physicalNetworkId);
 }
