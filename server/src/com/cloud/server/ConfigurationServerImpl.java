@@ -833,75 +833,73 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         
         //populate providers
-        Map<Network.Service, Network.Provider> defaultDirectNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultDirectNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
-        defaultDirectNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
-        defaultDirectNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
+        defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
+        defaultSharedNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
         
-        Map<Network.Service, Network.Provider> defaultDirectGuestNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultDirectGuestNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
-        defaultDirectGuestNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
-        defaultDirectGuestNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
-        defaultDirectGuestNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
+        Map<Network.Service, Network.Provider> defaultSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
+        defaultSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
+        defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
         
-        Map<Network.Service, Network.Provider> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultVirtualNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Firewall, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Gateway, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Lb, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.StaticNat, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
+        Map<Network.Service, Network.Provider> defaultIsolatedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultIsolatedNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Firewall, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Gateway, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Lb, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.SourceNat, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.StaticNat, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
+        defaultIsolatedNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
+
         
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(
+        //The only one diff between 1 and 3 network offerings is that the first one has SG enabled. In Basic zone only first network offering has to be enabled, in Advance zone - the third one
+        NetworkOfferingVO deafultSharedSGNetworkOffering = new NetworkOfferingVO(
                 NetworkOffering.SystemGuestNetwork, 
                 "System-Guest-Network", 
                 TrafficType.Guest, 
-                true, false, null, null, null, true, 
+                false, false, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Shared);
         
-        guestNetworkOffering.setState(NetworkOffering.State.Enabled);
-
-        guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
+        deafultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(deafultSharedSGNetworkOffering);
         
-        for (Service service : defaultDirectGuestNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(guestNetworkOffering.getId(), service, defaultDirectGuestNetworkOfferingProviders.get(service));
+        for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(deafultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
             _offeringServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
         
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(
+        NetworkOfferingVO defaultIsolatedNetworkOffering = new NetworkOfferingVO(
                 NetworkOffering.DefaultVirtualizedNetworkOffering, 
                 "Virtual Vlan", 
                 TrafficType.Guest, 
                 false, false, null, null, null, true, 
                 Availability.Required, null, Network.GuestType.Isolated);
         
-        defaultGuestNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
+        defaultIsolatedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedNetworkOffering);
         
         
-        for (Service service : defaultVirtualNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultGuestNetworkOffering.getId(), service, defaultVirtualNetworkOfferingProviders.get(service));
+        for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
             _offeringServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
         
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(
+        NetworkOfferingVO defaultSharedNetworkOffering = new NetworkOfferingVO(
                 NetworkOffering.DefaultDirectNetworkOffering, 
                 "Direct", 
                 TrafficType.Guest, 
-                false, true, null, null, null, true, 
+                false, false, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Shared);
         
-        defaultGuestDirectNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
+        defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
         
-        for (Service service : defaultDirectNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultGuestDirectNetworkOffering.getId(), service, defaultDirectNetworkOfferingProviders.get(service));
+        for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultSharedNetworkOfferingProviders.get(service));
             _offeringServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }

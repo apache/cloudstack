@@ -44,7 +44,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
-    final SearchBuilder<NetworkOfferingVO> TrafficTypeGuestTypeSearch;
+    final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
     
     protected NetworkOfferingDaoImpl() {
@@ -64,11 +64,12 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         AvailabilitySearch.and("isSystem", AvailabilitySearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         AvailabilitySearch.done();
         
-        TrafficTypeGuestTypeSearch = createSearchBuilder();
-        TrafficTypeGuestTypeSearch.and("trafficType", TrafficTypeGuestTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.and("guestType", TrafficTypeGuestTypeSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.and("isSystem", TrafficTypeGuestTypeSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("isSystem", AllFieldsSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
 
         UpgradeSearch = createSearchBuilder(Long.class);
         UpgradeSearch.selectField(UpgradeSearch.entity().getId());
@@ -107,13 +108,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public List<NetworkOfferingVO> listNonSystemNetworkOfferings() {
-        SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
-        sc.setParameters("system", false);
-        return this.listIncludingRemovedBy(sc, null);
-    }
-    
-    @Override
     public List<NetworkOfferingVO> listSystemNetworkOfferings() {
         SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
         sc.setParameters("system", true);
@@ -124,15 +118,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     public List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem) {
         SearchCriteria<NetworkOfferingVO> sc = AvailabilitySearch.create();
         sc.setParameters("availability", availability);
-        sc.setParameters("isSystem", isSystem);
-        return listBy(sc, null);
-    }
-    
-    @Override
-    public List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.GuestType type) {
-        SearchCriteria<NetworkOfferingVO> sc = TrafficTypeGuestTypeSearch.create();
-        sc.setParameters("trafficType", trafficType);
-        sc.setParameters("guestType", type);
         sc.setParameters("isSystem", isSystem);
         return listBy(sc, null);
     }
@@ -163,5 +148,23 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
         
         return customSearch(sc, null);
+    }
+    
+    @Override
+    public List<NetworkOfferingVO> listByTrafficTypeGuestTypeAndState(NetworkOffering.State state, TrafficType trafficType, Network.GuestType type) {
+        SearchCriteria<NetworkOfferingVO> sc = AllFieldsSearch.create();
+        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("guestType", type);
+        sc.setParameters("state", state);
+        return listBy(sc, null);
+    }
+    
+    @Override 
+    public List<NetworkOfferingVO> listGuestNetworkOfferings(Network.GuestType type, boolean isDefault) {
+        SearchCriteria<NetworkOfferingVO> sc = AllFieldsSearch.create();
+        sc.setParameters("trafficType", TrafficType.Guest);
+        sc.setParameters("guestType", type);
+        sc.setParameters("isDefault", isDefault);
+        return listBy(sc, null);
     }
 }

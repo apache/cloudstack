@@ -32,7 +32,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -95,7 +94,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
     
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the network offering")
     private String state;
 
     /////////////////////////////////////////////////////

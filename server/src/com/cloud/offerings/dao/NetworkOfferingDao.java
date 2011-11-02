@@ -53,14 +53,14 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      */
     NetworkOfferingVO persistDefaultNetworkOffering(NetworkOfferingVO offering);
     
-    List<NetworkOfferingVO> listNonSystemNetworkOfferings();
-    
     List<NetworkOfferingVO> listSystemNetworkOfferings();
     
     List<NetworkOfferingVO> listByAvailability(Availability availability, boolean isSystem);
     
-    List<NetworkOfferingVO> listByTrafficTypeAndType(boolean isSystem, TrafficType trafficType, Network.GuestType type);
-
     List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering);
+    
+    List<NetworkOfferingVO> listByTrafficTypeGuestTypeAndState(NetworkOffering.State state, TrafficType trafficType, Network.GuestType type);
+    
+    List<NetworkOfferingVO> listGuestNetworkOfferings(Network.GuestType type, boolean isDefault);
     
 }

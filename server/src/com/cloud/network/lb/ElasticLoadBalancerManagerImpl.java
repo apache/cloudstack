@@ -572,12 +572,16 @@ public class ElasticLoadBalancerManagerImpl implements
     @DB
     public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
         //TODO: this only works in the guest network. Handle the public network case also.
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndType(true, _frontendTrafficType, Network.GuestType.Shared);
-        if (offerings == null || offerings.size() == 0) {
-            s_logger.warn("ELB: Could not find system offering for direct networks of type " + _frontendTrafficType);
+        NetworkOfferingVO frontEndOffering = null;
+        if (_frontendTrafficType == TrafficType.Guest) {
+            frontEndOffering = _networkMgr.getExclusiveGuestNetworkOffering();
+        }
+        
+        if (frontEndOffering == null) {
+            s_logger.warn("ELB: Could not find offering for direct networks of type " + _frontendTrafficType);
             return null;
         }
-        NetworkOffering frontEndOffering = offerings.get(0);
+        
         List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, frontEndOffering.getId(), lb.getZoneId());
         if (networks == null || networks.size() == 0) {
             s_logger.warn("ELB: Could not find network of offering type " + frontEndOffering +  " in zone " + lb.getZoneId());

@@ -890,22 +890,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         NetworkOfferingVO defaultGuestOffering = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork);
         if (defaultGuestOffering == null) {
-            defaultGuestOffering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, true);
-            defaultGuestOffering.setState(NetworkOffering.State.Enabled);
+            defaultGuestOffering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false);
             _networkOfferingDao.update(defaultGuestOffering.getId(), defaultGuestOffering);
         } 
-        _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, defaultGuestOffering);
         
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, Network.GuestType.Isolated, false);
-            offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultDirectNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false);
-            offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
@@ -1129,6 +1125,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             offerings.add(network);
         }
         return offerings;
+    }
+    
+    
+    @Override
+    public NetworkOfferingVO getExclusiveGuestNetworkOffering() {
+        //this method should return Guest network offering in Enabled state; and this network offering should be unique, otherwise Runtime exception is going to be thrown
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeGuestTypeAndState(NetworkOffering.State.Enabled, TrafficType.Guest, GuestType.Shared);
+        if (offerings.isEmpty()) {
+            throw new CloudRuntimeException("Unable to find network offering in state " + NetworkOffering.State.Enabled + ", traffic type " + TrafficType.Guest + " and guest type " + GuestType.Shared);
+        }
+        
+        if (offerings.size() > 1) {
+            throw new CloudRuntimeException("Found more than 1 network offering in state " + NetworkOffering.State.Enabled + ", traffic type " + TrafficType.Guest + " and guest type " + GuestType.Shared);
+
+        }
+        return offerings.get(0);
     }
 
     @Override

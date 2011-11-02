@@ -1382,6 +1382,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // the zone creation
         if (zone != null) {
             List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
+            
+            //for Advance security group enabled zone and Basic zone we have to find only one guest network offering enabled in the system
+            if (zone.getNetworkType() == NetworkType.Basic || isSecurityGroupEnabled) {
+                ntwkOff.add(_networkMgr.getExclusiveGuestNetworkOffering());
+            }
 
             for (NetworkOfferingVO offering : ntwkOff) {
                 DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
@@ -3254,9 +3259,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         txn.start();
         // update network offering
         success = success && _networkOfferingDao.update(id, offering);
-        _ntwkOffServiceMapDao.deleteByOfferingId(id);
-        // update services/providers - delete old ones, insert new ones
-        if (serviceProviderMap != null) {
+       
+        if (!serviceProviderMap.isEmpty()) {
+            _ntwkOffServiceMapDao.deleteByOfferingId(id);
+            // update services/providers - delete old ones, insert new ones
             for (Network.Service service : serviceProviderMap.keySet()) {
                 for (Network.Provider provider : serviceProviderMap.get(service)) {
                     NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);

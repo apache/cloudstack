@@ -1,4 +1,5 @@
 /**
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -39,6 +40,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -233,6 +235,7 @@ public interface NetworkManager extends NetworkService {
 
     List<Service> getElementServices(Provider provider);
 
-    boolean canElementEnableIndividualServices(Provider provider); 
+    boolean canElementEnableIndividualServices(Provider provider);
 
+    NetworkOfferingVO getExclusiveGuestNetworkOffering();
 }

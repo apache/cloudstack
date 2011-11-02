@@ -34,6 +34,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 public interface NetworkService {
@@ -126,5 +127,4 @@ public interface NetworkService {
     List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId);
 
     PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
-    
 }

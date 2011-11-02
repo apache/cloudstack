@@ -2176,7 +2176,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // 2) If Availability=Optional, search for default networks for the account. If it's more than 1, throw an error.
             // If it's 0, and there are no default direct networks, create default Guest Virtual network
 
-            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeAndType(false, TrafficType.Guest, Network.GuestType.Isolated);
+            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeGuestTypeAndState(NetworkOffering.State.Enabled, TrafficType.Guest, Network.GuestType.Isolated);
             PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
             if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
                 // get Virtual netowrks
