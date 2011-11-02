@@ -2111,7 +2111,7 @@ public class ManagementServerImpl implements ManagementServer {
                     if (userAccount != null) {
                         accountId = userAccount.getId();
                     } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                        throw new InvalidParameterValueException("DomainId is not specified. Unable to find account " + accountName + " in default root domain " + domainId);
                     }
                 }
             }
