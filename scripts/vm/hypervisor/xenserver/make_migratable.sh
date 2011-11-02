@@ -18,6 +18,8 @@ fake(){
                  /local/domain/${domid}/data/updated 1
 }
 
+VERSION_RE="\([[:digit:]]\{1,3\}\.\)\{2\}[[:digit:]]\{1,3\}"
+
 uuid=$(xe vm-list uuid=$1 params=uuid --minimal)
 if [ $? -ne 0 ]; then
   echo "Argument should be a VM uuid"
@@ -25,12 +27,21 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# use the PRODUCT_VERSION from here:
+# use the INSTALLATION_UUID from here:
 . /etc/xensource-inventory
 
-major=$(echo ${PRODUCT_VERSION} | cut -f 1 -d .)
-minor=$(echo ${PRODUCT_VERSION} | cut -f 2 -d .)
-micro=$(echo ${PRODUCT_VERSION} | cut -f 3 -d .)
+product_version=$(xe host-list params=software-version uuid="$INSTALLATION_UUID" | \
+        sed -n -e 's/product_version: \('${VERSION_RE}'\).*/\1/' \
+               -e 's/^.*\('${VERSION_RE}'\)/\1/p')
+
+if [ $? -ne 0 ]; then
+  echo "Failed to get product version"
+  exit 1
+fi
+
+major=$(echo $product_version | cut -f 1 -d .)
+minor=$(echo $product_version | cut -f 2 -d .)
+micro=$(echo $product_version | cut -f 3 -d .)
 
 # Check the VM is running on this host
 resident_on=$(xe vm-list uuid=${uuid} params=resident-on --minimal)
