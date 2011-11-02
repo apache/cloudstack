@@ -2106,6 +2106,14 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             } else {
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
             }
         } else {
             accountId = account.getId();
