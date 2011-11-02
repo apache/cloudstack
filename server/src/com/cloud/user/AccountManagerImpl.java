@@ -353,8 +353,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public boolean resourceLimitExceeded(Account account, ResourceType type, long... count) {
         long numResources = ((count.length == 0) ? 1 : count[0]);
 
-        // Don't place any limits on system or admin accounts
-        if (isAdmin(account.getType())) {
+        // Don't place any limits on system or admin accounts for ROOT domain only
+        if (isAdmin(account.getType()) && account.getDomainId() == 1) {
             return false;
         }
         
