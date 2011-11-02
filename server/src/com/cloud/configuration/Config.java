@@ -194,7 +194,8 @@ public enum Config {
 	CapacitySkipcountingHours("Advanced", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "3600", "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state", null),
 	VmStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.stats.interval", "60000", "The interval (in milliseconds) when vm stats are retrieved from agents.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Time (in seconds) to wait before taking over a VM in transition state", null),
-	
+	VmDestroyForcestop("Advanced", ManagementServer.class, Boolean.class, "vm.destory.forcestop", "false", "On destory, force-stop takes this value ", null),
+    
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),
 	ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
 	UseUserConcentratedPodAllocation("Advanced", ManagementServer.class, Boolean.class, "use.user.concentrated.pod.allocation", "true", "If true, deployment planner applies the user concentration heuristic during VM resource allocation", "true,false"),	

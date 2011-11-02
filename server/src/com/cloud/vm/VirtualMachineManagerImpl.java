@@ -215,6 +215,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected StoragePoolDao _storagePoolDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected ConfigurationDao _configDao;
 
     @Inject(adapter = DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -1138,8 +1140,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             return true;
         }
-
-        if (!advanceStop(vm, false, user, caller)) {
+        boolean forceStop = Boolean.parseBoolean(_configDao.getValue("vm.destory.forcestop"));   
+        if (!advanceStop(vm, forceStop, user, caller)) {
             s_logger.debug("Unable to stop " + vm);
             return false;
         }
