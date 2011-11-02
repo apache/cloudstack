@@ -971,6 +971,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
             Status status = h.getStatus();
             if (!status.equals(Status.Up) && !status.equals(Status.Connecting)) {
+                s_logger.debug("Can not send command " + cmd + " due to Host " + hostId + " is not up");
                 return null;
             }
             final Answer answer = send(hostId, cmd);
