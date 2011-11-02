@@ -380,12 +380,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Account caller = UserContext.current().getCaller();
         Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
+        _vmDao.loadDetails(userVm);
 
         // Do parameters input validation
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + cmd.getId());
         }
-
+        
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
         if (template == null || !template.getEnablePassword()) {
             throw new InvalidParameterValueException("Fail to reset password for the virtual machine, the template is not password enabled");
@@ -402,6 +403,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (result) {
             userVm.setPassword(password);
+            //update the password in vm_details table too 
+            // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
+            String sshPublicKey = userVm.getDetail("SSH.PublicKey");
+            if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
+                String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+                if (encryptedPasswd == null) {
+                    throw new CloudRuntimeException("Error encrypting password");
+                }
+
+                userVm.setDetail("Encrypted.Password", encryptedPasswd);
+                _vmDao.saveDetails(userVm);
+            }
         }
 
         return userVm;
