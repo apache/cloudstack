@@ -1682,21 +1682,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
         }
 
-        // allow isDefault/isShared to be set only for Direct network
-        if (networkOffering.getGuestType() == GuestIpType.Virtual) {
-            if (isDefault != null && !isDefault) {
-                throw new InvalidParameterValueException("Can specify isDefault parameter only for Direct network.");
-            } else {
-                isDefault = true;
-            }
-            if (isShared != null && isShared) {
-                throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
-            }
-        } else {
-            if (isDefault == null) {
-                isDefault = false;
-            }
+        if (isDefault == null) {
+            isDefault = false;
         }
+        
+		// allow isDefault/isShared to be set only for Direct network
+		if (networkOffering.getGuestType() == GuestIpType.Virtual && isShared != null && isShared) {
+			throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
+		}
 
         // if network is shared, defult its owner to be system
         if (isShared) {
