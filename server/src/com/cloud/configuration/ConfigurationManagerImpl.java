@@ -2866,6 +2866,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         if (cmd.getSourceNatService()) {
+            if (guestType == GuestType.Shared) {
+                throw new InvalidParameterValueException("Source nat service is is not supported for network offerings with guest ip type " + GuestType.Shared);
+            }
             serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);
         }
 
@@ -3176,6 +3179,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         if (cmd.getSourceNatService()) {
+            if (offering.getGuestType() == GuestType.Shared) {
+                throw new InvalidParameterValueException("Source nat service is is not supported for network offerings with guest ip type " + GuestType.Shared);
+            }
             serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);
         }
 
