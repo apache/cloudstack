@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.IPAddressResponse;
@@ -48,27 +49,32 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ALLOCATED_ONLY, type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
     
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all public IP addresses by domain ID. If used with the account parameter, lists all public IP addresses by account for specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
     
+    @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists ip address by id")
     private Long id;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="lists the specified IP address")
     private String ipAddress;
 
+    @IdentityMapper(entityTableName="vlan")
     @Parameter(name=ApiConstants.VLAN_ID, type=CommandType.LONG, description="lists all public IP addresses by VLAN ID")
     private Long vlanId;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists all public IP addresses by Zone ID")
     private Long zoneId;
     
     @Parameter(name=ApiConstants.FOR_LOAD_BALANCING, type=CommandType.BOOLEAN, description="list only ips used for load balancing")
     private Boolean forLoadBalancing;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list ips by project")
     private Long projectId;
 

@@ -18,33 +18,34 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class GuestOSResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS type")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("guest_os");
 
     @SerializedName(ApiConstants.OS_CATEGORY_ID) @Param(description="the ID of the OS category")
-    private Long osCategoryId;
+    private IdentityProxy osCategoryId = new IdentityProxy("guest_os_category");
 
     @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the name/description of the OS type")
     private String description;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public Long getOsCategoryId() {
-        return osCategoryId;
+        return osCategoryId.getValue();
     }
 
     public void setOsCategoryId(Long osCategoryId) {
-        this.osCategoryId = osCategoryId;
+        this.osCategoryId.setValue(osCategoryId);
     }
 
     public String getDescription() {

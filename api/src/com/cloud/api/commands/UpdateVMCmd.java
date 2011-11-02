@@ -52,6 +52,7 @@ public class UpdateVMCmd extends BaseCmd{
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
     
+    @IdentityMapper(entityTableName="guest_os")
     @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, description="the ID of the OS type that best represents this VM.")
     private Long osTypeId;
     

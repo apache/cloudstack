@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.HostResponse;
@@ -43,15 +44,18 @@ public class ListHostsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="cluster")
     @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="lists hosts existing in particular cluster")
     private Long clusterId;
 
+    @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the host")
     private Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the host")
     private String hostName;
 
+    @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the host")
     private Long podId;
 
@@ -61,9 +65,11 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the host type")
     private String type;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the host")
     private Long zoneId;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
     

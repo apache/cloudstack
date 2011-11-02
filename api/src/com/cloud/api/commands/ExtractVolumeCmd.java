@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -47,6 +48,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     //FIXME - add description
+    @IdentityMapper(entityTableName="volumes")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the volume")
     private Long id;
 
@@ -55,6 +57,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     private String url;
 
     //FIXME - add description
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone where the volume is located")
     private Long zoneId;
     
@@ -133,6 +136,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 ExtractResponse response = new ExtractResponse();
                 response.setResponseName(getCommandName());
                 response.setObjectName("volume");
+                response.setIdentityTableName("volumes");
                 response.setId(id);
                 response.setName(_entityMgr.findById(Volume.class, id).getName());        
                 response.setZoneId(zoneId);

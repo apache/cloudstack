@@ -20,13 +20,14 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class IPAddressResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="public IP address id")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("user_ip_address");
     
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="public IP address")
     private String ipAddress;
@@ -35,7 +36,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Date allocated;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone the public IP address belongs to")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the name of the zone the public IP address belongs to")
     private String zoneName;
@@ -47,13 +48,13 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID the public IP address is associated with")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the public IP address is associated with")
     private String domainName;
@@ -62,7 +63,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address")
-    private Long vlanId;
+    private IdentityProxy vlanId = new IdentityProxy("vlan");
 
     @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
     private String vlanName;
@@ -71,7 +72,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private Boolean staticNat;
     
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
-    private Long virtualMachineId;
+    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
     
     @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineName;
@@ -80,16 +81,16 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String virtualMachineDisplayName;
     
     @SerializedName("associatednetworkid") @Param(description="the ID of the Network associated with the IP address")
-    private Long associatedNetworkId;
+    private IdentityProxy associatedNetworkId = new IdentityProxy("networks");
     
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
-    private Long networkId;
+    private IdentityProxy networkId = new IdentityProxy("networks");
     
     @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
     
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
@@ -103,7 +104,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     }
     
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setZoneName(String zoneName) {
@@ -121,7 +122,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
     
     @Override
@@ -134,7 +135,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     }
 
     public void setVlanId(Long vlanId) {
-        this.vlanId = vlanId;
+        this.vlanId.setValue(vlanId);
     }
 
     public void setVlanName(String vlanName) {
@@ -146,15 +147,15 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 	}
 
     public void setAssociatedNetworkId(Long networkId) {
-        this.associatedNetworkId = networkId;
+        this.associatedNetworkId.setValue(networkId);
     }
 
     public void setNetworkId(Long networkId) {
-        this.networkId = networkId;
+        this.networkId.setValue(networkId);
     }
 
     public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId = virtualMachineId;
+        this.virtualMachineId.setValue(virtualMachineId);
     }
 
     public void setVirtualMachineName(String virtualMachineName) {
@@ -166,11 +167,11 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setState(String state) {
@@ -184,12 +185,12 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @Override
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
     
     @Override
@@ -204,7 +205,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

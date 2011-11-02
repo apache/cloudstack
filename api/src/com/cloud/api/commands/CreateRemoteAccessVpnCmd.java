@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -44,6 +45,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
     private Long publicIpId;
 
@@ -55,6 +57,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     private String accountName;
 
     @Deprecated
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
     private Long domainId;
     

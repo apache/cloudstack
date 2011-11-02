@@ -3,6 +3,7 @@ package com.cloud.api.commands;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -21,9 +22,11 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="volumes")
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the volume")
     private Long volumeId;
 
+    @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="destination storage pool ID to migrate the volume to")
     private Long storageId;
     

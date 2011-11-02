@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.CommandType;
@@ -44,24 +45,30 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account with which the VLAN IP range is associated. Must be used with the domainId parameter.")
     private String accountName;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="project who will own the VLAN")
     private Long projectId;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID with which the VLAN IP range is associated.  If used with the account parameter, returns all VLAN IP ranges for that account in the specified domain.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="vlan")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=false, description="the ID of the VLAN IP range")
     private Long id;
 
+    @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the VLAN IP range")
     private Long podId;
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
     private String vlan;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="network id of the VLAN IP range")
     private Long networkId;
     

@@ -18,19 +18,20 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class VlanIpRangeResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the VLAN IP range")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("vlan");
 
     @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the VLAN IP range")
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the VLAN IP range")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
     private String vlan;
@@ -39,13 +40,13 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the VLAN IP range")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the VLAN IP range")
     private String domainName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID for the VLAN IP range")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName("podname") @Param(description="the Pod name for the VLAN IP range")
     private String podName;
@@ -66,16 +67,16 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String endIp;
     
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of vlan range")
-    private Long networkId;
+    private IdentityProxy networkId = new IdentityProxy("networks");
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vlan range")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vlan range")
     private String projectName;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
@@ -83,7 +84,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
     
     public void setVlan(String vlan) {
@@ -95,7 +96,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domainName) {
@@ -103,7 +104,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public void setPodName(String podName) {
@@ -131,12 +132,12 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setNetworkId(Long networkId) {
-        this.networkId = networkId;
+        this.networkId.setValue(networkId);
     }
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

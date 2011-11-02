@@ -1,22 +1,23 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ProjectInvitationResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the invitation")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("project_invitations");
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the id of the project")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the name of the project")
     private String projectName;
     
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
     private String domainName;
@@ -31,11 +32,11 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     private String invitationState;
     
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     public void setProjectName(String projectName) {
@@ -43,7 +44,7 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domain) {

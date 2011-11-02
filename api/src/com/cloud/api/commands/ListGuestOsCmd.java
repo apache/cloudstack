@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.GuestOSResponse;
@@ -41,9 +42,11 @@ public class ListGuestOsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="guest_os")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list by Os type Id")
     private Long id;
 
+    @IdentityMapper(entityTableName="guest_os_category")
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="list by Os Category id")
     private Long osCategoryId;
 

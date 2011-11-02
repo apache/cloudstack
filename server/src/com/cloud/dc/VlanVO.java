@@ -18,6 +18,8 @@
 
 package com.cloud.dc;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,9 +29,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
+
 @Entity
 @Table(name="vlan")
-public class VlanVO implements Vlan {
+public class VlanVO implements Vlan, Identity {
 	    
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -57,6 +61,9 @@ public class VlanVO implements Vlan {
 	@Column(name="vlan_type")
 	@Enumerated(EnumType.STRING) 
 	VlanType vlanType;
+
+    @Column(name="uuid")
+    String uuid;
 	
 	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId) {
 		this.vlanType = vlanType;
@@ -66,10 +73,11 @@ public class VlanVO implements Vlan {
 		this.dataCenterId = dataCenterId;
 		this.ipRange = ipRange;
 		this.networkId = networkId;
+		this.uuid = UUID.randomUUID().toString();
 	}
 	
 	public VlanVO() {
-		
+		this.uuid = UUID.randomUUID().toString();
 	}
 	
 	public long getId() {
@@ -106,5 +114,14 @@ public class VlanVO implements Vlan {
 
     public void setNetworkId(Long networkId) {
         this.networkId = networkId;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

@@ -18,12 +18,13 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class FirewallRuleResponse extends BaseResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("firewall_rules");
 
     @SerializedName(ApiConstants.PRIVATE_START_PORT) @Param(description = "the starting port of port forwarding rule's private port range")
     private String privateStartPort;
@@ -41,7 +42,7 @@ public class FirewallRuleResponse extends BaseResponse{
     private String publicEndPort;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
-    private Long virtualMachineId;
+    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
 
     @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
     private String virtualMachineName;
@@ -50,7 +51,7 @@ public class FirewallRuleResponse extends BaseResponse{
     private String virtualMachineDisplayName;
     
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
-    private Long publicIpAddressId;
+    private IdentityProxy publicIpAddressId = new IdentityProxy("user_ip_address");
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
@@ -64,11 +65,11 @@ public class FirewallRuleResponse extends BaseResponse{
     
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getPrivateStartPort() {
@@ -112,11 +113,11 @@ public class FirewallRuleResponse extends BaseResponse{
     }
 
     public Long getVirtualMachineId() {
-        return virtualMachineId;
+        return virtualMachineId.getValue();
     }
 
     public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId = virtualMachineId;
+        this.virtualMachineId.setValue(virtualMachineId);
     }
 
     public String getVirtualMachineName() {
@@ -152,11 +153,11 @@ public class FirewallRuleResponse extends BaseResponse{
     }
 
     public Long getPublicIpAddressId() {
-        return publicIpAddressId;
+        return publicIpAddressId.getValue();
     }
 
     public void setPublicIpAddressId(Long publicIpAddressId) {
-        this.publicIpAddressId = publicIpAddressId;
+        this.publicIpAddressId.setValue(publicIpAddressId);
     }
     
     public String getCidrList() {

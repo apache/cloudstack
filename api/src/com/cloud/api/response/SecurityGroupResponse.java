@@ -20,13 +20,14 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class SecurityGroupResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the security group")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("security_group");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the security group")
     private String name;
@@ -38,19 +39,19 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the security group")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the security group")
     private String domainName;
     
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
@@ -62,11 +63,11 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     private List<EgressRuleResponse> egressRules;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setName(String name) {
@@ -82,7 +83,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domainName) {
@@ -104,12 +105,12 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     
     @Override
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
     
     @Override
@@ -149,7 +150,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

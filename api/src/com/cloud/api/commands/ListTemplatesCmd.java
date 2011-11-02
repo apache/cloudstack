@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -49,12 +50,14 @@ public class ListTemplatesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list template by account. Must be used with the domainId parameter.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all templates in specified domain. If used with the account parameter, lists all templates for an account in the specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
+    @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the template ID")
     private Long id;
 
@@ -68,9 +71,11 @@ public class ListTemplatesCmd extends BaseListCmd {
     																					"* executable-all templates that can be used to deploy a new VM* community-templates that are public.")
     private String templateFilter;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list templates by zoneId")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list templates by project")
     private Long projectId;
 

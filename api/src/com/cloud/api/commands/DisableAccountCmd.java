@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -44,6 +45,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Disables specified account.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Disables specified account in this domain.")
     private Long domainId;
 

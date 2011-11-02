@@ -48,6 +48,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, required=true, description="destination Host ID to migrate VM to")
     private Long hostId;
 

@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -35,6 +36,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -48,7 +50,7 @@ import com.cloud.utils.net.NetUtils;
  */
 @Entity
 @Table(name="networks")
-public class NetworkVO implements Network {
+public class NetworkVO implements Network, Identity {
     @Id
     @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")
@@ -150,8 +152,12 @@ public class NetworkVO implements Network {
     @Column(name="tag")
     @CollectionTable(name="network_tags", joinColumns=@JoinColumn(name="network_id"))
     List<String> tags;
+    
+    @Column(name="uuid")
+    String uuid;
 
     public NetworkVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -176,6 +182,7 @@ public class NetworkVO implements Network {
         }
         this.id = -1;
         this.guestType = guestType;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain) {
@@ -190,6 +197,7 @@ public class NetworkVO implements Network {
         if (state == null) {
             state = State.Allocated;
         }
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -220,6 +228,7 @@ public class NetworkVO implements Network {
         this.isDefault = isDefault;
         this.isDomainSpecific = isDomainSpecific;
         this.networkDomain = networkDomain;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -482,5 +491,14 @@ public class NetworkVO implements Network {
         StringBuilder buf = new StringBuilder("Ntwk[");
         buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

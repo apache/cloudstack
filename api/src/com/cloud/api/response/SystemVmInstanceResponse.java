@@ -17,6 +17,7 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -25,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
  */
 public class SystemVmInstanceResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the system VM")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("vm_instance");
 
     @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
@@ -34,7 +35,7 @@ public class SystemVmInstanceResponse extends BaseResponse {
     private String name;
 
     @SerializedName("hostid") @Param(description="the host ID for the system VM")
-    private Long hostId;
+    private IdentityProxy hostId = new IdentityProxy("host");
 
     @SerializedName("state") @Param(description="the state of the system VM")
     private String state;
@@ -48,11 +49,11 @@ public class SystemVmInstanceResponse extends BaseResponse {
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getSystemVmType() {
@@ -72,11 +73,11 @@ public class SystemVmInstanceResponse extends BaseResponse {
     }
 
     public Long getHostId() {
-        return hostId;
+        return hostId.getValue();
     }
 
     public void setHostId(Long hostId) {
-        this.hostId = hostId;
+        this.hostId.setValue(hostId);
     }
 
     public String getState() {

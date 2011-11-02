@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainRouterResponse;
@@ -45,30 +46,37 @@ public class ListRoutersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the name of the account associated with the router. Must be used with the domainId parameter.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the router. If used with the account parameter, lists all routers associated with an account in the specified domain.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the router")
     private Long hostId;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk router")
     private Long id;
     
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the router")
     private String routerName;
 
+    @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the router")
     private Long podId;
 
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="the state of the router")
     private String state;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the router")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list firewall rules by project")
     private Long projectId;
 

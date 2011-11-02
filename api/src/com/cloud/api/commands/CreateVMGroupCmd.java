@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -44,9 +45,11 @@ public class CreateVMGroupCmd extends BaseCmd{
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the instance group")
     private Long domainId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="The project of the instance group")
     private Long projectId;
 

@@ -19,6 +19,7 @@
 package com.cloud.dc;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,13 +30,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "host_pod_ref")
-public class HostPodVO implements Pod {
+public class HostPodVO implements Pod, Identity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	long id;
@@ -68,6 +70,8 @@ public class HostPodVO implements Pod {
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+	@Column(name = "uuid")
+	private String uuid;
 
 	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
 		this.name = name;
@@ -78,12 +82,14 @@ public class HostPodVO implements Pod {
 		this.description = description;
 		this.allocationState = Grouping.AllocationState.Enabled;
 		this.externalDhcp = false;
+		this.uuid = UUID.randomUUID().toString();
 	}
 
 	/*
 	 * public HostPodVO(String name, long dcId) { this(null, name, dcId); }
 	 */
 	protected HostPodVO() {
+		this.uuid = UUID.randomUUID().toString();
 	}
 
 	@Override
@@ -179,5 +185,14 @@ public class HostPodVO implements Pod {
 	
     public Date getRemoved() {
         return removed;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

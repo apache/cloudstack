@@ -20,6 +20,7 @@ package com.cloud.dc;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,6 +33,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
@@ -39,7 +41,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="data_center")
-public class DataCenterVO implements DataCenter {
+public class DataCenterVO implements DataCenter, Identity {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -126,6 +128,9 @@ public class DataCenterVO implements DataCenter {
     @Column(name="allocation_state")
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
+
+	@Column(name="uuid")
+	private String uuid;    
     
     @Override
     public String getDnsProvider() {
@@ -176,6 +181,7 @@ public class DataCenterVO implements DataCenter {
         this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false, zoneToken, domainSuffix);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
+        this.uuid = UUID.randomUUID().toString();
 	}
 
     public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled, String zoneToken, String domainSuffix) {
@@ -210,6 +216,7 @@ public class DataCenterVO implements DataCenter {
 
         this.zoneToken = zoneToken;
         this.domain = domainSuffix;
+        this.uuid = UUID.randomUUID().toString();
     }
     
     @Override
@@ -407,5 +414,14 @@ public class DataCenterVO implements DataCenter {
  	
  	public Date getRemoved() {
  	    return removed;
+ 	}
+ 	
+ 	@Override
+ 	public String getUuid() {
+ 		return this.uuid;
+ 	}
+ 	
+ 	public void setUuid(String uuid) {
+ 		this.uuid = uuid;
  	}
 }

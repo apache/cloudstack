@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -65,6 +66,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
     private String tags;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
     private Long domainId; 
     

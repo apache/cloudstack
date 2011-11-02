@@ -20,29 +20,30 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class TemplatePermissionsResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the template ID")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("vm_template");
 
     @SerializedName(ApiConstants.IS_PUBLIC) @Param(description="true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the list of accounts the template is available for")
     private List<String> accountNames;
     
     @SerializedName(ApiConstants.PROJECT_IDS) @Param(description="the list of projects the template is available for")
-    private List<Long> projectIds;
+    private List<String> projectIds;
     
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setPublicTemplate(Boolean publicTemplate) {
@@ -50,14 +51,14 @@ public class TemplatePermissionsResponse extends BaseResponse {
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setAccountNames(List<String> accountNames) {
         this.accountNames = accountNames;
     }
 
-    public void setProjectIds(List<Long> projectIds) {
+    public void setProjectIds(List<String> projectIds) {
         this.projectIds = projectIds;
     }
 }

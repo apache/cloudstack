@@ -18,6 +18,8 @@
 
 package com.cloud.storage;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,12 +27,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.DateUtil.IntervalType;
 
 @Entity
 @Table(name="snapshot_policy")
-public class SnapshotPolicyVO implements SnapshotPolicy {
+public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
 	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -54,8 +57,13 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     
     @Column(name="active")
     boolean active = false;
+
+    @Column(name="uuid")
+    String uuid;
     
-    public SnapshotPolicyVO() { }
+    public SnapshotPolicyVO() { 
+    	this.uuid = UUID.randomUUID().toString();
+    }
 
     public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps) {
     	this.volumeId = volumeId;
@@ -64,6 +72,7 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
         this.interval = (short)intvType.ordinal();
         this.maxSnaps = maxSnaps;
         this.active = true;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public long getId() {
@@ -112,5 +121,14 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

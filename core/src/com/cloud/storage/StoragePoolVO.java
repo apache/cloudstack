@@ -18,6 +18,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,6 +31,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
@@ -39,7 +41,7 @@ import com.cloud.utils.db.GenericDao;
  */
 @Entity
 @Table(name="storage_pool")
-public class StoragePoolVO implements StoragePool {
+public class StoragePoolVO implements StoragePool, Identity {
     @Id
     @TableGenerator(name="storage_pool_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="storage_pool_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)
@@ -104,7 +106,7 @@ public class StoragePoolVO implements StoragePool {
     public String getUuid() {
 		return uuid;
 	}
-
+	
 	@Override
     public StoragePoolType getPoolType() {
 		return poolType;
@@ -205,6 +207,7 @@ public class StoragePoolVO implements StoragePool {
         this.port = port;
         this.path = path;
         this.setStatus(StoragePoolStatus.Up);
+        this.uuid = UUID.randomUUID().toString();
     }
     
     public void setStatus(StoragePoolStatus status)

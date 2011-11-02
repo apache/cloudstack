@@ -20,22 +20,23 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 
 public class StoragePoolResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the storage pool")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("storage_pool");
 
     @SerializedName("zoneid") @Param(description="the Zone ID of the storage pool")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name of the storage pool")
     private String zoneName;
 
     @SerializedName("podid") @Param(description="the Pod ID of the storage pool")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName("podname") @Param(description="the Pod name of the storage pool")
     private String podName;
@@ -56,7 +57,7 @@ public class StoragePoolResponse extends BaseResponse {
     private String type;
 
     @SerializedName("clusterid") @Param(description="the ID of the cluster for the storage pool")
-    private Long clusterId;
+    private IdentityProxy clusterId = new IdentityProxy("cluster");
 
     @SerializedName("clustername") @Param(description="the name of the cluster for the storage pool")
     private String clusterName;
@@ -77,7 +78,7 @@ public class StoragePoolResponse extends BaseResponse {
     private StoragePoolStatus state;
     
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the storage pool")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
@@ -89,12 +90,12 @@ public class StoragePoolResponse extends BaseResponse {
     
     @Override
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
     
     @Override
@@ -108,19 +109,19 @@ public class StoragePoolResponse extends BaseResponse {
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {
@@ -132,11 +133,11 @@ public class StoragePoolResponse extends BaseResponse {
     }
 
     public Long getPodId() {
-        return podId;
+        return podId.getValue();
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public String getPodName() {
@@ -188,11 +189,11 @@ public class StoragePoolResponse extends BaseResponse {
     }
 
     public Long getClusterId() {
-        return clusterId;
+        return clusterId.getValue();
     }
 
     public void setClusterId(Long clusterId) {
-        this.clusterId = clusterId;
+        this.clusterId.setValue(clusterId);
     }
 
     public String getClusterName() {

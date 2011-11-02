@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -51,6 +52,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required = true, description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 

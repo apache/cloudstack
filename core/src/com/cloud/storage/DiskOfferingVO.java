@@ -20,6 +20,7 @@ package com.cloud.storage;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -35,6 +36,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.offering.DiskOffering;
 import com.cloud.utils.db.GenericDao;
 
@@ -42,7 +44,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="disk_offering")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class DiskOfferingVO implements DiskOffering {
+public class DiskOfferingVO implements DiskOffering, Identity {
     public enum Type {
         Disk,
         Service
@@ -92,8 +94,12 @@ public class DiskOfferingVO implements DiskOffering {
     
     @Column(name="customized")
     private boolean customized;
+
+    @Column(name="uuid")
+    private String uuid;
     
     public DiskOfferingVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized) {
@@ -106,6 +112,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.type = Type.Disk;
         this.useLocalStorage = false;
         this.customized = isCustomized;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse, boolean customized) {
@@ -118,6 +125,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = useLocalStorage;
         this.systemUse = systemUse;
         this.customized = customized;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     //domain specific offerings constructor (null domainId implies public offering)
@@ -131,6 +139,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.systemUse = systemUse;
         this.customized = customized;
         this.domainId = domainId;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -282,5 +291,14 @@ public class DiskOfferingVO implements DiskOffering {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

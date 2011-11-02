@@ -20,6 +20,7 @@
 package com.cloud.server.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.api.response.BaseResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -27,10 +28,10 @@ import com.google.gson.annotations.SerializedName;
 public class ExternalFirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the external firewall")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("host");
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID of the external firewall")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
     
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external firewall")
     private String ipAddress;
@@ -60,19 +61,19 @@ public class ExternalFirewallResponse extends BaseResponse {
     private String timeout;
     
     public Long getId() {
-    	return id;
+    	return id.getValue();
     }
     
     public void setId(Long id) {
-    	this.id = id;
+    	this.id.setValue(id);
     }
     
     public Long getZoneId() {
-    	return zoneId;
+    	return zoneId.getValue();
     }
     
     public void setZoneId(Long zoneId) {
-    	this.zoneId = zoneId;
+    	this.zoneId.setValue(zoneId);
     }
     
     public String getIpAddress() {

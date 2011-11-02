@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -52,12 +53,14 @@ public class ListIsosCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available ISO files by ID of a domain. If used with the account parameter, lists all available ISO files for the account in the ID of a domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
     private String hypervisor;
 
+    @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list all isos by id")
     private Long id;
 
@@ -77,9 +80,11 @@ public class ListIsosCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list all isos by name")
     private String isoName;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the zone")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list isos by project")
     private Long projectId;
 

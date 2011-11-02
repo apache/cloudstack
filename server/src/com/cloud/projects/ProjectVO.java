@@ -18,6 +18,7 @@
 package com.cloud.projects;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,11 +29,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="projects")
-public class ProjectVO implements Project{
+public class ProjectVO implements Project, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -60,7 +62,11 @@ public class ProjectVO implements Project{
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
     
+    @Column(name="uuid")
+    private String uuid;
+    
     protected ProjectVO(){
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public ProjectVO(String name, String displayText, long domainId, long projectAccountId) {
@@ -69,6 +75,7 @@ public class ProjectVO implements Project{
         this.projectAccountId = projectAccountId;
         this.domainId = domainId;
         this.state = State.Disabled;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     @Override
@@ -143,6 +150,15 @@ public class ProjectVO implements Project{
     @Override
     public void setState(State state) {
         this.state = state;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid; 
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
     
 }

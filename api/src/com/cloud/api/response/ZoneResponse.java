@@ -20,12 +20,13 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="Zone id")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("data_center");
 
     @SerializedName(ApiConstants.NAME) @Param(description="Zone name")
     private String name;
@@ -83,11 +84,11 @@ public class ZoneResponse extends BaseResponse {
     private List<CapacityResponse> capacitites;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {

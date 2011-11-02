@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Parameter;
 import com.cloud.exception.InvalidParameterValueException;
 
@@ -38,6 +39,7 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "a comma delimited list of accounts. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
+    @IdentityMapper(entityTableName="vm_template")
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the template ID")
     private Long id;
 
@@ -53,6 +55,7 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name = ApiConstants.PROJECT_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
     private List<Long> projectIds;
 

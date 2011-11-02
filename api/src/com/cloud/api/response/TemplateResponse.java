@@ -20,6 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.google.gson.annotations.SerializedName;
@@ -27,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class TemplateResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the template ID")
-    private long id;
+    private IdentityProxy id = new IdentityProxy("vm_template");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the template name")
     private String name;
@@ -65,19 +66,19 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private boolean crossZones;
 
     @SerializedName(ApiConstants.OS_TYPE_ID) @Param(description="the ID of the OS type for this template.")
-    private Long osTypeId;
+    private IdentityProxy osTypeId = new IdentityProxy("guest_os");
 
     @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
     private String osTypeName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the account id to which the template belongs")
-    private Long accountId;
+    private IdentityProxy accountId = new IdentityProxy("account");
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name to which the template belongs")
     private String account;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone for this template")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the name of the zone for this template")
     private String zoneName;
@@ -95,7 +96,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String hypervisor;
 
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the template")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
@@ -104,7 +105,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String domainName;  
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.IS_EXTRACTABLE) @Param(description="true if the template is extractable, false otherwise")
     private Boolean extractable;
@@ -113,10 +114,10 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String checksum;
 
     @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
-    private Long sourcetemplateId;    
+    private IdentityProxy sourcetemplateId = new IdentityProxy("vm_template");    
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the secondary storage host for the template")
-    private Long hostId;
+    private IdentityProxy hostId = new IdentityProxy("host");
 
     @SerializedName("hostname") @Param(description="the name of the secondary storage host for the template")
     private String hostName;
@@ -125,7 +126,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     private String templateTag;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the template")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the template")
     private String projectName;
@@ -136,11 +137,11 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setZoneName(String zoneName) {
@@ -148,7 +149,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+        this.accountId.setValue(accountId);
     }
 
     public void setAccountName(String account) {
@@ -156,7 +157,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public void setOsTypeId(Long osTypeId) {
-        this.osTypeId = osTypeId;
+        this.osTypeId.setValue(osTypeId);
     }
 
     public void setOsTypeName(String osTypeName) {
@@ -164,7 +165,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public void setId(long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setName(String name) {
@@ -228,11 +229,11 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
 
     public Integer getJobStatus() {
@@ -250,7 +251,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setExtractable(Boolean extractable) {
@@ -262,11 +263,11 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public void setSourceTemplateId(Long sourcetemplateId) {
-        this.sourcetemplateId = sourcetemplateId;
+        this.sourcetemplateId.setValue(sourcetemplateId);
     }    
 
     public void setHostId(Long hostId) {
-        this.hostId = hostId;
+        this.hostId.setValue(hostId);
     }
 
     public void setHostName(String hostName) {
@@ -279,7 +280,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

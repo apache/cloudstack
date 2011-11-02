@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.CommandType;
@@ -43,6 +44,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="cluster")
     @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="list storage pools belongig to the specific cluster")
     private Long clusterId;
 
@@ -55,12 +57,15 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="the storage pool path")
     private String path;
 
+    @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID for the storage pool")
     private Long podId;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the storage pool")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the storage pool")
     private Long id;
 

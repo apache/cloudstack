@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -47,6 +48,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.SHORT, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Short accountType;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain.")
     private Long domainId;
 

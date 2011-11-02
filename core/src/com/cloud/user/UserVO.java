@@ -20,6 +20,7 @@ package com.cloud.user;
 
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,6 +31,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.GenericDao;
 
@@ -41,7 +43,7 @@ import com.cloud.utils.db.GenericDao;
  */
 @Entity
 @Table(name = "user")
-public class UserVO implements User {
+public class UserVO implements User, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -89,12 +91,17 @@ public class UserVO implements User {
     
     @Column(name="is_registered")
     boolean registered;
+    
+    @Column(name="uuid")
+    private String uuid;
 
     public UserVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public UserVO(long id) {
         this.id = id;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone) {
@@ -106,6 +113,7 @@ public class UserVO implements User {
         this.email = email;
         this.timezone = timezone;
         this.state = State.enabled;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -245,5 +253,14 @@ public class UserVO implements User {
     @Override
     public String toString() {
         return new StringBuilder("User[").append(id).append("-").append(username).append("]").toString();
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -47,12 +48,15 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account of the snapshot. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="volumes")
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, required = true, description = "The ID of the disk volume")
     private Long volumeId;
 
+    @IdentityMapper(entityTableName="snapshot_policy")
     @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
 

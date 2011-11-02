@@ -42,6 +42,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the system VM")
     private Long hostId;
 
@@ -52,6 +53,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the system VM")
     private String systemVmName;
 
+    @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the Pod ID of the system VM")
     private Long podId;
 
@@ -61,6 +63,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the system VM")
     private Long zoneId;
 

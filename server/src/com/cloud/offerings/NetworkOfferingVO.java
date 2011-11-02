@@ -18,6 +18,7 @@
 package com.cloud.offerings;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
@@ -35,7 +37,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="network_offerings")
-public class NetworkOfferingVO implements NetworkOffering {
+public class NetworkOfferingVO implements NetworkOffering, Identity {
    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -119,6 +121,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="redundant_router")
     boolean redundantRouter;
 
+    @Column(name="uuid")
+    String uuid;
+    
     @Override
     public String getDisplayText() {
         return displayText;
@@ -362,6 +367,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.guestType = guestIpType;
         this.redundantRouter = isRedundantRouterEnabled;
         this.uniqueName = name;
+        this.uuid = UUID.randomUUID().toString();
     }
     
     /**
@@ -377,5 +383,14 @@ public class NetworkOfferingVO implements NetworkOffering {
     public String toString() {
         StringBuilder buf = new StringBuilder("[Network Offering [");
         return buf.append(id).append("-").append(trafficType).append("-").append(name).append("]").toString();
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

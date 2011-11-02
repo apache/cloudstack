@@ -20,13 +20,14 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class AlertResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the alert")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("alert");
 
     @SerializedName(ApiConstants.TYPE) @Param(description="the alert type")
     private Short alertType;
@@ -38,7 +39,7 @@ public class AlertResponse extends BaseResponse {
     private Date lastSent;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setAlertType(Short alertType) {

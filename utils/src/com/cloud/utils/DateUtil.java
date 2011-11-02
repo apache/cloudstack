@@ -228,8 +228,7 @@ public class DateUtil {
 
     	return scheduleTime.getTime();
     }
-
-	
+    
 	// test only
 	public static void main(String[] args) {
 		TimeZone localTimezone = Calendar.getInstance().getTimeZone();

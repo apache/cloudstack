@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -38,12 +39,14 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list by project id")
     private Long projectId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list invitations for specified account; this parameter has to be specified with domainId")
     private String accountName;
     
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list all invitations in specified domain")
     private Long domainId;
    
@@ -53,6 +56,7 @@ public class ListProjectInvitationsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list invitations by state")
     private String state;
     
+    @IdentityMapper(entityTableName="project_invitations")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list invitations by id")
     private Long id;
     /////////////////////////////////////////////////////

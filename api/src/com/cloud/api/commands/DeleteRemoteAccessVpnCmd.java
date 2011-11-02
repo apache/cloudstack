@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
@@ -38,10 +39,12 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
     private Long publicIpId;
     
     // unexposed parameter needed for events logging
+    @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
     private Long ownerId;
     /////////////////////////////////////////////////////

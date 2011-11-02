@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -43,6 +44,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
     
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
@@ -52,6 +54,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the security group")
     private String securityGroupName;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
     private Long projectId;
 

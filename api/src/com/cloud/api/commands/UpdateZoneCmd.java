@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -51,6 +52,7 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.GUEST_CIDR_ADDRESS, type=CommandType.STRING, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Zone")
     private Long id;
 

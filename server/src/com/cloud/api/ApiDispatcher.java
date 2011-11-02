@@ -290,7 +290,15 @@ public class ApiDispatcher {
                         listParam.add(Integer.valueOf(token));
                         break;
                     case LONG:
-                        listParam.add(Long.valueOf(token));
+                    	{
+                    		Long val = null;
+	                    	if(identityMapper != null)
+	                    		val = s_instance._identityDao.getIdentityId(identityMapper, token);
+	                    	else
+	                    		val = Long.valueOf(token);
+	                    	
+	                        listParam.add(val);
+                    	}
                         break;
                     case SHORT:
                         listParam.add(Short.valueOf(token));

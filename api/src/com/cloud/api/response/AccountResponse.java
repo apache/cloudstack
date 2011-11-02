@@ -20,12 +20,13 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("account");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the account")
     private String name;
@@ -34,7 +35,7 @@ public class AccountResponse extends BaseResponse {
     private Short accountType;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="id of the Domain the account belongs too")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
     private String domainName;
@@ -109,11 +110,11 @@ public class AccountResponse extends BaseResponse {
     private String networkDomain;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {
@@ -133,11 +134,11 @@ public class AccountResponse extends BaseResponse {
     }
 
     public Long getDomainId() {
-        return domainId;
+        return domainId.getValue();
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public String getDomainName() {

@@ -17,15 +17,16 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SnapshotPolicyResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the snapshot policy")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("snapshot_policy");
 
     @SerializedName("volumeid") @Param(description="the ID of the disk volume")
-    private Long volumeId;
+    private IdentityProxy volumeId = new IdentityProxy("volumes");
 
     @SerializedName("schedule") @Param(description="time the snapshot is scheduled to be taken.")
     private String schedule;
@@ -40,19 +41,19 @@ public class SnapshotPolicyResponse extends BaseResponse {
     private String timezone;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public Long getVolumeId() {
-        return volumeId;
+        return volumeId.getValue();
     }
 
     public void setVolumeId(Long volumeId) {
-        this.volumeId = volumeId;
+        this.volumeId.setValue(volumeId);
     }
 
     public String getSchedule() {

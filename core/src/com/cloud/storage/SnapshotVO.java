@@ -19,6 +19,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,13 +30,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name="snapshots")
-public class SnapshotVO implements Snapshot {
+public class SnapshotVO implements Snapshot, Identity {
 	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -105,7 +107,12 @@ public class SnapshotVO implements Snapshot {
     @Column(name="version")
     String version;
     
-    public SnapshotVO() { }
+    @Column(name="uuid")
+    String uuid;
+    
+    public SnapshotVO() {
+    	this.uuid = UUID.randomUUID().toString();
+    }
 
     public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType ) {
         this.dataCenterId = dcId;
@@ -122,8 +129,8 @@ public class SnapshotVO implements Snapshot {
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
+    	this.uuid = UUID.randomUUID().toString();
     }
-
     
     @Override
     public Long getId() {
@@ -275,5 +282,13 @@ public class SnapshotVO implements Snapshot {
         }
         return null;
     }
-
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

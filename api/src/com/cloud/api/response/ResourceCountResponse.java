@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -27,14 +28,14 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id for which resource count's are updated")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name for which resource count's are updated")
     private String projectName;
 
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID for which resource count's are updated")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name for which resource count's are updated")
     private String domainName;
@@ -52,7 +53,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     @Override
@@ -70,7 +71,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

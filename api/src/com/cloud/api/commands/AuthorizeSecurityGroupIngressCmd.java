@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -75,15 +76,18 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
     private Map userSecurityGroupList;
     
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
     
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="an optional project of the security group")
     private Long projectId;
     
+    @IdentityMapper(entityTableName="security_group")
     @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, description="The ID of the security group. Mutually exclusive with securityGroupName parameter")
     private Long securityGroupId;
     

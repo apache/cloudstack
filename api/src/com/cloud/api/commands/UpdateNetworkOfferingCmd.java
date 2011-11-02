@@ -18,10 +18,13 @@
 
 package com.cloud.api.commands;
 
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -39,6 +42,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
+    @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the network offering")
     private Long id;
 

@@ -18,6 +18,8 @@
 
 package com.cloud.network.security;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,12 +29,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name = ("security_ingress_rule"))
-public class IngressRuleVO implements IngressRule {
+public class IngressRuleVO implements IngressRule, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -61,7 +64,11 @@ public class IngressRuleVO implements IngressRule {
     @Enumerated(value = EnumType.STRING)
     private AsyncInstanceCreateStatus createStatus;
 
+    @Column(name = "uuid")
+    private String uuid;
+    
     public IngressRuleVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId) {
@@ -70,6 +77,7 @@ public class IngressRuleVO implements IngressRule {
         this.endPort = toPort;
         this.protocol = protocol;
         this.allowedNetworkId = allowedNetworkId;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
@@ -78,6 +86,7 @@ public class IngressRuleVO implements IngressRule {
         this.endPort = toPort;
         this.protocol = protocol;
         this.allowedSourceIpCidr = allowedIpCidr;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -122,5 +131,14 @@ public class IngressRuleVO implements IngressRule {
     @Override
     public String getAllowedSourceIpCidr() {
         return allowedSourceIpCidr;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

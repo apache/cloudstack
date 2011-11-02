@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.CommandType;
@@ -45,24 +46,30 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the load balancer rule. Must be used with the domainId parameter.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, description = "the domain ID of the load balancer rule. If used with the account parameter, lists load balancer rules for the account in the specified domain.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the load balancer rule")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
     private String loadBalancerRuleName;
 
+    @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.LONG, description = "the public IP address id of the load balancer rule	")
     private Long publicIpId;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.LONG, description = "the ID of the virtual machine of the load balancer rule")
     private Long virtualMachineId;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "the availability zone ID")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list port forwarding rules by project")
     private Long projectId;
 

@@ -19,13 +19,14 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudIdentifierResponse extends BaseResponse {
 	
     @SerializedName(ApiConstants.USER_ID) @Param(description="the user ID for the cloud identifier")
-    private Long userId;
+    private IdentityProxy userId = new IdentityProxy("user");
     
     @SerializedName("cloudidentifier") @Param(description="the cloud identifier")
     private String cloudIdentifier;
@@ -34,11 +35,11 @@ public class CloudIdentifierResponse extends BaseResponse {
     private String signature;
     
     public Long getUserId() {
-        return userId;
+        return userId.getValue();
     }
 
     public void setUserId(Long userId) {
-        this.userId = userId;
+        this.userId.setValue(userId);
     }
     
     public String getCloudIdentifier() {

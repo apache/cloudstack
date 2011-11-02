@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -27,7 +28,7 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the resource limit")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the resource limit")
     private String domainName;
@@ -39,7 +40,7 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     private Long max;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource limit")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource limit")
     private String projectName;
@@ -56,7 +57,7 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
     
     @Override
@@ -74,6 +75,6 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
 
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 }

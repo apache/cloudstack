@@ -32,6 +32,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -40,7 +41,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="vm_template")
-public class VMTemplateVO implements VirtualMachineTemplate {
+public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     @Id
     @TableGenerator(name="vm_template_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_template_seq", allocationSize=1)
     @Column(name="id", nullable = false)
@@ -117,6 +118,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Column(name="template_tag")
     private String templateTag;
+    
+    @Column(name="uuid")
+    private String uuid;
+    
 
     @Override
     public String getUniqueName() {
@@ -128,6 +133,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     protected VMTemplateVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -135,11 +141,13 @@ public class VMTemplateVO implements VirtualMachineTemplate {
      */
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, isExtractable, type, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag) {
         this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
         this.templateTag = templateTag;
+    	this.uuid = UUID.randomUUID().toString();
     }    
 
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
@@ -161,17 +169,20 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.guestOSId = guestOSId;
         this.bootable = bootable;
         this.hypervisorType = hyperType;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     // Has an extra attribute - isExtractable
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         this(id, uniqueName, name, format, isPublic, featured, type, url, created, requiresHvm, bits, accountId, cksum,  displayText, enablePassword, guestOSId, bootable, hyperType);
         this.extractable = isExtractable;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag) {
         this(id, uniqueName, name, format, isPublic, featured, isExtractable, type, url, created, requiresHvm, bits, accountId, cksum,  displayText, enablePassword, guestOSId, bootable, hyperType);
         this.templateTag = templateTag;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -380,6 +391,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Override
     public long getDomainId() {
         return -1;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 
     @Override

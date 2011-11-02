@@ -18,13 +18,14 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the hypervisor capabilities row")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("hypervisor_capabilities");
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
     private String hypervisorVersion;
@@ -46,11 +47,11 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
 

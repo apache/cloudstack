@@ -19,6 +19,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -26,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 public class ProjectResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.ID) @Param(description="the id of the project")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the project")
     private String name;
@@ -35,7 +36,7 @@ public class ProjectResponse extends BaseResponse{
     private String displaytext;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id the project belongs to")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name where the project belongs to")
     private String domain;
@@ -47,7 +48,7 @@ public class ProjectResponse extends BaseResponse{
     private String state;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setName(String name) {
@@ -59,7 +60,7 @@ public class ProjectResponse extends BaseResponse{
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomain(String domain) {

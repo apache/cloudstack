@@ -17,6 +17,8 @@
  */
 package com.cloud.hypervisor;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,12 +28,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.NumbersUtil;
 
 @Entity
 @Table(name="hypervisor_capabilities")
-public class HypervisorCapabilitiesVO implements HypervisorCapabilities{
+public class HypervisorCapabilitiesVO implements HypervisorCapabilities, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -50,8 +53,11 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities{
     @Column(name="security_group_enabled")
     private boolean securityGroupEnabled;
 
+    @Column(name="uuid")
+    private String uuid;
 
     protected HypervisorCapabilitiesVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit, boolean securityGroupEnabled) {
@@ -59,6 +65,7 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities{
         this.hypervisorVersion = hypervisorVersion;
         this.maxGuestsLimit = maxGuestsLimit;
         this.securityGroupEnabled = securityGroupEnabled;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     /**
@@ -127,6 +134,15 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities{
     @Override
     public int hashCode() {
         return NumbersUtil.hash(id);
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 
     @Override

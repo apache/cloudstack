@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -42,6 +43,7 @@ public class CreateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="creates domain with this name")
     private String domainName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.PARENT_DOMAIN_ID, type=CommandType.LONG, description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
     private Long parentDomainId;
 

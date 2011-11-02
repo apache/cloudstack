@@ -21,13 +21,14 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class UserVmResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
-    private String id;
+    private IdentityProxy id = new IdentityProxy("vm_instance");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
     private String name;
@@ -42,13 +43,13 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain in which the virtual machine exists")
     private String domainName;
@@ -63,25 +64,25 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Boolean haEnable;
 
     @SerializedName(ApiConstants.GROUP_ID) @Param(description="the group ID of the virtual machine")
-    private Long groupId;
+    private IdentityProxy groupId = new IdentityProxy("instance_group");
 
     @SerializedName(ApiConstants.GROUP) @Param(description="the group name of the virtual machine")
     private String group;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the availablility zone for the virtual machine")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")
-    private Long hostId;
+    private IdentityProxy hostId = new IdentityProxy("host");
 
     @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
     private String hostName;
 
     @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
-    private Long templateId;
+    private IdentityProxy templateId = new IdentityProxy("vm_template");
 
     @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
@@ -93,7 +94,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Boolean passwordEnabled;
 
     @SerializedName("isoid") @Param(description="the ID of the ISO attached to the virtual machine")
-    private Long isoId;
+    private IdentityProxy isoId = new IdentityProxy("vm_template");
 
     @SerializedName("isoname") @Param(description="the name of the ISO attached to the virtual machine")
     private String isoName;
@@ -102,7 +103,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String isoDisplayText;
 
     @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
-    private Long serviceOfferingId;
+    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
@@ -129,7 +130,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Long networkKbsWrite;
 
     @SerializedName("guestosid") @Param(description="Os type ID of the virtual machine")
-    private Long guestOsId;
+    private IdentityProxy guestOsId = new IdentityProxy("guest_os");
 
     @SerializedName("rootdeviceid") @Param(description="device ID of the root volume")
     private Long rootDeviceId;
@@ -144,7 +145,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String password;
 
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the virtual machine")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
@@ -160,12 +161,12 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 		this.hypervisor = hypervisor;
 	}
     
-    public void setId(String id) {
-        this.id = id;
+    public void setId(Long id) {
+        this.id.setValue(id);
     }
 
-    public String getId() {
-        return id;
+    public Long getId() {
+        return this.id.getValue();
     }
 
     public void setName(String name) {
@@ -185,7 +186,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domainName) {
@@ -205,7 +206,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setGroupId(Long groupId) {
-        this.groupId = groupId;
+        this.groupId.setValue(groupId);
     }
 
     public void setGroup(String group) {
@@ -213,7 +214,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setZoneName(String zoneName) {
@@ -221,7 +222,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setHostId(Long hostId) {
-        this.hostId = hostId;
+        this.hostId.setValue(hostId);
     }
 
     public void setHostName(String hostName) {
@@ -229,7 +230,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setTemplateId(Long templateId) {
-        this.templateId = templateId;
+        this.templateId.setValue(templateId);
     }
 
     public void setTemplateName(String templateName) {
@@ -245,7 +246,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setIsoId(Long isoId) {
-        this.isoId = isoId;
+        this.isoId.setValue(isoId);
     }
 
     public void setIsoName(String isoName) {
@@ -257,7 +258,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
+        this.serviceOfferingId.setValue(serviceOfferingId);
     }
 
     public void setServiceOfferingName(String serviceOfferingName) {
@@ -289,7 +290,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setGuestOsId(Long guestOsId) {
-        this.guestOsId = guestOsId;
+        this.guestOsId.setValue(guestOsId);
     }
 
     public void setRootDeviceId(Long rootDeviceId) {
@@ -305,7 +306,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     }
 
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
 
     public void setJobStatus(Integer jobStatus) {
@@ -326,7 +327,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
     
     @Override

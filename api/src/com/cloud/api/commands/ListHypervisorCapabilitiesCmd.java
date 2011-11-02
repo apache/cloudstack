@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.HypervisorCapabilitiesResponse;
@@ -41,6 +42,7 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="hypervisor_capabilities")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the hypervisor capability")
     private Long id;
 

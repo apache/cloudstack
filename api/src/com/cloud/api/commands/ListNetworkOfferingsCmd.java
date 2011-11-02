@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -40,6 +41,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list network offerings by id")
     private Long id;
     
@@ -67,6 +69,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
     private String guestIpType;
     
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list netowrk offerings available for network creation in specific zone")
     private Long zoneId;
 

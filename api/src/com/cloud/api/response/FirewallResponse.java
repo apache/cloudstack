@@ -18,12 +18,13 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class FirewallResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the firewall rule")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("firewall_rules");
 
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the firewall rule")
     private String protocol;
@@ -53,7 +54,7 @@ public class FirewallResponse extends BaseResponse {
     private Integer icmpCode;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setProtocol(String protocol) {

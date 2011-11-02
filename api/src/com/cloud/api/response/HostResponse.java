@@ -20,6 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -28,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the host")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("host");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the host")
     private String name;
@@ -43,7 +44,7 @@ public class HostResponse extends BaseResponse {
     private Host.Type hostType;
 
     @SerializedName("oscategoryid") @Param(description="the OS category ID of the host")
-    private Long osCategoryId;
+    private IdentityProxy osCategoryId = new IdentityProxy("guest_os_category");
 
     @SerializedName("oscategoryname") @Param(description="the OS category name of the host")
     private String osCategoryName;
@@ -52,13 +53,13 @@ public class HostResponse extends BaseResponse {
     private String ipAddress;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the host")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name of the host")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the host")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName("podname") @Param(description="the Pod name of the host")
     private String podName;
@@ -118,7 +119,7 @@ public class HostResponse extends BaseResponse {
     private Long managementServerId;
 
     @SerializedName("clusterid") @Param(description="the cluster ID of the host")
-    private Long clusterId;
+    private IdentityProxy clusterId = new IdentityProxy("cluster");
 
     @SerializedName("clustername") @Param(description="the cluster name of the host")
     private String clusterName;
@@ -139,7 +140,7 @@ public class HostResponse extends BaseResponse {
     private String events;
 
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the host")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
@@ -167,12 +168,12 @@ public class HostResponse extends BaseResponse {
 
     @Override
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
 
     @Override
@@ -186,11 +187,11 @@ public class HostResponse extends BaseResponse {
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {
@@ -226,11 +227,11 @@ public class HostResponse extends BaseResponse {
     }
 
     public Long getOsCategoryId() {
-        return osCategoryId;
+        return osCategoryId.getValue();
     }
 
     public void setOsCategoryId(Long osCategoryId) {
-        this.osCategoryId = osCategoryId;
+        this.osCategoryId.setValue(osCategoryId);
     }
 
     public String getOsCategoryName() {
@@ -250,11 +251,11 @@ public class HostResponse extends BaseResponse {
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {
@@ -266,11 +267,11 @@ public class HostResponse extends BaseResponse {
     }
 
     public Long getPodId() {
-        return podId;
+        return podId.getValue();
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public String getPodName() {
@@ -418,11 +419,11 @@ public class HostResponse extends BaseResponse {
     }
 
     public Long getClusterId() {
-        return clusterId;
+        return clusterId.getValue();
     }
 
     public void setClusterId(Long clusterId) {
-        this.clusterId = clusterId;
+        this.clusterId.setValue(clusterId);
     }
 
     public String getClusterName() {

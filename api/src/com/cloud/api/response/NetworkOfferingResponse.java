@@ -21,12 +21,13 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName("id") @Param(description="the id of the network offering")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("network_offerings");
 
     @SerializedName("name") @Param(description="the name of the network offering")
     private String name;
@@ -65,11 +66,11 @@ public class NetworkOfferingResponse extends BaseResponse{
     private Boolean redundantRouter;
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {

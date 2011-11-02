@@ -18,6 +18,7 @@
 package com.cloud.dc;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.org.Managed.ManagedState;
@@ -37,7 +39,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="cluster")
-public class ClusterVO implements Cluster {
+public class ClusterVO implements Cluster, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -73,10 +75,15 @@ public class ClusterVO implements Cluster {
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
+
+    @Column(name="uuid")
+    String uuid;
     
     public ClusterVO() {
     	clusterType = Cluster.ClusterType.CloudManaged;
     	allocationState = Grouping.AllocationState.Enabled;
+    	
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public ClusterVO(long dataCenterId, long podId, String name) {
@@ -86,6 +93,7 @@ public class ClusterVO implements Cluster {
     	this.clusterType = Cluster.ClusterType.CloudManaged;
     	this.allocationState = Grouping.AllocationState.Enabled;
     	this.managedState = ManagedState.Managed;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public long getId() {
@@ -170,4 +178,12 @@ public class ClusterVO implements Cluster {
         this.name = name;
     }
     
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

@@ -33,6 +33,7 @@ public class ApiResponseGsonHelper {
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
         s_gBuilder.registerTypeAdapter(String.class, new EncodedStringTypeAdapter());
+        s_gBuilder.registerTypeAdapter(IdentityProxy.class, new IdentityTypeAdapter());
     }
 
     public static GsonBuilder getBuilder() {

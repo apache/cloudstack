@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.CommandType;
@@ -44,18 +45,22 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all available port security groups for the account. Must be used with domainID parameter")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available security groups for the domain ID. If used with the account parameter, lists all available security groups for the account in the specified domain ID.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="lists security groups by name")
     private String securityGroupName;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="lists security groups by virtual machine id")
     private Long virtualMachineId;
 
+    @IdentityMapper(entityTableName="security_group")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list the security group by the id provided")
     private Long id;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list security groups by project")
     private Long projectId;
     

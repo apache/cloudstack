@@ -1,6 +1,7 @@
 package com.cloud.projects;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,11 +12,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="project_invitations")
-public class ProjectInvitationVO implements ProjectInvitation{
+public class ProjectInvitationVO implements ProjectInvitation, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -43,8 +45,11 @@ public class ProjectInvitationVO implements ProjectInvitation{
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
 
+    @Column(name="uuid")
+    private String uuid;
     
     protected ProjectInvitationVO(){
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public ProjectInvitationVO(long projectId, Long accountId, Long domainId, String email, String token) {
@@ -53,6 +58,7 @@ public class ProjectInvitationVO implements ProjectInvitation{
        this.projectId = projectId;
        this.email = email;
        this.token = token;
+   		this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -105,5 +111,13 @@ public class ProjectInvitationVO implements ProjectInvitation{
     public Long getDomainId() {
         return domainId;
     }
-
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

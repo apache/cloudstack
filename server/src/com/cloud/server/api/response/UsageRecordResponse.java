@@ -20,6 +20,7 @@
 package com.cloud.server.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.api.response.BaseResponse;
 import com.cloud.api.response.ControlledEntityResponse;
 import com.cloud.serializer.Param;
@@ -31,22 +32,22 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     private String accountName;
     
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the user account Id")
-    private Long accountId;
+    private IdentityProxy accountId = new IdentityProxy("account");
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID number")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the public IP address is associated with")
     private String domainName;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID number")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of account, including account name, service offering, and template")
     private String description;
@@ -61,16 +62,16 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     private String rawUsage;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virtual machine ID number")
-    private Long virtualMachineId;
+    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
 
     @SerializedName(ApiConstants.NAME) @Param(description="virtual machine name")
     private String vmName;
 
     @SerializedName("offeringid") @Param(description="service offering ID number")
-    private Long serviceOfferingId;
+    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="template ID number")
-    private Long templateId;
+    private IdentityProxy templateId = new IdentityProxy("vm_template");
 
     @SerializedName("usageid") @Param(description="id of the usage entity")
     private Long usageId;
@@ -105,16 +106,16 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+        this.accountId.setValue(accountId);
     }
     
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setDescription(String description) {
@@ -134,7 +135,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId = virtualMachineId;
+        this.virtualMachineId.setValue(virtualMachineId);
     }
 
     public void setVmName(String vmName) {
@@ -142,11 +143,11 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
+        this.serviceOfferingId.setValue(serviceOfferingId);
     }
 
     public void setTemplateId(Long templateId) {
-        this.templateId = templateId;
+        this.templateId.setValue(templateId);
     }
 
     public void setUsageId(Long usageId) {
@@ -187,7 +188,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

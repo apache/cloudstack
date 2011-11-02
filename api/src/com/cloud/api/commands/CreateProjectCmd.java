@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -47,6 +48,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the project")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a project")
     private Long domainId;
 

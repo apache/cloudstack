@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -25,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 public class LoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the load balancer rule ID")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("firewall_rules");
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the load balancer")
@@ -37,7 +38,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "the public ip address id")
-    private Long publicIpId;
+    private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
 
     @SerializedName(ApiConstants.PUBLIC_IP)
     @Param(description = "the public ip address")
@@ -63,14 +64,14 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the load balancer")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the load balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the load balancer rule")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain of the load balancer rule")
@@ -82,10 +83,10 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the id of the zone the rule belongs to")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setName(String name) {
@@ -121,7 +122,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domainName) {
@@ -133,16 +134,16 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setPublicIpId(Long publicIpId) {
-        this.publicIpId = publicIpId;
+        this.publicIpId.setValue(publicIpId);
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

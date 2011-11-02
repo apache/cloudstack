@@ -19,6 +19,7 @@
 package com.cloud.network;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -31,6 +32,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.net.Ip;
 
 /**
@@ -39,7 +41,7 @@ import com.cloud.utils.net.Ip;
  */
 @Entity
 @Table(name=("user_ip_address"))
-public class IPAddressVO implements IpAddress {
+public class IPAddressVO implements IpAddress, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -86,8 +88,12 @@ public class IPAddressVO implements IpAddress {
 	
 	@Column(name="network_id")
 	private Long associatedWithNetworkId;
+	
+	@Column(name="uuid")
+	private String uuid;
 
 	protected IPAddressVO() {
+		this.uuid = UUID.randomUUID().toString();
 	}
 	
 	@Override
@@ -105,6 +111,7 @@ public class IPAddressVO implements IpAddress {
 		this.allocatedTime = null;
 		this.state = State.Free;
 		this.macAddress = macAddress;
+		this.uuid = UUID.randomUUID().toString();
 	}
 	
     public long getMacAddress() {
@@ -229,5 +236,13 @@ public class IPAddressVO implements IpAddress {
     public void setSourceNetworkId(Long sourceNetworkId) {
         this.sourceNetworkId = sourceNetworkId;
     }
-
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

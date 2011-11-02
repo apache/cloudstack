@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -40,9 +41,11 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="snapshots")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the Id of the snapshot")
     private Long id;
 
+    @IdentityMapper(entityTableName="snapshots")
     @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots IDs separated by comma")
     private List<Long> ids;
 

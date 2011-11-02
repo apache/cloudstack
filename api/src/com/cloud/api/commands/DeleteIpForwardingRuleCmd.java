@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -42,11 +43,13 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the forwarding rule")
     private Long id;
 
     
     // unexposed parameter needed for events logging
+    @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
     private Long ownerId;
     /////////////////////////////////////////////////////

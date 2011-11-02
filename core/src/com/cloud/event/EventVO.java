@@ -19,6 +19,7 @@
 package com.cloud.event;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,13 +33,14 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="event")
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class EventVO implements Event {
+public class EventVO implements Event, Identity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -80,6 +82,9 @@ public class EventVO implements Event {
 
 	@Column(name="parameters", length=1024)
 	private String parameters;
+	
+	@Column(name="uuid")
+	private String uuid;
 
 	@Transient
 	private int totalSize;
@@ -89,6 +94,7 @@ public class EventVO implements Event {
 	public static final String LEVEL_ERROR = "ERROR";
 	
 	public EventVO() {
+		this.uuid = UUID.randomUUID().toString();
 	}
 	
 	public long getId() {
@@ -181,5 +187,14 @@ public class EventVO implements Event {
 	}
 	public void setParameters(String parameters) {
 		this.parameters = parameters;
+	}
+	
+	@Override
+	public String getUuid() {
+		return this.uuid;
+	}
+	
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 }

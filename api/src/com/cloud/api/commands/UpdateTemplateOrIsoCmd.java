@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Parameter;
 
 public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
@@ -37,6 +38,7 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the image", length=4096)
     private String displayText;
 
+    @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the image file")
     private Long id;
 

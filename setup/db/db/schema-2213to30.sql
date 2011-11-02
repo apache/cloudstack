@@ -108,17 +108,103 @@ update configuration set name = 'cluster.memory.capacity.notificationthreshold' 
 update configuration set name = 'zone.virtualnetwork.publicip.capacity.notificationthreshold' , category = 'Alert' where name = 'public.ip.capacity.threshold' ;
 update configuration set name = 'pod.privateip.capacity.notificationthreshold' , category = 'Alert' where name = 'private.ip.capacity.threshold' ;
 
-
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `template_version` varchar(100) COMMENT 'template version' AFTER role;
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `scripts_version` varchar(100) COMMENT 'scripts version' AFTER template_version;
 ALTER TABLE `cloud`.`alert` ADD `cluster_id` bigint unsigned;
 
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(255); 
 DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
 
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(255); 
+ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `uc_vm_instance_uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`async_job` ADD COLUMN `uuid` varchar(255); 
+ALTER TABLE `cloud`.`async_job` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`async_job` ADD CONSTRAINT `uc_async__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`domain` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`domain` ADD CONSTRAINT `uc_domain__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`account` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`account` ADD CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`user` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`user` ADD CONSTRAINT `uc_user__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`projects` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`projects` ADD CONSTRAINT `uc_projects__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`project_invitations` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`project_invitations` ADD CONSTRAINT `uc_project_invitations__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`data_center` ADD CONSTRAINT `uc_data_center__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`host` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`host` ADD CONSTRAINT `uc_host__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `uc_vm_template__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`disk_offering` ADD CONSTRAINT `uc_disk_offering__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`networks` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `uc_networks__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`security_group` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `uc_security_group__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`instance_group` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`instance_group` ADD CONSTRAINT `uc_instance_group__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`host_pod_ref` ADD CONSTRAINT `uc_host_pod_ref__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`snapshots` ADD CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`snapshot_policy` ADD CONSTRAINT `uc_snapshot_policy__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `uc_volumes__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `uc_vlan__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `uc_user_ip_address__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`firewall_rules` ADD CONSTRAINT `uc_firewall_rules__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `uc_cluster__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`security_ingress_rule` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `uc_security_ingress_rule__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`network_offerings` ADD CONSTRAINT `uc_network_offerings__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`hypervisor_capabilities` ADD CONSTRAINT `uc_hypervisor_capabilities__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`vpn_users` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`vpn_users` ADD CONSTRAINT `uc_vpn_users__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`event` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`event` ADD CONSTRAINT `uc_event__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`alert` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`alert` ADD CONSTRAINT `uc_alert__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`guest_os` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`guest_os` ADD CONSTRAINT `uc_guest_os__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`guest_os_category` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uuid` UNIQUE (`uuid`);
+

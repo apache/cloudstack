@@ -19,9 +19,10 @@ package com.cloud.projects;
 
 import java.util.Date;
 
+import com.cloud.api.Identity;
 import com.cloud.domain.PartOf;
 
-public interface Project extends PartOf{
+public interface Project extends PartOf, Identity {
     public enum State {Active, Disabled, Suspended}
 
     String getDisplayText();

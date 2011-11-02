@@ -18,6 +18,8 @@
 
 package com.cloud.network.security;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,9 +27,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
+
 @Entity
 @Table(name = ("security_group"))
-public class SecurityGroupVO implements SecurityGroup {
+public class SecurityGroupVO implements SecurityGroup, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -45,7 +49,11 @@ public class SecurityGroupVO implements SecurityGroup {
     @Column(name = "account_id")
     private long accountId;
 
+    @Column(name = "uuid")
+    private String uuid;
+    
     public SecurityGroupVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     public SecurityGroupVO(String name, String description, long domainId, long accountId) {
@@ -53,6 +61,7 @@ public class SecurityGroupVO implements SecurityGroup {
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -78,5 +87,14 @@ public class SecurityGroupVO implements SecurityGroup {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

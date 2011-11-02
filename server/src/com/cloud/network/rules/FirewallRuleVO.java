@@ -35,6 +35,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;
@@ -44,7 +45,7 @@ import com.cloud.utils.net.NetUtils;
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements FirewallRule {
+public class FirewallRuleVO implements FirewallRule, Identity {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
     
     @Id
@@ -104,6 +105,8 @@ public class FirewallRuleVO implements FirewallRule {
     @Transient
     List<String> sourceCidrs;
 
+    @Column(name="uuid")
+    String uuid;
 
     public void setSourceCidrList(List<String> sourceCidrs) {
         this.sourceCidrs=sourceCidrs;
@@ -181,6 +184,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
     
     protected FirewallRuleVO() {
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public FirewallRuleVO(String xId, long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
@@ -206,6 +210,7 @@ public class FirewallRuleVO implements FirewallRule {
         }
         
         this.related = related;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
@@ -232,4 +237,12 @@ public class FirewallRuleVO implements FirewallRule {
         return related;
     }
     
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

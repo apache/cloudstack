@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -57,6 +58,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
+    @IdentityMapper(entityTableName="volumes")
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long volumeId;
 

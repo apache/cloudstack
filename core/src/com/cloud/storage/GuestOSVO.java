@@ -17,6 +17,8 @@
  */
 package com.cloud.storage;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -24,9 +26,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
+
 @Entity
 @Table(name="guest_os")
-public class GuestOSVO implements GuestOS {
+public class GuestOSVO implements GuestOS, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -40,6 +44,9 @@ public class GuestOSVO implements GuestOS {
     
     @Column(name="display_name")
     String displayName;
+    
+    @Column(name="uuid")
+    String uuid = UUID.randomUUID().toString();
     
     @Override
     public long getId() {
@@ -70,5 +77,14 @@ public class GuestOSVO implements GuestOS {
     
     public void setDisplayName(String displayName) {
     	this.displayName = displayName;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid; 
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

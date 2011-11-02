@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -50,6 +51,7 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.FIRSTNAME, type=CommandType.STRING, description="first name")
     private String firstname;
 
+    @IdentityMapper(entityTableName="user")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="User id")
     private Long id;
 

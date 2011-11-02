@@ -52,6 +52,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
     private Boolean forced;
 
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////

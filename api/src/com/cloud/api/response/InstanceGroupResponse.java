@@ -21,13 +21,14 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class InstanceGroupResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the instance group")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("instance_group");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the instance group")
     private String name;
@@ -39,19 +40,19 @@ public class InstanceGroupResponse extends BaseResponse implements ControlledEnt
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the instance group")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the instance group")
     private String domainName;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setName(String name) {
@@ -69,7 +70,7 @@ public class InstanceGroupResponse extends BaseResponse implements ControlledEnt
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class InstanceGroupResponse extends BaseResponse implements ControlledEnt
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

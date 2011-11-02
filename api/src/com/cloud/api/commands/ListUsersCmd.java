@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -47,9 +48,11 @@ public class ListUsersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
     private Long accountType;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List all users in a domain. If used with the account parameter, lists an account in a specific domain.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="user")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List user by ID.")
     private Long id;
 

@@ -27,13 +27,13 @@ import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
     @SerializedName(ApiConstants.JOB_ID) @Param(description="async job ID")
-    private String id;
+    private IdentityProxy id = new IdentityProxy("async_job");
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")
-    private Long accountId;
+    private IdentityProxy accountId = new IdentityProxy("account");
 
     @SerializedName(ApiConstants.USER_ID) @Param(description="the user that executed the async command")
-    private Long userId;
+    private IdentityProxy userId = new IdentityProxy("user");
 
     @SerializedName("cmd") @Param(description="the async command executed")
     private String cmd;
@@ -63,28 +63,28 @@ public class AsyncJobResponse extends BaseResponse {
     @SerializedName(ApiConstants.CREATED) @Param(description="	the created date of the job")
     private Date created;
 
-    public String getId() {
-        return id;
+    public Long getId() {
+        return id.getValue();
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setId(Long id) {
+        this.id.setValue(id);
     }
 
     public Long getAccountId() {
-        return accountId;
+        return accountId.getValue();
     }
 
     public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+        this.accountId.setValue(accountId);
     }
 
     public Long getUserId() {
-        return userId;
+        return userId.getValue();
     }
 
     public void setUserId(Long userId) {
-        this.userId = userId;
+        this.userId.setValue(userId);
     }
 
     public String getCmd() {

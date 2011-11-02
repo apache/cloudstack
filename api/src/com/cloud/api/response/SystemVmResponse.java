@@ -20,24 +20,25 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SystemVmResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the system VM")
-    private String id;
+    private IdentityProxy id = new IdentityProxy("vm_instance");
 
     @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
 
     @SerializedName("jobid") @Param(description="the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName("jobstatus") @Param(description="the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
     @SerializedName("zoneid") @Param(description="the Zone ID for the system VM")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name for the system VM")
     private String zoneName;
@@ -58,10 +59,10 @@ public class SystemVmResponse extends BaseResponse {
     private String name;
 
     @SerializedName("podid") @Param(description="the Pod ID for the system VM")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName("hostid") @Param(description="the host ID for the system VM")
-    private Long hostId;
+    private IdentityProxy hostId = new IdentityProxy("host");
 
     @SerializedName("hostname") @Param(description="the hostname for the system VM")
     private String hostName;
@@ -94,7 +95,7 @@ public class SystemVmResponse extends BaseResponse {
     private String publicNetmask;
 
     @SerializedName("templateid") @Param(description="the template ID for the system VM")
-    private Long templateId;
+    private IdentityProxy templateId = new IdentityProxy("vm_template");
 
     @SerializedName("created") @Param(description="the date and time the system VM was created")
     private Date created;
@@ -108,7 +109,6 @@ public class SystemVmResponse extends BaseResponse {
     private Long objectId;
     
     public Long getObjectId() {
-    	// return getId();
     	return objectId;
     }
     
@@ -116,12 +116,12 @@ public class SystemVmResponse extends BaseResponse {
     	this.objectId = objectId;
     }
 
-    public String getId() {
-        return id;
+    public Long getId() {
+        return id.getValue();
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setId(Long id) {
+        this.id.setValue(id);
     }
 
     public String getSystemVmType() {
@@ -133,11 +133,11 @@ public class SystemVmResponse extends BaseResponse {
     }
 
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
 
     public Integer getJobStatus() {
@@ -149,11 +149,11 @@ public class SystemVmResponse extends BaseResponse {
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {
@@ -205,19 +205,19 @@ public class SystemVmResponse extends BaseResponse {
     }
 
     public Long getPodId() {
-        return podId;
+        return podId.getValue();
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public Long getHostId() {
-        return hostId;
+        return hostId.getValue();
     }
 
     public void setHostId(Long hostId) {
-        this.hostId = hostId;
+        this.hostId.setValue(hostId);
     }
 
     public String getHostName() {
@@ -277,11 +277,11 @@ public class SystemVmResponse extends BaseResponse {
     }
 
     public Long getTemplateId() {
-        return templateId;
+        return templateId.getValue();
     }
 
     public void setTemplateId(Long templateId) {
-        this.templateId = templateId;
+        this.templateId.setValue(templateId);
     }
 
     public Date getCreated() {

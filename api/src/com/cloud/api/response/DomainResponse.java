@@ -18,12 +18,13 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class DomainResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the domain")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the domain")
     private String domainName;
@@ -32,7 +33,7 @@ public class DomainResponse extends BaseResponse {
     private Integer level;
 
     @SerializedName("parentdomainid") @Param(description="the domain ID of the parent domain")
-    private Long parentDomainId;
+    private IdentityProxy parentDomainId = new IdentityProxy("domain");
 
     @SerializedName("parentdomainname") @Param(description="the domain name of the parent domain")
     private String parentDomainName;
@@ -44,11 +45,11 @@ public class DomainResponse extends BaseResponse {
     private String networkDomain;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getDomainName() {
@@ -68,11 +69,11 @@ public class DomainResponse extends BaseResponse {
     }
 
     public Long getParentDomainId() {
-        return parentDomainId;
+        return parentDomainId.getValue();
     }
 
     public void setParentDomainId(Long parentDomainId) {
-        this.parentDomainId = parentDomainId;
+        this.parentDomainId.setValue(parentDomainId);
     }
 
     public String getParentDomainName() {

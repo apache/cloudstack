@@ -20,18 +20,19 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of extracted object")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("vm_template");
     
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the extracted object")
     private String name;
     
     @SerializedName("extractId") @Param(description="the upload id of extracted object")
-    private Long uploadId;
+    private IdentityProxy uploadId = new IdentityProxy("async_job");
     
     @SerializedName("uploadpercentage") @Param(description="the percentage of the entity uploaded to the specified location")
     private Integer uploadPercent;
@@ -40,7 +41,7 @@ public class ExtractResponse extends BaseResponse {
     private String status;
     
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
-    private Long accountId;    
+    private IdentityProxy accountId = new IdentityProxy("account");    
  
     @SerializedName("resultstring") @Param(includeInApiDoc=false)
     private String resultString;    
@@ -58,7 +59,7 @@ public class ExtractResponse extends BaseResponse {
     private String storage;
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone ID the object was extracted from")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="zone name the object was extracted from")
     private String zoneName;
@@ -74,19 +75,23 @@ public class ExtractResponse extends BaseResponse {
     
     public ExtractResponse(Long typeId, String typeName, long accountId,
             String state, Long uploadId) {
-        this.id = typeId;
+        this.id.setValue(typeId);
         this.name = typeName;
-        this.accountId = accountId;
+        this.accountId.setValue(accountId);
         this.state = state;
-        this.uploadId = uploadId;        
+        this.uploadId.setValue(uploadId);        
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(long id) {
-        this.id = id;
+        this.id.setValue(id);
+    }
+    
+    public void setIdentityTableName(String tableName) {
+    	this.id.setTableName(tableName);
     }
 
     public String getName() {
@@ -98,11 +103,11 @@ public class ExtractResponse extends BaseResponse {
     }
 
     public Long getUploadId() {
-        return uploadId;
+        return uploadId.getValue();
     }
 
     public void setUploadId(Long uploadId) {
-        this.uploadId = uploadId;
+        this.uploadId.setValue(uploadId);
     }
 
     public Integer getUploadPercent() {
@@ -122,11 +127,11 @@ public class ExtractResponse extends BaseResponse {
     }
 
     public Long getAccountId() {
-        return accountId;
+        return accountId.getValue();
     }
 
     public void setAccountId(long accountId) {
-        this.accountId = accountId;
+        this.accountId.setValue(accountId);
     }
 
     public String getResultString() {
@@ -170,11 +175,11 @@ public class ExtractResponse extends BaseResponse {
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {

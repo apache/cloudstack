@@ -20,15 +20,16 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class DiskOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="unique ID of the disk offering")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("disk_offering");
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID this disk offering belongs to. Ignore this information as it is not currently applicable.")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
@@ -52,19 +53,19 @@ public class DiskOfferingResponse extends BaseResponse {
     private String tags;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public Long getDomainId() {
-        return domainId;
+        return domainId.getValue();
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public String getDomain() {

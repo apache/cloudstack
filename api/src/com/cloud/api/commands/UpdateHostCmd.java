@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -41,9 +42,11 @@ public class UpdateHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the host to update")
     private Long id;
 
+    @IdentityMapper(entityTableName="guest_os_category")
     @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.LONG, description="the id of Os category to update the host with")
     private Long osCategoryId;
 

@@ -19,6 +19,7 @@
 package com.cloud.vm;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,13 +30,14 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="instance_group")
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class InstanceGroupVO implements InstanceGroup {
+public class InstanceGroupVO implements InstanceGroup, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -55,10 +57,14 @@ public class InstanceGroupVO implements InstanceGroup {
 
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
+
+    @Column(name="uuid")
+    private String uuid;
     
     public InstanceGroupVO(String name, long accountId) {
         this.name = name;
         this.accountId = accountId;
+        this.uuid = UUID.randomUUID().toString();
     }
     
     protected InstanceGroupVO() {
@@ -96,4 +102,12 @@ public class InstanceGroupVO implements InstanceGroup {
     	this.name = name;
     }
 
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

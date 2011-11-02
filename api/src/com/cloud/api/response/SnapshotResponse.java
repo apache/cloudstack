@@ -20,6 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
@@ -28,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("snapshots");
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the snapshot")
@@ -36,14 +37,14 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the snapshot's account")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
     
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the snapshot")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the snapshot")
     private String projectName;
@@ -54,7 +55,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.VOLUME_ID)
     @Param(description = "ID of the disk volume")
-    private Long volumeId;
+    private IdentityProxy volumeId = new IdentityProxy("volumes");
 
     @SerializedName(ApiConstants.VOLUME_NAME)
     @Param(description = "name of the disk volume")
@@ -74,7 +75,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.JOB_ID)
     @Param(description = "the job ID associated with the snapshot. This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
-    private Long jobId;
+    private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName(ApiConstants.JOB_STATUS)
     @Param(description = "the job status associated with the snapshot.  This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
@@ -94,11 +95,11 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     }
    
     private Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getAccountName() {
@@ -110,11 +111,11 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public Long getDomainId() {
-        return domainId;
+        return domainId.getValue();
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domainName) {
@@ -126,7 +127,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     }
 
     public void setVolumeId(Long volumeId) {
-        this.volumeId = volumeId;
+        this.volumeId.setValue(volumeId);
     }
 
     public void setVolumeName(String volumeName) {
@@ -147,12 +148,12 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @Override
     public Long getJobId() {
-        return jobId;
+        return jobId.getValue();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        this.jobId.setValue(jobId);
     }
 
     @Override
@@ -175,7 +176,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

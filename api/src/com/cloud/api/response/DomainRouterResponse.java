@@ -20,6 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;
@@ -27,10 +28,10 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class DomainRouterResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("vm_instance");
  
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID for the router")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name for the router")
     private String zoneName; 
@@ -51,10 +52,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     private String name;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID for the router")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the host ID for the router")
-    private Long hostId;
+    private IdentityProxy hostId = new IdentityProxy("host");
 
     @SerializedName("hostname") @Param(description="the hostname for the router")
     private String hostName;
@@ -81,7 +82,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     private String publicNetmask;
     
     @SerializedName("publicnetworkid") @Param(description="the ID of the corresponding public network")
-    private Long publicNetworkId;
+    private IdentityProxy publicNetworkId = new IdentityProxy("networks");
 
     @SerializedName("guestipaddress") @Param(description="the guest IP address for the router")
     private String guestIpAddress;
@@ -93,10 +94,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     private String guestNetmask;
     
     @SerializedName("guestnetworkid") @Param(description="the ID of the corresponding guest network")
-    private Long guestNetworkId;
+    private IdentityProxy guestNetworkId = new IdentityProxy("networks");
 
     @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="the template ID for the router")
-    private Long templateId;
+    private IdentityProxy templateId = new IdentityProxy("vm_template");
 
     @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the router was created")
     private Date created;
@@ -108,19 +109,19 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID associated with the router")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
     
     @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
-    private Long serviceOfferingId;
+    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
@@ -143,15 +144,15 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setZoneName(String zoneName) {
@@ -179,11 +180,11 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public void setHostId(Long hostId) {
-        this.hostId = hostId;
+        this.hostId.setValue(hostId);
     }
 
     public void setHostName(String hostName) {
@@ -215,7 +216,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setTemplateId(Long templateId) {
-        this.templateId = templateId;
+        this.templateId.setValue(templateId);
     }
 
     public void setCreated(Date created) {
@@ -233,7 +234,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     @Override
@@ -242,11 +243,11 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setPublicNetworkId(Long publicNetworkId) {
-        this.publicNetworkId = publicNetworkId;
+        this.publicNetworkId.setValue(publicNetworkId);
     }
 
     public void setGuestNetworkId(Long guestNetworkId) {
-        this.guestNetworkId = guestNetworkId;
+        this.guestNetworkId.setValue(guestNetworkId);
     }
 
     public void setLinkLocalIp(String linkLocalIp) {
@@ -266,7 +267,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
+        this.serviceOfferingId.setValue(serviceOfferingId);
     }
 
     public void setServiceOfferingName(String serviceOfferingName) {
@@ -298,7 +299,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

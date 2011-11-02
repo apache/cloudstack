@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -46,12 +47,15 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.DESTINATION_ZONE_ID, type=CommandType.LONG, required=true, description="ID of the zone the template is being copied to.")
     private Long destZoneId;
 
+    @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Template ID.")
     private Long id;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.SOURCE_ZONE_ID, type=CommandType.LONG, required=true, description="ID of the zone the template is currently hosted on.")
     private Long sourceZoneId;
 

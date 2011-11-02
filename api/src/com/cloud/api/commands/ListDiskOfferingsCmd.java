@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DiskOfferingResponse;
@@ -40,9 +41,11 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain of the disk offering.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="disk_offering")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="ID of the disk offering")
     private Long id;
 

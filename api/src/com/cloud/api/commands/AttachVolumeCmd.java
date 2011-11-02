@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -55,9 +56,11 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     																"* 9 - /dev/xvdj")
     private Long deviceId;
 
+    @IdentityMapper(entityTableName="volumes")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the disk volume")
     private Long id;
 
+    @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="	the ID of the virtual machine")
     private Long virtualMachineId;
 

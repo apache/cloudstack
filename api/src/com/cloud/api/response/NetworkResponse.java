@@ -21,6 +21,7 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -28,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 public class NetworkResponse extends BaseResponse implements ControlledEntityResponse{
     
     @SerializedName(ApiConstants.ID) @Param(description="the id of the network")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("networks");
     
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the network")
     private String name;
@@ -55,10 +56,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String endIp;
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
     
     @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
-    private Long networkOfferingId;
+    private IdentityProxy networkOfferingId = new IdentityProxy("network_offerings");
     
     @SerializedName("networkofferingname") @Param(description="name of the network offering the network is created from")
     private String networkOfferingName;
@@ -79,7 +80,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String state;
 
     @SerializedName("related") @Param(description="related to what other network configuration")
-    private Long related;
+    private IdentityProxy related = new IdentityProxy("networks");
     
     @SerializedName("broadcasturi") @Param(description="broadcast uri of the network")
     private String broadcastUri;
@@ -100,13 +101,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the network owner")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the network owner")
     private String domain;
@@ -127,7 +128,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String tags;
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setName(String name) {
@@ -151,11 +152,11 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     }
     
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setNetworkOfferingId(Long networkOfferingId) {
-        this.networkOfferingId = networkOfferingId;
+        this.networkOfferingId.setValue(networkOfferingId);
     }
 
     public void setState(String state) {
@@ -163,7 +164,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     }
 
     public void setRelated(Long related) {
-        this.related = related;
+        this.related.setValue(related);
     }
 
     public void setBroadcastUri(String broadcastUri) {
@@ -187,7 +188,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setNetworkOfferingName(String networkOfferingName) {
@@ -261,7 +262,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

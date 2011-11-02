@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -69,6 +70,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     private String templateName;
 
     @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this template.")
+    @IdentityMapper(entityTableName="guest_os")
     private Long osTypeId;
 
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
@@ -83,9 +85,11 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="the URL of where the template is hosted. Possible URL include http:// and https://")
     private String url;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone the template is to be hosted on")
     private Long zoneId;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
@@ -98,6 +102,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
     private String templateTag;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Register template for the project")
     private Long projectId;
 

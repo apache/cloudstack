@@ -44,15 +44,18 @@ public class ListVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="Must be used with domainId parameter. Defaults to false, but if true, lists all vms from the parent specified by the domain id till leaves.")
     private Boolean recursive;
 
+    @IdentityMapper(entityTableName="instance_group")
     @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID")
     private Long groupId;
 
+    @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID")
     private Long hostId;
 
@@ -63,27 +66,32 @@ public class ListVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the virtual machine")
     private String instanceName;
 
+    @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="the pod ID")
     private Long podId;
 
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="state of the virtual machine")
     private String state;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the availability zone ID")
     private Long zoneId;
     
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
     
+    @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
     private String hypervisor;
     
+    @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
     private Long storageId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list vms by project")
     private Long projectId;
     

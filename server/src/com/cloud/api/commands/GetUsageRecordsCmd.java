@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -54,6 +55,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List usage records for the specified user.")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List usage records for the specified domain.")
     private Long domainId;
 
@@ -63,9 +65,11 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, required=true, description="Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
     
+    @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, description="List usage records for the specified account")
     private Long accountId;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="List usage records for specified project")
     private Long projectId;
     

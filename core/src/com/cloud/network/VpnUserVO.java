@@ -18,6 +18,8 @@
 
 package com.cloud.network;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,9 +29,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
+
 @Entity
 @Table(name=("vpn_users"))
-public class VpnUserVO implements VpnUser {
+public class VpnUserVO implements VpnUser, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -51,7 +55,12 @@ public class VpnUserVO implements VpnUser {
     @Enumerated(value=EnumType.STRING)
     private State state;
 
-    public VpnUserVO() { }
+    @Column(name="uuid")
+    private String uuid;
+    
+    public VpnUserVO() {
+    	this.uuid = UUID.randomUUID().toString();
+    }
 
     public VpnUserVO(long accountId, long domainId, String userName, String password) {
         this.accountId = accountId;
@@ -59,6 +68,7 @@ public class VpnUserVO implements VpnUser {
         this.username = userName;
         this.password = password;
         this.state = State.Add;
+    	this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -107,5 +117,14 @@ public class VpnUserVO implements VpnUser {
 	@Override
     public String toString() {
 	    return new StringBuilder("VpnUser[").append(id).append("-").append(username).append("-").append(accountId).append("]").toString();
+	}
+	
+	@Override
+	public String getUuid() {
+		return this.uuid;
+	}
+	
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 }

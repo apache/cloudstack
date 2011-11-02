@@ -47,6 +47,7 @@ public class UpgradeVMCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
 
+    @IdentityMapper(entityTableName="disk_offering")
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the service offering ID to apply to the virtual machine")
     private Long serviceOfferingId;
 

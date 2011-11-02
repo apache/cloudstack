@@ -19,6 +19,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,11 +30,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="account")
-public class AccountVO implements Account {
+public class AccountVO implements Account, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -61,11 +63,16 @@ public class AccountVO implements Account {
     @Column(name="network_domain")
     private String networkDomain;
 
+    @Column(name="uuid")
+    private String uuid;
 
-    public AccountVO() {}
+    public AccountVO() {
+    	this.uuid = UUID.randomUUID().toString();
+    }
     
     public AccountVO(long id) {
         this.id = id;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public AccountVO(String accountName, long domainId, String networkDomain, short type) {
@@ -74,6 +81,7 @@ public class AccountVO implements Account {
         this.networkDomain = networkDomain;
         this.type = type;
         this.state = State.enabled;
+    	this.uuid = UUID.randomUUID().toString();
     }
     
     public void setNeedsCleanup(boolean value) {
@@ -149,4 +157,12 @@ public class AccountVO implements Account {
         this.networkDomain = networkDomain;
     }
     
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
+    }
 }

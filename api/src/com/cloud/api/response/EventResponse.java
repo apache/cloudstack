@@ -20,6 +20,7 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.event.Event;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -27,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class EventResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the event")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("event");
 
     @SerializedName(ApiConstants.USERNAME) @Param(description="the name of the user who performed the action (can be different from the account if an admin is performing an action for a user, e.g. starting/stopping a user's virtual machine)")
     private String username;
@@ -45,13 +46,13 @@ public class EventResponse extends BaseResponse implements ControlledEntityRespo
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the id of the account's domain")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the account's domain")
     private String domainName;
@@ -63,10 +64,10 @@ public class EventResponse extends BaseResponse implements ControlledEntityRespo
     private Event.State state;
 
     @SerializedName("parentid") @Param(description="whether the event is parented")
-    private Long parentId;
+    private IdentityProxy parentId = new IdentityProxy("event");
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setUsername(String username) {
@@ -92,7 +93,7 @@ public class EventResponse extends BaseResponse implements ControlledEntityRespo
 
     @Override
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     @Override
@@ -109,12 +110,12 @@ public class EventResponse extends BaseResponse implements ControlledEntityRespo
     }
 
     public void setParentId(Long parentId) {
-        this.parentId = parentId;
+        this.parentId.setValue(parentId);
     }
 
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

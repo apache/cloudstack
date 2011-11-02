@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -39,9 +40,11 @@ public class PrepareTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, required=true, type=CommandType.LONG, description="zone ID of the template to be prepared in primary storage(s).")
     private Long zoneId;
     
+    @IdentityMapper(entityTableName="vm_template")
     @Parameter(name=ApiConstants.TEMPLATE_ID, required=true, type=CommandType.LONG, description="template ID of the template to be prepared in primary storage(s).")
     private Long templateId;
 

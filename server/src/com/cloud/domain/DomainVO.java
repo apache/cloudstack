@@ -19,6 +19,7 @@
 package com.cloud.domain;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,11 +28,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="domain")
-public class DomainVO implements Domain {
+public class DomainVO implements Domain, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -67,11 +69,15 @@ public class DomainVO implements Domain {
     @Column(name="network_domain")
     private String networkDomain;
     
+    @Column(name="uuid")
+    private String uuid;
+    
     public DomainVO() {}
     
     public DomainVO(long id, String name, long owner, Long parentId, String networkDomain) {
         this(name, owner, parentId, networkDomain);
         this.id = id;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public DomainVO(String name, long owner, Long parentId, String networkDomain) {
@@ -82,7 +88,7 @@ public class DomainVO implements Domain {
         this.level = 0;
         this.state = Domain.State.Active;
         this.networkDomain = networkDomain;
-   
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -186,6 +192,15 @@ public class DomainVO implements Domain {
 
     public void setNetworkDomain(String domainSuffix) {
         this.networkDomain = domainSuffix;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }
 

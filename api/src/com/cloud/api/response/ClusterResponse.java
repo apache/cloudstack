@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
@@ -28,19 +29,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class ClusterResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the cluster ID")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("cluster");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the cluster name")
     private String name;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the cluster")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName("podname") @Param(description="the Pod name of the cluster")
     private String podName;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the cluster")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name of the cluster")
     private String zoneName;
@@ -61,11 +62,11 @@ public class ClusterResponse extends BaseResponse {
     private List<CapacityResponse> capacitites;
    
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {
@@ -77,11 +78,11 @@ public class ClusterResponse extends BaseResponse {
     }
 
     public Long getPodId() {
-        return podId;
+        return podId.getValue();
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public String getPodName() {
@@ -93,11 +94,11 @@ public class ClusterResponse extends BaseResponse {
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {

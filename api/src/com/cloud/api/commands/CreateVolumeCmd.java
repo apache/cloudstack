@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -47,12 +48,15 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="the project associated with the volume. Mutually exclusive with account parameter")
     private Long projectId;
     
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the disk offering. If used with the account parameter returns the disk volume associated with the account for the specified domain.")
     private Long domainId;
 
+    @IdentityMapper(entityTableName="disk_offering")
     @Parameter(name=ApiConstants.DISK_OFFERING_ID,required = false, type=CommandType.LONG, description="the ID of the disk offering. Either diskOfferingId or snapshotId must be passed in.")
     private Long diskOfferingId;
 
@@ -62,9 +66,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size")
     private Long size;
 
+    @IdentityMapper(entityTableName="snapshots")
     @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
     private Long snapshotId;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
 

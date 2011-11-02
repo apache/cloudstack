@@ -1267,11 +1267,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         SystemVmResponse vmResponse = new SystemVmResponse();
         if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
             // SystemVm vm = (SystemVm) systemVM;
-
-        	if(vm.getUuid() != null && !vm.getUuid().isEmpty())
-        		vmResponse.setId(vm.getUuid());
-        	else
-        		vmResponse.setId(String.valueOf(vm.getId()));
+    		vmResponse.setId(vm.getId());
             vmResponse.setObjectId(vm.getId());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setZoneId(vm.getDataCenterIdToDeployIn());
@@ -1873,11 +1869,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         jobResponse.setAccountId(job.getAccountId());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
-        
-        if(job.getUuid() != null && !job.getUuid().isEmpty())
-        	jobResponse.setId(job.getUuid());
-        else
-        	jobResponse.setId(String.valueOf(job.getId()));
+    	jobResponse.setId(job.getId());
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
@@ -2134,7 +2126,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         
         //Set accounts
-        List<Long> projectIds = new ArrayList<Long>();
+        List<String> projectIds = new ArrayList<String>();
         List<String> regularAccounts = new ArrayList<String>();
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
@@ -2143,7 +2135,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else {
                 //convert account to projectIds
                 Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-                projectIds.add(project.getId());
+
+                if(project.getUuid() != null && !project.getUuid().isEmpty())
+                    projectIds.add(project.getUuid());
+                else
+                	projectIds.add(String.valueOf(project.getId()));
             }
         }
         
@@ -2164,10 +2160,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         AsyncJobResult result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
         AsyncJobResponse response = new AsyncJobResponse();
         
-        if(result.getUuid() != null && !result.getUuid().isEmpty())
-        	response.setId(result.getUuid());
-        else
-        	response.setId(String.valueOf(result.getJobId()));
+    	response.setId(result.getJobId());
         response.setJobStatus(result.getJobStatus());
         response.setJobProcStatus(result.getProcessStatus());
         response.setJobResultCode(result.getResultCode());
@@ -2543,10 +2536,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserVmResponse newUserVmResponse(UserVmData userVmData, boolean caller_is_admin){
         UserVmResponse userVmResponse = new UserVmResponse();
         userVmResponse.setHypervisor(userVmData.getHypervisor());
-        if(userVmData.getUuid() != null && !userVmData.getUuid().isEmpty())
-            userVmResponse.setId(userVmData.getUuid());
-        else
-        	userVmResponse.setId(String.valueOf(userVmData.getId()));
+    	userVmResponse.setId(userVmData.getId());
         userVmResponse.setName(userVmData.getName());
         userVmResponse.setDisplayName(userVmData.getDisplayName());
         userVmResponse.setIpAddress(userVmData.getIpAddress());

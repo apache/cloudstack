@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -25,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
     
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
-    private Long publicIpId;
+    private IdentityProxy publicIpId = new IdentityProxy("user_ip_adddress");
     
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address of the vpn server")
     private String publicIp;
@@ -40,13 +41,13 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     private String accountName;
     
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the account of the remote access vpn")
-	private long domainId;
+	private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
 	private String domainName;
@@ -71,7 +72,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
 	}
 
 	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
+		this.domainId.setValue(domainId);
 	}
 
 	public void setDomainName(String name) {
@@ -83,12 +84,12 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     }
 
     public void setPublicIpId(Long publicIpId) {
-        this.publicIpId = publicIpId;
+        this.publicIpId.setValue(publicIpId);
     }
 
     @Override
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     @Override

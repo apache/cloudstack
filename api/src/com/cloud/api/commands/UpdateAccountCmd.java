@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -39,6 +40,7 @@ public class UpdateAccountCmd extends BaseCmd{
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="the current account name")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="the ID of the domain where the account exists")
     private Long domainId;
 

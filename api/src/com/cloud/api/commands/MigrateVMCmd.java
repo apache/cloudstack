@@ -57,6 +57,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine")
     private Long virtualMachineId;
 
+    @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, required=false, description="destination storage pool ID to migrate VM to")
     private Long storageId;
 

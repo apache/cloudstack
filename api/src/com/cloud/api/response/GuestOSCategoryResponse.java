@@ -18,22 +18,23 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class GuestOSCategoryResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS category")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("guest_os_category");
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the OS category")
     private String name; 
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {

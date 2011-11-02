@@ -20,6 +20,7 @@ package com.cloud.host;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -37,6 +38,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -47,7 +49,7 @@ import com.cloud.utils.db.GenericDao;
 @Table(name="host")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class HostVO implements Host {
+public class HostVO implements Host, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -138,6 +140,9 @@ public class HostVO implements Host {
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
+    @Column(name="uuid")
+    private String uuid;
+    
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call host dao to load it.
@@ -364,9 +369,11 @@ public class HostVO implements Host {
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
         this.resourceState = ResourceState.Creating;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     protected HostVO() {
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public HostVO(long id,
@@ -400,6 +407,7 @@ public class HostVO implements Host {
         this.parent = parent;
         this.totalSize = totalSize;
         this.fsType = fsType;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public HostVO(long id,
@@ -457,6 +465,7 @@ public class HostVO implements Host {
         this.disconnectedOn = disconnectedOn;
         this.dom0MinMemory = dom0MinMemory;
         this.storageUrl = url;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public void setPodId(Long podId) {
@@ -710,5 +719,14 @@ public class HostVO implements Host {
 	public long incrUpdated() {
 		updated++;
 		return updated;
+	}
+	
+	@Override
+	public String getUuid() {
+		return this.uuid;
+	}
+	
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 }

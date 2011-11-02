@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
@@ -39,12 +40,14 @@ public class ListProjectsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
+    @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list projects by project ID")
     private Long id;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list projects by owner name")
     private String accountName;
 
+    @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="list projects for the domain specified")
     private Long domainId;
 

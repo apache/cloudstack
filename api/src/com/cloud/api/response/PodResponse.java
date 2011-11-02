@@ -19,18 +19,19 @@ package com.cloud.api.response;
 
 import java.util.List;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class PodResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the Pod")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("host_pod_ref");
 
     @SerializedName("name") @Param(description="the name of the Pod")
     private String name;
 
     @SerializedName("zoneid") @Param(description="the Zone ID of the Pod")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name of the Pod")
     private String zoneName;
@@ -54,11 +55,11 @@ public class PodResponse extends BaseResponse {
     private List<CapacityResponse> capacitites;
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getName() {
@@ -70,11 +71,11 @@ public class PodResponse extends BaseResponse {
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {

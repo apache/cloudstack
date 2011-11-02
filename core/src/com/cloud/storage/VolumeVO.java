@@ -18,6 +18,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -31,13 +32,14 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "volumes")
-public class VolumeVO implements Volume {
+public class VolumeVO implements Volume, Identity {
     @Id
     @TableGenerator(name = "volume_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "volume_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)
@@ -127,6 +129,9 @@ public class VolumeVO implements Volume {
     @Column(name = "chain_info")
     String chainInfo;
 
+    @Column(name = "uuid")
+    String uuid;
+    
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
@@ -137,6 +142,7 @@ public class VolumeVO implements Volume {
         this.size = size;
         this.diskOfferingId = diskOfferingId;
         this.state = State.Allocated;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
@@ -152,6 +158,7 @@ public class VolumeVO implements Volume {
         this.volumeType = vType;
         this.state = Volume.State.Allocated;
         this.recreatable = false;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     // Copy Constructor
@@ -167,6 +174,7 @@ public class VolumeVO implements Volume {
         this.chainInfo = that.getChainInfo();
         this.templateId = that.getTemplateId();
         this.deviceId = that.getDeviceId();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -420,5 +428,14 @@ public class VolumeVO implements Volume {
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }
