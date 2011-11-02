@@ -433,7 +433,10 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
                 primaryStoragePath = sr.mountpoint
                 resultPath = copyToPrimary(secMountPoint, volumeFolderOnSecStorage, volumePath, primaryStoragePath)
             OvmStoragePool()._umount(secMountPoint)
-            rs = toGson({"installPath":resultPath})
+            
+            # ingratiate bad mgmt server design, it asks 'installPath' but it only wants the volume name without suffix
+            volumeUuid = basename(resultPath).rstrip(".raw")
+            rs = toGson({"installPath":volumeUuid})
             return rs
         except Exception, e:
             try:
