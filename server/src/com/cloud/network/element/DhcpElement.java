@@ -268,4 +268,9 @@ public class DhcpElement extends AdapterBase implements DhcpElementService, User
         // TODO Auto-generated method stub
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

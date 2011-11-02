@@ -2578,6 +2578,17 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider) {
         ProviderResponse response = new ProviderResponse();
         response.setName(serviceProvider.getName());
+        
+        //set details from network element
+        List<Service> supportedServices = ApiDBUtils.getElementServices(serviceProvider);
+        List<String> services = new ArrayList<String>();
+        for (Service service: supportedServices){
+            services.add(service.getName());
+        }
+        response.setServices(services);
+        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+        response.setCanEnableIndividualServices(canEnableIndividualServices);
+        
         response.setObjectName("networkserviceprovider");
         return response;
     }
@@ -2590,6 +2601,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPhysicalNetworkId(result.getPhysicalNetworkId());
         response.setDestinationPhysicalNetworkId(result.getDestinationPhysicalNetworkId());
         response.setState(result.getState().toString());
+        
+        //set enabled services
+        List<String> services = new ArrayList<String>();
+        for (Service service: result.getEnabledServices()){
+            services.add(service.getName());
+        }
+        response.setServices(services);
+        
         response.setObjectName("networkserviceprovider");
         return response;
     }

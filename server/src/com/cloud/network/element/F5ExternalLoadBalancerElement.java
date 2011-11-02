@@ -156,5 +156,10 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
         // TODO Auto-generated method stub
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
    
 }

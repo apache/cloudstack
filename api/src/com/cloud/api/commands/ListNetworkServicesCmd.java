@@ -23,18 +23,23 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 
 
-@Implementation(description="Lists all network services provided by CloudStack.", responseObject=ServiceResponse.class)
+@Implementation(description="Lists all network services provided by CloudStack or for the given Provider.", responseObject=ServiceResponse.class)
 public class ListNetworkServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServicesCmd.class.getName());
     private static final String _name = "listnetworkservicesresponse";
+    
+    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING, description="network service provider name")
+    private String providerName;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -44,6 +49,14 @@ public class ListNetworkServicesCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     
+
+    public void setProviderName(String providerName) {
+        this.providerName = providerName;
+    }
+
+    public String getProviderName() {
+        return providerName;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -60,7 +73,7 @@ public class ListNetworkServicesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Network.Service> services = _networkService.listNetworkServices();
+        List<? extends Network.Service> services = _networkService.listNetworkServices(getProviderName());
         ListResponse<ServiceResponse> response = new ListResponse<ServiceResponse>();
         List<ServiceResponse> servicesResponses = new ArrayList<ServiceResponse>();
         for (Network.Service service : services) {

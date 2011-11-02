@@ -93,15 +93,15 @@ public interface NetworkService {
 
     boolean deletePhysicalNetwork(Long id);
 
-    List<? extends Service> listNetworkServices();
+    List<? extends Service> listNetworkServices(String providerName);
 
     List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName);
 
-    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId);
+    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId, List<String> enabledServices);
 
     List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId);
 
-    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, boolean forcedShutdown) throws ConcurrentOperationException, ResourceUnavailableException;
+    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, boolean forcedShutdown, List<String> enabledServices) throws ConcurrentOperationException, ResourceUnavailableException;
 
     boolean deleteNetworkServiceProvider(Long id);
 

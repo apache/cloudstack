@@ -135,4 +135,9 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
         // TODO Auto-generated method stub
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

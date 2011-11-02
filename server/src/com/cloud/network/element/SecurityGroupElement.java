@@ -100,4 +100,9 @@ public class SecurityGroupElement extends AdapterBase implements NetworkElement 
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

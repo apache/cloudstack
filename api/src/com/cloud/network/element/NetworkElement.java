@@ -123,5 +123,11 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException;    
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    /**
+     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 
+     * @return true/false
+     */
+    boolean canEnableIndividualServices();
 }

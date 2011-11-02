@@ -225,4 +225,9 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         // TODO Auto-generated method stub
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

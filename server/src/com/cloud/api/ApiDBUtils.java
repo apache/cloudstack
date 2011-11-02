@@ -55,6 +55,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -653,4 +654,13 @@ public class ApiDBUtils {
     public static Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
         return _networkMgr.listNetworkOfferingServices(networkOfferingId);
     }
+    
+    public static List<Service> getElementServices(Provider provider) {
+         return _networkMgr.getElementServices(provider);
+    }
+
+    public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
+        return _networkMgr.canElementEnableIndividualServices(serviceProvider);
+    }
+
 }

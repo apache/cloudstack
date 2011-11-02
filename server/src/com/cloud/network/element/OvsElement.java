@@ -130,4 +130,9 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -51,6 +53,9 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name for the physical network service provider")
     private String name;
+    
+    @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
+    private List<String> enabledServices;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -67,7 +72,11 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public Long getDestinationPhysicalNetworkId() {
         return destinationPhysicalNetworkId;
     }
-    
+
+    public List<String> getEnabledServices() {
+        return enabledServices;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -97,7 +106,7 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetworkServiceProvider result = _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId());
+        PhysicalNetworkServiceProvider result = _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId(), getEnabledServices());
         if (result != null) {
             setEntityId(result.getId());
         } else {

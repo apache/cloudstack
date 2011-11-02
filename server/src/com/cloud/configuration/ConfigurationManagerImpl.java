@@ -1355,6 +1355,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
+            }else{
+                //Zone will be disabled since 3.0. Admin shoul enable it after physical network and providers setup.
+                zone.setAllocationState(Grouping.AllocationState.Disabled);
             }
             zone = _zoneDao.persist(zone);
 

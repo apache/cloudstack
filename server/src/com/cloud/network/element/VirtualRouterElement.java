@@ -460,6 +460,11 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
+    }
+    
+    @Override
+    public boolean canEnableIndividualServices() {
+        return true;
     }    
 
     @Override

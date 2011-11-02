@@ -256,6 +256,11 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         // TODO Auto-generated method stub
         return true;
     }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }
 
 

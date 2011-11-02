@@ -231,4 +231,8 @@ public interface NetworkManager extends NetworkService {
 
     List<String> getNetworkTags(HypervisorType hType, Network network);
 
+    List<Service> getElementServices(Provider provider);
+
+    boolean canElementEnableIndividualServices(Provider provider); 
+
 }

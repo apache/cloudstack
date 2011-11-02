@@ -21,6 +21,10 @@
  */
 package com.cloud.network;
 
+import java.util.List;
+
+import com.cloud.network.Network.Service;
+
 
 
 /**
@@ -46,4 +50,24 @@ public interface PhysicalNetworkServiceProvider {
     long getDestinationPhysicalNetworkId();
 
     void setState(State state);
+
+    boolean isLbServiceProvided();
+
+    boolean isVpnServiceProvided();
+
+    boolean isDhcpServiceProvided();
+
+    boolean isDnsServiceProvided();
+
+    boolean isGatewayServiceProvided();
+
+    boolean isFirewallServiceProvided();
+
+    boolean isSourcenatServiceProvided();
+
+    boolean isUserdataServiceProvided();
+
+    boolean isSecuritygroupServiceProvided();
+
+    List<Service> getEnabledServices();
 }

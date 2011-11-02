@@ -17,6 +17,8 @@
  */
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -39,11 +41,20 @@ public class ProviderResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="id of the network provider")
     private Long id;
     
+    @SerializedName(ApiConstants.SERVICE_LIST) @Param(description="services for this provider")
+    private List<String> services;
+    
+    @SerializedName(ApiConstants.CAN_ENABLE_INDIVIDUAL_SERVICE) @Param(description="true if individual services can be enabled/disabled")
+    private Boolean canEnableIndividualServices;
     
     public void setName(String name) {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+    
     public void setPhysicalNetworkId(long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
@@ -76,4 +87,19 @@ public class ProviderResponse extends BaseResponse {
         return this.id;
     }
     
+    public void setServices(List<String> services) {
+        this.services = services;
+    }
+    
+    public List<String> getServices() {
+        return services;
+    }
+    
+    public Boolean getCanEnableIndividualServices() {
+        return canEnableIndividualServices;
+    }
+
+    public void setCanEnableIndividualServices(Boolean canEnableIndividualServices) {
+        this.canEnableIndividualServices = canEnableIndividualServices;
+    }    
 }

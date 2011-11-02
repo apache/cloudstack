@@ -33,7 +33,7 @@ import com.cloud.network.Network;
 import com.cloud.user.Account;
 
 
-@Implementation(description="Lists all network serviceproviders supported by CloudStack.", responseObject=ProviderResponse.class)
+@Implementation(description="Lists all network serviceproviders supported by CloudStack or for the given service.", responseObject=ProviderResponse.class)
 public class ListSupportedNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServiceProvidersCmd.class.getName());
     private static final String _name = "listsupportednetworkserviceprovidersresponse";
