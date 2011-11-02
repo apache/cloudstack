@@ -120,9 +120,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
     
-    @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
-    private String tags;
-    
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
     private Long physicalNetworkId;
     
@@ -241,19 +238,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
-    }
-    
-    public void setTags(List<String> tags) {
-        if (tags == null || tags.size() == 0) {
-            return;
-        }
-        
-        StringBuilder buf = new StringBuilder();
-        for (String tag : tags) {
-            buf.append(tag).append(",");
-        }
-        
-        this.tags = buf.delete(buf.length()-1, buf.length()).toString();
     }
     
     @Override

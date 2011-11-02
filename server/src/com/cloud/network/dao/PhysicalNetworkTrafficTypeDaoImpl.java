@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -31,6 +32,9 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value=PhysicalNetworkTrafficTypeDao.class) @DB(txn=false)
 public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNetworkTrafficTypeVO, Long> implements PhysicalNetworkTrafficTypeDao {
     final SearchBuilder<PhysicalNetworkTrafficTypeVO> physicalNetworkSearch;
+    final SearchBuilder<PhysicalNetworkTrafficTypeVO> kvmAllFieldsSearch;
+    final SearchBuilder<PhysicalNetworkTrafficTypeVO> xenAllFieldsSearch;
+    final SearchBuilder<PhysicalNetworkTrafficTypeVO> vmWareAllFieldsSearch;
     
     protected PhysicalNetworkTrafficTypeDaoImpl() {
         super();
@@ -38,7 +42,24 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         physicalNetworkSearch.and("physicalNetworkId", physicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
         physicalNetworkSearch.and("trafficType", physicalNetworkSearch.entity().getTrafficType(), Op.EQ);
         physicalNetworkSearch.done();
-
+        
+        kvmAllFieldsSearch = createSearchBuilder();
+        kvmAllFieldsSearch.and("physicalNetworkId", kvmAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        kvmAllFieldsSearch.and("trafficType", kvmAllFieldsSearch.entity().getTrafficType(), Op.EQ);
+        kvmAllFieldsSearch.and("kvm_network_label", kvmAllFieldsSearch.entity().getKvmNetworkLabel(), Op.NNULL);
+        kvmAllFieldsSearch.done();
+        
+        xenAllFieldsSearch = createSearchBuilder();
+        xenAllFieldsSearch.and("physicalNetworkId", xenAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        xenAllFieldsSearch.and("trafficType", xenAllFieldsSearch.entity().getTrafficType(), Op.EQ);
+        xenAllFieldsSearch.and("xen_network_label", xenAllFieldsSearch.entity().getKvmNetworkLabel(), Op.NNULL);
+        xenAllFieldsSearch.done();
+        
+        vmWareAllFieldsSearch = createSearchBuilder();
+        vmWareAllFieldsSearch.and("physicalNetworkId", vmWareAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        vmWareAllFieldsSearch.and("trafficType", vmWareAllFieldsSearch.entity().getTrafficType(), Op.EQ);
+        vmWareAllFieldsSearch.and("vmware_network_label", vmWareAllFieldsSearch.entity().getKvmNetworkLabel(), Op.NNULL);
+        vmWareAllFieldsSearch.done();
     }
 
     @Override
@@ -58,5 +79,34 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public String getNetworkTag(long physicalNetworkId, TrafficType trafficType, HypervisorType hType) {
+        SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = null;
+        if (hType == HypervisorType.XenServer) {
+            sc = xenAllFieldsSearch.create();
+        } else if (hType == HypervisorType.KVM) {
+            sc = kvmAllFieldsSearch.create();
+        } else if (hType == HypervisorType.VMware) {
+            sc = vmWareAllFieldsSearch.create();
+        } else {
+            return null;
+        }
+        
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("trafficType", trafficType);
+        PhysicalNetworkTrafficTypeVO record = findOneBy(sc);
+        
+        if (record != null) {
+            if (hType == HypervisorType.XenServer) {
+                return record.getXenNetworkLabel();
+            } else if (hType == HypervisorType.KVM) {
+                return record.getKvmNetworkLabel();
+            } else if (hType == HypervisorType.VMware) {
+                return record.getVmwareNetworkLabel();
+            }
+        }
+        return null;
     }
 }

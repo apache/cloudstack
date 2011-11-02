@@ -269,8 +269,6 @@ public interface Network extends ControlledEntity {
 
     String getNetworkDomain();
 
-    List<String> getTags();
-
     GuestType getGuestType();
     
     boolean getIsShared();

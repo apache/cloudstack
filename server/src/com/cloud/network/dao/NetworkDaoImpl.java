@@ -202,7 +202,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         NetworkOpVO op = new NetworkOpVO(network.getId(), gc);
         _opDao.persist(op);
         txn.commit();
-        newNetwork.setTags(network.getTags());
         return newNetwork;
     }
 

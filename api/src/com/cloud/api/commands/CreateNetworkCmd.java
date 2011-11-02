@@ -163,11 +163,6 @@ public class CreateNetworkCmd extends BaseCmd {
         return zoneId;
     }
     
-    public List<String> getTags() {
-        //FIXME - remove this method
-        return null;
-    }
-    
     public Long getPhysicalNetworkId() {
         NetworkOffering offering = _configService.getNetworkOffering(networkOfferingId);
         if (offering == null) {

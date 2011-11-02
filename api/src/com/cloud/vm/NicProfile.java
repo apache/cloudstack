@@ -213,7 +213,7 @@ public class NicProfile {
         return strategy;
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, List<String> tags) {
         this.id = nic.getId();
         this.networkId = network.getId();
         this.gateway = nic.getGateway();
@@ -233,7 +233,7 @@ public class NicProfile {
         this.netmask = nic.getNetmask();
         this.isSecurityGroupEnabled = isSecurityGroupEnabled;
         this.vmId = nic.getInstanceId();
-        this.tags = network.getTags();
+        this.tags = tags;
 
         if (networkRate != null) {
             this.networkRate = networkRate;

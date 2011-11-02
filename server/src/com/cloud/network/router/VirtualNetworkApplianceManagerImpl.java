@@ -2189,7 +2189,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
-                ip.setNetworkTags(network.getTags());
+                ip.setNetworkTags(_networkMgr.getNetworkTags(router.getHypervisorType(), network));
                 ipsToSend[i++] = ip;
                 firstIP = false;
             }

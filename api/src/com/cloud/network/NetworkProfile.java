@@ -19,7 +19,6 @@
 package com.cloud.network;
 
 import java.net.URI;
-import java.util.List;
 
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -47,7 +46,6 @@ public class NetworkProfile implements Network {
     private String reservationId;
     private boolean isDefault;
     private String networkDomain;
-    private List<String> tags;
     private Network.GuestType guestType;
     private boolean isShared;
     private Long physicalNetworkId;
@@ -74,11 +72,6 @@ public class NetworkProfile implements Network {
         this.guestType = network.getGuestType();
         this.isShared = network.getIsShared();
         this.physicalNetworkId = network.getPhysicalNetworkId();
-    }
-
-    @Override
-    public List<String> getTags() {
-        return tags;
     }
 
     public String getDns1() {

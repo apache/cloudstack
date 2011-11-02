@@ -198,15 +198,6 @@ CREATE TABLE `cloud`.`networks` (
   INDEX `i_networks__removed`(`removed`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_tags` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `network_id` bigint unsigned NOT NULL COMMENT 'id of the network',
-  `tag` varchar(255) NOT NULL COMMENT 'tag',
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
-  UNIQUE KEY(`network_id`, `tag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',

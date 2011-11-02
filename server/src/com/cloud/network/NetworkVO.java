@@ -18,19 +18,13 @@
 package com.cloud.network;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
@@ -142,11 +136,6 @@ public class NetworkVO implements Network {
 
     @Column(name="is_default")
     boolean isDefault;
-
-    @ElementCollection(targetClass = String.class, fetch=FetchType.EAGER)
-    @Column(name="tag")
-    @CollectionTable(name="network_tags", joinColumns=@JoinColumn(name="network_id"))
-    List<String> tags;
     
     @Column(name="guest_type")
     @Enumerated(value=EnumType.STRING)
@@ -252,22 +241,6 @@ public class NetworkVO implements Network {
     @Override
     public long getId() {
         return id;
-    }
-
-    @Override
-    public List<String> getTags() {
-        return tags != null ? tags : new ArrayList<String>();
-    }
-
-    public void addTag(String tag) {
-        if (tags == null) {
-            tags = new ArrayList<String>();
-        }
-        tags.add(tag);
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
     }
 
     @Override
