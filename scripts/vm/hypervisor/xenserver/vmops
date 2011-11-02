@@ -1076,6 +1076,29 @@ def inflate_rules (zipped):
    return zlib.decompress(base64.b64decode(zipped))
 
 @echo
+def get_ipset_keyword():
+    tmpname = 'ipsetqzvxtmp'
+    keyword = 'match-set'
+    try:
+        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iptreemap'])
+    except:
+        util.pread2(['/bin/bash', '-c', 'ipset -F ' + tmpname])
+
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -A INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        util.pread2(['/bin/bash', '-c', 'iptables -D INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        keyword = 'set'
+    except:
+        keyword = 'match-set'
+    
+    try:
+       util.pread2(['/bin/bash', '-c', 'ipset -X ' + tmpname])
+    except:
+       pass
+
+    return keyword
+
+@echo
 def network_rules(session, args):
   try:
     vm_name = args.get('vmName')
@@ -1137,7 +1160,7 @@ def network_rules(session, args):
     rules = args.pop('rules')
     if deflated.lower() == 'true':
        rules = inflate_rules (rules)
-   
+    keyword = '--' + get_ipset_keyword() 
     lines = rules.split(' ')
 
     util.SMlog("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
@@ -1169,14 +1192,14 @@ def network_rules(session, args):
                 util.SMlog(" failed to create ipset for rule " + str(tokens))
 
             if protocol == 'all':
-                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--set', ipsetname, 'src', '-j', 'ACCEPT']
+                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, 'src', '-j', 'ACCEPT']
             elif protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--set', ipsetname, 'src', '-j', 'ACCEPT']
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, 'src', '-j', 'ACCEPT']
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--set', ipsetname, 'src', '-j', 'ACCEPT']
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, 'src', '-j', 'ACCEPT']
             cmds.append(iptables)
             util.SMlog(iptables)
         
