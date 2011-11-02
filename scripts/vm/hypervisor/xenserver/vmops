@@ -535,8 +535,30 @@ def destroy_ebtables_rules(vm_chain):
             util.pread2(['ebtables', '-t', 'nat', '-X', chain])
         except:
             util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain)   
+            
+    destroy_arptables_rules(vm_chain)
 
-         
+
+@echo
+def destroy_arptables_rules(vm_chain):
+    delcmd = "arptables -vL FORWARD | grep " + vm_chain + " sed 's/-i any//' | sed 's/-o any//' | awk '{print $1,$2,$3,$4}' "
+    delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
+    delcmds.pop()
+    for cmd in delcmds:
+        try:
+            dc = cmd.split(' ')
+            dc.insert(0, 'arptables')
+            dc.insert(1, '-D')
+            dc.insert(2, 'FORWARD')
+            util.pread2(dc)
+        except:
+            util.SMlog("Ignoring failure to delete arptables rules for vm " + vm_chain)
+    
+    try:
+        util.pread2(['arptables', '-F', vm_chain])
+        util.pread2(['arptables', '-X', vm_chain])
+    except:
+        util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain) 
               
 @echo
 def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
@@ -552,7 +574,7 @@ def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
                 util.pread2(['ebtables', '-t',  'nat',  '-F', chain])
             except:
                 util.SMlog("Failed to create ebtables nat rule, skipping")
-                return 'true'
+                return default_arptables_rules(vm_chain, vif, vm_ip, vm_mac)
 
     try:
         # -s ! 52:54:0:56:44:32 -j DROP 
@@ -583,6 +605,40 @@ def default_ebtables_rules(vm_chain, vif, vm_ip, vm_mac):
     except:
         util.SMlog("Failed to program default ebtables OUT rules")
         return 'false' 
+    
+    return 'true'
+    
+@echo
+def default_arptables_rules(vm_chain, vif, vm_ip, vm_mac):
+    try:
+        util.pread2(['arptables',  '-N', vm_chain])
+    except:
+        try:
+            util.pread2(['arptables', '-F', vm_chain])
+        except:
+            util.SMlog("Failed to create arptables rule, skipping")
+            return 'true'
+
+    try:
+        util.pread2(['arptables',  '-A', 'FORWARD', '-i',  vif, '-j', vm_chain])
+        util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
+    except:
+        util.SMlog("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
+        return 'false'
+    
+    try:
+        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-mac', '!', vm_mac, '-j', 'DROP'])
+        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--source-ip', '!', vm_ip, '-j', 'DROP']) 
+        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '-j', 'ACCEPT'])   
+        util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '-j', 'ACCEPT'])    
+        
+        util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
+        util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '-j', 'ACCEPT'])   
+        
+        util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])    
+    except:
+        util.SMlog("Failed to program default arptables  rules")
+        return 'false'
     
     return 'true'
 
@@ -1113,14 +1169,14 @@ def network_rules(session, args):
                 util.SMlog(" failed to create ipset for rule " + str(tokens))
 
             if protocol == 'all':
-                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--set', ipsetname, 'src', '-j', 'ACCEPT']
             elif protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--set', ipsetname, 'src', '-j', 'ACCEPT']
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--set', ipsetname, 'src', '-j', 'ACCEPT']
             cmds.append(iptables)
             util.SMlog(iptables)
         
