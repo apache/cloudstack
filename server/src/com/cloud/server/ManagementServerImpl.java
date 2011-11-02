@@ -1659,6 +1659,14 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             } else {
                 domainId = ((caller == null) ? DomainVO.ROOT_DOMAIN : caller.getDomainId());
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        permittedAccounts.add(userAccount.getId());
+                    } else {
+                        throw new InvalidParameterValueException("DomainId is not specified. Unable to find account " + accountName + " in default root domain " + domainId);
+                    }
+                }
             }
         } else {
             permittedAccounts.add(caller.getId());
