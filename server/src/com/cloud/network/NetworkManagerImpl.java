@@ -1374,6 +1374,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (nics != null) {
             for (Nic nic : nics) {
                 NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                if (network == null) {
+                    s_logger.warn("getNicProfiles : Skipping  Network beacuse of Null");
+                    continue;
+                }
                 Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
                 NetworkGuru guru = _networkGurus.get(network.getGuruName());
