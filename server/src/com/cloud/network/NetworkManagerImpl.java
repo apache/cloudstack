@@ -878,6 +878,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         defaultVirtualNetworkOfferingProviders.put(Service.Gateway, defaultProviders);
         defaultVirtualNetworkOfferingProviders.put(Service.Lb, defaultProviders);
         defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.StaticNat, defaultProviders);
+        defaultVirtualNetworkOfferingProviders.put(Service.PortForwarding, defaultProviders);
         defaultVirtualNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
         
         Transaction txn = Transaction.currentTxn();

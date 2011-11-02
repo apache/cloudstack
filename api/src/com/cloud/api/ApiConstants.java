@@ -266,6 +266,8 @@ public class ApiConstants {
     public static final String DHCP_SERVICE = "dhcpservice";
     public static final String DNS_SERVICE = "dnsservice";
     public static final String SOURCE_NAT_SERVICE = "sourcenatservice";
+    public static final String STATIC_NAT_SERVICE = "staticnatservice";
+    public static final String PORT_FORWARDING_SERVICE = "staticnatservice";
     public static final String VPN_SERVICE = "vpnservice";
     public static final String USERDATA_SERVICE = "userdataservice";
     public static final String LB_SERVICE = "lbservice";

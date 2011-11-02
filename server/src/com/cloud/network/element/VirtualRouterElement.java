@@ -302,9 +302,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         
         //Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
-        firewallCapabilities.put(Capability.PortForwarding, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
-        firewallCapabilities.put(Capability.StaticNat, "true");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         
@@ -323,10 +321,12 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         capabilities.put(Service.Dhcp, null);
         capabilities.put(Service.Gateway, null);
         
-        
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
+        
+        capabilities.put(Service.StaticNat, null);
+        capabilities.put(Service.PortForwarding, null);
         
         return capabilities;
     }

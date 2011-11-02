@@ -51,10 +51,12 @@ public interface Network extends ControlledEntity {
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat");
+        public static final Service StaticNat = new Service("StaticNat");
+        public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
 
         private String name;
@@ -154,8 +156,6 @@ public interface Network extends ControlledEntity {
 
     public static class Capability {
 
-        public static final Capability PortForwarding = new Capability("PortForwarding");
-        public static final Capability StaticNat = new Capability("StaticNat");
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
         public static final Capability MultipleIps = new Capability("MultipleIps");

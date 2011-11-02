@@ -74,6 +74,12 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @Column(name = "load_balance_service_provided")
     boolean lbServiceProvided;
     
+    @Column(name = "static_nat_service_provided")
+    boolean staticnatServiceProvided;
+    
+    @Column(name = "port_forwarding_service_provided")
+    boolean portForwardingServiceProvided;
+    
     @Column(name = "user_data_service_provided")
     boolean userdataServiceProvided;
     
@@ -188,6 +194,22 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.lbServiceProvided = lbServiceProvided;
     }
 
+    public boolean isStaticnatServiceProvided() {
+        return staticnatServiceProvided;
+    }
+
+    public void setStaticnatServiceProvided(boolean staticnatServiceProvided) {
+        this.staticnatServiceProvided = staticnatServiceProvided;
+    }
+
+    public boolean isPortForwardingServiceProvided() {
+        return portForwardingServiceProvided;
+    }
+
+    public void setPortForwardingServiceProvided(boolean portForwardingServiceProvided) {
+        this.portForwardingServiceProvided = portForwardingServiceProvided;
+    }
+
     @Override
     public boolean isUserdataServiceProvided() {
         return userdataServiceProvided;
@@ -214,6 +236,8 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.setFirewallServiceProvided(services.contains(Service.Firewall));
         this.setLbServiceProvided(services.contains(Service.Lb));
         this.setSourcenatServiceProvided(services.contains(Service.SourceNat));
+        this.setStaticnatServiceProvided(services.contains(Service.StaticNat));
+        this.setPortForwardingServiceProvided(services.contains(Service.PortForwarding));
         this.setUserdataServiceProvided(services.contains(Service.UserData));
         this.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
     }
@@ -241,6 +265,12 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         }
         if(this.sourcenatServiceProvided){
             services.add(Service.SourceNat);
+        }
+        if(this.staticnatServiceProvided){
+            services.add(Service.StaticNat);
+        }
+        if(this.portForwardingServiceProvided){
+            services.add(Service.PortForwarding);
         }
         if(this.isUserdataServiceProvided()){
             services.add(Service.UserData);

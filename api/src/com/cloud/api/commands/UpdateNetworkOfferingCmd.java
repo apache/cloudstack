@@ -80,6 +80,12 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.SOURCE_NAT_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports source nat service")
     private Boolean sourceNatService;
     
+    @Parameter(name=ApiConstants.STATIC_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
+    private Boolean staticNatService;
+    
+    @Parameter(name=ApiConstants.PORT_FORWARDING_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
+    private Boolean portForwardingService;
+    
     @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports vpn service")
     private Boolean vpnService;
     
@@ -138,6 +144,14 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getSourceNatService() {
         return sourceNatService == null ? false : sourceNatService;
+    }
+
+    public Boolean getStaticNatService() {
+        return staticNatService == null ? false : staticNatService;
+    }
+
+    public Boolean getPortForwardingService() {
+        return portForwardingService == null ? false : portForwardingService;
     }
 
     public Boolean getVpnService() {

@@ -852,6 +852,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultVirtualNetworkOfferingProviders.put(Service.Gateway, Provider.VirtualRouter);
         defaultVirtualNetworkOfferingProviders.put(Service.Lb, Provider.VirtualRouter);
         defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.StaticNat, Provider.VirtualRouter);
+        defaultVirtualNetworkOfferingProviders.put(Service.PortForwarding, Provider.VirtualRouter);
         defaultVirtualNetworkOfferingProviders.put(Service.Vpn, Provider.VirtualRouter);
         
         NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(
