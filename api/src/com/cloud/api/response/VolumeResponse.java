@@ -30,6 +30,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "ID of the disk volume")
     private IdentityProxy id = new IdentityProxy("volumes");
 
+/*    
     @SerializedName(ApiConstants.JOB_ID)
     @Param(description = "shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private IdentityProxy jobId = new IdentityProxy("async_job");
@@ -37,6 +38,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.JOB_STATUS)
     @Param(description = "shows the current pending asynchronous job status")
     private Integer jobStatus;
+*/    
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "name of the disk volume")
@@ -161,14 +163,15 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
         return getId();
     }
 
+/*    
     @Override
     public Long getJobId() {
-        return jobId.getValue();
+        return super.getJobId();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId.setValue(jobId);
+        super.setJobId(jobId);
     }
 
     @Override
@@ -180,7 +183,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
-
+*/
     public Boolean getDestroyed() {
         return destroyed;
     }

@@ -28,6 +28,7 @@ import com.google.gson.GsonBuilder;
 
 public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
+    
     static {
         s_gBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         s_gBuilder.setVersion(1.3);

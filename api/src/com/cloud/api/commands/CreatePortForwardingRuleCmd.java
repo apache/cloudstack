@@ -83,6 +83,10 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+    
+    public String getEntityTable() {
+    	return "firewall_rules";
+    }
 
     public Long getIpAddressId() {
         return ipAddressId;

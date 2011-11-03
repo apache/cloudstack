@@ -26,8 +26,10 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
+/*	
     @SerializedName(ApiConstants.JOB_ID) @Param(description="async job ID")
     private IdentityProxy id = new IdentityProxy("async_job");
+*/    
 
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private IdentityProxy accountId = new IdentityProxy("account");
@@ -57,18 +59,17 @@ public class AsyncJobResponse extends BaseResponse {
     private String jobInstanceType;
 
     @SerializedName("jobinstanceid") @Param(description="the unique ID of the instance/entity object related to the job")
-    // private Long jobInstanceId;
-    IdentityProxy jobInstanceIdProxy = new IdentityProxy();
+    private IdentityProxy jobInstanceId = new IdentityProxy();
 
     @SerializedName(ApiConstants.CREATED) @Param(description="	the created date of the job")
     private Date created;
 
     public Long getId() {
-        return id.getValue();
+        return getJobId();
     }
 
     public void setId(Long id) {
-        this.id.setValue(id);
+        setJobId(id);
     }
 
     public Long getAccountId() {
@@ -141,13 +142,14 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setJobInstanceType(String jobInstanceType) {
         this.jobInstanceType = jobInstanceType;
+
         if(jobInstanceType != null) {
         	if(jobInstanceType.equalsIgnoreCase("volume")) {
-        		this.jobInstanceIdProxy.setTableName("volumes");
+        		this.jobInstanceId.setTableName("volumes");
         	} else if(jobInstanceType.equalsIgnoreCase("template")) {
-        		this.jobInstanceIdProxy.setTableName("vm_template");
+        		this.jobInstanceId.setTableName("vm_template");
         	} else if(jobInstanceType.equalsIgnoreCase("iso")) {
-        		this.jobInstanceIdProxy.setTableName("vm_template");
+        		this.jobInstanceId.setTableName("vm_template");
         	} else {
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
         		assert(false);
@@ -156,11 +158,11 @@ public class AsyncJobResponse extends BaseResponse {
     }
 
     public Long getJobInstanceId() {
-        return jobInstanceIdProxy.getValue();
+        return this.jobInstanceId.getValue();
     }
 
     public void setJobInstanceId(Long jobInstanceId) {
-        this.jobInstanceIdProxy.setValue(jobInstanceId);
+    	this.jobInstanceId.setValue(jobInstanceId);
     }
 
     public Date getCreated() {

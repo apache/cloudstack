@@ -77,6 +77,10 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public String getEntityTable() {
+    	return "user_ip_address";
+    }
+    
     public String getAccountName() {
         if (accountName != null) { 
             return accountName;

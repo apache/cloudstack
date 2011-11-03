@@ -18,6 +18,7 @@
 package com.cloud.keystore;
 
 import java.security.KeyStore;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +29,11 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
+import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.ApiSerializerHelper;
+import com.cloud.api.response.AlertResponse;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.configuration.DefaultInterceptorLibrary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.MockComponentLocator;
@@ -84,17 +90,20 @@ public class KeystoreTest extends TestCase {
     @Override
     @Before
     public void setUp() {
+/*    	
         MockComponentLocator locator = new MockComponentLocator("management-server");
         locator.addDao("keystoreDao", KeystoreDaoImpl.class);
         locator.addManager("KeystoreManager", KeystoreManagerImpl.class);
         locator.makeActive(new DefaultInterceptorLibrary());
+*/        
     }
     
     @Override
     @After
     public void tearDown() throws Exception {
     }
-    
+
+/*    
     public void testKeystoreSave() throws Exception {
     	KeystoreVO ksVo;
     	
@@ -153,5 +162,36 @@ public class KeystoreTest extends TestCase {
         KeystoreDao ksDao = locator.getDao(KeystoreDao.class);
         KeystoreVO ksVo = ksDao.findByName("CPVMCertificate");
         ksDao.expunge(ksVo.getId());
+    }
+*/    
+    public void testUuid() {
+    	UserVmResponse vm = new UserVmResponse();
+    	vm.setId(3L);
+/*    	
+    	vm.setAccountName("admin");
+    	vm.setName("i-2-3-KY");
+    	vm.setDisplayName("i-2-3-KY");
+    	vm.setDomainId(1L);
+    	vm.setDomainName("ROOT");
+    	vm.setCreated(new Date());
+    	vm.setState("Running");
+    	vm.setZoneId(1L);
+    	vm.setZoneName("KY");
+    	vm.setHostId(1L);
+    	
+    	vm.setObjectName("virtualmachine");
+*/    	
+    	String result = ApiSerializerHelper.toSerializedStringOld(vm);
+        // String result = "com.cloud.api.response.UserVmResponse/virtualmachine/{\"id\":{\"_tableName\":\"vm_instance\",\"_value\":3},\"name\":\"i-2-3-KY\",\"displayname\":\"i-2-3-KY\",\"account\":\"admin\",\"projectid\":{\"_tableName\":\"projects\"},\"domainid\":{\"_tableName\":\"domain\",\"_value\":1},\"domain\":\"ROOT\",\"created\":\"2011-11-02T21:54:07-0700\",\"state\":\"Running\",\"haenable\":false,\"groupid\":{\"_tableName\":\"instance_group\"},\"zoneid\":{\"_tableName\":\"data_center\",\"_value\":1},\"zonename\":\"KY\",\"hostid\":{\"_tableName\":\"host\",\"_value\":1},\"hostname\":\"xenserver-basic\",\"templateid\":{\"_tableName\":\"vm_template\",\"_value\":2},\"templatename\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"templatedisplaytext\":\"CentOS 5.3(64-bit) no GUI (XenServer)\",\"passwordenabled\":false,\"isoid\":{\"_tableName\":\"vm_template\"},\"serviceofferingid\":{\"_tableName\":\"disk_offering\",\"_value\":7},\"serviceofferingname\":\"Small Instance\",\"cpunumber\":1,\"cpuspeed\":500,\"memory\":512,\"guestosid\":{\"_tableName\":\"guest_os\",\"_value\":12},\"rootdeviceid\":0,\"rootdevicetype\":\"NetworkFilesystem\",\"securitygroup\":[],\"jobid\":{\"_tableName\":\"async_job\"},\"nic\":[{\"id\":7,\"networkid\":200,\"netmask\":\"255.255.255.0\",\"gateway\":\"10.1.1.1\",\"ipaddress\":\"10.1.1.116\",\"isolationuri\":\"vlan://1699\",\"broadcasturi\":\"vlan://1699\",\"traffictype\":\"Guest\",\"type\":\"Virtual\",\"isdefault\":true,\"macaddress\":\"02:00:39:a7:00:01\"}],\"hypervisor\":\"XenServer\"}";
+    	System.out.println(result);
+    	//Object obj = ApiSerializerHelper.fromSerializedString(result);
+
+    	AlertResponse alert = new AlertResponse();
+    	alert.setId(100L);
+    	alert.setDescription("Hello");
+    	
+    	result = ApiSerializerHelper.toSerializedStringOld(alert);
+    	System.out.println(result);
+    	ApiSerializerHelper.fromSerializedString(result);
     }
 }

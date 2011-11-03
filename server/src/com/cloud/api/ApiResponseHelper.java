@@ -2159,7 +2159,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setJobStatus(result.getJobStatus());
         response.setJobProcStatus(result.getProcessStatus());
         response.setJobResultCode(result.getResultCode());
+        
+        boolean savedValue = SerializationContext.current().getUuidTranslation();
+        SerializationContext.current().setUuidTranslation(false);
         response.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(result.getResult()));
+        SerializationContext.current().setUuidTranslation(savedValue);
 
         Object resultObject = result.getResultObject();
         if (resultObject != null) {

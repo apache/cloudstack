@@ -75,7 +75,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
     
     private static final int VM_DETAILS_BATCH_SIZE=100;
-    
+   
     protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
     protected final NicDaoImpl _nicDao = ComponentLocator.inject(NicDaoImpl.class);
     
@@ -393,8 +393,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         
         if (!userVmData.isInitialized()){
         
-            userVmData.setUuid(rs.getString("vm_instance.uuid"));
-        	
             //account.account_name, account.type, domain.name,  instance_group.id, instance_group.name,"
             userVmData.setAccountId(rs.getLong("account.id"));
             userVmData.setAccountName(rs.getString("account.account_name"));

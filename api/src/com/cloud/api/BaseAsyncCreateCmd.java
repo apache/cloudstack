@@ -34,11 +34,14 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     public void setEntityId(Long id) {
         this.id = id;
     }
+    
+    public abstract String getEntityTable();
 
-    public String getResponse(long jobId, long objectId) {
+    public String getResponse(long jobId, long objectId, String objectEntityTable) {
         CreateCmdResponse response = new CreateCmdResponse();
         response.setJobId(jobId);
         response.setId(objectId);
+        response.setIdEntityTable(objectEntityTable);
         response.setResponseName(getCommandName());
         return _responseGenerator.toSerializedString(response, getResponseType());
     }

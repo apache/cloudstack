@@ -393,10 +393,12 @@ public class ApiServer implements HttpRequestHandler {
         Account caller = ctx.getCaller();
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
+            String objectEntityTable = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
+                objectEntityTable = createCmd.getEntityTable();
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.setupParameters(cmdObj, params);
@@ -444,8 +446,10 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId);
+                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
             }
+            
+            SerializationContext.current().setUuidTranslation(true);
             return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
         } else {
             _dispatcher.dispatch(cmdObj, params);
@@ -455,7 +459,9 @@ public class ApiServer implements HttpRequestHandler {
             if (cmdObj instanceof BaseListCmd) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
-            return ApiResponseSerializer.toSerializedString((ResponseObject) cmdObj.getResponseObject(), cmdObj.getResponseType());
+            
+            SerializationContext.current().setUuidTranslation(true);
+        	return ApiResponseSerializer.toSerializedString((ResponseObject) cmdObj.getResponseObject(), cmdObj.getResponseType());
         }
     }
 
@@ -925,6 +931,8 @@ public class ApiServer implements HttpRequestHandler {
             apiResponse.setErrorCode(errorCode);
             apiResponse.setErrorText(errorText);
             apiResponse.setResponseName(responseName);
+            
+            SerializationContext.current().setUuidTranslation(true);
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 
         } catch (Exception e) {

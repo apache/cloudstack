@@ -67,6 +67,10 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+    public String getEntityTable() {
+    	return "user_ip_address";
+    }
     
     public Long getPublicIpId() {
 		return publicIpId;

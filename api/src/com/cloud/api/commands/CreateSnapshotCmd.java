@@ -63,6 +63,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+    
+    public String getEntityTable() {
+    	return "snapshots";
+    }
 
     public String getAccountName() {
         return accountName;

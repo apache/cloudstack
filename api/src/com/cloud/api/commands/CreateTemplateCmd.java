@@ -96,6 +96,10 @@ import com.cloud.user.UserContext;
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+    
+    public String getEntityTable() {
+    	return "vm_template";
+    }
 
     public Integer getBits() {
         return bits;

@@ -62,6 +62,10 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public String getEntityTable() {
+    	return "projects";
+    }
+    
     public String getAccountName() {
         if (accountName != null) {
             return accountName;

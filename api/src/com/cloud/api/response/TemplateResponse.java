@@ -95,11 +95,13 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
 
+/*    
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the template")
     private IdentityProxy jobId = new IdentityProxy("async_job");
 
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
+*/    
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain to which the template belongs")
     private String domainName;  
@@ -227,13 +229,13 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
-
+/*
     public Long getJobId() {
-        return jobId.getValue();
+        return super.getJobId();
     }
 
     public void setJobId(Long jobId) {
-        this.jobId.setValue(jobId);
+        super.setJobId(jobId);
     }
 
     public Integer getJobStatus() {
@@ -243,6 +245,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
+*/    
     
     @Override
     public void setDomainName(String domainName) {

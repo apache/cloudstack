@@ -75,7 +75,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
+    
+    public String getEntityTable() {
+    	return "firewall_rules";
+    }
+    
     public Long getIpAddressId() {
         return ipAddressId;
     }

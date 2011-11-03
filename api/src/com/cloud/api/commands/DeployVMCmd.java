@@ -143,6 +143,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public String getEntityTable() {
+    	return "vm_instance";
+    }
+    
     public String getAccountName() {
         if (accountName == null) {
             return UserContext.current().getCaller().getAccountName();

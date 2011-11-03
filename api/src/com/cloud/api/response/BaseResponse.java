@@ -19,6 +19,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -53,17 +54,17 @@ public abstract class BaseResponse implements ResponseObject {
     
     // For use by list commands with pending async jobs
     @SerializedName(ApiConstants.JOB_ID) @Param(description="the ID of the latest async job acting on this object")
-    private Long jobId;
+    protected IdentityProxy jobId = new IdentityProxy("async_job");
     
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
     private Integer jobStatus;
     
     public Long getJobId() {
-    	return jobId;
+    	return jobId.getValue();
     }
     
     public void setJobId(Long jobId) {
-    	this.jobId = jobId;
+    	this.jobId.setValue(jobId);
     }
     
     public Integer getJobStatus() {

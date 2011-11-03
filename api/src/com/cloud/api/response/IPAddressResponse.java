@@ -88,12 +88,16 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
-    
+
+/*    
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
     private IdentityProxy jobId = new IdentityProxy("async_job");
+*/    
 
+/*    
     @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
+*/    
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -182,15 +186,16 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public Long getObjectId() {
         return getId();
     }
-    
+
+/*    
     @Override
     public Long getJobId() {
-        return jobId.getValue();
+        return super.getJobId();
     }
 
     @Override
     public void setJobId(Long jobId) {
-        this.jobId.setValue(jobId);
+        super.setJobId(jobId);
     }
     
     @Override
@@ -202,7 +207,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
-    
+*/    
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);

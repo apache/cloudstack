@@ -78,6 +78,10 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+    
+    public String getEntityTable() {
+    	return "firewall_rules";
+    }
 
     public Long getIpAddressId() {
         return ipAddressId;

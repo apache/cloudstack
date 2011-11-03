@@ -19,28 +19,37 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 public class CreateCmdResponse extends BaseResponse {
+/*	
     @SerializedName(ApiConstants.JOB_ID)
     private Long jobId;
+*/
 
     @SerializedName(ApiConstants.ID)
-    private Long id;
+    private IdentityProxy id = new IdentityProxy();
 
+/*    
     public Long getJobId() {
-        return jobId;
+        return super.getJobId();
     }
 
     public void setJobId(Long jobId) {
-        this.jobId = jobId;
+        super.setJobId(jobId);
     }
+*/    
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
+    }
+    
+    public void setIdEntityTable(String entityTable) {
+    	this.id.setTableName(entityTable);
     }
 }

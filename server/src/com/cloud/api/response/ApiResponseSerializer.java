@@ -35,6 +35,7 @@ import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ResponseObject;
+import com.cloud.api.ResponseObjectTypeAdapter;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.component.ComponentLocator;
@@ -65,9 +66,10 @@ public class ApiResponseSerializer {
         return str;
     }
 
-    private static String toJSONSerializedString(ResponseObject result) {
+    public static String toJSONSerializedString(ResponseObject result) {
         if (result != null) {
             Gson gson = ApiResponseGsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
+            	
             StringBuilder sb = new StringBuilder();
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");

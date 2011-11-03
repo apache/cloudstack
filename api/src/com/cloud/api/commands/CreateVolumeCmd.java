@@ -78,6 +78,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+    
+    public String getEntityTable() {
+    	return "volumes";
+    }
 
     public String getAccountName() {
         return accountName;

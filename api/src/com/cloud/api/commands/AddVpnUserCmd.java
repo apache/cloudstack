@@ -103,6 +103,10 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         
         return accountId;
     }
+	
+    public String getEntityTable() {
+    	return "vpn_users";
+    }
 
 	@Override
 	public String getEventDescription() {

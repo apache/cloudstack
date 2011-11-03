@@ -109,6 +109,10 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         return privatePort;
     }
 
+    public String getEntityTable() {
+    	return "firewall_rules";
+    }
+    
     public Long getPublicIpId() {
         IpAddress ipAddr = _networkService.getIp(publicIpId);
         if (ipAddr == null || !ipAddr.readyToUse()) {

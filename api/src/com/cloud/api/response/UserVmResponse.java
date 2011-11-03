@@ -144,12 +144,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.PASSWORD) @Param(description="the password (if exists) of the virtual machine")
     private String password;
 
+/*    
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the virtual machine")
     private IdentityProxy jobId = new IdentityProxy("async_job");
+    
 
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
-    
+*/    
     @SerializedName("nic")  @Param(description="the list of nics associated with vm", responseObject = NicResponse.class)
     private List<NicResponse> nics;
     
@@ -305,14 +307,15 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.password = password;
     }
 
+/*   
     public void setJobId(Long jobId) {
-        this.jobId.setValue(jobId);
+        super.setJobId(jobId);
     }
 
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
-
+*/
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
