@@ -5804,6 +5804,53 @@
           "domain": "ROOT",
           "timezone": "CET"
         }
+      ],
+
+      projects: [
+        {
+          name: 'prj1',
+          displayText: 'Project 1',
+          users: [
+            {
+              username: 'bfederle',
+              role: 'admin'
+            },
+            {
+              username: 'schhen',
+              role: 'admin'
+            },
+            {
+              username: 'jdoe',
+              role: 'user'
+            }
+          ]
+        },
+        {
+          name: 'prj2',
+          displayText: 'Project 2',
+          users: [
+            {
+              username: 'someuserA',
+              role: 'user'
+            },
+            {
+              username: 'someuserB',
+              role: 'user'
+            },
+            {
+              username: 'someadmin',
+              role: 'admin'
+            }
+          ]
+        },
+        {
+          name: 'prj3',
+          displayText: 'Project 3'
+        },
+        {
+          name: 'prj4',
+          displayText: 'Project 4'
+        }
       ]
     }
   };

@@ -69,7 +69,7 @@
       if (args.data) $.extend(true, data, args.data);
       if (listViewArgs) section = listViewArgs.section;
 
-      notification.desc = messages ? 
+      notification.desc = messages ?
         messages.notification(messageArgs) : null;
 
       if (listViewArgs)
@@ -226,7 +226,7 @@
               }
             }
           };
-          
+
           if (action.custom && action.noAdd) {
             action.custom({
               data: data,
@@ -236,7 +236,7 @@
               complete: actionArgs.response.success
             });
           } else {
-            action(actionArgs);            
+            action(actionArgs);
           }
         }
       };
@@ -494,7 +494,7 @@
             })
             .data('list-view-action-id', actionName)
         );
-        
+
         return true;
       } else if (action.type == 'checkbox') {
         $td.append(
@@ -513,10 +513,10 @@
             })
             .data('list-view-action-id', actionName)
         );
-        
+
         return true;
       }
-      
+
       $td.append(
         $('<div></div>')
           .addClass('action')
@@ -579,7 +579,7 @@
           $('<tr>').addClass('empty').append(
             $('<td>').html('No data to show')
           ).appendTo($tbody)
-        ];        
+        ];
       }
 
       return $tbody.find('tr:last').addClass('last');
@@ -642,7 +642,7 @@
         });
 
         var $listView = $tr.closest('.list-view');
-        var isUICustom = $listView.data('view-args') ? 
+        var isUICustom = $listView.data('view-args') ?
               $tr.closest('.list-view').data('view-args').uiCustom : false;
 
         if (options.actionFilter && !isUICustom) {
@@ -651,7 +651,7 @@
               actions: allowedActions,
               item: dataItem
             })
-          }); 
+          });
         }
 
         makeActionIcons(
@@ -768,7 +768,7 @@
       if (sectionPreFilter && $.inArray(key, sectionPreFilter) == -1) {
         return true;
       }
-      
+
       var $sectionButton;
 
       if (!this.type || this.type == 'button') {
@@ -921,9 +921,9 @@
         return true;
 
       loadBody(
-        $table, 
-        listViewData.dataProvider, 
-        listViewData.fields, 
+        $table,
+        listViewData.dataProvider,
+        listViewData.fields,
         false,
         {
           page: 1,
@@ -946,6 +946,7 @@
 
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
+      if (args.listView.disableInfiniteScrolling) return false;
       if ($listView.find('tr.last, td.loading:visible').size()) return false;
 
       clearTimeout(infScrollTimer);

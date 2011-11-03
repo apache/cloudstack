@@ -1,10 +1,10 @@
-(function($, window) {
-  window.cloudStack = {
+(function($, cloudStack) {
+  $.extend(cloudStack, {
     ui: {
       widgets: {} // Defines API methods for UI widgets
     },
     uiCustom: {}
-  };
+  });
 
   /**
    * Generate navigation <li>s
@@ -102,23 +102,34 @@
             .notifications();
 
       // Project switcher
-      var $viewSwitcher = $('<div>').addClass('button view-switcher')
+      var $viewSwitcher = $('<div>').addClass('view-switcher').append(
+        $.merge(
+          $('<span>').addClass('select-project').html('Select View:'),
+          $('<select>')
             .append(
               // Default View
-              $('<div>').addClass('default-view')
-                .html('Default View')
-                .prepend(
-                  $('<span>').addClass('icon').html('&nbsp;')
-                )
+              $('<option>').val('default-view')
+                .html('All')
             )
             .append(
               // Project View
-              $('<div>').addClass('select')
-                .html('Select View')
-                .prepend(
-                  $('<span>').addClass('icon').html('&nbsp;')
-                )
-            );
+              $('<option>').val('select-project')
+                .html('Project View')
+            )
+            .change(function() {
+              var $projectSwitcher = $(this);
+              var $container = $('html body');
+
+              if ($projectSwitcher.val() == 'select-project') {
+                cloudStack.uiCustom.projects();
+              } else {
+                $('.project-view').removeClass('project-view');
+              }
+
+              return false;
+            })
+        )
+      );
 
       // User status area
       var $userInfo = $('<div>').attr({ id: 'user' }).addClass('button')
@@ -223,6 +234,8 @@
         return false;
       }
       else $('#user-options').hide();
+
+      return false;
     });
 
     $(document).bind('click', function(event) {
@@ -255,49 +268,6 @@
         return false;
       }
 
-      // Project buttons
-      var $defaultSwitcher = $target.closest('div.controls div.button.view-switcher .default-view');
-      if ($defaultSwitcher.size()) {
-        $container.removeClass('project-view');
-        $defaultSwitcher.closest('.view-switcher').removeClass('alt');
-        $('#navigation li.dashboard').click();
-        return false;
-      }
-
-      var $projectSwitcher = $target.closest('div.controls div.button.view-switcher .select');
-      if ($projectSwitcher.size()) {
-        $projectSwitcher.html('<span class="icon"></span>Projects');
-        $projectSwitcher.closest('.view-switcher').addClass('alt');
-        $('<div>')
-          .addClass('sample-project-view')
-          .appendTo($container)
-          .overlay()
-          .click(function(event) {
-            $container.addClass('project-view');
-            $('#navigation li.dashboard')
-              .click();
-            $('div.overlay').remove();
-            $(this).remove();
-            $('div.panel:first').children().remove();
-            $('div.panel:first')
-              .append(
-                $('<img>')
-                  .attr({ src: 'images/screens/ProjectDashboard.png' })
-                  .css({ cursor: 'pointer' })
-              );
-            $('#breadcrumbs ul')
-              .addClass('project-view')
-              .prepend(
-                $('<li>').addClass('active').append($('<span>').html('Project Name'))
-              )
-              .append(
-                $('<div>').addClass('end')
-              );
-          });
-
-        return false;
-      }
-
       // User options
       if ($target.closest('#user div.icon.options').size()) {
         $('#user-options').toggle();
@@ -308,4 +278,4 @@
       return true;
     });
   });
-})(jQuery, window);
+})(jQuery, window.cloudStack ? window.cloudStack : window.cloudStack = {});

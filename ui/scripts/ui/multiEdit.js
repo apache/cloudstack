@@ -18,7 +18,7 @@
       // Setup columns
       $.each(fields, function(fieldName, field) {
         if (options.ignoreEmptyFields && !data[fieldName]) {
-          return true; 
+          return true;
         }
 
         var $td = $('<td>').addClass(fieldName).appendTo($tr);
@@ -95,8 +95,17 @@
         $multi.find('th.multi-actions').width() + 4
       );
 
+      // Action filter
+      var allowedActions = options.preFilter ? options.preFilter({
+        context: $.extend(true, {}, options.context, {
+          actions: $.map(actions, function(value, key) { return key; })
+        })
+      }) : null;
+
       // Append actions
       $.each(actions, function(actionID, action) {
+        if (allowedActions && $.inArray(actionID, allowedActions) == -1) return true;
+
         $actions.append(
           $('<div>')
             .addClass('action')
@@ -110,7 +119,7 @@
               var isDestroy = $target.hasClass('destroy');
 
               if (isDestroy) {
-                var $loading = _medit.loadingItem($multi, 'Removing rule...');
+                var $loading = _medit.loadingItem($multi, 'Removing...');
 
                 if ($expandable.is(':visible')) {
                   $expandable.slideToggle(function() {
@@ -134,11 +143,11 @@
                       $('.notifications').notifications('add', {
                         section: 'network',
                         desc: notification.label,
-                        interval: 1000,
+                        interval: 500,
                         _custom: _custom,
                         poll: function(args) {
                           var complete = args.complete;
-                          
+
                           notification.poll({
                             _custom: args._custom,
                             complete: function(args) {
@@ -223,7 +232,7 @@
     },
     details: function(data, $browser, options) {
       if (!options) options = {};
-      
+
       var detailViewArgs, $detailView;
 
       detailViewArgs = $.extend(true, {}, cloudStack.sections.instances.listView.detailView);
@@ -316,6 +325,7 @@
     var noSelect = args.noSelect;
     var context = args.context;
     var ignoreEmptyFields = args.ignoreEmptyFields;
+    var actionPreFilter = args.actionPreFilter;
 
     var $thead = $('<tr>').appendTo(
       $('<thead>').appendTo($inputTable)
@@ -456,12 +466,12 @@
         });
 
         // Loading appearance
-        var $loading = _medit.loadingItem($multi, 'Adding rule...');
+        var $loading = _medit.loadingItem($multi, 'Adding...');
         $dataBody.append($loading);
 
         // Clear out fields
         $multi.find('input').val('');
-        
+
         // Apply action
         args.add.action({
           context: context,
@@ -474,11 +484,11 @@
                 $('.notifications').notifications('add', {
                   section: 'network',
                   desc: notification.label,
-                  interval: 3000,
+                  interval: 500,
                   _custom: successArgs._custom,
                   poll: function(pollArgs) {
                     var complete = pollArgs.complete;
-                    
+
                     notification.poll({
                       _custom: pollArgs._custom,
                       complete: function(completeArgs) {
@@ -495,7 +505,8 @@
                             multipleAdd: multipleAdd,
                             noSelect: noSelect,
                             context: context,
-                            ignoreEmptyFields: ignoreEmptyFields
+                            ignoreEmptyFields: ignoreEmptyFields,
+                            preFilter: actionPreFilter
                           }
                         ).appendTo($dataBody);
                       }
@@ -579,7 +590,8 @@
                 multipleAdd: multipleAdd,
                 noSelect: noSelect,
                 context: $.extend(true, {}, context, this._context),
-                ignoreEmptyFields: ignoreEmptyFields
+                ignoreEmptyFields: ignoreEmptyFields,
+                preFilter: actionPreFilter
               }
             ).appendTo($dataBody);
           });

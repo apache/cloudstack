@@ -28,6 +28,7 @@
   $(function() {
     var $container = $('#cloudStack3-container');
     
+    // Login
     cloudStack.uiCustom.login({
       $container: $container,
       
