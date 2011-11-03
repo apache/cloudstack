@@ -354,7 +354,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         long numResources = ((count.length == 0) ? 1 : count[0]);
 
         // Don't place any limits on system or admin accounts
-        if (isAdmin(account.getType())) {
+        if (isRootAdmin(account.getType())) {
             return false;
         }
         
