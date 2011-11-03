@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -44,11 +43,11 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -135,46 +134,6 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             return false;
         }
     }
-    
-//    @Override
-//    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-//        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-//        if (!canHandle(network.getType(), network.getNetworkOfferingId())) {
-//            s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
-//            return false;
-//        }
-//
-//        DeployDestination dest = new DeployDestination(dc, null, null, null);
-//
-//        NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-//        
-//        // We need to re-implement the network since the redundancy capability may changed
-//        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
-//        if (routers == null || routers.isEmpty()) {
-//            s_logger.trace("Can't find virtual router element in network " + network.getId());
-//            return true;
-//        }
-//
-//        /* Get the host_id in order to find the cluster */
-//        Long host_id = new Long(0);
-//        for (DomainRouterVO router : routers) {
-//            if (host_id == null || host_id == 0) {
-//                host_id = (router.getHostId() != null ? router.getHostId() : router.getLastHostId());
-//            }
-//            if (cleanup) {
-//                /* FIXME it's not completely safe to ignore these failure, but we would try to push on now */
-//                if (router.getState() != State.Stopped && _routerMgr.stopRouter(router.getId(), false) == null) {
-//                    s_logger.warn("Failed to stop virtual router element " + router + " as a part of network " + network + " restart");
-//                }
-//                if (_routerMgr.destroyRouter(router.getId()) == null) {
-//                    s_logger.warn("Failed to destroy virtual router element " + router + " as a part of network " + network + " restart");
-//                }
-//            }
-//        }
-//        if (host_id == null || host_id == 0) {
-//            throw new ResourceUnavailableException("Fail to locate virtual router element in network " + network.getId(), this.getClass(), 0);
-//        }
-//    }
 
     @Override
     public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
