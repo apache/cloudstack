@@ -765,8 +765,12 @@
       detailView: {
         name: 'Instance details',
         viewAll: { path: 'storage.volumes', label: 'Volumes' },
-
-        // Detail view actions
+        tabFilter: function(args) {
+          var hiddenTabs = [];                      
+          if(g_directAttachSecurityGroupsEnabled != "true") 
+             hiddenTabs.push("securityGroups");	         
+          return hiddenTabs;
+        },               
         actions: {
           start: {
             label: 'Start instance' ,
