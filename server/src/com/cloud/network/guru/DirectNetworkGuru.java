@@ -34,6 +34,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
@@ -99,7 +100,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         State state = State.Allocated;
-        if (offering.isSystemOnly()) {
+        if (dc.getNetworkType() == NetworkType.Basic) {
             state = State.Setup;
         }
 

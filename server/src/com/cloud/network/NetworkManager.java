@@ -40,7 +40,6 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -229,7 +228,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean isProviderAvailable(long physicalNetowrkId, String providerName);
     
-    boolean isServiceEnabled(Long physicalNetworkId, long networkOfferingId, Service service);
+    boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service);
 
     List<String> getNetworkTags(HypervisorType hType, Network network);
 

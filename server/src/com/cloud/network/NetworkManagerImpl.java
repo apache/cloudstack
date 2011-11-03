@@ -1377,11 +1377,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // associate a source NAT IP (if one isn't already associated with the network)
         
         boolean sharedSourceNat = false;
-        Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
-        if (sourceNatCapabilities != null) {
-            String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
-            if (supportedSourceNatTypes.contains("zone")) {
-                sharedSourceNat = true;
+        if (isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat)) {
+            Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+            if (sourceNatCapabilities != null) {
+                String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+                if (supportedSourceNatTypes.contains("zone")) {
+                    sharedSourceNat = true;
+                }
             }
         }
         
@@ -1491,7 +1493,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 element.prepare(network, profile, vmProfile, dest, context);
             }
             
-            profile.setSecurityGroupEnabled(isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup));
+            profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
             guru.updateNicProfile(profile, network);
             vmProfile.addNic(profile);
         }
@@ -4407,9 +4409,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean isSecurityGroupSupportedInNetwork(Network network) {
-        boolean supported = isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup);
+        Long physicalNetworkId = network.getPhysicalNetworkId();
         
-        return supported;
+        //physical network id can be null in Guest Network in Basic zone, so locate the physical network
+        if (physicalNetworkId == null) {
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null);
+        }
+        
+        return isServiceEnabled(physicalNetworkId, network.getNetworkOfferingId(), Service.SecurityGroup);
     }
 
     @Override
@@ -4603,7 +4610,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean isServiceEnabled(Long physicalNetworkId, long networkOfferingId, Service service) {
+    public boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service) {
         //check if the service is supported by the network offering
         if (!isServiceSupportedByNetworkOffering(networkOfferingId, service)) {
             s_logger.debug("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
@@ -4611,13 +4618,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //get providers for the service and check if all of them are supported
-        if (physicalNetworkId != null) {
-            List<String> providers = _ntwkOfferingSrvcDao.getProvidersForService(networkOfferingId, service);
-            for (String provider : providers) {
-                if (!isProviderAvailable(physicalNetworkId, provider)) {
-                    s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
-                    return false;
-                }
+        List<String> providers = _ntwkOfferingSrvcDao.getProvidersForService(networkOfferingId, service);
+        for (String provider : providers) {
+            if (!isProviderAvailable(physicalNetworkId, provider)) {
+                s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
+                return false;
             }
         }
         
@@ -4652,6 +4657,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         //in all other cases return empty list
         return new ArrayList<String>();
+    }
+    
+    
+    @Override
+    public NetworkVO getExclusiveGuestNetwork(long zoneId) {
+        List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, zoneId, GuestType.Shared, TrafficType.Guest);
+        if (networks == null || networks.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to find network with trafficType " + TrafficType.Guest + " and guestType " + GuestType.Shared + " in zone " + zoneId);
+        }
+        
+        if (networks.size() > 1) {
+            throw new InvalidParameterValueException("Found more than 1 network with trafficType " + TrafficType.Guest + " and guestType " + GuestType.Shared + " in zone " + zoneId);
+
+        }
+        
+        return networks.get(0);
     }
     
 }

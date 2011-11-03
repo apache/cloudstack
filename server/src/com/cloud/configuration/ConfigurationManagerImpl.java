@@ -1941,7 +1941,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         } else {
             if (network == null) {
                 if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
-                    networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
+                    networkId = _networkMgr.getExclusiveGuestNetwork(zoneId).getId();
                 } else {
                     network = _networkMgr.getNetworkWithSecurityGroupEnabled(zoneId);
                     if (network == null) {

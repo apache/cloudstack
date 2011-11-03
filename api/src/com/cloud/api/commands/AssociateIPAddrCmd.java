@@ -105,7 +105,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
             return networks.get(0).getId();
         } else {
-            Network defaultGuestNetwork = _networkService.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+            Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
             if (defaultGuestNetwork == null) {
                 throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
             } else {

@@ -546,10 +546,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         Account systemAcct = _accountMgr.getSystemAccount();
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
-        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
+        NetworkOfferingVO defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
 
         if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-            defaultOffering.add(_networkMgr.getExclusiveGuestNetworkOffering());
+            defaultOffering = _networkMgr.getExclusiveGuestNetworkOffering();
         }
 
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
@@ -557,7 +557,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering, plan, null, null, false, false).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }

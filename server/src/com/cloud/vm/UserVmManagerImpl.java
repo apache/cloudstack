@@ -1996,7 +1996,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(caller, null, owner);
 
         // Get default guest network in Basic zone
-        Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+        Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(zone.getId());
 
         if (defaultNetwork == null) {
             throw new InvalidParameterValueException("Unable to find a default network to start a vm");
@@ -2097,7 +2097,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
-                boolean isSecurityGroupEnabled = _networkMgr.isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup);
+                boolean isSecurityGroupEnabled = _networkMgr.isSecurityGroupSupportedInNetwork(network);
                 if (isSecurityGroupEnabled && networkIdList.size() > 1) {
                     throw new InvalidParameterValueException("Can't create a vm with multiple networks one of which is Security Group enabled");
                 }
@@ -2421,7 +2421,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             networks.add(new Pair<NetworkVO, NicProfile>(network, profile));
             
-            if (_networkMgr.isServiceEnabled(network.getPhysicalNetworkId(), network.getNetworkOfferingId(), Service.SecurityGroup)) {
+            if (_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
                 securityGroupEnabled = true;
             }
         }
