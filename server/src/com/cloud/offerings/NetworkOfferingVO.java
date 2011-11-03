@@ -120,6 +120,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     
     @Column(name="redundant_router")
     boolean redundantRouter;
+    
+    @Column(name="sort_key")
+    int sortKey;
 
     @Column(name="uuid")
     String uuid;
@@ -392,5 +395,13 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+
+    public void setSortKey(int key) {
+    	sortKey = key;
+    }
+    
+    public int getSortKey() {
+    	return sortKey;
     }
 }

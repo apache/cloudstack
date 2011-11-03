@@ -25,6 +25,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
@@ -48,6 +49,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the service offering to be updated")
     private String serviceOfferingName;
     
+    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the service offering, integer")
+    private Integer sortKey;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,7 +67,9 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return serviceOfferingName;
     }
 
-
+    public Integer getSortKey() {
+    	return sortKey;
+    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

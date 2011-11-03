@@ -24,6 +24,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 
 public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
@@ -53,6 +54,9 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the image supports the password reset feature; default is false")
     private Boolean passwordEnabled;
+    
+    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the template, integer")
+    private Integer sortKey;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -84,5 +88,9 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     
     public String getFormat() {
         return format;
+    }
+    
+    public Integer getSortKey() {
+    	return sortKey;
     }
 }

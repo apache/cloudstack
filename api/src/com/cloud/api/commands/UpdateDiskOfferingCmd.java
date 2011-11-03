@@ -47,6 +47,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates name of the disk offering with this value")
     private String diskOfferingName;
+    
+    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the disk offering, integer")
+    private Integer sortKey;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -62,6 +65,10 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
 
     public String getDiskOfferingName() {
         return diskOfferingName;
+    }
+    
+    public Integer getSortKey() {
+    	return sortKey;
     }
 
 

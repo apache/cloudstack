@@ -274,6 +274,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service',
   `guest_type` char(32) COMMENT 'guest ip type of network offering',
   `redundant_router` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides redundant routers',
+  `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`),
@@ -890,6 +891,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template belongs to',
   `source_template_id` bigint unsigned COMMENT 'Id of the original template, if this template is created from snapshot',
   `template_tag` varchar(255) COMMENT 'template tag',
+  `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
   PRIMARY KEY  (`id`),
   INDEX `i_vm_template__removed`(`removed`),
   CONSTRAINT `uc_vm_template__uuid` UNIQUE (`uuid`)
@@ -1267,6 +1269,7 @@ CREATE TABLE `cloud`.`disk_offering` (
   `customized` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 implies not customized by default',
   `removed` datetime COMMENT 'date removed',
   `created` datetime COMMENT 'date the disk offering was created',
+  `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
   PRIMARY KEY  (`id`),
   INDEX `i_disk_offering__removed`(`removed`),
   CONSTRAINT `uc_disk_offering__uuid` UNIQUE (`uuid`)
@@ -1284,6 +1287,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   `default_use` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'is this offering a default system offering',
   `vm_type` varchar(32) COMMENT 'type of offering specified for system offerings',
+  `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_service_offering__id` FOREIGN KEY `fk_service_offering__id`(`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

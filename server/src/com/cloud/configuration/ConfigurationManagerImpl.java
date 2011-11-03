@@ -1709,6 +1709,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String displayText = cmd.getDisplayText();
         Long id = cmd.getId();
         String name = cmd.getServiceOfferingName();
+        Integer sortKey = cmd.getSortKey();
         Long userId = UserContext.current().getCallerUserId();
 
         if (userId == null) {
@@ -1735,6 +1736,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (displayText != null) {
             offering.setDisplayText(displayText);
+        }
+        
+        if (sortKey != null) {
+        	offering.setSortKey(sortKey);
         }
 
         // Note: tag editing commented out for now; keeping the code intact, might need to re-enable in next releases
@@ -1823,6 +1828,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long diskOfferingId = cmd.getId();
         String name = cmd.getDiskOfferingName();
         String displayText = cmd.getDisplayText();
+        Integer sortKey = cmd.getSortKey();
 
         // Check if diskOffering exists
         DiskOffering diskOfferingHandle = getDiskOffering(diskOfferingId);
@@ -1831,7 +1837,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
         }
 
-        boolean updateNeeded = (name != null || displayText != null);
+        boolean updateNeeded = (name != null || displayText != null || sortKey != null);
         if (!updateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
         }
@@ -1844,6 +1850,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (displayText != null) {
             diskOffering.setDisplayText(displayText);
+        }
+        
+        if (sortKey != null) {
+        	diskOffering.setSortKey(sortKey);
         }
 
         // Note: tag editing commented out for now;keeping the code intact, might need to re-enable in next releases
@@ -2944,7 +2954,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
-        Filter searchFilter = new Filter(NetworkOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+    	isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
 
         Object id = cmd.getId();
@@ -3054,6 +3066,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long id = cmd.getId();
         String name = cmd.getNetworkOfferingName();
         String availabilityStr = cmd.getAvailability();
+        Integer sortKey = cmd.getSortKey();
         Availability availability = null;
         UserContext.current().setEventDetails(" Id: "+id);
         
@@ -3081,6 +3094,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (displayText != null) {
             offering.setDisplayText(displayText);
+        }
+        
+        if (sortKey != null) {
+        	offering.setSortKey(sortKey);
         }
 
         // Verify availability
