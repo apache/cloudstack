@@ -41,7 +41,17 @@ do
   fi
 done
 
+# eject all CD
 
+
+for vm in $(xe vbd-list type=CD empty=false | grep vm-uuid  | awk '{print $NF}')
+do
+  vmname=$(xe vm-param-get uuid=f873bb90-2e86-f7c5-364c-f315ecea826e param-name=name-label)
+  xe vm-cd-eject vm=$vmname
+  if [ $? -ne 0 ]; then
+    echo "Need to eject CD for VM $vmname"
+  fi
+done
 
 # fake PV for PV VM
 
