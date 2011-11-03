@@ -2921,7 +2921,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
                 if (serviceProviderMap.containsKey(service)) {
-                    serviceProviderMap.clear();
                     Set<Provider> providers = new HashSet<Provider>();
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
@@ -3246,7 +3245,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
                 if (serviceProviderMap.containsKey(service)) {
-                    serviceProviderMap.clear();
                     Set<Provider> providers = new HashSet<Provider>();
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
