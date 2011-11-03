@@ -21,3 +21,4 @@ api.log.*.gz
 cloud.log.*.*
 unittest
 deps/cloud.userlibraries
+.DS_Store
