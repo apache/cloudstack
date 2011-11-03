@@ -57,41 +57,6 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<Param, Object> params, DeploymentPlan plan, HypervisorType hyperType, Account owner)
-            throws InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Long rootSize, Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkVO, NicProfile>> networks, DeploymentPlan plan, HypervisorType hyperType, Account owner) throws InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, List<Pair<NetworkVO, NicProfile>> networkProfiles, DeploymentPlan plan,
-            HypervisorType hyperType, Account owner) throws InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-            ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
@@ -113,20 +78,6 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     public boolean stateTransitTo(VMInstanceVO vm, Event e, Long hostId) throws NoTransitionException {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException,
-            ConcurrentOperationException, OperationTimedoutException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -168,6 +119,67 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     @Override
+    public VMInstanceVO findByIdAndType(Type type, long vmId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
+            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<Param, Object> params, DeploymentPlan plan, HypervisorType hyperType, Account owner)
+            throws InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Long rootSize, Pair<DiskOfferingVO, Long> dataDiskOffering,
+            List<Pair<NetworkVO, NicProfile>> networks, DeploymentPlan plan, HypervisorType hyperType, Account owner) throws InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, List<Pair<NetworkVO, NicProfile>> networkProfiles, DeploymentPlan plan,
+            HypervisorType hyperType, Account owner) throws InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public <T extends VMInstanceVO> T reboot(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
@@ -181,15 +193,9 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     @Override
-    public VMInstanceVO findByIdAndType(Type type, long vmId) {
+    public VMInstanceVO findById(long vmId) {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
-        // TODO Auto-generated method stub
-        return false;
     }
 
 }

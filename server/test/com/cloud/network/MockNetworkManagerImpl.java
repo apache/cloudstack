@@ -20,21 +20,21 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.element.PasswordServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.Nic;
@@ -49,12 +49,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<? extends NetworkOffering> listNetworkOfferings() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -115,12 +109,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public NetworkProfile convertNetworkToNetworkProfile(long networkId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -255,31 +243,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public List<NicProfile> getNicProfiles(VirtualMachine vm) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<AccountVO> getAccountsUsingNetwork(long configurationId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public AccountVO getNetworkOwner(long configurationId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -388,13 +352,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return false;
     }
-
-    @Override
-    public Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
+    
     @Override
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
@@ -421,12 +379,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -501,12 +453,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<? extends PasswordServiceProvider> getPasswordResetElements() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Long getPodIdForVlan(long vlanDbId) {
         // TODO Auto-generated method stub
         return null;
@@ -516,5 +462,222 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean deletePhysicalNetwork(Long id) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<? extends Service> listNetworkServices(String providerName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId, List<String> enabledServices) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, boolean forcedShutdown, List<String> enabledServices) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean deleteNetworkServiceProvider(Long id) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public PhysicalNetwork getPhysicalNetwork(Long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetwork getCreatedPhysicalNetwork(Long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider getPhysicalNetworkServiceProvider(Long providerId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public long findPhysicalNetworkId(long zoneId, String tag) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean deletePhysicalNetworkTrafficType(Long id) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Network getExclusiveGuestNetwork(long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public Map<Capability, String> getServiceCapabilities(Long networkOfferingId, Service service) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestType type, Boolean isDefault) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> listNetworkOfferingsForUpgrade(long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isSecurityGroupSupportedInNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isProviderEnabled(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isProviderAvailable(long physicalNetowrkId, String providerName) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<String> getNetworkTags(HypervisorType hType, Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Service> getElementServices(Provider provider) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean canElementEnableIndividualServices(Provider provider) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public NetworkOfferingVO getExclusiveGuestNetworkOffering() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends UserDataServiceProvider> getPasswordResetElements() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

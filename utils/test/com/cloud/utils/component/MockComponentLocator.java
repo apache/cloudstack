@@ -59,8 +59,8 @@ public class MockComponentLocator extends ComponentLocator {
         return _library.addAdapterChain(interphace, adapters);
     }
     
-    public ComponentInfo<PluggableService> addService(String name, Class<? extends PluggableService> service) {
-        return _library.addService(name, service);
+    public <T> ComponentInfo<PluggableService> addService(String name, Class<T> serviceInterphace, Class<? extends PluggableService> service) {
+        return _library.addService(name, serviceInterphace, service);
     }
     
     @Override
