@@ -18,12 +18,14 @@ from xmlrpclib import Fault as XmlRpcFault
 from OVSCommons import *
 from OvmLoggerModule import OvmLogger
 from OVSXXenStore import xen_get_vm_path
+from OVSSiteRMServer import get_master_ip
 
 HEARTBEAT_TIMESTAMP_FORMAT='<timestamp>%s</timestamp>'
 HEARTBEAT_TIMESTAMP_PATTERN='(\<timestamp\>\d+.\d+<\/timestamp\>)'
 HEARTBEAT_DIR='heart_beat'
 ETC_HOSTS='/etc/hosts'
 HOSTNAME_FILE='/etc/sysconfig/network'
+OWNER_FILE_PREFIX='host_'
 
 logger = OvmLogger('OvmCommon')
 
@@ -124,4 +126,9 @@ def getVmNameFromConfigureFile(cfgPath):
             return value
     fd.close()
     raise Exception('Cannot find vm name in %s'%cfgPath)
+
+def makeOwnerFileName():
+    hostIp = successToMap(get_master_ip())['ip']
+    ownerFileName = OWNER_FILE_PREFIX + hostIp.replace('.', '_')
+    return ownerFileName
     

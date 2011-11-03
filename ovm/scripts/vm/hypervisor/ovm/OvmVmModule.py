@@ -16,7 +16,7 @@ from OVSXXenStore import xen_get_vm_path, xen_get_vnc_port
 from OVSDB import db_get_vm
 from OVSXMonitor import xen_get_vm_perf_metrics, xen_get_xm_info
 from OVSXXenVM import xen_migrate_vm
-from OVSSiteRMVM import unregister_vm, register_vm
+from OVSSiteRMVM import unregister_vm, register_vm, set_vm_status
 from OVSSiteVMInstall import install_vm_hvm
 from OVSSiteRMServer import get_master_ip
 from OVSXXenVMInstall import xen_change_vm_cdrom
@@ -114,6 +114,23 @@ class OvmVm(OvmObject):
     def _getVmTypeFromConfigFile(self, vmPath):
         vmType = successToMap(xen_get_vm_type(vmPath))['type']
         return vmType.replace('hvm', 'HVM').replace('para', 'PV')
+    
+    def _tapAOwnerFile(self, vmPath):
+        # Create a file with name convention 'host_ip_address' in vmPath
+        # Because xm list doesn't return vm that has been stopped, we scan
+        # primary storage for stopped vm. This file tells us which host it belongs
+        # to. The file is used in OvmHost.getAllVms()
+        self._cleanUpOwnerFile(vmPath)
+        ownerFileName = makeOwnerFileName()
+        fd = open(join(vmPath, ownerFileName), 'w')
+        fd.write(ownerFileName)
+        fd.close()
+    
+    def _cleanUpOwnerFile(self, vmPath):
+        for f in os.listdir(vmPath):
+            fp = join(vmPath, f)
+            if isfile(fp) and f.startswith(OWNER_FILE_PREFIX):
+                os.remove(join(vmPath, fp))
     
     @staticmethod
     def create(jsonString):    
@@ -256,6 +273,9 @@ class OvmVm(OvmObject):
             vmNameFile.write(vm.name)
             vmNameFile.close()
             
+            OvmVm()._tapAOwnerFile(rootDiskDir)
+            # set the VM to DOWN before starting, OVS agent will check this status
+            set_vm_status(vmPath, 'DOWN')
             if vm.bootDev == "HDD":
                 return hddBoot(vm, vmPath)
             elif vm.bootDev == "CD":
@@ -279,6 +299,8 @@ class OvmVm(OvmObject):
                 
             logger.info(OvmVm.stop, "Stop vm %s"%vmName)
             vmPath = OvmHost()._vmNameToPath(vmName)
+            # set the VM to DOWN before starting, OVS agent will check this status
+            set_vm_status(vmPath, 'RUNNING')
             raiseExceptionIfFail(stop_vm(vmPath))
             return SUCC()
         except Exception, e:
@@ -429,6 +451,7 @@ class OvmVm(OvmObject):
             vmPath = OvmHost()._vmNameToPath(vmName)
             raiseExceptionIfFail(xen_migrate_vm(vmPath, targetHost))
             unregister_vm(vmPath)
+            OvmVm()._cleanUpOwnerFile(vmPath)
             return SUCC()
         except Exception, e:
             errmsg = fmt_err_msg(e)
@@ -440,6 +463,7 @@ class OvmVm(OvmObject):
         try:
             vmPath = OvmHost()._vmNameToPath(vmName)
             raiseExceptionIfFail(register_vm(vmPath))
+            OvmVm()._tapAOwnerFile(vmPath)
             vncPort= successToMap(xen_get_vnc_port(vmName))['vnc_port']
             rs = toGson({"vncPort":str(vncPort)})
             logger.debug(OvmVm.register, rs)
