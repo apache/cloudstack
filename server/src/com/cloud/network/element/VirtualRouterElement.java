@@ -333,7 +333,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        if (canHandle(config.getGuestType(), config.getNetworkOfferingId(), Service.Firewall)) {
+        if (canHandle(config.getGuestType(), config.getNetworkOfferingId(), Service.StaticNat)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual router doesn't exist in the network " + config.getId());
@@ -429,7 +429,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
 
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Firewall)) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.PortForwarding)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
