@@ -63,6 +63,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("podId", AllFieldsSearch.entity().getPodIdToDeployIn(), Op.EQ);
+        AllFieldsSearch.and("elementId", AllFieldsSearch.entity().getElementId(), Op.EQ);
         AllFieldsSearch.done();
 
         IdNetworkIdStatesSearch = createSearchBuilder();
@@ -236,6 +237,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("role", role);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DomainRouterVO> listByElementId(long elementId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("elementId", elementId);
         return listBy(sc);
     }
 }

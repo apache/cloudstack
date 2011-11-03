@@ -122,9 +122,12 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.SshKeysDistriMonitor;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
@@ -136,7 +139,9 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -317,6 +322,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    PhysicalNetworkServiceProviderDao _physicalProviderDao;
+    @Inject
+    VirtualRouterProviderDao _vrProviderDao;
 
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1103,6 +1112,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (offering_id == null) {
                     offering_id = _offering.getId();
                 }
+                VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouterElement;
+                String typeString = "VirtualRouter";
+                if (isRedundant) {
+                    type = VirtualRouterProviderType.RedundantVirtualRouterElement;
+                    typeString = "RedundantVirtualRouter";
+                }
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(network.getPhysicalNetworkId(), typeString);
+                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
                 ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
                 int retry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
@@ -1110,7 +1127,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         s_logger.debug("Allocating the domR with the hypervisor type " + hType);
                         VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
                         
-                        router = new DomainRouterVO(id, routerOffering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                        router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
                                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
                         router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                         break;
@@ -1320,7 +1337,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     /* Before starting router, already know the hypervisor type */
                     VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
 
-                    router = new DomainRouterVO(id, routerOffering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                    VirtualRouterProviderType type = VirtualRouterProviderType.DhcpElement;
+                    String typeString = "DhcpServer";
+                    PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(network.getPhysicalNetworkId(), typeString);
+                    VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
+                    
+                    router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
                             template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
                     router.setRole(Role.DHCP_USERDATA);
                     router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);

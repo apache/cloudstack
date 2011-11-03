@@ -923,7 +923,7 @@ CREATE TABLE `cloud`.`user_vm_details` (
 
 CREATE TABLE `cloud`.`domain_router` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
-  `element_id` bigint unsigned NOT NULL COMMENT 'correlated virtual router element ID',
+  `element_id` bigint unsigned NOT NULL COMMENT 'correlated virtual router provider ID',
   `public_mac_address` varchar(17)   COMMENT 'mac address of the public facing network card',
   `public_ip_address` char(40)  COMMENT 'public ip address used for source net',
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
@@ -939,8 +939,8 @@ CREATE TABLE `cloud`.`domain_router` (
   `template_version` varchar(100) COMMENT 'template version',
   `scripts_version` varchar(100) COMMENT 'scripts version',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
-  #CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id` (`element_id`) REFERENCES `virtual_router_elements`(`id`)
+  CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';
 
 CREATE TABLE  `cloud`.`upload` (

@@ -122,4 +122,23 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         return vr.getId();
     }
     
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.RedundantVirtualRouterElement);
+        if (element == null) {
+            return true;
+        }
+        //Find domain routers
+        long elementId = element.getId();
+        List<DomainRouterVO> routers = _routerDao.listByElementId(elementId);
+        boolean result = true;
+        for (DomainRouterVO router : routers) {
+            if (forceShutdown) {
+                result = result && (_routerMgr.stopRouter(router.getId(), true) != null);
+            }
+            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+        }
+        return result;
+    }
 }
