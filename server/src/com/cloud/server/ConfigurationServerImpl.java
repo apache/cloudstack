@@ -893,7 +893,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultDirectNetworkOffering, 
                 "Direct", 
                 TrafficType.Guest, 
-                false, false, null, null, null, true, 
+                false, true, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Shared);
         
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
