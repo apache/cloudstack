@@ -5,8 +5,15 @@ public class KVMPhysicalDisk {
 	private String name;
 	private KVMStoragePool pool;
 	public static enum PhysicalDiskFormat {
-		RAW,
-		QCOW2
+		RAW("raw"),
+		QCOW2("qcow2");
+		String format;
+		private PhysicalDiskFormat(String format) {
+			this.format = format;
+		}
+		public String toString() {
+			return this.format;
+		}
 	}
 	private PhysicalDiskFormat format;
 	private long size;

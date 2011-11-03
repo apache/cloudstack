@@ -100,8 +100,11 @@ create_from_file() {
   local tmpltfs=$1
   local tmpltimg=$2
   local tmpltname=$3
-
-  $qemu_img convert -f qcow2 -O qcow2 $tmpltimg /$tmpltfs/$tmpltname >& /dev/null
+  if [ -b $tmpltimg ]; then
+      $qemu-img convert -f raw -O qcow2 $tmpltimg /$tmpltfs/$tmpltname
+  else
+      $qemu_img convert -f qcow2 -O qcow2 $tmpltimg /$tmpltfs/$tmpltname >& /dev/null
+  fi
   
   if [ "$cleanup" == "true" ]
   then
@@ -177,7 +180,7 @@ then
   fi
 fi
 
-if [ ! -f $tmpltimg ] 
+if [ ! -f $tmpltimg -a ! -b $tmpltimg ] 
 then
   printf "root disk file $tmpltimg doesn't exist\n"
   exit 3

@@ -858,7 +858,7 @@ public class VirtualRoutingResource implements Manager {
 
         _getDomRVersionPath = findScript("getDomRVersion.sh");
         if(_getDomRVersionPath == null) {
-            throw new ConfigurationException("Unable to find getRouterStatus.sh");
+            throw new ConfigurationException("Unable to find getDomRVersion.sh");
         }
         
         return true;

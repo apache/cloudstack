@@ -20,6 +20,7 @@ public interface StorageAdaptor {
 	public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool);
 	public KVMStoragePool getStoragePoolByUri(String uri);
 	public KVMPhysicalDisk getPhysicalDiskFromURI(String uri);
-	boolean refresh(KVMStoragePool pool);
+	public boolean refresh(KVMStoragePool pool);
+	public boolean deleteStoragePool(KVMStoragePool pool);
 
 }

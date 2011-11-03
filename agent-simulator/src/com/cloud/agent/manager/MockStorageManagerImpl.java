@@ -416,7 +416,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
             return new BackupSnapshotAnswer(cmd, false, "can't find snapshot" + snapshotPath, null, true);
         }
         
-        String secStorageUrl = cmd.getSecondaryStoragePoolURL();
+        String secStorageUrl = cmd.getSecondaryStorageUrl();
         MockSecStorageVO secStorage = _mockSecStorageDao.findByUrl(secStorageUrl);
         if (secStorage == null) {
             return new BackupSnapshotAnswer(cmd, false, "can't find sec storage" + snapshotPath, null, true);
@@ -613,7 +613,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
             }
         }
         
-        MockSecStorageVO sec = _mockSecStorageDao.findByUrl(cmd.getSecondaryStoragePoolURL());
+        MockSecStorageVO sec = _mockSecStorageDao.findByUrl(cmd.getSecondaryStorageUrl());
         if (sec == null) {
             return new CreatePrivateTemplateAnswer(cmd, false, "can't find secondary storage");
         }
@@ -654,7 +654,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
             return new CreatePrivateTemplateAnswer(cmd, false, "cant' find volume" + cmd.getVolumePath());
         }
         
-        MockSecStorageVO sec = _mockSecStorageDao.findByUrl(cmd.getSecondaryStoragePoolURL());
+        MockSecStorageVO sec = _mockSecStorageDao.findByUrl(cmd.getSecondaryStorageUrl());
         if (sec == null) {
             return new CreatePrivateTemplateAnswer(cmd, false, "can't find secondary storage");
         }

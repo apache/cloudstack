@@ -37,7 +37,7 @@ mount_raw_disk() {
     local vmname=$1
     local datadisk=$2
     local path=$(mntpath $vmname)
-    if [ ! -f $datadisk ]
+    if [ ! -f $datadisk -a ! -b $datadisk ]
     then
         printf "$datadisk doesn't exist" >&2
         return 2
@@ -46,9 +46,15 @@ mount_raw_disk() {
     retry=10
     while [ $retry -gt 0 ]
     do
-    mount $datadisk $path -o loop  &>/dev/null
+    if [ -b $datadisk ]; then
+	mount $datadisk $path &>/dev/null
+	ret=$?
+    else
+        mount $datadisk $path -o loop  &>/dev/null
+	ret=$?
+    fi
     sleep 10
-    if [ $? -gt 0 ]
+    if [ $ret -gt 0 ]
     then
 	sleep 5
     else

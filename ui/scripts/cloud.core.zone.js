@@ -991,6 +991,8 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
 					isValid &= validateString("LUN #", $thisDialog.find("#add_pool_lun"), $thisDialog.find("#add_pool_lun_errormsg"));	
+				} else if(protocol == "clvm") {
+					isValid &= validateString("Volume Group", $thisDialog.find("#add_pool_clvm_vg"), $thisDialog.find("#add_pool_clvm_vg_errormsg"));
 				} else if(protocol == "vmfs") {
 					isValid &= validateString("vCenter Datacenter", $thisDialog.find("#add_pool_vmfs_dc"), $thisDialog.find("#add_pool_vmfs_dc_errormsg"));	
 					isValid &= validateString("vCenter Datastore", $thisDialog.find("#add_pool_vmfs_ds"), $thisDialog.find("#add_pool_vmfs_ds_errormsg"));	
@@ -1046,6 +1048,10 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 						path = "/" + path; 
 					url = SharedMountPointURL(server, path);
 				} 
+				else if (protocol == "clvm") {
+					var vg = trim($thisDialog.find("#add_pool_clvm_vg").val());
+					url = clvmURL(vg);
+				}
 				else if (protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")

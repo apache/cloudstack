@@ -377,6 +377,13 @@ dictionary = {
                 <div id="add_pool_lun_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
+            <li id="add_pool_clvm_vg_container" style="display: none" input_group="clvm">
+                <label for="add_pool_clvm_vg">
+                    <fmt:message key="label.volgroup"/>:</label>
+                <input class="text" type="text" name="add_pool_clvm_vg" id="add_pool_clvm_vg" />
+                <div id="add_pool_clvm_vg_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
             <li input_group="vmfs">
                 <label for="add_pool_vmfs_dc">
                     <fmt:message key="label.vcenter.datacenter"/>:</label>

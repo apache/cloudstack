@@ -95,6 +95,7 @@
 		'label.SharedMountPoint': '<fmt:message key="label.SharedMountPoint"/>',
 		'label.PreSetup': '<fmt:message key="label.PreSetup"/>',
 		'label.iscsi': '<fmt:message key="label.iscsi"/>',
+		'label.clvm': '<fmt:message key="label.clvm"/>',
 		'label.VMFS.datastore': '<fmt:message key="label.VMFS.datastore"/>',
 		'label.theme.default': '<fmt:message key="label.theme.default"/>',
 		'label.none': '<fmt:message key="label.none"/>',

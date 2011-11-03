@@ -31,6 +31,18 @@ public class LibvirtStorageVolumeDef {
 		public String toString() {
 			return _format;
 		}
+		
+		public static volFormat getFormat(String format) {
+			if (format == null) {
+				return null;
+			}
+			if (format.equalsIgnoreCase("raw")) {
+				return RAW;
+			} else if (format.equalsIgnoreCase("qcow2")) {
+				return QCOW2;
+			}
+			return null;
+		}
 	}
 	private String _volName;
 	private Long _volSize;

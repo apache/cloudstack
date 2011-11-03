@@ -194,7 +194,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
             // Attach each data volume to the VM, if there is a deferred attached disk
             for (DiskDef disk : vm.getDevices().getDisks()) {
                 if (disk.isAttachDeferred()) {
-                    attachOrDetachDisk(conn, true, vmName, disk.getDiskPath(), disk.getDiskSeq());
+                	attachOrDetachDevice(conn, true, vmName, disk.toString());
                 }
             }
             

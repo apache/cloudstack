@@ -71,6 +71,8 @@ public class LibvirtDomainXMLParser {
                 Element disk = (Element)disks.item(i);
                 String diskFmtType = getAttrValue("driver", "type", disk);
                 String diskFile = getAttrValue("source", "file", disk);
+                String diskDev = getAttrValue("source", "dev", disk);
+
                 String diskLabel = getAttrValue("target", "dev", disk);
                 String bus = getAttrValue("target", "bus", disk);
                 String type = disk.getAttribute("type");
@@ -87,6 +89,8 @@ public class LibvirtDomainXMLParser {
                     } else if (device.equalsIgnoreCase("cdrom")) {
                         def.defISODisk(diskFile);
                     }
+                } else if (type.equalsIgnoreCase("block")) {
+                	def.defBlockBasedDisk(diskDev, diskLabel, DiskDef.diskBus.valueOf(bus.toUpperCase()));
                 }
                 diskDefs.add(def);
             }

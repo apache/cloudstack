@@ -64,6 +64,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 		return this.uri;
 	}
 	
+	@Override
 	public PhysicalDiskFormat getDefaultFormat() {
 		if (getStoragePoolType() == StoragePoolType.CLVM) {
 			return PhysicalDiskFormat.RAW;
@@ -127,5 +128,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
 	
 	public StoragePool getPool() {
 		return this._pool;
+	}
+
+	@Override
+	public boolean delete() {
+		return this._storageAdaptor.deleteStoragePool(this);
 	}
 }

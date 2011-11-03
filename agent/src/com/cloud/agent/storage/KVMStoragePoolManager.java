@@ -74,4 +74,6 @@ public class KVMStoragePoolManager {
 	public KVMPhysicalDisk getPhysicalDiskFromUrl(String url) {
 		return this._storageAdaptor.getPhysicalDiskFromURI(url);
 	}
+	
+	
 }

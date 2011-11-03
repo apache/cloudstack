@@ -18,4 +18,6 @@ public interface KVMStoragePool {
 	public boolean isExternalSnapshot();
 	public String getLocalPath();
 	public StoragePoolType getType();
+	public boolean delete();
+	PhysicalDiskFormat getDefaultFormat();
 }

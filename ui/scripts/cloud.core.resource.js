@@ -1824,6 +1824,8 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
 					isValid &= validateString("LUN #", $thisDialog.find("#add_pool_lun"), $thisDialog.find("#add_pool_lun_errormsg"));	
+				} else if(protocol == "clvm") {
+					isValid &= validateString("Volume Group", $thisDialog.find("#add_pool_clvm_vg"), $thisDialog.find("#add_pool_clvm_vg_errormsg"));
 				} else if(protocol == "vmfs") {
 					isValid &= validateString("vCenter Datacenter", $thisDialog.find("#add_pool_vmfs_dc"), $thisDialog.find("#add_pool_vmfs_dc_errormsg"));	
 					isValid &= validateString("vCenter Datastore", $thisDialog.find("#add_pool_vmfs_ds"), $thisDialog.find("#add_pool_vmfs_ds_errormsg"));	
@@ -1880,6 +1882,10 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 						path = "/" + path; 
 					url = SharedMountPointURL(server, path);
 				}  
+				else if (protocol == "clvm") {
+					var vg = trim($thisDialog.find("#add_pool_clvm_vg").val());
+					url = clvmURL(vg);
+				}
 				else if(protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")
@@ -1951,6 +1957,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$protocolSelector.empty();
     		$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
     		$protocolSelector.append('<option value="SharedMountPoint">' + g_dictionary["label.SharedMountPoint"] + '</option>');
+    		$protocolSelector.append('<option value="clvm">' + g_dictionary["label.clvm"] + '</option>');
     	} 
     	else if(clusterObj.hypervisortype == "XenServer") {
     		$protocolSelector.empty();
@@ -1980,6 +1987,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="clvm"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
     		
@@ -1999,6 +2007,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="clvm"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
     		
@@ -2009,15 +2018,27 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).hide();
     		$('li[input_group="iscsi"]', $dialogAddPool).show();
+    		$('li[input_group="clvm"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		
     		$dialogAddPool.find("#add_pool_nfs_server").val("");
     		$dialogAddPool.find("#add_pool_server_container").show();
     	} 
+    	else if($(this).val() == "clvm") {
+    		$("#add_pool_server_container", $dialogAddPool).hide();
+    		$('li[input_group="nfs"]', $dialogAddPool).hide();
+    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="clvm"]', $dialogAddPool).show();
+    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
+    		
+    		$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+    		$dialogAddPool.find("#add_pool_server_container").hide()
+    	}
     	else if($(this).val() == "vmfs") {
     		$("#add_pool_server_container", $dialogAddPool).hide();
     		$('li[input_group="nfs"]', $dialogAddPool).hide();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="clvm"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).show();   
     		
     		$dialogAddPool.find("#add_pool_nfs_server").val(""); 	
@@ -2027,6 +2048,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="clvm"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		
     		$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
@@ -2036,6 +2058,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     	    //$("#add_pool_server_container", $dialogAddPool).hide();
     		//$('li[input_group="nfs"]', $dialogAddPool).hide();    		
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="clvm"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		
     		$dialogAddPool.find("#add_pool_nfs_server").val(""); 	

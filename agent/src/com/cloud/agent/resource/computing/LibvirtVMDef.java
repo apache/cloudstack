@@ -345,6 +345,14 @@ public class LibvirtVMDef {
 			_diskLabel = getDevLabel(devId, bus);
 			_bus = bus;
 		}
+		public void defBlockBasedDisk(String diskName, String diskLabel, diskBus bus) {
+			_diskType = diskType.BLOCK;
+			_deviceType = deviceType.DISK;
+			_diskFmtType = diskFmtType.RAW;
+			_sourcePath = diskName;
+			_diskLabel = diskLabel;
+			_bus = bus;
+		}
 		public void setReadonly() {
 			_readonly = true;
 		}

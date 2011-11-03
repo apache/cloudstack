@@ -23,10 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -35,27 +32,17 @@ import org.libvirt.StoragePoolInfo;
 import org.libvirt.StorageVol;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
-import com.cloud.agent.api.GetStorageStatsAnswer;
-import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.resource.computing.KVMHABase;
-import com.cloud.agent.resource.computing.KVMHAMonitor;
-import com.cloud.agent.resource.computing.LibvirtComputingResource;
+import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.resource.computing.LibvirtConnection;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolXMLParser;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef;
-import com.cloud.agent.resource.computing.KVMHABase.NfsStoragePool;
-import com.cloud.agent.resource.computing.KVMHABase.PoolType;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeXMLParser;
 import com.cloud.agent.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -65,12 +52,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private static final Logger s_logger = Logger.getLogger(LibvirtStorageAdaptor.class);
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
-  
+    private String _manageSnapshotPath;
     
     public LibvirtStorageAdaptor(StorageLayer storage
                                  ) {
         _storageLayer = storage;
-      
+        _manageSnapshotPath = Script.findScript("scripts/storage/qcow2/", "managesnapshot.sh");
     }
     
     
@@ -233,6 +220,33 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             return null;
         }
+    }
+    
+    private StoragePool createCLVMStoragePool(Connect conn, String uuid, String host, String path) {
+    	
+    	String volgroupPath = "/dev/" + path;
+
+    	LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.LOGICAL, uuid, uuid,
+    			host, volgroupPath, volgroupPath);
+    	StoragePool sp = null;
+    	try {
+    		s_logger.debug(spd.toString());
+    		sp = conn.storagePoolDefineXML(spd.toString(), 0);
+    		sp.create(0);
+    		return sp;
+    	} catch (LibvirtException e) {
+    		s_logger.debug(e.toString());
+    		if (sp != null) {
+    			try {
+    				sp.undefine();
+    				sp.free();
+    			} catch (LibvirtException l) {
+    				s_logger.debug("Failed to define clvm storage pool with: " + l.toString());
+    			}
+    		}
+    		return null;
+    	}
+
     }
     
     public StorageVol copyVolume(StoragePool destPool, LibvirtStorageVolumeDef destVol, StorageVol srcVol, int timeout) throws LibvirtException {
@@ -405,7 +419,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
 			disk.setSize(vol.getInfo().allocation);
 			disk.setVirtualSize(vol.getInfo().capacity);
-			if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.QCOW2) {
+			if (voldef.getFormat() == null) {
+				disk.setFormat(pool.getDefaultFormat());
+			} else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.QCOW2) {
 				disk.setFormat(KVMPhysicalDisk.PhysicalDiskFormat.QCOW2);
 			} else if (voldef.getFormat() == LibvirtStorageVolumeDef.volFormat.RAW) {
 				disk.setFormat(KVMPhysicalDisk.PhysicalDiskFormat.RAW);
@@ -416,6 +432,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		}
 		
 	}
+	
 	@Override
 	public KVMStoragePool createStoragePool(String name, String host, String path, StoragePoolType type) {
 		StoragePool sp = null;
@@ -437,6 +454,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 				sp = createNfsStoragePool(conn, name, host, path);
 			} else if (type == StoragePoolType.SharedMountPoint || type == StoragePoolType.Filesystem) {
 				sp = CreateSharedStoragePool(conn, name, host, path);
+			} else if (type == StoragePoolType.CLVM) {
+				sp = createCLVMStoragePool(conn, name, host, path);
 			}
 		}
 
@@ -534,18 +553,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		KVMPhysicalDisk disk = destPool.createPhysicalDisk(UUID.randomUUID().toString(), format, template.getVirtualSize());
 
 		if (format == PhysicalDiskFormat.QCOW2) {
-			Script.runSimpleBashScript("qemu-img create -f qcow2 -b  " + template.getPath() + " " + disk.getPath());
-		} else {
-			Script.runSimpleBashScript("cp " + template.getPath() + " " + disk.getPath());
+			Script.runSimpleBashScript("qemu-img create -f " + template.getFormat() + " -b  " + template.getPath() + " " + disk.getPath());
+		} else if (format == PhysicalDiskFormat.RAW) {
+			Script.runSimpleBashScript("qemu-img convert -f " + template.getFormat()+ " -O raw " + template.getPath() + " " + disk.getPath());
 		}
 		return disk;
 	}
 
 	@Override
-	public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk,
-			String name, PhysicalDiskFormat format, long size,
-			KVMStoragePool destPool) {
-		// TODO Auto-generated method stub
+	public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk,  String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool) {
 		return null;
 	}
 
@@ -572,7 +588,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		KVMPhysicalDisk newDisk = destPool.createPhysicalDisk(name, disk.getVirtualSize());
 		String sourcePath = disk.getPath();
 		String destPath = newDisk.getPath();
-		Script.runSimpleBashScript("qemu-img convert -f qcow2 -O qcow2  " + sourcePath + " " + destPath);
+
+		Script.runSimpleBashScript("qemu-img convert -f " + disk.getFormat() + " -O " + newDisk.getFormat() + " " + sourcePath + " " + destPath); 
+		
 		return newDisk;
 	}
 
@@ -594,7 +612,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			sourcePath = storageUri.getPath();
 			sourcePath = sourcePath.replace("//", "/");
 			sourceHost = storageUri.getHost();
-			uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
+			uuid = UUID.randomUUID().toString();
 			protocal = StoragePoolType.NetworkFilesystem;
 		}
 		
@@ -610,7 +628,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 	@Override
 	public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot,
 			String snapshotName, String name, KVMStoragePool destPool) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
@@ -625,6 +642,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 		}
 		return true;
 	}
-	
+
+
+	@Override
+	public boolean deleteStoragePool(KVMStoragePool pool) {
+		LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
+		StoragePool virtPool = libvirtPool.getPool();
+		try {
+			virtPool.destroy();
+			virtPool.undefine();
+			virtPool.free();
+		} catch (LibvirtException e) {
+			return false;
+		}
+		
+		return true;
+	}
     
 }
