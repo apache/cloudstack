@@ -176,6 +176,26 @@ class OvmHost(OvmObject):
     
     @staticmethod
     def getAllVms():
+        def scanStoppedVmOnPrimaryStorage(vms):
+            def isMyVmDirLink(path):
+                return (islink(path) and exists(join(path, 'vm.cfg')) and ('-' in basename(path)) and (exists(join(path, makeOwnerFileName()))))
+                    
+            mps = OvmStoragePool()._getAllMountPoints()
+            for mountPoint in mps:
+                runningPool = join(mountPoint, 'running_pool')
+                for dir in os.listdir(runningPool):
+                    vmDir = join(runningPool, dir)
+                    if not isMyVmDirLink(vmDir):
+                        logger.debug(OvmHost.getAllVms, "%s is not our vm directory, skip it"%vmDir)
+                        continue
+                    if vms.has_key(dir):
+                        logger.debug(OvmHost.getAllVms, "%s is already in running list, skip it"%dir)
+                        continue
+                    
+                    logger.debug(OvmHost.getAllVms, "Found a stopped vm %s on primary storage %s, report it to management server" % (dir, mountPoint))
+                    vms[dir] = "DOWN"
+                    
+                    
         try:
             l = OvmHost()._getAllDomains()
             dct = {}
@@ -184,6 +204,8 @@ class OvmHost(OvmObject):
                 vmPath = host._getVmPathFromPrimaryStorage(name)
                 vmStatus = db_get_vm(vmPath)
                 dct[name] = vmStatus['status']
+                
+            scanStoppedVmOnPrimaryStorage(dct)
             rs = toGson(dct)
             logger.info(OvmHost.getAllVms, rs)
             return rs
