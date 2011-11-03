@@ -1588,8 +1588,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, ipVO);
         }
+        
+        Network associatedNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
 
-        if (ipVO.isSourceNat()) {
+        if (isServiceSupportedByNetworkOffering(associatedNetwork.getNetworkOfferingId(), Service.SourceNat)) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 

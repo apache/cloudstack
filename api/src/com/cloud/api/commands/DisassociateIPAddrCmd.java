@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
@@ -95,6 +96,10 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
                 throw new InvalidParameterValueException("Unable to find ip address by id=" + id);
             }
             ownerId = ip.getAccountId();
+        }
+        
+        if (ownerId == null) {
+            return Account.ACCOUNT_ID_SYSTEM;
         }
         return ownerId;
     }
