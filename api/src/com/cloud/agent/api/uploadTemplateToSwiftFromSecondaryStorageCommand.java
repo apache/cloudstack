@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
@@ -26,6 +27,7 @@ import com.cloud.agent.api.to.SwiftTO;
  */
 
 public class uploadTemplateToSwiftFromSecondaryStorageCommand extends Command {
+    @LogLevel(Log4jLevel.Off)
     private SwiftTO swift;
     private String secondaryStorageUrl;
 

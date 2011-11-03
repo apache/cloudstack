@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.storage.StoragePool;
@@ -34,6 +35,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     private boolean isVolumeInactive;
     private String vmName;
     private Long snapshotId;
+    @LogLevel(Log4jLevel.Off)
     private SwiftTO swift;
     StorageFilerTO pool;
 

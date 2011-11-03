@@ -17,10 +17,13 @@
  */
 package com.cloud.agent.api.storage;
 
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 public class ListTemplateCommand extends StorageCommand {
     private String secUrl;
+    @LogLevel(Log4jLevel.Off)
     private SwiftTO swift;
     
     public ListTemplateCommand() {

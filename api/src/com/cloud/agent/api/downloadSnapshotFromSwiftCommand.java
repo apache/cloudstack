@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
@@ -27,6 +28,7 @@ import com.cloud.agent.api.to.SwiftTO;
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.  
  */
 public class downloadSnapshotFromSwiftCommand extends SnapshotCommand {
+    @LogLevel(Log4jLevel.Off)
     private SwiftTO _swift;
 
     private String _parent;

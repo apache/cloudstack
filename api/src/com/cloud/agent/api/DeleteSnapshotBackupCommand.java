@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
@@ -24,6 +25,7 @@ import com.cloud.agent.api.to.SwiftTO;
  * This currently assumes that the secondary storage are mounted on the XenServer.  
  */
 public class DeleteSnapshotBackupCommand extends SnapshotCommand {
+    @LogLevel(Log4jLevel.Off)
     private SwiftTO swift;
     private Boolean all;
 
