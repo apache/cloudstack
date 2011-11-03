@@ -1545,12 +1545,23 @@
           stats: {
             title: 'Statistics',
             fields: {
-              cpuspeed: { label: 'Total CPU' },
+              totalCPU: { label: 'Total CPU' },
               cpuused: { label: 'CPU Utilized' },
               networkkbsread: { label: 'Network Read' },
               networkkbswrite: { label: 'Network Write' }
             },
-            dataProvider: testData.dataProvider.detailView('instances')
+            //dataProvider: testData.dataProvider.detailView('instances')
+            dataProvider: function(args) {
+              var jsonObj = args.context.instances[0];                          
+              args.response.success({
+                data: {
+                  totalCPU: fromdb(jsonObj.cpunumber) + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
+                  cpuused: jsonObj.cpuused,
+                  networkkbsread: (jsonObj.networkkbsread == null || jsonObj.networkkbsread == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
+                  networkkbswrite: (jsonObj.networkkbswrite == null || jsonObj.networkkbswrite == 0)? "N/A": cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024)
+                }
+              });
+            }
           }
         }
       }
