@@ -130,7 +130,7 @@ class OvmVm(OvmObject):
         for f in os.listdir(vmPath):
             fp = join(vmPath, f)
             if isfile(fp) and f.startswith(OWNER_FILE_PREFIX):
-                os.remove(join(vmPath, fp))
+                os.remove(fp)
     
     @staticmethod
     def create(jsonString):    
@@ -299,7 +299,7 @@ class OvmVm(OvmObject):
                 
             logger.info(OvmVm.stop, "Stop vm %s"%vmName)
             vmPath = OvmHost()._vmNameToPath(vmName)
-            # set the VM to DOWN before starting, OVS agent will check this status
+            # set the VM to RUNNING before starting, OVS agent will check this status
             set_vm_status(vmPath, 'RUNNING')
             raiseExceptionIfFail(stop_vm(vmPath))
             return SUCC()
