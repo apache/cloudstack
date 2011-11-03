@@ -203,7 +203,7 @@ table th div.ui-resizable-handle {
 
 /*Login screen*/
 body.login {
-  background: #066CAA url(../images/bg-login.jpg) no-repeat 50% -82px;
+  background: transparent url(../images/bg-login.png) repeat 50% -82px;
 }
 
 .login {
@@ -212,6 +212,11 @@ body.login {
   height: 245px;
   margin: 166px auto auto;
   background: #FFFFFF;
+  /*+box-shadow:0px 3px 5px #D5D5D5;*/
+  -moz-box-shadow: 0px 3px 5px #D5D5D5;
+  -webkit-box-shadow: 0px 3px 5px #D5D5D5;
+  -o-box-shadow: 0px 3px 5px #D5D5D5;
+  box-shadow: 0px 3px 5px #D5D5D5;
 }
 
 .login .fields {
