@@ -32,6 +32,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
@@ -95,8 +96,13 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         if (!canHandle(network)) {
             return false;
         }
-    	
-    	return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(true, network, offering);
+
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(true, network, offering);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception
+            return false;
+        }
     }
 
     @Override
@@ -123,8 +129,12 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         if (!canHandle(network)) {
             return false;
         }
-        
-        return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(false, network, offering);
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(false, network, offering);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception 
+            return false;
+        }        
     }
     
     @Override

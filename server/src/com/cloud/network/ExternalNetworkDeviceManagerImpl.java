@@ -72,6 +72,9 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.DetailVO;
@@ -83,14 +86,18 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.ExternalFirewallDeviceDao;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkExternalDeviceDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
+import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -108,6 +115,7 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
@@ -163,13 +171,17 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject ConfigurationDao _configDao;
     @Inject HostDetailsDao _detailsDao;
     @Inject NetworkOfferingDao _networkOfferingDao;
+    @Inject NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
     @Inject NicDao _nicDao;
     @Inject VpnUserDao _vpnUsersDao;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject AccountManager _accountMgr;
     @Inject PhysicalNetworkDao _physicalNetworkDao;
     @Inject PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject PhysicalNetworkExternalDeviceDao _physicalNetworkExternalDeviceDao;
+    @Inject ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
+    @Inject ExternalFirewallDeviceDao _externalFirewallDeviceDao;
+    @Inject NetworkExternalLoadBalancerDao _networkExternalLBDao;
+    @Inject NetworkExternalFirewallDao _networkExternalFirewallDao;
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
@@ -372,20 +384,46 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     public String getExternalNetworkResourceGuid(long zoneId, ExternalNetworkResourceName name, String ip) {
         return zoneId + "-" + name + "-" + ip;
     }
-    
-    protected HostVO getExternalNetworkAppliance(long zoneId, long networkOfferingId, Host.Type type) {
-/*        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (!_networkMgr.networkIsConfiguredForExternalNetworking(zoneId, networkOfferingId)) {
-            s_logger.debug("Zone " + zone.getName() + " is not configured for external networking.");
-            return null;
-        } else {
-            List<HostVO> externalNetworkAppliancesInZone = _hostDao.listBy(type, zoneId);
-            if (externalNetworkAppliancesInZone.size() != 1) {
-                return null;
-            } else {
-                return externalNetworkAppliancesInZone.get(0);
-            }            
-        }*/
+
+    protected HostVO getExternalLoadBalancerForNetwork(Network network) {
+        NetworkExternalLoadBalancerVO lbDeviceForNetwork = _networkExternalLBDao.findByNetworkId(network.getId());
+        if (lbDeviceForNetwork != null) {
+            long lbDeviceId = lbDeviceForNetwork.getExternalLBDeviceId();
+            ExternalLoadBalancerDeviceVO lbDeviceVo = _externalLoadBalancerDeviceDao.findById(lbDeviceId);
+            assert(lbDeviceVo != null);
+            _hostDao.findById(lbDeviceVo.getHostId());
+        }
+        return null;
+    }
+
+    protected HostVO getExternalFirewallForNetwork(Network network) {
+    	NetworkExternalFirewallVO fwDeviceForNetwork = _networkExternalFirewallDao.findByNetworkId(network.getId());
+        if (fwDeviceForNetwork != null) {
+            long fwDeviceId = fwDeviceForNetwork.getFirewallDeviceId();
+            ExternalFirewallDeviceVO fwDeviceVO = _externalFirewallDeviceDao.findById(fwDeviceId);
+            assert(fwDeviceVO != null);
+            _hostDao.findById(fwDeviceVO.getHostId());
+        }
+        return null;
+    }
+
+    protected void setExternalLoadBalancerForNetwork(Network network, long externalLBDeviceID) {
+        NetworkExternalLoadBalancerVO lbDeviceForNetwork = new NetworkExternalLoadBalancerVO(network.getId(), externalLBDeviceID);
+        _networkExternalLBDao.persist(lbDeviceForNetwork);
+    }
+
+    protected void setExternalFirewallForNetwork(Network network, long externalFWDeviceID) {
+        NetworkExternalFirewallVO fwDeviceForNetwork = new NetworkExternalFirewallVO(network.getId(), externalFWDeviceID);
+        _networkExternalFirewallDao.persist(fwDeviceForNetwork);
+    }
+
+    protected HostVO findSuitableExternalLBForNetwork(Network network) {
+        // TODO: get a LB device from physical network, and pick one with least-connections
+        return null;        
+    }
+
+    protected HostVO findSuitableExternalFirewallForNetwork(Network network) {
+        // TODO: get a firewall device from physical network, and pick one with least-connections
         return null;
     }
     
@@ -439,17 +477,18 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             if (pNetwork == null) {
                 List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
                 if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-                    throw new InvalidParameterValueException("There are multiple physical networks configured in zone with ID: "
-                            + zoneId + ". Physical network ID must be passed to select a physical network in this zonea.");
+                    throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
+                            + zoneId + ". Physical network ID must be passed to select a physical network in this zone.");
                 }
                 pNetwork = physicalNetworks.get(0);
             }
         }
 
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (!_networkMgr.isProviderEnabled(ntwkSvcProvider)) { //TODO: check for other states: Shutdown?
+        if ((ntwkSvcProvider == null ) || (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown)
+                || (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Disabled)) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + 
-                    " is not in enabled state in the physical network: " + physicalNetworkId + "to add this device" );
+                    " is not added or in shutdown state in the physical network: " + physicalNetworkId + "to add this device" );
         }
 
         URI uri;
@@ -514,8 +553,8 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (host != null) {
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            PhysicalNetworkExternalDeviceVO device = new PhysicalNetworkExternalDeviceVO(ntwkSvcProvider.getId(), host.getId());
-            _physicalNetworkExternalDeviceDao.persist(device);
+            ExternalLoadBalancerDeviceVO device = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName());
+            _externalLoadBalancerDeviceDao.persist(device);
             txn.commit();
             return host;
         } else {
@@ -560,10 +599,10 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     public List<Host> listExternalLoadBalancers(Long zoneId, Long physicalNetworkId, String deviceName) {
         List<Host> lbHosts = new ArrayList<Host>();
         List<Host> lbHostsInZone = new ArrayList<Host>();
-        NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
+        NetworkDevice lbNetworkDevice = NetworkDevice.getNetworkDevice(deviceName);
         PhysicalNetworkVO pNetwork=null;
 
-        if (((zoneId == null) && (physicalNetworkId == null)) || (ntwkDevice == null)) {
+        if (((zoneId == null) && (physicalNetworkId == null)) || (lbNetworkDevice == null)) {
             throw new InvalidParameterValueException("Atleast one of ther required parameter zone Id, physical networkId, device name is missing or invalid.");
         }
 
@@ -583,15 +622,19 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (physicalNetworkId == null) {
             return lbHostsInZone;
         }
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(),
+                lbNetworkDevice.getNetworkServiceProvder());
+        //if provider not configured in to physical network, then there can be no instances
         if (ntwkSvcProvider == null) {
             return null; 
         }
-        List<PhysicalNetworkExternalDeviceVO> providerInstances = _physicalNetworkExternalDeviceDao.listByNetworkServiceProviderId(ntwkSvcProvider.getId());
-        for (PhysicalNetworkExternalDeviceVO provderInstance : providerInstances) {
+
+        List<ExternalLoadBalancerDeviceVO> lbDevices = _externalLoadBalancerDeviceDao.listByPhysicalNetworkServiceProvider(physicalNetworkId,
+                ntwkSvcProvider.getProviderName());
+        for (ExternalLoadBalancerDeviceVO provderInstance : lbDevices) {
             lbHosts.add(_hostDao.findById(provderInstance.getHostId()));
         }
-        return lbHosts;    
+        return lbHosts;
     }
 
     @Override
@@ -608,19 +651,24 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }
 
     @Override
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException {
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientAddressCapacityException {
         if (guestConfig.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("External load balancer can only be user for add/remove guest networks.");
             return false;
         }
 
-        // Find the external load balancer in this zone
         long zoneId = guestConfig.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalLoadBalancer = getExternalNetworkAppliance(zoneId, guestConfig.getNetworkOfferingId(), Host.Type.ExternalLoadBalancer);
+        HostVO externalLoadBalancer = null;
 
-        if (externalLoadBalancer == null) {
-            return false;
+        if (add) {
+            externalLoadBalancer = findSuitableExternalLBForNetwork(guestConfig);
+            if (externalLoadBalancer == null) {
+                throw new InsufficientAddressCapacityException("Unable to find a load balancing provider with sufficient capcity " +
+                        " to implement the network", Network.class, guestConfig.getId());
+            }
+        } else {
+            externalLoadBalancer = getExternalLoadBalancerForNetwork(guestConfig);
         }
 
         // Send a command to the external load balancer to implement or shutdown the guest network
@@ -661,17 +709,15 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalLoadBalancer = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalLoadBalancer);
 
-        if (externalLoadBalancer == null) {
-            return false;
-        }
-        
+        HostVO externalLoadBalancer = getExternalLoadBalancerForNetwork(network);
+        assert(externalLoadBalancer != null);
+
         // If the load balancer is inline, find the external firewall in this zone
         boolean externalLoadBalancerIsInline = externalLoadBalancerIsInline(externalLoadBalancer);
         HostVO externalFirewall = null;
         if (externalLoadBalancerIsInline) {
-            externalFirewall = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
+            externalFirewall = getExternalFirewallForNetwork(network);
             if (externalFirewall == null) {
                 String msg = "External load balancer in zone " + zone.getName() + " is inline, but no external firewall in this zone.";
                 s_logger.error(msg);
@@ -836,9 +882,10 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         }
 
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
-        if (!_networkMgr.isProviderEnabled(ntwkSvcProvider)) {
+        if ((ntwkSvcProvider == null ) || (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown)
+                || (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Disabled)) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + 
-                    " is not in enabled state in the physical network: " + physicalNetworkId + "to add this device" );
+                    " is not added or in shutdown state in the physical network: " + physicalNetworkId + "to add this device" );
         }
 
         URI uri;
@@ -901,7 +948,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         }
         if (deviceName.equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
             resource = new JuniperSrxResource();
-            guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.JuniperSrx, ipAddress);            
+            guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.JuniperSrx, ipAddress);
         } else {
             throw new CloudRuntimeException("An unsupported networt device type is added as external firewall.");
         }
@@ -935,8 +982,8 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             Transaction txn = Transaction.currentTxn();
             txn.start();
             _dcDao.update(zone.getId(), zone);
-            PhysicalNetworkExternalDeviceVO device = new PhysicalNetworkExternalDeviceVO(ntwkSvcProvider.getId(), externalFirewall.getId());
-            _physicalNetworkExternalDeviceDao.persist(device);
+            ExternalFirewallDeviceVO device = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName());
+            _externalFirewallDeviceDao.persist(device);
             txn.commit();
             return externalFirewall;
         } else {
@@ -980,10 +1027,10 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     public List<Host> listExternalFirewalls(Long zoneId, Long physicalNetworkId, String deviceName) {
         List<Host> firewallHosts = new ArrayList<Host>();
         List<Host> firewallhostsInZone = new ArrayList<Host>();
-        NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
+        NetworkDevice fwNetworkDevice = NetworkDevice.getNetworkDevice(deviceName);
         PhysicalNetworkVO pNetwork=null;
 
-        if (((zoneId == null) && (physicalNetworkId == null)) || (ntwkDevice == null)) {
+        if (((zoneId == null) && (physicalNetworkId == null)) || (fwNetworkDevice == null)) {
             throw new InvalidParameterValueException("Atleast one of ther required parameter zone Id, physical networkId, device name is missing or invalid.");
         }
 
@@ -1003,13 +1050,13 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (physicalNetworkId == null) {
             return firewallhostsInZone;
         }
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), fwNetworkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
             return null; 
         }
-        List<PhysicalNetworkExternalDeviceVO> providerInstances = _physicalNetworkExternalDeviceDao.listByNetworkServiceProviderId(ntwkSvcProvider.getId());
-        for (PhysicalNetworkExternalDeviceVO provderInstance : providerInstances) {
-            firewallHosts.add(_hostDao.findById(provderInstance.getHostId()));
+        List<ExternalFirewallDeviceVO> fwDevices = _externalFirewallDeviceDao.listByPhysicalNetworkServiceProvider(physicalNetworkId, ntwkSvcProvider.getProviderName());
+        for (ExternalFirewallDeviceVO fwDevice : fwDevices) {
+            firewallHosts.add(_hostDao.findById(fwDevice.getHostId()));
         }
         return firewallHosts;
     }
@@ -1032,19 +1079,24 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }
 
     @Override
-    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException {
+    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException, InsufficientNetworkCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("External firewall can only be used for add/remove guest networks.");
             return false;
         }
 
-        // Find the external firewall in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalFirewall = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
+        HostVO externalFirewall = null;
 
-        if (externalFirewall == null) {
-            return false;
+        if (add) {
+            externalFirewall = findSuitableExternalFirewallForNetwork(network);
+            if (externalFirewall == null) {
+                throw new InsufficientNetworkCapacityException("Unable to find a firewall provider with sufficient capcity " +
+                        " to implement the network", Network.class, network.getId());
+            }
+        } else {
+            externalFirewall = getExternalFirewallForNetwork(network);
         }
 
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());
@@ -1131,11 +1183,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         // Find the external firewall in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HostVO externalFirewall = getExternalNetworkAppliance(zoneId, network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
+        HostVO externalFirewall = getExternalFirewallForNetwork(network);
 
-        if (externalFirewall == null) {
-            return false;
-        }
+        assert(externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
             s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
@@ -1201,7 +1251,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     
     
     public boolean manageRemoteAccessVpn(boolean create, Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        HostVO externalFirewall = getExternalNetworkAppliance(network.getDataCenterId(), network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
+        HostVO externalFirewall = getExternalFirewallForNetwork(network);
 
         if (externalFirewall == null) {
             return false;
@@ -1240,7 +1290,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }  
     
     public boolean manageRemoteAccessVpnUsers(Network network, RemoteAccessVpn vpn, List<? extends VpnUser> vpnUsers) throws ResourceUnavailableException {
-        HostVO externalFirewall = getExternalNetworkAppliance(network.getDataCenterId(), network.getNetworkOfferingId(), Host.Type.ExternalFirewall);
+        HostVO externalFirewall = getExternalFirewallForNetwork(network);
 
         if (externalFirewall == null) {
             return false;
@@ -1450,75 +1500,68 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
          * Creates/updates all necessary stats entries for an account and zone.
          * Stats entries are created for source NAT IP addresses, static NAT rules, port forwarding rules, and load balancing rules
          */
-        private boolean manageStatsEntries(boolean create, long accountId, long zoneId, 
+        private boolean manageStatsEntries(boolean create, long accountId, long zoneId, Network network,
                                            HostVO externalFirewall, ExternalNetworkResourceUsageAnswer firewallAnswer,
                                            HostVO externalLoadBalancer, ExternalNetworkResourceUsageAnswer lbAnswer) {
             String accountErrorMsg = "Failed to update external network stats entry. Details: account ID = " + accountId;
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             try {
                 txn.start();
-                
-                List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.GuestType.Isolated);
-                
-                for (NetworkVO network : networksForAccount) {
-                    String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();                
+                String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();
                     
-                    boolean sharedSourceNat = false;
-                    Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
-                    if (sourceNatCapabilities != null) {
-                        String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
-                        if (supportedSourceNatTypes.contains("zone")) {
-                            sharedSourceNat = true;
+                boolean sharedSourceNat = false;
+                Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+                if (sourceNatCapabilities != null) {
+                    String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
+                    if (supportedSourceNatTypes.contains("zone")) {
+                        sharedSourceNat = true;
+                    }
+                }
+                
+                if (!sharedSourceNat) {
+                    // Manage the entry for this network's source NAT IP address
+                    List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+                    if (sourceNatIps.size() == 1) {
+                        String publicIp = sourceNatIps.get(0).getAddress().addr();
+                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer)) {
+                            throw new ExecutionException(networkErrorMsg + ", source NAT IP = " + publicIp);
                         }
                     }
                     
-                    if (!sharedSourceNat) {
-                        // Manage the entry for this network's source NAT IP address
-                        List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
-                        if (sourceNatIps.size() == 1) {
-                            String publicIp = sourceNatIps.get(0).getAddress().addr();
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer)) {
-                                throw new ExecutionException(networkErrorMsg + ", source NAT IP = " + publicIp);
-                            }
-                        }
-                        
-                        // Manage one entry for each static NAT rule in this network
-                        List<IPAddressVO> staticNatIps = _ipAddressDao.listStaticNatPublicIps(network.getId());
-                        for (IPAddressVO staticNatIp : staticNatIps) {
-                            String publicIp = staticNatIp.getAddress().addr();
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer)) {
-                                throw new ExecutionException(networkErrorMsg + ", static NAT rule public IP = " + publicIp);
-                            }  
-                        }
-                        
-                        // Manage one entry for each port forwarding rule in this network
-                        List<PortForwardingRuleVO> portForwardingRules = _portForwardingRulesDao.listByNetwork(network.getId());
-                        for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
-                            String publicIp = _networkMgr.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();                 
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer)) {
-                                throw new ExecutionException(networkErrorMsg + ", port forwarding rule public IP = " + publicIp);
-                            }   
-                        }
-                    } else {
-                        // Manage the account-wide entry for the external firewall
-                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), null, externalFirewall.getId(), firewallAnswer)) {
-                            throw new ExecutionException(networkErrorMsg);
-                        }
-                    }                                        
-                    
-                    // If an external load balancer is added, manage one entry for each load balancing rule in this network
-                    if (externalLoadBalancer != null && lbAnswer != null) {
-                        List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByNetworkId(network.getId());
-                        for (LoadBalancerVO loadBalancer : loadBalancers) {
-                            String publicIp = _networkMgr.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();               
-                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer)) {
-                                throw new ExecutionException(networkErrorMsg + ", load balancing rule public IP = " + publicIp);
-                            }   
-                        }
+                    // Manage one entry for each static NAT rule in this network
+                    List<IPAddressVO> staticNatIps = _ipAddressDao.listStaticNatPublicIps(network.getId());
+                    for (IPAddressVO staticNatIp : staticNatIps) {
+                        String publicIp = staticNatIp.getAddress().addr();
+                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer)) {
+                            throw new ExecutionException(networkErrorMsg + ", static NAT rule public IP = " + publicIp);
+                        }  
                     }
-                                      
-                }                
+                    
+                    // Manage one entry for each port forwarding rule in this network
+                    List<PortForwardingRuleVO> portForwardingRules = _portForwardingRulesDao.listByNetwork(network.getId());
+                    for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
+                        String publicIp = _networkMgr.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();                 
+                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer)) {
+                            throw new ExecutionException(networkErrorMsg + ", port forwarding rule public IP = " + publicIp);
+                        }   
+                    }
+                } else {
+                    // Manage the account-wide entry for the external firewall
+                    if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), null, externalFirewall.getId(), firewallAnswer)) {
+                        throw new ExecutionException(networkErrorMsg);
+                    }
+                }                                        
                 
+                // If an external load balancer is added, manage one entry for each load balancing rule in this network
+                if (externalLoadBalancer != null && lbAnswer != null) {
+                    List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByNetworkId(network.getId());
+                    for (LoadBalancerVO loadBalancer : loadBalancers) {
+                        String publicIp = _networkMgr.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();               
+                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer)) {
+                            throw new ExecutionException(networkErrorMsg + ", load balancing rule public IP = " + publicIp);
+                        }   
+                    }
+                }
                 return txn.commit();
             } catch (Exception e) {
                 s_logger.warn("Exception: ", e);
@@ -1531,74 +1574,68 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         
         private void runExternalNetworkUsageTask() {
             s_logger.debug("External network stats collector is running...");
-            for (DataCenterVO zone : _dcDao.listAll()) {                
-                // Make sure the zone is configured for external networking
-                
-                //FIXME: add another way to check if zone has external networking.
-                
-                if (!_networkMgr.zoneIsConfiguredForExternalNetworking(zone.getId())) {
-                    s_logger.debug("Zone " + zone.getName() + " is not configured for external networking, so skipping usage check.");
-                    continue;
-                }
-                
-                // Only collect stats if there is an external firewall in this zone
-                
-                //FIXME: add another way to check if zone has external networking.
-                
-                HostVO externalFirewall = getExternalNetworkAppliance(zone.getId(), 0, Host.Type.ExternalFirewall);
-                HostVO externalLoadBalancer = getExternalNetworkAppliance(zone.getId(), 0,  Host.Type.ExternalLoadBalancer);
-                
-                if (externalFirewall == null) {
-                    s_logger.debug("Skipping usage check for zone " + zone.getName());
-                    continue;
-                }
-                
-                s_logger.debug("Collecting external network stats for zone " + zone.getName());
-                
-                ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
-        
-                // Get network stats from the external firewall
-                ExternalNetworkResourceUsageAnswer firewallAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalFirewall.getId(), cmd);
-                if (firewallAnswer == null || !firewallAnswer.getResult()) {
-                    String details = (firewallAnswer != null) ? firewallAnswer.getDetails() : "details unavailable";
-                    String msg = "Unable to get external firewall stats for " + zone.getName() + " due to: " + details + ".";
-                    s_logger.error(msg);
-                    continue;
-                } 
-                                            
-                ExternalNetworkResourceUsageAnswer lbAnswer = null;
-                if (externalLoadBalancer != null) {
-                    // Get network stats from the external load balancer
-                    lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
-                    if (lbAnswer == null || !lbAnswer.getResult()) {
-                        String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
-                        String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
-                        s_logger.error(msg);
-                    }                    
-                }
-                
+
+            for (DataCenterVO zone : _dcDao.listAll()) {
                 List<DomainRouterVO> domainRoutersInZone = _routerDao.listByDataCenter(zone.getId());
                 for (DomainRouterVO domainRouter : domainRoutersInZone) {
                     long accountId = domainRouter.getAccountId();
-                    long zoneId = domainRouter.getDataCenterIdToDeployIn();
+                    long zoneId = zone.getId();
+                    List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.GuestType.Isolated);
                     
-                    AccountVO account = _accountDao.findById(accountId);
-                    if (account == null) {
-                        s_logger.debug("Skipping stats update for account with ID " + accountId);
-                        continue;
+                    for (NetworkVO network : networksForAccount) {
+                        if (!_networkMgr.networkIsConfiguredForExternalNetworking(zoneId, network.getNetworkOfferingId())) {
+                            s_logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
+                            continue;
+                        }
+
+                        HostVO externalFirewall = getExternalFirewallForNetwork(network);
+                        HostVO externalLoadBalancer = getExternalLoadBalancerForNetwork(network);
+
+                        s_logger.debug("Collecting external network stats for network " + network.getId());
+
+                        ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
+
+                        // Get network stats from the external firewall
+                        ExternalNetworkResourceUsageAnswer firewallAnswer = null;
+                        if (externalFirewall != null) {
+                            firewallAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalFirewall.getId(), cmd);
+                            if (firewallAnswer == null || !firewallAnswer.getResult()) {
+                                String details = (firewallAnswer != null) ? firewallAnswer.getDetails() : "details unavailable";
+                                String msg = "Unable to get external firewall stats for " + zone.getName() + " due to: " + details + ".";
+                                s_logger.error(msg);
+                                continue;
+                            }
+                        }
+
+                       // Get network stats from the external load balancer
+                        ExternalNetworkResourceUsageAnswer lbAnswer = null;
+                        if (externalLoadBalancer != null) {
+                            lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+                            if (lbAnswer == null || !lbAnswer.getResult()) {
+                                String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
+                                String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
+                                s_logger.error(msg);
+                            }
+                        }
+
+                        AccountVO account = _accountDao.findById(accountId);
+                        if (account == null) {
+                            s_logger.debug("Skipping stats update for account with ID " + accountId);
+                            continue;
+                        }
+                        
+                        if (!manageStatsEntries(true, accountId, zoneId, network, externalFirewall, firewallAnswer, externalLoadBalancer, lbAnswer)) {
+                            continue;
+                        }
+                        
+                        manageStatsEntries(false, accountId, zoneId, network, externalFirewall, firewallAnswer, externalLoadBalancer, lbAnswer);
                     }
-                    
-                    if (!manageStatsEntries(true, accountId, zoneId, externalFirewall, firewallAnswer, externalLoadBalancer, lbAnswer)) {
-                        continue;
-                    }
-                    
-                    manageStatsEntries(false, accountId, zoneId, externalFirewall, firewallAnswer, externalLoadBalancer, lbAnswer);
-                }                
-            }                                    
+                }
+            }
         }
         
         @Override
-        public void run() {            
+        public void run() {
             GlobalLock scanLock = GlobalLock.getInternLock("ExternalNetworkManagerImpl");
             try {
                 if (scanLock.lock(20)) {

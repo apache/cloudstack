@@ -31,6 +31,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.ExternalNetworkDeviceManager;
@@ -78,8 +79,13 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
         if (!canHandle(guestConfig)) {
             return false;
         }
-        
-        return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
+
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception
+            return false;
+        }        
     }
 
     @Override
@@ -97,8 +103,13 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
         if (!canHandle(guestConfig)) {
             return false;
         }
-        
-        return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
+
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception
+            return false;
+        }
     }
     
     @Override

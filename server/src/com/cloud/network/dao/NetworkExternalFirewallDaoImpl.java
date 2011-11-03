@@ -18,32 +18,32 @@
 
 package com.cloud.network.dao;
 
-import java.util.List;
+
 import javax.ejb.Local;
-import com.cloud.network.PhysicalNetworkExternalDeviceVO;
+
+import com.cloud.network.NetworkExternalFirewallVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-@Local(value=PhysicalNetworkExternalDeviceDao.class) @DB(txn=false)
-public class PhysicalNetworkExternalDeviceDaoImpl extends GenericDaoBase<PhysicalNetworkExternalDeviceVO, Long> implements PhysicalNetworkExternalDeviceDao {
-    final SearchBuilder<PhysicalNetworkExternalDeviceVO> physicalNetworkServiceProviderSearch;
+@Local(value=NetworkExternalFirewallDao.class) @DB(txn=false)
+public class NetworkExternalFirewallDaoImpl extends GenericDaoBase<NetworkExternalFirewallVO, Long> implements NetworkExternalFirewallDao {
 
-    protected PhysicalNetworkExternalDeviceDaoImpl() {
+    final SearchBuilder<NetworkExternalFirewallVO> networkIdSearch;
+    
+    protected NetworkExternalFirewallDaoImpl() {
         super();
-        physicalNetworkServiceProviderSearch = createSearchBuilder();
-        physicalNetworkServiceProviderSearch.and("networkServiceProviderId", physicalNetworkServiceProviderSearch.entity().getNetworkServiceProviderId(), Op.EQ);
-        physicalNetworkServiceProviderSearch.done();
-
+        networkIdSearch = createSearchBuilder();
+        networkIdSearch.and("networkId", networkIdSearch.entity().getNetworkId(), Op.EQ);
+        networkIdSearch.done();
     }
 
     @Override
-    public List<PhysicalNetworkExternalDeviceVO> listByNetworkServiceProviderId(long networkServiceProviderId) {
-        SearchCriteria<PhysicalNetworkExternalDeviceVO> sc = physicalNetworkServiceProviderSearch.create();
-        sc.setParameters("networkServiceProviderId", networkServiceProviderId);
-        return search(sc, null);
+    public NetworkExternalFirewallVO findByNetworkId(long networkId) {
+        SearchCriteria<NetworkExternalFirewallVO> sc = networkIdSearch.create();
+        sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
     }
-   
 }

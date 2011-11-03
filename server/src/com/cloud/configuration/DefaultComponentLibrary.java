@@ -70,6 +70,8 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -78,9 +80,10 @@ import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
+import com.cloud.network.dao.NetworkExternalFirewallDaoImpl;
+import com.cloud.network.dao.NetworkExternalLoadBalancerDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
-import com.cloud.network.dao.PhysicalNetworkExternalDeviceDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
@@ -298,7 +301,10 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
         addDao("PhysicalNetworkServiceProviderDao", PhysicalNetworkServiceProviderDaoImpl.class);
         addDao("VirtualRouterProviderDao", VirtualRouterProviderDaoImpl.class);
-        addDao("PhysicalNetworkExternalDeviceDao", PhysicalNetworkExternalDeviceDaoImpl.class);
+        addDao("ExternalLoadBalancerDeviceDao", ExternalLoadBalancerDeviceDaoImpl.class);
+        addDao("ExternalFirewallDeviceDao", ExternalFirewallDeviceDaoImpl.class);
+        addDao("NetworkExternalLoadBalancerDao", NetworkExternalLoadBalancerDaoImpl.class);
+        addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
         addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
     }
 

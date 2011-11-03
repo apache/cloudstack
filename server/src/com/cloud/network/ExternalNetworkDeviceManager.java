@@ -30,6 +30,8 @@ import com.cloud.api.commands.DeleteNetworkDeviceCmd;
 import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.api.commands.ListExternalLoadBalancersCmd;
 import com.cloud.api.commands.ListNetworkDeviceCmd;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.rules.FirewallRule;
@@ -76,6 +78,20 @@ public interface ExternalNetworkDeviceManager extends Manager {
         }
     }
 
+    public static class LoadBalancerCapacityType {
+        private String _capacityType;
+        public static final LoadBalancerCapacityType Throughput = new LoadBalancerCapacityType("Throughput");
+        public static final LoadBalancerCapacityType publicIPOwned = new LoadBalancerCapacityType("publicIPOwned");
+
+        public LoadBalancerCapacityType(String capacityType) {
+            _capacityType = capacityType;
+        }
+
+        public String getCapacityType() {
+            return _capacityType;
+        }
+    }
+
     public Host addNetworkDevice(AddNetworkDeviceCmd cmd);
     
     public NetworkDeviceResponse getApiResponse(Host device);
@@ -94,7 +110,7 @@ public interface ExternalNetworkDeviceManager extends Manager {
 
     public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
         
-    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException;
+    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException, InsufficientCapacityException;
     
     public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
 
@@ -114,7 +130,7 @@ public interface ExternalNetworkDeviceManager extends Manager {
     
     public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer);
     
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException;
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientAddressCapacityException;
     
     public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
     

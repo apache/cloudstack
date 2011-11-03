@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.network;
 
 import javax.persistence.Column;
@@ -25,43 +24,51 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-/**
- * PhysicalNetworkExternalDeviceVO contains information about a external network devices (Network service provider instances)
- * added in to a physical network.
-  */
-
 @Entity
-@Table(name="physical_network_external_devices")
-public class PhysicalNetworkExternalDeviceVO {
+@Table(name="network_external_lb_device_map")
+public class NetworkExternalLoadBalancerVO {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name = "physical_network_service_provider_id")
-    private long networkServiceProviderId;
+    @Column(name = "network_id")
+    private long networkId;
 
-    @Column(name = "host_id")
-    private long hostId;
+    @Column(name = "external_load_balancer_device_id")
+    private long externalLBDeviceId;
 
-    public PhysicalNetworkExternalDeviceVO(long networkServiceProviderId, long hostId) {
-        this.networkServiceProviderId = networkServiceProviderId;
-        this.hostId = hostId;
+    @Column(name = "subscribed_capacity")
+    private long subscribedCapacity;
+
+    public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID) {
+        this.networkId = networkId;
+        this.externalLBDeviceId = externalLBDeviceID;
+        this.subscribedCapacity = 0;
     }
-    
-    protected PhysicalNetworkExternalDeviceVO(){
+    public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID, long subscribedCapacity) {
+        this(networkId, externalLBDeviceID);
+        this.subscribedCapacity = subscribedCapacity;
+    }
+
+    public NetworkExternalLoadBalancerVO(){
+
     }
 
     public long getId() {
         return id;
     }
 
-    public long getNetworkServiceProviderId() {
-        return networkServiceProviderId;
+    public long getNetworkId() {
+        return networkId;
     }
 
-    public long getHostId() {
-        return hostId;
+    public long getExternalLBDeviceId() {
+        return externalLBDeviceId;
+    }
+
+    public long getSubscribedCapacity() {
+        return subscribedCapacity;
     }
 }
