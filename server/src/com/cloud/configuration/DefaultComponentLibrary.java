@@ -137,6 +137,7 @@ import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
+import com.cloud.storage.swift.SwiftManagerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
@@ -337,6 +338,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("ProjectManager", ProjectManagerImpl.class);
         addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
+        addManager("SwiftManager", SwiftManagerImpl.class);
     }
 
     @Override

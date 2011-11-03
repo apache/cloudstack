@@ -89,10 +89,10 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -171,7 +171,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     private ResourceLimitService _resourceLimitMgr;
     @Inject
-    private SwiftDao _swiftDao;
+    private SwiftManager _swiftMgr;
     @Inject
     private ProjectManager _projectMgr;
     @Inject 
@@ -533,11 +533,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override
     public void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId ){
-        SwiftVO swiftVO = _swiftDao.findById(1L);
-        SwiftTO swift = null;
-        if ( swiftVO != null ) {
-            swift = toSwiftTO(swiftVO);
-        }
+        SwiftTO swift = _swiftMgr.getSwiftTO();
         DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, null, true);
         try {
             Answer ans = _agentMgr.sendToSSVM(dcId, cmd);
@@ -573,8 +569,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         String secondaryStoragePoolUrl = secHost.getStorageUrl();
 
         Long swiftId = ss.getSwiftId();
-        SwiftVO swift = _swiftDao.findById(swiftId);
-        SwiftTO swiftTO = toSwiftTO(swift);
+        SwiftTO swift = _swiftMgr.getSwiftTO(swiftId);
         SnapshotVO tss = ss;
         List<String> BackupUuids = new ArrayList<String>(30);
         while (true) {
@@ -588,7 +583,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         String parent = null;
         try {
             for (String backupUuid : BackupUuids) {
-                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swiftTO, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
+                downloadSnapshotFromSwiftCommand cmd = new downloadSnapshotFromSwiftCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, parent, backupUuid, _backupsnapshotwait);
                 Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
                 if ((answer == null) || !answer.getResult()) {
                     throw new CloudRuntimeException("downloadSnapshotsFromSwift failed ");
@@ -637,7 +632,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             String prevBackupUuid = null;
 
 
-            SwiftVO swift= _swiftDao.findById(1L);
+            SwiftTO swift = _swiftMgr.getSwiftTO();
             
             long prevSnapshotId = snapshot.getPrevSnapshotId();
             if (prevSnapshotId > 0) {
@@ -659,7 +654,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
             if ( swift != null ) {
-                backupSnapshotCommand.setSwift(toSwiftTO(swift));
+                backupSnapshotCommand.setSwift(swift);
             }
             
             String backedUpSnapshotUuid = null;
@@ -894,7 +889,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (backupOfSnapshot == null) {
             return true;
         }
-        SwiftTO swift = _swiftDao.getSwiftTO(null);
+        SwiftTO swift = _swiftMgr.getSwiftTO(snapshot.getSwiftId());
         DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(swift, secondaryStoragePoolUrl, dcId, accountId, volumeId, backupOfSnapshot, false);
         Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
 
@@ -1080,7 +1075,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 continue;
             }
             List<HostVO> ssHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
-            SwiftTO swift = _swiftDao.getSwiftTO(null);
+            SwiftTO swift = _swiftMgr.getSwiftTO();
             if (swift == null) {
                 for (HostVO ssHost : ssHosts) {
                     DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(null, ssHost.getStorageUrl(), dcId, accountId, volumeId, "", true);

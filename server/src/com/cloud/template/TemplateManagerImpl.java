@@ -98,7 +98,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -108,6 +107,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
@@ -166,7 +166,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject VolumeDao _volumeDao;
     @Inject SnapshotDao _snapshotDao;
     @Inject
-    SwiftDao _swiftDao;
+    SwiftManager _swiftMgr;
     @Inject
     VMTemplateSwiftDao _tmpltSwiftDao;
     @Inject
@@ -416,7 +416,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.warn(errMsg);
             return errMsg;
         }
-        SwiftTO swift = _swiftDao.getSwiftTO(tmpltSwift.getSwiftId());
+        SwiftTO swift = _swiftMgr.getSwiftTO(tmpltSwift.getSwiftId());
         if ( swift == null ) {
             String errMsg = " Swift " + tmpltSwift.getSwiftId() + " doesn't exit ?";
             s_logger.warn(errMsg);
@@ -455,7 +455,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             return null;
         }
 
-        SwiftTO swift = _swiftDao.getSwiftTO(null);
+        SwiftTO swift = _swiftMgr.getSwiftTO();
         if (swift == null) {
             String errMsg = " There is no Swift in this setup ";
             s_logger.warn(errMsg);
@@ -821,8 +821,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     void swiftTemplateSync() {
         GlobalLock swiftTemplateSyncLock = GlobalLock.getInternLock("templatemgr.swiftTemplateSync");
         try {
-            Boolean swiftEnable = Boolean.valueOf(_configDao.getValue(Config.SwiftEnable.key()));
-            if (!swiftEnable) {
+            if (!_swiftMgr.isSwiftEnabled()) {
                 return;
             }
             List<HypervisorType> hypers = _clusterDao.getAvailableHypervisorInZone(null);

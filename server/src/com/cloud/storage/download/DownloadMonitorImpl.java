@@ -42,7 +42,6 @@ import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -74,6 +73,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
@@ -114,6 +114,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     SecondaryStorageVmDao _secStorageVmDao;
     @Inject
     AlertManager _alertMgr;
+    @Inject
+    protected SwiftManager _swiftMgr;
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
     
@@ -505,8 +507,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 handleTemplateSync(ssHost);
             }
         }
-        Boolean swiftEnable = Boolean.getBoolean(_configDao.getValue(Config.SwiftEnable.key()));
-        if (swiftEnable) {
+        if (_swiftMgr.isSwiftEnabled()) {
             List<SwiftVO> swifts = _swiftDao.listAll();
             for (SwiftVO swift : swifts) {
                 handleTemplateSync(swift);

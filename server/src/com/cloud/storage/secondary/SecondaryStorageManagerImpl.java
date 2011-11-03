@@ -18,7 +18,6 @@
 package com.cloud.storage.secondary;
 
 import java.util.ArrayList;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -80,6 +79,7 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -88,6 +88,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -122,7 +123,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.storage.Storage;
 
 //
 // Possible secondary storage vm state transition cases
@@ -176,6 +176,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     @Inject
     private AgentManager _agentMgr;
+    @Inject
+    protected SwiftManager _swiftMgr;
     @Inject
     private NetworkManager _networkMgr;
     @Inject
@@ -314,8 +316,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if( snapshots != null && !snapshots.isEmpty()) {
             throw new CloudRuntimeException("Can not delete this secondary storage due to there are still snapshots on it ");
         }
-        Boolean swiftEnable = Boolean.getBoolean(_configDao.getValue(Config.SwiftEnable.key()));
-        if (!swiftEnable) {
+        if (!_swiftMgr.isSwiftEnabled()) {
             List<Long> list = _templateDao.listPrivateTemplatesByHost(hostId);
             if (list != null && !list.isEmpty()) {
                 throw new CloudRuntimeException("Can not delete this secondary storage due to there are still private template on it ");
