@@ -243,6 +243,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected long _cancelWait;
     protected long _opWaitInterval;
     protected int _lockStateRetry;
+    protected boolean _forceStop;
 
     @Override
     public <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru) {
@@ -432,7 +433,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         _opWaitInterval = NumbersUtil.parseLong(params.get(Config.VmOpWaitInterval.key()), 120) * 1000;
         _lockStateRetry = NumbersUtil.parseInt(params.get(Config.VmOpLockStateRetry.key()), 5);
         _operationTimeout = NumbersUtil.parseInt(params.get(Config.Wait.key()), 1800) * 2;
-
+        _forceStop = Boolean.parseBoolean(params.get(Config.VmDestroyForcestop.key()));
+        
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
         _nodeId = _clusterMgr.getManagementNodeId();
 
@@ -1151,7 +1153,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             return true;
         }
 
-        if (!advanceStop(vm, false, user, caller)) {
+        if (!advanceStop(vm, _forceStop, user, caller)) {
             s_logger.debug("Unable to stop " + vm);
             return false;
         }
