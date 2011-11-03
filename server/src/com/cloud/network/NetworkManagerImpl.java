@@ -3194,7 +3194,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateNetwork(long networkId, String name, String displayText, Account caller, String domainSuffix, Long networkOfferingId) {
+    public Network updateNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -3203,7 +3203,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network id=" + networkId + "doesn't exist in the system");
         }
 
-        _accountMgr.checkAccess(caller, null, network);
+        _accountMgr.checkAccess(callerAccount, null, network);
         
         // Don't allow to update system network
         NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
@@ -3270,13 +3270,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }   
 
-        boolean success = _networksDao.update(networkId, network);
-        
-        if (success && restartNetwork && (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+        _networksDao.update(networkId, network);
+        boolean success = true;
+        if (restartNetwork && (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
             s_logger.info("Restarting network " + network + " as a part of update network call");
 
             try {
-                success = restartNetwork(networkId, caller, null, networkOfferingId, true);
+                success = restartNetwork(networkId, callerAccount, callerUser, networkOfferingId, true);
             } catch (Exception e) {
                 success = false;
             }
@@ -3500,11 +3500,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //tags should be the same
-        if (!oldNetworkOffering.getTags().equalsIgnoreCase(newNetworkOffering.getTags())) {
-            s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different tags, can't upgrade");
-            return false;
+        if (newNetworkOffering.getTags() != null) {
+            if (oldNetworkOffering.getTags() == null) {
+                s_logger.debug("New network offering id=" + newNetworkOfferingId + " has tags and old network offering id=" + oldNetworkOfferingId +  " doesn't, can't upgrade");
+                return false;
+            }
+            if (!oldNetworkOffering.getTags().equalsIgnoreCase(newNetworkOffering.getTags())) {
+                s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different tags, can't upgrade");
+                return false;
+            }
         }
-        
+  
         //Traffic types should be the same 
         if (oldNetworkOffering.getTrafficType() != newNetworkOffering.getTrafficType()) {
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId +  " have different traffic types, can't upgrade");

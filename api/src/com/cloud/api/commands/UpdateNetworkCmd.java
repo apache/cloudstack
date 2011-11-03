@@ -32,6 +32,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a network", responseObject=NetworkResponse.class)
@@ -103,7 +105,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
-        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), UserContext.current().getCaller(), getNetworkDomain(), getNetworkOfferingId());
+        User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
+        Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());      
+        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

@@ -35,6 +35,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 
 public interface NetworkService {
 
@@ -77,7 +78,7 @@ public interface NetworkService {
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateNetwork(long networkId, String name, String displayText, Account caller, String domainSuffix, Long networkOfferingId);
+    Network updateNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId);
 
     Integer getNetworkRate(long networkId, Long vmId);
 
