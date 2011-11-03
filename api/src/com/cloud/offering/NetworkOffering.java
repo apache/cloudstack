@@ -93,4 +93,6 @@ public interface NetworkOffering {
     State getState();
     
     GuestType getGuestType();
+    
+    Long getServiceOfferingId();
 }

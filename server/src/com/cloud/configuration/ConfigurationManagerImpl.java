@@ -2845,6 +2845,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         Integer maxConnections = cmd.getMaxconnections();
 
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        
+        if (serviceOfferingId != null) {
+            ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
+            if (offering == null) {
+                throw new InvalidParameterValueException("Cannot find specified service offering: " + serviceOfferingId);
+            }
+            if (!VirtualMachine.Type.DomainRouter.toString().equalsIgnoreCase(offering.getSystemVmType())) {
+                throw new InvalidParameterValueException("The specified service offering " + serviceOfferingId + " cannot be used by virtual router!");
+            }
+        }
+        
         // configure service provider map
         Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -2927,19 +2939,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false, serviceOfferingId);
     }
 
     @Override
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
-            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly) {
+            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type);
+        
+        if (serviceOfferingId != null) {
+            offering.setServiceOfferingId(serviceOfferingId);
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();

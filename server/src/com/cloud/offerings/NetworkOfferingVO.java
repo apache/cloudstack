@@ -70,6 +70,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="system_only")
     boolean systemOnly;
     
+    @Column(name="service_offering_id")
+    Long serviceOfferingId;
+    
     @Column(name="tags", length=4096)
     String tags;
    
@@ -199,6 +202,15 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public Network.GuestType getGuestType() {
         return guestType;
+    }
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    @Override
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, String tags, Network.GuestType guestType) {

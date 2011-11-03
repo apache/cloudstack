@@ -1099,15 +1099,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 //Router is the network element, we don't know the hypervisor type yet.
                 //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
                 List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+                Long offering_id = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+                if (offering_id == null) {
+                    offering_id = _offering.getId();
+                }
+                ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
                 int retry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
                     try {
                         s_logger.debug("Allocating the domR with the hypervisor type " + hType);
                         VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
                         
-                        router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
-                        router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+                        router = new DomainRouterVO(id, routerOffering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                                template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
+                        router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                         break;
                     } catch (InsufficientCapacityException ex) {
                         if (retry < 2) {
@@ -1303,6 +1308,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //Router is the network element, we don't know the hypervisor type yet.
             //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
             List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+            Long offering_id = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+            if (offering_id == null) {
+                offering_id = _offering.getId();
+            }
+            ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
             int retry = 0;
             for (HypervisorType hType : supportedHypervisors) {
                 try {
@@ -1310,10 +1320,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     /* Before starting router, already know the hypervisor type */
                     VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
 
-                    router = new DomainRouterVO(id, _offering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
-                            template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _offering.getOfferHA(), false);
+                    router = new DomainRouterVO(id, routerOffering.getId(), 0, VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
+                            template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
                     router.setRole(Role.DHCP_USERDATA);
-                    router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
+                    router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                     break;
                 } catch (InsufficientCapacityException ex) {
                     if (retry < 2) {

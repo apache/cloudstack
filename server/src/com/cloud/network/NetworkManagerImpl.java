@@ -890,18 +890,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         NetworkOfferingVO defaultGuestOffering = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork);
         if (defaultGuestOffering == null) {
-            defaultGuestOffering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false);
+            defaultGuestOffering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false, null);
             _networkOfferingDao.update(defaultGuestOffering.getId(), defaultGuestOffering);
         } 
         
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, Network.GuestType.Isolated, false);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultDirectNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false, null);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         

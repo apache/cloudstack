@@ -70,6 +70,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
     
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, description="the service offering ID used by virtual router provider")
+    private Long serviceOfferingId;
+    
     @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports dhcp service")
     private Boolean dhcpService; 
     
@@ -151,6 +154,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Integer getMaxConnections() {
         return maxConnections;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public Boolean getDhcpService() {
