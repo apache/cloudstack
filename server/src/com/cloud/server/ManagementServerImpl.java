@@ -186,7 +186,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Storage;
@@ -205,7 +204,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -308,7 +306,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final AlertDao _alertDao;
     private final CapacityDao _capacityDao;
     private final GuestOSDao _guestOSDao;
-    private final GuestOSHypervisorDao _guestOSHypervisorDao;
     private final GuestOSCategoryDao _guestOSCategoryDao;
     private final StoragePoolDao _poolDao;
     private final StoragePoolHostDao _poolHostDao;
@@ -386,7 +383,6 @@ public class ManagementServerImpl implements ManagementServer {
         _alertDao = locator.getDao(AlertDao.class);
         _capacityDao = locator.getDao(CapacityDao.class);
         _guestOSDao = locator.getDao(GuestOSDao.class);
-        _guestOSHypervisorDao = locator.getDao(GuestOSHypervisorDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
         _poolHostDao = locator.getDao(StoragePoolHostDao.class);
@@ -2750,19 +2746,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _guestOSDao.search(sc, searchFilter);
     }
-    
-    
-    @Override
-    public List<GuestOSHypervisorVO> listGuestOSByHypervisor(ListGuestOsCmd cmd) {
-        String hypervisor = cmd.getHypervisor();
-        HypervisorType ht = HypervisorType.getType(hypervisor);
-        if (ht == HypervisorType.None){
-            throw new InvalidParameterValueException("The Hypervisor type is not recognized " + hypervisor);
-        }
-        return _guestOSHypervisorDao.findByHypervisorType(ht);
-    }
-    
-    
+
     @Override
     public List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd) {
         Filter searchFilter = new Filter(GuestOSCategoryVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());

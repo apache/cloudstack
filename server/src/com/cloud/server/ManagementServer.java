@@ -21,7 +21,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ResourceLimitVO;
@@ -40,7 +39,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -572,6 +570,4 @@ public interface ManagementServer extends ManagementService {
     boolean checkIfMaintenable(long hostId);
 
     String getHashKey();
-
-    List<GuestOSHypervisorVO> listGuestOSByHypervisor(ListGuestOsCmd cmd);
 }
