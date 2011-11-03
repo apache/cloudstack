@@ -19,5 +19,6 @@ package com.cloud.api;
 
 public interface IdentityService {
 	Long getIdentityId(IdentityMapper mapper, String identityString);
+    Long getIdentityId(String tableName, String identityString);
 	String getIdentityUuid(String tableName, String identityString);
 }

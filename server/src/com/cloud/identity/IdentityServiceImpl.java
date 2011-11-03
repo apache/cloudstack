@@ -38,6 +38,10 @@ public class IdentityServiceImpl implements Manager, IdentityService {
 		return _identityDao.getIdentityId(mapper, identityString);
 	}
 	
+    public Long getIdentityId(String tableName, String identityString) {
+		return _identityDao.getIdentityId(tableName, identityString);
+    }
+	
 	public String getIdentityUuid(String tableName, String identityString) {
 		return _identityDao.getIdentityUuid(tableName, identityString);
 	}

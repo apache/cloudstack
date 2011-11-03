@@ -74,6 +74,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.identity.dao.IdentityDao;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.info.ConsoleProxyLoadInfo;
@@ -209,6 +210,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     ResourceManager _resourceMgr;
+    
+    @Inject
+    IdentityDao _identityDao;
 
     private ConsoleProxyListener _listener;
 
@@ -681,7 +685,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd) {
-        long vmId = 0;
+        Long vmId = null;
 
         String ticketInUrl = cmd.getTicket();
         if (ticketInUrl == null) {
@@ -720,11 +724,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
-
-        try {
-            vmId = Long.parseLong(cmd.getVmId());
-        } catch (NumberFormatException e) {
-            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication", e);
+        
+        vmId = _identityDao.getIdentityId("vm_instance", cmd.getVmId());
+        if(vmId == null) {
+            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication");
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 

@@ -37,6 +37,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.IdentityService;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOSVO;
@@ -67,6 +68,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	private final static VirtualMachineManager _vmMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(VirtualMachineManager.class);
 	private final static DomainManager _domainMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(DomainManager.class);
 	private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+	private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
 	
 	@Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
@@ -133,10 +135,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 			}
 
 			String vmIdString = req.getParameter("vm");
-			long vmId = 0;
-			try {
-				vmId = Long.parseLong(vmIdString);
-			} catch(NumberFormatException e) {
+			Long vmId = _identityService.getIdentityId("vm_instance", vmIdString);
+			if(vmId == null) {
 				s_logger.info("invalid console servlet command parameter: " + vmIdString);
 				sendResponse(resp, "");
 				return;
@@ -154,7 +154,6 @@ public class ConsoleProxyServlet extends HttpServlet {
             } else {
                 handleAuthRequest(req, resp, vmId);
             }
-			
 		} catch (Throwable e) {
 			s_logger.error("Unexepected exception in ConsoleProxyServlet", e);
 			sendResponse(resp, "Server Internal Error");
@@ -297,8 +296,9 @@ public class ConsoleProxyServlet extends HttpServlet {
             host = portInfo.first();
         }
 		String sid = vm.getVncPassword();
-		long tag = vm.getId();
-		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag));
+		String tag = String.valueOf(vm.getId());
+		tag = _identityService.getIdentityUuid("vm_instance", tag);
+		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
 		
 		sb.append("/getscreen?host=").append(host);
 		sb.append("&port=").append(portInfo.second());
@@ -322,8 +322,9 @@ public class ConsoleProxyServlet extends HttpServlet {
             host = portInfo.first();
         }
 		String sid = vm.getVncPassword();
-		long tag = vm.getId();
-		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag));
+		String tag = String.valueOf(vm.getId());
+		tag = _identityService.getIdentityUuid("vm_instance", tag);
+		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
 		
 		sb.append("/ajax?host=").append(host);
 		sb.append("&port=").append(portInfo.second());

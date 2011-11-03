@@ -39,7 +39,13 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     
     @DB
 	public Long getIdentityId(IdentityMapper mapper, String identityString) {
-		assert(mapper.entityTableName() != null);
+    	assert(mapper.entityTableName() != null);
+    	return getIdentityId(mapper.entityTableName(), identityString);
+	}
+    
+    @DB
+    public Long getIdentityId(String tableName, String identityString) {
+		assert(tableName != null);
 		assert(identityString != null);
 
         PreparedStatement pstmt = null;
@@ -47,7 +53,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		try {
 	        try {
 	            pstmt = txn.prepareAutoCloseStatement(
-	        		String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", mapper.entityTableName())
+	        		String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
 	        		
 	        		// TODO : after graceful period, use following line turn on more secure check
 	        		// String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
@@ -75,7 +81,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 			txn.close();
 		}
 		return null;
-	}
+    }
 	
     @DB
 	public String getIdentityUuid(String tableName, String identityString) {
