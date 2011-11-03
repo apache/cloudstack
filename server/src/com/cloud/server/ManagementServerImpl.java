@@ -729,7 +729,9 @@ public class ManagementServerImpl implements ManagementServer {
         // 1. For root, we will list all offerings
         // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till
         // root
-        Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+    	isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(ServiceOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
         Account caller = UserContext.current().getCaller();
@@ -1568,6 +1570,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long guestOSId = cmd.getOsTypeId();
         Boolean passwordEnabled = cmd.isPasswordEnabled();
         Boolean bootable = cmd.isBootable();
+        Integer sortKey = cmd.getSortKey();
         Account account = UserContext.current().getCaller();
 
         // verify that template exists
@@ -1584,7 +1587,7 @@ public class ManagementServerImpl implements ManagementServer {
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.ModifyEntry, template);
 
-        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null);
+        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null);
         if (!updateNeeded) {
             return template;
         }
@@ -1597,6 +1600,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (displayText != null) {
             template.setDisplayText(displayText);
+        }
+        
+        if (sortKey != null) {
+        	template.setSortKey(sortKey);
         }
 
         ImageFormat imageFormat = null;
@@ -2826,7 +2833,9 @@ public class ManagementServerImpl implements ManagementServer {
         // 2. For domainAdmin and regular users, we will list everything in their domains+parent domains ... all the way till
         // root
 
-        Filter searchFilter = new Filter(DiskOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+    	isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
         // SearchBuilder and SearchCriteria are now flexible so that the search builder can be built with all possible

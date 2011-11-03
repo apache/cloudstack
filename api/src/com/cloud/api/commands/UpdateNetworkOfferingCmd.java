@@ -28,6 +28,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -53,7 +54,10 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     private String displayText;
     
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering")
-    private String availability; 
+    private String availability;
+    
+    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the network offering, integer")
+    private Integer sortKey;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -73,6 +77,10 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     public String getAvailability() {
         return availability == null ? Availability.Required.toString() : availability;
+    }
+    
+    public Integer getSortKey() {
+    	return sortKey;
     }
 
     /////////////////////////////////////////////////////

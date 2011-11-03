@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -401,7 +402,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 return templateZonePairList;
             }
 
-            sql += joinClause + whereClause;
+            sql += joinClause + whereClause + getOrderByLimit(pageSize, startIndex);
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -448,7 +449,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	    Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long, Long>>();
+        /* Use LinkedHashSet here to guarantee iteration order */
+        Set<Pair<Long, Long>> templateZonePairList = new LinkedHashSet<Pair<Long, Long>>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         StringBuilder relatedDomainIds = new StringBuilder();
@@ -649,7 +651,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	private String getOrderByLimit(Long pageSize, Long startIndex) {
-        String sql = " ORDER BY t.created DESC";
+    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+    	isAscending = (isAscending == null ? true : isAscending);
+    	
+		String sql;
+		if (isAscending) {
+			sql = " ORDER BY t.sort_key ASC";
+		} else {
+			sql = " ORDER BY t.sort_key DESC";
+		}
+    	
         if ((pageSize != null) && (startIndex != null)) {
             sql += " LIMIT " + startIndex.toString() + "," + pageSize.toString();
         }

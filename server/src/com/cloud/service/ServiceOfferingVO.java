@@ -64,6 +64,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name="vm_type")
     private String vm_type;
     
+    @Column(name="sort_key")
+    int sortKey;
+    
     protected ServiceOfferingVO() {
         super();
     }
@@ -188,5 +191,13 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 	public String getSystemVmType(){
 	    return vm_type;
 	}
+	
+    public void setSortKey(int key) {
+    	sortKey = key;
+    }
+    
+    public int getSortKey() {
+    	return sortKey;
+    }
 	
 }

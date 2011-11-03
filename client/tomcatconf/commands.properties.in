@@ -175,7 +175,6 @@ listAlerts=com.cloud.api.commands.ListAlertsCmd;3
 
 #### system capacity commands
 listCapacity=com.cloud.api.commands.ListCapacityCmd;3
-listCapacityByType=com.cloud.api.commands.ListCapacityByTypeCmd;3
 
 #### host commands
 addHost=com.cloud.api.commands.AddHostCmd;3

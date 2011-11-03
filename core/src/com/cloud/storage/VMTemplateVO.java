@@ -123,6 +123,9 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     private String uuid;
     
 
+    @Column(name="sort_key")
+    int sortKey;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -432,6 +435,14 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+    
+    public void setSortKey(int key) {
+    	sortKey = key;
+    }
+    
+    public int getSortKey() {
+    	return sortKey;
     }
 
 }

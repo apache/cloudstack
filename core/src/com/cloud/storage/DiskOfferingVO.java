@@ -98,10 +98,13 @@ public class DiskOfferingVO implements DiskOffering, Identity {
     @Column(name="uuid")
     private String uuid;
     
+    @Column(name="sort_key")
+    int sortKey;
+
     public DiskOfferingVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
-
+    
     public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized) {
         this.domainId = domainId;
         this.name = name;
@@ -300,5 +303,13 @@ public class DiskOfferingVO implements DiskOffering, Identity {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+
+    public void setSortKey(int key) {
+    	sortKey = key;
+    }
+    
+    public int getSortKey() {
+    	return sortKey;
     }
 }
