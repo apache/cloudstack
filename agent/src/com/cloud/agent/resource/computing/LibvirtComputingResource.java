@@ -699,12 +699,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		/*get pifs from bridge*/
 		String pubPif = null;
 		String privPif = null;
-		if (_publicBridgeName != null) {
-			pubPif = Script.runSimpleBashScript("brctl show | grep " + _publicBridgeName + " | awk '{print $4}'");			
-		}
 		if (_guestBridgeName != null) {
 			privPif = Script.runSimpleBashScript("brctl show | grep " + _guestBridgeName + " | awk '{print $4}'");	
 		}
+		if (_publicBridgeName != null) {
+			pubPif = Script.runSimpleBashScript("brctl show | grep " + _publicBridgeName + " | awk '{print $4}'");			
+			if (pubPif == null) {
+				pubPif = privPif;
+			}
+		}
+		
 		return new Pair<String, String>(privPif, pubPif);
 	}
 	private String getVnetId(String vnetId) {
