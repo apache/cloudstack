@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.identity;
+package com.cloud.uuididentity;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.IdentityService;
-import com.cloud.identity.dao.IdentityDao;
+import com.cloud.Identity.dao.IdentityDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 

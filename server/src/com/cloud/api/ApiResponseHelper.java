@@ -1189,11 +1189,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return vmResponses;
     }
 
-            userVmResponse.setId(userVm.getId());
-            userVmResponse.setName(userVm.getInstanceName());
-            userVmResponse.setDisplayName(userVm.getDisplayName());
-            userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
-            userVmResponse.setHaEnable(userVm.isHaEnabled());
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {

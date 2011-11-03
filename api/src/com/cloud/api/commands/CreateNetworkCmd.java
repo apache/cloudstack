@@ -52,6 +52,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network")
     private String displayText;
     
+    @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, required=true, description="the network offering id")
     private Long networkOfferingId;
     

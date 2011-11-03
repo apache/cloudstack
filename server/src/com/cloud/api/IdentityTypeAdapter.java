@@ -19,8 +19,8 @@ package com.cloud.api;
 
 import java.lang.reflect.Type;
 
-import com.cloud.identity.dao.IdentityDao;
-import com.cloud.identity.dao.IdentityDaoImpl;
+import com.cloud.Identity.dao.IdentityDao;
+import com.cloud.Identity.dao.IdentityDaoImpl;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
