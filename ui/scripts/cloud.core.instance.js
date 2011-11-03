@@ -1956,7 +1956,7 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 		buildActionLinkForTab("label.action.reboot.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		if (isAdmin() 
-			&& (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN' || jsonObj.rootdevicetype == 'PreSetup')
+			&& (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN' || jsonObj.rootdevicetype == 'PreSetup' || jsonObj.rootdevicetype == 'OCFS2')
 			//&& (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == 'VMware' || jsonObj.hypervisor == 'KVM')
 			) 
 		{
