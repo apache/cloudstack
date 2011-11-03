@@ -237,6 +237,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected long _cancelWait;
     protected long _opWaitInterval;
     protected int _lockStateRetry;
+    protected boolean _forceStop;  
 
     @Override
     public <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru) {
@@ -420,6 +421,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
         VirtualMachineProfileImpl.setComponents(_offeringDao, _templateDao, _accountDao);
 
+        _forceStop = Boolean.parseBoolean(params.get(Config.VmDestroyForcestop.key()));
         _cancelWait = NumbersUtil.parseLong(params.get(Config.VmOpCancelInterval.key()), 3600);
         _cleanupWait = NumbersUtil.parseLong(params.get(Config.VmOpCleanupWait.key()), 3600);
         _cleanupInterval = NumbersUtil.parseLong(params.get(Config.VmOpCleanupInterval.key()), 86400) * 1000;
@@ -1139,9 +1141,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
             }
             return true;
-        }
-        boolean forceStop = Boolean.parseBoolean(_configDao.getValue("vm.destory.forcestop"));   
-        if (!advanceStop(vm, forceStop, user, caller)) {
+        } 
+        if (!advanceStop(vm, _forceStop, user, caller)) {
             s_logger.debug("Unable to stop " + vm);
             return false;
         }
