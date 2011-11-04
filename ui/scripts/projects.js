@@ -29,17 +29,6 @@
       noSelect: true,
       fields: {
         'username': { edit: true, label: 'Account' },
-        'role': {
-          label: 'Role',
-          select: function(args) {
-            args.response.success({
-              data: [
-                { name: 'User', description: 'User' },
-                { name: 'Admin', description: 'Admin' }
-              ]
-            });
-          }
-        },
         'add-user': { addButton: true, label: '' }
       },
       add: {
@@ -61,16 +50,21 @@
                 notification: {
                   label: 'Added user to project',
                   poll: pollAsyncJobResult
-                } 
+                }
               });
             }
           });
         }
       },
       actionPreFilter: function(args) {
-        if (cloudStack.context.projects &&
-            cloudStack.context.projects[0] &&
-            !cloudStack.context.projects[0].isNew) {
+        var rowAccount = args.context.multiRule[0].account;
+        var userAccount = cloudStack.context.users[0].account;
+        var projectOwner = cloudStack.context.projects[0].account;
+        var isExistingProject = cloudStack.context.projects &&
+              cloudStack.context.projects[0] &&
+              !cloudStack.context.projects[0].isNew;
+
+        if (isExistingProject) {
           return args.context.actions;
         }
 
@@ -80,27 +74,51 @@
         destroy: {
           label: 'Remove user from project',
           action: function(args) {
-            setTimeout(function() {
-              args.response.success({
-                notification: {
-                  label: 'Removed user from project',
-                  poll: testData.notifications.testPoll
-                }
-              });
-            }, 500);
+            $.ajax({
+              url: createURL('deleteAccountFromProject'),
+              data: {
+                projectId: cloudStack.context.projects[0].id,
+                account: args.context.multiRule[0].username
+              },
+              dataType: 'json',
+              async: true,
+              success: function(data) {
+                args.response.success({
+                  _custom: {
+                    jobId: data.deleteaccountfromprojectresponse.jobid
+                  },
+                  notification: {
+                    label: 'Removed user from project',
+                    poll: pollAsyncJobResult
+                  }
+                });
+              }
+            });
           }
         },
 
         makeOwner: {
           label: 'Make user project owner',
           action: function(args) {
-            setTimeout(function() {
-              args.response.success({
-                notification: {
-                  label: 'Assigned new owner to project',
-                  poll: testData.notifications.testPoll
-                }
-              });
+            $.ajax({
+              url: createURL('updateProject'),
+              data: {
+                id: cloudStack.context.projects[0].id,
+                account: args.context.multiRule[0].username
+              },
+              dataType: 'json',
+              async: true,
+              success: function(data) {
+                args.response.success({
+                  _custom: {
+                    jobId: data.updateprojectresponse.jobid
+                  },
+                  notification: {
+                    label: 'Assigned new project owner',
+                    poll: pollAsyncJobResult
+                  }
+                });
+              }
             });
           }
         }
@@ -111,7 +129,6 @@
         $.ajax({
           url: createURL('listProjectAccounts'),
           data: {
-            role: 'Admin, User',
             projectId: cloudStack.context.projects[0].id
           },
           dataType: 'json',
@@ -121,8 +138,8 @@
               data: $.map(data.listprojectaccountsresponse.projectaccount, function(elem) {
                 return {
                   id: elem.accountid,
-                  username: elem.account,
-                  role: elem.role
+                  username: elem.role == 'Owner' ?
+                    elem.account + ' (owner)' : elem.account
                 };
               })
             });
@@ -144,7 +161,10 @@
         async: true,
         success: function(data) {
           args.response.success({
-            data: $.map(data.listprojectsresponse.project, function(elem) {
+            data: $.map(
+              data.listprojectsresponse.project ?
+                data.listprojectsresponse.project : [],
+              function(elem) {
               return $.extend(elem, {
                 displayText: elem.displaytext
               });
@@ -152,6 +172,90 @@
           });
         }
       });
+    }
+  };
+
+  cloudStack.sections.projects = {
+    title: 'Projects',
+    id: 'projects',
+    listView: {
+      fields: {
+        name: { label: 'Project Name' },
+        displaytext: { label: 'Display Text' },
+        domain: { label: 'Domain' },
+        account: { label: 'Owner' }
+      },
+
+      dataProvider: function(args) {
+        $.ajax({
+          url: createURL('listProjects'),
+          dataType: 'json',
+          async: true,
+          success: function(data) {
+            args.response.success({
+              data: data.listprojectsresponse.project
+            });
+          }
+        });
+      },
+
+      actions: {
+        add: {
+          label: 'New Project',
+          action: {
+            custom: function(args) {
+              
+            }
+          },
+
+          messages: {
+            confirm: function(args) {
+              return 'Are you sure you want to remove ' + args.name + '?';
+            },
+            notification: function(args) {
+              return 'Removed project';
+            }
+          },
+
+          notification: {
+            poll: testData.notifications.testPoll
+          }
+        },
+
+        destroy: {
+          label: 'Remove project',
+          action: function(args) {
+            $.ajax({
+              url: createURL('deleteProject'),
+              data: {
+                id: args.data.id
+              },
+              dataType: 'json',
+              async: true,
+              success: function(data) {
+                args.response.success({
+                  _custom: {
+                    jobId: data.deleteprojectresponse.jobid
+                  }
+                });
+              }
+            });
+          },
+
+          messages: {
+            confirm: function(args) {
+              return 'Are you sure you want to remove ' + args.name + '?';
+            },
+            notification: function(args) {
+              return 'Removed project';
+            }
+          },
+
+          notification: {
+            poll: pollAsyncJobResult
+          }
+        }
+      }
     }
   };
 } (cloudStack, testData));

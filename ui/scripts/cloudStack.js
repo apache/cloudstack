@@ -4,13 +4,13 @@
 
     sectionPreFilter: function(args) {      
       if(isAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration"];
+        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects"];
       }
       else if(isDomainAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events"];
+        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
       }
       else { //normal user
-        return ["dashboard", "instances", "storage", "network", "templates", "events"];
+        return ["dashboard", "instances", "storage", "network", "templates", "events", "projects"];
       }     
     },
     sections: {
@@ -28,7 +28,8 @@
       events: {},
       system: {},
       'global-settings': {},
-      configuration: {}
+      configuration: {},
+      projects: {}
     }
   });
 
