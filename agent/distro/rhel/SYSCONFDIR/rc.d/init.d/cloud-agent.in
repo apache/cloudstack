@@ -1,9 +1,17 @@
-#!/bin/bash
-
+#!/bin/sh
+#
+# cloud-agent  This shell script takes care of starting and stopping cloud-agent
+#
 # chkconfig: 35 99 10
 # description: Cloud Agent
 
-# WARNING: if this script is changed, then all other initscripts MUST BE changed to match it as well
+### BEGIN INIT INFO
+# Provides: cloud-agent
+# Required-Start: $network
+# Default-Stop: 0 1 6
+# Short-Description: Start up the cloud agent sevice
+# description: Cloud Agent
+### END INIT INFO
 
 . /etc/rc.d/init.d/functions
 
