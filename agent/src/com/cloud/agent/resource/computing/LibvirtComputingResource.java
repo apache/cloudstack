@@ -3596,7 +3596,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean isSnapshotSupported() {
     	String result = executeBashScript("qemu-img --help|grep convert |grep snapshot");
     	if (result != null) {
-    	    return false;
+    		/*For fedora*/
+    		File qemu = new File("/usr/bin/cloud-qemu-img");
+    		if (qemu.exists()) {
+    			return true;
+    		} else {
+    			return false;
+    		}
     	} else {
     	    return true;
     	}
