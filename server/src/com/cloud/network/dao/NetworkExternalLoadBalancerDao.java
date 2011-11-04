@@ -17,9 +17,12 @@
  */
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface  NetworkExternalLoadBalancerDao extends GenericDao<NetworkExternalLoadBalancerVO, Long> {
     NetworkExternalLoadBalancerVO findByNetworkId(long networkId);
+    List<NetworkExternalLoadBalancerVO> listByLBDeviceId(long lbDeviceId);
 }

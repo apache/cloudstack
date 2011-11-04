@@ -399,7 +399,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     protected HostVO getExternalFirewallForNetwork(Network network) {
     	NetworkExternalFirewallVO fwDeviceForNetwork = _networkExternalFirewallDao.findByNetworkId(network.getId());
         if (fwDeviceForNetwork != null) {
-            long fwDeviceId = fwDeviceForNetwork.getFirewallDeviceId();
+            long fwDeviceId = fwDeviceForNetwork.getExternalFirewallDeviceId();
             ExternalFirewallDeviceVO fwDeviceVO = _externalFirewallDeviceDao.findById(fwDeviceId);
             assert(fwDeviceVO != null);
             _hostDao.findById(fwDeviceVO.getHostId());
@@ -417,16 +417,48 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         _networkExternalFirewallDao.persist(fwDeviceForNetwork);
     }
 
-    protected HostVO findSuitableExternalLBForNetwork(Network network) {
-        // TODO: get a LB device from physical network, and pick one with least-connections
-        return null;        
+    protected long findSuitableLBDeviceForNetwork(Network network) throws InsufficientCapacityException {
+        long physicalNetworkId = network.getPhysicalNetworkId();
+        List<ExternalLoadBalancerDeviceVO> lbDevices = _externalLoadBalancerDeviceDao.listByPhysicalNetwork(physicalNetworkId);
+
+        // loop through the LB device in the physical network and pick the first-fit 
+        for (ExternalLoadBalancerDeviceVO lbdevice: lbDevices) {
+            // max number of guest networks that can be mapped to this device
+            long fullCapacity = lbdevice.getCapacity();
+
+            // get the list of guest networks that are mapped to this load balancer
+            List<NetworkExternalLoadBalancerVO> mappedNetworks = _networkExternalLBDao.listByLBDeviceId(lbdevice.getId()); 
+
+            long usedCapacity = (mappedNetworks == null) ? 0 : mappedNetworks.size();
+            if ((fullCapacity - usedCapacity) > 0) {
+                return lbdevice.getId();
+            }
+        }
+        throw new InsufficientNetworkCapacityException("Unable to find a load balancing provider with sufficient capcity " +
+                " to implement the network", Network.class, network.getId());
     }
 
-    protected HostVO findSuitableExternalFirewallForNetwork(Network network) {
-        // TODO: get a firewall device from physical network, and pick one with least-connections
-        return null;
+    protected long findSuitableFirewallDeviceForNetwork(Network network) throws InsufficientCapacityException {
+        long physicalNetworkId = network.getPhysicalNetworkId();
+        List<ExternalFirewallDeviceVO> fwDevices = _externalFirewallDeviceDao.listByPhysicalNetwork(physicalNetworkId);
+
+        // loop through the firewall device in the physical network and pick the first-fit 
+        for (ExternalFirewallDeviceVO fwDevice: fwDevices) {
+            // max number of guest networks that can be mapped to this device
+            long fullCapacity = fwDevice.getCapacity();
+
+            // get the list of guest networks that are mapped to this load balancer
+            List<NetworkExternalFirewallVO> mappedNetworks = _networkExternalFirewallDao.listByFirewallDeviceId(fwDevice.getId()); 
+
+            long usedCapacity = (mappedNetworks == null) ? 0 : mappedNetworks.size();
+            if ((fullCapacity - usedCapacity) > 0) {
+                return fwDevice.getId();
+            }
+        }
+        throw new InsufficientNetworkCapacityException("Unable to find a firewall provider with sufficient capcity " +
+                " to implement the network", Network.class, network.getId());
     }
-    
+
     @Override
     @Deprecated  // should use more generic addNetworkDevice command to add external load balancer
     public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd) {
@@ -651,7 +683,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }
 
     @Override
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientAddressCapacityException {
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException {
         if (guestConfig.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("External load balancer can only be user for add/remove guest networks.");
             return false;
@@ -662,10 +694,22 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         HostVO externalLoadBalancer = null;
 
         if (add) {
-            externalLoadBalancer = findSuitableExternalLBForNetwork(guestConfig);
-            if (externalLoadBalancer == null) {
-                throw new InsufficientAddressCapacityException("Unable to find a load balancing provider with sufficient capcity " +
-                        " to implement the network", Network.class, guestConfig.getId());
+            GlobalLock deviceMapLock =  GlobalLock.getInternLock("NetworkLBDeviceMap");
+            try {
+                if (deviceMapLock.lock(120)) {
+                    try {
+                        long externalLoadBalancerId = findSuitableLBDeviceForNetwork(guestConfig);
+                        NetworkExternalLoadBalancerVO networkLB = new NetworkExternalLoadBalancerVO(guestConfig.getId(), externalLoadBalancerId);
+                        _networkExternalLBDao.persist(networkLB);
+                        
+                        ExternalLoadBalancerDeviceVO device = _externalLoadBalancerDeviceDao.findById(externalLoadBalancerId);
+                        externalLoadBalancer = _hostDao.findById(device.getHostId());
+                    } finally {
+                        deviceMapLock.unlock();
+                    }
+                }
+            } finally {
+                deviceMapLock.releaseRef();
             }
         } else {
             externalLoadBalancer = getExternalLoadBalancerForNetwork(guestConfig);
@@ -1079,7 +1123,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }
 
     @Override
-    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException, InsufficientNetworkCapacityException {
+    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("External firewall can only be used for add/remove guest networks.");
             return false;
@@ -1090,13 +1134,25 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         HostVO externalFirewall = null;
 
         if (add) {
-            externalFirewall = findSuitableExternalFirewallForNetwork(network);
-            if (externalFirewall == null) {
-                throw new InsufficientNetworkCapacityException("Unable to find a firewall provider with sufficient capcity " +
-                        " to implement the network", Network.class, network.getId());
+            GlobalLock deviceMapLock =  GlobalLock.getInternLock("NetworkFirewallDeviceMap");
+            try {
+                if (deviceMapLock.lock(120)) {
+                    try {
+                        long externalFirewallId = findSuitableFirewallDeviceForNetwork(network);
+                        NetworkExternalFirewallVO networkFW = new NetworkExternalFirewallVO(network.getId(), externalFirewallId);
+                        _networkExternalFirewallDao.persist(networkFW);
+
+                        ExternalFirewallDeviceVO device = _externalFirewallDeviceDao.findById(externalFirewallId);
+                        externalFirewall = _hostDao.findById(device.getHostId());
+                    } finally {
+                        deviceMapLock.unlock();
+                    }
+                }
+            } finally {
+                deviceMapLock.releaseRef();
             }
         } else {
-            externalFirewall = getExternalFirewallForNetwork(network);
+        	externalFirewall = getExternalFirewallForNetwork(network);
         }
 
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());

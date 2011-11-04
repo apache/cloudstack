@@ -1817,6 +1817,8 @@ CREATE TABLE `cloud`.`external_firewall_devices` (
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network to which the device is added in to',
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this device',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the external firewall device',
+  `capacity_type` varchar(32) NOT NULL DEFAULT 'Throughput' COMMENT 'Type of the capacity',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_external_firewall_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_firewall_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE

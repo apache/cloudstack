@@ -56,7 +56,7 @@ public class NetworkExternalFirewallVO {
         return networkId;
     }
 
-    public long getFirewallDeviceId() {
+    public long getExternalFirewallDeviceId() {
         return externalFirewallDeviceId;
     }
 

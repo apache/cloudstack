@@ -130,7 +130,7 @@ public interface ExternalNetworkDeviceManager extends Manager {
     
     public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLoadBalancer);
     
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientAddressCapacityException;
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException;
     
     public boolean applyLoadBalancerRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
     

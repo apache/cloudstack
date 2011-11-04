@@ -32,12 +32,17 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class NetworkExternalLoadBalancerDaoImpl extends GenericDaoBase<NetworkExternalLoadBalancerVO, Long> implements NetworkExternalLoadBalancerDao {
 
     final SearchBuilder<NetworkExternalLoadBalancerVO> networkIdSearch;
+    final SearchBuilder<NetworkExternalLoadBalancerVO> deviceIdSearch;
     
     protected NetworkExternalLoadBalancerDaoImpl() {
         super();
         networkIdSearch = createSearchBuilder();
         networkIdSearch.and("networkId", networkIdSearch.entity().getNetworkId(), Op.EQ);
         networkIdSearch.done();
+
+        deviceIdSearch = createSearchBuilder();
+        deviceIdSearch.and("externalLBDeviceId", deviceIdSearch.entity().getExternalLBDeviceId(), Op.EQ);
+        deviceIdSearch.done();
     }
 
     @Override
@@ -46,5 +51,11 @@ public class NetworkExternalLoadBalancerDaoImpl extends GenericDaoBase<NetworkEx
         sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
-    
+
+    @Override
+    public List<NetworkExternalLoadBalancerVO> listByLBDeviceId(long lbDeviceId) {
+        SearchCriteria<NetworkExternalLoadBalancerVO> sc = deviceIdSearch.create();
+        sc.setParameters("externalLBDeviceId", lbDeviceId);
+        return search(sc, null);
+    }
 }

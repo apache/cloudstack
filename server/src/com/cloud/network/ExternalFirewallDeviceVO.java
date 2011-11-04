@@ -55,6 +55,12 @@ public class ExternalFirewallDeviceVO {
     @Enumerated(value=EnumType.STRING)
     State state;
 
+    @Column(name = "capacity")
+    private long capacity;
+
+    @Column(name = "capacity_type")
+    private String capacity_type;
+
     public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
@@ -80,6 +86,14 @@ public class ExternalFirewallDeviceVO {
 
     public long getHostId() {
         return hostId;
+    }
+
+    public long getCapacity() {
+        return capacity;
+    }
+
+    public String getCapacityType() {
+        return capacity_type;
     }
 
     public State getState() {
