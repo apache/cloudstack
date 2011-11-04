@@ -144,33 +144,34 @@ def describe_setup_in_basic_mode():
         z.networktype = 'Basic'
     
         '''create 10 pods'''
-        for i in range(2):
+        for i in range(300):
             p = pod()
             p.name = "test" +str(l) + str(i)
-            p.gateway = "192.168.%d.1"%i
+            p.gateway = "192.%d.%d.1"%((i/255)+168,i%255)
             p.netmask = "255.255.255.0"
-            p.startip = "192.168.%d.150"%i
-            p.endip = "192.168.%d.220"%i
+            
+            p.startip = "192.%d.%d.150"%((i/255)+168,i%255)
+            p.endip = "192.%d.%d.220"%((i/255)+168,i%255)
         
             '''add two pod guest ip ranges'''
-            for j in range(2):
+            for j in range(1):
                 ip = iprange()
                 ip.gateway = p.gateway
                 ip.netmask = p.netmask
-                ip.startip = "192.168.%d.%d"%(i,j*20)
-                ip.endip = "192.168.%d.%d"%(i,j*20+10)
+                ip.startip = "192.%d.%d.%d"%(((i/255)+168), i%255,j*20)
+                ip.endip = "192.%d.%d.%d"%((i/255)+168,i%255,j*20+10)
             
                 p.guestIpRanges.append(ip)
         
             '''add 10 clusters'''
-            for j in range(2):
+            for j in range(10):
                 c = cluster()
                 c.clustername = "test"+str(l)+str(i) + str(j)
                 c.clustertype = "CloudManaged"
                 c.hypervisor = "Simulator"
             
                 '''add 10 hosts'''
-                for k in range(2):
+                for k in range(1):
                     h = host()
                     h.username = "root"
                     h.password = "password"
@@ -181,6 +182,7 @@ def describe_setup_in_basic_mode():
                     c.hosts.append(h)
                 
                 '''add 2 primary storages'''
+                '''
                 for m in range(2):
                     primary = primaryStorage()
                     size=1*1024*1024*1024*1024
@@ -188,6 +190,7 @@ def describe_setup_in_basic_mode():
                     #primary.url = "nfs://localhost/path%s/size=%d"%(str(l) + str(i) + str(j) + str(m), size)
                     primary.url = "nfs://localhost/path%s"%(str(l) + str(i) + str(j) + str(m))
                     c.primaryStorages.append(primary)
+                '''
         
                 p.clusters.append(c)
             

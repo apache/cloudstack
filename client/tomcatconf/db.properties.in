@@ -38,3 +38,17 @@ db.usage.maxActive=100
 db.usage.maxIdle=30
 db.usage.maxWait=10000
 db.usage.autoReconnect=true
+
+
+# simulator database settings
+db.simulator.username=@DBUSER@
+db.simulator.password=@DBPW@
+db.simulator.host=@DBHOST@
+db.simulator.port=3306
+db.simulator.name=cloud_simulator
+
+# simulator database tuning parameters
+db.simulator.maxActive=100
+db.simulator.maxIdle=30
+db.simulator.maxWait=10000
+db.simulator.autoReconnect=true

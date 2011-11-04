@@ -77,6 +77,7 @@ public class Transaction {
 
     public static final short CLOUD_DB = 0;
     public static final short USAGE_DB = 1;
+    public static final short SIMULATOR_DB = 2;
     public static final short CONNECTED_DB = -1;
 
     private static AtomicLong s_id = new AtomicLong();
@@ -523,6 +524,14 @@ public class Transaction {
                     throw new CloudRuntimeException("Database is not initialized, process is dying?");
                 }
                 break;
+            case SIMULATOR_DB:
+            	if (s_simulatorDS != null) {
+            		_conn = s_simulatorDS.getConnection();
+            	} else {
+                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                }
+            	break;
             default:
                 throw new CloudRuntimeException("No database selected for the transaction");
             }
@@ -951,6 +960,7 @@ public class Transaction {
 
     private static DataSource s_ds;
     private static DataSource s_usageDS;
+    private static DataSource s_simulatorDS;
     static {
         try {
             final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
@@ -1019,6 +1029,24 @@ public class Transaction {
             final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
+            
+            // configure the simulator db
+            final int simulatorMaxActive = Integer.parseInt(dbProps.getProperty("db.simulator.maxActive"));
+            final int simulatorMaxIdle = Integer.parseInt(dbProps.getProperty("db.simulator.maxIdle"));
+            final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
+            final String simulatorUsername = dbProps.getProperty("db.simulator.username");
+            final String simulatorPassword = dbProps.getProperty("db.simulator.password");
+            final String simulatorHost = dbProps.getProperty("db.simulator.host");
+            final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
+            final String simulatorDbName = dbProps.getProperty("db.simulator.name");
+            final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
+            final GenericObjectPool simulatorConnectionPool = new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
+            		simulatorMaxWait, simulatorMaxIdle);
+            final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+simulatorHost + ":" + simulatorPort + "/" + simulatorDbName +
+                    "?autoReconnect="+simulatorAutoReconnect, simulatorUsername, simulatorPassword);
+            final PoolableConnectionFactory simulatorPoolableConnectionFactory = new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool,
+                    new StackKeyedObjectPoolFactory(), null, false, false);
+            s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
         } catch (final Exception e) {
             final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
             final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud", "cloud", "cloud");
@@ -1029,6 +1057,11 @@ public class Transaction {
             final ConnectionFactory connectionFactoryUsage = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud_usage", "cloud", "cloud");
             final PoolableConnectionFactory poolableConnectionFactoryUsage = new PoolableConnectionFactory(connectionFactoryUsage, connectionPoolUsage, null, null, false, true);
             s_usageDS = new PoolingDataSource(poolableConnectionFactoryUsage.getPool());
+            
+            final GenericObjectPool connectionPoolsimulator = new GenericObjectPool(null, 5);
+            final ConnectionFactory connectionFactorysimulator = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud_simulator", "cloud", "cloud");
+            final PoolableConnectionFactory poolableConnectionFactorysimulator = new PoolableConnectionFactory(connectionFactorysimulator, connectionPoolsimulator, null, null, false, true);
+            s_simulatorDS = new PoolingDataSource(poolableConnectionFactorysimulator.getPool());
             s_logger.warn("Unable to load db configuration, using defaults with 5 connections.  Please check your configuration", e);
         }
     }

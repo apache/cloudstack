@@ -88,13 +88,14 @@ public class SimulatorManagerImpl implements SimulatorManager {
     private ConnectionConcierge _concierge;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	/*
         try {
             Connection conn = Transaction.getStandaloneConnectionWithException();
             conn.setAutoCommit(true);
             _concierge = new ConnectionConcierge("SimulatorConnection", conn, true);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to get a db connection", e);
-        }
+        }*/
         return true;
     }
 
@@ -131,9 +132,8 @@ public class SimulatorManagerImpl implements SimulatorManager {
     @DB
     @Override
     public Answer simulate(Command cmd, String hostGuid) {
-        Transaction txn = Transaction.currentTxn();
-        txn.transitToUserManagedConnection(_concierge.conn());
-        
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+
         try {
             MockHost host = _mockHost.findByGuid(hostGuid);
             String cmdName = cmd.toString();
@@ -268,20 +268,30 @@ public class SimulatorManagerImpl implements SimulatorManager {
             txn.rollback();
             return new Answer(cmd, false, e.toString());
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+        	txn.close();
+        	txn = Transaction.open(Transaction.CLOUD_DB);
+        	txn.close();
         }
     }
 
     @Override
     public StoragePoolInfo getLocalStorage(String hostGuid) {
-        return _mockStorageMgr.getLocalStorage(hostGuid);
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+    	try {
+    		return _mockStorageMgr.getLocalStorage(hostGuid);
+    	} finally {
+    		txn.close();
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+    		txn.close();
+    	}
     }
 
     @Override
     public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values) {
-    	MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
-    	if (config == null) {
-    		config = new MockConfigurationVO();
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+    	try {
+
+    		MockConfigurationVO config = new MockConfigurationVO();
     		config.setClusterId(clusterId);
     		config.setDataCenterId(zoneId);
     		config.setPodId(podId);
@@ -289,23 +299,38 @@ public class SimulatorManagerImpl implements SimulatorManager {
     		config.setName(command);
     		config.setValues(values);
     		_mockConfigDao.persist(config);
-    	} else {
-    		config.setValues(values);
-    		_mockConfigDao.update(config.getId(), config);
+    		return true;
+    	} finally {
+    		txn.close();
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+    		txn.close();
     	}
-        return true;
     }
     
     @Override
     @DB
     public Map<String, State> getVmStates(String hostGuid) {
-        Transaction txn = Transaction.currentTxn();
-        txn.transitToUserManagedConnection(_concierge.conn());
-        try {
-            return _mockVmMgr.getVmStates(hostGuid);
-        } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
-        }
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+    	try {
+    		return _mockVmMgr.getVmStates(hostGuid);
+    	} finally {
+    		txn.close();
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+    		txn.close();
+    	}
+    }
+    
+    @Override
+    public Pair<MockHost,StoragePoolInfo> getHostInfo(String uuid) {
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+    	try {
+    		Pair<MockHost,StoragePoolInfo> info = new Pair<MockHost,StoragePoolInfo>(_mockHost.findByGuid(uuid), _mockStorageMgr.getLocalStorage(uuid));
+    		return info;
+    	} finally {	
+    		 txn.close();
+             txn = Transaction.open(Transaction.CLOUD_DB);
+             txn.close();
+    	}
     }
 
     @Override

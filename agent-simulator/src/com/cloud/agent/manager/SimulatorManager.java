@@ -15,6 +15,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
 
 import com.cloud.resource.AgentResourceBase;
+import com.cloud.simulator.MockHost;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.State;
@@ -51,4 +52,6 @@ public interface SimulatorManager extends Manager {
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
 
     Map<String, State> getVmStates(String hostGuid);
+
+	Pair<MockHost, StoragePoolInfo> getHostInfo(String uuid);
 }

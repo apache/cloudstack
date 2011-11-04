@@ -142,7 +142,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     private StartupStorageCommand initializeLocalSR() {
         Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
       
-        StoragePoolInfo poolInfo = _simMgr.getLocalStorage(hostGuid);
+        StoragePoolInfo poolInfo = localstorage;
 
         StartupStorageCommand cmd = new StartupStorageCommand(poolInfo.getHostPath(), poolInfo.getPoolType(), poolInfo.getCapacityBytes(), tInfo);
 

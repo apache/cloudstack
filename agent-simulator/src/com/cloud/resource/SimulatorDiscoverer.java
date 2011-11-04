@@ -45,6 +45,8 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
 /**
  * @author prasanna
@@ -182,12 +184,15 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 
 	private Map<AgentResourceBase, Map<String, String>> createAgentResources(
 			Map<String, Object> params) {
+	
 		try {
 			s_logger.info("Creating Simulator Resources");
 			return _mockAgentMgr.createServerResources(params);
 		} catch (Exception ex) {
 			s_logger.warn("Caught exception at agent resource creation: "
 					+ ex.getMessage(), ex);
+		} finally {
+			
 		}
 		return null;
 	}

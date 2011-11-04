@@ -25,6 +25,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.manager.MockAgentManager;
 import com.cloud.agent.manager.MockStorageManager;
 import com.cloud.agent.manager.MockStorageManagerImpl;
@@ -35,6 +36,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.simulator.MockHost;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -58,6 +60,7 @@ public class AgentResourceBase implements ServerResource {
 	protected MockHost agentHost = null;
 	protected boolean stopped = false;
 	protected String hostGuid = null;
+	protected StoragePoolInfo localstorage = null;
 	
 
 	public AgentResourceBase(long instanceId, AgentType agentType, SimulatorManager simMgr, String hostGuid) {
@@ -115,7 +118,13 @@ public class AgentResourceBase implements ServerResource {
 	    _locator = ComponentLocator.getLocator("management-server");
         _simMgr = _locator.getManager(SimulatorManager.class);
         
-	    agentHost = getAgentMgr().getHost(hostGuid);
+        agentHost = (MockHost)params.get("host");
+        localstorage = (StoragePoolInfo)params.get("localstorage");
+        if (agentHost == null) {
+        	Pair<MockHost, StoragePoolInfo> info = _simMgr.getHostInfo(hostGuid);
+        	agentHost = info.first();
+        	localstorage = info.second();
+        }
 	    return true;
 	}
 	

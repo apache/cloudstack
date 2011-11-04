@@ -76,6 +76,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -513,47 +514,54 @@ public class MockStorageManagerImpl implements MockStorageManager {
 
     @Override
     public void preinstallTemplates(String url, long zoneId) {
-        MockSecStorageVO storage = _mockSecStorageDao.findByUrl(url);
-        if (storage == null) {
-            storage = new MockSecStorageVO();
-            URI uri;
-            try {
-                uri = new URI(url);
-            } catch (URISyntaxException e) {
-                return;
-            }
-            
-            String nfsHost = uri.getHost();
-            String nfsPath = uri.getPath();
-            String path = nfsHost + ":" + nfsPath;
-            String dir = "/mnt/" + UUID.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
-            
-            storage.setUrl(url);
-            storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
-           
-            storage.setMountPoint(dir);
-            
-            storage = _mockSecStorageDao.persist(storage);
-            
-            //preinstall default templates into secondary storage
-            long defaultTemplateSize = 2 * 1024 * 1024 * 1024L;
-            MockVolumeVO template = new MockVolumeVO();
-            template.setName("simulator-domR");
-            template.setPath(storage.getMountPoint() + "template/tmpl/1/9/" + UUID.randomUUID().toString());
-            template.setPoolId(storage.getId());
-            template.setSize(defaultTemplateSize);
-            template.setType(MockVolumeType.TEMPLATE);
-            template.setStatus(Status.DOWNLOADED);
-            _mockVolumeDao.persist(template);
-            
-            template = new MockVolumeVO();
-            template.setName("simulator-Centos");
-            template.setPath(storage.getMountPoint() + "template/tmpl/1/10/" + UUID.randomUUID().toString());
-            template.setPoolId(storage.getId());
-            template.setSize(defaultTemplateSize);
-            template.setType(MockVolumeType.TEMPLATE);
-            _mockVolumeDao.persist(template);
-        }
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+    	try {
+    		MockSecStorageVO storage = _mockSecStorageDao.findByUrl(url);
+    		if (storage == null) {
+    			storage = new MockSecStorageVO();
+    			URI uri;
+    			try {
+    				uri = new URI(url);
+    			} catch (URISyntaxException e) {
+    				return;
+    			}
+
+    			String nfsHost = uri.getHost();
+    			String nfsPath = uri.getPath();
+    			String path = nfsHost + ":" + nfsPath;
+    			String dir = "/mnt/" + UUID.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
+
+    			storage.setUrl(url);
+    			storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);
+
+    			storage.setMountPoint(dir);
+
+    			storage = _mockSecStorageDao.persist(storage);
+
+    			//preinstall default templates into secondary storage
+    			long defaultTemplateSize = 2 * 1024 * 1024 * 1024L;
+    			MockVolumeVO template = new MockVolumeVO();
+    			template.setName("simulator-domR");
+    			template.setPath(storage.getMountPoint() + "template/tmpl/1/9/" + UUID.randomUUID().toString());
+    			template.setPoolId(storage.getId());
+    			template.setSize(defaultTemplateSize);
+    			template.setType(MockVolumeType.TEMPLATE);
+    			template.setStatus(Status.DOWNLOADED);
+    			_mockVolumeDao.persist(template);
+
+    			template = new MockVolumeVO();
+    			template.setName("simulator-Centos");
+    			template.setPath(storage.getMountPoint() + "template/tmpl/1/10/" + UUID.randomUUID().toString());
+    			template.setPoolId(storage.getId());
+    			template.setSize(defaultTemplateSize);
+    			template.setType(MockVolumeType.TEMPLATE);
+    			_mockVolumeDao.persist(template);
+    		}
+    	} finally {
+    		txn.close();
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+    		txn.close();
+    	}
         
     }
     

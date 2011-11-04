@@ -29,6 +29,7 @@ import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.ShutdownCommand;
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.AgentResourceBase;
@@ -45,6 +46,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = { MockAgentManager.class })
@@ -91,8 +93,59 @@ public class MockAgentManagerImpl implements MockAgentManager {
         return random.nextInt((int)cidrSize);
     }
     
+    private AgentResourceBase createhost(long dataCenterId, long podId, long clusterId, long cpuCore, long cpuSpeed, long memory, long localStorageSize, String ipAddress, String macAddress, String guid,
+    		Map<String, Object> params) {
+    	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+    	try {
+    		
+    		MockHostVO mockHost = new MockHostVO();
+    		mockHost.setDataCenterId(dataCenterId);
+    		mockHost.setPodId(podId);
+    		mockHost.setClusterId(clusterId);
+    		mockHost.setCapabilities("hvm");
+    		mockHost.setCpuCount(cpuCore);
+    		mockHost.setCpuSpeed(cpuSpeed);
+    		mockHost.setMemorySize(memory);
+
+    		mockHost.setGuid(guid);
+    		mockHost.setName("SimulatedAgent." + guid);
+    		mockHost.setPrivateIpAddress(ipAddress);
+    		mockHost.setPublicIpAddress(ipAddress);
+    		mockHost.setStorageIpAddress(ipAddress);
+    		mockHost.setPrivateMacAddress(macAddress);
+    		mockHost.setPublicMacAddress(macAddress);
+    		mockHost.setStorageMacAddress(macAddress);
+    		mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
+    		mockHost.setResource("com.cloud.agent.AgentRoutingResource");
+    		mockHost = _mockHostDao.persist(mockHost);
+
+    		StoragePoolInfo  info = _storageMgr.getLocalStorage(guid, localStorageSize);
+    		AgentResourceBase agentResource = new AgentRoutingResource();
+            if (agentResource != null) {
+                try {
+                    params.put("guid", guid);
+                    params.put("host", mockHost);
+                    params.put("localstorage", info);
+                    agentResource.start();
+                    agentResource.configure("SimulatedAgent." + guid,
+                            params);
+                } catch (ConfigurationException e) {
+                    s_logger
+                    .error("error while configuring server resource"
+                            + e.getMessage());
+                }
+            
+            }
+            return agentResource;
+    	} finally {
+    		txn.close();
+    		txn = Transaction.open(Transaction.CLOUD_DB);
+    		txn.close();
+    	}
+    }
+    
     @Override
-    @DB
+    
     public Map<AgentResourceBase, Map<String, String>> createServerResources(
             Map<String, Object> params) {
       
@@ -112,44 +165,11 @@ public class MockAgentManagerImpl implements MockAgentManager {
             int agentId = getNextAgentId(cidrSize);
             String ipAddress = getIpAddress(agentId, dataCenterId, podId);
             String macAddress = getMacAddress(dataCenterId, podId, clusterId, agentId);
-            MockHostVO mockHost = new MockHostVO();
-            mockHost.setDataCenterId(dataCenterId);
-            mockHost.setPodId(podId);
-            mockHost.setClusterId(clusterId);
-            mockHost.setCapabilities("hvm");
-            mockHost.setCpuCount(cpuCore);
-            mockHost.setCpuSpeed(cpuSpeed);
-            mockHost.setMemorySize(memory);
             String guid = UUID.randomUUID().toString();
-            mockHost.setGuid(guid);
-            mockHost.setName("SimulatedAgent." + guid);
-            mockHost.setPrivateIpAddress(ipAddress);
-            mockHost.setPublicIpAddress(ipAddress);
-            mockHost.setStorageIpAddress(ipAddress);
-            mockHost.setPrivateMacAddress(macAddress);
-            mockHost.setPublicMacAddress(macAddress);
-            mockHost.setStorageMacAddress(macAddress);
-            mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
-            mockHost.setResource("com.cloud.agent.AgentRoutingResource");
-            mockHost = _mockHostDao.persist(mockHost);
-            
-            _storageMgr.getLocalStorage(guid, localStorageSize);
 
-            agentResource = new AgentRoutingResource();
-            if (agentResource != null) {
-                try {
-                    params.put("guid", mockHost.getGuid());
-                    agentResource.start();
-                    agentResource.configure(mockHost.getName(),
-                            params);
+            agentResource = createhost(dataCenterId, podId, clusterId, cpuCore, cpuSpeed, memory, localStorageSize, ipAddress, macAddress, guid, params);
 
-                    newResources.put(agentResource, args);
-                } catch (ConfigurationException e) {
-                    s_logger
-                    .error("error while configuring server resource"
-                            + e.getMessage());
-                }
-            }
+            newResources.put(agentResource, args);
         }
         return newResources;
     }
@@ -217,64 +237,74 @@ public class MockAgentManagerImpl implements MockAgentManager {
         }
         
         @Override
-        @DB
         public void run() {
-            if (this.mode.equalsIgnoreCase("Stop")) {
-                MockHost host = _mockHostDao.findByVmId(this.vmId);
-                if (host != null) {
-                    String guid = host.getGuid();
-                    if (guid != null) {
-                        AgentResourceBase res = _resources.get(guid);
-                        if (res != null) {
-                            res.stop();
-                            _resources.remove(guid);
-                        }
-                    }
-                }
-                return;
-            }
+        	AgentStorageResource storageResource = null;
+        	Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        	try {
+        		if (this.mode.equalsIgnoreCase("Stop")) {
+        			MockHost host = _mockHostDao.findByVmId(this.vmId);
+        			if (host != null) {
+        				String guid = host.getGuid();
+        				if (guid != null) {
+        					AgentResourceBase res = _resources.get(guid);
+        					if (res != null) {
+        						res.stop();
+        						_resources.remove(guid);
+        					}
+        				}
+        			}
+        			return;
+        		}
+
+        		String resource = null;
+        		if (vmType.equalsIgnoreCase("secstorage")) {
+        			resource = "com.cloud.agent.AgentStorageResource";
+        		}
+        		MockHostVO mockHost = new MockHostVO();
+        		mockHost.setDataCenterId(this.dcId);
+        		mockHost.setPodId(this.podId);
+        		mockHost.setCpuCount(DEFAULT_HOST_CPU_CORES);
+        		mockHost.setCpuSpeed(DEFAULT_HOST_SPEED_MHZ);
+        		mockHost.setMemorySize(DEFAULT_HOST_MEM_SIZE);
+        		mockHost.setGuid(this.guid);
+        		mockHost.setName(name);
+        		mockHost.setPrivateIpAddress(this.privateIpAddress);
+        		mockHost.setPublicIpAddress(this.privateIpAddress);
+        		mockHost.setStorageIpAddress(this.privateIpAddress);
+        		mockHost.setPrivateMacAddress(this.privateMacAddress);
+        		mockHost.setPublicMacAddress(this.privateMacAddress);
+        		mockHost.setStorageMacAddress(this.privateMacAddress);
+        		mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
+        		mockHost.setResource(resource);
+        		mockHost.setVmId(vmId);
+        		mockHost = _mockHostDao.persist(mockHost);
+
+        		if (vmType.equalsIgnoreCase("secstorage")) {
+        			storageResource = new AgentStorageResource();
+        			try {
+        				Map<String, Object> params =  new HashMap<String, Object>();
+        				params.put("guid", this.guid);
+        				storageResource.configure("secondaryStorage", params);
+        				storageResource.start();
+        			} catch (ConfigurationException e) {
+        				s_logger.debug("Failed to load secondary storage resource: " + e.toString());
+        				return;
+        			}
+        			
+        			_resources.put(this.guid, storageResource);
+        		} 
+        	} finally {
+        		txn.close();
+        		txn = Transaction.open(Transaction.CLOUD_DB);
+          		txn.close();
+        	}
             
-            String resource = null;
-            if (vmType.equalsIgnoreCase("secstorage")) {
-                resource = "com.cloud.agent.AgentStorageResource";
-            }
-            MockHostVO mockHost = new MockHostVO();
-            mockHost.setDataCenterId(this.dcId);
-            mockHost.setPodId(this.podId);
-            mockHost.setCpuCount(DEFAULT_HOST_CPU_CORES);
-            mockHost.setCpuSpeed(DEFAULT_HOST_SPEED_MHZ);
-            mockHost.setMemorySize(DEFAULT_HOST_MEM_SIZE);
-            mockHost.setGuid(this.guid);
-            mockHost.setName(name);
-            mockHost.setPrivateIpAddress(this.privateIpAddress);
-            mockHost.setPublicIpAddress(this.privateIpAddress);
-            mockHost.setStorageIpAddress(this.privateIpAddress);
-            mockHost.setPrivateMacAddress(this.privateMacAddress);
-            mockHost.setPublicMacAddress(this.privateMacAddress);
-            mockHost.setStorageMacAddress(this.privateMacAddress);
-            mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
-            mockHost.setResource(resource);
-            mockHost.setVmId(vmId);
-            mockHost = _mockHostDao.persist(mockHost);
-           
-            if (vmType.equalsIgnoreCase("secstorage")) {
-                AgentStorageResource storageResource = new AgentStorageResource();
-                try {
-                    Map<String, Object> params =  new HashMap<String, Object>();
-                    params.put("guid", this.guid);
-                    storageResource.configure("secondaryStorage", params);
-                    storageResource.start();
-                } catch (ConfigurationException e) {
-                    s_logger.debug("Failed to load secondary storage resource: " + e.toString());
-                    return;
-                }
-                Map<String, String> details = new HashMap<String, String>();
-                
-                _agentMgr.addHost(this.dcId, storageResource, Type.SecondaryStorageVM, details);
-                _resources.put(this.guid, storageResource);
-            }
-            
-        }
+        	if (storageResource != null) {
+        		Map<String, String> details = new HashMap<String, String>();
+        		_agentMgr.addHost(this.dcId, storageResource, Type.SecondaryStorageVM, details);
+        	}
+        } 
+        
 
     }
 
