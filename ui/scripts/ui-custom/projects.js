@@ -101,6 +101,7 @@
         $form.prepend($loading);
 
         cloudStack.projects.add({
+          context: cloudStack.context,
           data: cloudStack.serializeForm($form),
           response: {
             success: function(args) {
@@ -259,12 +260,16 @@
 
                     return $userManagement;
                   });
+
+                  return false;
                 });
 
                 var $laterButton = $('<div>').addClass('button later').html('Remind me later');
                 $laterButton.click(function() {
                   $(':ui-dialog, .overlay').remove();
                   showDashboard();
+
+                  return false;
                 });
 
                 $buttons.appendTo($confirm).append($.merge(
@@ -310,7 +315,9 @@
               $(data).each(function() {
                 $('<li>')
                   .data('json-obj', this)
-                  .html(this.displayText)
+                  .html(
+                    this.displayText ? this.displayText : this.name
+                  )
                   .appendTo($list.find('ul'));
               });
 
