@@ -6584,10 +6584,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 final Pair<String, State> oldState = oldStates.remove(vm);
                 
                 //check if host is changed
-                if (host_uuid != null){
+                if (host_uuid != null && oldState != null){
                     if (!host_uuid.equals(oldState.first())){
                         changes.put(vm, new Pair<String, State>(host_uuid, newState));
                         s_vms.put(_cluster, host_uuid, vm, newState);
+                        continue;
                     }
                 }
                 
