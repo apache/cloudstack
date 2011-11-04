@@ -260,7 +260,57 @@
                 args.response.success({data: json.listusersresponse.user});                
               }
             })            
-          }
+          },
+         
+          detailView: {
+            name: 'User details',   
+            tabs: {
+              details: {
+                title: 'details',
+
+                fields: [
+                  {
+                    username: { label: 'Name' }
+                  },
+                  {
+                    id: { label: 'ID' },
+                    state: { label: 'State' },
+                    apikey: { label: 'API key' },
+                    secretkey: { label: 'Secret key' },
+                    account: { label: 'Account name' },
+                    accounttype: { 
+                      label: 'Role',
+                      converter: function(args) {
+                        return cloudStack.converters.toRole(args);
+                      }
+                    },
+                    domain: { label: 'Domain' },
+                    email: { label: 'Email' },
+                    firstname: { label: 'First name' },
+                    lastname: { label: 'Last name' },
+                    timezone: { 
+                      label: 'Timezone',
+                      converter: function(args) {                        
+                        if(args == null || args.length == 0)
+                          return "";
+                        else                        
+                          return timezoneMap[args];
+                      }
+                    }                    
+                  }
+                ],
+
+                dataProvider: function(args) {
+                  args.response.success(
+                    {
+                      actionFilter: accountActionfilter,
+                      data:args.context.users[0]
+                    }
+                  );
+                }
+              }
+            }
+          }                    
         }
       }        
     }    
