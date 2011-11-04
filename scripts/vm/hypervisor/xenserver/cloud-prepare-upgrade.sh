@@ -27,20 +27,6 @@ do
   done
 done
 
-
-# propagates local link network
-local_networkname="cloud_link_local_network"
-local_network=$(xe network-list name-label=$local_networkname --minimal)
-for dom0 in $(xe vm-list is-control-domain=true | grep ^uuid | awk '{print $NF}')
-do
-  local_vif=$(xe vif-list vm-uuid=$dom0 network-name-label=$local_networkname | grep ^uuid | awk '{print $NF}')
-  if [ -z $local_vif ]; then
-      local_vif=$(xe vif-create network-uuid=$local_network vm-uuid=$dom0 device=0 mac=fe:ff:ff:ff:ff:ff)
-      xe vif-param-set uuid=$local_vif other-config:nameLabel=link_local_network_vif
-      xe vif-plug uuid=$local_vif
-  fi
-done
-
 # eject all CD
 
 
