@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.IdentityMapper;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
@@ -121,6 +122,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		} finally {
 			txn.close();
 		}
-		return null;
+		
+		throw new InvalidParameterValueException("Object(uuid: " + identityString + ") does not exist");
 	}
 }
