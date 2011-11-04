@@ -857,56 +857,60 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
         
         //populate providers
-        Map<Network.Service, Set<Network.Provider>> defaultDirectNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+
         defaultProviders.add(Network.Provider.VirtualRouter);
-        defaultDirectNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
-        defaultDirectNetworkOfferingProviders.put(Service.Dns, defaultProviders);
-        defaultDirectNetworkOfferingProviders.put(Service.UserData, defaultProviders);
+        defaultSharedNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultSharedNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultSharedNetworkOfferingProviders.put(Service.UserData, defaultProviders);
         
+        Map<Network.Service, Set<Network.Provider>> defaultIsolatedNetworkOfferingProviders = defaultSharedNetworkOfferingProviders;
         
-        Map<Network.Service, Set<Network.Provider>> defaultDirectBasicZoneNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
-        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
-        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.Dns, defaultProviders);
-        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.UserData, defaultProviders);
+        Map<Network.Service, Set<Network.Provider>> defaultSharedSGEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        defaultSharedSGEnabledNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultSharedSGEnabledNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultSharedSGEnabledNetworkOfferingProviders.put(Service.UserData, defaultProviders);
         Set<Provider> sgProviders = new HashSet<Provider>();
         sgProviders.add(Provider.SecurityGroupProvider);
-        defaultDirectBasicZoneNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
+        defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
         
-        Map<Network.Service, Set<Network.Provider>> defaultVirtualNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        Map<Network.Service, Set<Network.Provider>> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
         defaultProviders.add(Network.Provider.VirtualRouter);
-        defaultVirtualNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.Dns, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.UserData, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.Firewall, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.Gateway, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.Lb, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.SourceNat, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.StaticNat, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.PortForwarding, defaultProviders);
-        defaultVirtualNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dns, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.UserData, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Firewall, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Gateway, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Lb, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.SourceNat, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.StaticNat, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.PortForwarding, defaultProviders);
+        defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        //there is only 1 diff between offering #1 and #3 - securityGroup is enabled for the first, and disabled for the third
-        //TODO - networkOffering 1 should probably become non-system
-        //check that offering already exists
-        
-        NetworkOfferingVO defaultGuestOffering = _networkOfferingDao.findByUniqueName(NetworkOffering.SystemGuestNetwork);
-        if (defaultGuestOffering == null) {
-            defaultGuestOffering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.SystemGuestNetwork, "System Offering for System-Guest-Network", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false, null);
-            _networkOfferingDao.update(defaultGuestOffering.getId(), defaultGuestOffering);
-        } 
+        //diff between offering #1 and #2 - securityGroup is enabled for the first, and disabled for the third
         
         NetworkOfferingVO offering = null;
-        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultVirtualizedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, null, null, false, Availability.Required, null, defaultVirtualNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null);
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+        
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
-
-        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultDirectNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultDirectNetworkOfferingProviders, true, Network.GuestType.Shared, false, null);
+        
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
@@ -1715,7 +1719,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Can't use network offering id=" + networkOfferingId + " as its state is not " + NetworkOffering.State.Enabled);
         }
 
-        // Check if the network is domain specific
+        // Check if the network is domain specific. If yes, only guestType = Shared is allowed
         if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
             if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Shared) {
                 throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and type " + Network.GuestType.Shared);
@@ -1800,10 +1804,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
 
-        // Regular user can create Guest Isolated network only
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Isolated)) {
+        // Regular user can create Guest Isolated Source Nat enabled network only
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Isolated && isServiceSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and network type "
-                    + Network.GuestType.Isolated);
+                    + Network.GuestType.Isolated + " with a service " + Service.SourceNat + " enabled");
         }
 
         // Don't allow to specify cidr if the caller is a regular user
@@ -1836,8 +1840,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network.getGuestType() == Network.GuestType.Shared) {
             owner = null;
         }
+        
+        //Vlan is created in 2 cases:
+        //1) GuestType is Shared
+        //2) GuestType is Isolated, but SourceNat service is disabled
+        boolean createVlan = ((network.getGuestType() == Network.GuestType.Shared) || (network.getGuestType() == GuestType.Isolated && !isServiceSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == Network.GuestType.Shared && defineNetworkConfig) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan && defineNetworkConfig) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId(), physicalNetworkId);
         }

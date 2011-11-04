@@ -2825,7 +2825,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String displayText = cmd.getDisplayText();
         String tags = cmd.getTags();
         String trafficTypeString = cmd.getTraffictype();
-        Boolean specifyVlan = cmd.getSpecifyVlan();
+        boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
 
         Integer networkRate = cmd.getNetworkRate();
@@ -2844,7 +2844,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (trafficType == null) {
             throw new InvalidParameterValueException("Invalid value for traffictype. Supported traffic types: Public, Management, Control, Guest, Vlan or Storage");
         }
-
+        
+        //Only GUEST traffic type is supported in Acton
+        if (trafficType != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Only traffic type " + TrafficType.Guest + " is supported in the current release");
+        }
+        
         // Verify offering type
         for (Network.GuestType offType : Network.GuestType.values()) {
             if (offType.name().equalsIgnoreCase(cmd.getGuestIpType())) {
@@ -2856,6 +2861,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (guestType == null) {
             throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
+        
+        //specifyVlan can be true for Shared network offering only in Acton
+        if (specifyVlan && guestType != GuestType.Shared) {
+            
+        }
+        
+
 
         // Verify availability
         for (Availability avlb : Availability.values()) {

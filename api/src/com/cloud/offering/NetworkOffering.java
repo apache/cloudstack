@@ -42,10 +42,11 @@ public interface NetworkOffering {
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
     public final static String SystemStorageNetwork = "System-Storage-Network";
-    public final static String SystemGuestNetwork = "System-Guest-Network";
     
-    public final static String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
-    public final static String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
+    public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
+    public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
+    public final static String DefaultIsolatedNetworkOffering= "DefaultIsolatedNetworkOffering";
 
     long getId();
 

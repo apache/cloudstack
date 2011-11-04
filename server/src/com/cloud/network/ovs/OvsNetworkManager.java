@@ -21,15 +21,12 @@ package com.cloud.network.ovs;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface OvsNetworkManager extends Manager {
