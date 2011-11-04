@@ -44,7 +44,7 @@ public class ListProjectsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list projects by project ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list projects by owner name")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list projects availabe for specified account")
     private String accountName;
 
     @IdentityMapper(entityTableName="domain")

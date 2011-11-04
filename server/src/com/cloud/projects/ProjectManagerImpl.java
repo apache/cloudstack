@@ -368,6 +368,12 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
         
+        if (accountId != null) {
+            SearchBuilder<ProjectAccountVO> projectAccountSearch = _projectAccountDao.createSearchBuilder();
+            projectAccountSearch.and("accountId", projectAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+            sb.join("projectAccountSearch", projectAccountSearch, sb.entity().getId(), projectAccountSearch.entity().getProjectId(), JoinBuilder.JoinType.INNER);
+        }
+        
         SearchCriteria<ProjectVO> sc = sb.create();
         
         if (id != null) {
@@ -383,7 +389,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         if (accountId != null) {
-            sc.addAnd("accountId", Op.EQ, accountId);
+            sc.setJoinParameters("projectAccountSearch", "accountId", accountId);
         }
         
         if (state != null) {
