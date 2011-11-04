@@ -99,65 +99,9 @@
                 label: 'Timezone',
                 select: function(args) {
                   var items = [];
-                  items.push({id: "", description: ""});
-                  items.push({id: "Etc/GMT+12", description: "[UTC-12:00] GMT-12:00"});
-                  items.push({id: "Etc/GMT+11", description: "[UTC-11:00] GMT-11:00"});
-                  items.push({id: "Pacific/Samoa", description: "[UTC-11:00] Samoa Standard Time"});
-                  items.push({id: "Pacific/Honolulu", description: "[UTC-10:00] Hawaii Standard Time"});
-                  items.push({id: "US/Alaska", description: "[UTC-09:00] Alaska Standard Time"});                  
-                  items.push({id: "Mexico/BajaNorte", description: "[UTC-08:00] Baja California"});
-                  items.push({id: "US/Arizona", description: "[UTC-07:00] Arizona"});
-                  items.push({id: "US/Mountain", description: "[UTC-07:00] Mountain Standard Time"});
-                  items.push({id: "America/Chihuahua", description: "[UTC-07:00] Chihuahua, La Paz"});
-                  items.push({id: "America/Chicago", description: "[UTC-06:00] Central Standard Time"});
-                  items.push({id: "America/Costa_Rica", description: "[UTC-06:00] Central America"});
-                  items.push({id: "America/Mexico_City", description: "[UTC-06:00] Mexico City, Monterrey"});
-                  items.push({id: "Canada/Saskatchewan", description: "[UTC-06:00] Saskatchewan"});
-                  items.push({id: "America/Bogota", description: "[UTC-05:00] Bogota, Lima"});
-                  items.push({id: "America/New_York", description: "[UTC-05:00] Eastern Standard Time"});
-                  items.push({id: "America/Caracas", description: "[UTC-04:00] Venezuela Time"});
-                  items.push({id: "America/Asuncion", description: "[UTC-04:00] Paraguay Time"});
-                  items.push({id: "America/Cuiaba", description: "[UTC-04:00] Amazon Time"});
-                  items.push({id: "America/Halifax", description: "[UTC-04:00] Atlantic Standard Time"});
-                  items.push({id: "America/La_Paz", description: "[UTC-04:00] Bolivia Time"});
-                  items.push({id: "America/Santiago", description: "[UTC-04:00] Chile Time"});
-                  items.push({id: "America/St_Johns", description: "[UTC-03:30] Newfoundland Standard Time"});
-                  items.push({id: "America/Araguaina", description: "[UTC-03:00] Brasilia Time"});
-                  items.push({id: "America/Argentina/Buenos_Aires", description: "[UTC-03:00] Argentine Time"});
-                  items.push({id: "America/Cayenne", description: "[UTC-03:00] French Guiana Time"});
-                  items.push({id: "America/Godthab", description: "[UTC-03:00] Greenland Time"});
-                  items.push({id: "America/Montevideo", description: "[UTC-03:00] Uruguay Time"});
-                  items.push({id: "Etc/GMT+2", description: "[UTC-02:00] GMT-02:00"});
-                  items.push({id: "Atlantic/Azores", description: "[UTC-01:00] Azores Time"});
-                  items.push({id: "Atlantic/Cape_Verde", description: "[UTC-01:00] Cape Verde Time"});
-                  items.push({id: "Africa/Casablanca", description: "[UTC] Casablanca"});
-                  items.push({id: "Etc/UTC", description: "[UTC] Coordinated Universal Time"});
-                  items.push({id: "Atlantic/Reykjavik", description: "[UTC] Reykjavik"});
-                  items.push({id: "Europe/London", description: "[UTC] Western European Time"});
-                  items.push({id: "CET", description: "[UTC+01:00] Central European Time"});
-                  items.push({id: "Europe/Bucharest", description: "[UTC+02:00] Eastern European Time"});
-                  items.push({id: "Africa/Johannesburg", description: "[UTC+02:00] South Africa Standard Time"});
-                  items.push({id: "Asia/Beirut", description: "[UTC+02:00] Beirut"});
-                  items.push({id: "Africa/Cairo", description: "[UTC+02:00] Cairo"});
-                  items.push({id: "Asia/Jerusalem", description: "[UTC+02:00] Israel Standard Time"});
-                  items.push({id: "Europe/Minsk", description: "[UTC+02:00] Minsk"});
-                  items.push({id: "Europe/Moscow", description: "[UTC+03:00] Moscow Standard Time"});
-                  items.push({id: "Africa/Nairobi", description: "[UTC+03:00] Eastern African Time"});
-                  items.push({id: "Asia/Karachi", description: "[UTC+05:00] Pakistan Time"});
-                  items.push({id: "Asia/Kolkata", description: "[UTC+05:30] India Standard Time"});
-                  items.push({id: "Asia/Bangkok", description: "[UTC+05:30] Indochina Time"});
-                  items.push({id: "Asia/Shanghai", description: "[UTC+08:00] China Standard Time"});
-                  items.push({id: "Asia/Kuala_Lumpur", description: "[UTC+08:00] Malaysia Time"});
-                  items.push({id: "Australia/Perth", description: "[UTC+08:00] Western Standard Time (Australia)"});
-                  items.push({id: "Asia/Taipei", description: "[UTC+08:00] Taiwan"});
-                  items.push({id: "Asia/Tokyo", description: "[UTC+09:00] Japan Standard Time"});
-                  items.push({id: "Asia/Seoul", description: "[UTC+09:00] Korea Standard Time"});
-                  items.push({id: "Australia/Adelaide", description: "[UTC+09:30] Central Standard Time (South Australia)"});
-                  items.push({id: "Australia/Darwin", description: "[UTC+09:30] Central Standard Time (Northern Territory)"});
-                  items.push({id: "Australia/Brisbane", description: "[UTC+10:00] Eastern Standard Time (Queensland)"});
-                  items.push({id: "Australia/Canberra", description: "[UTC+10:00] Eastern Standard Time (New South Wales)"});
-                  items.push({id: "Pacific/Guam", description: "[UTC+10:00] Chamorro Standard Time"});
-                  items.push({id: "Pacific/Auckland", description: "[UTC+12:00] New Zealand Standard Time"});                 
+                  items.push({id: "", description: ""});                  
+                  for(var p in timezoneMap)
+                    items.push({id: p, description: timezoneMap[p]});                  
                   args.response.success({data: items});
                 }
               }

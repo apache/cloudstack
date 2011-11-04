@@ -356,7 +356,7 @@
                     },
                     timezone: function(args) {
                       args.response.success({
-                        data: $.map(timezones, function(value, key) {
+                        data: $.map(timezoneMap, function(value, key) {
                           return {
                             id: key,
                             name: value
