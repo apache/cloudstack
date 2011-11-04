@@ -259,6 +259,10 @@ disable_rpfilter_domR() {
          echo "1" > /proc/sys/net/ipv4/conf/$vif/rp_filter
       done
   fi
+  log_it "cloud: Enabling rp_filter on Non-public interfaces(eth0,eth1)"
+  echo "1" > /proc/sys/net/ipv4/conf/eth0/rp_filter
+  echo "1" > /proc/sys/net/ipv4/conf/eth1/rp_filter
+  echo "1" > /proc/sys/net/ipv4/conf/lo/rp_filter
 }
 
 enable_svc() {
