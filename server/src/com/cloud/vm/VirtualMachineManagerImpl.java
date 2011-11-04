@@ -1987,7 +1987,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
                 hs.setExecuted();
             } else if (!answer.getResult()) {
-                s_logger.warn("Cleanup failed due to " + answer.getDetails());
+                s_logger.warn("Cleanup failed due to " + answer.getDetails() + " for " + answer.getClass().getName());
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cleanup succeeded. Details " + answer.getDetails());
