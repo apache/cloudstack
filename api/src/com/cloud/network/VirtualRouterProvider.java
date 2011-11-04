@@ -20,7 +20,6 @@ package com.cloud.network;
 
 public interface VirtualRouterProvider {
     public enum VirtualRouterProviderType {
-        DhcpElement,
         VirtualRouterElement,
         RedundantVirtualRouterElement,
     }

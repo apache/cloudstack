@@ -3,8 +3,6 @@
 
 #### router commands
 createVirtualRouterElement=com.cloud.api.commands.CreateVirtualRouterElementCmd;7
-createDhcpElement=com.cloud.api.commands.CreateDhcpElementCmd;7
 createRedundantVirtualRouterElement=com.cloud.api.commands.CreateRedundantVirtualRouterElementCmd;7
-configureDhcpElement=com.cloud.api.commands.ConfigureDhcpElementCmd;7
 configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
 configureRedundantVirtualRouterElement=com.cloud.api.commands.ConfigureRedundantVirtualRouterElementCmd;7

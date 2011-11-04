@@ -113,7 +113,6 @@ public interface Network extends ControlledEntity {
 
 
         public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
-        public static final Provider DhcpServer = new Provider("DhcpServer", false);
         public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
         public static final Provider F5BigIp = new Provider("F5BigIp", true);
         public static final Provider Netscaler = new Provider("Netscaler", true);

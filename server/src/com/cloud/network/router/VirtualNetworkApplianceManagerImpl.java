@@ -1031,8 +1031,28 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         long dcId = dest.getDataCenter().getId();
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
-
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
+        boolean publicNetwork = false;
+        if (_networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+            publicNetwork = true;
+        }
+        if (isRedundant && !publicNetwork) {
+            s_logger.error("Didn't support redundant virtual router without public network!");
+            return null;
+        }
+        List<DomainRouterVO> routers;
+        if (publicNetwork) {
+            routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+        } else {
+            Long podId = dest.getPod().getId();
+            if (isPodBased) {
+                routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.DHCP_USERDATA);
+                plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
+            } else {
+                routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.DHCP_USERDATA);
+                plan = new DataCenterDeployment(dcId);
+            }
+        }
         
         try {
             int routerCount = 1;
@@ -1058,7 +1078,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             
             NicProfile defaultNic = new NicProfile();
             //if source nat service is supported by the network, get the source nat ip address
-            if (_networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+            if (publicNetwork) {
                 PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
                 defaultNic.setDefaultNic(true);
                 defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
@@ -1086,21 +1106,38 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
-                NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
-                networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
-                NicProfile gatewayNic = new NicProfile();
-                if (isRedundant) {
-                    gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
-                } else {
-                    gatewayNic.setIp4Address(guestNetwork.getGateway());
+                if (publicNetwork) {
+                    NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+                    List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
+                    networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
                 }
-                gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
-                gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
-                gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
-                gatewayNic.setMode(guestNetwork.getMode());
-                String gatewayCidr = guestNetwork.getCidr();
-                gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+
+                String defaultNetworkStartIp = null;
+                if (guestNetwork.getCidr() != null && !publicNetwork) {
+                    String startIp = _networkMgr.getStartIpAddress(guestNetwork.getId());
+                    if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                        defaultNetworkStartIp = startIp;
+                    } else if (s_logger.isDebugEnabled()){
+                        s_logger.debug("First ip " + startIp + " in network id=" + guestNetwork.getId() + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                    }
+                }
+
+                NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp);
+                if (publicNetwork) {
+                    if (isRedundant) {
+                        gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
+                    } else {
+                        gatewayNic.setIp4Address(guestNetwork.getGateway());
+                    }
+                    gatewayNic.setBroadcastUri(guestNetwork.getBroadcastUri());
+                    gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
+                    gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
+                    gatewayNic.setMode(guestNetwork.getMode());
+                    String gatewayCidr = guestNetwork.getCidr();
+                    gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+                } else {
+                    gatewayNic.setDefaultNic(true);
+                }
 
                 networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
                 networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
@@ -1135,6 +1172,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         
                         router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
                                 template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), isRedundant, 0, false, RedundantState.UNKNOWN, routerOffering.getOfferHA(), false);
+                        if (!publicNetwork) {
+                            router.setRole(Role.DHCP_USERDATA);
+                        }
                         router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
                         break;
                     } catch (InsufficientCapacityException ex) {
@@ -1236,6 +1276,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
+        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
+        if (offering.isSystemOnly() || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+            owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+        }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a router for " + guestNetwork + " in " + dest);
         }
@@ -1272,6 +1317,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return runningRouters;
     }
     
+    /*
     List<DomainRouterVO> findOrCreateDhcpServers(Network guestNetwork, DeployDestination dest, Account owner) throws ConcurrentOperationException, InsufficientCapacityException {
         Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
@@ -1340,7 +1386,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             for (HypervisorType hType : supportedHypervisors) {
                 try {
                     s_logger.debug("Allocating the domR with the hypervisor type " + hType);
-                    /* Before starting router, already know the hypervisor type */
                     VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
 
                     //physical network id can be null in Guest Network in Basic zone, so locate the physical network
@@ -1421,6 +1466,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         return runningRouters;
     }
+    */
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {

@@ -834,14 +834,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         //populate providers
         Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
-        defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
-        defaultSharedNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
+        defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
+        defaultSharedNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
         
         Map<Network.Service, Network.Provider> defaultSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-        defaultSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.DhcpServer);
-        defaultSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.DhcpServer);
-        defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.DhcpServer);
+        defaultSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
+        defaultSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
+        defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
         
         Map<Network.Service, Network.Provider> defaultIsolatedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();

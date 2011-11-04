@@ -199,9 +199,9 @@ public class DataCenterVO implements DataCenter {
             vpnProvider = Provider.VirtualRouter.getName();
             userDataProvider = Provider.VirtualRouter.getName();
         } else if (zoneType == NetworkType.Basic){
-            dhcpProvider = Provider.DhcpServer.getName();
-            dnsProvider = Provider.DhcpServer.getName();
-            userDataProvider = Provider.DhcpServer.getName();
+            dhcpProvider = Provider.VirtualRouter.getName();
+            dnsProvider = Provider.VirtualRouter.getName();
+            userDataProvider = Provider.VirtualRouter.getName();
             loadBalancerProvider = Provider.ElasticLoadBalancerVm.getName();
         }
 

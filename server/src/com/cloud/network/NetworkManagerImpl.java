@@ -854,7 +854,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //populate providers
         Map<Network.Service, Set<Network.Provider>> defaultDirectNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
-        defaultProviders.add(Network.Provider.DhcpServer);
+        defaultProviders.add(Network.Provider.VirtualRouter);
         defaultDirectNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
         defaultDirectNetworkOfferingProviders.put(Service.Dns, defaultProviders);
         defaultDirectNetworkOfferingProviders.put(Service.UserData, defaultProviders);

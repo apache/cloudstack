@@ -22,12 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -38,6 +41,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -59,7 +63,9 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
@@ -68,12 +74,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends DhcpElement implements VirtualRouterElementService, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider {
+public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -90,11 +97,17 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     @Inject DomainRouterDao _routerDao;
     @Inject LoadBalancerDao _lbDao;
     @Inject HostDao _hostDao;
+    @Inject AccountManager _accountMgr;
     @Inject ConfigurationDao _configDao;
     @Inject VirtualRouterProviderDao _vrProviderDao;
     
     protected boolean canHandle(GuestType networkType, long offeringId, Service service) {
-        boolean result = (networkType == Network.GuestType.Isolated && _networkMgr.isProviderSupported(offeringId, service, getProvider()));
+        boolean result = false;
+       
+        if (_networkMgr.isProviderSupported(offeringId, service, getProvider())) {
+            result = true;
+        }
+
         if (!result) {
             s_logger.trace("Virtual router element only takes care of type " + Network.GuestType.Isolated + " for provider " + getProvider().getName());
         }
@@ -108,6 +121,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
         }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
 
         _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, false);
 
@@ -117,7 +131,7 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Gateway)) {
+        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -128,6 +142,16 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
             }
+
+            //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
+            Long podId = dest.getPod().getId();
+            DataCenter dc = dest.getDataCenter();
+            boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) && network.getTrafficType() == TrafficType.Guest;
+            if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+                List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
+                routers.addAll(allRunningRoutersOutsideThePod);
+            }
+
             List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
             return (rets != null) && (!rets.isEmpty());
         } else {
@@ -443,5 +467,16 @@ public class VirtualRouterElement extends DhcpElement implements VirtualRouterEl
     public Long getIdByNspId(Long nspId) {
         VirtualRouterProviderVO vr = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.VirtualRouterElement);
         return vr.getId();
+    }
+
+    @Override
+    public VirtualRouterProvider getCreatedElement(long id) {
+        return _vrProviderDao.findById(id);
+    }
+
+    @Override
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        return true;
     }
 }
