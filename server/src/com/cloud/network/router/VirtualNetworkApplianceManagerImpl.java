@@ -1118,7 +1118,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     type = VirtualRouterProviderType.RedundantVirtualRouterElement;
                     typeString = "RedundantVirtualRouter";
                 }
-                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(network.getPhysicalNetworkId(), typeString);
+                
+                //physical network id can be null in Guest Network in Basic zone, so locate the physical network
+                Long physicalNetworkId = network.getPhysicalNetworkId();
+                if (physicalNetworkId == null) {
+                    physicalNetworkId = _networkMgr.findPhysicalNetworkId(network.getDataCenterId(), null);
+                }
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
                 VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
                 ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
                 int retry = 0;
@@ -1337,9 +1343,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     /* Before starting router, already know the hypervisor type */
                     VMTemplateVO template = _templateDao.findRoutingTemplate(hType);
 
+                    //physical network id can be null in Guest Network in Basic zone, so locate the physical network
+                    Long physicalNetworkId = network.getPhysicalNetworkId();
+                    if (physicalNetworkId == null) {
+                        physicalNetworkId = _networkMgr.findPhysicalNetworkId(network.getDataCenterId(), null);
+                    }
                     VirtualRouterProviderType type = VirtualRouterProviderType.DhcpElement;
                     String typeString = "DhcpServer";
-                    PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(network.getPhysicalNetworkId(), typeString);
+                    PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
                     VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
                     
                     router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
