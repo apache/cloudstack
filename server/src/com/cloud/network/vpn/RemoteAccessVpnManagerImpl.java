@@ -387,14 +387,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
         List<VpnUserVO> users = _vpnUsersDao.listByAccount(vpnOwnerId);
         
-        //If user is in Active state, we still have to resend them therefore their status has to be Add
-        for (VpnUserVO user : users) {
-            if (user.getState() == State.Active) {
-                user.setState(State.Add);
-                _vpnUsersDao.update(user.getId(), user);
-            }
-        }
-        
         List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
 
         boolean success = true;
