@@ -178,6 +178,10 @@ cloudStack.preFilter = {
   }
 }
 
+var roleTypeUser = "0";
+var roleTypeAdmin = "1";
+var roleTypeDomainAdmin = "2";
+
 cloudStack.converters = {
   convertBytes: function(bytes) {
     if (bytes < 1024 * 1024) {
@@ -245,11 +249,11 @@ cloudStack.converters = {
       return "Direct";
   },
   toRole: function(type) {
-    if (type == "0") {
+    if (type == roleTypeUser) {
       return "User";
-    } else if (type == "1") {
+    } else if (type == roleTypeAdmin) {
       return "Admin";
-    } else if (type == "2") {
+    } else if (type == roleTypeDomainAdmin) {
       return "Domain-Admin";
     }
   },

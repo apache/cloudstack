@@ -2,6 +2,12 @@
 
   var rootDomainId = 1;
 
+  var systemAccountId = 1;
+  var adminAccountId = 2;
+
+  var systemUserId = 1;
+  var adminUserId = 2;
+  
   cloudStack.sections.accounts = {
     title: 'Accounts',
     id: 'accounts',
@@ -436,7 +442,24 @@
   var accountActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
-    allowedActions.push("edit");
+    
+    if(isAdmin()) {
+      if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {   
+        allowedActions.push("edit");             
+        if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {                   
+          allowedActions.push("updateResourceLimits");                
+        }             
+        if(jsonObj.state == "enabled") {                
+          allowedActions.push("disable");                    
+          allowedActions.push("lock");                      
+        }          	        
+        else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {                 
+          allowedActions.push("enable");                      
+        }                          
+        allowedActions.push("delete");                 
+      }  
+    }    
+    allowedActions.push("updateResourceCount");        
     return allowedActions;
   }
 
