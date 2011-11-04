@@ -2517,6 +2517,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         // snapshots dir fails, let Ready command
         // succeed.
         callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
+        
+        setupLinkLocalNetwork(conn);
        
         _localGateway = callHostPlugin(conn, "vmops", "getgateway", "mgmtIP", _host.ip);
         if (_localGateway == null || _localGateway.isEmpty()) {
