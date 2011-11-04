@@ -635,8 +635,10 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
         }
         
-        //verify permissions
-        _accountMgr.checkAccess(caller, _domainDao.findById(project.getDomainId()));
+        //verify permissions - only accounts belonging to the project can list project's account
+        if (!_accountMgr.isAdmin(caller.getType()) && _projectAccountDao.findByProjectIdAccountId(projectId, caller.getAccountId()) == null) {
+            throw new PermissionDeniedException("Account " + caller + " is not authorized to list users of the project id=" + projectId);
+        }
         
         Filter searchFilter = new Filter(ProjectAccountVO.class, "id", false, startIndex, pageSizeVal);
         SearchBuilder<ProjectAccountVO> sb = _projectAccountDao.createSearchBuilder();
