@@ -179,8 +179,28 @@
             name: 'Account details',
             viewAll: { path: 'accounts.users', label: 'Users' },
             
-            actions: {
-
+            actions: {             
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var array1 = [];                 
+                  var accountObj = args.context.accounts[0];                  
+                  array1.push("&newname=" + todb(args.data.name));
+                   
+                  array1.push("&id=" + accountObj.id);   
+                  array1.push("&domainid=" + accountObj.domainid);
+                  array1.push("&account=" + accountObj.name);
+                
+                  $.ajax({
+                    url: createURL("updateAccount" + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {                     
+                      var item = json.updateaccountresponse.account;
+                      args.response.success({data: item});
+                    }
+                  });
+                }
+              }              
             },
 
             tabs: {
@@ -416,6 +436,7 @@
   var accountActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+    allowedActions.push("edit");
     return allowedActions;
   }
 
