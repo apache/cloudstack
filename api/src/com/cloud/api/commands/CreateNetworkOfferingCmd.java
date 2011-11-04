@@ -52,13 +52,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network offering")
     private String displayText;
     
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
+    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage")
     private String traffictype;
     
     @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
     
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering.")
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering")
     private String tags; 
     
     @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="true if network offering supports vlans")
@@ -67,7 +67,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability; 
     
-    @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed.")
+    @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed")
     private Integer networkRate;
     
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, description="the service offering ID used by virtual router provider")
@@ -94,16 +94,16 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.SOURCE_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
     private Boolean sourceNatService;
     
-    @Parameter(name=ApiConstants.STATIC_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
+    @Parameter(name=ApiConstants.STATIC_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports static nat service")
     private Boolean staticNatService;
     
-    @Parameter(name=ApiConstants.PORT_FORWARDING_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
+    @Parameter(name=ApiConstants.PORT_FORWARDING_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports port forwarding service")
     private Boolean portForwardingService;
     
     @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports vpn service")
     private Boolean vpnService;
     
-    @Parameter(name=ApiConstants.SECURITY_GROUP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports security service")
+    @Parameter(name=ApiConstants.SECURITY_GROUP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports security group service")
     private Boolean securityGroupService;
     
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")

@@ -21,8 +21,6 @@ package com.cloud.api.response;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.Column;
-
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
