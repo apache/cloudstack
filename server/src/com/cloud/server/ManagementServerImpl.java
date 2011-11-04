@@ -1396,13 +1396,22 @@ public class ManagementServerImpl implements ManagementServer {
             if (template == null) {
                 templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller);
+                Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
+                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller);
+                for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
+                    if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), 0L))) {
+                        templateZonePairSet.add(tmpltPair);
+                    }
+                }
+
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     Account owner = _accountMgr.getAccount(template.getAccountId());
                     _accountMgr.checkAccess(caller, null, owner);
                 }
-                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), 0L));
+                templateZonePairSet.add(new Pair<Long, Long>(template.getId(), zoneId));
             }
         } else {
             if (template == null) {
