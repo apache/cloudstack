@@ -26,7 +26,7 @@
       if (preFilter && $.inArray(sectionID, preFilter) == -1) {
         return true;
       }
-      
+
       var $li = $('<li>')
             .addClass('navigation-item')
             .addClass(sectionID)
@@ -102,34 +102,61 @@
             .notifications();
 
       // Project switcher
-      var $viewSwitcher = $('<div>').addClass('view-switcher').append(
-        $.merge(
-          $('<span>').addClass('select-project').html('Select View:'),
-          $('<select>')
+      var $viewSwitcher = $('<div>').addClass('button view-switcher')
             .append(
               // Default View
-              $('<option>').val('default-view')
-                .html('All')
+              $('<div>').addClass('select default-view active')
+                .html('Default View')
+                .prepend(
+                  $('<span>').addClass('icon').html('&nbsp;')
+                )
             )
             .append(
               // Project View
-              $('<option>').val('select-project')
+              $('<div>').addClass('select project-view')
                 .html('Project View')
+                .prepend(
+                  $('<span>').addClass('icon').html('&nbsp;')
+                )
             )
-            .change(function() {
+            .click(function(event) {
+              var $target = $(event.target);
               var $projectSwitcher = $(this);
               var $container = $('html body');
 
-              if ($projectSwitcher.val() == 'select-project') {
-                cloudStack.uiCustom.projects();
+              if ($target.hasClass('active')) return false;
+
+              if ($target.closest('.select.project-view').size()) {
+                $('#cloudStack3-container').addClass('project-view');
+                $projectSwitcher.addClass('alt');
+                $projectSwitcher.find('.select.project-view').addClass('active')
+                  .siblings().removeClass('active');
+
+                // Activate project view
+                $('#navigation li.projects').addClass('disabled').attr({
+                  title: 'Projects can only be edited outside of project view.'
+                });
+                cloudStack.uiCustom.projects({
+                  $projectSelect: $projectSelect.hide().find('select')
+                });
               } else {
-                $('.project-view').removeClass('project-view');
+                $('#navigation li.projects').removeClass('disabled').attr('title', '');
+                $('#cloudStack3-container').removeClass('project-view');
+                $projectSwitcher.removeClass('alt');
+                $projectSelect.hide();
+                $projectSwitcher.find('.select.default-view').addClass('active')
+                  .siblings().removeClass('active');
+
+                // Clear out project
+                cloudStack.context.projects = null;
               }
 
+              $('#navigation li.dashboard').click();
+
               return false;
-            })
-        )
-      );
+            });
+      var $projectSelect = $('<div>').addClass('view-switcher').hide()
+            .append($('<select>'));
 
       // User status area
       var $userInfo = $('<div>').attr({ id: 'user' }).addClass('button')
@@ -154,6 +181,7 @@
         $('<div>').addClass('controls')
           .append($notificationArea)
           .append($viewSwitcher)
+          .append($projectSelect)
           .append($userInfo)
       ];
     },
@@ -248,6 +276,8 @@
       // Navigation items
       if ($target.closest('li.navigation-item').size() && $target.closest('#navigation').size()) {
         var $navItem = $target.closest('li.navigation-item');
+
+        if ($navItem.is('.disabled')) return false;
         showSection($navItem.data('cloudStack-section-id'), args);
 
         return false;

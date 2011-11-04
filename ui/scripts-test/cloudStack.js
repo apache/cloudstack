@@ -21,7 +21,8 @@
       events: {},
       system: {},
       'global-settings': {},
-      configuration: {}
+      configuration: {},
+      projects: {}
     }
   });
 

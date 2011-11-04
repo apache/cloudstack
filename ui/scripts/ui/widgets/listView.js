@@ -1144,10 +1144,42 @@
         return false;
       });
       makeListView(this, $.extend(true, {}, args, { context: options.context }), targetSection);
+    } else if (args == 'refresh') {
+      var activeSection = this.data('view-args').activeSection;
+      var listViewArgs = this.data('view-args').sections ?
+            this.data('view-args').sections[activeSection].listView :
+            this.data('view-args').listView;
+
+      loadBody(
+        this.find('table:last'),
+        listViewArgs.dataProvider,
+        listViewArgs.fields,
+        false,
+        null,
+        listViewArgs.actions,
+        {
+          context: this.data('view-args').context
+        }
+      );
     } else {
-      makeListView(this, $.extend(true, {}, args, { context: options.context ? options.context : cloudStack.context }));
+      makeListView(
+        this,
+        $.extend(true, {}, args, {
+          context: options.context ? options.context : cloudStack.context
+        }));
     }
 
     return this;
   };
+
+  // List view refresh handler
+  $(window).bind('cloudStack.fullRefresh', function() {
+    var $listViews = $('.list-view');
+
+    $listViews.each(function() {
+      var $listView = $(this);
+
+      $listView.listView('refresh');
+    });
+  });
 })(jQuery, cloudStack);

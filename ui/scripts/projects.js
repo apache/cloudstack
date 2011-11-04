@@ -37,12 +37,13 @@
           $.ajax({
             url: createURL('addAccountToProject'),
             data: {
-              projectId: cloudStack.context.projects[0].id,
+              projectId: args.context.projects[0].id,
               account: args.data.username
             },
             dataType: 'json',
             async: true,
             success: function(data) {
+              data: args.data,
               args.response.success({
                 _custom: {
                   jobId: data.addaccounttoprojectresponse.jobid
@@ -57,18 +58,21 @@
         }
       },
       actionPreFilter: function(args) {
+        if (!cloudStack.context.projects) { // This is for the new project wizard
+          return ['destroy'];
+        }
+
+        var project = cloudStack.context.projects[0];
+        var projectOwner = project.account;
         var rowAccount = args.context.multiRule[0].account;
         var userAccount = cloudStack.context.users[0].account;
-        var projectOwner = cloudStack.context.projects[0].account;
-        var isExistingProject = cloudStack.context.projects &&
-              cloudStack.context.projects[0] &&
-              !cloudStack.context.projects[0].isNew;
+        var isEditableRow = rowAccount != projectOwner && userAccount == projectOwner;
 
-        if (isExistingProject) {
+        if (isEditableRow) {
           return args.context.actions;
         }
 
-        return ['destroy'];
+        return [];
       },
       actions: {
         destroy: {
@@ -77,7 +81,7 @@
             $.ajax({
               url: createURL('deleteAccountFromProject'),
               data: {
-                projectId: cloudStack.context.projects[0].id,
+                projectId: args.context.projects[0].id,
                 account: args.context.multiRule[0].username
               },
               dataType: 'json',
@@ -129,7 +133,7 @@
         $.ajax({
           url: createURL('listProjectAccounts'),
           data: {
-            projectId: cloudStack.context.projects[0].id
+            projectId: args.context.projects[0].id
           },
           dataType: 'json',
           async: true,
@@ -204,7 +208,7 @@
           label: 'New Project',
           action: {
             custom: function(args) {
-              
+              $(window).trigger('cloudStack.newProject');
             }
           },
 

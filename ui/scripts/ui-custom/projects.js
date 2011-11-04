@@ -3,10 +3,12 @@
     /**
      * User management multi-edit
      */
-    userManagement: function() {
+    userManagement: function(args) {
       var multiEdit = cloudStack.projects.addUserForm;
 
-      return $('<div>').multiEdit(multiEdit);
+      return $('<div>').multiEdit($.extend(true, {}, multiEdit, {
+        context: args.context
+      }));
     },
 
     /**
@@ -24,16 +26,9 @@
           return $('<div>').addClass('management');
         };
       }
-      
+
       var $tabs = $('<div>').addClass('tab-content').append($('<ul>'));
-      var $toolbar = $('<div>').addClass('toolbar')
-            .append(
-              $('<div>').addClass('button add')
-                .append($('<span>').html('New Project'))
-                .click(function() {
-                  addProject();
-                })
-            );
+      var $toolbar = $('<div>').addClass('toolbar');
 
       // Make UI tabs
       $.each(tabs, function(tabName, tab) {
@@ -57,7 +52,9 @@
 
         if ($management.size()) {
           $management.children().remove();
-          $management.append(pageElems.userManagement());
+          $management.append(pageElems.userManagement({
+            context: cloudStack.context
+          }));
         }
       });
 
@@ -105,12 +102,12 @@
           data: cloudStack.serializeForm($form),
           response: {
             success: function(args) {
-              // Add project data to context
-              cloudStack.context.projects = [args.data];
-              cloudStack.context.projects[0].isNew = true;
+              var project = args.data;
+
+              $(window).trigger('cloudStack.fullRefresh');
               
               $loading.remove();
-              
+
               // Confirmation
               $form.replaceWith(function() {
                 var $confirm = $('<div>').addClass('confirm');
@@ -136,7 +133,11 @@
                 $addAccountButton.click(function() {
                   // Show add user form
                   $confirm.replaceWith(function() {
-                    var $userManagement = pageElems.userManagement();
+                    var $userManagement = pageElems.userManagement({
+                      context: $.extend(true, {}, cloudStack.context, {
+                        projects: [project]
+                      })
+                    });
                     var $nextButton = $('<div>').addClass('button confirm next').html('Next');
 
                     $newProject.find('.title').html('Add Accounts to ' + args.data.name);
@@ -186,52 +187,30 @@
                             disableInfiniteScrolling: true,
 
                             fields: {
-                              username: { label: 'Account' },
-                              role: { label: 'Role' }
+                              username: { label: 'Account' }
                             },
                             actions: {
-                              editRole: {
-                                label: 'Edit account role',
-                                action: {
-                                  custom: function(args) {
-                                    var $instanceRow = args.$instanceRow;
-                                    var $role = $instanceRow.find('td.role');
-                                    var role = $role.find('span').html();
-                                    var $select = $('<select>');
-                                    var $editButtons = $.merge(
-                                      $('<div>').addClass('action save'),
-                                      $('<div>').addClass('action cancel')
-                                    );
-
-                                    // Edit actions
-                                    $editButtons.click(function(event) {
-                                      var $target = $(event.target);
-
-                                      return false;
-                                    });
-
-                                    $role.addClass('editable');
-                                    $select.append(
-                                      $userManagement.find('option').clone()
-                                    );
-
-                                    $role.html('')
-                                      .append(
-                                        $('<div>').addClass('edit')
-                                          .append($select)
-                                          .append($editButtons)
-
-                                      );
-
-                                    $instanceRow.closest('.data-table').dataTable('refresh');
-                                  }
-                                }
-                              },
                               destroy: {
                                 label: 'Remove account from project',
                                 action: {
                                   custom: function(args) {
+                                    var $instanceRow = args.$instanceRow;
 
+                                    $instanceRow.animate({ opacity: 0.5 });
+                                    
+                                    cloudStack.projects.addUserForm.actions.destroy.action({
+                                      context: $.extend(true, {}, cloudStack.context, {
+                                        projects: [project],
+                                        multiRule: [{
+                                          username: $instanceRow.find('td.username span').html()
+                                        }]
+                                      }),
+                                      response: {
+                                        success: function(args) {
+                                          $instanceRow.remove();
+                                        }
+                                      }
+                                    });
                                   }
                                 }
                               }
@@ -239,7 +218,12 @@
                             dataProvider: function(args) {
                               setTimeout(function() {
                                 args.response.success({
-                                  data: cloudStack.context.projects[0].users
+                                  data: $.map($userManagement.find('.data-item tr'), function(elem) {
+                                    // Store previous user data in list table
+                                    return {
+                                      username: $(elem).find('td.username span').html()
+                                    };
+                                  })
                                 });
                               }, 0);
                             }
@@ -251,7 +235,6 @@
                         $saveButton.html('Save');
                         $saveButton.click(function() {
                           $('.ui-dialog, .overlay').remove();
-                          showDashboard();
                         });
 
                         return $review;
@@ -267,7 +250,6 @@
                 var $laterButton = $('<div>').addClass('button later').html('Remind me later');
                 $laterButton.click(function() {
                   $(':ui-dialog, .overlay').remove();
-                  showDashboard();
 
                   return false;
                 });
@@ -303,7 +285,21 @@
     /**
      * Project selection list
      */
-    selector: function(dataProvider) {
+    selector: function(args) {
+      var $selector = $('<div>').addClass('project-selector');
+      var $toolbar = $('<div>').addClass('toolbar');
+      var $list = $('<div>').addClass('listing')
+            .append($('<div>').addClass('header').html('Name'))
+            .append($('<div>').addClass('data').append($('<ul>')));
+      var $searchForm = $('<form>');
+      var $search = $('<div>').appendTo($toolbar).addClass('search')
+            .append(
+              $searchForm
+                .append($('<input>').attr({ type: 'text' }))
+                .append($('<input>').attr({ type: 'submit' }).val(''))
+            );
+      var $projectSelect = args.$projectSelect;
+
       // Get project data
       var loadData = function(complete) {
         cloudStack.projects.dataProvider({
@@ -312,13 +308,20 @@
             success: function(args) {
               var data = args.data;
 
+              $projectSelect.find('option').remove();
               $(data).each(function() {
+                var displayText = this.displayText ? this.displayText : this.name;
+
                 $('<li>')
                   .data('json-obj', this)
-                  .html(
-                    this.displayText ? this.displayText : this.name
-                  )
+                  .html(displayText)
                   .appendTo($list.find('ul'));
+
+                // Populate project select
+                $('<option>')
+                  .appendTo($projectSelect)
+                  .data('json-obj', this)
+                  .html(displayText);
               });
 
               cloudStack.evenOdd($list, 'li', {
@@ -336,19 +339,6 @@
           }
         });
       };
-
-      var $selector = $('<div>').addClass('project-selector');
-      var $toolbar = $('<div>').addClass('toolbar');
-      var $list = $('<div>').addClass('listing')
-            .append($('<div>').addClass('header').html('Name'))
-            .append($('<div>').addClass('data').append($('<ul>')));
-      var $searchForm = $('<form>');
-      var $search = $('<div>').appendTo($toolbar).addClass('search')
-            .append(
-              $searchForm
-                .append($('<input>').attr({ type: 'text' }))
-                .append($('<input>').attr({ type: 'submit' }).val(''))
-            );
 
       // Search form
       $searchForm.submit(function() {
@@ -382,6 +372,14 @@
           cloudStack.context.projects = [$target.data('json-obj')];
           showDashboard();
           $.merge($selector, $('.overlay')).remove();
+
+          // Select active project
+          $projectSelect
+            .find('option').attr('selected', '')
+            .filter(function() {
+              return $(this).data('json-obj').name == cloudStack.context.projects[0].name;
+            }).attr('selected', 'selected');
+          $projectSelect.parent().show();
         }
       });
 
@@ -433,8 +431,9 @@
   /**
    * Projects entry point
    */
-  cloudStack.uiCustom.projects = function() {
+  cloudStack.uiCustom.projects = function(args) {
     var $dashboardNavItem = $('#navigation li.navigation-item.dashboard');
+    var $projectSelect = args.$projectSelect;
 
     // Use project dashboard
     var event = function() {
@@ -453,6 +452,22 @@
     };
     $dashboardNavItem.bind('click', event);
 
-    pageElems.selector();
+    // Project selector event
+    $projectSelect.change(function() {
+      cloudStack.context.projects = [
+        $projectSelect.find('option:selected').data('json-obj')
+      ];
+
+      $(window).trigger('cloudStack.fullRefresh');
+    });
+
+    pageElems.selector(args);
   };
+
+  /**
+   * New project event
+   */
+  $(window).bind('cloudStack.newProject', function() {
+    addProject();
+  });
 })(cloudStack, jQuery);

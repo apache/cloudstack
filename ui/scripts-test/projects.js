@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function($, cloudStack, testData) {
   cloudStack.projects = {
     add: function(args) {
       setTimeout(function() {
@@ -15,25 +15,14 @@
       noSelect: true,
       fields: {
         'username': { edit: true, label: 'Account' },
-        'role': {
-          label: 'Role',
-          select: function(args) {
-            args.response.success({
-              data: [
-                { name: 'user', description: 'User' },
-                { name: 'admin', description: 'Admin' }
-              ]
-            });
-          }
-        },
         'add-user': { addButton: true, label: '' }
       },
       add: {
         label: 'Invite',
         action: function(args) {
           setTimeout(function() {
-            cloudStack.context.projects[0].users.push(args.data);
             args.response.success({
+              data: args.data,
               notification: {
                 label: 'Added user to project',
                 poll: testData.notifications.testPoll
@@ -104,4 +93,66 @@
       }, 200);
     }
   };
-} (cloudStack, testData));
+
+  /**
+   * Projects section -- list view
+   */
+  cloudStack.sections.projects = {
+    title: 'Projects',
+    id: 'projects',
+    listView: {
+      fields: {
+        name: { label: 'Project Name' },
+        displayText: { label: 'Display Text' },
+        domain: { label: 'Domain' },
+        account: { label: 'Owner' }
+      },
+
+      dataProvider: testData.dataProvider.listView('projects'),
+
+      actions: {
+        add: {
+          label: 'New Project',
+          action: {
+            custom: function(args) {
+              $(window).trigger('cloudStack.newProject');
+            }
+          },
+
+          messages: {
+            confirm: function(args) {
+              return 'Are you sure you want to remove ' + args.name + '?';
+            },
+            notification: function(args) {
+              return 'Removed project';
+            }
+          },
+
+          notification: {
+            poll: testData.notifications.testPoll
+          }
+        },
+
+        destroy: {
+          label: 'Remove project',
+          action: function(args) {
+            args.response.success({});
+          },
+
+          messages: {
+            confirm: function(args) {
+              return 'Are you sure you want to remove ' + args.name + '?';
+            },
+            notification: function(args) {
+              return 'Removed project';
+            }
+          },
+
+          notification: {
+            poll: testData.notifications.testPoll
+          }
+        }
+      }
+    }
+  };
+} (jQuery, cloudStack, testData));

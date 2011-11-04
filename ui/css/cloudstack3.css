@@ -953,7 +953,7 @@ div.detail-group.actions td {
 }
 
 #header div.logo {
-  width: 35%;
+  width: 263px;
   height: 32px;
   position: relative;
   float: left;
@@ -965,7 +965,9 @@ div.detail-group.actions td {
   height: 100%;
   position: relative;
   float: right;
-  width: 614px;
+  width: auto;
+  max-width: 886px;
+  display: inline-block;
 }
 
 .button {
@@ -1109,11 +1111,25 @@ div.detail-group.actions td {
   width: 230px;
 }
 
+#navigation ul li.disabled {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+}
+
 .project-view #navigation ul li:hover,
 .project-view #navigation ul li.active {
   background: url(../images/bg-nav-item-active-project-view.png);
   background-position: 0px 0px;
   width: 230px;
+}
+
+.project-view #navigation ul li.disabled:hover {
+  background: #D5D5D5;
+  color: #596D7F;
+  cursor: default;
 }
 
 #navigation ul li:hover span,
@@ -1124,6 +1140,19 @@ div.detail-group.actions td {
   -webkit-text-shadow: 1px 2px 1px #5D5F6D;
   -o-text-shadow: 1px 2px 1px #5D5F6D;
   text-shadow: 1px 2px 1px #5D5F6D;
+}
+
+#navigation ul li.disabled:hover {
+  cursor: not-allowed !important;
+}
+
+#navigation ul li.disabled:hover span {
+  color: #596D7F;
+  /*+text-shadow:none;*/
+  -moz-text-shadow: none;
+  -webkit-text-shadow: none;
+  -o-text-shadow: none;
+  text-shadow: none;
 }
 
 #navigation ul li.last {
@@ -4902,13 +4931,73 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   margin: 11px 0 0 18px;
 }
 
+#header div.view-switcher {
+  height: 39px;
+  background-position: 0px -5px;
+  /*+placement:shift 0px -10px;*/
+  position: relative;
+  left: 0px;
+  top: -10px;
+  margin-right: 14px;
+}
+
+#header div.view-switcher.alt {
+  background-position: 0px -41px;
+}
+
+#header div.view-switcher div {
+  float: left;
+  /*[empty]display:;*/
+  width: 126px;
+  padding: 12px 0 0;
+  margin: 0;
+  text-indent: 21px;
+  position: relative;
+}
+
+#header div.view-switcher .select.active {
+  color: #FFFFFF;
+  font-weight: bold;
+  /*+text-shadow:0px 2px 2px #224F7B;*/
+  -moz-text-shadow: 0px 2px 2px #224F7B;
+  -webkit-text-shadow: 0px 2px 2px #224F7B;
+  -o-text-shadow: 0px 2px 2px #224F7B;
+  text-shadow: 0px 2px 2px #224F7B;
+}
+
+#header div.view-switcher div span.icon {
+  background: url(../images/icons.png) no-repeat;
+  width: 10px;
+  height: 10px;
+  padding: 0 19px 0 0;
+  top: 0;
+  /*+placement:shift -4px 0px;*/
+  position: relative;
+  left: -4px;
+  top: 0px;
+}
+
+#header div.view-switcher div.default-view span.icon {
+  background-position: -23px 0px;
+}
+
+#header div.view-switcher div.project-view span.icon {
+  background-position: -26px 0px !important;
+}
+
+#header div.view-switcher div.select span.icon {
+  background-position: -47px 0px;
+}
+
 #header .view-switcher span {
   padding: 0 13px 0 0;
+  background-repeat: repeat-x;
 }
 
 #header .view-switcher select {
-  width: 144px;
-  margin: 0;
+  max-width: 120px;
+  margin: 6px 3px 0 -21px;
+  padding: 3px 0 4px;
 }
 
 /*** Select project*/

@@ -40,7 +40,7 @@
       allowedActions = $.grep(allowedActions, function(item) {
         return $.inArray(item, disallowedActions) == -1;
       });
-      
+
       return allowedActions;
     },
     notifications: {
@@ -132,7 +132,7 @@
                 allowedActions = $.grep(allowedActions, function(item) {
                   return $.inArray(item, disallowedActions) == -1;
                 });
-                
+
                 return allowedActions;
               },
               data: item[0]
@@ -5218,7 +5218,7 @@
             }
           ],
           "securitygroupenabled": false
-        }, 
+        },
       ],
 
       hypervisors: [
@@ -5715,7 +5715,7 @@
           "disksizeallocated": 260649058304,
           "tags": "",
           "state": "Up"
-        } 
+        }
       ],
 
       users: [
@@ -5810,6 +5810,8 @@
         {
           name: 'prj1',
           displayText: 'Project 1',
+          account: 'bfederle',
+          domain: 'ROOT',
           users: [
             {
               username: 'bfederle',
@@ -5828,6 +5830,8 @@
         {
           name: 'prj2',
           displayText: 'Project 2',
+          account: 'someuserA',
+          domain: 'ROOT',
           users: [
             {
               username: 'someuserA',
@@ -5845,14 +5849,45 @@
         },
         {
           name: 'prj3',
-          displayText: 'Project 3'
+          displayText: 'Project 3',
+          account: 'schhen',
+          domain: 'ROOT',
+          users: [
+            {
+              username: 'someuserA',
+              role: 'user'
+            },
+            {
+              username: 'someuserB',
+              role: 'user'
+            },
+            {
+              username: 'someadmin',
+              role: 'admin'
+            }
+          ]
         },
         {
           name: 'prj4',
-          displayText: 'Project 4'
+          displayText: 'Project 4',
+          account: 'admin',
+          domain: 'ROOT',
+          users: [
+            {
+              username: 'someuserA',
+              role: 'user'
+            },
+            {
+              username: 'someuserB',
+              role: 'user'
+            },
+            {
+              username: 'someadmin',
+              role: 'admin'
+            }
+          ]
         }
       ]
     }
   };
 })(window);
-
