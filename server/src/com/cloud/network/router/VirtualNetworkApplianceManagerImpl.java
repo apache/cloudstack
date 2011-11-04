@@ -1638,6 +1638,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 
+        // Update router template/scripts version
+        final GetDomRVersionCmd command = new GetDomRVersionCmd();
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand("getDomRVersion", command);
+
         // Network usage command to create iptables rules
         cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
         
@@ -1753,35 +1759,39 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         s_logger.debug("Reapplying vm data (userData and metaData) entries as a part of domR " + router + " start...");
         createVmDataCommands(router, cmds);
 
-        // Update router template/scripts version
-        final GetDomRVersionCmd command = new GetDomRVersionCmd();
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        cmds.addCommand("getDomRVersion", command);
-
         return true;
     }
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
         DomainRouterVO router = profile.getVirtualMachine();
+        boolean result = true;
         
-        CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
-        if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
-            return false;
+        Answer answer = cmds.getAnswer("checkSsh");
+        if (answer != null && answer instanceof CheckSshAnswer) {
+            CheckSshAnswer sshAnswer = (CheckSshAnswer) answer;
+            if (sshAnswer == null || !sshAnswer.getResult()) {
+                s_logger.warn("Unable to ssh to the VM: " + sshAnswer.getDetails());
+                result = false;
+            }
+        } else {
+            result = false;
         }
         
-        GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
-        if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + " due to: " + versionAnswer.getDetails() + ", but we would continue");
-            return true;
+        answer = cmds.getAnswer("getDomRVersion");
+        if (answer != null && answer instanceof GetDomRVersionAnswer) {
+            GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
+            if (answer == null || !answer.getResult()) {
+                /* Try to push on because it's not a critical error */
+                s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + " due to: " + versionAnswer.getDetails() + ", but we would continue");
+            } else {
+                router.setTemplateVersion(versionAnswer.getTemplateVersion());
+                router.setScriptsVersion(versionAnswer.getScriptsVersion());
+                router = _routerDao.persist(router);
+            }
         }
-        router.setTemplateVersion(versionAnswer.getTemplateVersion());
-        router.setScriptsVersion(versionAnswer.getScriptsVersion());
-        router = _routerDao.persist(router);
 
-        return true;
+        return result;
     }
 
     @Override
