@@ -3050,6 +3050,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             while ( iter.hasNext() ) {
                 VM vm = iter.next();
                 VM.Record vmr = vm.getRecord(conn);
+                s_logger.warn("----------------------" + vmr.nameLabel + ", " + vmr.powerState + " , " + 
+                        isRefNull(vmr.residentOn) + ", " + vmr.residentOn.getUuid(conn).equals(_host.uuid) + ", " + _host.uuid);
                 if (vmr.powerState != VmPowerState.RUNNING) {
                     continue;
                 }
@@ -3059,6 +3061,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 if (vmr.residentOn.getUuid(conn).equals(_host.uuid)) {
                     continue;
                 }
+                s_logger.warn("----------------------Removing --" + vmr.nameLabel);
                 iter.remove();
             }
 
@@ -6541,10 +6544,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
               String host_uuid = entry.getValue().first();
               final Pair<String, State> oldState = oldStates.remove(vm);
               //check if host is changed
-              if (host_uuid != null){
+              if (host_uuid != null && oldState != null){
                   if (!host_uuid.equals(oldState.first())){
                       changes.put(vm, new Pair<String, State>(host_uuid, newState));
                       s_vms.put(_cluster, host_uuid, vm, newState);
+                      continue;
                   }
               }
 
