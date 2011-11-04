@@ -42,8 +42,7 @@
 
               createForm: {
                 title: 'Create account',
-                desc: 'Please fill in the following data to create a new account.',
-                preFilter: cloudStack.preFilter.createTemplate,
+                desc: 'Please fill in the following data to create a new account.',               
                 fields: {
                   username: {
                     label: 'Username',
@@ -137,7 +136,7 @@
                 array1.push("&accounttype=" + accountType);
                 
                 if(args.data.timezone != null && args.data.timezone.length > 0)
-                  array1.push("&timezone=" + args.data.timezone);
+                  array1.push("&timezone=" + todb(args.data.timezone));
                 
                 $.ajax({
                   url: createURL("createAccount" + array1.join("")),
@@ -252,16 +251,114 @@
             lastname: { label: 'Last name' }
           },          
           dataProvider: function(args) {            
-            var acctObj = args.context.accounts[0];
+            var accountObj = args.context.accounts[0];
             $.ajax({
-              url: createURL("listUsers&domainid=" + fromdb(acctObj.domainid) + "&account=" + todb(fromdb(acctObj.name))),
+              url: createURL("listUsers&domainid=" + fromdb(accountObj.domainid) + "&account=" + todb(fromdb(accountObj.name))),
               dataType: "json",
               success: function(json) {                
                 args.response.success({data: json.listusersresponse.user});                
               }
             })            
+          },         
+          actions: {
+            add: {
+              label: 'Create user',
+
+              messages: {
+                confirm: function(args) {
+                  return 'Are you sure you want to create an user?';
+                },
+                success: function(args) {
+                  return 'Your new user is being created.';
+                },
+                notification: function(args) {
+                  return 'Creating new user';
+                },
+                complete: function(args) {
+                  return 'User has been created successfully!';
+                }
+              },
+
+              createForm: {
+                title: 'Create user',                        
+                fields: {                
+                  username: {
+                    label: 'Username',
+                    validation: { required: true }
+                  },
+                  password: {
+                    label: 'Password',
+                    isPassword: true,
+                    validation: { required: true }
+                  },
+                  email: {
+                    label: 'Email',
+                    validation: { required: true }
+                  },
+                  firstname: {
+                    label: 'First name',
+                    validation: { required: true }
+                  },
+                  lastname: {
+                    label: 'Last name',
+                    validation: { required: true }                  
+                  },   
+                  timezone: {
+                    label: 'Timezone',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "", description: ""});                  
+                      for(var p in timezoneMap)
+                        items.push({id: p, description: timezoneMap[p]});                  
+                      args.response.success({data: items});
+                    }
+                  }
+                }
+              },
+
+              action: function(args) {                
+                var accountObj = args.context.accounts[0];
+                
+                var array1 = [];
+                array1.push("&username=" + todb(args.data.username));
+
+                var password = args.data.password;
+                if (md5Hashed)
+                  password = $.md5(password);
+                array1.push("&password=" + password);
+                
+                array1.push("&email=" + todb(args.data.email));
+                array1.push("&firstname=" + todb(args.data.firstname));
+                array1.push("&lastname=" + todb(args.data.lastname));
+                if(args.data.timezone != null && args.data.timezone.length > 0)
+                  array1.push("&timezone=" + todb(args.data.timezone));
+                
+                array1.push("&domainid=" + accountObj.domainid);
+                array1.push("&account=" + accountObj.name);							
+				        array1.push("&accounttype=" + accountObj.accounttype);	
+                
+                $.ajax({
+                  url: createURL("createUser" + array1.join("")),
+                  dataType: "json",
+                  success: function(json) {
+                    var item = json.createuserresponse.user;
+                    args.response.success({data: item});
+                  },
+                  error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    args.response.error(errorMsg);
+                  }
+                });
+              },
+
+              notification: {
+                poll: function(args) {
+                  args.complete();
+                }
+              }
+            }
           },
-         
+                   
           detailView: {
             name: 'User details',   
             tabs: {
