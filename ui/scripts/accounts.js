@@ -132,13 +132,10 @@
             if (args.data.accounttype == "1" && parseInt(args.data.domainid) != rootDomainId) //if account type is admin, but domain is not Root domain
               accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
             array1.push("&accounttype=" + accountType);
-
-            /*
-             var timezone = $thisDialog.find("#add_user_timezone").val();
-             if(timezone != null && timezone.length > 0)
-             array1.push("&timezone=" + todb(timezone));
-             */
-
+            
+            if(args.data.timezone != null && args.data.timezone.length > 0)
+              array1.push("&timezone=" + args.data.timezone);
+            
             $.ajax({
               url: createURL("createAccount" + array1.join("")),
               dataType: "json",
