@@ -2156,6 +2156,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getTrafficType() != null) {
             response.setTrafficType(network.getTrafficType().name());
         }
+        
+        response.setGuestIpType(network.getGuestType().toString());
 
         // get start ip and end ip of corresponding vlan
         List<? extends Vlan> vlan = ApiDBUtils.listVlanByNetworkId(network.getId());
