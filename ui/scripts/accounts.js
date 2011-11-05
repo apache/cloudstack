@@ -229,7 +229,7 @@
                     }
                   });         
                                  
-                   $.ajax({
+                  $.ajax({
                     url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
@@ -237,8 +237,15 @@
                       selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
                     }
                   });         
-                  
-                  
+                                    
+                   $.ajax({
+                    url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {		
+                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                    }
+                  });                     
                 }
               }              
             },
@@ -284,6 +291,7 @@
                           return cloudStack.converters.convertBytes(args);
                       }
                     },
+                    
                     instanceLimits: {
                       label: 'Instance limits',
                       isEditable: true,
@@ -297,8 +305,7 @@
                           }
                         }  
                       }
-                    },
-                                        
+                    },                                        
                     ipLimits: {
                       label: 'Public IP limits',
                       isEditable: true,
@@ -312,8 +319,7 @@
                           }
                         }  
                       }
-                    },
-                                        
+                    },                                        
                     volumeLimits: {
                       label: 'Volume limits',
                       isEditable: true,
@@ -327,10 +333,9 @@
                           }
                         }  
                       }
-                    },
-                    
+                    },                    
                     snapshotLimits: {
-                      label: 'Instance limits',
+                      label: 'Snapshot limits',
                       isEditable: true,
                       converter: function(args) {                        
                         if (selectedAccountResourceLimits != null) {	
@@ -342,9 +347,21 @@
                           }
                         }  
                       }
-                    }            
-                    
-                    
+                    },
+                    templateLimits: {
+                      label: 'Template limits',
+                      isEditable: true,
+                      converter: function(args) {                        
+                        if (selectedAccountResourceLimits != null) {	
+                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
+                            if(selectedAccountResourceLimits[i].resourcetype == "4") {
+                              return selectedAccountResourceLimits[i].max;
+                              break;
+                            }
+                          }
+                        }  
+                      }
+                    }                    
                   }
                 ],
 
