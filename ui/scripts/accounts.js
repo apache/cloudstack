@@ -190,23 +190,26 @@
             actions: {             
               edit: {
                 label: 'Edit',
-                action: function(args) {
-                  var array1 = [];                 
-                  var accountObj = args.context.accounts[0];                  
-                  array1.push("&newname=" + todb(args.data.name));
-                   
-                  array1.push("&id=" + accountObj.id);   
-                  array1.push("&domainid=" + accountObj.domainid);
-                  array1.push("&account=" + accountObj.name);
-                
+                action: function(args) {                                
+                  var accountObj = args.context.accounts[0];    
                   $.ajax({
-                    url: createURL("updateAccount" + array1.join("")),
+                    url: createURL("updateAccount&newname=" + todb(args.data.name) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
-                    success: function(json) {                     
-                      var item = json.updateaccountresponse.account;
-                      args.response.success({data: item});
+                    async: false,
+                    success: function(json) {                                        
+                      accountObj = json.updateaccountresponse.account;
+                      args.response.success({data: accountObj});
                     }
                   });
+                                   
+                  $.ajax({
+                    url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.instanceLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {		
+                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                    }
+                  });           
                 }
               }              
             },
@@ -254,7 +257,7 @@
                     },
                     instanceLimits: {
                       label: 'Instance limits',
-                      idEditable: true,
+                      isEditable: true,
                       converter: function(args) {                        
                         if (selectedAccountResourceLimits != null) {	
                           for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
