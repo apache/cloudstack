@@ -9,7 +9,7 @@ usage() {
 }
 
 #set iptables
-iptables -D RH-Firewall-1-INPUT -p tcp -m tcp --dport 5900:6099 -j ACCEPT 2>&1
+iptables -D RH-Firewall-1-INPUT -p tcp -m tcp --dport 5900:6099 -j ACCEPT 2>/dev/null
 iptables -I RH-Firewall-1-INPUT -p tcp -m tcp --dport 5900:6099 -j ACCEPT 2>&1
 
 # listen vnc on all interface
