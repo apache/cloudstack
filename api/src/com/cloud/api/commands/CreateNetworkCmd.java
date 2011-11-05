@@ -168,18 +168,18 @@ public class CreateNetworkCmd extends BaseCmd {
         if (offering == null) {
             throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
         }
-        if (offering.getGuestType() == GuestType.Shared) {
-            if (physicalNetworkId != null) {
+        
+        if (physicalNetworkId != null) {
+            if (offering.getGuestType() == GuestType.Shared) {
                 return physicalNetworkId;
-            } else if (zoneId != null) {
-                return _networkService.findPhysicalNetworkId(zoneId, offering.getTags());
             } else {
-                throw new InvalidParameterValueException("Either zoneId or physicalNetworkId have to be specified for the network of type " + GuestType.Shared);
+                throw new InvalidParameterValueException("Physical network id can be specified for networks of guest ip type " + GuestType.Shared + " only.");
             }
-        } else if (physicalNetworkId != null) {
-            throw new InvalidParameterValueException("Physical network id can be specified for networks of guest ip type " + GuestType.Shared + " only.");
         } else {
-            return null;
+            if (zoneId == null) {
+                throw new InvalidParameterValueException("ZoneId is required as physicalNetworkId is null");
+            }
+            return _networkService.findPhysicalNetworkId(zoneId, offering.getTags());
         }
     }
 

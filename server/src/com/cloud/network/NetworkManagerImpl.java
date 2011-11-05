@@ -1049,8 +1049,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (locked == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
         }
+        
         try {
-
             if (predefined == null || (predefined.getCidr() == null && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
@@ -1868,9 +1868,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkOffering.getGuestType() == Network.GuestType.Isolated) {
             if (isDefault != null && !isDefault) {
                 throw new InvalidParameterValueException("Can specify isDefault parameter only for network of type " + Network.GuestType.Shared);
-            } else {
+            } else if (areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)){
                 isDefault = true;
+            } else {
+                isDefault = false;
             }
+            
             if (isShared != null && isShared) {
                 throw new InvalidParameterValueException("Can specify isShared parameter for " + Network.GuestType.Shared + " networks only");
             }
@@ -1896,11 +1899,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // VlanId can be specified only when network offering supports it
         if (vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
-        }
-
-        // Don't allow to create guest isolated network with Vlan specified
-        if (networkOffering.getGuestType() == Network.GuestType.Isolated && vlanId != null) {
-            throw new InvalidParameterValueException("Can't specify vlan when create " + Network.GuestType.Isolated + " network");
         }
 
         // If networkDomain is not specified, take it from the global configuration
