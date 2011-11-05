@@ -1162,7 +1162,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     physicalNetworkId = _networkMgr.findPhysicalNetworkId(network.getDataCenterId(), null);
                 }
                 PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
+                if (provider == null) {
+                    throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
+                }
                 VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
+                if (vrProvider == null) {
+                    throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
+                }
                 ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
                 int retry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
