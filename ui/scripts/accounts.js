@@ -228,7 +228,16 @@
                       selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
                     }
                   });         
-                
+                                 
+                   $.ajax({
+                    url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {		
+                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                    }
+                  });         
+                  
                   
                 }
               }              
@@ -318,7 +327,22 @@
                           }
                         }  
                       }
-                    }   
+                    },
+                    
+                    snapshotLimits: {
+                      label: 'Instance limits',
+                      isEditable: true,
+                      converter: function(args) {                        
+                        if (selectedAccountResourceLimits != null) {	
+                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
+                            if(selectedAccountResourceLimits[i].resourcetype == "3") {
+                              return selectedAccountResourceLimits[i].max;
+                              break;
+                            }
+                          }
+                        }  
+                      }
+                    }            
                     
                     
                   }
