@@ -28,6 +28,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @Implementation(description="Deletes a Network Service Provider.", responseObject=SuccessResponse.class)
@@ -69,13 +71,21 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        boolean result = _networkService.deleteNetworkServiceProvider(getId());
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network service provider");
-        }
+        try{
+            boolean result = _networkService.deleteNetworkServiceProvider(getId());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network service provider");
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        }  catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } 
     }
 
 

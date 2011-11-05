@@ -369,6 +369,23 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listBy(sc);
     }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
+        SearchBuilder<NetworkOfferingServiceMapVO> svcProviderMapSearch = _ntwkOffSvcMap.createSearchBuilder();
+        NetworkOfferingServiceMapVO svcProviderEntry = svcProviderMapSearch.entity();
+        svcProviderMapSearch.and("Provider", svcProviderMapSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<NetworkVO> networksSearch = createSearchBuilder();
+        networksSearch.and("physicalNetworkId", networksSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        networksSearch.join("svcProviderMapSearch", svcProviderMapSearch, networksSearch.entity().getNetworkOfferingId(), svcProviderEntry.getNetworkOfferingId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<NetworkVO> sc = networksSearch.create();
+        sc.setJoinParameters("svcProviderMapSearch", "Provider", providerName);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+
+        return listBy(sc);
+    }
     
     @Override
     public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type, TrafficType trafficType) {

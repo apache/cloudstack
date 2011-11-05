@@ -103,6 +103,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -1361,8 +1362,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
             zone = _zoneDao.persist(zone);
 
+            // Create default Physical Network
+            long physicalNetworkId = createDefaultPhysicalNetwork(zone.getId(), domainId);
+            
             // Create deafult networks
-            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled);
+            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled, physicalNetworkId);
             txn.commit();
             return zone;
         } catch (Exception ex) {
@@ -1374,8 +1378,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
+    private long createDefaultPhysicalNetwork(long zoneId, Long domainId){
+        //create entry
+        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zoneId, null, null, null, PhysicalNetwork.BroadcastDomainRange.ZONE.toString(), domainId, null);
+        
+        String defaultXenLabel = "cloud-private";
+        
+        //add default Traffic types to the physical network
+        
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Guest.toString(), defaultXenLabel, null, null, null);
+
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Public.toString(), defaultXenLabel, null, null, null);
+        
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Management.toString(), defaultXenLabel, null, null, null);
+        
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Storage.toString(), defaultXenLabel, null, null, null);
+        
+        return defaultNetwork.getId();
+    }
+    
     @Override
-    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException {
+    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled, long physicalNetworkId) throws ConcurrentOperationException {
         DataCenterVO zone = _zoneDao.findById(zoneId);
         String networkDomain = null;
         // Create public, management, control and storage networks as a part of
@@ -1410,6 +1433,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
+                        //set physicalnetworkId to the default Guest network in a basic Zone.
+                        plan = new DataCenterDeployment(zone.getId(), null, null, null, null, physicalNetworkId);
                     } else if (offering.getGuestType() == GuestType.Shared && isSecurityGroupEnabled) {
                         isNetworkDefault = true;
                     } else {

@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,17 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.dao;
+package com.cloud.agent.api;
 
 import java.util.List;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 
-public interface PhysicalNetworkTrafficTypeDao extends GenericDao<PhysicalNetworkTrafficTypeVO, Long> {
-    List<PhysicalNetworkTrafficTypeVO> listBy(long physicalNetworkId);
-    boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType);
-    String getNetworkTag (long physicalNetworkId, TrafficType trafficType, HypervisorType hType);
-    PhysicalNetworkTrafficTypeVO findBy(long physicalNetworkId, TrafficType trafficType);
+public class CheckNetworkCommand extends Command {
+
+    List<PhysicalNetworkSetupInfo> networkInfoList;
+    
+    public CheckNetworkCommand(List<PhysicalNetworkSetupInfo> networkInfoList) {
+        this.networkInfoList = networkInfoList;
+    }
+    
+    public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfoList() {
+        return networkInfoList;
+    }
+    
+    protected CheckNetworkCommand() {
+    }
+    
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }

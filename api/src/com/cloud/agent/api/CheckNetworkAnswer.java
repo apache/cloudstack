@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,17 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.dao;
+package com.cloud.agent.api;
 
-import java.util.List;
+public class CheckNetworkAnswer extends Answer {
+    // indicate if agent reconnect is needed after setupNetworkNames command
+    private boolean _reconnect;
+    public CheckNetworkAnswer() {}
+    
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.utils.db.GenericDao;
+    public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details, boolean reconnect) {
+        super(cmd, result, details);
+        _reconnect = reconnect;
+    }
 
-public interface PhysicalNetworkTrafficTypeDao extends GenericDao<PhysicalNetworkTrafficTypeVO, Long> {
-    List<PhysicalNetworkTrafficTypeVO> listBy(long physicalNetworkId);
-    boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType);
-    String getNetworkTag (long physicalNetworkId, TrafficType trafficType, HypervisorType hType);
-    PhysicalNetworkTrafficTypeVO findBy(long physicalNetworkId, TrafficType trafficType);
+    public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details) {
+        this(cmd, result, details, false);
+    }
+
+    public boolean needReconnect() {
+        return _reconnect;
+    }
+    
 }

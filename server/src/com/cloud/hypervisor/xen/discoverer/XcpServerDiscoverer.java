@@ -260,7 +260,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put(HostInfo.HOST_OS_KERNEL_VERSION, hostKernelVer);
                 details.put(HostInfo.HYPERVISOR_VERSION, xenVersion);
 
-                if (!params.containsKey("public.network.device") && _publicNic != null) {
+                /*if (!params.containsKey("public.network.device") && _publicNic != null) {
                     params.put("public.network.device", _publicNic);
                     details.put("public.network.device", _publicNic);
                 }
@@ -283,7 +283,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 if (!params.containsKey("storage.network.device2") && _storageNic2 != null) {
                     params.put("storage.network.device2", _storageNic2);
                     details.put("storage.network.device2", _storageNic2);
-                }                             
+                }*/                             
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));

@@ -1770,8 +1770,9 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `xen_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
-  `kvm_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
-  `vmware_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
+  `kvm_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
+  `vmware_network_label` varchar(255) DEFAULT 'vSwitch0' COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
+  `vlan` varchar(255) COMMENT 'The vlan tag to be sent down to a VMware host',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_physical_network_traffic_types__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
   UNIQUE KEY(`physical_network_id`, `traffic_type`)

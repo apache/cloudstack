@@ -30,8 +30,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ProviderResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 
@@ -50,9 +48,6 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="network service provider id")
     private Long id;    
 
-    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force shutdown the service provider.")
-    private Boolean forcedShutdown;    
-    
     @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
     
@@ -66,10 +61,6 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     
     private Long getId() {
         return id;
-    }    
-    
-    public boolean isForcedShutdown() {
-        return (forcedShutdown != null) ? forcedShutdown : false;
     }    
     
     public List<String> getEnabledServices() {
@@ -91,23 +82,14 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        PhysicalNetworkServiceProvider result;
-        try {
-            result = _networkService.updateNetworkServiceProvider(getId(), getState(), isForcedShutdown(), getEnabledServices());
-            if (result != null) {
-                ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            }else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
-            }
-        } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        }  catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+        PhysicalNetworkServiceProvider result = _networkService.updateNetworkServiceProvider(getId(), getState(), getEnabledServices());
+        if (result != null) {
+            ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        }else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
+        }
     }
 
     @Override

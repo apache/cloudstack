@@ -77,4 +77,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listByPhysicalNetworkTrafficType(long physicalNetworkId, TrafficType trafficType);
     
     List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type, TrafficType trafficType);
+
+    List<NetworkVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName);
 }
+

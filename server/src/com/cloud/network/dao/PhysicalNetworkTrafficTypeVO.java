@@ -52,16 +52,20 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
 
     @Column(name = "vmware_network_label")
     private String vmwareNetworkLabel;
+
+    @Column(name = "vlan")
+    private String vlan;
     
     public PhysicalNetworkTrafficTypeVO() {
     }
 
-    public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel) {
+    public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String vlan) {
         this.physicalNetworkId = physicalNetworkId;
         this.trafficType = trafficType;
         this.xenNetworkLabel = xenLabel;
         this.kvmNetworkLabel = kvmLabel;
         this.vmwareNetworkLabel = vmwareLabel;
+        this.setVlan(vlan);
     }
 
     @Override
@@ -104,6 +108,14 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     @Override
     public String getVmwareNetworkLabel() {
         return vmwareNetworkLabel;
+    }
+
+    public void setVlan(String vlan) {
+        this.vlan = vlan;
+    }
+
+    public String getVlan() {
+        return vlan;
     }    
 
 }

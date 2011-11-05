@@ -116,14 +116,13 @@ public interface NetworkElement extends Adapter {
     
     /**
      * The network service provider is being shutdown. This should shutdown all instances of this element deployed for this provider.
-     * @param networkServiceProvider
      * @param context
-     * @param forceShutdown 
+     * @param networkServiceProvider
      * @return boolean success/failure
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 

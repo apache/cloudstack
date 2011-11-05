@@ -162,7 +162,7 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;

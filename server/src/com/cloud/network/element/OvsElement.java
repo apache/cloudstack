@@ -126,7 +126,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) 
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
     throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }

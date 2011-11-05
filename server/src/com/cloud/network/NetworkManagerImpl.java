@@ -47,8 +47,11 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.AssociateIPAddrCmd;
@@ -96,6 +99,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
@@ -270,6 +274,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject LoadBalancerDao _lbDao;
     @Inject PhysicalNetworkTrafficTypeDao _pNTrafficTypeDao;
     @Inject AgentManager _agentMgr;
+    @Inject HostDao _hostDao;
     
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -3576,6 +3581,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
+        if(zone.getNetworkType() == NetworkType.Basic){
+            if(!_physicalNetworkDao.listByZone(zoneId).isEmpty()){
+                throw new CloudRuntimeException("Cannot add the physical network to basic zone id: "+zoneId+", there is a physical network already existing in this basic Zone");
+            }
+        }
         if (tags != null && tags.size() > 1) {
             throw new InvalidParameterException("Only one tag can be specified for a physical network at this time");
         }
@@ -3639,11 +3649,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.commit();
             return pNetwork;
         } catch (Exception ex) {
-            txn.rollback();
             s_logger.warn("Exception: ", ex);
             throw new CloudRuntimeException("Fail to create a physical network");
-        } finally {
-            txn.close();
         }
     }
 
@@ -3794,7 +3801,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_DELETE, eventDescription = "deleting physical network", async = true)
-    @DB
     public boolean deletePhysicalNetwork(Long physicalNetworkId) {
 
         // verify input parameters
@@ -3802,11 +3808,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (pNetwork == null) {
             throw new InvalidParameterValueException("Network id=" + physicalNetworkId + "doesn't exist in the system");
         }
-        Transaction txn = Transaction.currentTxn();
         
         checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
         
-        txn.start();
         
         // delete vlans for this zone
         List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
@@ -3830,7 +3834,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = _physicalNetworkDao.remove(physicalNetworkId);
         
-        txn.commit();
         
         return success;
     }
@@ -4020,11 +4023,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.commit();
             return nsp;
         } catch (Exception ex) {
-            txn.rollback();
             s_logger.warn("Exception: ", ex);
             throw new CloudRuntimeException("Fail to add a provider to physical network");
-        } finally {
-            txn.close();
         }
         
     }
@@ -4041,7 +4041,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_UPDATE, eventDescription = "Updating physical network ServiceProvider", async = true)
-    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String stateStr, boolean forcedShutdown, List<String> enabledServices) throws ConcurrentOperationException, ResourceUnavailableException {
+    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String stateStr, List<String> enabledServices){
         
         PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
         if(provider == null){
@@ -4058,13 +4058,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             try {
                 state = PhysicalNetworkServiceProvider.State.valueOf(stateStr);
             } catch (IllegalArgumentException ex) {
-                throw new InvalidParameterValueException("Unable to resolve state '" + stateStr + "' to a supported value {Enabled or Disabled or Shutdown}");
+                throw new InvalidParameterValueException("Unable to resolve state '" + stateStr + "' to a supported value {Enabled or Disabled}");
             }
         }
         
         boolean update = false;
 
         if(state != null){
+            if(state == PhysicalNetworkServiceProvider.State.Shutdown){
+                throw new InvalidParameterValueException("Updating the provider state to 'Shutdown' is not supported");
+            }
+            
             if(s_logger.isDebugEnabled()){
                 s_logger.debug("updating state of the service provider id=" + id + " on physical network: "+provider.getPhysicalNetworkId() + " to state: "+stateStr);
             }
@@ -4079,19 +4083,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     //do we need to do anything for the provider instances before disabling?
                     provider.setState(PhysicalNetworkServiceProvider.State.Disabled);
                     update = true;
-                    break;
-                case Shutdown:
-                    User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
-                    Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
-                    //shutdown the network
-                    ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
-                    if(s_logger.isDebugEnabled()){
-                        s_logger.debug("Shutting down the service provider id=" + id + " on physical network: "+provider.getPhysicalNetworkId());
-                    }
-                    if(element != null && element.shutdownProviderInstances(provider, context, forcedShutdown)){
-                        provider.setState(PhysicalNetworkServiceProvider.State.Shutdown);
-                        update = true;
-                    }
                     break;
             }
         }
@@ -4124,14 +4115,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_PROVIDER_DELETE, eventDescription = "Deleting physical network ServiceProvider", async = true)
-    public boolean deleteNetworkServiceProvider(Long id) {
+    public boolean deleteNetworkServiceProvider(Long id) throws ConcurrentOperationException, ResourceUnavailableException {
         PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(id);
         
         if(provider == null){
             throw new InvalidParameterValueException("Network Service Provider id=" + id + "doesn't exist in the system");
         }
         
-        //TODO provider instances?
+        //check if there are networks using this provider
+        List<NetworkVO> networks = _networksDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), provider.getProviderName());
+        if(networks != null && !networks.isEmpty()){
+            throw new CloudRuntimeException("Provider is not deletable because there are existing networks using this provider, please destroy all networks first");
+        }
+        
+        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        Account callerAccount = _accountMgr.getActiveAccountById(callerUser.getAccountId());
+        //shutdown the provider instances
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
+        if(s_logger.isDebugEnabled()){
+            s_logger.debug("Shutting down the service provider id=" + id + " on physical network: "+provider.getPhysicalNetworkId());
+        }
+        NetworkElement element = getElementImplementingProvider(provider.getProviderName());
+        if(element == null){
+            throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getProviderName() + "'");
+        }
+        
+        if(element != null && element.shutdownProviderInstances(provider, context)){
+            provider.setState(PhysicalNetworkServiceProvider.State.Shutdown);
+        }
         
         return _pNSPDao.remove(id);
     }
@@ -4430,7 +4441,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", create = true)    
-    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel) {
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String xenLabel, String kvmLabel, String vmwareLabel, String vlan) {
 
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
@@ -4464,19 +4475,36 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         try {
             txn.start();
             // Create the new traffic type in the database
-            PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel);
+            if(xenLabel == null){
+                xenLabel = getDefaultXenNetworkLabel(trafficType);
+            }
+            PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, vlan);
             pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
 
             txn.commit();
             return pNetworktrafficType;
         } catch (Exception ex) {
-            txn.rollback();
             s_logger.warn("Exception: ", ex);
             throw new CloudRuntimeException("Fail to add a traffic type to physical network");
-        } finally {
-            txn.close();
         }
         
+    }
+    
+    private String getDefaultXenNetworkLabel(TrafficType trafficType){
+        String xenLabel = null;
+        switch(trafficType){
+            case Public: xenLabel = "cloud-public";
+                         break;
+            case Guest: xenLabel = "cloud-guest"; 
+                        break;
+            case Storage: xenLabel = "cloud-storage";
+                          break;
+            case Management: xenLabel = "cloud-private";
+                             break;
+            case Control: xenLabel = "cloud_link_local_network";
+                          break;
+        }
+        return xenLabel;
     }
     
     @Override
@@ -4556,49 +4584,115 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-        // TODO Auto-generated method stub
+        if (!(cmd instanceof StartupRoutingCommand )) {
+            return;
+        } 
+        long hostId = host.getId();
+        StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
         
+        String dataCenter = startup.getDataCenter();
+        
+        long dcId = -1;
+        DataCenterVO dc = _dcDao.findByName(dataCenter);
+        if (dc == null) {
+            try {
+                dcId = Long.parseLong(dataCenter);
+                dc = _dcDao.findById(dcId);
+            } catch (final NumberFormatException e) {
+            }
+        }
+        if (dc == null) {
+            throw new IllegalArgumentException("Host " + startup.getPrivateIpAddress() + " sent incorrect data center: " + dataCenter);
+        }
+        dcId = dc.getId();
+        HypervisorType hypervisorType =  startup.getHypervisorType();
+        
+        
+        List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+        
+        //list all physicalnetworks in the zone & for each get the network names
+        List<PhysicalNetworkVO> physicalNtwkList = _physicalNetworkDao.listByZone(dcId);
+        for(PhysicalNetworkVO pNtwk : physicalNtwkList){
+            String publicName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Public, hypervisorType);
+            String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
+            String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
+            String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
+            //String controlName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
+            PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
+            info.setPhysicalNetworkId(pNtwk.getId());
+            info.setGuestNetworkName(guestName);
+            info.setPrivateNetworkName(privateName);
+            info.setPublicNetworkName(publicName);
+            info.setStorageNetworkName(storageName);
+            PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(pNtwk.getId(), TrafficType.Management);
+            if(mgmtTraffic != null){
+                String vlan = mgmtTraffic.getVlan();
+                info.setMgmtVlan(vlan);
+            }
+            networkInfoList.add(info);
+        }
+        
+        //send the names to the agent  
+        if(s_logger.isDebugEnabled()){
+            s_logger.debug("Sending CheckNetworkCommand to check the Network is setup correctly on Agent");
+        }
+        CheckNetworkCommand nwCmd = new CheckNetworkCommand(networkInfoList);
+
+        CheckNetworkAnswer answer = (CheckNetworkAnswer) _agentMgr.easySend(hostId, nwCmd);
+        
+        if (answer == null) {
+            s_logger.warn("Unable to get an answer to the CheckNetworkCommand from agent:" +host.getId());
+            throw new ConnectionException(true, "Unable to get an answer to the CheckNetworkCommand from agent: "+host.getId());
+        }
+        
+        if (!answer.getResult()) {
+            s_logger.warn("Unable to setup agent " + hostId + " due to " + ((answer != null)?answer.getDetails():"return null"));
+            String msg = "Incorrect Network setup on agent, Reinitialize agent after network names are setup, details : " + answer.getDetails();
+           _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, host.getPodId(), msg, msg);
+            throw new ConnectionException(true, msg);
+        }else{
+            if ( answer.needReconnect() ) {
+                throw new ConnectionException(false, "Reinitialize agent after network setup.");
+            }
+            if(s_logger.isDebugEnabled()){
+                s_logger.debug("Network setup is correct on Agent");
+            }
+            return;
+        }
     }
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean isRecurring() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public int getTimeout() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public boolean processTimeout(long agentId, long seq) {
-        // TODO Auto-generated method stub
         return false;
     }    
 

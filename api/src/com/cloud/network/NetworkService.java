@@ -102,9 +102,9 @@ public interface NetworkService {
 
     List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId);
 
-    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, boolean forcedShutdown, List<String> enabledServices) throws ConcurrentOperationException, ResourceUnavailableException;
+    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices);
 
-    boolean deleteNetworkServiceProvider(Long id);
+    boolean deleteNetworkServiceProvider(Long id) throws ConcurrentOperationException, ResourceUnavailableException;
 
     PhysicalNetwork getPhysicalNetwork(Long physicalNetworkId);
 
@@ -116,7 +116,7 @@ public interface NetworkService {
     
     long findPhysicalNetworkId(long zoneId, String tag);
 
-    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel);
+    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String vlan);
 
     PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
 
