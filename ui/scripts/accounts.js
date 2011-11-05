@@ -8,6 +8,8 @@
   var systemUserId = 1;
   var adminUserId = 2;
   
+  var selectedAccountResourceLimits;
+  
   cloudStack.sections.accounts = {
     title: 'Accounts',
     id: 'accounts',
@@ -249,15 +251,39 @@
                         else
                           return cloudStack.converters.convertBytes(args);
                       }
+                    },
+                    instanceLimits: {
+                      label: 'Instance limits',
+                      idEditable: true,
+                      converter: function(args) {                        
+                        if (selectedAccountResourceLimits != null) {	
+                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
+                            if(selectedAccountResourceLimits[i].resourcetype == "0") {
+                              return selectedAccountResourceLimits[i].max;
+                              break;
+                            }
+                          }
+                        }  
+                      }
                     }
                   }
                 ],
 
-                dataProvider: function(args) {
+                dataProvider: function(args) {                  
+                  var accountObj = args.context.accounts[0];                  
+                  $.ajax({
+                    url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+                    dataType: "json",     
+                    async: false,                    
+                    success: function(json) {    
+                      selectedAccountResourceLimits = json.listresourcelimitsresponse.resourcelimit;		                      
+                    }
+                  });
+                 
                   args.response.success(
                     {
                       actionFilter: accountActionfilter,
-                      data:args.context.accounts[0]
+                      data: args.context.accounts[0]
                     }
                   );
                 }
