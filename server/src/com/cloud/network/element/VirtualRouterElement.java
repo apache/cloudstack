@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -41,8 +40,8 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
@@ -73,8 +72,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -450,9 +449,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         List<DomainRouterVO> routers = _routerDao.listByElementId(elementId);
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            if (forceShutdown) {
-                result = result && (_routerMgr.stopRouter(router.getId(), true) != null);
-            }
             result = result && (_routerMgr.destroyRouter(router.getId()) != null);
         }
         return result;

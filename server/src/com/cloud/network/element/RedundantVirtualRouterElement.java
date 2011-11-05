@@ -14,13 +14,13 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
@@ -124,7 +124,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     }
     
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context, boolean forceShutdown) throws ConcurrentOperationException,
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.RedundantVirtualRouterElement);
         if (element == null) {
@@ -135,9 +135,6 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         List<DomainRouterVO> routers = _routerDao.listByElementId(elementId);
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            if (forceShutdown) {
-                result = result && (_routerMgr.stopRouter(router.getId(), true) != null);
-            }
             result = result && (_routerMgr.destroyRouter(router.getId()) != null);
         }
         return result;
