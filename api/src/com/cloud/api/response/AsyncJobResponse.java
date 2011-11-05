@@ -26,11 +26,6 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
-/*	
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="async job ID")
-    private IdentityProxy id = new IdentityProxy("async_job");
-*/    
-
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private IdentityProxy accountId = new IdentityProxy("account");
 

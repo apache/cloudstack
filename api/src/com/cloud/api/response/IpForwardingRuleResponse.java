@@ -18,18 +18,19 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("firewall_rules");
 
     @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the port forwarding rule")
     private String protocol;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="the VM ID for the port forwarding rule")
-    private Long virtualMachineId;
+    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
 
     @SerializedName("virtualmachinename") @Param(description="the VM name for the port forwarding rule")
     private String virtualMachineName;
@@ -53,11 +54,11 @@ public class IpForwardingRuleResponse extends BaseResponse {
     private String state;
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getProtocol() {
@@ -69,11 +70,11 @@ public class IpForwardingRuleResponse extends BaseResponse {
     }
 
     public Long getVirtualMachineId() {
-        return virtualMachineId;
+        return virtualMachineId.getValue();
     }
 
     public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId = virtualMachineId;
+        this.virtualMachineId.setValue(virtualMachineId);
     }
 
     public String getVirtualMachineName() {

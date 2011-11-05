@@ -19,44 +19,45 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SnapshotScheduleResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ID of the snapshot schedule")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("snapshot_schedule");
 
     @SerializedName("volumeid") @Param(description="the volume ID the snapshot schedule applied for")
-    private Long volumeId;
+    private IdentityProxy volumeId = new IdentityProxy("volumes");
 
     @SerializedName("snapshotpolicyid") @Param(description="the snapshot policy ID used by the snapshot schedule")
-    private Long snapshotPolicyId;
+    private IdentityProxy snapshotPolicyId = new IdentityProxy("snapshot_policy");
 
     @SerializedName("scheduled") @Param(description="time the snapshot is scheduled to be taken")
     private Date scheduled;
 
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public Long getVolumeId() {
-        return volumeId;
+        return volumeId.getValue();
     }
 
     public void setVolumeId(Long volumeId) {
-        this.volumeId = volumeId;
+        this.volumeId.setValue(volumeId);
     }
 
     public Long getSnapshotPolicyId() {
-        return snapshotPolicyId;
+        return snapshotPolicyId.getValue();
     }
 
     public void setSnapshotPolicyId(Long snapshotPolicyId) {
-        this.snapshotPolicyId = snapshotPolicyId;
+        this.snapshotPolicyId.setValue(snapshotPolicyId);
     }
 
     public Date getScheduled() {

@@ -19,6 +19,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,11 +30,12 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.api.Identity;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 
 @Entity
 @Table(name="snapshot_schedule")
-public class SnapshotScheduleVO implements SnapshotSchedule {
+public class SnapshotScheduleVO implements SnapshotSchedule, Identity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -57,6 +59,9 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
     @Column(name="snapshot_id")
     Long snapshotId;
 
+    @Column(name="uuid")
+    String uuid = UUID.randomUUID().toString();
+    
     public SnapshotScheduleVO() { }
 
     public SnapshotScheduleVO(long volumeId, long policyId, Date scheduledTimestamp) {
@@ -108,5 +113,14 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
 	
 	public void setSnapshotId(Long snapshotId) {
 	    this.snapshotId = snapshotId;
+	}
+	
+	@Override
+	public String getUuid() {
+		return this.uuid;
+	}
+	
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 }

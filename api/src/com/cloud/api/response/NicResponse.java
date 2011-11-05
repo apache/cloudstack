@@ -17,16 +17,17 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class NicResponse extends BaseResponse {
     
     @SerializedName("id") @Param(description="the ID of the nic")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("nics");
 
     @SerializedName("networkid") @Param(description="the ID of the corresponding network")
-    private Long networkid;
+    private IdentityProxy networkid = new IdentityProxy("networks");
     
     @SerializedName("netmask") @Param(description="the netmask of the nic")
     private String netmask;
@@ -56,19 +57,19 @@ public class NicResponse extends BaseResponse {
     private String macAddress;
     
     public Long getId() {
-        return id;
+        return id.getValue();
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public Long getNetworkid() {
-        return networkid;
+        return networkid.getValue();
     }
 
     public void setNetworkid(Long networkid) {
-        this.networkid = networkid;
+        this.networkid.setValue(networkid);
     }
 
     public String getNetmask() {

@@ -50,14 +50,6 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the security group")
     private String domainName;
 
-/*    
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-    private IdentityProxy jobId = new IdentityProxy("async_job");
-
-    @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
-    private Integer jobStatus;
-*/
-    
     @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = IngressRuleResponse.class)
     private List<IngressRuleResponse> ingressRules;
 
@@ -105,28 +97,6 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
         return getId();
     }
 
-/*    
-    @Override
-    public Long getJobId() {
-        return super.getJobId();
-    }
-
-    @Override
-    public void setJobId(Long jobId) {
-        super.setJobId(jobId);
-    }
-
-    @Override
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    @Override
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-*/
-    
     @Override
     public int hashCode() {
         final int prime = 31;

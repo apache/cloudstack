@@ -19,6 +19,7 @@ package com.cloud.vm;
 
 import java.net.URI;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,13 +30,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "nics")
-public class NicVO implements Nic {
+public class NicVO implements Nic, Identity {
     protected NicVO() {
     }
 
@@ -110,6 +112,9 @@ public class NicVO implements Nic {
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
+    
+    @Column(name = "uuid")
+    String uuid = UUID.randomUUID().toString();
 
     public NicVO(String reserver, Long instanceId, long configurationId, VirtualMachine.Type vmType) {
         this.reserver = reserver;
@@ -309,5 +314,14 @@ public class NicVO implements Nic {
     @Override
     public VirtualMachine.Type getVmType() {
         return vmType;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

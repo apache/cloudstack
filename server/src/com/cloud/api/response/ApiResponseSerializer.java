@@ -34,10 +34,13 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.api.ResponseObjectTypeAdapter;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.identity.dao.IdentityDao;
+import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -204,6 +207,14 @@ public class ApiResponseSerializer {
 
                 } else if (fieldValue instanceof Date) {
                     sb.append("<" + serializedName.value() + ">" + BaseCmd.getDateString((Date) fieldValue) + "</" + serializedName.value() + ">");
+                } else if (fieldValue instanceof IdentityProxy) { 
+                	IdentityProxy idProxy = (IdentityProxy)fieldValue;
+                	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
+                	if(!id.isEmpty()) {
+                		IdentityDao identityDao = new IdentityDaoImpl();
+                		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
+                	}
+                    sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {

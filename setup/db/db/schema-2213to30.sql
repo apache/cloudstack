@@ -169,6 +169,9 @@ ALTER TABLE `cloud`.`snapshots` ADD CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uui
 ALTER TABLE `cloud`.`snapshot_policy` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`snapshot_policy` ADD CONSTRAINT `uc_snapshot_policy__uuid` UNIQUE (`uuid`);
 
+ALTER TABLE `cloud`.`snapshot_schedule` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`snapshot_schedule` ADD CONSTRAINT `uc_snapshot_schedule__uuid` UNIQUE (`uuid`);
+
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `uc_volumes__uuid` UNIQUE (`uuid`);
 
@@ -186,6 +189,9 @@ ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `uc_cluster__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`security_ingress_rule` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `uc_security_ingress_rule__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`security_egress_rule` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`security_egress_rule` ADD CONSTRAINT `uc_security_egress_rule__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`network_offerings` ADD CONSTRAINT `uc_network_offerings__uuid` UNIQUE (`uuid`);
@@ -207,4 +213,7 @@ ALTER TABLE `cloud`.`guest_os` ADD CONSTRAINT `uc_guest_os__uuid` UNIQUE (`uuid`
 
 ALTER TABLE `cloud`.`guest_os_category` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`);
 

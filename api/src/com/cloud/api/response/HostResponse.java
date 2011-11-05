@@ -139,14 +139,6 @@ public class HostResponse extends BaseResponse {
     @SerializedName("events") @Param(description="events available for the host")
     private String events;
 
-/*    
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the host")
-    private IdentityProxy jobId = new IdentityProxy("async_job");
-    
-
-    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
-    private Integer jobStatus;
-*/
     @SerializedName("hosttags") @Param(description="comma-separated list of tags for the host")
     private String hostTags;
 
@@ -168,28 +160,6 @@ public class HostResponse extends BaseResponse {
         return getId();
     }
     
-/*
-    @Override
-    public Long getJobId() {
-        return super.getJobId();
-    }
-
-    @Override
-    public void setJobId(Long jobId) {
-        super.setJobId(jobId);
-    }
-
-    @Override
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    @Override
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-*/    
-
     public Long getId() {
         return id.getValue();
     }

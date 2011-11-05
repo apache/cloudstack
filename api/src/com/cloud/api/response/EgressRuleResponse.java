@@ -18,12 +18,13 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class EgressRuleResponse extends BaseResponse {
     @SerializedName("ruleid") @Param(description="the id of the ingress rule")
-    private Long ruleId;
+    private IdentityProxy ruleId = new IdentityProxy("security_egress_rule");
 
     @SerializedName("protocol") @Param(description="the protocol of the ingress rule")
     private String protocol;
@@ -50,11 +51,11 @@ public class EgressRuleResponse extends BaseResponse {
     private String cidr;
 
     public Long getRuleId() {
-        return ruleId;
+        return ruleId.getValue();
     }
 
     public void setRuleId(Long ruleId) {
-        this.ruleId = ruleId;
+        this.ruleId.setValue(ruleId);
     }
 
     public String getProtocol() {

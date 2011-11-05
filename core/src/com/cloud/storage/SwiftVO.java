@@ -19,6 +19,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,11 +29,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="swift")
-public class SwiftVO implements Swift {
+public class SwiftVO implements Swift, Identity {
 	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -51,6 +53,9 @@ public class SwiftVO implements Swift {
     @Column(name="key")
     String key;
 
+    @Column(name="uuid")
+    String uuid = UUID.randomUUID().toString();
+    
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
         
@@ -91,5 +96,14 @@ public class SwiftVO implements Swift {
     @Override
     public SwiftTO toSwiftTO() {
         return new SwiftTO(getId(), getUrl(), getAccount(), getUserName(), getKey());
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

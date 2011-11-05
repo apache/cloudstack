@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -26,19 +27,19 @@ public class CapacityResponse extends BaseResponse {
     private Short capacityType;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("zonename") @Param(description="the Zone name")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 
     @SerializedName("podname") @Param(description="the Pod name")
     private String podName;
     
     @SerializedName(ApiConstants.CLUSTER_ID) @Param(description="the Cluster ID")
-    private Long clusterId;
+    private IdentityProxy clusterId = new IdentityProxy("cluster");
 
     @SerializedName("clustername") @Param(description="the Cluster name")
     private String clusterName;
@@ -61,11 +62,11 @@ public class CapacityResponse extends BaseResponse {
     }
 
     public Long getZoneId() {
-        return zoneId;
+        return zoneId.getValue();
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public String getZoneName() {
@@ -77,11 +78,11 @@ public class CapacityResponse extends BaseResponse {
     }
 
     public Long getPodId() {
-        return podId;
+        return podId.getValue();
     }
 
     public void setPodId(Long podId) {
-        this.podId = podId;
+        this.podId.setValue(podId);
     }
 
     public String getPodName() {
@@ -93,11 +94,11 @@ public class CapacityResponse extends BaseResponse {
     }
 
     public Long getClusterId() {
-		return clusterId;
+		return clusterId.getValue();
 	}
 
 	public void setClusterId(Long clusterId) {
-		this.clusterId = clusterId;
+		this.clusterId.setValue(clusterId);
 	}
 
 	public String getClusterName() {

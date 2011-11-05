@@ -74,6 +74,8 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 	            ResultSet rs = pstmt.executeQuery();
 	            if(rs.next()) {
 	            	return rs.getLong(1);
+	            } else {
+	        		throw new InvalidParameterValueException("Object " + tableName + "(uuid: " + identityString + ") does not exist.");
 	            }
 	        } catch (SQLException e) {
 	        	s_logger.error("Unexpected exception ", e);
@@ -123,6 +125,6 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 			txn.close();
 		}
 		
-		throw new InvalidParameterValueException("Object(uuid: " + identityString + ") does not exist");
+		return identityString;
 	}
 }

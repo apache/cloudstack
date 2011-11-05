@@ -70,7 +70,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     private String linkLocalNetmask;
     
     @SerializedName(ApiConstants.LINK_LOCAL_NETWORK_ID) @Param(description="the ID of the corresponding link local network")
-    private Long linkLocalNetworkId;
+    private IdentityProxy linkLocalNetworkId = new IdentityProxy("networks");
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address for the router")
     private String publicIp;
@@ -263,7 +263,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     }
 
     public void setLinkLocalNetworkId(Long linkLocalNetworkId) {
-        this.linkLocalNetworkId = linkLocalNetworkId;
+        this.linkLocalNetworkId.setValue(linkLocalNetworkId);
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {

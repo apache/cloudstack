@@ -219,6 +219,7 @@ CREATE TABLE `cloud`.`account_network_ref` (
 
 CREATE TABLE `cloud`.`nics` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
   `instance_id` bigint unsigned COMMENT 'vm instance id',
   `mac_address` varchar(17) COMMENT 'mac address',
   `ip4_address` char(40) COMMENT 'ip4 address',
@@ -243,6 +244,7 @@ CREATE TABLE `cloud`.`nics` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`),
   INDEX `i_nics__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1472,12 +1474,14 @@ CREATE TABLE `cloud`.`snapshot_policy` (
 
 CREATE TABLE  `cloud`.`snapshot_schedule` (
   `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
   `volume_id` bigint unsigned NOT NULL COMMENT 'The volume for which this snapshot is being taken',
   `policy_id` bigint unsigned NOT NULL COMMENT 'One of the policyIds for which this snapshot was taken',
   `scheduled_timestamp` datetime NOT NULL COMMENT 'Time at which the snapshot was scheduled for execution',
   `async_job_id` bigint unsigned COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
   `snapshot_id` bigint unsigned COMMENT 'If this schedule is being executed, then the corresponding snapshot has this id. Before that it is null',
   UNIQUE (volume_id, policy_id),
+  CONSTRAINT `uc_snapshot_schedule__uuid` UNIQUE (`uuid`),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1519,6 +1523,7 @@ CREATE TABLE `cloud`.`security_ingress_rule` (
 
 CREATE TABLE `cloud`.`security_egress_rule` (
   `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
   `security_group_id` bigint unsigned NOT NULL,
   `start_port` varchar(10) default NULL,
   `end_port` varchar(10) default NULL,
@@ -1526,7 +1531,8 @@ CREATE TABLE `cloud`.`security_egress_rule` (
   `allowed_network_id` bigint unsigned,
   `allowed_ip_cidr`  varchar(44),
   `create_status` varchar(32) COMMENT 'rule creation status',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `uc_security_egress_rule__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`security_group_vm_map` (
@@ -1725,12 +1731,14 @@ CREATE TABLE `cloud`.`keystore` (
 
 CREATE TABLE `cloud`.`swift` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40),
   `url` varchar(255) NOT NULL,
   `account` varchar(255) NOT NULL COMMENT ' account in swift',
   `username` varchar(255) NOT NULL COMMENT ' username in swift',
   `key` varchar(255) NOT NULL COMMENT 'token for this user',
   `created` datetime COMMENT 'date the swift first signed on',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_swift__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

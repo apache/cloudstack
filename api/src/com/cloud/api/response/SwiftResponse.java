@@ -20,13 +20,14 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SwiftResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of swift")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("swift");
 
     @SerializedName(ApiConstants.URL)
     @Param(description = "url for swift")
@@ -38,11 +39,11 @@ public class SwiftResponse extends BaseResponse {
 
     @Override
     public Long getObjectId() {
-        return id;
+        return id.getValue();
     }
     
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public String getUrl() {

@@ -17,12 +17,13 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class IsoVmResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the ISO ID")
-    private long id;
+    private IdentityProxy id = new IdentityProxy("vm_template");
 
     @SerializedName("name") @Param(description="the ISO name")
     private String name;
@@ -37,13 +38,13 @@ public class IsoVmResponse extends BaseResponse {
     private Boolean featured;
 
     @SerializedName("ostypeid") @Param(description="the ID of the OS type for this template.")
-    private Long osTypeId;
+    private IdentityProxy osTypeId = new IdentityProxy("guest_os");
 
     @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
     private String osTypeName;
 
     @SerializedName("virtualmachineid") @Param(description="id of the virtual machine")
-    private Long virtualMachineId;
+    private IdentityProxy virtualMachineId = new IdentityProxy("vm_instance");
 
     @SerializedName("vmname") @Param(description="name of the virtual machine")
     private String virtualMachineName;
@@ -56,11 +57,11 @@ public class IsoVmResponse extends BaseResponse {
 
     
     public Long getOsTypeId() {
-        return osTypeId;
+        return osTypeId.getValue();
     }
 
     public void setOsTypeId(Long osTypeId) {
-        this.osTypeId = osTypeId;
+        this.osTypeId.setValue(osTypeId);
     }
 
     public String getOsTypeName() {
@@ -71,12 +72,12 @@ public class IsoVmResponse extends BaseResponse {
         this.osTypeName = osTypeName;
     }
 
-    public long getId() {
-        return id;
+    public Long getId() {
+        return id.getValue();
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setId(Long id) {
+        this.id.setValue(id);
     }
 
     public String getName() {
@@ -112,11 +113,11 @@ public class IsoVmResponse extends BaseResponse {
     }
 
     public Long getVirtualMachineId() {
-        return virtualMachineId;
+        return virtualMachineId.getValue();
     }
 
     public void setVirtualMachineId(Long virtualMachineId) {
-        this.virtualMachineId = virtualMachineId;
+        this.virtualMachineId.setValue(virtualMachineId);
     }
 
     public String getVirtualMachineName() {

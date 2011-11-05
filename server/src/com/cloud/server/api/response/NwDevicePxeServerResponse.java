@@ -1,16 +1,17 @@
 package com.cloud.server.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class NwDevicePxeServerResponse extends NetworkDeviceResponse {
 
 	@SerializedName(ApiConstants.ZONE_ID) @Param(description="Zone where to add PXE server")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 	
 	@SerializedName(ApiConstants.POD_ID) @Param(description="Pod where to add PXE server")
-    private Long podId;
+    private IdentityProxy podId = new IdentityProxy("host_pod_ref");
 	
 	@SerializedName(ApiConstants.URL) @Param(description="Ip of PXE server")
     private String url;
@@ -19,17 +20,17 @@ public class NwDevicePxeServerResponse extends NetworkDeviceResponse {
     private String type;
 	
 	public void setZoneId(Long zoneId) {
-		this.zoneId = zoneId;
+		this.zoneId.setValue(zoneId);
 	}
 	public Long getZoneId() {
-		return zoneId;
+		return zoneId.getValue();
 	}
 	
 	public void setPodId(Long podId) {
-		this.podId = podId;
+		this.podId.setValue(podId);
 	}
 	public Long getPodId() {
-		return podId;
+		return podId.getValue();
 	}
 	
 	public void setUrl(String url) {

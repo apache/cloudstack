@@ -20,19 +20,20 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ProjectAccountResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID) @Param(description="project id")
-    private Long projectId;
+    private IdentityProxy projectId = new IdentityProxy("projects");
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="project name")
     private String projectName;
     
     @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the id of the account")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("account");
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the name of the account")
     private String accountName;
@@ -44,7 +45,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
     private String role;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="id of the Domain the account belongs too")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
     private String domainName;
@@ -53,7 +54,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
     private List<UserResponse> users;
 
     public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+        this.projectId.setValue(projectId);
     }
 
     public void setProjectName(String projectName) {
@@ -61,7 +62,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.id.setValue(id);
     }
 
     public void setAccountName(String accountName) {
@@ -73,7 +74,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledEn
     }
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
 
     public void setDomainName(String domainName) {

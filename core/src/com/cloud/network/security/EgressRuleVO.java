@@ -18,6 +18,8 @@
 
 package com.cloud.network.security;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,12 +29,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name = ("security_egress_rule"))
-public class EgressRuleVO implements EgressRule {
+public class EgressRuleVO implements EgressRule, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -61,6 +64,9 @@ public class EgressRuleVO implements EgressRule {
     @Enumerated(value = EnumType.STRING)
     private AsyncInstanceCreateStatus createStatus;
 
+    @Column(name = "uuid")
+    private String uuid = UUID.randomUUID().toString();
+    
     public EgressRuleVO() {
     }
 
@@ -122,5 +128,14 @@ public class EgressRuleVO implements EgressRule {
     @Override
     public String getAllowedDestinationIpCidr() {
         return allowedDestinationIpCidr;
+    }
+    
+    @Override
+    public String getUuid() {
+    	return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+    	this.uuid = uuid;
     }
 }

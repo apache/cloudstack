@@ -19,12 +19,13 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class UpgradeVmResponse extends BaseResponse {
 	@SerializedName("id")
-    private long id;
+    private IdentityProxy id = new IdentityProxy("vm_instance");
 
     public String getName() {
         return name;
@@ -66,12 +67,12 @@ public class UpgradeVmResponse extends BaseResponse {
         this.account = account;
     }
 
-    public long getDomainId() {
-        return domainId;
+    public Long getDomainId() {
+        return domainId.getValue();
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
+    public void setDomainId(Long domainId) {
+        this.domainId.setValue(domainId);
     }
 
     public String getDomain() {
@@ -90,12 +91,12 @@ public class UpgradeVmResponse extends BaseResponse {
         this.haEnable = haEnable;
     }
 
-    public long getZoneId() {
-        return zoneId;
+    public Long getZoneId() {
+        return zoneId.getValue();
     }
 
-    public void setZoneId(long zoneId) {
-        this.zoneId = zoneId;
+    public void setZoneId(Long zoneId) {
+        this.zoneId.setValue(zoneId);
     }
 
     public String getDisplayName() {
@@ -114,12 +115,12 @@ public class UpgradeVmResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
-    public long getHostId() {
-        return hostId;
+    public Long getHostId() {
+        return hostId.getValue();
     }
 
-    public void setHostId(long hostId) {
-        this.hostId = hostId;
+    public void setHostId(Long hostId) {
+        this.hostId.setValue(hostId);
     }
 
     public String getHostName() {
@@ -130,12 +131,12 @@ public class UpgradeVmResponse extends BaseResponse {
         this.hostName = hostName;
     }
 
-    public long getTemplateId() {
-        return templateId;
+    public Long getTemplateId() {
+        return templateId.getValue();
     }
 
-    public void setTemplateId(long templateId) {
-        this.templateId = templateId;
+    public void setTemplateId(Long templateId) {
+        this.templateId.setValue(templateId);
     }
 
     public String getTemplateName() {
@@ -162,12 +163,12 @@ public class UpgradeVmResponse extends BaseResponse {
         this.passwordEnabled = passwordEnabled;
     }
 
-    public long getServiceOfferingId() {
-        return serviceOfferingId;
+    public Long getServiceOfferingId() {
+        return serviceOfferingId.getValue();
     }
 
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId.setValue(serviceOfferingId);
     }
 
     public String getServiceOfferingName() {
@@ -218,8 +219,8 @@ public class UpgradeVmResponse extends BaseResponse {
         this.networkKbsWrite = networkKbsWrite;
     }
 
-    public long isId() {
-        return id;
+    public Long isId() {
+        return id.getValue();
     }
 
     @SerializedName("name") @Param(description="the ID of the virtual machine")
@@ -238,7 +239,7 @@ public class UpgradeVmResponse extends BaseResponse {
     private String account;
 
     @SerializedName("domainid") @Param(description="the ID of the domain in which the virtual machine exists")
-    private long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName("domain") @Param(description="the name of the domain in which the virtual machine exists")
     private String domain;
@@ -247,7 +248,7 @@ public class UpgradeVmResponse extends BaseResponse {
     private boolean haEnable;
 
     @SerializedName("zoneid") @Param(description="the ID of the availablility zone for the virtual machine")
-    private long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
@@ -256,13 +257,13 @@ public class UpgradeVmResponse extends BaseResponse {
     private String zoneName;
 
     @SerializedName("hostid") @Param(description="the ID of the host for the virtual machine")
-    private long hostId;
+    private IdentityProxy hostId = new IdentityProxy("host");
 
     @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
     private String hostName;
 
     @SerializedName("templateid") @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
-    private long templateId;
+    private IdentityProxy templateId = new IdentityProxy("vm_template");
 
     @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
@@ -274,7 +275,7 @@ public class UpgradeVmResponse extends BaseResponse {
     private boolean passwordEnabled;
 
     @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
-    private long serviceOfferingId;
+    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;

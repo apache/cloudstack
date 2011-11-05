@@ -73,15 +73,6 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "name of the snapshot")
     private String name;
 
-/*    
-    @SerializedName(ApiConstants.JOB_ID)
-    @Param(description = "the job ID associated with the snapshot. This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
-    private IdentityProxy jobId = new IdentityProxy("async_job");
-   
-    @SerializedName(ApiConstants.JOB_STATUS)
-    @Param(description = "the job status associated with the snapshot.  This is only displayed if the snapshot listed is part of a currently running asynchronous job.")
-    private Integer jobStatus;
-*/
     @SerializedName(ApiConstants.INTERVAL_TYPE)
     @Param(description = "valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
@@ -146,28 +137,6 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     public void setName(String name) {
         this.name = name;
     }
-
-/*    
-    @Override
-    public Long getJobId() {
-        return super.getJobId();
-    }
-
-    @Override
-    public void setJobId(Long jobId) {
-        super.setJobId(jobId);
-    }
-
-    @Override
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    @Override
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-*/    
 
     public void setIntervalType(String intervalType) {
         this.intervalType = intervalType;
