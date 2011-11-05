@@ -3034,6 +3034,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         DataCenter zone = null;
         Long networkId = cmd.getNetworkId();
         String guestIpType = cmd.getGuestIpType();
+        List<String> supportedServicesStr = cmd.getSupportedServices();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3096,7 +3097,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Don't return system network offerings to the user
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
 
-        // list offerings available for upgrade only
+        // if networkId is specified, list offerings available for upgrade only (for this network)
         if (networkId != null) {
             // check if network exists and the caller can operate with it
             Network network = _networkMgr.getNetwork(networkId);
@@ -3123,8 +3124,33 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
-
-        return _networkOfferingDao.search(sc, searchFilter);
+        
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);;
+        
+        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty()) {
+            List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
+            Service[] suppportedServices = new Service[supportedServicesStr.size()];
+            int i = 0;
+            for (String supportedServiceStr : supportedServicesStr) {
+                Service service = Service.getService(supportedServiceStr);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
+                } else {
+                    suppportedServices[i] = service;
+                }
+                i++;
+            }
+           
+            for (NetworkOfferingVO offering : offerings) {
+                if (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices)) {
+                    supportedOfferings.add(offering);
+                }
+            }
+            
+            return supportedOfferings;
+        } else {
+            return offerings;
+        }
     }
 
     @Override

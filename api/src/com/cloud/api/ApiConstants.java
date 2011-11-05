@@ -292,6 +292,7 @@ public class ApiConstants {
     public static final String NETWORK_SERVICE_PROVIDER_ID = "nspid";
     public static final String SECURITY_GROUP_SERVICE = "securitygroupservice";
     public static final String SERVICE_LIST = "servicelist";
-    public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canEnableIndividualService";
+    public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
+    public static final String SUPPORTED_SERVICES = "supportedservices";
     
 }

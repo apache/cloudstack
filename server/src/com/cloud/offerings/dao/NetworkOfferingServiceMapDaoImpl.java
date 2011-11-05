@@ -39,6 +39,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value=NetworkOfferingServiceMapDao.class) @DB(txn=false)
 public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOfferingServiceMapVO, Long> implements NetworkOfferingServiceMapDao {
     final SearchBuilder<NetworkOfferingServiceMapVO> AllFieldsSearch;
+    final SearchBuilder<NetworkOfferingServiceMapVO> MultipleServicesSearch;
     
     protected NetworkOfferingServiceMapDaoImpl() {
         super();
@@ -47,18 +48,42 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         AllFieldsSearch.and("service", AllFieldsSearch.entity().getService(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("provider", AllFieldsSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
+        
+        MultipleServicesSearch = createSearchBuilder();
+        MultipleServicesSearch.and("networkOfferingId", MultipleServicesSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        MultipleServicesSearch.and("service", MultipleServicesSearch.entity().getService(), SearchCriteria.Op.IN);
+        MultipleServicesSearch.and("provider", MultipleServicesSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+        MultipleServicesSearch.done();
     }
     
     @Override
-    public boolean isServiceSupported(long networkOfferingId, Service service) {
-        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
+    public boolean areServicesSupported(long networkOfferingId, Service... services) {
+        SearchCriteria<NetworkOfferingServiceMapVO> sc = MultipleServicesSearch.create();
         sc.setParameters("networkOfferingId", networkOfferingId);
-        sc.setParameters("service", service.getName());
-        if (findOneBy(sc) != null) {
-            return true;
-        } else {
-            return false;
+        
+        if (services != null) {
+            String[] servicesStr = new String[services.length];
+            
+            int i = 0;
+            for (Service service : services) {
+                servicesStr[i] = service.getName();
+                i++;
+            }
+            
+            sc.setParameters("service", (Object[])servicesStr);
         }
+        
+        List<NetworkOfferingServiceMapVO> offerings = listBy(sc);
+        
+        if (services != null) {
+            if (offerings.size() == services.length) {
+                return true;
+            }
+        } else if (!offerings.isEmpty()) {
+            return true;
+        }
+        
+        return false;
     }
     
     @Override

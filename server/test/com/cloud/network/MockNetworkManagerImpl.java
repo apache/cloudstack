@@ -360,7 +360,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean isServiceSupportedByNetworkOffering(long networkOfferingId, Service service) {
+    public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         // TODO Auto-generated method stub
         return false;
     }

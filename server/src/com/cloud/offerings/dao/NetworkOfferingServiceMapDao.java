@@ -30,7 +30,7 @@ import com.cloud.utils.db.GenericDao;
  *
  */
 public interface NetworkOfferingServiceMapDao extends GenericDao<NetworkOfferingServiceMapVO, Long> {
-   boolean isServiceSupported(long networkOfferingId, Service service);
+   boolean areServicesSupported(long networkOfferingId, Service... services);
    boolean isProviderSupported(long networkOfferingId, Service service, Provider provider);
    List<String> getServicesForProvider(long networkOfferingId, Provider provider);
    List<String> getProvidersForService(long networkOfferingid, Service service);

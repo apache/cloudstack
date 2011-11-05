@@ -1031,9 +1031,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         long dcId = dest.getDataCenter().getId();
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
-        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
+        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.areServicesSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
         boolean publicNetwork = false;
-        if (_networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+        if (_networkMgr.areServicesSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
             publicNetwork = true;
         }
         if (isRedundant && !publicNetwork) {
@@ -1333,7 +1333,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterDeployment plan = null;
         DataCenter dc = dest.getDataCenter();
         long dcId = dc.getId();
-        boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isServiceSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
+        boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.areServicesSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
         DomainRouterVO router = null;
         
         List<DomainRouterVO> routers = null;

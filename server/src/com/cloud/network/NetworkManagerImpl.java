@@ -1386,7 +1386,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // associate a source NAT IP (if one isn't already associated with the network)
         
         boolean sharedSourceNat = false;
-        if (isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat)) {
+        if (areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat)) {
             Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
             if (sourceNatCapabilities != null) {
                 String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
@@ -1396,7 +1396,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        if (network.getGuestType() == Network.GuestType.Isolated && isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !sharedSourceNat) {
+        if (network.getGuestType() == Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !sharedSourceNat) {
             List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
 
             if (ips.isEmpty()) {
@@ -1600,7 +1600,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         Network associatedNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
 
-        if (isServiceSupportedByNetworkOffering(associatedNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+        if (areServicesSupportedByNetworkOffering(associatedNetwork.getNetworkOfferingId(), Service.SourceNat)) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
@@ -1805,7 +1805,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Regular user can create Guest Isolated Source Nat enabled network only
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Isolated && isServiceSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and network type "
                     + Network.GuestType.Isolated + " with a service " + Service.SourceNat + " enabled");
         }
@@ -1844,7 +1844,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //Vlan is created in 2 cases:
         //1) GuestType is Shared
         //2) GuestType is Isolated, but SourceNat service is disabled
-        boolean createVlan = ((network.getGuestType() == Network.GuestType.Shared) || (network.getGuestType() == GuestType.Isolated && !isServiceSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        boolean createVlan = ((network.getGuestType() == Network.GuestType.Shared) || (network.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan && defineNetworkConfig) {
             // Create vlan ip range
@@ -1904,7 +1904,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // If networkDomain is not specified, take it from the global configuration
-        if (isServiceSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
+        if (areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
             Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(networkOfferingId, Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
@@ -2731,7 +2731,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public Map<Capability, String> getServiceCapabilities(Long networkOfferingId, Service service) {
 
-        if (!isServiceSupportedByNetworkOffering(networkOfferingId, service)) {
+        if (!areServicesSupportedByNetworkOffering(networkOfferingId, service)) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
         }
         
@@ -3021,7 +3021,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (zone.getNetworkType() == NetworkType.Advanced) {
             if (usesJuniperForGatewayService && usesJuniperForFirewallService) {
                 return true;
-            } else if (_ntwkOfferingSrvcDao.isServiceSupported(networkOfferingId, Service.Gateway) && (usesF5ForLBService || usesNetscalarForLBService)) {
+            } else if (_ntwkOfferingSrvcDao.areServicesSupported(networkOfferingId, Service.Gateway) && (usesF5ForLBService || usesNetscalarForLBService)) {
                 return true;
             } else {
                 return false;
@@ -3033,8 +3033,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }    
 
     @Override
-    public boolean isServiceSupportedByNetworkOffering(long networkOfferingId, Network.Service service) {
-        return (_ntwkOfferingSrvcDao.isServiceSupported(networkOfferingId, service));
+    public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
+        return (_ntwkOfferingSrvcDao.areServicesSupported(networkOfferingId, services));
     }
 
     private boolean cleanupIpResources(long ipId, long userId, Account caller) {
@@ -3504,7 +3504,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOffering newNetworkOffering = _networkOfferingDao.findById(newNetworkOfferingId);
         
         //security group service should be the same
-        if (isServiceSupportedByNetworkOffering(oldNetworkOfferingId, Service.SecurityGroup) != isServiceSupportedByNetworkOffering(newNetworkOfferingId, Service.SecurityGroup)) {
+        if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.SecurityGroup) != areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.SecurityGroup)) {
             s_logger.debug("Offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different securityGroupProperty, can't upgrade");
             return false;
         }
@@ -4228,14 +4228,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<Long> offeringsToReturn = new ArrayList<Long>();
         NetworkOffering originalOffering = _configMgr.getNetworkOffering(getNetwork(networkId).getNetworkOfferingId());
         
-        boolean securityGroupSupportedByOriginalOff = isServiceSupportedByNetworkOffering(originalOffering.getId(), Service.SecurityGroup);
+        boolean securityGroupSupportedByOriginalOff = areServicesSupportedByNetworkOffering(originalOffering.getId(), Service.SecurityGroup);
        
         //security group supported property should be the same
         
         List<Long> offerings = _networkOfferingDao.getOfferingIdsToUpgradeFrom(originalOffering);
         
         for (Long offeringId : offerings) {
-            if (isServiceSupportedByNetworkOffering(offeringId, Service.SecurityGroup) == securityGroupSupportedByOriginalOff) {
+            if (areServicesSupportedByNetworkOffering(offeringId, Service.SecurityGroup) == securityGroupSupportedByOriginalOff) {
                 offeringsToReturn.add(offeringId);
             }
         }
@@ -4723,7 +4723,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service) {
         //check if the service is supported by the network offering
-        if (!isServiceSupportedByNetworkOffering(networkOfferingId, service)) {
+        if (!areServicesSupportedByNetworkOffering(networkOfferingId, service)) {
             s_logger.debug("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
             return false;
         }

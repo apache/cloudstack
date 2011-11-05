@@ -343,7 +343,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         Network network = _networkMgr.getNetwork(networkId);
-        if (!_networkMgr.isServiceSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.Firewall)) {
+        if (!_networkMgr.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.Firewall)) {
             throw new InvalidParameterValueException("Unable to create static nat rule; Firewall service is not supported in network id=" + networkId);
         }
 
