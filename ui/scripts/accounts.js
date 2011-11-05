@@ -189,7 +189,7 @@
             
             actions: {             
               edit: {
-                label: 'Edit',
+                label: 'Edit ("-1" indicates no limit to the amount of resources create)',
                 action: function(args) {                                
                   var accountObj = args.context.accounts[0];    
                   $.ajax({
@@ -209,7 +209,17 @@
                     success: function(json) {		
                       selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
                     }
-                  });           
+                  });          
+                 
+                  $.ajax({
+                    url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {		
+                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                    }
+                  });       
+                              
                 }
               }              
             },
@@ -268,7 +278,24 @@
                           }
                         }  
                       }
+                    },
+                                        
+                    ipLimits: {
+                      label: 'Public IP limits',
+                      isEditable: true,
+                      converter: function(args) {                        
+                        if (selectedAccountResourceLimits != null) {	
+                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
+                            if(selectedAccountResourceLimits[i].resourcetype == "1") {
+                              return selectedAccountResourceLimits[i].max;
+                              break;
+                            }
+                          }
+                        }  
+                      }
                     }
+                   
+                    
                   }
                 ],
 
@@ -474,9 +501,10 @@
     
     if(isAdmin()) {
       if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {   
-        allowedActions.push("edit");             
+        //allowedActions.push("edit");             
         if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {                   
-          allowedActions.push("updateResourceLimits");                
+          //allowedActions.push("updateResourceLimits");   
+          allowedActions.push("edit");             
         }             
         if(jsonObj.state == "enabled") {                
           allowedActions.push("disable");                    
