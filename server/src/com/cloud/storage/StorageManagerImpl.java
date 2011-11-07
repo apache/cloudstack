@@ -109,6 +109,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1711,6 +1712,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 } else if (account.getId() != snapshotCheck.getAccountId()) {
                     throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId + " for this account");
                 }
+            }
+            
+         // bug #11428. Operation not supported if vmware and snapshots parent volume = ROOT
+            if(snapshotCheck.getHypervisorType() == HypervisorType.VMware
+            	&& ApiDBUtils.findVolumeById(snapshotCheck.getVolumeId()).getVolumeType() == Type.ROOT){
+            		throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId + " is created from ROOT volume");            	
             }
         }
 
