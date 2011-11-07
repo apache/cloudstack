@@ -138,6 +138,21 @@
                 args.response.error();
               }
             });
+
+            // Get project configuration
+            $.ajax({
+              url: createURL('listConfigurations'),
+              data: {
+                name: 'project.invite.required'
+              },
+              async: false,
+              dataType: 'json',
+              success: function(data) {
+                window.g_projectsInviteRequired = false;
+                window.g_projectsInviteRequired = data.listconfigurationsresponse.configuration[0].value == "true" ?
+                  true : false;
+              }
+            });
           },
           error: function() {
             args.response.error();

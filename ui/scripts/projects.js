@@ -1,7 +1,7 @@
 (function(cloudStack, testData) {
   cloudStack.projects = {
     requireInvitation: function(args) {
-      return false;
+      return window.g_projectsInviteRequired;
     },
     
     add: function(args) {
