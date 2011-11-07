@@ -72,6 +72,9 @@ public class ListNetworksCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
     private Long physicalNetworkId;
+    
+    @Parameter(name=ApiConstants.SOURCE_NAT_ENABLED, type=CommandType.BOOLEAN, description="list networks that support/don't support sourceNat service")
+    private Boolean sourceNatEnabled;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -119,6 +122,10 @@ public class ListNetworksCmd extends BaseListCmd {
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
+    }
+
+    public Boolean getSourceNatEnabled() {
+        return sourceNatEnabled;
     }
 
     /////////////////////////////////////////////////////

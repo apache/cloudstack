@@ -80,7 +80,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-
         if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
             return null;
         }

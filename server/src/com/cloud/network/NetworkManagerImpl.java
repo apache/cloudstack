@@ -2018,6 +2018,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String path = null;
         Long sharedNetworkDomainId = null;
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Boolean sourceNatEnabled = cmd.getSourceNatEnabled();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -2102,10 +2103,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
 
+        List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
         if (isSystem == null || !isSystem) {
             //Get domain level + account/zone level networks
-            List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
-
             if (sharedNetworkDomainId != null) {
                 networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, sharedNetworkDomainId));
             } else {
@@ -2119,11 +2119,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (!permittedAccounts.isEmpty() || (domainId == null && accountName == null && projectId == null)) {
                 networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, path, permittedAccounts));
             }
-
-            return networksToReturn;
-
         } else {
-            return _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter);
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter);
+        }
+        
+        //sort networks by sourceNatEnabled parameter
+        if (sourceNatEnabled != null) {
+            List<Network> supportedNetworks = new ArrayList<Network>();
+            
+            for (Network network : networksToReturn) {
+                NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                boolean isSupported = areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat);
+                if (isSupported == sourceNatEnabled.booleanValue()) {
+                    supportedNetworks.add(network);
+                }
+            }
+
+            return supportedNetworks;
+        } else {
+            return networksToReturn;
         }
     }
 

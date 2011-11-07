@@ -79,11 +79,11 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // This guru handles only non-system Guest Isolated network that supports Source nat service
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == Network.GuestType.Isolated  && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat) && !offering.isSystemOnly()) {
+        // This guru handles only Guest Isolated network that supports Source nat service
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == Network.GuestType.Isolated  && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest Virtual networks in zone of type " + NetworkType.Advanced);
+            s_logger.trace("We only take care of Guest networks with service  " + Service.SourceNat + " enabled in zone of type " + NetworkType.Advanced);
             return false;
         }
     }

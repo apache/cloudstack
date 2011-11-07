@@ -75,17 +75,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // this guru handles only non-system network with:
-        //1) type=Shared
-        //2) type=Isolated and Source nat service disabled
-        //TODO - after broadCastDomainType + physical network are introduced, don't rely on network type of the dc
+        // this guru handles only Guest networks in Advance zone with source nat service disabled
         if (dc.getNetworkType() == NetworkType.Advanced && !_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)&& offering.getTrafficType() == TrafficType.Guest) {
-            if (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup)) {
-                return true;
-            } else if (!offering.isSystemOnly()) {
-                return true;
-            }
-            return false;
+            return true;
         } else {
             s_logger.trace("We only take care of Guest Direct networks");
             return false;
