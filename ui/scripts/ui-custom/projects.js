@@ -473,6 +473,9 @@
       $(this).addClass('active');
       $(this).siblings().removeClass('active');
 
+      if (cloudStack.context.projects && cloudStack.context.projects[0])
+        showDashboard();
+
       return false;
     };
     $dashboardNavItem.bind('click', event);
