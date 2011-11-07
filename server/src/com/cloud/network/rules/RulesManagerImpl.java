@@ -352,10 +352,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Can't enable static, ip address id=" + ipId + " is a sourceNat ip address");
         }
 
-        if (!ipAddress.isOneToOneNat()) {
-            List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.PortForwarding);
-            if (rules != null && !rules.isEmpty()) {
-                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address id=" + ipId + " as it already has firewall rules assigned");
+        if (!ipAddress.isOneToOneNat()) { // Dont allow to enable static nat if PF/LB rules exist for the IP
+            List<FirewallRuleVO> portForwardingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.PortForwarding);
+            if (portForwardingRules != null && !portForwardingRules.isEmpty()) {
+                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address id=" + ipId + " as it already has PortForwarding rules assigned");
+            }
+            
+            List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipId, Purpose.LoadBalancing);
+            if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
+                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address id=" + ipId + " as it already has LoadBalancing rules assigned");
             }
         } else {
             if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
