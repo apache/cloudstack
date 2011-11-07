@@ -786,4 +786,22 @@
     return allowedActions;
   }
 
+  var userActionfilter = function(args) {
+    var jsonObj = args.context.item;
+    var allowedActions = [];       
+    if(isAdmin()) {      
+      allowedActions.push("edit");          
+      allowedActions.push("changePassword");    
+      allowedActions.push("generateKeys");   
+      if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
+        if(jsonObj.state == "enabled")           
+          allowedActions.push("disable");            
+        if(jsonObj.state == "disabled")         
+          allowedActions.push("enable");  
+        allowedActions.push("delete");  
+      }
+	  } 	             
+    return allowedActions;
+  }
+  
 })(cloudStack, testData);
