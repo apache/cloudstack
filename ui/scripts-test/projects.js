@@ -1,5 +1,9 @@
 (function($, cloudStack, testData) {
   cloudStack.projects = {
+    requireInvitation: function(args) {
+      return cloudStack.context.users[0].username == 'jdoe';
+    },
+    
     add: function(args) {
       setTimeout(function() {
         args.response.success({
@@ -11,6 +15,54 @@
         });
       }, 1000);
     },
+    inviteForm: {
+      noSelect: true,
+      fields: {
+        'email': { edit: true, label: 'E-mail' },
+        'add-user': { addButton: true, label: '' }
+      },
+      add: {
+        label: 'Invite',
+        action: function(args) {
+          setTimeout(function() {
+            args.response.success({
+              data: args.data,
+              notification: {
+                label: 'Invited user to project',
+                poll: testData.notifications.testPoll
+              }
+            });
+          }, 100);
+        }
+      },
+      actionPreFilter: function(args) {
+        if (cloudStack.context.projects &&
+            cloudStack.context.projects[0] &&
+            !cloudStack.context.projects[0].isNew) {
+          return args.context.actions;
+        }
+
+        return ['destroy'];
+      },
+
+      actions: {},
+
+      // Project users data provider
+      dataProvider: function(args) {
+        var data = cloudStack.context.projects ?
+              [
+                { email: 'brian.federle@citrix.com' },
+                { email: 'john.doe@aol.com' },
+                { email: 'some.user@gmail.com' }
+              ] : [];
+
+        setTimeout(function() {
+          args.response.success({
+            data: data
+          });
+        }, 100);
+      }
+    },
     addUserForm: {
       noSelect: true,
       fields: {
@@ -18,7 +70,7 @@
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'Invite',
+        label: 'Add user',
         action: function(args) {
           setTimeout(function() {
             args.response.success({

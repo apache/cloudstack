@@ -8,7 +8,7 @@
       if (user.role == 'admin')
         return args.context.sections;
 
-      return ['dashboard', 'instances', 'storage', 'templates', 'events'];
+      return ['dashboard', 'instances', 'storage', 'templates', 'events', 'projects'];
     },
     sections: {
       dashboard: {},
@@ -20,9 +20,9 @@
       domains: {},
       events: {},
       system: {},
+      projects: {},
       'global-settings': {},
-      configuration: {},
-      projects: {}
+      configuration: {}
     }
   });
 

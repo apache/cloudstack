@@ -62,10 +62,11 @@ var pollAsyncJobResult = function(args) {
 }
 
 //API calls
-function createURL(apiName) {
+function createURL(apiName, options) {
+  if (!options) options = {};
   var urlString = clientApiUrl + "?" + "command=" + apiName +"&response=json&sessionkey=" + g_sessionKey;
 
-  if (cloudStack.context && cloudStack.context.projects) {
+  if (cloudStack.context && cloudStack.context.projects && !options.ignoreProject) {
     urlString = urlString + '&projectid=' + cloudStack.context.projects[0].id;
   }
   

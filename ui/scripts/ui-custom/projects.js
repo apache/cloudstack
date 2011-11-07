@@ -4,7 +4,9 @@
      * User management multi-edit
      */
     userManagement: function(args) {
-      var multiEdit = cloudStack.projects.addUserForm;
+      var multiEdit = !args.useInvites ? 
+            cloudStack.projects.addUserForm :
+            cloudStack.projects.inviteForm;
 
       return $('<div>').multiEdit($.extend(true, {}, multiEdit, {
         context: args.context
@@ -22,8 +24,12 @@
       };
 
       if (cloudStack.context.projects) {
-        tabs['Manage'] = function() {
+        tabs['Users'] = function() {
           return $('<div>').addClass('management');
+        };
+
+        tabs['Invitations'] = function() {
+          return $('<div>').addClass('management-invite');
         };
       }
 
@@ -49,13 +55,26 @@
       $tabs.bind('tabsshow', function(event, ui) {
         var $panel = $(ui.panel);
         var $management = $panel.find('.management');
+        var $managementInvite = $panel.find('.management-invite');
 
         if ($management.size()) {
           $management.children().remove();
           $management.append(pageElems.userManagement({
             context: cloudStack.context
           }));
+
+          return true;
         }
+
+        if ($managementInvite.size()) {
+          $managementInvite.children().remove();
+          $managementInvite.append(pageElems.userManagement({
+            context: cloudStack.context,
+            useInvites: true
+          }));
+        }
+
+        return true;
       });
 
       return $('<div>').addClass('project-dashboard')
@@ -136,7 +155,8 @@
                     var $userManagement = pageElems.userManagement({
                       context: $.extend(true, {}, cloudStack.context, {
                         projects: [project]
-                      })
+                      }),
+                      useInvites: cloudStack.projects.requireInvitation()
                     });
                     var $nextButton = $('<div>').addClass('button confirm next').html('Next');
 
@@ -185,11 +205,12 @@
                           listView: {
                             id: 'project-accounts',
                             disableInfiniteScrolling: true,
-
-                            fields: {
+                            fields: !cloudStack.projects.requireInvitation() ? {
                               username: { label: 'Account' }
+                            } : {
+                              email: { label: 'E-mail invite'}
                             },
-                            actions: {
+                            actions: !cloudStack.projects.requireInvitation() ? {
                               destroy: {
                                 label: 'Remove account from project',
                                 action: {
@@ -214,14 +235,16 @@
                                   }
                                 }
                               }
-                            },
+                            } : {},
                             dataProvider: function(args) {
                               setTimeout(function() {
                                 args.response.success({
                                   data: $.map($userManagement.find('.data-item tr'), function(elem) {
                                     // Store previous user data in list table
-                                    return {
+                                    return !cloudStack.projects.requireInvitation() ? {
                                       username: $(elem).find('td.username span').html()
+                                    } : {
+                                      email: $(elem).find('td.email span').html()
                                     };
                                   })
                                 });
@@ -351,16 +374,19 @@
       // Initial load
       loadData(function() {
         if (!$list.find('li').size()) {
-          showDashboard();
+          cloudStack.dialog.notice({
+            message: 'You do not have any projects. '
+              + 'Please create a new project from the projects section.'
+          }).closest('.ui-dialog');
           $.merge($selector, $('.overlay')).remove();
-
-          return;
+          $('.select.default-view').click();
         } else {
           $selector.dialog({
             title: 'Select Project',
             dialogClass: 'project-selector-dialog',
             width: 420
           }).closest('.ui-dialog').overlay();
+          showDashboard();
         }
       });
 
@@ -444,7 +470,6 @@
         return true;
       }
 
-      showDashboard();
       $(this).addClass('active');
       $(this).siblings().removeClass('active');
 

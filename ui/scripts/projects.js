@@ -1,9 +1,13 @@
 (function(cloudStack, testData) {
   cloudStack.projects = {
+    requireInvitation: function(args) {
+      return false;
+    },
+    
     add: function(args) {
       setTimeout(function() {
         $.ajax({
-          url: createURL('createProject'),
+          url: createURL('createProject', { ignoreProject: true }),
           data: {
             account: args.context.users[0].account,
             domainId: args.context.users[0].domainid,
@@ -25,6 +29,73 @@
         });
       }, 100);
     },
+    inviteForm: {
+      noSelect: true,
+      fields: {
+        'email': { edit: true, label: 'E-mail' },
+        'add-user': { addButton: true, label: '' }
+      },
+      add: {
+        label: 'Invite',
+        action: function(args) {
+          $.ajax({
+            url: createURL('addAccountToProject', { ignoreProject: true }),
+            data: {
+              projectId: args.context.projects[0].id,
+              email: args.data.email
+            },
+            dataType: 'json',
+            async: true,
+            success: function(data) {
+              data: args.data,
+              args.response.success({
+                _custom: {
+                  jobId: data.addaccounttoprojectresponse.jobid
+                },
+                notification: {
+                  label: 'Invited user to project',
+                  poll: pollAsyncJobResult
+                }
+              });
+            }
+          });          
+        }
+      },
+      actionPreFilter: function(args) {
+        if (cloudStack.context.projects &&
+            cloudStack.context.projects[0] &&
+            !cloudStack.context.projects[0].isNew) {
+          return args.context.actions;
+        }
+
+        return ['destroy'];
+      },
+
+      actions: {},
+
+      // Project users data provider
+      dataProvider: function(args) {
+        $.ajax({
+          url: createURL('listProjectInvitations', { ignoreProject: true }),
+          data: {
+            projectId: args.context.projects[0].id
+          },
+          dataType: 'json',
+          async: true,
+          success: function(data) {
+            var invites = data.listprojectinvitationsresponse.projectinvitation;
+            args.response.success({
+              data: $.map(invites, function(elem) {
+                return {
+                  id: elem.id,
+                  email: elem.email ? elem.email : elem.account
+                };
+              })
+            });
+          }
+        });
+      }
+    },
     addUserForm: {
       noSelect: true,
       fields: {
@@ -32,10 +103,10 @@
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'Invite',
+        label: 'Add user',
         action: function(args) {
           $.ajax({
-            url: createURL('addAccountToProject'),
+            url: createURL('addAccountToProject', { ignoreProject: true }),
             data: {
               projectId: args.context.projects[0].id,
               account: args.data.username
@@ -79,7 +150,7 @@
           label: 'Remove user from project',
           action: function(args) {
             $.ajax({
-              url: createURL('deleteAccountFromProject'),
+              url: createURL('deleteAccountFromProject', { ignoreProject: true }),
               data: {
                 projectId: args.context.projects[0].id,
                 account: args.context.multiRule[0].username
@@ -105,7 +176,7 @@
           label: 'Make user project owner',
           action: function(args) {
             $.ajax({
-              url: createURL('updateProject'),
+              url: createURL('updateProject', { ignoreProject: true }),
               data: {
                 id: cloudStack.context.projects[0].id,
                 account: args.context.multiRule[0].username
@@ -131,7 +202,7 @@
       // Project users data provider
       dataProvider: function(args) {
         $.ajax({
-          url: createURL('listProjectAccounts'),
+          url: createURL('listProjectAccounts', { ignoreProject: true }),
           data: {
             projectId: args.context.projects[0].id
           },
@@ -157,7 +228,7 @@
       var user = args.context.users[0];
 
       $.ajax({
-        url: createURL('listProjects'),
+        url: createURL('listProjects', { ignoreProject: true }),
         data: {
           accountId: user.userid
         },
@@ -192,7 +263,7 @@
 
       dataProvider: function(args) {
         $.ajax({
-          url: createURL('listProjects'),
+          url: createURL('listProjects', { ignoreProject: true }),
           dataType: 'json',
           async: true,
           success: function(data) {
@@ -230,7 +301,7 @@
           label: 'Remove project',
           action: function(args) {
             $.ajax({
-              url: createURL('deleteProject'),
+              url: createURL('deleteProject', { ignoreProject: true }),
               data: {
                 id: args.data.id
               },
