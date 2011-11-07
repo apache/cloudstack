@@ -399,12 +399,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         int defPortStart = lb.getDefaultPortStart();
         int srcPortEnd = lb.getSourcePortEnd();
         
-        IPAddressVO ipAddr = _ipAddressDao.findById(lb.getSourceIpAddressId());
+        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
         Long networkId = ipAddr.getSourceNetworkId();
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
-        }
+        } else if (ipAddr.isOneToOneNat()) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule; ip id=" + ipId + " has static nat enabled");
+        }                 
         
         _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), Purpose.LoadBalancing);
 
