@@ -3482,7 +3482,7 @@
               }
             },
 
-            enableMaintenaceMode: {
+            enableMaintenanceMode: {
               label: 'Enable Maintenace' ,
               action: function(args) {
                 $.ajax({
@@ -3525,7 +3525,7 @@
               }
             },
 
-            cancelMaintenaceMode: {
+            cancelMaintenanceMode: {
               label: 'Cancel Maintenace' ,
               action: function(args) {
                 $.ajax({
@@ -3690,7 +3690,7 @@
                 }
               },
 
-              enableMaintenaceMode: {
+              enableMaintenanceMode: {
                 label: 'Enable Maintenace' ,
                 action: function(args) {
                   $.ajax({
@@ -3733,7 +3733,7 @@
                 }
               },
 
-              cancelMaintenaceMode: {
+              cancelMaintenanceMode: {
                 label: 'Cancel Maintenace' ,
                 action: function(args) {
                   $.ajax({
@@ -4332,7 +4332,7 @@
               }
             },
 
-            enableMaintenaceMode: {
+            enableMaintenanceMode: {
               label: 'Enable Maintenace' ,
               action: function(args) {
                 $.ajax({
@@ -4375,7 +4375,7 @@
               }
             },
 
-            cancelMaintenaceMode: {
+            cancelMaintenanceMode: {
               label: 'Cancel Maintenace' ,
               action: function(args) {
                 $.ajax({
@@ -4454,7 +4454,7 @@
           detailView: {
             name: "Primary storage details",
             actions: {
-              enableMaintenaceMode: {
+              enableMaintenanceMode: {
                 label: 'Enable Maintenace' ,
                 action: function(args) {
                   $.ajax({
@@ -4497,7 +4497,7 @@
                 }
               },
 
-              cancelMaintenaceMode: {
+              cancelMaintenanceMode: {
                 label: 'Cancel Maintenace' ,
                 action: function(args) {
                   $.ajax({
@@ -4929,12 +4929,12 @@
 
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
       allowedActions.push("edit");
-      allowedActions.push("enableMaintenaceMode");
+      allowedActions.push("enableMaintenanceMode");
       allowedActions.push("forceReconnect");
     }
     else if(jsonObj.state == 'Down') {
       allowedActions.push("edit");
-      allowedActions.push("enableMaintenaceMode");
+      allowedActions.push("enableMaintenanceMode");
       allowedActions.push("delete");
     }
     else if(jsonObj.state == "Alert") {
@@ -4943,16 +4943,16 @@
     }
     else if (jsonObj.state == "ErrorInMaintenance") {
       allowedActions.push("edit");
-      allowedActions.push("enableMaintenaceMode");
-      allowedActions.push("cancelMaintenaceMode");
+      allowedActions.push("enableMaintenanceMode");
+      allowedActions.push("cancelMaintenanceMode");
     }
     else if (jsonObj.state == "PrepareForMaintenance") {
       allowedActions.push("edit");
-      allowedActions.push("cancelMaintenaceMode");
+      allowedActions.push("cancelMaintenanceMode");
     }
     else if (jsonObj.state == "Maintenance") {
       allowedActions.push("edit");
-      allowedActions.push("cancelMaintenaceMode");
+      allowedActions.push("cancelMaintenanceMode");
       allowedActions.push("delete");
     }
     else if (jsonObj.state == "Disconnected"){
@@ -4967,24 +4967,24 @@
     var allowedActions = [];
 
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-      allowedActions.push("enableMaintenaceMode");
+      allowedActions.push("enableMaintenanceMode");
     }
     else if(jsonObj.state == 'Down') {
-      allowedActions.push("enableMaintenaceMode");
+      allowedActions.push("enableMaintenanceMode");
       allowedActions.push("delete");
     }
     else if(jsonObj.state == "Alert") {
       allowedActions.push("delete");
     }
     else if (jsonObj.state == "ErrorInMaintenance") {
-      allowedActions.push("enableMaintenaceMode");
-      allowedActions.push("cancelMaintenaceMode");
+      allowedActions.push("enableMaintenanceMode");
+      allowedActions.push("cancelMaintenanceMode");
     }
     else if (jsonObj.state == "PrepareForMaintenance") {
-      allowedActions.push("cancelMaintenaceMode");
+      allowedActions.push("cancelMaintenanceMode");
     }
     else if (jsonObj.state == "Maintenance") {
-      allowedActions.push("cancelMaintenaceMode");
+      allowedActions.push("cancelMaintenanceMode");
       allowedActions.push("delete");
     }
     else if (jsonObj.state == "Disconnected"){
