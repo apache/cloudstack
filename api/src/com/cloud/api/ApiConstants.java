@@ -271,5 +271,5 @@ public class ApiConstants {
     public static final String TOKEN = "token";
     public static final String ACCEPT = "accept";
     public static final String SORT_KEY = "sortkey";
-
+    public static final String ACCOUNT_DETAILS = "accountdetails";
 }

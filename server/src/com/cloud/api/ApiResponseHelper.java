@@ -322,6 +322,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         accountResponse.setUsers(userResponseList);
+        accountResponse.setDetails(ApiDBUtils.getAccountDetails(account.getId()));
         return accountResponse;
     }
     

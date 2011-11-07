@@ -18,6 +18,10 @@
 
 package com.cloud.api.commands;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -26,6 +30,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.Account;
@@ -73,6 +78,8 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
     private String networkDomain;
 
+	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    private Map details;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -116,6 +123,16 @@ public class CreateAccountCmd extends BaseCmd {
     public String getNetworkDomain() {
         return networkDomain;
     } 
+    
+    public Map getDetails() {
+    	if (details == null || details.isEmpty()) {
+    		return null;
+    	}
+    	
+    	Collection paramsCollection = details.values();
+    	Map params = (Map) (paramsCollection.toArray())[0];
+    	return params;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -134,7 +151,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain());
+        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain(), getDetails());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());

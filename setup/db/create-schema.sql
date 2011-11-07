@@ -743,6 +743,15 @@ CREATE TABLE `cloud`.`op_host` (
   CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE 
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`account_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_details__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`host_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL COMMENT 'host id',

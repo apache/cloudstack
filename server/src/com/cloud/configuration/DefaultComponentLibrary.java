@@ -145,6 +145,7 @@ import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.TemplateManagerImpl;
+import com.cloud.user.AccountDetailsDaoImpl;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.DomainManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
@@ -284,6 +285,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ProjectsAccountDao", ProjectAccountDaoImpl.class);
         addDao("ProjectInvitationDao", ProjectInvitationDaoImpl.class);
         addDao("IdentityDao", IdentityDaoImpl.class);
+        addDao("AccountDetailsDao", AccountDetailsDaoImpl.class);
         info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
         info.addParameter("cache.size", "100");
         info.addParameter("cache.time.to.live", "600");

@@ -18,6 +18,7 @@
 package com.cloud.user;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.RegisterCmd;
@@ -44,7 +45,7 @@ public interface AccountService {
      * 
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain, Map details);
 
     /**
      * Deletes a user by userId

@@ -183,6 +183,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectManager _projectMgr;
     @Inject
     private ProjectDao _projectDao;
+    @Inject
+    private AccountDetailsDao _accountDetailsDao;
     
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -603,7 +605,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain, Map details) {
         
         if (accountName == null) {
             accountName = userName;
@@ -638,7 +640,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         txn.start();
         
         //create account
-        Account account = createAccount(accountName, accountType, domainId, networkDomain);
+        Account account = createAccount(accountName, accountType, domainId, networkDomain, details);
         long accountId = account.getId();
 
         //create the first user for the account
@@ -1029,6 +1031,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String accountName = cmd.getAccountName();
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
+        Map<String, String>details = cmd.getDetails();
 
         boolean success = false;
         Account account = _accountDao.findAccount(accountName, domainId);
@@ -1075,6 +1078,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         
         success = _accountDao.update(account.getId(), acctForUpdate);
+        
+        if (details != null) {
+        	_accountDetailsDao.update(account.getId(), details);
+        }
         
         if (success) {
             return _accountDao.findById(account.getId());
@@ -1375,7 +1382,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	}
     
     @Override @DB
-    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain) {
+    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
         //Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -1426,6 +1433,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
         
         Long accountId = account.getId();
+        
+		if (details != null) {
+			_accountDetailsDao.persist(accountId, details);
+		}
         
         //Create resource count records for the account
         _resourceCountDao.createResourceCounts(accountId, ResourceLimit.ResourceOwnerType.Account);

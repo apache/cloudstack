@@ -104,6 +104,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -177,6 +178,7 @@ public class ApiDBUtils {
     private static ResourceLimitService _resourceLimitMgr;
     private static ProjectService _projectMgr;
     private static ResourceManager _resourceMgr;
+    private static AccountDetailsDao _accountDetailsDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -225,6 +227,7 @@ public class ApiDBUtils {
         _resourceLimitMgr = locator.getManager(ResourceLimitService.class);
         _projectMgr = locator.getManager(ProjectService.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
+        _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -666,5 +669,9 @@ public class ApiDBUtils {
     
     public static long getProjectOwnwerId(long projectId) {
         return _projectMgr.getProjectOwner(projectId).getId();
+    }
+    
+    public static Map getAccountDetails(long accountId) {
+    	return _accountDetailsDao.findDetails(accountId);
     }
 }

@@ -17,6 +17,10 @@
  */
 package com.cloud.api.commands;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -25,6 +29,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.user.Account;
 
@@ -49,6 +54,9 @@ public class UpdateAccountCmd extends BaseCmd{
     
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the account's networks")
     private String networkDomain;
+    
+	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    private Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -68,6 +76,16 @@ public class UpdateAccountCmd extends BaseCmd{
     
     public String getNetworkDomain() {
         return networkDomain;
+    }
+    
+    public Map getDetails() {
+    	if (details == null || details.isEmpty()) {
+    		return null;
+    	}
+    	
+    	Collection paramsCollection = details.values();
+    	Map params = (Map) (paramsCollection.toArray())[0];
+    	return params;
     }
 
     /////////////////////////////////////////////////////

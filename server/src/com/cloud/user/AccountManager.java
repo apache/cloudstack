@@ -50,7 +50,7 @@ public interface AccountManager extends AccountService {
 
 	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
 	
-	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain);
+	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details);
 	
 	UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone);
 	

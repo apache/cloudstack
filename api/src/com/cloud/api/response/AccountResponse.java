@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.IdentityProxy;
@@ -108,6 +109,9 @@ public class AccountResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
+    
+    @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details fro the account")
+    private Map details;
 
     public Long getId() {
         return id.getValue();
@@ -329,4 +333,11 @@ public class AccountResponse extends BaseResponse {
         this.networkDomain = networkDomain;
     }
     
+    public void setDetails(Map details) {
+    	this.details = details;
+    }
+    
+    public Map getDetails() {
+    	return details;
+    }
 }
