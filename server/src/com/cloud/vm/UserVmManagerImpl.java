@@ -1396,6 +1396,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         } else { // create template from snapshot
             SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
             volume = _volsDao.findById(snapshot.getVolumeId());
+            VolumeVO snapshotVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());
             
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
@@ -1406,7 +1407,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             
             // bug #11428. Operation not supported if vmware and snapshots parent volume = ROOT
-            if(snapshot.getHypervisorType() == HypervisorType.VMware && volume.getVolumeType() == Type.DATADISK){            	
+            if(snapshot.getHypervisorType() == HypervisorType.VMware && snapshotVolume.getVolumeType() == Type.DATADISK){            	
             	throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId + " is created from Data Disk");            	
             }
 

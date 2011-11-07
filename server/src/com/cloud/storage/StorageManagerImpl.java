@@ -1716,7 +1716,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             
          // bug #11428. Operation not supported if vmware and snapshots parent volume = ROOT
             if(snapshotCheck.getHypervisorType() == HypervisorType.VMware
-            	&& ApiDBUtils.findVolumeById(snapshotCheck.getVolumeId()).getVolumeType() == Type.ROOT){
+            	&& _volumeDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId()).getVolumeType() == Type.ROOT){
             		throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId + " is created from ROOT volume");            	
             }
         }
