@@ -128,6 +128,7 @@ import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -4146,7 +4147,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //check if there are networks using this provider
         List<NetworkVO> networks = _networksDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), provider.getProviderName());
         if(networks != null && !networks.isEmpty()){
-            throw new CloudRuntimeException("Provider is not deletable because there are existing networks using this provider, please destroy all networks first");
+            throw new CloudRuntimeException("Provider is not deletable because there are active networks using this provider, please upgrade these networks to new network offerings");
         }
         
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
@@ -4797,5 +4798,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         return networks.get(0);
     }
+
+    @Override
+    public PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
+        
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName(), null, null);
+        //add instance of the provider
+        VirtualRouterElement element = (VirtualRouterElement)getElementImplementingProvider(Network.Provider.VirtualRouter.getName());
+        if(element == null){
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the VirtualRouter Provider");
+        }
+        element.addElement(nsp.getId());
+        
+        return nsp;
+    }
+
     
 }

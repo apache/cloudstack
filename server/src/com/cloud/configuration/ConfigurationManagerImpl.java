@@ -104,6 +104,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -1365,6 +1366,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             // Create default Physical Network
             long physicalNetworkId = createDefaultPhysicalNetwork(zone.getId(), domainId);
             
+            //add VirtualRouter as the defualt network service provider 
+            PhysicalNetworkServiceProvider nsp = _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
+            
             // Create deafult networks
             createDefaultNetworks(zone.getId(), isSecurityGroupEnabled, physicalNetworkId);
             txn.commit();
@@ -1385,18 +1389,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String defaultXenLabel = "cloud-private";
         
         //add default Traffic types to the physical network
-        
         _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Guest.toString(), defaultXenLabel, null, null, null);
-
         _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Public.toString(), defaultXenLabel, null, null, null);
-        
         _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Management.toString(), defaultXenLabel, null, null, null);
-        
         _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Storage.toString(), defaultXenLabel, null, null, null);
-        
+
         return defaultNetwork.getId();
     }
-    
+        
     @Override
     public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled, long physicalNetworkId) throws ConcurrentOperationException {
         DataCenterVO zone = _zoneDao.findById(zoneId);

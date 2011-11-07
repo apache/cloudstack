@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -366,6 +367,26 @@ public class PodZoneConfig {
             stmt.executeBatch();
         } catch (SQLException ex) {
             printError("Error creating vnet for the physical network. Please contact Cloud Support.");
+        }
+        
+        //add default traffic types
+        String defaultXenLabel = "cloud-private";
+        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
+
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);
+            for (TrafficType traffic : TrafficType.values()) {
+                if(traffic.equals(TrafficType.Control) || traffic.equals(TrafficType.Vpn)){
+                    continue;
+                }
+                stmt.setLong(1, id);
+                stmt.setString(2, traffic.toString());
+                stmt.setString(3, defaultXenLabel);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        } catch (SQLException ex) {
+            printError("Error adding default traffic types for the physical network. Please contact Cloud Support.");
         }
         
         if (printOutput) System.out.println("Successfully saved physical network.");
