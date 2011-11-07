@@ -281,7 +281,51 @@
                     args.complete();
                   }
                 }
-              }           
+              },
+              
+              disable: {
+                label: 'Disable account',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to disable this account?';
+                  },
+                  success: function(args) {
+                    return 'Account is being disabled.';
+                  },
+                  notification: function(args) {
+                    return 'Disabling account';
+                  },
+                  complete: function(args) {
+                    return 'Account has been disabled.';
+                  }
+                },
+                action: function(args) {                  
+                  var accountObj = args.context.accounts[0];                
+                  $.ajax({
+                    url: createURL("disableAccount&lock=false&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                     
+                      var jid = json.disableaccountresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {                              
+                            return json.queryasyncjobresultresponse.jobresult.account;
+                          },
+                          getActionFilter: function() {
+                            return accountActionfilter;
+                          }
+                         }
+                        }
+                      );    
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }                         
             },
 
             tabs: {
