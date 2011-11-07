@@ -247,7 +247,41 @@
                     }
                   });                     
                 }
-              }              
+              },
+             
+              updateResourceCount: {
+                label: 'Update Resource Count',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to update resource count ?';
+                  },
+                  success: function(args) {
+                    return 'Resource count is being updated.';
+                  },
+                  notification: function(args) {
+                    return 'Updating resource count';
+                  },
+                  complete: function(args) {
+                    return 'Resource count has been updated.';
+                  }
+                },
+                action: function(args) {                  
+                  var accountObj = args.context.accounts[0];                
+                  $.ajax({
+                    url: createURL("updateResourceCount&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                     
+                      //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing                                        
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              }           
             },
 
             tabs: {
