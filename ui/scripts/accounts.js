@@ -709,13 +709,38 @@
                    
           detailView: {
             name: 'User details',   
+            actions: {              
+              edit: {
+                label: 'Edit',
+                action: function(args) {                                 
+                  var array1 = [];
+                  array1.push("&username=" + todb(args.data.username));
+                  array1.push("&email=" + todb(args.data.email));
+                  array1.push("&firstname=" + todb(args.data.firstname));
+                  array1.push("&lastname=" + todb(args.data.lastname));
+                  array1.push("&timezone=" + todb(args.data.timezone));
+                  $.ajax({
+                    url: createURL("updateUser&id=" + args.context.users[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var item = json.updateuserresponse.user;
+                      args.response.success({data:item});
+                    }
+                  });
+                  
+                }
+              }              
+            },
             tabs: {
               details: {
                 title: 'details',
 
                 fields: [
                   {
-                    username: { label: 'Name' }
+                    username: { 
+                      label: 'Name',
+                      isEditable: true                      
+                    }
                   },
                   {
                     id: { label: 'ID' },
@@ -730,17 +755,34 @@
                       }
                     },
                     domain: { label: 'Domain' },
-                    email: { label: 'Email' },
-                    firstname: { label: 'First name' },
-                    lastname: { label: 'Last name' },
+                    email: { 
+                      label: 'Email',
+                      isEditable: true                             
+                    },
+                    firstname: { 
+                      label: 'First name',
+                      isEditable: true                             
+                    },
+                    lastname: { 
+                      label: 'Last name',
+                      isEditable: true                             
+                    },
                     timezone: { 
                       label: 'Timezone',
                       converter: function(args) {                        
                         if(args == null || args.length == 0)
                           return "";
-                        else                        
-                          return timezoneMap[args];
-                      }
+                        else  
+                          return args;     
+                      }, 
+                      isEditable: true,                      
+                      select: function(args) {
+                        var items = [];
+                        items.push({id: "", description: ""});                  
+                        for(var p in timezoneMap)
+                          items.push({id: p, description: timezoneMap[p]});                  
+                        args.response.success({data: items});
+                      }                      
                     }                    
                   }
                 ],
