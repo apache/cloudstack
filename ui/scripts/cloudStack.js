@@ -2,7 +2,7 @@
   $.extend(window.cloudStack, testData, {
     home: 'dashboard',
 
-    sectionPreFilter: function(args) {      
+    sectionPreFilter: function(args) {
       if(isAdmin()) {
         return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects"];
       }
@@ -11,7 +11,7 @@
       }
       else { //normal user
         return ["dashboard", "instances", "storage", "network", "templates", "events", "projects"];
-      }     
+      }
     },
     sections: {
       /**
@@ -27,9 +27,9 @@
       domains: {},
       events: {},
       system: {},
+      projects: {},
       'global-settings': {},
-      configuration: {},
-      projects: {}
+      configuration: {}
     }
   });
 
