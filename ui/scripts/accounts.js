@@ -326,6 +326,50 @@
                   poll: pollAsyncJobResult
                 }
               },
+                           
+              lock: {
+                label: 'Lock account',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to lock this account?';
+                  },
+                  success: function(args) {
+                    return 'Account is being locked.';
+                  },
+                  notification: function(args) {
+                    return 'Locking account';
+                  },
+                  complete: function(args) {
+                    return 'Account has been locked.';
+                  }
+                },
+                action: function(args) {               
+                  var accountObj = args.context.accounts[0];                
+                  $.ajax({
+                    url: createURL("disableAccount&lock=true&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                     
+                      var jid = json.disableaccountresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {                              
+                            return json.queryasyncjobresultresponse.jobresult.account;
+                          },
+                          getActionFilter: function() {
+                            return accountActionfilter;
+                          }
+                         }
+                        }
+                      );    
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },              
              
               enable: {
                 label: 'Enable account',
