@@ -325,7 +325,43 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              }                         
+              },
+             
+              enable: {
+                label: 'Enable account',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to enable this account?';
+                  },
+                  success: function(args) {
+                    return 'Account is being enabled.';
+                  },
+                  notification: function(args) {
+                    return 'Enabling account';
+                  },
+                  complete: function(args) {
+                    return 'Account has been enabled.';
+                  }
+                },
+                action: function(args) {                  
+                  var accountObj = args.context.accounts[0];                
+                  $.ajax({
+                    url: createURL("enableAccount&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                      
+                      args.response.success({data: json.enableaccountresponse.account});                                        
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }         
+              }                
+             
+              
             },
 
             tabs: {
