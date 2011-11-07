@@ -60,7 +60,5 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering);
     
     List<NetworkOfferingVO> listByTrafficTypeGuestTypeAndState(NetworkOffering.State state, TrafficType trafficType, Network.GuestType type);
-    
-    List<NetworkOfferingVO> listGuestNetworkOfferings(Network.GuestType type, boolean isDefault);
-    
+        
 }

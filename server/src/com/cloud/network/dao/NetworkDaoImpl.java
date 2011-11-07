@@ -164,15 +164,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId) {
-        SearchCriteria<NetworkVO> sc = AccountSearch.create();
-        sc.setParameters("account", accountId);
-        sc.setJoinParameters("accounts", "account", accountId);
-
-        return listBy(sc);
-    }
-
-    @Override
     public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId) {
         SearchCriteria<NetworkVO> sc = AccountSearch.create();
         sc.setParameters("offering", offeringId);
@@ -205,11 +196,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return newNetwork;
     }
 
-    @Override
-    public void addAccountToNetwork(long networkId, long accountId) {
-        addAccountToNetwork(networkId, accountId, false);
-    }
-
     protected void addAccountToNetwork(long networkId, long accountId, boolean isOwner) {
         NetworkAccountVO account = new NetworkAccountVO(networkId, accountId, isOwner);
         _accountsDao.persist(account);
@@ -226,13 +212,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("offering", offeringId);
         sc.setParameters("dc", dataCenterId);
         sc.setJoinParameters("account", "account", accountId);
-        return search(sc, null);
-    }
-
-    @Override
-    public List<NetworkVO> getRelatedNetworks(long related) {
-        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
-        sc.setParameters("related", related);
         return search(sc, null);
     }
 
@@ -316,36 +295,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listNetworksBy(boolean isShared) {
-        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
-        if (isShared) {
-            sc.setParameters("guestType", Network.GuestType.Shared);
-         } else {
-             sc.setParameters("guestType", Network.GuestType.Isolated);
-         }
-        
-        return listBy(sc);
-    }
-
-    @Override
-    public List<NetworkVO> listByZoneIncludingRemoved(long zoneId) {
-        SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
-        sc.setParameters("dataCenterId", zoneId);
-        return listIncludingRemovedBy(sc);
-    }
-    
-    @Override
     public Long getNetworkCountByOfferingId(long offeringId) {
         SearchCriteria<Long> sc = CountByOfferingId.create();
         sc.setParameters("offeringId", offeringId);
         List<Long> results = customSearch(sc, null);
         return results.get(0);
-    }
-    
-    public List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId){
-        SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
-        sc.setParameters("physicalNetworkId", physicalNetworkId);
-        return listBy(sc);
     }
 
     @Override

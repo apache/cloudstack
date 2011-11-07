@@ -158,13 +158,4 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.setParameters("state", state);
         return listBy(sc, null);
     }
-    
-    @Override 
-    public List<NetworkOfferingVO> listGuestNetworkOfferings(Network.GuestType type, boolean isDefault) {
-        SearchCriteria<NetworkOfferingVO> sc = AllFieldsSearch.create();
-        sc.setParameters("trafficType", TrafficType.Guest);
-        sc.setParameters("guestType", type);
-        sc.setParameters("isDefault", isDefault);
-        return listBy(sc, null);
-    }
 }
