@@ -1216,9 +1216,13 @@ div.detail-group.actions td {
   background-position: -351px -23px;
 }
 
-#navigation ul li.configuration span.icon,
-#navigation ul li.global-settings span.icon {
+#navigation ul li.configuration span.icon {
   background-position: -400px -24px;
+}
+
+#navigation ul li.global-settings span.icon {
+  background-image: url(../images/sprites.png);
+  background-position: -141px -241px;
 }
 
 #navigation ul li.accounts span.icon {
@@ -3789,14 +3793,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view>ul {
+.tree-view > ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view>ul>li {
+.tree-view > ul > li {
   left: 5px;
 }
 
@@ -3831,7 +3835,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded>.expand {
+.tree-view ul li.expanded > .expand {
   background-position: -631px -228px;
 }
 
@@ -5721,5 +5725,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .unmanage:hover .icon {
   background-position: -196px -704px;
+}
+
+.viewConsole .icon {
+  background-position: -231px -2px;
+}
+
+.viewConsole:hover .icon {
+  background-position: -229px -586px;
 }
 
