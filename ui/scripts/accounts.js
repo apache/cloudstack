@@ -403,8 +403,50 @@
                     args.complete();
                   }
                 }         
-              }                
+              },
              
+              'delete': {
+                label: 'Delete account',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this account?';
+                  },
+                  success: function(args) {
+                    return 'Account is being deleted.';
+                  },
+                  notification: function(args) {
+                    return 'Deleting account';
+                  },
+                  complete: function(args) {
+                    return 'Account has been deleted.';
+                  }
+                },
+                action: function(args) {    
+                  $.ajax({
+                    url: createURL("deleteAccount&id=" + args.context.accounts[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.deleteaccountresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {
+                            return {}; //nothing in this account needs to be updated, in fact, this whole account has being deleted
+                          },
+                          getActionFilter: function() {
+                            return accountActionfilter;
+                          }
+                         }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }                         
               
             },
 
@@ -523,7 +565,7 @@
                   }
                 ],
 
-                dataProvider: function(args) {                  
+                dataProvider: function(args) {     
                   var accountObj = args.context.accounts[0];                  
                   $.ajax({
                     url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
