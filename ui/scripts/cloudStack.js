@@ -140,19 +140,8 @@
             });
 
             // Get project configuration
-            $.ajax({
-              url: createURL('listConfigurations'),
-              data: {
-                name: 'project.invite.required'
-              },
-              async: false,
-              dataType: 'json',
-              success: function(data) {
-                window.g_projectsInviteRequired = false;
-                window.g_projectsInviteRequired = data.listconfigurationsresponse.configuration[0].value == "true" ?
-                  true : false;
-              }
-            });
+            // TEMPORARY -- replace w/ output of capability response, etc., once implemented
+            window.g_projectsInviteRequired = false;
           },
           error: function() {
             args.response.error();
