@@ -45,8 +45,9 @@
 
             action: function(args) {
               var array1 = [];
-              //if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") //uncomment after Brian fix it to include $form in args
-              array1.push("&cleanup=" + (args.data.isForced == "on"));
+              debugger;
+              if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") //uncomment after Brian fix it to include $form in args
+                array1.push("&cleanup=" + (args.data.isForced == "on"));
 
               $.ajax({
                 url: createURL("deleteDomain&id=" + args.context.domains[0].id + array1.join("")),
@@ -71,14 +72,21 @@
           edit: {
             label: 'Edit domain details',
             messages: {
-              notification: function(args) {
+              notification: function(args) {               
                 return 'Edited domain: ' + args.name;
               }
             },
-            action: function(args) {
-              setTimeout(function() {
-                args.response.success();
-              }, 200);
+            action: function(args) {                     
+              var array1 = [];
+              array1.push("&name=" + todb(args.data.name));              
+              $.ajax({
+                url: createURL("updateDomain&id=" + args.context.domains[0].id + array1.join("")),
+                dataType: "json",
+                success: function(json) {
+                  debugger;                  
+                  args.response.success({data: json.updatedomainresponse.domain});
+                }
+              });   
             }
           },
 
@@ -222,11 +230,11 @@
     if(isAdmin()) {       
       allowedActions.push("add");    
     	if(jsonObj.id != 1) { //"ROOT" domain is not allowed to edit or delete
-        allowedActions.push("edit");
+        allowedActions.push("edit"); //merge updateResourceCount into edit
 	      allowedActions.push("delete");	        
     	}    	
     }   
-	  allowedActions.push("updateResourceCount");
+	  //allowedActions.push("updateResourceCount");
     return allowedActions;
   }  
   
