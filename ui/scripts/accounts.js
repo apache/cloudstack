@@ -733,8 +733,7 @@
                   
                 }
               },
-
-              //???
+             
               changePassword: {
                 label: 'Change password',
                 messages: {
@@ -775,8 +774,41 @@
                     args.complete();
                   }
                 }
+              },
+                            
+              generateKeys: {
+                label: 'Generate keys',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to generate keys?';
+                  },
+                  success: function(args) {
+                    return 'Keys are being generated.';
+                  },
+                  notification: function(args) {
+                    return 'Generating keys';
+                  },
+                  complete: function(args) {
+                    return 'Keys have been generated.';
+                  }
+                },
+                action: function(args) {                                           
+                  $.ajax({
+                    url: createURL("registerUserKeys&id=" + args.context.users[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                     
+                      args.response.success({data: json.registeruserkeysresponse.userkeys});                                        
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
               }
-                       
+                                    
             },
             tabs: {
               details: {
