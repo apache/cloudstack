@@ -59,7 +59,7 @@ public class ClusterSyncCommand extends Command implements CronCommand {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return false;
     }
     
 }
