@@ -604,7 +604,10 @@
               url: createURL("listUsers&domainid=" + fromdb(accountObj.domainid) + "&account=" + todb(fromdb(accountObj.name))),
               dataType: "json",
               success: function(json) {                
-                args.response.success({data: json.listusersresponse.user});                
+                args.response.success({
+                  actionFilter: userActionfilter,
+                  data: json.listusersresponse.user
+                });                
               }
             })            
           },         
@@ -729,7 +732,51 @@
                   });
                   
                 }
-              }              
+              },
+
+              //???
+              changePassword: {
+                label: 'Change password',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to change password?';
+                  },
+                  success: function(args) {
+                    return 'Password is being changed.';
+                  },
+                  notification: function(args) {
+                    return 'Changing password';
+                  },
+                  complete: function(args) {
+                    return 'Password has been changed.';
+                  }
+                },
+                createForm: {
+                  label: 'Change password',
+                  fields: {
+                    newPassword: { label: 'New password' }
+                  }
+                },
+                action: function(args) {              
+                  var password = args.data.newPassword;	
+                  if (md5Hashed) 
+                    password = $.md5(password);                  
+                  $.ajax({
+                    url: createURL("updateUser&id=" + args.context.users[0].id + "&password=" + password),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                      
+                      args.response.success({data: json.updateuserresponse.user});                                        
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              }
+                       
             },
             tabs: {
               details: {
@@ -790,7 +837,7 @@
                 dataProvider: function(args) {
                   args.response.success(
                     {
-                      actionFilter: accountActionfilter,
+                      actionFilter: userActionfilter,
                       data:args.context.users[0]
                     }
                   );
@@ -830,7 +877,7 @@
 
   var userActionfilter = function(args) {
     var jsonObj = args.context.item;
-    var allowedActions = [];       
+    var allowedActions = [];         
     if(isAdmin()) {      
       allowedActions.push("edit");          
       allowedActions.push("changePassword");    
