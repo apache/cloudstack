@@ -531,14 +531,14 @@ public class ApiServer implements HttpRequestHandler {
 
                 if (!isCommandAvailable(accountType, commandName)) {
                     s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
                 if (!isCommandAvailable(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     s_logger.warn("The given command:" + commandName + " does not exist");
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist");
                 }
             }
 
