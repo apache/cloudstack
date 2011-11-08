@@ -2861,13 +2861,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (guestType == null) {
             throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
-        
-        //specifyVlan can be true for Shared network offering only in Acton
-        if (specifyVlan && guestType != GuestType.Shared) {
-            
-        }
-        
-
 
         // Verify availability
         for (Availability avlb : Availability.values()) {
