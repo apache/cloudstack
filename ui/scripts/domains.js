@@ -75,16 +75,59 @@
               }
             },
             action: function(args) {                     
-              var array1 = [];
-              array1.push("&name=" + todb(args.data.name));              
+              var domainObj;             
+             
               $.ajax({
-                url: createURL("updateDomain&id=" + args.context.domains[0].id + array1.join("")),
+                url: createURL("updateDomain&id=" + args.context.domains[0].id + "&name=" + todb(args.data.name)),
+                async: false,
                 dataType: "json",
-                success: function(json) {
-                  debugger;                  
-                  args.response.success({data: json.updatedomainresponse.domain});
+                success: function(json) {      
+                  domainObj = json.updatedomainresponse.domain;
                 }
-              });   
+              });  
+
+              $.ajax({
+                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=0&max=" + args.data.vmLimit),
+                dataType: "json",
+                async: false,
+                success: function(json) {	                  
+                  domainObj["vmLimit"] = args.data.vmLimit;                
+                }
+              });    
+              $.ajax({
+                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=1&max=" + args.data.ipLimit),
+                dataType: "json",
+                async: false,
+                success: function(json) {	                  
+                  domainObj["ipLimit"] = args.data.ipLimit;                
+                }
+              });  
+              $.ajax({
+                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=2&max=" + args.data.volumeLimit),
+                dataType: "json",
+                async: false,
+                success: function(json) {	                  
+                  domainObj["volumeLimit"] = args.data.volumeLimit;                
+                }
+              });  
+              $.ajax({
+                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=3&max=" + args.data.snapshotLimit),
+                dataType: "json",
+                async: false,
+                success: function(json) {	                  
+                  domainObj["snapshotLimit"] = args.data.snapshotLimit;                
+                }
+              });
+              $.ajax({
+                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=4&max=" + args.data.templateLimit),
+                dataType: "json",
+                async: false,
+                success: function(json) {	                  
+                  domainObj["templateLimit"] = args.data.templateLimit;                
+                }
+              });
+              
+              args.response.success({data: domainObj});
             }
           },
 
