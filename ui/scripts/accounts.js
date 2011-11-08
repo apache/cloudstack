@@ -7,9 +7,7 @@
 
   var systemUserId = 1;
   var adminUserId = 2;
-  
-  var selectedAccountResourceLimits;
-  
+    
   cloudStack.sections.accounts = {
     title: 'Accounts',
     id: 'accounts',
@@ -191,61 +189,63 @@
               edit: {
                 label: 'Edit ("-1" indicates no limit to the amount of resources create)',
                 action: function(args) {                                
-                  var accountObj = args.context.accounts[0];    
+                  var accountObj = args.context.accounts[0];  
+                  
                   $.ajax({
                     url: createURL("updateAccount&newname=" + todb(args.data.name) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
                     success: function(json) {                                        
-                      accountObj = json.updateaccountresponse.account;
-                      args.response.success({data: accountObj});
+                      accountObj = json.updateaccountresponse.account;                      
                     }
                   });
                                    
                   $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.instanceLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    url: createURL("updateResourceLimit&resourceType=0&max=" + todb(args.data.vmLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
                     success: function(json) {		
-                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                      accountObj["vmLimit"] = args.data.vmLimit;                       
                     }
                   });          
                  
                   $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    url: createURL("updateResourceLimit&resourceType=1&max=" + todb(args.data.ipLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
                     success: function(json) {		
-                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                      accountObj["ipLimit"] = args.data.ipLimit;                      
                     }
                   });       
                                     
                   $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=2&max=" + todb(args.data.volumeLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    url: createURL("updateResourceLimit&resourceType=2&max=" + todb(args.data.volumeLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
                     success: function(json) {		
-                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                      accountObj["volumeLimit"] = args.data.volumeLimit;                                      
                     }
                   });         
                                  
                   $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    url: createURL("updateResourceLimit&resourceType=3&max=" + todb(args.data.snapshotLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
                     success: function(json) {		
-                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                      accountObj["snapshotLimit"] = args.data.snapshotLimit;                                        
                     }
                   });         
                                     
-                   $.ajax({
-                    url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimits) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                  $.ajax({
+                    url: createURL("updateResourceLimit&resourceType=4&max=" + todb(args.data.templateLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
                     dataType: "json",
                     async: false,
                     success: function(json) {		
-                      selectedAccountResourceLimits = json.updateresourcelimitresponse.resourcelimit;                      
+                      accountObj["templateLimit"] = args.data.templateLimit;                                         
                     }
-                  });                     
+                  });    
+
+                  args.response.success({data: accountObj});                  
                 }
               },
              
@@ -471,6 +471,28 @@
                     },
                     domain: { label: 'Domain' },
                     state: { label: 'State' },
+                                        
+                    vmLimit: { 
+                      label: 'Instance limits',
+                      isEditable: true
+                    },
+                    ipLimit: { 
+                      label: 'Public IP limits',
+                      isEditable: true
+                    },
+                    volumeLimit: { 
+                      label: 'Volume limits',
+                      isEditable: true
+                    },
+                    snapshotLimit: { 
+                      label: 'Snapshot limits',
+                      isEditable: true
+                    },
+                    templateLimit: { 
+                      label: 'Template limits',
+                      isEditable: true
+                    },
+
                     vmtotal: { label: 'Total of VM' },
                     iptotal: { label: 'Total of IP Address' },
                     receivedbytes: {
@@ -490,96 +512,48 @@
                         else
                           return cloudStack.converters.convertBytes(args);
                       }
-                    },
-                    
-                    instanceLimits: {
-                      label: 'Instance limits',
-                      isEditable: true,
-                      converter: function(args) {                        
-                        if (selectedAccountResourceLimits != null) {	
-                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
-                            if(selectedAccountResourceLimits[i].resourcetype == "0") {
-                              return selectedAccountResourceLimits[i].max;
-                              break;
-                            }
-                          }
-                        }  
-                      }
-                    },                                        
-                    ipLimits: {
-                      label: 'Public IP limits',
-                      isEditable: true,
-                      converter: function(args) {                        
-                        if (selectedAccountResourceLimits != null) {	
-                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
-                            if(selectedAccountResourceLimits[i].resourcetype == "1") {
-                              return selectedAccountResourceLimits[i].max;
-                              break;
-                            }
-                          }
-                        }  
-                      }
-                    },                                        
-                    volumeLimits: {
-                      label: 'Volume limits',
-                      isEditable: true,
-                      converter: function(args) {                        
-                        if (selectedAccountResourceLimits != null) {	
-                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
-                            if(selectedAccountResourceLimits[i].resourcetype == "2") {
-                              return selectedAccountResourceLimits[i].max;
-                              break;
-                            }
-                          }
-                        }  
-                      }
-                    },                    
-                    snapshotLimits: {
-                      label: 'Snapshot limits',
-                      isEditable: true,
-                      converter: function(args) {                        
-                        if (selectedAccountResourceLimits != null) {	
-                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
-                            if(selectedAccountResourceLimits[i].resourcetype == "3") {
-                              return selectedAccountResourceLimits[i].max;
-                              break;
-                            }
-                          }
-                        }  
-                      }
-                    },
-                    templateLimits: {
-                      label: 'Template limits',
-                      isEditable: true,
-                      converter: function(args) {                        
-                        if (selectedAccountResourceLimits != null) {	
-                          for (var i = 0; i < selectedAccountResourceLimits.length; i++) {
-                            if(selectedAccountResourceLimits[i].resourcetype == "4") {
-                              return selectedAccountResourceLimits[i].max;
-                              break;
-                            }
-                          }
-                        }  
-                      }
                     }                    
                   }
                 ],
 
                 dataProvider: function(args) {     
-                  var accountObj = args.context.accounts[0];                  
+                  var accountObj = args.context.accounts[0];      
+                  
                   $.ajax({
                     url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
                     dataType: "json",     
                     async: false,                    
-                    success: function(json) {    
-                      selectedAccountResourceLimits = json.listresourcelimitsresponse.resourcelimit;		                      
+                    success: function(json) {                          
+                      var limits = json.listresourcelimitsresponse.resourcelimit;	             
+                      if (limits != null) {	
+                        for (var i = 0; i < limits.length; i++) {
+                          var limit = limits[i];
+                          switch (limit.resourcetype) {
+                            case "0":                          
+                              accountObj["vmLimit"] = limit.max;                          
+                              break;
+                            case "1":                          
+                              accountObj["ipLimit"] = limit.max;                          
+                              break;
+                            case "2":                         
+                              accountObj["volumeLimit"] = limit.max;                        
+                              break;
+                            case "3":                          
+                              accountObj["snapshotLimit"] = limit.max;                         
+                              break;
+                            case "4":                          
+                              accountObj["templateLimit"] = limit.max;                         
+                              break;
+                          }
+                        }
+                      }		                       
                     }
                   });
                  
                   args.response.success(
                     {
                       actionFilter: accountActionfilter,
-                      data: args.context.accounts[0]
+                      data: accountObj
                     }
                   );
                 }
