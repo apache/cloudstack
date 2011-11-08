@@ -883,7 +883,38 @@
                     args.complete();
                   }
                 }         
-              }                     
+              },
+            
+              'delete': {
+                label: 'Delete user',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this user?';
+                  },
+                  success: function(args) {
+                    return 'user is being deleted.';
+                  },
+                  notification: function(args) {
+                    return 'Deleting user';
+                  },
+                  complete: function(args) {
+                    return 'user has been deleted.';
+                  }
+                },
+                action: function(args) {    
+                  $.ajax({
+                    url: createURL("deleteUser&id=" + args.context.users[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {}
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              }                         
                                     
             },
             tabs: {
