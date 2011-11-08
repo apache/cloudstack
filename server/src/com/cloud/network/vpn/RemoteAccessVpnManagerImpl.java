@@ -432,6 +432,9 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                     _vpnUsersDao.remove(user.getId());
                 }
             } else {
+            	if (user.getState() == State.Add) {
+                    _vpnUsersDao.remove(user.getId());
+                }
                 s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());
             }
         }
