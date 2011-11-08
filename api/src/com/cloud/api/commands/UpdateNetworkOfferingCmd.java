@@ -34,7 +34,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
 
 @Implementation(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
