@@ -3305,8 +3305,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             
             //don't allow to update shared network
-            if (offering.getGuestType() == GuestType.Shared) {
-            	throw new InvalidParameterValueException("Can't upgrade the networkDomain for the network of type " + GuestType.Isolated);
+            if (offering.getGuestType() != GuestType.Isolated) {
+            	throw new InvalidParameterValueException("networkDomain can be upgraded only for the network of type " + GuestType.Isolated);
             }
             
             long offeringId = oldNetworkOfferingId;
