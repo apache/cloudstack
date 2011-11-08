@@ -788,19 +788,34 @@
 
       <!-- Zone chart -->
       <div class="zone-chart">
-        <div class="toolbar"></div>
-
-        <!-- Network resources -->
-        <div class="resources network">
+        <!-- NAAS configuration -->
+        <div class="resources naas">
           <div class="head">
-            <span>Network Resources</span>
-            <div class="add">Add</div>
+            <span>Zone Configuration</span>
+            <div class="add">Add Network</div>
+          </div>
+          <ul class="system-main">
+            <li class="main public">
+              <div class="name">Public</div>
+              <div class="view-all configure">Configure</div>
+            </li>
+            <li class="main management">
+              <div class="name">Management</div>
+              <div class="view-all configure">Configure</div>
+            </li>
+            <li class="main guest">
+              <div class="name">Guest</div>
+              <div class="view-all configure">Configure</div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Zone resources -->
+        <div class="resources zone">
+          <div class="head">
+            <div class="add">Add Resource</div>
           </div>
           <ul>
-            <li class="zone">
-              <div class="name">Zone: <span></span></div>
-              <div class="view-details" zone-target="pods">Details</div>
-            </li>
             <li class="pod">
               <div class="name"><span>Pods</span></div>
               <div class="view-all" zone-target="pods">View All</div>
@@ -817,39 +832,9 @@
               <div class="name"><span>Primary Storage</span></div>
               <div class="view-all" zone-target="primary-storage">View All</div>
             </li>
-            <li class="network">
-              <div class="name"><span>Network</span></div>
-              <div class="view-all" zone-target="networks">View All</div>
-            </li>
             <li class="secondary-storage">
               <div class="name"><span>Secondary Storage</span></div>
               <div class="view-all" zone-target="secondary-storage">View All</div>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Service resources -->
-        <div class="resources service">
-          <div class="head">
-            <span>Service Resources</span>
-            <div class="add">Add</div>
-          </div>
-          <ul>
-            <li>
-              <div class="name"><span>Item 1</span></div>
-              <div class="view-details">Details</div>
-            </li>
-            <li>
-              <div class="name"><span>Item 2</span></div>
-              <div class="view-all">View All</div>
-            </li>
-            <li>
-              <div class="name"><span>Item 3</span></div>
-              <div class="view-all">View All</div>
-            </li>
-            <li>
-              <div class="name"><span>Item 4</span></div>
-              <div class="view-all">View All</div>
             </li>
           </ul>
         </div>

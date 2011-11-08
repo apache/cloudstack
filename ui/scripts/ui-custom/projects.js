@@ -405,7 +405,10 @@
             .filter(function() {
               return $(this).data('json-obj').name == cloudStack.context.projects[0].name;
             }).attr('selected', 'selected');
-          $projectSelect.parent().show();
+
+          ////
+          // Hidden for now
+          //$projectSelect.parent().show();
         }
       });
 

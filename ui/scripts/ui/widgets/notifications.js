@@ -77,10 +77,6 @@
             notifications.cornerAlert({ message: $item.html() });
             notifications.activeTasks.pop(pollTimer);
             $item.removeClass('pending');
-
-            if (!notifications.activeTasks.length) {
-              $total.parent().removeClass('pending');
-            }
           },
           incomplete: function(args) {},
           error: function(args) {
@@ -108,6 +104,9 @@
       if (newTotal < 0) newTotal = completed;
 
       $total.html(newTotal);
+
+      if (!newTotal)
+        $total.parent().removeClass('pending');
     },
 
     /**
@@ -186,7 +185,7 @@
           .fadeIn();
       },
       hide: function($popup) {
-        $popup.fadeOut();      
+        $popup.fadeOut();
       },
       reposition: function($popup, $attachTo) {
         return $popup
@@ -194,7 +193,7 @@
             zIndex: 10000,
             top: $attachTo.offset().top + $attachTo.height() + 10,
             left: $attachTo.offset().left - $attachTo.width()
-          });        
+          });
       }
     }
   };
@@ -258,7 +257,7 @@
 
       // Close button
       else if ($target.closest('.button.close')) {
-        $('div.overlay').click();        
+        $('div.overlay').click();
       }
 
       return false;
