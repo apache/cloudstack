@@ -140,14 +140,30 @@
               },
               {
                 id: { label: 'ID' },
-                accounts: { label: 'Accounts' },
+                accountTotal: { label: 'Accounts' },
                 instances: { label: 'Instances' },
                 volumes: { label: 'Volumes' }
               }
             ],
-            dataProvider: function(args) {
+            dataProvider: function(args) {             
+              var domainObj = args.context.domains[0];    
+              $.ajax({                      	
+                url: createURL("listAccounts&domainid=" + domainObj.id),
+                async: false,
+                dataType: "json",
+                success: function(json) {	                                     
+                  var accounts = json.listaccountsresponse.account;	    
+                  var accountTotal;
+                  if (accounts != null) 	
+                    accountTotal = accounts.length;   
+                  else
+                    accountTotal = 0;   
+                  domainObj["accountTotal"] = accountTotal;   
+                }		
+              });	
+                            
               args.response.success({
-                data: args.context.domains[0]
+                data: domainObj
               });
             }
           },
