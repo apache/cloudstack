@@ -75,6 +75,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 	            if(rs.next()) {
 	            	return rs.getLong(1);
 	            } else {
+	            	if(id != 0)
+	            		return id;
+	            	
 	        		throw new InvalidParameterValueException("Object " + tableName + "(uuid: " + identityString + ") does not exist.");
 	            }
 	        } catch (SQLException e) {

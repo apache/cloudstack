@@ -446,6 +446,7 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
+                SerializationContext.current().setUuidTranslation(true);
                 return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
             }
             
