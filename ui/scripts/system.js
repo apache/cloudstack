@@ -6,6 +6,211 @@
   cloudStack.sections.system = {
     title: 'System',
     id: 'system',
+    // Network-as-a-service configuration
+    naas: {
+      networks: {
+        actions: {
+          add: {
+            label: 'Add Network',
+            action: function(args) {
+              args.response.success();
+            }
+          }
+        },
+        dataProvider: function(args) {
+          setTimeout(function() {
+            args.response.success({
+              data: [
+                { id: 1, name: 'Network A' },
+                { id: 2, name: 'Network B' },
+                { id: 3, name: 'Network C' }
+              ]
+            });
+          }, 500);
+        }
+      },
+
+      networkProviders: {
+        // Returns state of each network provider type
+        statusCheck: function(args) {
+          return {
+            virtualRouter: 'enabled',
+            netscaler: 'disabled',
+            f5: 'shutdown',
+            srx: 'enabled',
+            securityGroups: 'enabled'
+          };
+        },
+
+        // Actions performed on entire net. provider type
+        actions: {
+          enable: function(args) {
+            args.response.success();
+          },
+
+          disable: function(args) {
+            args.response.success();
+          }
+        },
+
+        types: {
+          // Virtual router
+          virtualRouter: {
+            label: 'Virtual Router',
+            fields: {
+              name: { label: 'Name' },
+              ipaddress: { label: 'IP Address' },
+              state: { label: 'Status' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    name: 'Router0001S',
+                    ipaddress: '192.168.1.1',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0001B',
+                    ipaddress: '192.168.1.155',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0002',
+                    ipaddress: '192.168.1.13',
+                    state: 'Enabled'
+                  }
+                ]
+              });
+            }
+          },
+
+          // NetScaler
+          netscaler: {
+            label: 'NetScaler',
+            fields: {
+              name: { label: 'Name' },
+              ipaddress: { label: 'IP Address' },
+              state: { label: 'Status' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    name: 'Router0001S',
+                    ipaddress: '192.168.1.1',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0001B',
+                    ipaddress: '192.168.1.155',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0002',
+                    ipaddress: '192.168.1.13',
+                    state: 'Enabled'
+                  }
+                ]
+              });
+            }
+          },
+
+          // F5
+          f5: {
+            label: 'F5',
+            fields: {
+              name: { label: 'Name' },
+              ipaddress: { label: 'IP Address' },
+              state: { label: 'Status' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    name: 'Router0001S',
+                    ipaddress: '192.168.1.1',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0001B',
+                    ipaddress: '192.168.1.155',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0002',
+                    ipaddress: '192.168.1.13',
+                    state: 'Enabled'
+                  }
+                ]
+              });
+            }
+          },
+
+          // SRX
+          srx: {
+            label: 'SRX',
+            fields: {
+              name: { label: 'Name' },
+              ipaddress: { label: 'IP Address' },
+              state: { label: 'Status' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    name: 'Router0001S',
+                    ipaddress: '192.168.1.1',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0001B',
+                    ipaddress: '192.168.1.155',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0002',
+                    ipaddress: '192.168.1.13',
+                    state: 'Enabled'
+                  }
+                ]
+              });
+            }
+          },
+
+          // Security groups
+          securityGroups: {
+            label: 'Security Groups',
+            fields: {
+              name: { label: 'Name' },
+              ipaddress: { label: 'IP Address' },
+              state: { label: 'Status' }
+            },
+            dataProvider: function(args) {
+              args.response.success({
+                data: [
+                  {
+                    name: 'Router0001S',
+                    ipaddress: '192.168.1.1',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0001B',
+                    ipaddress: '192.168.1.155',
+                    state: 'Enabled'
+                  },
+                  {
+                    name: 'Router0002',
+                    ipaddress: '192.168.1.13',
+                    state: 'Enabled'
+                  }
+                ]
+              });
+            }
+          }
+        }
+      }
+    },
     show: cloudStack.uiCustom.physicalResources({
       sectionSelect: {
         label: 'Select view'
