@@ -73,6 +73,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, description="the service offering ID used by virtual router provider")
     private Long serviceOfferingId;
     
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, required=true, description="guest type of the network offering: Shared or Isolated")
+    private String guestIptype;
+    
     @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports dhcp service")
     private Boolean dhcpService; 
     
@@ -108,9 +111,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
-    
-    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, required=true, description="guest type of the network offering: Shared or Isolated")
-    private String guestIptype;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

@@ -92,11 +92,6 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
     	
-        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(config.getNetworkOfferingId());
-        if (!canHandle(offering)) {
-            return null;
-        }
-
         if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
         	NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());

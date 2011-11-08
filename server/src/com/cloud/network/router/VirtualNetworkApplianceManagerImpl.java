@@ -1031,9 +1031,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         long dcId = dest.getDataCenter().getId();
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
-        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.areServicesSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
+        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup)) && guestNetwork.getTrafficType() == TrafficType.Guest;
         boolean publicNetwork = false;
-        if (_networkMgr.areServicesSupportedByNetworkOffering(guestNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+        if (_networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SourceNat)) {
             publicNetwork = true;
         }
         if (isRedundant && !publicNetwork) {
@@ -1142,9 +1142,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
                 networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
                 
-                //Router is the network element, we don't know the hypervisor type yet.
-                //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
-                List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
+                
                 Long offering_id = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
                 if (offering_id == null) {
                     offering_id = _offering.getId();
@@ -1170,6 +1168,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }
                 ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
+                
+                //Router is the network element, we don't know the hypervisor type yet.
+                //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
+                List<HypervisorType> supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId());
                 int retry = 0;
                 for (HypervisorType hType : supportedHypervisors) {
                     try {
@@ -1282,8 +1284,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
-        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-        if (offering.isSystemOnly() || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+        if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 

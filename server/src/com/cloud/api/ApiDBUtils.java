@@ -575,8 +575,8 @@ public class ApiDBUtils {
         return _networkDao.findById(id);
     }
 
-    public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkOfferingId, long zoneId) {
-        return _networkMgr.getNetworkCapabilities(networkOfferingId);
+    public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
+        return _networkMgr.getNetworkCapabilities(networkId);
     }
 
     public static long getPublicNetworkIdByZone(long zoneId) {

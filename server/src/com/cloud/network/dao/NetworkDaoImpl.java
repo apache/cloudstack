@@ -18,22 +18,23 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
+import com.cloud.network.NetworkServiceMapVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.offerings.NetworkOfferingServiceMapVO;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -63,7 +64,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
-    NetworkOfferingServiceMapDaoImpl _ntwkOffSvcMap = ComponentLocator.inject(NetworkOfferingServiceMapDaoImpl.class);
+    NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
 
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
@@ -116,9 +117,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         ZoneSecurityGroupSearch = createSearchBuilder();
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
-        SearchBuilder<NetworkOfferingServiceMapVO> join1 = _ntwkOffSvcMap.createSearchBuilder();
+        SearchBuilder<NetworkServiceMapVO> join1 = _ntwkSvcMap.createSearchBuilder();
         join1.and("service", join1.entity().getService(), Op.EQ);
-        ZoneSecurityGroupSearch.join("services", join1, ZoneSecurityGroupSearch.entity().getNetworkOfferingId(), join1.entity().getNetworkOfferingId(), JoinBuilder.JoinType.INNER);
+        ZoneSecurityGroupSearch.join("services", join1, ZoneSecurityGroupSearch.entity().getId(), join1.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         ZoneSecurityGroupSearch.done();
         
         CountByOfferingId = createSearchBuilder(Long.class);
@@ -133,9 +134,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         PhysicalNetworkSearch.done();
         
         securityGroupSearch = createSearchBuilder();
-        SearchBuilder<NetworkOfferingServiceMapVO> join3 = _ntwkOffSvcMap.createSearchBuilder();
+        SearchBuilder<NetworkServiceMapVO> join3 = _ntwkSvcMap.createSearchBuilder();
         join3.and("service", join3.entity().getService(), Op.EQ);
-        securityGroupSearch.join("services", join3, securityGroupSearch.entity().getNetworkOfferingId(), join3.entity().getNetworkOfferingId(), JoinBuilder.JoinType.INNER);
+        securityGroupSearch.join("services", join3, securityGroupSearch.entity().getId(), join3.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         securityGroupSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
@@ -185,13 +186,23 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override @DB
-    public NetworkVO persist(NetworkVO network, boolean gc) {
+    public NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        
+        //1) create network
         NetworkVO newNetwork = super.persist(network);
+        //2) add account to the network
         addAccountToNetwork(network.getId(), network.getAccountId(), true);
+        //3) add network to gc monitor table
         NetworkOpVO op = new NetworkOpVO(network.getId(), gc);
         _opDao.persist(op);
+        //4) add services/providers for the network
+        for (String service : serviceProviderMap.keySet()) {
+            NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(newNetwork.getId(), Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
+            _ntwkSvcMap.persist(serviceMap);
+        }
+
         txn.commit();
         return newNetwork;
     }
@@ -326,13 +337,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
     @Override
     public List<NetworkVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
-        SearchBuilder<NetworkOfferingServiceMapVO> svcProviderMapSearch = _ntwkOffSvcMap.createSearchBuilder();
-        NetworkOfferingServiceMapVO svcProviderEntry = svcProviderMapSearch.entity();
+        SearchBuilder<NetworkServiceMapVO> svcProviderMapSearch = _ntwkSvcMap.createSearchBuilder();
+        NetworkServiceMapVO svcProviderEntry = svcProviderMapSearch.entity();
         svcProviderMapSearch.and("Provider", svcProviderMapSearch.entity().getProvider(), SearchCriteria.Op.EQ);
 
         SearchBuilder<NetworkVO> networksSearch = createSearchBuilder();
         networksSearch.and("physicalNetworkId", networksSearch.entity().getPhysicalNetworkId(), Op.EQ);
-        networksSearch.join("svcProviderMapSearch", svcProviderMapSearch, networksSearch.entity().getNetworkOfferingId(), svcProviderEntry.getNetworkOfferingId(), JoinBuilder.JoinType.INNER);
+        networksSearch.join("svcProviderMapSearch", svcProviderMapSearch, networksSearch.entity().getId(), svcProviderEntry.getNetworkId(), JoinBuilder.JoinType.INNER);
 
         SearchCriteria<NetworkVO> sc = networksSearch.create();
         sc.setJoinParameters("svcProviderMapSearch", "Provider", providerName);

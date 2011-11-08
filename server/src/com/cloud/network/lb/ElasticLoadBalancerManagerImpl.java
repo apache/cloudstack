@@ -458,8 +458,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
         try {
 
-            NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-            if (offering.isSystemOnly() || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+            if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
                 owner = _accountService.getSystemAccount();
             }
 

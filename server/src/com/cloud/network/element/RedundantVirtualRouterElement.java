@@ -45,7 +45,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getGuestType(), offering.getId(), Service.Gateway)) {
+        if (!canHandle(guestConfig, Service.Gateway)) {
             return false;
         }
         
@@ -60,7 +60,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Gateway)) {
+        if (canHandle(network, Service.Gateway)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }

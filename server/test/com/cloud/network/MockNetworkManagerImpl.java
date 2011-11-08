@@ -459,7 +459,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider) {
+    public boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -513,13 +513,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, boolean forcedShutdown, List<String> enabledServices) throws ConcurrentOperationException,
-            ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean deleteNetworkServiceProvider(Long id) {
         // TODO Auto-generated method stub
         return false;
@@ -553,12 +546,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public long findPhysicalNetworkId(long zoneId, String tag) {
         // TODO Auto-generated method stub
         return 0;
-    }
-
-    @Override
-    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -598,13 +585,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkOfferingId) {
+    public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Map<Capability, String> getServiceCapabilities(Long networkOfferingId, Service service) {
+    public Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -646,7 +633,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service) {
+    public boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -679,5 +666,29 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public List<? extends UserDataServiceProvider> getPasswordResetElements() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String vlan) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean areServicesSupportedInNetwork(long networkId, Service... services) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isNetworkSystem(Network network) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

@@ -40,6 +40,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -184,9 +185,9 @@ public interface NetworkManager extends NetworkService {
     @Deprecated
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
     
-    boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkOfferingId);
+    boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId);
 
-    Map<Capability, String> getServiceCapabilities(Long networkOfferingId, Service service);
+    Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
@@ -216,7 +217,7 @@ public interface NetworkManager extends NetworkService {
     
     Long getPodIdForVlan(long vlanDbId);
     
-    boolean isProviderSupported(long networkOfferingId, Service service, Provider provider);
+    boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider);
     
     List<Long> listNetworkOfferingsForUpgrade(long networkId);
 
@@ -228,7 +229,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean isProviderAvailable(long physicalNetowrkId, String providerName);
     
-    boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service);
+    boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service);
 
     List<String> getNetworkTags(HypervisorType hType, Network network);
 
@@ -240,4 +241,9 @@ public interface NetworkManager extends NetworkService {
     
     PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId);
     
+    boolean areServicesSupportedInNetwork(long networkId, Service... services);
+
+    boolean isNetworkSystem(Network network);
+
+    Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
 }

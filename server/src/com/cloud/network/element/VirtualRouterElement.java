@@ -37,7 +37,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -100,10 +99,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject ConfigurationDao _configDao;
     @Inject VirtualRouterProviderDao _vrProviderDao;
     
-    protected boolean canHandle(GuestType networkType, long offeringId, Service service) {
+    protected boolean canHandle(Network network, Service service) {
         boolean result = false;
        
-        if (_networkMgr.isProviderSupported(offeringId, service, getProvider())) {
+        if (_networkMgr.isProviderSupportedInNetwork(network.getId(), service, getProvider())) {
             result = true;
         }
 
@@ -115,7 +114,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig.getGuestType(), offering.getId(), Service.Gateway)) {
+        if (!canHandle(guestConfig, Service.Gateway)) {
             return false;
         }
         
@@ -130,7 +129,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Dhcp)) {
+        if (canHandle(network, Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -160,7 +159,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        if (canHandle(config.getGuestType(), config.getNetworkOfferingId(), Service.Firewall)) {
+        if (canHandle(config, Service.Firewall)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + config.getId());
@@ -179,7 +178,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Lb)) {
+        if (canHandle(network, Service.Lb)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
@@ -206,7 +205,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return null;
         }
         
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Vpn)) {
+        if (canHandle(network, Service.Vpn)) {
             return _routerMgr.applyVpnUsers(network, users, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle applyVpnUsers command");
@@ -222,7 +221,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
         
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Vpn)) {
+        if (canHandle(network, Service.Vpn)) {
             return _routerMgr.startRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle createVpn command");
@@ -238,7 +237,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
         
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Vpn)) {
+        if (canHandle(network, Service.Vpn)) {
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle removeVpn command");
@@ -248,7 +247,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.Firewall)) {
+        if (canHandle(network, Service.Firewall)) {
             
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
@@ -315,7 +314,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        if (canHandle(config.getGuestType(), config.getNetworkOfferingId(), Service.StaticNat)) {
+        if (canHandle(config, Service.StaticNat)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual router doesn't exist in the network " + config.getId());
@@ -411,7 +410,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), network.getNetworkOfferingId(), Service.PortForwarding)) {
+        if (canHandle(network, Service.PortForwarding)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());

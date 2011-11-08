@@ -35,7 +35,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.server.api.response.NetworkDeviceResponse;
@@ -110,7 +109,7 @@ public interface ExternalNetworkDeviceManager extends Manager {
 
     public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
         
-    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException, InsufficientCapacityException;
+    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network) throws ResourceUnavailableException, InsufficientCapacityException;
     
     public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
 

@@ -2157,7 +2157,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setTrafficType(network.getTrafficType().name());
         }
         
-        response.setGuestIpType(network.getGuestType().toString());
+        if (network.getGuestType() != null) {
+            response.setGuestIpType(network.getGuestType().toString());
+        }
 
         // get start ip and end ip of corresponding vlan
         List<? extends Vlan> vlan = ApiDBUtils.listVlanByNetworkId(network.getId());
@@ -2195,7 +2197,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         // populate capability
-        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(networkOffering.getId(), network.getDataCenterId());
+        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId(), network.getDataCenterId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
             for (Service service : serviceCapabilitiesMap.keySet()) {

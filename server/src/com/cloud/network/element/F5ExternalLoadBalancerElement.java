@@ -31,7 +31,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -43,9 +42,9 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
@@ -61,7 +60,7 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
     @Inject NetworkManager _networkManager;
     @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject ConfigurationManager _configMgr;
-    @Inject NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    @Inject NetworkServiceMapDao _ntwkSrvcDao;
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
@@ -70,8 +69,8 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
             return false;
         }
         
-        return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getNetworkOfferingId()) && 
-                _ntwkOfferingSrvcDao.isProviderSupported(config.getNetworkOfferingId(), Service.Lb, Network.Provider.F5BigIp));
+        return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getId()) && 
+                _ntwkSrvcDao.isProviderSupportedInNetwork(config.getId(), Service.Lb, Network.Provider.F5BigIp));
     }
 
     @Override

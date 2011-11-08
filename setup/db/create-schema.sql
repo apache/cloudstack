@@ -1731,6 +1731,18 @@ CREATE TABLE  `ntwk_offering_service_map` (
   UNIQUE (`network_offering_id`, `service`, `provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `ntwk_service_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_id` bigint unsigned NOT NULL COMMENT 'network_id',
+  `service` varchar(255) NOT NULL COMMENT 'service',
+  `provider` varchar(255) COMMENT 'service provider',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_ntwk_service_map__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  UNIQUE (`network_id`, `service`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 CREATE TABLE `cloud`.`physical_network` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',

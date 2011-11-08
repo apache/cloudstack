@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.offerings;
+package com.cloud.network;
 
 import java.util.Date;
 
@@ -31,16 +31,15 @@ import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="ntwk_offering_service_map")
-public class NetworkOfferingServiceMapVO {
-   
+@Table(name="ntwk_service_map")
+public class NetworkServiceMapVO {  
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
     
-    @Column(name="network_offering_id")
-    long networkOfferingId;
+    @Column(name="network_id")
+    long networkId;
     
     @Column(name="service")
     String service;
@@ -55,8 +54,8 @@ public class NetworkOfferingServiceMapVO {
         return id;
     }
 
-    public long getNetworkOfferingId() {
-        return networkOfferingId;
+    public long getNetworkId() {
+        return networkId;
     }
 
     public String getService() {
@@ -71,18 +70,18 @@ public class NetworkOfferingServiceMapVO {
         return created;
     }
     
-    public NetworkOfferingServiceMapVO() {
+    public NetworkServiceMapVO() {
     }
     
-    public NetworkOfferingServiceMapVO(long networkOfferingId, Service service, Provider provider) {
-        this.networkOfferingId = networkOfferingId;
+    public NetworkServiceMapVO(long networkId, Service service, Provider provider) {
+        this.networkId = networkId;
         this.service = service.getName();
         this.provider = provider.getName();
     }
     
     public String toString() {
-        StringBuilder buf = new StringBuilder("[Network Offering Service[");
-        return buf.append(networkOfferingId).append("-").append(service).append("-").append(provider).append("]").toString();
+        StringBuilder buf = new StringBuilder("[Network Service[");
+        return buf.append(networkId).append("-").append(service).append("-").append(provider).append("]").toString();
     }
 }
 

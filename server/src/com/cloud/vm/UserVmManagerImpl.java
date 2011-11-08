@@ -128,6 +128,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -141,7 +142,6 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
@@ -350,7 +350,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected ProjectManager _projectMgr;
     @Inject 
-    protected NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    protected NetworkServiceMapDao _ntwkSrvcDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -2736,7 +2736,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
             UserVmVO userVm = profile.getVirtualMachine();
             //dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
-            if (_ntwkOfferingSrvcDao.isProviderSupported(guestNetwork.getNetworkOfferingId(), Service.Dhcp, Provider.ExternalDhcpServer)){
+            if (_ntwkSrvcDao.isProviderSupportedInNetwork(guestNetwork.getId(), Service.Dhcp, Provider.ExternalDhcpServer)){
                 _nicDao.update(guestNic.getId(), guestNic);
                 userVm.setPrivateIpAddress(guestNic.getIp4Address());
                 _vmDao.update(userVm.getId(), userVm);

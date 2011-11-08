@@ -72,7 +72,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -93,11 +92,10 @@ import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
+import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
-import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -112,8 +110,6 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ServerResource;
@@ -171,7 +167,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject ConfigurationDao _configDao;
     @Inject HostDetailsDao _detailsDao;
     @Inject NetworkOfferingDao _networkOfferingDao;
-    @Inject NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
     @Inject NicDao _nicDao;
     @Inject VpnUserDao _vpnUsersDao;
     @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
@@ -1123,7 +1118,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     }
 
     @Override
-    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network, NetworkOffering offering) throws ResourceUnavailableException, InsufficientCapacityException {
+    public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network) throws ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("External firewall can only be used for add/remove guest networks.");
             return false;
@@ -1158,7 +1153,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());
         
         boolean sharedSourceNat = false;
-        Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+        Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
         if (sourceNatCapabilities != null) {
             String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
             if (supportedSourceNatTypes.contains("zone")) {
@@ -1566,7 +1561,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
                 String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();
                     
                 boolean sharedSourceNat = false;
-                Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+                Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
                 if (sourceNatCapabilities != null) {
                     String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
                     if (supportedSourceNatTypes.contains("zone")) {
@@ -1639,7 +1634,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
                     List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.GuestType.Isolated);
                     
                     for (NetworkVO network : networksForAccount) {
-                        if (!_networkMgr.networkIsConfiguredForExternalNetworking(zoneId, network.getNetworkOfferingId())) {
+                        if (!_networkMgr.networkIsConfiguredForExternalNetworking(zoneId, network.getId())) {
                             s_logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
                             continue;
                         }

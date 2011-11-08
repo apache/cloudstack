@@ -18,6 +18,7 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.network.Network;
 import com.cloud.network.NetworkAccountVO;
@@ -36,7 +37,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type);
 
-    NetworkVO persist(NetworkVO network, boolean gc);
+    NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap);
 
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
 

@@ -83,6 +83,7 @@ import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkExternalFirewallDaoImpl;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
+import com.cloud.network.dao.NetworkServiceMapDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
@@ -304,6 +305,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkExternalLoadBalancerDao", NetworkExternalLoadBalancerDaoImpl.class);
         addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
         addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
+        addDao("NetworkServiceMapDao", NetworkServiceMapDaoImpl.class);
     }
 
     @Override

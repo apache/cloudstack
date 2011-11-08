@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -76,7 +75,6 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.guru.ControlNetworkGuru;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
 import com.cloud.network.guru.PodBasedNetworkGuru;
@@ -121,9 +119,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final DomainDao _domainDao;
     private final AccountDao _accountDao;
     private final ResourceCountDao _resourceCountDao;
-    private final NetworkOfferingServiceMapDao _offeringServiceMapDao;
-    private final VirtualRouterProviderDao _virtualRouterProviderDao;
-
+    private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
     
     public ConfigurationServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
@@ -139,8 +135,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _domainDao = locator.getDao(DomainDao.class);
         _accountDao = locator.getDao(AccountDao.class);
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
-        _offeringServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
-        _virtualRouterProviderDao = locator.getDao(VirtualRouterProviderDao.class);
+        _ntwkOfferingServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
     }
 
     @Override @DB
@@ -874,7 +869,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(deafultSharedSGNetworkOffering.getId(), service, defaultSharedSGNetworkOfferingProviders.get(service));
-            _offeringServiceMapDao.persist(offService);
+            _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
         
@@ -890,7 +885,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultSharedNetworkOfferingProviders.get(service));
-            _offeringServiceMapDao.persist(offService);
+            _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
         
@@ -907,7 +902,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
-            _offeringServiceMapDao.persist(offService);
+            _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
         
@@ -923,7 +918,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
-            _offeringServiceMapDao.persist(offService);
+            _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
        
@@ -989,7 +984,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());
                         network.setState(State.Implemented);
-                        _networkDao.persist(network, false);
+                        _networkDao.persist(network, false, getServicesAndProvidersForNetwork(networkOfferingId));
                         id++;
                     }
                 } 
@@ -1114,5 +1109,18 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
     }
     
+    public Map<String, String> getServicesAndProvidersForNetwork(long networkOfferingId) {
+        Map<String, String> svcProviders = new HashMap<String, String>();
+        List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingServiceMapDao.listByNetworkOfferingId(networkOfferingId);
+        
+        for (NetworkOfferingServiceMapVO serviceMap : servicesMap) {
+            if (svcProviders.containsKey(serviceMap.getService())) {
+                continue;
+            } 
+            svcProviders.put(serviceMap.getService(), serviceMap.getProvider());  
+        }
+        
+        return svcProviders;
+    }
 
 }

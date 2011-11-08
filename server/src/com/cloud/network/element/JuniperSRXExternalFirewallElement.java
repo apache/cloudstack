@@ -80,7 +80,7 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
             return false;
         }   
         
-        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getNetworkOfferingId());
+        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getId());
     }
 
     @Override
@@ -98,7 +98,7 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
         }
 
         try {
-            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(true, network, offering);
+            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(true, network);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception
             return false;
@@ -118,7 +118,6 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         
         //don't have to implement network is Basic zone
         if (zone.getNetworkType() == NetworkType.Basic) {
@@ -130,7 +129,7 @@ public class JuniperSRXExternalFirewallElement extends AdapterBase implements So
             return false;
         }
         try {
-            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(false, network, offering);
+            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(false, network);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception 
             return false;

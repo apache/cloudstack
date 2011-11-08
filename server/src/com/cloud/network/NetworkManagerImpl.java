@@ -116,6 +116,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -276,6 +277,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject PhysicalNetworkTrafficTypeDao _pNTrafficTypeDao;
     @Inject AgentManager _agentMgr;
     @Inject HostDao _hostDao;
+    @Inject NetworkServiceMapDao _ntwkSrvcDao;
     
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -701,7 +703,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
 
             boolean sharedSourceNat = false;
-            Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+            Map<Network.Capability, String> sourceNatCapabilities = getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
             if (sourceNatCapabilities != null) {
                 String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
                 if (supportedSourceNatTypes.contains("zone")) {
@@ -1106,7 +1108,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
                         (domainId != null), predefined.getNetworkDomain(), offering.getGuestType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
-                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated));
+                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, getServicesAndProvidersForNetwork(offering)));
 
                 if (domainId != null) {
                     _networksDao.addDomainToNetwork(id, domainId);
@@ -1387,8 +1389,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // associate a source NAT IP (if one isn't already associated with the network)
         
         boolean sharedSourceNat = false;
-        if (areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat)) {
-            Map<Network.Capability, String> sourceNatCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.SourceNat);
+        if (areServicesSupportedInNetwork(network.getId(), Service.SourceNat)) {
+            Map<Network.Capability, String> sourceNatCapabilities = getNetworkServiceCapabilities(network.getId(), Service.SourceNat);
             if (sourceNatCapabilities != null) {
                 String supportedSourceNatTypes = sourceNatCapabilities.get(Capability.SupportedSourceNatTypes).toLowerCase();
                 if (supportedSourceNatTypes.contains("zone")) {
@@ -1397,7 +1399,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        if (network.getGuestType() == Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.SourceNat) && !sharedSourceNat) {
+        if (network.getGuestType() == Network.GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat) && !sharedSourceNat) {
             List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
 
             if (ips.isEmpty()) {
@@ -1601,7 +1603,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         Network associatedNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
 
-        if (areServicesSupportedByNetworkOffering(associatedNetwork.getNetworkOfferingId(), Service.SourceNat)) {
+        if (areServicesSupportedInNetwork(associatedNetwork.getId(), Service.SourceNat)) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
@@ -1735,7 +1737,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 isDomainSpecific = true;
             }
         }
-        
         
         //FIXME - need to check if all providers are supported by the physical network
         //FIXME - need to check that the traffic type is supported
@@ -1904,7 +1905,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // If networkDomain is not specified, take it from the global configuration
         if (areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
-            Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(networkOfferingId, Service.Dns);
+            Map<Network.Capability, String> dnsCapabilities = getNetworkOfferingServiceCapabilities(_configMgr.getNetworkOffering(networkOfferingId), Service.Dns);
             String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
             if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
                 if (networkDomain != null) {
@@ -2127,10 +2128,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //sort networks by sourceNatEnabled parameter
         if (sourceNatEnabled != null) {
             List<Network> supportedNetworks = new ArrayList<Network>();
-            
             for (Network network : networksToReturn) {
-                NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-                boolean isSupported = areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat);
+                boolean isSupported = areServicesSupportedInNetwork(network.getId(), Service.SourceNat);
                 if (isSupported == sourceNatEnabled.booleanValue()) {
                     supportedNetworks.add(network);
                 }
@@ -2254,9 +2253,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         //don't allow to delete system network
-        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-        if (offering.isSystemOnly()) {
-            throw new InvalidParameterValueException("Network id=" + networkId + " is system and can't be removed");
+        if (isNetworkSystem(network)) {
+            throw new InvalidParameterValueException("Network " + network + " is system and can't be removed");
         }
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
@@ -2713,22 +2711,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     
     @Override
-    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkOfferingId) {
+    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
 
         Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
 
         //list all services of this networkOffering
-        List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.getServices(networkOfferingId);
-        for(NetworkOfferingServiceMapVO instance : servicesMap ){
+        List<NetworkServiceMapVO> servicesMap = _ntwkSrvcDao.getServicesInNetwork(networkId);
+        for(NetworkServiceMapVO instance : servicesMap ){
             Service service = Service.getService(instance.getService());
-            //FIXME what if a service has multiple providers in the same networkOffering?
-            if(networkCapabilities.containsKey(service)){
-                if(s_logger.isDebugEnabled()){
-                    s_logger.debug("Network Offering: "+ networkOfferingId +" has multiple Providers associated for this Service:"+service.getName());
-                    s_logger.debug("Returning the capabilities of the first Provider");
-                }
-                continue;
-            }
             NetworkElement element = getElementImplementingProvider(instance.getProvider());
             if(element != null){
                 Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
@@ -2742,32 +2732,51 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public Map<Capability, String> getServiceCapabilities(Long networkOfferingId, Service service) {
+    public Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service) {
 
-        if (!areServicesSupportedByNetworkOffering(networkOfferingId, service)) {
-            throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
+        if (!areServicesSupportedInNetwork(networkId, service)) {
+            throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in the network id=" + networkId);
         }
         
         Map<Capability, String> serviceCapabilities = new HashMap<Capability, String>();
 
         //get the Provider for this Service for this offering
-        List<String> serviceProviderNames = _ntwkOfferingSrvcDao.getProvidersForService(networkOfferingId, service);
+        String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(networkId, service);
+        
+        NetworkElement element = getElementImplementingProvider(provider);
+        if(element != null){
+            Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
+        
+            if (elementCapabilities == null || elementCapabilities.get(service) == null) {
+                throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" + provider);
+            }
+            serviceCapabilities = elementCapabilities.get(service);
+        }
+        
+        return serviceCapabilities;
+    }
+    
+    @Override
+    public Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service) {
+
+        if (!areServicesSupportedByNetworkOffering(offering.getId(), service)) {
+            throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the network offering " + offering);
+        }
+        
+        Map<Capability, String> serviceCapabilities = new HashMap<Capability, String>();
+
+        //get the Provider for this Service for this offering
+        String provider = _ntwkOfferingSrvcDao.getProviderForServiceForNetworkOffering(offering.getId(), service);
         
         //FIXME we return the capabilities of the first provider of the service - what if we have multiple providers for same Service?
-        if(serviceProviderNames != null && !serviceProviderNames.isEmpty()){
-            NetworkElement element = getElementImplementingProvider(serviceProviderNames.get(0));
-            if(element != null){
-                Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
-            
-                if (elementCapabilities == null || elementCapabilities.get(service) == null) {
-                    throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" + serviceProviderNames.get(0));
-                }
-                serviceCapabilities = elementCapabilities.get(service);
+        NetworkElement element = getElementImplementingProvider(provider);
+        if(element != null){
+            Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();;
+        
+            if (elementCapabilities == null || elementCapabilities.get(service) == null) {
+                throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" + provider);
             }
-        }else{
-            if(s_logger.isDebugEnabled()){
-                s_logger.debug("Network Offering: "+ networkOfferingId +" does not have any Providers associated for this Service:"+service.getName());
-            }
+            serviceCapabilities = elementCapabilities.get(service);
         }
         
         return serviceCapabilities;
@@ -2833,8 +2842,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (nics != null) {
             for (Nic nic : nics) {
                 NetworkVO network = _networksDao.findByIdIncludingRemoved(nic.getNetworkId());
-                NetworkOffering no = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-                if (no.isSystemOnly() == isSystem) {
+                
+                if (isNetworkSystem(network) == isSystem) {
                     networks.add(network);
                 }
             }
@@ -3023,18 +3032,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkOfferingId) {
+    public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
         DataCenterVO zone = _dcDao.findById(zoneId);
         
-        boolean usesJuniperForGatewayService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Gateway, Network.Provider.JuniperSRX);
-        boolean usesJuniperForFirewallService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Firewall, Network.Provider.JuniperSRX);
-        boolean usesNetscalarForLBService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Lb, Network.Provider.Netscaler);
-        boolean usesF5ForLBService = _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, Service.Lb, Network.Provider.F5BigIp);
+        boolean usesJuniperForGatewayService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Gateway, Network.Provider.JuniperSRX);
+        boolean usesJuniperForFirewallService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Firewall, Network.Provider.JuniperSRX);
+        boolean usesNetscalarForLBService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Lb, Network.Provider.Netscaler);
+        boolean usesF5ForLBService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Lb, Network.Provider.F5BigIp);
         
         if (zone.getNetworkType() == NetworkType.Advanced) {
             if (usesJuniperForGatewayService && usesJuniperForFirewallService) {
                 return true;
-            } else if (_ntwkOfferingSrvcDao.areServicesSupported(networkOfferingId, Service.Gateway) && (usesF5ForLBService || usesNetscalarForLBService)) {
+            } else if (_ntwkSrvcDao.areServicesSupportedInNetwork(networkId, Service.Gateway) && (usesF5ForLBService || usesNetscalarForLBService)) {
                 return true;
             } else {
                 return false;
@@ -3042,12 +3051,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             return usesJuniperForFirewallService;
         }
-
     }    
 
     @Override
     public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
-        return (_ntwkOfferingSrvcDao.areServicesSupported(networkOfferingId, services));
+        return (_ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(networkOfferingId, services));
+    }
+    
+    @Override
+    public boolean areServicesSupportedInNetwork(long networkId, Service... services) {
+        return (_ntwkSrvcDao.areServicesSupportedInNetwork(networkId, services));
     }
 
     private boolean cleanupIpResources(long ipId, long userId, Account caller) {
@@ -3126,8 +3139,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
 
         for (NetworkVO network : zoneNetworks) {
-            NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            if (!no.isSystemOnly()) {
+            if (!isNetworkSystem(network)) {
                 if (network.getGuestType() == Network.GuestType.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
                     if ((type == null || type == network.getGuestType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
                         accountNetworks.add(network);
@@ -3240,27 +3252,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Can't update system networks");
         }
 
-        //don't allow to modify network domain if the service is not supported
-        if (domainSuffix != null) {
-            // validate network domain
-            if (!NetUtils.verifyDomainName(domainSuffix)) {
-                throw new InvalidParameterValueException(
-                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
-            }
-
-
-            Map<Network.Capability, String> dnsCapabilities = getServiceCapabilities(network.getNetworkOfferingId(), Service.Dns);
-            String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
-            if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
-                throw new InvalidParameterValueException("Domain name change is not supported for network id=" + network.getNetworkOfferingId() + " in zone id=" + network.getDataCenterId());
-            }
-
-            network.setNetworkDomain(domainSuffix);
-            //have to restart the network
-            restartNetwork = true;
-        }
-
         if (name != null) {
             network.setName(name);
         }
@@ -3297,7 +3288,32 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 restartNetwork = true;
             }
-        }   
+        }
+        
+        //don't allow to modify network domain if the service is not supported
+        if (domainSuffix != null) {
+            // validate network domain
+            if (!NetUtils.verifyDomainName(domainSuffix)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+            
+            long offeringId = oldNetworkOfferingId;
+            if (networkOfferingId != null) {
+                offeringId = networkOfferingId;
+            }
+            
+            Map<Network.Capability, String> dnsCapabilities = getNetworkOfferingServiceCapabilities(_configMgr.getNetworkOffering(offeringId), Service.Dns);
+            String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
+            if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
+                throw new InvalidParameterValueException("Domain name change is not supported by the network offering id=" + networkOfferingId);
+            }
+
+            network.setNetworkDomain(domainSuffix);
+            //have to restart the network
+            restartNetwork = true;
+        }
 
         _networksDao.update(networkId, network);
         boolean success = true;
@@ -3490,7 +3506,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
         Map<String, Set<String>> serviceProviderMap = new HashMap<String, Set<String>>();
-        List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.getServices(networkOfferingId);
+        List<NetworkOfferingServiceMapVO> map = _ntwkOfferingSrvcDao.listByNetworkOfferingId(networkOfferingId);
         
         for (NetworkOfferingServiceMapVO instance : map) {
             String service = instance.getService();
@@ -3508,8 +3524,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider){
-        return _ntwkOfferingSrvcDao.isProviderSupported(networkOfferingId, service, provider);
+    public boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider){
+        return _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, service, provider);
     }
     
     protected boolean canUpgrade(long oldNetworkOfferingId, long newNetworkOfferingId) {
@@ -4457,7 +4473,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null);
         }
         
-        return isServiceEnabled(physicalNetworkId, network.getNetworkOfferingId(), Service.SecurityGroup);
+        return isServiceEnabledInNetwork(physicalNetworkId, network.getId(), Service.SecurityGroup);
     }
 
     @Override
@@ -4734,20 +4750,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean isServiceEnabled(long physicalNetworkId, long networkOfferingId, Service service) {
-        //check if the service is supported by the network offering
-        if (!areServicesSupportedByNetworkOffering(networkOfferingId, service)) {
-            s_logger.debug("Service " + service.getName() + " is not supported by the network offering id=" + networkOfferingId);
+    public boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service) {
+        //check if the service is supported in the network
+        if (!areServicesSupportedInNetwork(networkId, service)) {
+            s_logger.debug("Service " + service.getName() + " is not supported in the network id=" + networkId);
             return false;
         }
         
-        //get providers for the service and check if all of them are supported
-        List<String> providers = _ntwkOfferingSrvcDao.getProvidersForService(networkOfferingId, service);
-        for (String provider : providers) {
-            if (!isProviderAvailable(physicalNetworkId, provider)) {
-                s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
-                return false;
-            }
+        //get provider for the service and check if all of them are supported
+        String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(networkId, service);
+        
+        if (!isProviderAvailable(physicalNetworkId, provider)) {
+            s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
+            return false;
         }
         
         return true;
@@ -4813,5 +4828,30 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return nsp;
     }
 
+    
+    @Override
+    public boolean isNetworkSystem(Network network) {
+        NetworkOffering no = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (no.isSystemOnly()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    public Map<String, String> getServicesAndProvidersForNetwork(NetworkOffering offering) {
+        Map<String, String> svcProviders = new HashMap<String, String>();
+        List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.listByNetworkOfferingId(offering.getId());
+        
+        for (NetworkOfferingServiceMapVO serviceMap : servicesMap) {
+            if (svcProviders.containsKey(serviceMap.getService())) {
+                //FIXME - right now we pick up the first provider from the list, need to add more logic based on provider load, etc
+                continue;
+            } 
+            svcProviders.put(serviceMap.getService(), serviceMap.getProvider());  
+        }
+        
+        return svcProviders;
+    }
     
 }

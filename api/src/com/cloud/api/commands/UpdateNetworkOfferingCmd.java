@@ -55,7 +55,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the network offering")
     private String displayText;
     
-    @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering")
+    @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Supported values are Required, Optional and Unavailable")
     private String availability;
     
     @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, description="true is network offering supports dhcp service")

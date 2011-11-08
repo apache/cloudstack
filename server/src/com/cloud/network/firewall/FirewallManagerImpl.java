@@ -358,10 +358,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         
         if (purpose == Purpose.LoadBalancing) {
             if (!_elbEnabled) {
-                protocolCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.Lb);
+                protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
         } else {
-            protocolCapabilities = _networkMgr.getServiceCapabilities(network.getNetworkOfferingId(), Service.Firewall);
+            protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
         }
         
         if (protocolCapabilities != null) {

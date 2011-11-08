@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,20 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
-/**
- * 
- */
 package com.cloud.offerings.dao;
 
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.utils.db.DB;
@@ -57,7 +51,7 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     }
     
     @Override
-    public boolean areServicesSupported(long networkOfferingId, Service... services) {
+    public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         SearchCriteria<NetworkOfferingServiceMapVO> sc = MultipleServicesSearch.create();
         sc.setParameters("networkOfferingId", networkOfferingId);
         
@@ -73,67 +67,21 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
             sc.setParameters("service", (Object[])servicesStr);
         }
         
-        List<NetworkOfferingServiceMapVO> offerings = listBy(sc);
+        List<NetworkOfferingServiceMapVO> offeringServices = listBy(sc);
         
         if (services != null) {
-            if (offerings.size() == services.length) {
+            if (offeringServices.size() == services.length) {
                 return true;
             }
-        } else if (!offerings.isEmpty()) {
+        } else if (!offeringServices.isEmpty()) {
             return true;
         }
         
         return false;
     }
-    
-    @Override
-    public boolean isProviderSupported(long networkOfferingId, Service service, Provider provider) {
-        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkOfferingId", networkOfferingId);
-        sc.setParameters("service", service.getName());
-        sc.setParameters("provider", provider.getName());
-        if (findOneBy(sc) != null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
-   
-    @Override
-    public List<String> getServicesForProvider(long networkOfferingId, Provider provider) {
-        List<String> services = new ArrayList<String>();
-        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkOfferingId", networkOfferingId);
-        sc.setParameters("provider", provider.getName());
-        List<NetworkOfferingServiceMapVO> map = listBy(sc);
-        for (NetworkOfferingServiceMapVO instance : map) {
-            services.add(instance.getService());
-        }
-        
-        return services;
-    }
-    
-    @Override
-    public List<String> getProvidersForService(long networkOfferingId, Service service) {
-        List<String> providers = new ArrayList<String>();
-        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkOfferingId", networkOfferingId);
-        sc.setParameters("service", service.getName());
-        List<NetworkOfferingServiceMapVO> map = listBy(sc);
-        if (map.isEmpty()) {
-            throw new UnsupportedServiceException("Service " + service + " is not supported by the network offering id=" + networkOfferingId);
-        }
-        
-        for (NetworkOfferingServiceMapVO instance : map) {
-            providers.add(instance.getProvider());
-        }
-        
-        return providers;
-    }
  
     @Override
-    public List<NetworkOfferingServiceMapVO> getServices(long networkOfferingId) {
+    public List<NetworkOfferingServiceMapVO> listByNetworkOfferingId(long networkOfferingId) {
         SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkOfferingId", networkOfferingId);
         return listBy(sc);
@@ -144,5 +92,18 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkOfferingId", networkOfferingId);
         remove(sc);
+    }
+    
+    @Override
+    public String getProviderForServiceForNetworkOffering(long networkOfferingId, Service service) {
+        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        sc.setParameters("service", service.getName());
+        NetworkOfferingServiceMapVO ntwkSvc = findOneBy(sc);
+        if (ntwkSvc == null) {
+            throw new UnsupportedServiceException("Service " + service + " is not supported by network offering id=" + networkOfferingId);
+        }
+        
+        return ntwkSvc.getProvider();
     }
 }
