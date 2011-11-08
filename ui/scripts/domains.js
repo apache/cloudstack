@@ -140,6 +140,26 @@
               },
               {
                 id: { label: 'ID' },
+                vmLimit: { 
+                  label: 'Instance limits',
+                  isEditable: true
+                },
+                ipLimit: { 
+                  label: 'Public IP limits',
+                  isEditable: true
+                },
+                volumeLimit: { 
+                  label: 'Volume limits',
+                  isEditable: true
+                },
+                snapshotLimit: { 
+                  label: 'Snapshot limits',
+                  isEditable: true
+                },
+                templateLimit: { 
+                  label: 'Template limits',
+                  isEditable: true
+                },
                 accountTotal: { label: 'Accounts' },
                 vmTotal: { label: 'Instances' },
                 volumeTotal: { label: 'Volumes' }
@@ -191,7 +211,38 @@
                   domainObj["volumeTotal"] = total;   
                 }		
               });	              
-                  
+              
+              $.ajax({
+                url: createURL("listResourceLimits&domainid=" + domainObj.id),
+                async: false,
+                dataType: "json",
+                success: function(json) {
+                  var limits = json.listresourcelimitsresponse.resourcelimit;		                  
+                  if (limits != null) {	
+                    for (var i = 0; i < limits.length; i++) {
+                      var limit = limits[i];
+                      switch (limit.resourcetype) {
+                        case "0":                          
+                          domainObj["vmLimit"] = limit.max;                          
+                          break;
+                        case "1":                          
+                          domainObj["ipLimit"] = limit.max;                          
+                          break;
+                        case "2":                         
+                          domainObj["volumeLimit"] = limit.max;                        
+                          break;
+                        case "3":                          
+                          domainObj["snapshotLimit"] = limit.max;                         
+                          break;
+                        case "4":                          
+                          domainObj["templateLimit"] = limit.max;                         
+                          break;
+                      }
+                    }
+                  }		               
+                }                
+              });                       
+               
               args.response.success({
                 data: domainObj
               });
