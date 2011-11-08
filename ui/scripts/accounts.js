@@ -850,7 +850,40 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              }              
+              },
+             
+              enable: {
+                label: 'Enable user',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to enable this user?';
+                  },
+                  success: function(args) {
+                    return 'user is being enabled.';
+                  },
+                  notification: function(args) {
+                    return 'Enabling user';
+                  },
+                  complete: function(args) {
+                    return 'user has been enabled.';
+                  }
+                },
+                action: function(args) {                                     
+                  $.ajax({
+                    url: createURL("enableUser&id=" + args.context.users[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {    
+                      args.response.success({data: json.enableuserresponse.user});                                        
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }         
+              }                     
                                     
             },
             tabs: {
