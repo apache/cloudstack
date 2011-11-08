@@ -198,13 +198,38 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         NetworkOpVO op = new NetworkOpVO(network.getId(), gc);
         _opDao.persist(op);
         //4) add services/providers for the network
-        for (String service : serviceProviderMap.keySet()) {
-            NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(newNetwork.getId(), Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
-            _ntwkSvcMap.persist(serviceMap);
-        }
+        persistNetworkServiceProviders(newNetwork.getId(), serviceProviderMap);
 
         txn.commit();
         return newNetwork;
+    }
+    
+    
+    @Override @DB
+    public boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap) {
+    	Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        super.update(networkId, network);
+        if (serviceProviderMap != null) {
+            _ntwkSvcMap.deleteByNetworkId(networkId);
+            persistNetworkServiceProviders(networkId, serviceProviderMap);
+        }
+        
+        txn.commit();
+        return true;
+    }
+    
+    @Override
+    @DB
+    public void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+    	for (String service : serviceProviderMap.keySet()) {
+            NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
+            _ntwkSvcMap.persist(serviceMap);
+        }
+    	txn.commit();
     }
 
     protected void addAccountToNetwork(long networkId, long accountId, boolean isOwner) {

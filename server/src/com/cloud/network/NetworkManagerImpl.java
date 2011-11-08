@@ -1108,7 +1108,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
                         (domainId != null), predefined.getNetworkDomain(), offering.getGuestType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
-                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, getServicesAndProvidersForNetwork(offering)));
+                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null) {
                     _networksDao.addDomainToNetwork(id, domainId);
@@ -1737,9 +1737,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 isDomainSpecific = true;
             }
         }
-        
-        //FIXME - need to check if all providers are supported by the physical network
-        //FIXME - need to check that the traffic type is supported
 
         Account owner = null;
         if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
@@ -1865,7 +1862,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
-
+        
         // allow isDefault to be set only for Shared network
         if (networkOffering.getGuestType() == Network.GuestType.Isolated) {
             if (isDefault != null && !isDefault) {
@@ -2630,7 +2627,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (newNetworkOfferingId != null) {
             s_logger.debug("Updating network " + network + " with the new network offering id=" + newNetworkOfferingId + " as a part of network restart");
             network.setNetworkOfferingId(newNetworkOfferingId);
-            _networksDao.update(networkId, network);
+            _networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(newNetworkOfferingId), network.getPhysicalNetworkId()));
         }
         
         //implement the network elements and rules again
@@ -3324,10 +3321,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             //have to restart the network
             restartNetwork = true;
         }
+            
+        _networksDao.update(networkId, network); 
 
-        _networksDao.update(networkId, network);
         boolean success = true;
         if (restartNetwork && (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
+        	//network offering id will be updated in the restartNetowrk call aftet the network elements are shutdown properly
             s_logger.info("Restarting network " + network + " as a part of update network call");
 
             try {
@@ -3341,6 +3340,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 s_logger.warn("Failed to restart the network " + network + " as a part of updateNetwork call");
             }
+        } else if (networkOfferingId != null) {
+        	network.setNetworkOfferingId(networkOfferingId);
+        	_networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
         }
         
         return network;
@@ -4851,16 +4853,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    public Map<String, String> getServicesAndProvidersForNetwork(NetworkOffering offering) {
+    public Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
         Map<String, String> svcProviders = new HashMap<String, String>();
         List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.listByNetworkOfferingId(offering.getId());
+        
+        boolean checkPhysicalNetwork = (physicalNetworkId != null) ? true : false;
         
         for (NetworkOfferingServiceMapVO serviceMap : servicesMap) {
             if (svcProviders.containsKey(serviceMap.getService())) {
                 //FIXME - right now we pick up the first provider from the list, need to add more logic based on provider load, etc
                 continue;
-            } 
-            svcProviders.put(serviceMap.getService(), serviceMap.getProvider());  
+            }
+            
+            String service = serviceMap.getService();
+            String provider = serviceMap.getProvider();
+            
+            //check that provider is supported
+            if (checkPhysicalNetwork) {
+            	 if (!_pNSPDao.isServiceProviderEnabled(physicalNetworkId, provider, service)) {
+                 	throw new UnsupportedServiceException("Provider " + provider + " doesn't support service " + service + " in physical network id=" + physicalNetworkId);
+                 }
+            }
+ 
+            svcProviders.put(service, provider);  
         }
         
         return svcProviders;

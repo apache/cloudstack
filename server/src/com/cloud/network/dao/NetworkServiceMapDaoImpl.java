@@ -128,8 +128,8 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         return listBy(sc);
     }
     
-    
-    protected void deleteByNetworkId(long networkId) {
+    @Override
+    public void deleteByNetworkId(long networkId) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         remove(sc);
