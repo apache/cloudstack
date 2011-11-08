@@ -807,7 +807,50 @@
                     args.complete();
                   }
                 }
-              }
+              },
+                           
+              disable: {
+                label: 'Disable user',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to disable this user?';
+                  },
+                  success: function(args) {
+                    return 'User is being disabled.';
+                  },
+                  notification: function(args) {
+                    return 'Disabling user';
+                  },
+                  complete: function(args) {
+                    return 'User has been disabled.';
+                  }
+                },
+                action: function(args) {   
+                  $.ajax({
+                    url: createURL("disableUser&id=" + args.context.users[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                     
+                      var jid = json.disableuserresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {                              
+                            return json.queryasyncjobresultresponse.jobresult.user;
+                          },
+                          getActionFilter: function() {
+                            return userActionfilter;
+                          }
+                         }
+                        }
+                      );    
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }              
                                     
             },
             tabs: {
