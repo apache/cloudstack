@@ -24,16 +24,15 @@
               notification: function(args) {
                 return 'Domain is deleted';
               }
-            },
-
-            preFilter: function(args) {
-              if(isAdmin()) {
-                args.$form.find('.form-item[rel=isForced]').css('display', 'inline-block');
-              }
-            },
+            },           
 
             createForm: {
-              title: 'Delete domain',
+              title: 'Delete domain',              
+              preFilter: function(args) {                
+                if(isAdmin()) {
+                  args.$form.find('.form-item[rel=isForced]').css('display', 'inline-block');
+                }
+              },   
               fields: {
                 isForced: {
                   label: 'Force delete',
@@ -44,8 +43,7 @@
             },
 
             action: function(args) {
-              var array1 = [];
-              debugger;
+              var array1 = [];             
               if(args.$form.find('.form-item[rel=isForced]').css("display") != "none") //uncomment after Brian fix it to include $form in args
                 array1.push("&cleanup=" + (args.data.isForced == "on"));
 
