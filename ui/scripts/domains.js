@@ -141,8 +141,8 @@
               {
                 id: { label: 'ID' },
                 accountTotal: { label: 'Accounts' },
-                instances: { label: 'Instances' },
-                volumes: { label: 'Volumes' }
+                vmTotal: { label: 'Instances' },
+                volumeTotal: { label: 'Volumes' }
               }
             ],
             dataProvider: function(args) {             
@@ -152,16 +152,46 @@
                 async: false,
                 dataType: "json",
                 success: function(json) {	                                     
-                  var accounts = json.listaccountsresponse.account;	    
-                  var accountTotal;
-                  if (accounts != null) 	
-                    accountTotal = accounts.length;   
+                  var items = json.listaccountsresponse.account;	    
+                  var total;
+                  if (items != null) 	
+                    total = items.length;   
                   else
-                    accountTotal = 0;   
-                  domainObj["accountTotal"] = accountTotal;   
+                    total = 0;     
+                  domainObj["accountTotal"] = total;   
                 }		
               });	
-                            
+                                
+              $.ajax({                      	
+                url: createURL("listVirtualMachines&domainid=" + domainObj.id),
+                async: false,
+                dataType: "json",
+                success: function(json) {	                                     
+                  var items = json.listvirtualmachinesresponse.virtualmachine;		
+                  var total;
+                  if (items != null) 	
+                    total = items.length;   
+                  else
+                    total = 0;   
+                  domainObj["vmTotal"] = total;   
+                }		
+              });	
+                          
+              $.ajax({                      	
+                url: createURL("listVolumes&domainid=" + domainObj.id),
+                async: false,
+                dataType: "json",
+                success: function(json) {	                                     
+                  var items = json.listvolumesresponse.volume;	
+                  var total;
+                  if (items != null) 	
+                    total = items.length;   
+                  else
+                    total = 0;     
+                  domainObj["volumeTotal"] = total;   
+                }		
+              });	              
+                  
               args.response.success({
                 data: domainObj
               });
