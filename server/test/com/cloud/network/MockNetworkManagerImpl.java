@@ -32,6 +32,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -690,5 +691,17 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean isNetworkSystem(Network network) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
