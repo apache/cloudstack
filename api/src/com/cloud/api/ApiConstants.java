@@ -274,6 +274,7 @@ public class ApiConstants {
     public static final String FIREWALL_SERVICE = "firewallservice";
     public static final String GATEWAY_SERVICE = "gatewayservice";
     public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
+    public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String PROVIDER = "provider";
     public static final String NETWORK_SPEED = "networkspeed";
     public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";

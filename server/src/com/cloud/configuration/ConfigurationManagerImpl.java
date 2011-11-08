@@ -96,6 +96,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -2968,19 +2969,73 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false, serviceOfferingId);
+        // verify the LB service capabilities specified in the network offering
+        Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
+        if (!cmd.getLbService() && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
+        }
+        validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
+
+        // verify the Firewall service capabilities specified in the network offering
+        Map<Capability, String> fwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Firewall);
+        if (!cmd.getFirewallService() && fwServiceCapabilityMap != null && !fwServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
+        }
+        validateFirewallServiceCapablities(fwServiceCapabilityMap);
+
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false,
+                guestType, false, serviceOfferingId, lbServiceCapabilityMap, fwServiceCapabilityMap);
     }
 
+    void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
+        if ((lbServiceCapabilityMap != null) && (lbServiceCapabilityMap.keySet().size() > 1 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation.getName()))) {
+            throw new InvalidParameterValueException("Only Load balancer isolation capability can be sepcified for LB service");
+        } else {
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation.getName());
+            boolean dedicatedLb = isolationCapability.contains("dedicated");
+            boolean sharedLB = isolationCapability.contains("shared"); 
+            if ((dedicatedLb && sharedLB) || (!dedicatedLb && !sharedLB)){
+                throw new InvalidParameterValueException("Either dedicated or shared isolation can be specified for " + Capability.SupportedLBIsolation.getName());
+            }
+        }
+    }
+
+    void validateFirewallServiceCapablities(Map<Capability, String> fwServiceCapabilityMap) {
+        if ((fwServiceCapabilityMap != null) && (fwServiceCapabilityMap.keySet().size() > 1) || !fwServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes.getName())) {
+            throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
+        } else {
+            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            boolean perAccount = sourceNatType.contains("peraccount");
+            boolean perZone = sourceNatType.contains("perzone");
+            if ((perAccount && perZone) || (!perAccount && !perZone)) {
+                throw new InvalidParameterValueException("Either perAccount or perZone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
+            }
+        }
+    }
+    
     @Override
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
-            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId) {
+            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, 
+            boolean systemOnly, Long serviceOfferingId, Map<Capability, String> lbServiceCapabilityMap, Map<Capability, String> fwServiceCapabilityMap) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type);
+        boolean dedicatedLb = true;
+        if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
+            dedicatedLb = isolationCapability.contains("dedicated");
+        }
+
+        boolean sharedSourceNat = false;
+        if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
+            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            sharedSourceNat = sourceNatType.contains("perzone");
+        }
+
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat);
         
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
@@ -3317,6 +3372,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
         }
+
+        // verify and update the LB service capabilities specified in the network offering
+        Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
+        boolean dedicatedLb = true;
+        if (!cmd.getLbService() && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
+        }
+        validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
+
+        if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
+            dedicatedLb = isolationCapability.contains("dedicated");
+        }
+        offering.setDedicatedLb(dedicatedLb);
+
+        // verify the Firewall service capabilities specified in the network offering
+        Map<Capability, String> fwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Firewall);
+        boolean sharedSourceNat = false;
+
+        if (!cmd.getFirewallService() && fwServiceCapabilityMap != null && !fwServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
+        }
+        validateFirewallServiceCapablities(fwServiceCapabilityMap);
+
+        if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
+            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            sharedSourceNat = sourceNatType.contains("perzone");
+        }
+        offering.setSharedSourceNat(sharedSourceNat);
 
         if (svcPrv != null && !svcPrv.isEmpty()) {
             if (networksExist) {

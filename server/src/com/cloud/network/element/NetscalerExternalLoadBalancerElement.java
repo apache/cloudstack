@@ -135,7 +135,10 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
          
          // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
          lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
-         
+
+         // specifies that Netscaler network element can provided both shared and isolation modes
+         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated, shared");
+
          // Specifies that load balancing rules can be made for either TCP or UDP traffic
          lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
          

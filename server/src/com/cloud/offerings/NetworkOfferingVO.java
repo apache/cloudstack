@@ -97,6 +97,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Enumerated(value=EnumType.STRING)
     Network.GuestType guestType;
     
+    @Column(name="dedicated_lb_service")
+    boolean dedicatedLB;
+    
+    @Column(name="shared_source_nat_service")
+    boolean sharedSourceNat;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -213,7 +219,26 @@ public class NetworkOfferingVO implements NetworkOffering {
         return serviceOfferingId;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, String tags, Network.GuestType guestType) {
+    @Override
+    public boolean getDedicatedLB() {
+        return dedicatedLB;
+    }
+    
+    public void setDedicatedLb(boolean dedicatedLB) {
+        this.dedicatedLB = dedicatedLB;
+    }
+
+    @Override
+    public boolean getSharedSourceNat() {
+        return sharedSourceNat;
+    }
+    
+    public void setSharedSourceNat(boolean sharedSourceNat) {
+        this.sharedSourceNat = sharedSourceNat;
+    }
+
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections,
+            boolean isDefault, Availability availability, String tags, Network.GuestType guestType) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -227,6 +252,15 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.uniqueName = name;
         this.tags = tags;
         this.guestType = guestType;
+        this.dedicatedLB = true;
+        this.sharedSourceNat =false;
+    }
+
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections,
+            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean dedicatedLb, boolean sharedSourceNat) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, concurrentConnections, isDefault,  availability,  tags, guestType);
+        this.dedicatedLB = dedicatedLb;
+        this.sharedSourceNat = sharedSourceNat;
     }
     
     public NetworkOfferingVO() {

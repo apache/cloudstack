@@ -33,6 +33,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
@@ -92,7 +94,10 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
-    
+
+    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of network offering")
+    private Map serviceCapabilistList;
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the network offering")
     private String state;
 
@@ -183,6 +188,18 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
         
         return serviceProviderMap;
     }
+
+    public Map<Capability, String> getServiceCapabilities(Service service) {
+
+        Map<Capability, String> serviceCapabilityMap = null;
+        if (serviceCapabilistList != null && !serviceCapabilistList.isEmpty()) {
+            if (serviceCapabilistList.containsKey(service.getName())) {
+                serviceCapabilityMap = (HashMap<Capability, String>) serviceCapabilistList.get(service.getName());
+            }
+        }
+        return serviceCapabilityMap;
+    }
+
 
     public String getState() {
         return state;

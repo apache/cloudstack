@@ -2113,6 +2113,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
+        response.setIsLBShared(!offering.getDedicatedLB());
+        response.setIsSourceNatShared(offering.getSharedSourceNat());
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }

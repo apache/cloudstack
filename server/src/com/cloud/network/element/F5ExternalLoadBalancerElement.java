@@ -135,7 +135,10 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
          
          // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
          lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
-         
+
+         // specifies that F5 BIG IP network element can provide shared mode only
+         lbCapabilities.put(Capability.SupportedLBIsolation, "shared");
+
          // Specifies that load balancing rules can be made for either TCP or UDP traffic
          lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
          

@@ -254,6 +254,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
   `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network offering is default',
   `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
+  `dedicated_lb_service` int(1) unsigned NOT NULL DEFAULT 1 COMMENT 'true if the network offering provides a dedicated load balancer for each network',
   `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service',
   `state` char(32) COMMENT 'state of the network offering; has Disabled value by default',
   `guest_type` char(32) COMMENT 'type of guest network; can be shared or isolated',

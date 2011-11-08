@@ -96,4 +96,8 @@ public interface NetworkOffering {
     GuestType getGuestType();
     
     Long getServiceOfferingId();
+
+    boolean getDedicatedLB();
+
+    boolean getSharedSourceNat();
 }

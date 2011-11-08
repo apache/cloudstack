@@ -33,6 +33,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -186,8 +187,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId);
-    
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
+            Map<Capability, String> lbServiceCapabilityMap, Map<Capability, String> fwServiceCapabilityMap);
+
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId, Long physicalNetworkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     
     void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled, long physicalNetworkId) throws ConcurrentOperationException;

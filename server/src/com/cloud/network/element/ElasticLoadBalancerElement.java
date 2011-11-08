@@ -89,6 +89,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         
         Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
+        lbCapabilities.put(Capability.SupportedLBIsolation, "shared");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         
         capabilities.put(Service.Lb, lbCapabilities);   
