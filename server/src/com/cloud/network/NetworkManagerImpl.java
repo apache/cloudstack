@@ -3005,28 +3005,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return elements;
     }
-
-    @Override
-    @Deprecated
-    // try to use the method networkIsConfiguredForExternalNetworking instead
-    public boolean zoneIsConfiguredForExternalNetworking(long zoneId) {
-        DataCenterVO zone = _dcDao.findById(zoneId);
-
-        if (zone.getNetworkType() == NetworkType.Advanced) {
-        	
-        	if (zone.getGatewayProvider() != null && zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) &&
-                    zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName())) {
-        		return true;
-        	} else if (zone.getGatewayProvider() != null && zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.Netscaler.getName())) {
-        		return true;
-        	} else {
-                return false;
-        	}
-        } else {
-            return (zone.getFirewallProvider() != null && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()));
-        }
-
-    }
+    
     
     @Override
     public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
@@ -3171,7 +3150,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // Save usage event
             if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                NetworkVO network = _networksDao.findByIdIncludingRemoved(ip.getSourceNetworkId());
                 VlanVO vlan = _vlanDao.findById(ip.getVlanId());
                 
                 String guestType = vlan.getVlanType().toString();
@@ -3426,11 +3404,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
 
-    protected String getZoneNetworkDomain(long zoneId) {
+    private String getZoneNetworkDomain(long zoneId) {
         return _dcDao.findById(zoneId).getDomain();
     }
     
-    protected String getDomainNetworkDomain(long domainId, long zoneId) {
+    private String getDomainNetworkDomain(long domainId, long zoneId) {
         String networkDomain = _domainDao.findById(domainId).getNetworkDomain();
         if (networkDomain == null) {
             return getZoneNetworkDomain(zoneId);
@@ -3439,7 +3417,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networkDomain;
     }
     
-    protected String getAccountNetworkDomain(long accountId, long zoneId) {
+    private String getAccountNetworkDomain(long accountId, long zoneId) {
         String networkDomain = _accountDao.findById(accountId).getNetworkDomain();
         
         if (networkDomain == null) {
@@ -4853,7 +4831,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    public Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
+    protected Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
         Map<String, String> svcProviders = new HashMap<String, String>();
         List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.listByNetworkOfferingId(offering.getId());
         

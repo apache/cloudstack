@@ -181,10 +181,7 @@ public interface NetworkManager extends NetworkService {
     Nic getDefaultNic(long vmId);
 
     List<? extends UserDataServiceProvider> getPasswordResetElements();
-    
-    @Deprecated
-    boolean zoneIsConfiguredForExternalNetworking(long zoneId);
-    
+        
     boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId);
 
     Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
