@@ -65,7 +65,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public List<VMTemplateVO> listAllInZone(long dataCenterId);	
 	
 	public List<VMTemplateVO> listByHypervisorType(HypervisorType hyperType);
-	public List<VMTemplateVO> publicIsoSearch(Boolean bootable);
+	public List<VMTemplateVO> publicIsoSearch(Boolean bootable, boolean listRemoved);
     VMTemplateVO findSystemVMTemplate(long zoneId);
     VMTemplateVO findSystemVMTemplate(long zoneId, HypervisorType hType);
 
