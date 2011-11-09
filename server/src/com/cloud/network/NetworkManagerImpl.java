@@ -4859,4 +4859,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return svcProviders;
     }
     
+    @Override
+    public Long getPhysicalNetworkId(Network network) {
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+        if (physicalNetworkId == null) {
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null);
+        }
+        return physicalNetworkId;
+    }
+    
 }

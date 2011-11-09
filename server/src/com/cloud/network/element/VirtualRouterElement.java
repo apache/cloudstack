@@ -60,6 +60,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
@@ -113,15 +114,18 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig, Service.Gateway)) {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (offering.isSystemOnly()) {
             return false;
         }
-        
+        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+            return false;
+        }
+
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
 
-        _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, getProvider());
+        _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), params, getProvider());
 
         return true;
     }
@@ -129,32 +133,36 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network, Service.Dhcp)) {
-            if (vm.getType() != VirtualMachine.Type.User) {
-                return false;
-            }
-            
-            @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), getProvider());
-            if ((routers == null) || (routers.size() == 0)) {
-                throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
-            }
-
-            //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
-            Long podId = dest.getPod().getId();
-            DataCenter dc = dest.getDataCenter();
-            boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) && network.getTrafficType() == TrafficType.Guest;
-            if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
-                List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
-                routers.addAll(allRunningRoutersOutsideThePod);
-            }
-
-            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
-            return (rets != null) && (!rets.isEmpty());
-        } else {
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (offering.isSystemOnly()) {
             return false;
         }
+        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+            return false;
+        }
+        
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), getProvider());
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
+        }
+
+        //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
+        Long podId = dest.getPod().getId();
+        DataCenter dc = dest.getDataCenter();
+        boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) && network.getTrafficType() == TrafficType.Guest;
+        if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+            List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
+            routers.addAll(allRunningRoutersOutsideThePod);
+        }
+
+        List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
+        return (rets != null) && (!rets.isEmpty());
     }
 
     @Override

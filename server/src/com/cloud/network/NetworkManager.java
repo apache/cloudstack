@@ -243,4 +243,6 @@ public interface NetworkManager extends NetworkService {
     boolean isNetworkSystem(Network network);
 
     Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
+
+    Long getPhysicalNetworkId(Network network);
 }

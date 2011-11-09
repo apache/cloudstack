@@ -23,6 +23,7 @@ import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DomainRouterVO;
@@ -44,15 +45,18 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     }
     
     @Override
-    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(guestConfig, Service.Gateway)) {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (offering.isSystemOnly()) {
+            return false;
+        }
+        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "RedundantVirtualRouter")) {
             return false;
         }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
 
-        _routerMgr.deployVirtualRouter(guestConfig, dest, _accountMgr.getAccount(guestConfig.getAccountId()), params, getProvider());
+        _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), params, getProvider());
 
         return true;
     }
@@ -60,22 +64,26 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network, Service.Gateway)) {
-            if (vm.getType() != VirtualMachine.Type.User) {
-                return false;
-            }
-            
-            @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), getProvider());
-            if ((routers == null) || (routers.size() == 0)) {
-                throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
-            }
-            List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
-            return (rets != null) && (!rets.isEmpty());
-        } else {
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (offering.isSystemOnly()) {
             return false;
         }
+        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "RedundantVirtualRouter")) {
+            return false;
+        }
+        
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), uservm.getParameters(), getProvider());
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
+        }
+        List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
+        return (rets != null) && (!rets.isEmpty());
     }
     
     @Override
