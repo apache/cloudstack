@@ -22,6 +22,7 @@ public interface VirtualRouterProvider {
     public enum VirtualRouterProviderType {
         VirtualRouterElement,
         RedundantVirtualRouterElement,
+        ElasticLoadBalancerVm
     }
     public VirtualRouterProviderType getType();
     public long getId();

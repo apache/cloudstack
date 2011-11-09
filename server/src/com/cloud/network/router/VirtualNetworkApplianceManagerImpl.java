@@ -1155,11 +1155,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     typeString = "RedundantVirtualRouter";
                 }
                 
-                //physical network id can be null in Guest Network in Basic zone, so locate the physical network
-                Long physicalNetworkId = network.getPhysicalNetworkId();
-                if (physicalNetworkId == null) {
-                    physicalNetworkId = _networkMgr.findPhysicalNetworkId(network.getDataCenterId(), null);
-                }
+                Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
                 PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
                 if (provider == null) {
                     throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);

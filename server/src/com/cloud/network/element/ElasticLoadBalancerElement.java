@@ -40,6 +40,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.offering.NetworkOffering;
