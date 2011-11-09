@@ -195,11 +195,17 @@
 
                 fields: [
                   {                    
-                    name: { label: 'Name', editable: true }
+                    name: { 
+                      label: 'Name', 
+                      editable: true 
+                    }
                   },                  
                   {
-                    displaytext: { label: 'Description' },
-                   
+                    id: { label: 'ID' },
+                    displaytext: { 
+                      label: 'Description',
+                      editable: true 
+                    },                   
                     storagetype: { label: 'Storage Type' },
                     cpunumber: { label: 'CPU number' },
                     cpuspeed: { 
@@ -213,7 +219,20 @@
                       converter: function(args) {                
                         return cloudStack.converters.convertBytes(args*1024*1024);
                       }
-                    }   
+                    },
+                    networkrate: { label: 'Network rate' },
+                    offerha: {
+                      label: 'Offer HA',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    limitcpuuse: { 
+                      label: 'CPU cap',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    tags: { label: 'Storage tags' },
+                    hosttags: { label: 'Host tags' },
+                    domain: { label: 'Domain' },
+                    created: { label: 'Created' }                     
                   }
                 ],
 
