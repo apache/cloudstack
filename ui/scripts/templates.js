@@ -388,7 +388,7 @@
           },
 
           dataProvider: function(args) {        	
-        	var array1 = [];          	
+        	  var array1 = [];          	
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {                          
@@ -717,6 +717,11 @@
         title: 'ISOs',
         listView: {
           label: 'ISOs',
+          filters: {
+            mine: { label: 'Mine' },
+            featured: { label: 'Featured' },
+            community: { label: 'Community' }
+          },      
           fields: {
             displaytext: { label: 'Name' },
             id: { label: 'ID' },
@@ -1038,9 +1043,33 @@
 
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {           
+            var array1 = [];          	
+            if(args.filterBy != null) {
+              if(args.filterBy.kind != null) {
+                switch(args.filterBy.kind) {                          
+                case "mine":
+                  array1.push("&isofilter=self");
+                  break;
+                case "featured":
+                  array1.push("&isofilter=featured");
+                  break;
+                case "community":
+                  array1.push("&isofilter=community");
+                  break;                
+                }
+              }
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }                
+                      
             $.ajax({
-              url: createURL("listIsos&isofilter=self&page="+args.page+"&pagesize="+pageSize),
+              url: createURL("listIsos&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
