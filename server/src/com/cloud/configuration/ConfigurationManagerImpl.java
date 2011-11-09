@@ -2988,9 +2988,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
-        if ((lbServiceCapabilityMap != null) && (lbServiceCapabilityMap.keySet().size() > 1 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation.getName()))) {
-            throw new InvalidParameterValueException("Only Load balancer isolation capability can be sepcified for LB service");
-        } else {
+        if (lbServiceCapabilityMap != null) {
+            if (lbServiceCapabilityMap.keySet().size() > 1 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation.getName())) {
+                throw new InvalidParameterValueException("Only Load balancer isolation capability can be sepcified for LB service");
+            }
             String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation.getName());
             boolean dedicatedLb = isolationCapability.contains("dedicated");
             boolean sharedLB = isolationCapability.contains("shared"); 
@@ -3001,9 +3002,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     void validateFirewallServiceCapablities(Map<Capability, String> fwServiceCapabilityMap) {
-        if ((fwServiceCapabilityMap != null) && (fwServiceCapabilityMap.keySet().size() > 1) || !fwServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes.getName())) {
-            throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
-        } else {
+        if (fwServiceCapabilityMap != null) {
+            if (fwServiceCapabilityMap.keySet().size() > 1 || !fwServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes.getName())) {
+                throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
+            }
             String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
             boolean perAccount = sourceNatType.contains("peraccount");
             boolean perZone = sourceNatType.contains("perzone");
@@ -3012,7 +3014,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
     }
-    
+
     @Override
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
