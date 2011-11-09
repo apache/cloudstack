@@ -248,6 +248,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     String _networkDomain;
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
+    int _networkLockTimeout;
 
     private Map<String, String> _configs;
 
@@ -382,6 +383,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
 
             owner = _accountDao.acquireInLockTable(ownerId);
+            		
             if (owner == null) {
                 throw new ConcurrentOperationException("Unable to lock account " + ownerId);
             }
@@ -755,6 +757,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
 
         _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
+        _networkLockTimeout = NumbersUtil.parseInt(_configs.get(Config.NetworkLockTimeout.key()), 600);
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -1154,7 +1157,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
-        NetworkVO network = _networksDao.acquireInLockTable(networkId);
+        NetworkVO network = _networksDao.acquireInLockTable(networkId, _networkLockTimeout);
         if (network == null) {
             throw new ConcurrentOperationException("Unable to acquire network configuration: " + networkId);
         }
