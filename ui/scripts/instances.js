@@ -10,6 +10,7 @@
     listView: {
       section: 'instances',
       filters: {
+	    all: { label: 'All' },
         mine: { label: 'Mine' },
         running: { label: 'Running' },
         stopped: { label: 'Stopped' },
@@ -720,10 +721,12 @@
       },
 
       dataProvider: function(args) {
-        var array1 = [];
+        var array1 = [];  
         if(args.filterBy != null) {
           if(args.filterBy.kind != null) {
             switch(args.filterBy.kind) {
+            case "all":
+              break;            
             case "mine":
               array1.push("&domainid=" + g_domainid + "&account=" + g_account);
               break;

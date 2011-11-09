@@ -12,7 +12,12 @@
         title: 'Templates',
         listView: {
           id: 'templates',
-          label: 'Templates',
+          label: 'Templates',          
+          filters: {
+            mine: { label: 'Mine' },
+            featured: { label: 'Featured' },
+            community: { label: 'Community' }
+          },          
           fields: {
             name: { label: 'Name' },
             id: { label: 'ID' },
@@ -382,9 +387,32 @@
 
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {        	
+        	var array1 = [];          	
+            if(args.filterBy != null) {
+              if(args.filterBy.kind != null) {
+                switch(args.filterBy.kind) {                          
+                case "mine":
+                  array1.push("&templatefilter=self");
+                  break;
+                case "featured":
+                  array1.push("&templatefilter=featured");
+                  break;
+                case "community":
+                  array1.push("&templatefilter=community");
+                  break;                
+                }
+              }
+              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                switch(args.filterBy.search.by) {
+                case "name":
+                  array1.push("&keyword=" + args.filterBy.search.value);
+                  break;
+                }
+              }
+            }                	  
             $.ajax({
-              url: createURL("listTemplates&templatefilter=self&page="+args.page+"&pagesize="+pageSize),
+              url: createURL("listTemplates&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: "json",
               async: true,
               success: function(json) {
