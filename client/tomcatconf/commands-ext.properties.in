@@ -23,16 +23,3 @@ addTrafficMonitor=com.cloud.api.commands.AddTrafficMonitorCmd;1
 deleteTrafficMonitor=com.cloud.api.commands.DeleteTrafficMonitorCmd;1
 listTrafficMonitors=com.cloud.api.commands.ListTrafficMonitorsCmd;1
 
-####Netapp integration commands
-createVolumeOnFiler=com.cloud.api.commands.netapp.CreateVolumeOnFilerCmd;15
-destroyVolumeOnFiler=com.cloud.api.commands.netapp.DestroyVolumeOnFilerCmd;15
-listVolumesOnFiler=com.cloud.api.commands.netapp.ListVolumesOnFilerCmd;15
-createLunOnFiler=com.cloud.api.commands.netapp.CreateLunCmd;15
-destroyLunOnFiler=com.cloud.api.commands.netapp.DestroyLunCmd;15
-listLunsOnFiler=com.cloud.api.commands.netapp.ListLunsCmd;15
-associateLun=com.cloud.api.commands.netapp.AssociateLunCmd;15
-dissociateLun=com.cloud.api.commands.netapp.DissociateLunCmd;15
-createVolumePool=com.cloud.api.commands.netapp.CreateVolumePoolCmd;15
-deleteVolumePool=com.cloud.api.commands.netapp.DeleteVolumePoolCmd;15
-modifyVolumePool=com.cloud.api.commands.netapp.ModifyVolumePoolCmd;15
-listVolumePools=com.cloud.api.commands.netapp.ListVolumePoolsCmd;15

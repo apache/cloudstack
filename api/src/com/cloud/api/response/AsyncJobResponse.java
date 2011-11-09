@@ -147,7 +147,7 @@ public class AsyncJobResponse extends BaseResponse {
         		this.jobInstanceId.setTableName("vm_template");
         	} else {
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
-        		assert(false);
+        		//assert(false);
         	}
         }
     }
