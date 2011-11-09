@@ -166,7 +166,11 @@
               if (args.doInstall) {
                 cloudStack.uiCustom.installWizard({
                   $container: $container,
-                  context: context
+                  context: context,
+                  complete: function() {
+                    // Show cloudStack main UI
+                    $container.cloudStack(cloudStackArgs);
+                  }
                 });
               } else {
                 // Show cloudStack main UI

@@ -3,6 +3,8 @@
     var context = args.context;
     var $installWizard = $('<div>').addClass('install-wizard');
     var $container = args.$container;
+    var action = cloudStack.installWizard.action;
+    var complete = args.complete;
 
     var elems = {
       nextButton: function() {
@@ -38,6 +40,13 @@
       }
     };
 
-    $installWizard.append(steps.addZone).appendTo($container);
+    action({
+      context: context,
+      response: {
+        success: function() {
+          complete();
+        }
+      }
+    });
   };
 }(jQuery, cloudStack, testData));
