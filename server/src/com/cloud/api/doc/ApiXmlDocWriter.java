@@ -448,43 +448,45 @@ public class ApiXmlDocWriter {
 
         for (Field responseField : responseFields) {
             SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
-            Param paramAnnotation = responseField.getAnnotation(Param.class);
-            Argument respArg = new Argument(nameAnnotation.value());
+            if (nameAnnotation != null) {
+            	 Param paramAnnotation = responseField.getAnnotation(Param.class);
+                 Argument respArg = new Argument(nameAnnotation.value());
 
-            boolean hasChildren = false;
-            if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
-                String description = paramAnnotation.description();
-                Class fieldClass = paramAnnotation.responseObject();
-                if (description != null && !description.isEmpty()) {
-                    respArg.setDescription(description);
-                }
+                 boolean hasChildren = false;
+                 if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
+                     String description = paramAnnotation.description();
+                     Class fieldClass = paramAnnotation.responseObject();
+                     if (description != null && !description.isEmpty()) {
+                         respArg.setDescription(description);
+                     }
 
-                if (fieldClass != null) {
-                    Class<?> superClass = fieldClass.getSuperclass();
-                    if (superClass != null) {
-                        String superName = superClass.getName();
-                        if (superName.equals(BaseResponse.class.getName())) {
-                            ArrayList<Argument> fieldArguments = new ArrayList<Argument>();
-                            Field[] fields = fieldClass.getDeclaredFields();
-                            fieldArguments = setResponseFields(fields);
-                            respArg.setArguments(fieldArguments);
-                            hasChildren = true;
-                        }
-                    }
-                }
-            }
+                     if (fieldClass != null) {
+                         Class<?> superClass = fieldClass.getSuperclass();
+                         if (superClass != null) {
+                             String superName = superClass.getName();
+                             if (superName.equals(BaseResponse.class.getName())) {
+                                 ArrayList<Argument> fieldArguments = new ArrayList<Argument>();
+                                 Field[] fields = fieldClass.getDeclaredFields();
+                                 fieldArguments = setResponseFields(fields);
+                                 respArg.setArguments(fieldArguments);
+                                 hasChildren = true;
+                             }
+                         }
+                     }
+                 }
 
-            if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
-                if (nameAnnotation.value().equals("id")) {
-                    id = respArg;
-                } else {
-                    if (hasChildren) {
-                        respArg.setName(nameAnnotation.value() + "(*)");
-                        sortedArguments.add(respArg);
-                    } else {
-                        sortedChildlessArguments.add(respArg);
-                    }
-                }
+                 if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
+                     if (nameAnnotation.value().equals("id")) {
+                         id = respArg;
+                     } else {
+                         if (hasChildren) {
+                             respArg.setName(nameAnnotation.value() + "(*)");
+                             sortedArguments.add(respArg);
+                         } else {
+                             sortedChildlessArguments.add(respArg);
+                         }
+                     }
+                 }
             }
         }
 
