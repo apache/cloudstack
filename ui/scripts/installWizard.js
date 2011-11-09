@@ -175,7 +175,7 @@
       var pollSystemVMs = function() {
         var poll = setInterval(function() {
           $.ajax({
-            url: createURL('listSystemVMs'),
+            url: createURL('listSystemVms'),
             dataType: 'json',
             async: true,
             success: function(data) {
@@ -184,8 +184,8 @@
                 complete();
               }
             }
-          });          
-        });
+          });
+        }, 1000);
       };
 
       createZone();
