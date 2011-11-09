@@ -20,8 +20,8 @@ package com.cloud.network;
 
 public interface VirtualRouterProvider {
     public enum VirtualRouterProviderType {
-        VirtualRouterElement,
-        RedundantVirtualRouterElement,
+        VirtualRouter,
+        RedundantVirtualRouter,
         ElasticLoadBalancerVm
     }
     public VirtualRouterProviderType getType();

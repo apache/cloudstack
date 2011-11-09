@@ -1148,21 +1148,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (offering_id == null) {
                     offering_id = _offering.getId();
                 }
-                VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouterElement;
-                String typeString = "VirtualRouter";
+                VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
                 if (isRedundant) {
-                    type = VirtualRouterProviderType.RedundantVirtualRouterElement;
-                    typeString = "RedundantVirtualRouter";
+                    type = VirtualRouterProviderType.RedundantVirtualRouter;
                 }
                 
                 Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
-                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
                 if (provider == null) {
-                    throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
+                    throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
                 }
                 VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
                 if (vrProvider == null) {
-                    throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
+                    throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString()+ " as service provider " + provider.getId());
                 }
                 ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(offering_id);
                 
