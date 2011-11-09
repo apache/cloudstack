@@ -92,5 +92,14 @@ public class Upgrade2212to2213 implements DbUpgrade {
         // drop primary keys
         DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud_usage.usage_load_balancer_policy");
         DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud_usage.usage_port_forwarding");
+        
+        //Drop usage_network_offering unique key
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("drop index network_offering_id on cloud_usage.usage_network_offering");
+            pstmt.executeUpdate();
+            s_logger.debug("Dropped usage_network_offering unique key");
+        } catch (Exception e) {
+            // Ignore error if the usage_network_offering table or the unique key doesn't exist
+        }
     }
 }
