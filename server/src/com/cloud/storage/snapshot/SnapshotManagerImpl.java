@@ -1369,16 +1369,16 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
         }
         
-        UserVmVO vm = _vmDao.findById(volume.getInstanceId());
-        if (vm.getHypervisorType() == HypervisorType.Ovm) {
-        	throw new InvalidParameterValueException("Ovm won't support taking snapshot");
-        }
-
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO == null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
 
+        ClusterVO cluster = _clusterDao.findById(storagePoolVO.getClusterId());
+        if (cluster != null && cluster.getHypervisorType() == HypervisorType.Ovm) {
+        	throw new InvalidParameterValueException("Ovm won't support taking snapshot");
+        }
+        
         // Verify permissions
         _accountMgr.checkAccess(caller, null, volume);
 
