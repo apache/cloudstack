@@ -90,8 +90,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the network")
     private String dns2;
     
-    @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="the guest type of the network")
-    private String guestIpType;
+    @SerializedName(ApiConstants.TYPE) @Param(description="the type of the network")
+    private String type;
     
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the network")
     private String vlan;
@@ -176,8 +176,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.dns2 = dns2;
     }
 
-    public void setGuestIpType(String type) {
-        this.guestIpType = type;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public void setAccountName(String accountName) {

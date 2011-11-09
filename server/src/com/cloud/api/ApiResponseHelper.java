@@ -2160,7 +2160,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         
         if (network.getGuestType() != null) {
-            response.setGuestIpType(network.getGuestType().toString());
+            response.setType(network.getGuestType().toString());
         }
 
         // get start ip and end ip of corresponding vlan
