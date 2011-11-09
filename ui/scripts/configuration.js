@@ -600,10 +600,15 @@
         title: 'Disk',
         listView: {
           label: 'Disk Offerings',
-          fields: {
-            displaytext: { label: 'Name' },
-            disksize: { label: 'Disk Size' },
-            domain: { label: 'Domain'}
+          fields: {            
+            name: { label: 'Name' },
+            displaytext: { label: 'Description' },            
+            disksize: { 
+              label: 'Disk Size',
+              converter: function(args) {
+                return args + " GB";
+              }              
+            }            
           },
           dataProvider: function(args) {
             $.ajax({
@@ -722,7 +727,105 @@
                 }
               }
             }
-          }                  
+          },
+                   
+          detailView: {
+            name: 'Disk offering details',
+            actions: {             
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&name=" + todb(args.data.name));
+                  array1.push("&displaytext=" + todb(args.data.displaytext));                  
+                  $.ajax({
+                    url: createURL("updateDiskOffering&id=" + args.context.diskOfferings[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var item = json.updatediskofferingresponse.diskoffering;	               
+                      args.response.success({data: item});
+                    }
+                  });
+                }
+              },
+            
+              'delete': {
+                label: 'Delete disk offering',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this disk offering?';
+                  },
+                  success: function(args) {
+                    return 'Disk offering is being deleted.';
+                  },
+                  notification: function(args) {
+                    return 'Deleting disk offering';
+                  },
+                  complete: function(args) {
+                    return 'Disk offering has been deleted.';
+                  }
+                },
+                action: function(args) {    
+                  $.ajax({
+                    url: createURL("deleteDiskOffering&id=" + args.context.diskOfferings[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                      
+                      args.response.success();
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              }              
+            },              
+                        
+            tabs: {
+              details: {
+                title: 'Details',
+
+                fields: [
+                  {                    
+                    name: { 
+                      label: 'Name', 
+                      isEditable: true 
+                    }
+                  },                  
+                  {   
+                    id: { label: 'ID' },                    
+                    displaytext: { 
+                      label: 'Description',
+                      isEditable: true 
+                    },
+                    iscustomized: { 
+                      label: 'Customized', 
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    disksize: { 
+                      label: 'Disk Size',
+                      converter: function(args) {
+                        return args + " GB";
+                      }              
+                    },
+                    tags: { label: 'Storage tags' },
+                    domain: { label: 'Domain' } 
+                  }
+                ],
+
+                dataProvider: function(args) {
+                  args.response.success(
+                    {
+                      actionFilter: diskOfferingActionfilter,
+                      data:args.context.diskOfferings[0]
+                    }
+                  );
+                }
+              }
+            }
+          }   
         }
       },
       networkOfferings: {
@@ -847,6 +950,14 @@
   } 
   
   var systemServiceOfferingActionfilter = function(args) {
+    var jsonObj = args.context.item;    
+    var allowedActions = [];
+    allowedActions.push("edit");
+    allowedActions.push("delete");
+    return allowedActions;
+  } 
+  
+   var diskOfferingActionfilter = function(args) {
     var jsonObj = args.context.item;    
     var allowedActions = [];
     allowedActions.push("edit");
