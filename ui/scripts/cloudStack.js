@@ -151,11 +151,30 @@
 
       // Show cloudStack main UI widget
       complete: function(args) {
-        $container.cloudStack($.extend(cloudStack, {
-          context: {
-            users: [args.user]
+        var context = {
+          users: [args.user]
+        };
+        var cloudStackArgs = $.extend(cloudStack, {
+          context: context
+        });
+
+        // Check to invoke install wizard
+        cloudStack.installWizard.check({
+          context: context,
+          response: {
+            success: function(args) {
+              if (args.doInstall) {
+                cloudStack.uiCustom.installWizard({
+                  $container: $container,
+                  context: context
+                });
+              } else {
+                // Show cloudStack main UI
+                $container.cloudStack(cloudStackArgs);
+              }
+            }
           }
-        }));
+        });
       }
     });
   });

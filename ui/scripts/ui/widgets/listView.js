@@ -441,8 +441,9 @@
     var $filters = $('<div></div>').addClass('filters reduced-hide');
     $filters.append('<label>Filter By: </label>');
 
-    var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
-    
+    var $filterSelect = $('<select></select>').appendTo($filters);
+    $filterSelect.append('<option value="all">All</option>'); // Always appears by default
+
     if (filters)
       $.each(filters, function(key) {
         var $option = $('<option>').attr({
@@ -870,21 +871,13 @@
 
     createFilters($toolbar, listViewData.filters);
     createSearchBar($toolbar);
-    
     loadBody(
       $table,
       listViewData.dataProvider,
       listViewData.fields,
       false,
       {
-        page: page,        
-        filterBy: {
-          kind: $listView.find('select[id=filterBy]').val(),
-          search: {
-            value: $listView.find('input[type=text]').val(),
-            by: 'name'
-          }
-        },        
+        page: page,
         ref: args.ref
       },
       actions,
@@ -935,7 +928,7 @@
         {
           page: 1,
           filterBy: {
-        	kind: $listView.find('select[id=filterBy]').val(),
+            kind: $listView.find('select').val(),
             search: {
               value: $listView.find('input[type=text]').val(),
               by: 'name'
