@@ -249,8 +249,7 @@ CREATE TABLE  `cloud_usage`.`usage_network_offering` (
   `network_offering_id` bigint unsigned NOT NULL,
   `is_default` smallint(1) NOT NULL,
   `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL,
-  UNIQUE KEY (`network_offering_id`, `vm_instance_id`, `created`)
+  `deleted` DATETIME NULL  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_network_offering` ADD INDEX `i_usage_network_offering__account_id`(`account_id`);
