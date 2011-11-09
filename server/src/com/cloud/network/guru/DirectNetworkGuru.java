@@ -53,6 +53,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -231,5 +232,15 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

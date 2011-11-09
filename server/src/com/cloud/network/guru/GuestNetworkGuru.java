@@ -17,6 +17,11 @@
  */
 package com.cloud.network.guru;
 
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -49,6 +54,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -70,6 +76,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     protected NicDao _nicDao;
     @Inject
     protected NetworkDao _networkDao;
+    Random _rand = new Random(System.currentTimeMillis());
 
     String _defaultGateway;
     String _defaultCidr;
@@ -256,5 +263,51 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override 
+    public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        assert requestedIp == null || requestedIp.equals(reservationId) : "The GuestNetworkGuru relies on the fact that the reservationId is always the same as the requestedIp because at this point, there's no way for the GuestNetworkGuru to record down the reservation id.  It can be done but I'm just lazy so don't you be lazy when you hit this assert!";
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        String[] cidr = network.getCidr().split("/");
+        Set<Long> usedIps = new TreeSet<Long>();
+        
+        int size = Integer.parseInt(cidr[1]);
+        
+        // Let's prepare the list of ips already taken.
+        usedIps.add(NetUtils.ip2Long(network.getGateway()));
+        for (String ip : ips) {
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+        
+        if (requestedIp != null) { // Make sure requestedIp is not already taken.
+            if (usedIps.contains(requestedIp)) {
+                throw new InsufficientAddressCapacityException("The ip requested " + requestedIp + " is already assigned within " + network, DataCenter.class, network.getDataCenterId());
+            }
+            
+            if (!NetUtils.sameSubnetCIDR(requestedIp, cidr[0], size)) {
+                throw new IllegalArgumentException("The ip requested " + requestedIp + " does not match the cidr, " + network.getCidr() + ", of " + network);
+            }
+            
+            return new Ip4Address(requestedIp);
+        }
+        
+        long base = NetUtils.ip2Long(cidr[0]);
+        int diff = 1 << size - usedIps.size();
+        for (diff = 1 << size - usedIps.size(); diff > 0; diff--) {
+            long nextIp = _rand.nextInt(1 << size);
+            nextIp += base;
+            if (!usedIps.contains(nextIp)) {
+                return new Ip4Address(nextIp);
+            }
+        }
+        
+        throw new InsufficientAddressCapacityException("Unable to map more ip addresses into a cidr of " + network.getCidr(), DataCenter.class, network.getDataCenterId());
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        
+        // TODO Auto-generated method stub
+        return false;
     }
 }

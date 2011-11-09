@@ -48,13 +48,13 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -73,23 +73,14 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkManager _networkMgr;
     @Inject
     IPAddressDao _ipAddressDao;
-    @Inject
-    NetworkOfferingDao _networkOfferingDao;
 
-    protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
-            return true;
-        } else {
-            s_logger.trace("We take care only of System Public Virtual Network");
-            return false;
-        }
+    protected boolean canHandle(NetworkOffering offering) {
+        return offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly();
     }
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
-        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
-
-        if (!canHandle(offering, dc)) {
+        if (!canHandle(offering)) {
             return null;
         }
 
@@ -212,5 +203,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }
