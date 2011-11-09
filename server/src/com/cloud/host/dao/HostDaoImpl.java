@@ -146,7 +146,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SecondaryStorageVMSearch = createSearchBuilder();
         SecondaryStorageVMSearch.and("type", SecondaryStorageVMSearch.entity().getType(), SearchCriteria.Op.EQ);
         SecondaryStorageVMSearch.and("dc", SecondaryStorageVMSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        SecondaryStorageVMSearch.and("status", SecondaryStorageVMSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        SecondaryStorageVMSearch.and("status", SecondaryStorageVMSearch.entity().getStatus(), SearchCriteria.Op.IN);
         SecondaryStorageVMSearch.done();
 
         TypeDcStatusSearch = createSearchBuilder();
@@ -801,6 +801,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         return listBy(sc);
     }
+    
+    @Override
+    public List<HostVO> listSecondaryStorageVMInUpAndConnecting(long dcId) {
+        SearchCriteria<HostVO> sc = SecondaryStorageVMSearch.create();
+        sc.setParameters("type", Type.SecondaryStorageVM);
+        sc.setParameters("status", Status.Up, Status.Connecting);
+        sc.setParameters("dc", dcId);
+
+        return listBy(sc);
+    }
+    
     @Override
     public List<HostVO> listByType(Type type) {
         SearchCriteria<HostVO> sc = TypeSearch.create();

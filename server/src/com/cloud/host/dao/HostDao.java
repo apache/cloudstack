@@ -178,5 +178,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 
     List<HostVO> listByInAllStatus(Type type, Long clusterId, Long podId, long dcId);
 
-    List<HostVO> listByClusterStatus(long clusterId, Status status);    
+    List<HostVO> listByClusterStatus(long clusterId, Status status); 
+    
+    List<HostVO> listSecondaryStorageVMInUpAndConnecting(long dcId);
 }
