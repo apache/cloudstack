@@ -494,7 +494,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
 
-        return stop(router, forced, user, account);
+        VirtualRouter virtualRouter = stop(router, forced, user, account);
+        if(virtualRouter == null){
+        	throw new CloudRuntimeException("Failed to stop router with id " + routerId);
+        }
+        return virtualRouter;
     }
 
     @DB
@@ -2178,7 +2182,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "starting router Vm", async = true)
     public VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException{
-        return startRouter(id, true);
+    	return startRouter(id, true);
     }
     
     @Override
@@ -2221,7 +2225,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         } else {
             params.put(Param.RestartNetwork, false);
         }
-        return startVirtualRouter(router, user, caller, params);
+        VirtualRouter virtualRouter = startVirtualRouter(router, user, caller, params);
+    	if(virtualRouter == null){
+    		throw new CloudRuntimeException("Failed to start router with id " + routerId);
+    	}
+        return virtualRouter;
     }
 
     private void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {
