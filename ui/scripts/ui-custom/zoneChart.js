@@ -46,6 +46,9 @@
         // View all action
         $chartView.find('ul li div.view-all').click(function() {
           var $target = $(this);
+
+          if ($target.hasClass('configure')) return false;
+
           var $panel = $browser.cloudBrowser('addPanel', {
             title: $target.closest('li').find('div.name span').html(),
             data: '',
@@ -214,6 +217,40 @@
                 var $tabContent = $('<div>').appendTo($tabMain)
                       .attr({ id: tabID })
                       .append(chartView(this));
+
+                // Tooltip hover event
+                var $tooltip = $tabContent.find('.tooltip-info:visible').hide();
+                $tabContent.find('li.main').mouseenter(function(event) {
+                  $tooltip.css({ opacity: 0 });
+                  $tooltip.show().animate({ opacity: 1 }, { queue: false });
+
+                  var $item = $(this);
+
+                  $item.siblings().each(function() {
+                    $tooltip.removeClass($(this).attr('rel'));
+                  });
+                  $tooltip.addClass('tooltip-info ' + $item.attr('rel'));
+                });
+
+                $tabContent.find('li.main').mouseleave(function(event) {
+                  $tooltip.animate({ opacity: 0 }, { queue: false });
+                });
+
+                // Main items configure event
+                $tabContent.find('li.main .view-all.configure').click(function() {
+                  var itemID = $(this).closest('li').attr('rel');
+
+                  $browser.cloudBrowser('addPanel', {
+                    title: itemID + ' details',
+                    complete: function($newPanel) {
+                      $newPanel.detailView(
+                         naas.mainNetworks[itemID].detailView
+                      );
+                    }
+                  });
+
+                  return false;
+                });
               });
 
               $tabMain.tabs();

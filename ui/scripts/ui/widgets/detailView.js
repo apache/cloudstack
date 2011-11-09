@@ -235,10 +235,12 @@
                 }
               });
 
+              var id = $detailView.data('view-args').id
+
               addNotification(
                 {
-                  section: $detailView.data('view-args').id,
-                  desc: 'Renamed VM'
+                  section: id,
+                  desc: 'Changed item properties'
                 },
                 function(data) {
                 },

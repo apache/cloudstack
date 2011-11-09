@@ -5,6 +5,89 @@
 
     // Network-as-a-service configuration
     naas: {
+      mainNetworks: {
+        'public': {
+          detailView: {
+            actions: {
+              edit: {
+                label: 'Edit network details',
+                action: function(args) {
+                  args.response.success();
+                }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'name' },
+                    displaytext: { label: 'displaytext' }
+                  },
+                  {
+                    broadcastdomaintype: { label: 'broadcastdomaintype' },
+                    traffictype: { label: 'traffictype' },
+                    gateway: { label: 'gateway' },
+                    netmask: { label: 'netmask' },
+                    startip: { isEditable: true, label: 'startip' },
+                    endip: { isEditable: true, label: 'endip' },
+                    zoneid: { label: 'zoneid' },
+                    networkofferingid: { label: 'networkofferingid' },
+                    networkofferingname: { label: 'networkofferingname' },
+                    networkofferingdisplaytext: { label: 'networkofferingdisplaytext' },
+                    networkofferingavailability: { label: 'networkofferingavailability' },
+                    isshared: { label: 'isshared' },
+                    issystem: { label: 'issystem' },
+                    state: { label: 'state' },
+                    related: { label: 'related' },
+                    broadcasturi: { label: 'broadcasturi' },
+                    dns1: { label: 'dns1' },
+                    type: { label: 'type' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({ data: testData.data.networks[0] });
+                }
+              }
+            }
+          }
+        },
+        'management': {
+          detailView: {
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({ data: testData.data.networks[0] });
+                }
+              }
+            }
+          }
+        },
+        'guest': {
+          detailView: {
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({ data: testData.data.networks[0] });
+                }
+              }
+            }
+          }
+        }
+      },
+
       networks: {
         actions: {
           add: {
@@ -543,7 +626,7 @@
                   if (args.context.zones[0].networktype == "Basic") {
                     $guestFields.css('display', 'inline-block');
                   }
-                  else if(args.context.zones[0].networktype == "Advanced") { //advanced-mode network (zone-wide VLAN)
+                  else if (args.context.zones[0].networktype == "Advanced") { //advanced-mode network (zone-wide VLAN)
                     $guestFields.hide();
                   }
                 },
@@ -652,7 +735,7 @@
                       args.response.success({ data: testData.data.hypervisors });
                       args.$select.bind("change", function(event) {
                         var $form = $(this).closest('form');
-                        if($(this).val() == "VMware") {
+                        if ($(this).val() == "VMware") {
                           //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                           $form.find('.form-item[rel=vCenterHost]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterUsername]').css('display', 'inline-block');
@@ -760,8 +843,8 @@
                 preFilter: function(args) {
                   var $form = args.$form;
                   var $guestFields = $form.find('.form-item[rel=guestGateway], '
-                                                + '.form-item[rel=guestNetmask], '
-                                                + '.form-item[rel=guestIPRange]');
+                    + '.form-item[rel=guestNetmask], '
+                    + '.form-item[rel=guestIPRange]');
 
                   if (args.context.zones[0].name == 'Chicago') {
                     $guestFields.css('display', 'inline-block');
@@ -896,16 +979,16 @@
                 title: 'Details',
                 fields: [
                   {
-                    name: { label: 'Name' },
+                    name: { label: 'Name' }
                   },
                   {
                     type: { label: 'Type' },
-                    zonename: { label: 'Zone' },
+                    zonename: { label: 'Zone' }
                   }
                 ],
 
                 dataProvider: testData.dataProvider.detailView('hosts')
-              },
+              }
             }
           }
         }
@@ -1030,7 +1113,7 @@
               },
 
               notification: {
-                poll: function(args){
+                poll: function(args) {
                   args.complete();
                 }
               },

@@ -512,6 +512,49 @@ div.notification.corner-alert:hover div.message span {
   color: #5FAAF7;
 }
 
+/*Tooltips*/
+.tooltip {
+}
+
+.tooltip-info {
+  width: 239px;
+  min-height: 83px;
+  display: inline-block;
+  background: #FFFFFF;
+  border: 1px solid #BEB8B8;
+  position: absolute;
+  z-index: 1000;
+  /*+border-radius:22px;*/
+  -moz-border-radius: 22px;
+  -webkit-border-radius: 22px;
+  -khtml-border-radius: 22px;
+  border-radius: 22px 22px 22px 22px;
+}
+
+.tooltip-info .arrow {
+  width: 27px;
+  height: 47px;
+  position: absolute;
+  top: 17px;
+  left: -18px;
+  background: url(../images/sprites.png) -583px -939px;
+}
+
+.tooltip-info .title {
+  color: #485766;
+  margin: 12px;
+  font-size: 19px;
+}
+
+.tooltip-info .content {
+  width: 182px;
+  font-size: 11px;
+  line-height: 19px;
+  padding-bottom: 13px;
+  overflow: auto;
+  margin: auto;
+}
+
 /*List view*/
 div.panel div.list-view {
   overflow: auto;
@@ -2983,6 +3026,21 @@ Dialogs*/
   border: none;
 }
 
+.zone-chart .resources.naas .tooltip-info {
+  width: 202px;
+  min-height: 226px;
+  left: 520px;
+  top: 48px;
+}
+
+.zone-chart .resources.naas .tooltip-info.public .arrow {
+}
+
+.zone-chart .resources.naas .tooltip-info.management .arrow,
+.zone-chart .resources.naas .tooltip-info.guest .arrow {
+  top: 159px;
+}
+
 .zone-chart .resources.naas .head {
   background: #E7E7E7;
   width: 728px;
@@ -4142,14 +4200,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view>ul {
+.tree-view > ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view>ul>li {
+.tree-view > ul > li {
   left: 5px;
 }
 
@@ -4184,7 +4242,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded>.expand {
+.tree-view ul li.expanded > .expand {
   background-position: -631px -228px;
 }
 
