@@ -14,9 +14,19 @@
           fields: {
             name: { label: 'Name', editable: true },
             storagetype: { label: 'Storage Type' },
-            cpuspeed: { label: 'CPU' },
-            memory: { label: 'Memory' },
-            domain: { label: 'Domain'}
+            cpunumber: { label: 'CPU number' },
+            cpuspeed: { 
+              label: 'CPU speed', 
+              converter: function(args) {                
+                return cloudStack.converters.convertHz(args);
+              }
+            },
+            memory: { 
+              label: 'Memory',
+              converter: function(args) {                
+                return cloudStack.converters.convertBytes(args*1024*1024);
+              }
+            }
           },
                    
           actions: {            
