@@ -13,20 +13,7 @@
           label: 'Service Offerings',
           fields: {
             name: { label: 'Name', editable: true },
-            storagetype: { label: 'Storage Type' },
-            cpunumber: { label: 'CPU number' },
-            cpuspeed: { 
-              label: 'CPU speed', 
-              converter: function(args) {                
-                return cloudStack.converters.convertHz(args);
-              }
-            },
-            memory: { 
-              label: 'Memory',
-              converter: function(args) {                
-                return cloudStack.converters.convertBytes(args*1024*1024);
-              }
-            }
+            displaytext: { label: 'Description' }           
           },
                    
           actions: {            
@@ -195,7 +182,52 @@
                 args.response.success({data:items});
               }
             });
-          }
+          },
+                    
+          detailView: {
+            name: 'Service offering details',
+            actions: {
+            
+            },
+            tabs: {
+              details: {
+                title: 'Details',
+
+                fields: [
+                  {                    
+                    name: { label: 'Name', editable: true }
+                  },                  
+                  {
+                    displaytext: { label: 'Description' },
+                   
+                    storagetype: { label: 'Storage Type' },
+                    cpunumber: { label: 'CPU number' },
+                    cpuspeed: { 
+                      label: 'CPU speed', 
+                      converter: function(args) {                
+                        return cloudStack.converters.convertHz(args);
+                      }
+                    },
+                    memory: { 
+                      label: 'Memory',
+                      converter: function(args) {                
+                        return cloudStack.converters.convertBytes(args*1024*1024);
+                      }
+                    }   
+                  }
+                ],
+
+                dataProvider: function(args) {
+                  args.response.success(
+                    {
+                      actionFilter: serviceOfferingActionfilter,
+                      data:args.context.serviceOfferings[0]
+                    }
+                  );
+                }
+              }
+            }
+          }          
         }
       },
 
@@ -624,6 +656,14 @@
       }
     }
   };
+  
+  var serviceOfferingActionfilter = function(args) {
+    var jsonObj = args.context.item;    
+    var allowedActions = [];
+    allowedActions.push("edit");
+    allowedActions.push("delete");
+    return allowedActions;
+  } 
   
   var networkOfferingsActionfilter = function(args) {
     var jsonObj = args.context.item;    
