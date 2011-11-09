@@ -106,7 +106,6 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("activeviewersessions") @Param(description="the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
     
-    @SerializedName("objectId") @Param(description="the object id")
     private Long objectId;
     
     public Long getObjectId() {
