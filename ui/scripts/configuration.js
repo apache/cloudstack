@@ -205,8 +205,42 @@
                     }
                   });
                 }
+              },
+            
+              'delete': {
+                label: 'Delete service offering',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this service offering?';
+                  },
+                  success: function(args) {
+                    return 'Service offering is being deleted.';
+                  },
+                  notification: function(args) {
+                    return 'Deleting service offering';
+                  },
+                  complete: function(args) {
+                    return 'Service offering has been deleted.';
+                  }
+                },
+                action: function(args) {    
+                  $.ajax({
+                    url: createURL("deleteServiceOffering&id=" + args.context.serviceOfferings[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      args.response.success();
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
               }              
-            },
+            },              
+                        
             tabs: {
               details: {
                 title: 'Details',
