@@ -309,10 +309,7 @@
           label: 'System Service Offerings',
           fields: {
             name: { label: 'Name', editable: true },
-            storagetype: { label: 'Storage Type' },
-            cpuspeed: { label: 'CPU' },
-            memory: { label: 'Memory' },
-            domain: { label: 'Domain'}
+            displaytext: { label: 'Description' }           
           },
                  
           actions: {            
@@ -481,7 +478,120 @@
                 args.response.success({data:items});
               }
             });
-          }
+          },
+                   
+          detailView: {
+            name: 'System service offering details',
+            actions: {             
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&name=" + todb(args.data.name));
+                  array1.push("&displaytext=" + todb(args.data.displaytext));                  
+                  $.ajax({
+                    url: createURL("updateServiceOffering&id=" + args.context.systemServiceOfferings[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var item = json.updateserviceofferingresponse.serviceoffering;	
+                      args.response.success({data: item});
+                    }
+                  });
+                }
+              },
+            
+              'delete': {
+                label: 'Delete system service offering',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to delete this system service offering?';
+                  },
+                  success: function(args) {
+                    return 'System service offering is being deleted.';
+                  },
+                  notification: function(args) {
+                    return 'Deleting system service offering';
+                  },
+                  complete: function(args) {
+                    return 'System service offering has been deleted.';
+                  }
+                },
+                action: function(args) {    
+                  $.ajax({
+                    url: createURL("deleteServiceOffering&id=" + args.context.systemServiceOfferings[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      args.response.success();
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              }              
+            },              
+                        
+            tabs: {
+              details: {
+                title: 'Details',
+
+                fields: [
+                  {                    
+                    name: { 
+                      label: 'Name', 
+                      isEditable: true 
+                    }
+                  },                  
+                  {
+                    id: { label: 'ID' },
+                    displaytext: { 
+                      label: 'Description',
+                      isEditable: true 
+                    },                   
+                    storagetype: { label: 'Storage Type' },
+                    cpunumber: { label: 'CPU number' },
+                    cpuspeed: { 
+                      label: 'CPU speed', 
+                      converter: function(args) {                
+                        return cloudStack.converters.convertHz(args);
+                      }
+                    },
+                    memory: { 
+                      label: 'Memory',
+                      converter: function(args) {                
+                        return cloudStack.converters.convertBytes(args*1024*1024);
+                      }
+                    },
+                    networkrate: { label: 'Network rate' },
+                    offerha: {
+                      label: 'Offer HA',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    limitcpuuse: { 
+                      label: 'CPU cap',
+                      converter: cloudStack.converters.toBooleanText
+                    },
+                    tags: { label: 'Storage tags' },
+                    hosttags: { label: 'Host tags' },
+                    domain: { label: 'Domain' },
+                    created: { label: 'Created' }                     
+                  }
+                ],
+
+                dataProvider: function(args) {
+                  args.response.success(
+                    {
+                      actionFilter: systemServiceOfferingActionfilter,
+                      data:args.context.systemServiceOfferings[0]
+                    }
+                  );
+                }
+              }
+            }
+          }   
         }
       },
 
@@ -729,6 +839,14 @@
   };
   
   var serviceOfferingActionfilter = function(args) {
+    var jsonObj = args.context.item;    
+    var allowedActions = [];
+    allowedActions.push("edit");
+    allowedActions.push("delete");
+    return allowedActions;
+  } 
+  
+  var systemServiceOfferingActionfilter = function(args) {
     var jsonObj = args.context.item;    
     var allowedActions = [];
     allowedActions.push("edit");
