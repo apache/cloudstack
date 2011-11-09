@@ -179,15 +179,33 @@
               async: true,
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
-                args.response.success({data:items});
+                args.response.success({
+                  actionFitler: serviceOfferingActionfilter,
+                  data:items
+                });
               }
             });
           },
                     
           detailView: {
             name: 'Service offering details',
-            actions: {
-            
+            actions: {             
+              edit: {
+                label: 'Edit',
+                action: function(args) {
+                  var array1 = [];
+                  array1.push("&name=" + todb(args.data.name));
+                  array1.push("&displaytext=" + todb(args.data.displaytext));                  
+                  $.ajax({
+                    url: createURL("updateServiceOffering&id=" + args.context.serviceOfferings[0].id + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var item = json.updateserviceofferingresponse.serviceoffering;	
+                      args.response.success({data: item});
+                    }
+                  });
+                }
+              }              
             },
             tabs: {
               details: {
@@ -197,14 +215,14 @@
                   {                    
                     name: { 
                       label: 'Name', 
-                      editable: true 
+                      isEditable: true 
                     }
                   },                  
                   {
                     id: { label: 'ID' },
                     displaytext: { 
                       label: 'Description',
-                      editable: true 
+                      isEditable: true 
                     },                   
                     storagetype: { label: 'Storage Type' },
                     cpunumber: { label: 'CPU number' },
