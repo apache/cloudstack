@@ -199,17 +199,21 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             map = _lb2VmMapDao.persist(map);
         }
         txn.commit();
-
+        boolean success = false;
         try {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
             applyLoadBalancerConfig(loadBalancerId);
+            success = true;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
-            return false;
+        }
+        
+        if(!success){
+        	throw new CloudRuntimeException("Failed to add load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
         }
 
-        return true;
+        return success;
     }
 
     @Override
@@ -228,6 +232,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         _accountMgr.checkAccess(caller.getCaller(), null, loadBalancer);
 
+        boolean success = false;
         try {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
@@ -243,13 +248,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
                 throw new CloudRuntimeException("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
             }
-
+            success = true;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
-            return false;
         }
-
-        return true;
+        if(!success){
+        	throw new CloudRuntimeException("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
+    	}
+        return success;
     }
 
     @Override
@@ -301,7 +307,12 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         _accountMgr.checkAccess(caller, null, rule);
 
-        return deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallerUserId());
+
+        boolean result = deleteLoadBalancerRule(loadBalancerId, apply, caller, ctx.getCallerUserId());
+        if(!result){
+    		throw new CloudRuntimeException("Unable to remove load balancer rule " + loadBalancerId);
+    	}
+        return result;
     }
 
     @DB
@@ -390,6 +401,9 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         if (result == null){
             result =  createLoadBalancer(lb, openFirewall);
         } 
+    	if(result == null){
+    		throw new CloudRuntimeException("Failed to create load balancer rule: "+lb.getName());
+    	}
         return result;
     }
     
@@ -639,7 +653,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             lb.setAlgorithm(algorithm);
         }
 
-        _lbDao.update(lbRuleId, lb);
+        boolean success = _lbDao.update(lbRuleId, lb);
 
         // If algorithm is changed, have to reapply the lb config
         if (algorithm != null) {
@@ -649,9 +663,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 applyLoadBalancerConfig(lbRuleId);
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                success = false;
             }
         }
 
+        if(!success){
+    		throw new CloudRuntimeException("Failed to update load balancer rule: "+lbRuleId);
+    	}
+        
         return lb;
     }
 
