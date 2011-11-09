@@ -2281,7 +2281,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkTags(network.getTags());
                 ipsToSend[i++] = ip;
-                firstIP = false;
+                /* send the firstIP = true for the first Add, this is to create primary on interface*/
+                if (!firstIP || add)  {
+                    firstIP = false;
+                }
+                
+
             }
             IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
