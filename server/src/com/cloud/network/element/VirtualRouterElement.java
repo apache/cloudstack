@@ -405,6 +405,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return null;
         }
         element = new VirtualRouterProviderVO(nspId, null, VirtualRouterProviderType.VirtualRouterElement);
+        element.setEnabled(true);
         _vrProviderDao.persist(element);
         return element;
     }
