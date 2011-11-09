@@ -122,6 +122,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
@@ -1424,6 +1425,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
+    protected void prepareElement(NetworkElement element, NetworkVO network, NicProfile profile, VirtualMachineProfile<? extends VMInstanceVO> vmProfile,
+                                  DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
+                                                                                             ConcurrentOperationException, ResourceUnavailableException {
+        element.prepare(network, profile, vmProfile, dest, context);
+        if (vmProfile.getType() == Type.User && element.getProvider() != null) {
+            if (areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
+                    isProviderSupportedInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
+                    (element instanceof DhcpServiceProvider)) {
+                DhcpServiceProvider sp = (DhcpServiceProvider)element;
+                sp.addDhcpEntry(network, profile, vmProfile, dest, context);
+            }
+            if (areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
+                    isProviderSupportedInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
+                    (element instanceof UserDataServiceProvider)) {
+                UserDataServiceProvider sp = (UserDataServiceProvider)element;
+                sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
+            }
+        }
+    }
+ 
     @DB
     protected void updateNic(NicVO nic, long networkId, int count) {
         Transaction txn = Transaction.currentTxn();
@@ -1502,7 +1523,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
                 }
-                element.prepare(network, profile, vmProfile, dest, context);
+                prepareElement(element, network, profile, vmProfile, dest, context);
             }
             
             profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));

@@ -151,18 +151,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
         }
-
-        //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
-        Long podId = dest.getPod().getId();
-        DataCenter dc = dest.getDataCenter();
-        boolean isPodBased = (dc.getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) && network.getTrafficType() == TrafficType.Guest;
-        if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
-            List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
-            routers.addAll(allRunningRoutersOutsideThePod);
-        }
-
-        List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
-        return (rets != null) && (!rets.isEmpty());
+        return true;
     }
 
     @Override
@@ -488,14 +477,96 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
+        if (canHandle(network, Service.Dhcp)) {
+            if (vm.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+
+            @SuppressWarnings("unchecked")
+            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+
+            boolean publicNetwork = false;
+            if (_networkMgr.isProviderSupportedInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+                publicNetwork = true;
+            }
+            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
+                                network.getTrafficType() == TrafficType.Guest;
+            
+            List<DomainRouterVO> routers;
+            
+            if (publicNetwork) {
+                routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+            } else {
+                Long podId = dest.getPod().getId();
+                if (isPodBased) {
+                    routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.DHCP_USERDATA);
+                } else {
+                    routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_USERDATA);
+                }
+            }
+        
+            //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
+            Long podId = dest.getPod().getId();
+            if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+                List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
+                routers.addAll(allRunningRoutersOutsideThePod);
+            }
+
+            if ((routers == null) || (routers.size() == 0)) {
+                throw new ResourceUnavailableException("Can't find at least one router!", this.getClass(), 0);
+            }
+            
+            List<VirtualRouter> rets = _routerMgr.applyDhcpEntry(network, nic, uservm, dest, context, routers);
+            return (rets != null) && (!rets.isEmpty());
+        }
         return false;
     }
 
     @Override
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
+        if (canHandle(network, Service.UserData)) {
+            if (vm.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+
+            @SuppressWarnings("unchecked")
+            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+
+            boolean publicNetwork = false;
+            if (_networkMgr.isProviderSupportedInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+                publicNetwork = true;
+            }
+            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
+                                network.getTrafficType() == TrafficType.Guest;
+            
+            List<DomainRouterVO> routers;
+            
+            if (publicNetwork) {
+                routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+            } else {
+                Long podId = dest.getPod().getId();
+                if (isPodBased) {
+                    routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.DHCP_USERDATA);
+                } else {
+                    routers = _routerDao.listByNetworkAndRole(network.getId(), Role.DHCP_USERDATA);
+                }
+            }
+        
+            //for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when network.dns.basiczone.updates is set to "all"
+            Long podId = dest.getPod().getId();
+            if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+                List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(), podId, State.Running, Role.DHCP_USERDATA);
+                routers.addAll(allRunningRoutersOutsideThePod);
+            }
+
+            if ((routers == null) || (routers.size() == 0)) {
+                throw new ResourceUnavailableException("Can't find at least one router!", this.getClass(), 0);
+            }
+            
+            List<VirtualRouter> rets = _routerMgr.applyUserData(network, nic, uservm, dest, context, routers);
+            return (rets != null) && (!rets.isEmpty());
+        }
         return false;
     }
 }

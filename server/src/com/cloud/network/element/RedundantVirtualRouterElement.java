@@ -82,8 +82,7 @@ public class RedundantVirtualRouterElement extends VirtualRouterElement implemen
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!", this.getClass(), 0);
         }
-        List<VirtualRouter> rets = _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, routers);                                                                                                                      
-        return (rets != null) && (!rets.isEmpty());
+        return true;
     }
     
     @Override

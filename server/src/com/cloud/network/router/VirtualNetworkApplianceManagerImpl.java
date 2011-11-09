@@ -1966,7 +1966,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public List<VirtualRouter> addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers)
+    public List<VirtualRouter> applyDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
@@ -1981,7 +1981,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
         
         for (DomainRouterVO router : routers) { 
-            boolean sendPasswordAndVmData = true;
             boolean sendDnsDhcpData = true;
             
             if (router.getState() != State.Running) {
@@ -2005,7 +2004,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (isZoneBasic) {
                 podId = dest.getPod().getId();
                 if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
-                    sendPasswordAndVmData = false;
                     if (_dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
                         sendDnsDhcpData = false;
                     }
@@ -2034,6 +2032,99 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 cmds.addCommand("dhcp", dhcpCommand);
             }
     
+            if (cmds.size() > 0) {
+                boolean podLevelException = false;
+                //for user vm in Basic zone we should try to re-deploy vm in a diff pod if it fails to deploy in original pod; so throwing exception with Pod scope
+                if (isZoneBasic && podId != null && profile.getVirtualMachine().getType() == VirtualMachine.Type.User && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared) {
+                    podLevelException = true;
+                }
+                try {
+                    _agentMgr.send(router.getHostId(), cmds);
+                } catch (AgentUnavailableException e){
+                    s_logger.warn("Unable to reach the agent " + router.getHostId(), e);
+                    disconnectedRouters.add(router);
+                    continue;
+                } catch (OperationTimedoutException e) {
+                    s_logger.warn("Connection timeout on host " + router.getHostId(), e);
+                    disconnectedRouters.add(router);
+                    continue;
+                }
+                connectedRouters.add(router);
+
+                Answer answer = cmds.getAnswer("dhcp");
+                if (!answer.getResult()) {
+                    s_logger.error("Unable to set dhcp entry for " + profile + " on domR: " + router.getHostName() + " due to " + answer.getDetails());
+                    if (podLevelException) {
+                        throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), Pod.class, podId);
+                    }
+                    throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
+                }
+            }
+           
+            rets.add(router);
+        }
+        
+        String msg = "Unable to apply dhcp entry for new VM into network on disconnected router ";
+        if (!connectedRouters.isEmpty()) {
+            // These disconnected ones are out of sync now, stop them for synchronization
+            handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+        } else if (!disconnectedRouters.isEmpty()) {
+            for (VirtualRouter router : disconnectedRouters) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+                }
+            }
+            throw new ResourceUnavailableException(msg, VirtualRouter.class, disconnectedRouters.get(0).getId());
+        }
+        
+        return rets;
+    }
+
+    @Override
+    public List<VirtualRouter> applyUserData(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers)
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+
+        List<VirtualRouter> rets = new ArrayList<VirtualRouter>(routers.size());
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+        
+        DataCenter dc = dest.getDataCenter();
+        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
+        String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+        boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+
+        List<VirtualRouter> connectedRouters = new ArrayList<VirtualRouter>();
+        List<VirtualRouter> disconnectedRouters = new ArrayList<VirtualRouter>();
+        
+        for (DomainRouterVO router : routers) { 
+            boolean sendPasswordAndVmData = true;
+            
+            if (router.getState() != State.Running) {
+                s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is not in Running state");
+                continue;
+            }
+            
+            if (router.isStopPending()) {
+                if (_hostDao.findById(router.getHostId()).getStatus() == Status.Up) {
+                    throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName() + " haven't been stopped after it's host coming back!",
+                            VirtualRouter.class, router.getId());
+                }
+                s_logger.warn("Unable to add virtual machine " + profile.getVirtualMachine() + " to the router " + router + " as the router is to be stopped");
+                continue;
+            }
+            
+            //for basic zone: 
+            //1) send vm data/password information only to the dhcp in the same pod
+            //2) send dhcp/dns information to all routers in the cloudstack only when _dnsBasicZoneUpdates is set to "all" value
+            Long podId = null;
+            if (isZoneBasic) {
+                podId = dest.getPod().getId();
+                if (router.getPodIdToDeployIn().longValue() != podId.longValue()) {
+                    sendPasswordAndVmData = false;
+                }
+            }
+
+            Commands cmds = new Commands(OnError.Stop);
+
             if (sendPasswordAndVmData) {
                 String password = (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword);
                 String userData = profile.getVirtualMachine().getUserData();
@@ -2078,16 +2169,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 connectedRouters.add(router);
 
-                Answer answer = cmds.getAnswer("dhcp");
-                if (!answer.getResult()) {
-                    s_logger.error("Unable to set dhcp entry for " + profile + " on domR: " + router.getHostName() + " due to " + answer.getDetails());
-                    if (podLevelException) {
-                        throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), Pod.class, podId);
-                    }
-                    throw new ResourceUnavailableException("Unable to set dhcp entry for " + profile + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterIdToDeployIn());
-                }
-
-                answer = cmds.getAnswer("password");
+                Answer answer = cmds.getAnswer("password");
                 if (answer != null && !answer.getResult()) {
                     s_logger.error("Unable to set password for " + profile + " due to " + answer.getDetails());
                     if (podLevelException) {
@@ -2109,7 +2191,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             rets.add(router);
         }
         
-        String msg = "Unable to add new VM into network on disconnected router ";
+        String msg = "Unable to apply userdata for new VM into network on disconnected router ";
         if (!connectedRouters.isEmpty()) {
             // These disconnected ones are out of sync now, stop them for synchronization
             handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
