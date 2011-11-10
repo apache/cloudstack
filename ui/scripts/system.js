@@ -129,7 +129,62 @@
                     },
                     add: {
                       label: 'Add',
-                      action: function(args) {
+                      action: function(args) {                        
+                        var zoneId = "6e3728bf-0b13-442c-a968-a42015291662"; //temporary until Brian fixes the bug.
+                        //var zoneId = args.context.zones[0].id; 
+                                                
+                        var array1 = [];
+                        array1.push("&zoneId=" + zoneId);
+
+                        if (args.data.vlanid != null && args.data.vlanid.length > 0)
+                          array1.push("&vlan=" + todb(args.data.vlanid));
+                        else
+                          array1.push("&vlan=untagged");
+
+                        /*
+                        if($form.find('.form-item[rel=domainId]').css("display") != "none") {
+                          if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+                            array1.push("&domainId=" + args.data.domainId);
+                            array1.push("&account=" + args.data.account);
+                          }
+                          else {  //domain-specific
+                            array1.push("&domainId=" + args.data.domainId);
+                            array1.push("&isshared=true");
+                          }
+                        }
+                        else { //zone-wide
+                          array1.push("&isshared=true");
+                        }
+                        */
+                        
+                        array1.push("&gateway=" + args.data.gateway);
+                        array1.push("&netmask=" + args.data.netmask);
+                        array1.push("&startip=" + args.data.startip);
+                        if(args.data.endip != null && args.data.endip.length > 0)
+                          array1.push("&endip=" + args.data.endip);
+
+                        //uncomment when Brian fixes the bug that args.context shouldn't be undefined
+                        /*
+                        if(args.context.zones[0].securitygroupsenabled == false)
+                          array1.push("&forVirtualNetwork=true");
+                        else
+                          array1.push("&forVirtualNetwork=false");
+                        */
+
+                        $.ajax({
+                          url: createURL("createVlanIpRange" + array1.join("")),
+                          dataType: "json",
+                          success: function(json) {                            
+                            var item = json.createvlaniprangeresponse.vlan;
+                            args.response.success({data: item});
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            args.response.error(errorMsg);
+                          }
+                        });   
+                        
+                        /*
                         setTimeout(function() {
                           args.response.success({
                             notification: {
@@ -138,6 +193,8 @@
                             }
                           });
                         }, 500);
+                        */
+                        
                       }
                     },
                     actions: {
