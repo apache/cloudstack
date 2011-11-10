@@ -65,6 +65,7 @@
       var messageArgs = { name: $detailView.find('tr.name td.value').html() };
       var id = args.id;
       var context = $detailView.data('view-args').context;
+      var _custom = $detailView.data('_custom');
 
       var externalLinkAction = action.action.externalLink;
       if (externalLinkAction) {
@@ -99,6 +100,7 @@
 
         action.action({
           data: data,
+          _custom: _custom,
           ref: options.ref,
           context: $detailView.data('view-args').context,
           $form: $form,
@@ -214,6 +216,7 @@
 
         args.actions[args.actionName].action({
           data: data,
+          _custom: $detailView.data('_custom'),
           context: $detailView.data('view-args').context,
           response: {
             data: data,
@@ -617,6 +620,9 @@
       context: args.context,
       response: {
         success: function(args) {
+          if (args._custom) {
+            $detailView.data('_custom', args._custom);
+          }
           var tabData = $tabContent.data('detail-view-tab-data');
           var data = args.data;
           var isFirstPanel = $tabContent.index($detailView.find('div.detail-group.ui-tabs-panel')) == 0;

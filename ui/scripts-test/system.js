@@ -46,7 +46,11 @@
                   }
                 ],
                 dataProvider: function(args) {
-                  args.response.success({ data: testData.data.networks[0] });
+                  args.response.success({ _custom: {
+                    physicalNetwork: {
+                      ip: '192.168.1.1'
+                    }
+                  }, data: testData.data.networks[0] });
                 }
               },
               ipAddresses: {
