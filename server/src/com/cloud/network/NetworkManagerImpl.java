@@ -2038,7 +2038,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String path = null;
         Long sharedNetworkDomainId = null;
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
-        Boolean sourceNatEnabled = cmd.getSourceNatEnabled();
+        List<String> supportedServicesStr = cmd.getSupportedServices();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -2143,16 +2143,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter);
         }
         
-        //sort networks by sourceNatEnabled parameter
-        if (sourceNatEnabled != null) {
-            List<Network> supportedNetworks = new ArrayList<Network>();
-            for (Network network : networksToReturn) {
-                boolean isSupported = areServicesSupportedInNetwork(network.getId(), Service.SourceNat);
-                if (isSupported == sourceNatEnabled.booleanValue()) {
+        
+        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
+            List<NetworkVO> supportedNetworks = new ArrayList<NetworkVO>();
+            Service[] suppportedServices = new Service[supportedServicesStr.size()];
+            int i = 0;
+            for (String supportedServiceStr : supportedServicesStr) {
+                Service service = Service.getService(supportedServiceStr);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
+                } else {
+                    suppportedServices[i] = service;
+                }
+                i++;
+            }
+           
+            for (NetworkVO network : networksToReturn) {
+                if (areServicesSupportedInNetwork(network.getId(), suppportedServices)) {
                     supportedNetworks.add(network);
                 }
             }
-
+            
             return supportedNetworks;
         } else {
             return networksToReturn;

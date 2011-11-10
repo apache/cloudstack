@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.network.Network;
@@ -73,8 +74,8 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
     private Long physicalNetworkId;
     
-    @Parameter(name=ApiConstants.SOURCE_NAT_ENABLED, type=CommandType.BOOLEAN, description="list networks that support/don't support sourceNat service")
-    private Boolean sourceNatEnabled;
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
+    private List<String> supportedServices;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -124,8 +125,8 @@ public class ListNetworksCmd extends BaseListCmd {
         return physicalNetworkId;
     }
 
-    public Boolean getSourceNatEnabled() {
-        return sourceNatEnabled;
+    public List<String> getSupportedServices() {
+        return supportedServices;
     }
 
     /////////////////////////////////////////////////////
