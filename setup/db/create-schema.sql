@@ -260,7 +260,6 @@ CREATE TABLE `cloud`.`network_offerings` (
   `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
   `dedicated_lb_service` int(1) unsigned NOT NULL DEFAULT 1 COMMENT 'true if the network offering provides a dedicated load balancer for each network',
   `shared_source_nat_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides the shared source nat service',
-  `guest_type` char(32) COMMENT 'guest ip type of network offering',
   `redundant_router` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides redundant routers',
   `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
   `state` char(32) COMMENT 'state of the network offering; has Disabled value by default',
@@ -461,7 +460,7 @@ CREATE TABLE `cloud`.`vlan` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
-  CONSTRAINT `uc_vlan__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_vlan__uuid` UNIQUE (`uuid`),
   #CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vlan__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
