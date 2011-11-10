@@ -148,9 +148,9 @@
             actions: {
               edit: {
                 label: 'Edit',
-                action: function(args) {   
+                action: function(args) {                     
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork&id=" + args.context.guest[0].id + "&state=Enabled&vlan=" + args.data.vlan),                    
+                    url: createURL("updatePhysicalNetwork&id=" + args._custom.physicalNetworkObj.id + "&state=Enabled&vlan=" + args.data.vlan),                    
                     dataType: "json",
                     success: function(json) {
                       var item = json.updatephysicalnetworkresponse.physicalnetwork;
@@ -180,13 +180,10 @@
                     guestcidraddress: { label: 'CIDR' }                    
                   }
                 ],
-                dataProvider: function(args) {                  
-                  //var zoneId = args.context.zones[0].id;
-                  var zoneId = 1; //hardcode it until Brian fixes the bug.
-                  
+                dataProvider: function(args) { 
                   var physicalNetworkObj = [];
                   $.ajax({
-                    url: createURL("listPhysicalNetworks&zoneId=" + zoneId),
+                    url: createURL("listPhysicalNetworks&zoneId=" + args.context.zones[0].id),
                     dataType: "json",
                     async: false,
                     success: function(json) {                      
@@ -195,10 +192,12 @@
                     }
                   });  
                   
-                  //physicalNetworkObj["guestcidraddress"] = args.context.zones[0].guestcidraddress;
-                  physicalNetworkObj["guestcidraddress"] = "10.1.1.0/24"; //hardcode it until Brian fixes the bug.
-
-                  args.response.success({data: physicalNetworkObj});                  
+                  physicalNetworkObj["guestcidraddress"] = args.context.zones[0].guestcidraddress;
+                  
+                  args.response.success({
+                    _custom: {"physicalNetworkObj": physicalNetworkObj},
+                    data: physicalNetworkObj
+                  });                  
                 }
               }
             }
