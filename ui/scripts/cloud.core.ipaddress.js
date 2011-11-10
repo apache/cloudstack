@@ -1162,7 +1162,9 @@ function ipJsonToLoadBalancerTab() {
     });    
 }
 
-function showEnableVPNDialog($thisTab) {
+function showEnableVPNDialog($thisTab) {  
+  $("#dialog_enable_vpn").find("#info_container").hide(); 
+  
 	$("#dialog_enable_vpn")	
 	.dialog('option', 'buttons', { 						
 		"Enable": function() { 
