@@ -17,6 +17,8 @@
  */
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import com.cloud.network.element.VirtualRouterProviderVO;
@@ -33,9 +35,11 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
     public VirtualRouterProviderDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("nsp_id", AllFieldsSearch.entity().getNspId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("enabled", AllFieldsSearch.entity().isEnabled(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -45,5 +49,29 @@ public class VirtualRouterProviderDaoImpl extends GenericDaoBase<VirtualRouterPr
         sc.setParameters("nsp_id", nspId);
         sc.setParameters("type", type);
         return findOneBy(sc);
+    }
+    
+    @Override
+    public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, VirtualRouterProviderType type) {
+        SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
+        sc.setParameters("enabled", enabled);
+        sc.setParameters("type", type);
+        return listBy(sc);
+    }
+    
+    @Override
+    public VirtualRouterProviderVO findByIdAndEnabledAndType(long id, boolean enabled, VirtualRouterProviderType type) {
+        SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
+        sc.setParameters("id", id);
+        sc.setParameters("enabled", enabled);
+        sc.setParameters("type", type);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<VirtualRouterProviderVO> listByType(VirtualRouterProviderType type) {
+        SearchCriteria<VirtualRouterProviderVO> sc = AllFieldsSearch.create();
+        sc.setParameters("type", type);
+        return listBy(sc);
     }
 }

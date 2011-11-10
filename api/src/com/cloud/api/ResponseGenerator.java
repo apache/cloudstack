@@ -65,6 +65,7 @@ import com.cloud.api.response.TemplateResponse;
 import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.api.response.VpnUsersResponse;
@@ -89,6 +90,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
@@ -251,5 +253,7 @@ public interface ResponseGenerator {
     ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result);
 
     TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result);
+    
+    VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
 }

@@ -17,6 +17,7 @@
  */
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
+import com.cloud.api.commands.ListVirtualRouterElementsCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -381,17 +383,17 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
     
     @Override
-    public boolean configure(ConfigureVirtualRouterElementCmd cmd) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(cmd.getNspId(), VirtualRouterProviderType.VirtualRouter);
+    public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
+        VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
         if (element == null) {
-            s_logger.trace("Can't find element with network service provider id " + cmd.getNspId());
-            return false;
+            s_logger.trace("Can't find element with network service provider id " + cmd.getId());
+            return null;
         }
         
         element.setEnabled(cmd.getEnabled());
         _vrProviderDao.persist(element);
         
-        return true;
+        return element;
     }
     
     @Override
@@ -456,7 +458,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         return true;
     }    
 
-    @Override
     public Long getIdByNspId(Long nspId) {
         VirtualRouterProviderVO vr = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.VirtualRouter);
         return vr.getId();
@@ -567,5 +568,22 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return (rets != null) && (!rets.isEmpty());
         }
         return false;
+    }
+
+    @Override
+    public List<? extends VirtualRouterProvider> searchForVirtualRouterElement(ListVirtualRouterElementsCmd cmd) {
+        if (cmd.getEnabled() == null && cmd.getId() == null) {
+            return _vrProviderDao.listByType(VirtualRouterProviderType.VirtualRouter);
+        }
+        if (cmd.getId() == null) {
+            return _vrProviderDao.listByEnabledAndType(cmd.getEnabled(), VirtualRouterProviderType.VirtualRouter);
+        }
+        //Search by Id
+        List<VirtualRouterProviderVO> list = new ArrayList<VirtualRouterProviderVO>();
+        VirtualRouterProviderVO provider = _vrProviderDao.findById(cmd.getId());
+        if (provider != null) {
+            list.add(provider);
+        }
+        return list;
     }
 }

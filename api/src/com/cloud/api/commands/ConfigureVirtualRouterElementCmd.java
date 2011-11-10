@@ -27,7 +27,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.VirtualRouterProviderResponse;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -37,7 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(responseObject=SuccessResponse.class, description="Configures a virtual router element.")
+@Implementation(responseObject=VirtualRouterProviderResponse.class, description="Configures a virtual router element.")
 public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
     private static final String s_name = "configurevirtualrouterelementresponse";
@@ -49,8 +50,8 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the network service provider ID of the virtual router element")
-    private Long nspId;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the virtual router provider")
+    private Long id;
 
     @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, required=true, description="Enabled/Disabled the service provider")
     private Boolean enabled;
@@ -59,12 +60,12 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public void setNspId(Long nspId) {
-        this.nspId = nspId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public Long getNspId() {
-        return nspId;
+    public Long getId() {
+        return id;
     }
 
     public void setEnabled(Boolean enabled) {
@@ -100,7 +101,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "configuring virtual router element: " + _service.getIdByNspId(nspId);
+        return  "configuring virtual router provider: " + id;
     }
     
     public AsyncJob.Type getInstanceType() {
@@ -108,20 +109,19 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     }
     
     public Long getInstanceId() {
-        return _service.getIdByNspId(getNspId());
+        return id;
     }
 	
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        UserContext.current().setEventDetails("Virtual router element: " + _service.getIdByNspId(nspId));
-        Boolean result = _service.configure(this);
-        if (result){
-            SuccessResponse response = new SuccessResponse();
-            response.setResponseName(getCommandName());
-            response.setSuccess(result);
-            this.setResponseObject(response);
+        UserContext.current().setEventDetails("Virtual router element: " + id);
+        VirtualRouterProvider result = _service.configure(this);
+        if (result != null){
+            VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);
+            routerResponse.setResponseName(getCommandName());
+            this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure the virtual router element");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure the virtual router provider");
         }
     }
 }
