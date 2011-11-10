@@ -69,7 +69,7 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName("service") @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
-    @SerializedName(ApiConstants.IS_SHARED) @Param(description="true if load balncer service offered is shared by multiple networks", responseObject = ServiceResponse.class)
+    @SerializedName(ApiConstants.IS_LB_SHARED) @Param(description="true if load balncer service offered is shared by multiple networks", responseObject = ServiceResponse.class)
     private Boolean isLbShared;
 
     @SerializedName(ApiConstants.IS_SHARED) @Param(description="true if soruce NAT service offered is shared by multiple networks", responseObject = ServiceResponse.class)

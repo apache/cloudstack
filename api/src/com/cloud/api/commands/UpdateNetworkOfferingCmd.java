@@ -33,6 +33,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.offering.NetworkOffering;
@@ -190,14 +191,33 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Map<Capability, String> getServiceCapabilities(Service service) {
+        Map<Capability, String> capabilityMap = null;
 
-        Map<Capability, String> serviceCapabilityMap = null;
         if (serviceCapabilistList != null && !serviceCapabilistList.isEmpty()) {
-            if (serviceCapabilistList.containsKey(service.getName())) {
-                serviceCapabilityMap = (HashMap<Capability, String>) serviceCapabilistList.get(service.getName());
+            capabilityMap = new HashMap <Capability, String>();
+            Collection serviceCapabilityCollection = serviceCapabilistList.values();
+            Iterator iter = serviceCapabilityCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> svcCapabilityMap = (HashMap<String, String>) iter.next();
+                Capability capability = null;
+                String svc = (String) svcCapabilityMap.get("service");
+                String capabilityName = (String) svcCapabilityMap.get("capabilityType");
+                String capabilityValue = (String) svcCapabilityMap.get("capabilityValue");
+
+                if (capabilityName != null) {
+                    capability = Capability.getCapability(capabilityName);
+                }
+
+                if ((capability == null) || (capabilityName == null) || (capabilityValue == null) ) {
+                    throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
+                }
+                if (svc.equalsIgnoreCase(service.getName())) {
+                    capabilityMap.put(capability, capabilityValue);
+                }
             }
         }
-        return serviceCapabilityMap;
+
+        return capabilityMap;
     }
 
 

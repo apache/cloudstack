@@ -154,6 +154,8 @@ public interface Network extends ControlledEntity {
 
     public static class Capability {
 
+        private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
+        
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
         public static final Capability SupportedLBIsolation = new Capability("SupportedLBIsolation");
@@ -169,10 +171,20 @@ public interface Network extends ControlledEntity {
 
         public Capability(String name) {
             this.name = name;
+            supportedCapabilities.add(this);
         }
 
         public String getName() {
             return name;
+        }
+
+        public static Capability getCapability(String capabilityName) {
+            for (Capability capability : supportedCapabilities) {
+                if (capability.getName().equalsIgnoreCase(capabilityName)) {
+                    return capability;
+                }
+            }
+            return null;
         }
     }
 
