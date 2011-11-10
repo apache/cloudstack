@@ -266,15 +266,19 @@
                         if(selectedZoneObj.securitygroupsenabled == false) {
                           if (networks != null && networks.length > 0) {
                             for (var i = 0; i < networks.length; i++) {
-                              if (networks[i].type == 'Virtual') {
-                                virtualNetwork = networks[i];
-                                break;
+                              if (networks[i].type == 'Isolated') {
+                                //loop through
+                                var sourceNatObj = ipFindNetworkServiceByName("SourceNat", networkObj);
+                                if(sourceNatObj != null) {
+                                  virtualNetwork = networks[i];
+                                  break;
+                                }  
                               }
                             }
                           }
-                          if (virtualNetwork == null) { //if there is no virtualNetwork
+                          if (virtualNetwork == null) { //if there is no isolatedNetwork
                             $.ajax({
-                              url: createURL("listNetworkOfferings&guestiptype=Virtual"), //check DefaultVirtualizedNetworkOffering
+                              url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //check networkOffering for isolatedNetwork
                               dataType: "json",
                               async: false,
                               success: function(json) {
@@ -284,9 +288,9 @@
                                     if (networkOfferings[i].isdefault == true
                                         && (networkOfferings[i].availability == "Required" || networkOfferings[i].availability == "Optional")
                                        ) {
-                                         // Create a virtual network
-                                         var networkName = "Virtual Network";
-                                         var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";
+                                         // Create a isolated network
+                                         var networkName = "Isolated Network";
+                                         var networkDesc = "A dedicated isolated network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";
                                          $.ajax({
                                            url: createURL("createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+args.currentData.zoneid),
                                            dataType: "json",

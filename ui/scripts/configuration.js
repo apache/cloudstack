@@ -839,7 +839,7 @@
           },
           dataProvider: function(args) {
             $.ajax({
-              url: createURL("listNetworkOfferings&guestiptype=Virtual&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
