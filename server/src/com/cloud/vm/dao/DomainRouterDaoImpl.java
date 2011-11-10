@@ -126,7 +126,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
-        sc.setParameters("role", Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+        sc.setParameters("role", Role.VIRTUAL_ROUTER);
         return listBy(sc);
     }
 
