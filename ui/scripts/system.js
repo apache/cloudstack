@@ -148,15 +148,24 @@
             actions: {
               edit: {
                 label: 'Edit',
-                action: function(args) {                     
+                action: function(args) {                                    
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork&id=" + args._custom.physicalNetworkObj.id + "&state=Enabled&vlan=" + args.data.vlan),                    
+                    url: createURL("updatePhysicalNetwork&id=" + args._custom.physicalNetworkObj.id + "&state=Enabled&vlan=" + todb(args.data.vlan)),                    
                     dataType: "json",
-                    success: function(json) {
-                      var item = json.updatephysicalnetworkresponse.physicalnetwork;
-                      args.response.success({data: item});
+                    success: function(json) {                      
+                      
                     }
                   });
+                  
+                  $.ajax({
+                    url: createURL("updateZone&id=" + args.context.zones[0].id + "&guestcidraddress=" + todb(args.data.guestcidraddress)),
+                    dataType: "json",
+                    success: function(json) {
+                    
+                    }
+                  });
+                  
+                  //args.response.success({data: item});                  
                 }
               }
             },
@@ -177,7 +186,10 @@
                     },
                     broadcastdomainrange: { label: 'Broadcast domain range' },                  
                     zoneid: { label: 'Zone ID' },
-                    guestcidraddress: { label: 'CIDR' }                    
+                    guestcidraddress: { 
+                      label: 'CIDR',
+                      isEditable: true                             
+                    }                    
                   }
                 ],
                 dataProvider: function(args) { 
