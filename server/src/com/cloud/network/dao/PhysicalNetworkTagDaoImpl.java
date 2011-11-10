@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -27,34 +27,34 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 
-public class NetworkTagDaoImpl extends GenericDaoBase<NetworkTagVO, Long> implements GenericDao<NetworkTagVO, Long> {
-    private final GenericSearchBuilder<NetworkTagVO, String> TagSearch;
-    private final SearchBuilder<NetworkTagVO> AllFieldsSearch;
+public class PhysicalNetworkTagDaoImpl extends GenericDaoBase<PhysicalNetworkTagVO, Long> implements GenericDao<PhysicalNetworkTagVO, Long> {
+    private final GenericSearchBuilder<PhysicalNetworkTagVO, String> TagSearch;
+    private final SearchBuilder<PhysicalNetworkTagVO> AllFieldsSearch;
 
-    protected NetworkTagDaoImpl() {
+    protected PhysicalNetworkTagDaoImpl() {
         super();
         TagSearch = createSearchBuilder(String.class);
         TagSearch.selectField(TagSearch.entity().getTag());
-        TagSearch.and("networkid", TagSearch.entity().getNetworkId(), Op.EQ);
+        TagSearch.and("physicalNetworkId", TagSearch.entity().getPhysicalNetworkId(), Op.EQ);
         TagSearch.done();
 
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
-        AllFieldsSearch.and("networkid", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("physicalNetworkId", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         AllFieldsSearch.and("tag", AllFieldsSearch.entity().getTag(), Op.EQ);
         AllFieldsSearch.done();
     }
 
-    public List<String> getTags(long networkId) {
+    public List<String> getTags(long physicalNetworkId) {
         SearchCriteria<String> sc = TagSearch.create();
-        sc.setParameters("networkid", networkId);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
 
         return customSearch(sc, null);
     }
 
-    public int clearTags(long networkId) {
-        SearchCriteria<NetworkTagVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkid", networkId);
+    public int clearTags(long physicalNetworkId) {
+        SearchCriteria<PhysicalNetworkTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
 
         return remove(sc);
     }

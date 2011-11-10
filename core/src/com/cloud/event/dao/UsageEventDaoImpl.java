@@ -28,10 +28,10 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.Vlan;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.UsageServerException;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -180,7 +180,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         sc.setParameters("assignEvent", EventTypes.EVENT_NET_IP_ASSIGN);
         sc.setParameters("releaseEvent", EventTypes.EVENT_NET_IP_RELEASE);
         sc.setParameters("zoneid", zoneId);
-        sc.setParameters("networktype", GuestIpType.Direct.toString());
+        sc.setParameters("networktype", Vlan.VlanType.DirectAttached.toString());
         return listBy(sc, filter);
     }
 

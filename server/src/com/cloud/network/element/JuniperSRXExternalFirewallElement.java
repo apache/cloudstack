@@ -36,19 +36,19 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -60,14 +60,14 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalFirewallElement extends AdapterBase implements NetworkElement, RemoteAccessVpnElement  {
+public class JuniperSRXExternalFirewallElement extends AdapterBase implements SourceNatServiceProvider, FirewallServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider {
 
-    private static final Logger s_logger = Logger.getLogger(ExternalFirewallElement.class);
+    private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     
     @Inject NetworkManager _networkManager;
-    @Inject ExternalNetworkManager _externalNetworkManager;
+    @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject HostDao _hostDao;
     @Inject ConfigurationManager _configMgr;
     @Inject NetworkOfferingDao _networkOfferingDao;
@@ -75,12 +75,12 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() != Network.GuestIpType.Virtual) || (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() != Network.GuestIpType.Direct)) {
-            s_logger.trace("Not handling guest ip type = " + config.getGuestType());
+        if ((zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() != Network.GuestType.Shared)) {
+            s_logger.trace("Not handling network type = " + config.getGuestType());
             return false;
         }   
         
-        return _networkManager.zoneIsConfiguredForExternalNetworking(zone.getId());
+        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getId());
     }
 
     @Override
@@ -96,8 +96,13 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
         if (!canHandle(network)) {
             return false;
         }
-    	
-    	return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(true, network, offering);
+
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(true, network);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception
+            return false;
+        }
     }
 
     @Override
@@ -111,9 +116,8 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         
         //don't have to implement network is Basic zone
         if (zone.getNetworkType() == NetworkType.Basic) {
@@ -124,8 +128,12 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
         if (!canHandle(network)) {
             return false;
         }
-        
-        return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(false, network, offering);
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalFirewall(false, network);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception 
+            return false;
+        }        
     }
     
     @Override
@@ -144,7 +152,7 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
     
 
     @Override
-    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyFWRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config)) {
             return false;
         }
@@ -204,23 +212,13 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
         // Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         
-        // Specifies that static NAT rules are supported by this element
-        firewallCapabilities.put(Capability.StaticNat, "true");
-        
         // Specifies that NAT rules can be made for either TCP or UDP traffic
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
         
         firewallCapabilities.put(Capability.MultipleIps, "true");
         
-        // Specifies that this element supports either one source NAT rule per account, or no source NAT rules at all; 
-        // in the latter case a shared interface NAT rule will be used 
-        firewallCapabilities.put(Capability.SupportedSourceNatTypes, "per account, per zone");
-        
         // Specifies that this element can measure network usage on a per public IP basis
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
-        
-        // Specifies that port forwarding rules are supported by this element
-        firewallCapabilities.put(Capability.PortForwarding, "true");
         
         // Specifies supported VPN types
         Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
@@ -229,17 +227,46 @@ public class ExternalFirewallElement extends AdapterBase implements NetworkEleme
         
         capabilities.put(Service.Firewall, firewallCapabilities);
         capabilities.put(Service.Gateway, null);
+        
+        Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
+        // Specifies that this element supports either one source NAT rule per account, or no source NAT rules at all; 
+        // in the latter case a shared interface NAT rule will be used 
+        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "per account, per zone");
+        capabilities.put(Service.SourceNat, sourceNatCapabilities);
+        
+        // Specifies that port forwarding rules are supported by this element
+        capabilities.put(Service.PortForwarding, null);
+        
+        // Specifies that static NAT rules are supported by this element
+        capabilities.put(Service.StaticNat, null);
 
         return capabilities;
     }
     
     @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+        if (!canHandle(network)) {
+            return false;
+        }
+    	
+    	return _externalNetworkManager.applyFirewallRules(network, rules);
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
         return true;
     }
-    
+
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean canEnableIndividualServices() {
         return false;
     }
 }

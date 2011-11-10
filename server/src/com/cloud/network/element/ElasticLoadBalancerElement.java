@@ -34,15 +34,14 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.Provider; 
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpAddress;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.ElasticLoadBalancerManager;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.AdapterBase;
@@ -54,7 +53,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 
 @Local(value=NetworkElement.class)
-public class ElasticLoadBalancerElement extends AdapterBase implements NetworkElement{
+public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider {
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     @Inject NetworkManager _networkManager;
@@ -67,8 +66,8 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
     TrafficType _frontEndTrafficType = TrafficType.Guest;
     
     private boolean canHandle(Network network) {
-        if (network.getGuestType() != Network.GuestIpType.Direct || network.getTrafficType() != TrafficType.Guest) {
-            s_logger.debug("Not handling network with guest Type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
+        if (network.getGuestType() != Network.GuestType.Shared|| network.getTrafficType() != TrafficType.Guest) {
+            s_logger.debug("Not handling network with type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
         }
         
@@ -90,6 +89,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
         
         Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
+        lbCapabilities.put(Capability.SupportedLBIsolation, "shared");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         
         capabilities.put(Service.Lb, lbCapabilities);   
@@ -118,14 +118,8 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO kill all loadbalancer vms by calling the ElasticLoadBalancerManager
-        return false;
-    }
-
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // TODO restart all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }
 
@@ -136,12 +130,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
     }
 
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return true;
-    }
-
-    @Override
-    public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(network)) {
             return false;
         }
@@ -167,9 +156,22 @@ public class ElasticLoadBalancerElement extends AdapterBase implements NetworkEl
         }
         return true;
     }
-    
+
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean canEnableIndividualServices() {
         return false;
     }
 }

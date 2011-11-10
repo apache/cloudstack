@@ -34,16 +34,16 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -53,23 +53,24 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class NetscalerExternalLoadBalancerElement extends AdapterBase implements NetworkElement  {
+public class NetscalerExternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerExternalLoadBalancerElement.class);
     
     @Inject NetworkManager _networkManager;
-    @Inject ExternalNetworkManager _externalNetworkManager;
+    @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject ConfigurationManager _configMgr;
+    @Inject NetworkServiceMapDao _ntwkSrvcDao;
     
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
-        if (config.getGuestType() != Network.GuestIpType.Virtual || config.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("Not handling network with guest Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
+        if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
+            s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
         
-        return (_networkManager.zoneIsConfiguredForExternalNetworking(zone.getId()) && 
-                zone.getLoadBalancerProvider() != null && zone.getLoadBalancerProvider().equals(Network.Provider.NetscalerMPX.getName()));
+        return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getId()) && 
+                _ntwkSrvcDao.isProviderSupportedInNetwork(config.getId(), Service.Lb, Network.Provider.Netscaler));
     }
 
     @Override
@@ -78,8 +79,13 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
         if (!canHandle(guestConfig)) {
             return false;
         }
-        
-        return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
+
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception
+            return false;
+        }        
     }
 
     @Override
@@ -93,12 +99,17 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdown(Network guestConfig, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException {
+    public boolean shutdown(Network guestConfig, ReservationContext context, boolean cleanup) throws ResourceUnavailableException, ConcurrentOperationException {
         if (!canHandle(guestConfig)) {
             return false;
         }
-        
-        return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
+
+        try {
+            return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
+        } catch (InsufficientCapacityException capacityException) {
+            // TODO: handle out of capacity exception
+            return false;
+        }
     }
     
     @Override
@@ -107,12 +118,7 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     }
     
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return true;
-    }
-    
-    @Override
-    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyLBRules(Network config, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(config)) {
             return false;
         }
@@ -129,7 +135,10 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
          
          // Specifies that the RoundRobin and Leastconn algorithms are supported for load balancing rules
          lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
-         
+
+         // specifies that Netscaler network element can provided both shared and isolation modes
+         lbCapabilities.put(Capability.SupportedLBIsolation, "dedicated, shared");
+
          // Specifies that load balancing rules can be made for either TCP or UDP traffic
          lbCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
          
@@ -146,17 +155,24 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
     
     @Override
     public Provider getProvider() {
-        return Provider.NetscalerMPX;
+        return Provider.Netscaler;
     }
-    
+
     @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
         return true;
     }
-    
+
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean canEnableIndividualServices() {
         return false;
     }
-	
 }

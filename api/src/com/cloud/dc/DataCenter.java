@@ -1,4 +1,5 @@
 /**
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -41,7 +42,6 @@ public interface DataCenter extends Grouping {
     Long getDomainId();
     String getDescription();
     String getDomain();
-    String getVnet();
     
     NetworkType getNetworkType();
     String getInternalDns1();

@@ -18,15 +18,19 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
 import javax.persistence.TableGenerator;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
+import com.cloud.network.NetworkServiceMapVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -34,10 +38,12 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.Transaction;
@@ -51,10 +57,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
-
+    final GenericSearchBuilder<NetworkVO, Long> CountByOfferingId;
+    final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
+    final SearchBuilder<NetworkVO> securityGroupSearch;
+    
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
+    NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
 
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
@@ -70,9 +80,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("offering", AllFieldsSearch.entity().getNetworkOfferingId(), Op.EQ);
         AllFieldsSearch.and("datacenter", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
-        AllFieldsSearch.and("guesttype", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
-        AllFieldsSearch.and("isShared", AllFieldsSearch.entity().getIsShared(), Op.EQ);
+        AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), Op.EQ);
+        AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);        
         AllFieldsSearch.done();
 
         AccountSearch = createSearchBuilder();
@@ -107,20 +117,39 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         ZoneSecurityGroupSearch = createSearchBuilder();
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
-        ZoneSecurityGroupSearch.and("securityGroup", ZoneSecurityGroupSearch.entity().isSecurityGroupEnabled(), Op.EQ);
+        SearchBuilder<NetworkServiceMapVO> join1 = _ntwkSvcMap.createSearchBuilder();
+        join1.and("service", join1.entity().getService(), Op.EQ);
+        ZoneSecurityGroupSearch.join("services", join1, ZoneSecurityGroupSearch.entity().getId(), join1.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         ZoneSecurityGroupSearch.done();
+        
+        CountByOfferingId = createSearchBuilder(Long.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("offeringId", CountByOfferingId.entity().getNetworkOfferingId(), Op.EQ);
+        CountByOfferingId.and("removed", CountByOfferingId.entity().getRemoved(), Op.NULL);
+        CountByOfferingId.done();
 
+        
+        PhysicalNetworkSearch = createSearchBuilder();
+        PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        PhysicalNetworkSearch.done();
+        
+        securityGroupSearch = createSearchBuilder();
+        SearchBuilder<NetworkServiceMapVO> join3 = _ntwkSvcMap.createSearchBuilder();
+        join3.and("service", join3.entity().getService(), Op.EQ);
+        securityGroupSearch.join("services", join3, securityGroupSearch.entity().getId(), join3.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        securityGroupSearch.done();
+        
         _tgMacAddress = _tgs.get("macAddress");
 
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type) {
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("account", accountId);
         if (type != null) {
-            sc.setParameters("guesttype", type);
+            sc.setParameters("guestType", type);
         }
         return listBy(sc, null);
     }
@@ -134,21 +163,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         return search(sc, null);
     }
-
-    @Override
-    public List<NetworkVO> listBy(long accountId) {
-        SearchCriteria<NetworkVO> sc = AccountSearch.create();
-        sc.setParameters("account", accountId);
-        sc.setJoinParameters("accounts", "account", accountId);
-
-        return listBy(sc);
-    }
-
-    // @Override
-    // public void loadTags(NetworkVO network) {
-    // network.setTags(_tagDao.getTags(network.getId()));
-    // }
-
 
     @Override
     public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId) {
@@ -172,21 +186,50 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override @DB
-    public NetworkVO persist(NetworkVO network, boolean gc) {
+    public NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        
+        //1) create network
         NetworkVO newNetwork = super.persist(network);
+        //2) add account to the network
         addAccountToNetwork(network.getId(), network.getAccountId(), true);
+        //3) add network to gc monitor table
         NetworkOpVO op = new NetworkOpVO(network.getId(), gc);
         _opDao.persist(op);
+        //4) add services/providers for the network
+        persistNetworkServiceProviders(newNetwork.getId(), serviceProviderMap);
+
         txn.commit();
-        newNetwork.setTags(network.getTags());
         return newNetwork;
     }
-
+    
+    
+    @Override @DB
+    public boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap) {
+    	Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        super.update(networkId, network);
+        if (serviceProviderMap != null) {
+            _ntwkSvcMap.deleteByNetworkId(networkId);
+            persistNetworkServiceProviders(networkId, serviceProviderMap);
+        }
+        
+        txn.commit();
+        return true;
+    }
+    
     @Override
-    public void addAccountToNetwork(long networkId, long accountId) {
-        addAccountToNetwork(networkId, accountId, false);
+    @DB
+    public void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+    	for (String service : serviceProviderMap.keySet()) {
+            NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
+            _ntwkSvcMap.persist(serviceMap);
+        }
+    	txn.commit();
     }
 
     protected void addAccountToNetwork(long networkId, long accountId, boolean isOwner) {
@@ -205,13 +248,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("offering", offeringId);
         sc.setParameters("dc", dataCenterId);
         sc.setJoinParameters("account", "account", accountId);
-        return search(sc, null);
-    }
-
-    @Override
-    public List<NetworkVO> getRelatedNetworks(long related) {
-        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
-        sc.setParameters("related", related);
         return search(sc, null);
     }
 
@@ -253,7 +289,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        sc.setParameters("securityGroup", true);
+        sc.setJoinParameters("services", "service", Service.SecurityGroup.getName());
         return search(sc, null);
     }
 
@@ -295,16 +331,60 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listNetworksBy(boolean isShared) {
-        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
-        sc.setParameters("isShared", isShared);
+    public Long getNetworkCountByOfferingId(long offeringId) {
+        SearchCriteria<Long> sc = CountByOfferingId.create();
+        sc.setParameters("offeringId", offeringId);
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
+    @Override
+    public List<NetworkVO> listSecurityGroupEnabledNetworks() {
+        SearchCriteria<NetworkVO> sc = securityGroupSearch.create();
+        sc.setJoinParameters("services", "service", Service.SecurityGroup.getName());
         return listBy(sc);
     }
 
     @Override
-    public List<NetworkVO> listByZoneIncludingRemoved(long zoneId) {
-        SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
-        sc.setParameters("dataCenterId", zoneId);
+    public List<NetworkVO> listByPhysicalNetworkIncludingRemoved(long physicalNetworkId) {
+        SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkTrafficType(long physicalNetworkId, TrafficType trafficType){
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName) {
+        SearchBuilder<NetworkServiceMapVO> svcProviderMapSearch = _ntwkSvcMap.createSearchBuilder();
+        NetworkServiceMapVO svcProviderEntry = svcProviderMapSearch.entity();
+        svcProviderMapSearch.and("Provider", svcProviderMapSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<NetworkVO> networksSearch = createSearchBuilder();
+        networksSearch.and("physicalNetworkId", networksSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        networksSearch.join("svcProviderMapSearch", svcProviderMapSearch, networksSearch.entity().getId(), svcProviderEntry.getNetworkId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<NetworkVO> sc = networksSearch.create();
+        sc.setJoinParameters("svcProviderMapSearch", "Provider", providerName);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type, TrafficType trafficType) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("datacenter", dataCenterId);
+        sc.setParameters("account", accountId);
+        sc.setParameters("guestType", type);
+        sc.setParameters("trafficType", trafficType);
+        
+        return listBy(sc, null);
     }
 }

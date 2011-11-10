@@ -15,7 +15,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.network.NetworkDeviceManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.NetworkDeviceResponse;
 import com.cloud.utils.component.ComponentLocator;
@@ -30,7 +30,7 @@ public class AddNetworkDeviceCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 	
-	@Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer")
+	@Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall")
     private String type;
 	
 	@Parameter(name = ApiConstants.NETWORK_DEVICE_PARAMETER_LIST, type = CommandType.MAP, description = "parameters for network device")
@@ -49,9 +49,9 @@ public class AddNetworkDeviceCmd extends BaseCmd {
 	public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
 			ResourceAllocationException {
 		try {
-			NetworkDeviceManager nwDeviceMgr;
+			ExternalNetworkDeviceManager nwDeviceMgr;
 			ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-			nwDeviceMgr = locator.getManager(NetworkDeviceManager.class);
+			nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
 			Host device = nwDeviceMgr.addNetworkDevice(this);
 			NetworkDeviceResponse response = nwDeviceMgr.getApiResponse(device);
 			response.setObjectName("networkdevice");

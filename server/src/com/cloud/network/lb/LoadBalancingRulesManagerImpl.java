@@ -437,7 +437,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         _accountMgr.checkAccess(caller.getCaller(), null, ipAddr);
 
         // verify that lb service is supported by the network
-        if (!_networkMgr.isServiceSupported(network.getNetworkOfferingId(), Service.Lb)) {
+        if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             throw new InvalidParameterValueException("LB service is not supported in network id= " + networkId);
 
         }
@@ -491,14 +491,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     public boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = new ArrayList<LoadBalancerVO>(1);
         lbs.add(_lbDao.findById(lbRuleId));
-        return applyLoadBalancerRules(lbs);
+        return applyLoadBalancerRules(lbs, true);
     }
 
     @Override
     public boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
         if (lbs != null) {
-            return applyLoadBalancerRules(lbs);
+            return applyLoadBalancerRules(lbs, true);
         } else {
             s_logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to apply");
             return true;
@@ -506,7 +506,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
 
     @DB
-    protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs) throws ResourceUnavailableException {
+    protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs, boolean updateRulesInDB) throws ResourceUnavailableException {
         Transaction txn = Transaction.currentTxn();
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         for (LoadBalancerVO lb : lbs) {
@@ -521,38 +521,41 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             return false;
         }
 
-        for (LoadBalancerVO lb : lbs) {
-            txn.start();
-            if (lb.getState() == FirewallRule.State.Revoke) {
-                _lbDao.remove(lb.getId());
-                s_logger.warn("LB " + lb.getId() + " is successfully removed");
-            } else if (lb.getState() == FirewallRule.State.Add) {
-                lb.setState(FirewallRule.State.Active);
-                s_logger.warn("LB rule " + lb.getId() + " state is set to Active");
-                _lbDao.persist(lb);
+        if (updateRulesInDB) {
+            for (LoadBalancerVO lb : lbs) {
+                txn.start();
+                if (lb.getState() == FirewallRule.State.Revoke) {
+                    _lbDao.remove(lb.getId());
+                    s_logger.warn("LB " + lb.getId() + " is successfully removed");
+                } else if (lb.getState() == FirewallRule.State.Add) {
+                    lb.setState(FirewallRule.State.Active);
+                    s_logger.warn("LB rule " + lb.getId() + " state is set to Active");
+                    _lbDao.persist(lb);
+                }
+
+                // remove LB-Vm mappings that were state to revoke
+                List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(lb.getId(), true);
+                List<Long> instanceIds = new ArrayList<Long>();
+
+                for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
+                    instanceIds.add(lbVmMap.getInstanceId());
+                }
+
+                if (!instanceIds.isEmpty()) {
+                    _lb2VmMapDao.remove(lb.getId(), instanceIds, null);
+                    s_logger.debug("Load balancer rule id " + lb.getId() + " is removed for vms " + instanceIds);
+                }
+
+                if (_lb2VmMapDao.listByLoadBalancerId(lb.getId()).isEmpty()) {
+                    lb.setState(FirewallRule.State.Add);
+                    _lbDao.persist(lb); 
+                    s_logger.debug("LB rule " + lb.getId() + " state is set to Add as there are no more active LB-VM mappings");
+                }
+
+                txn.commit();
             }
-
-            // remove LB-Vm mappings that were state to revoke
-            List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(lb.getId(), true);
-            List<Long> instanceIds = new ArrayList<Long>();
-
-            for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
-                instanceIds.add(lbVmMap.getInstanceId());
-            }
-
-            if (!instanceIds.isEmpty()) {
-                _lb2VmMapDao.remove(lb.getId(), instanceIds, null);
-                s_logger.debug("Load balancer rule id " + lb.getId() + " is removed for vms " + instanceIds);
-            }
-
-            if (_lb2VmMapDao.listByLoadBalancerId(lb.getId()).isEmpty()) {
-                lb.setState(FirewallRule.State.Add);
-                _lbDao.persist(lb); 
-                s_logger.debug("LB rule " + lb.getId() + " state is set to Add as there are no more active LB-VM mappings");
-            }
-
-            txn.commit();
         }
+        
         return true;
     }
 

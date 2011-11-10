@@ -19,7 +19,6 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -37,9 +36,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -65,7 +62,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 
 	@Override
 	public Provider getProvider() {
-		return Provider.ExternalDhcpServer;
+		return null;
 	}
 
 	@Override
@@ -102,13 +99,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 	}
 
 	@Override
-	public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
+	public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
 
@@ -117,19 +108,18 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 		return true;
 	}
 
-	@Override
-	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-		return true;
-	}
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        return true;
+    }
 
-	@Override
-	public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-		return true;
-	}
-	
-	@Override
-	public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-	    return false;
-	}
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
 
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

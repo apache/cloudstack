@@ -64,6 +64,8 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -176,6 +178,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.ovs.OvsCreateGreTunnelAnswer;
 import com.cloud.network.ovs.OvsCreateGreTunnelCommand;
 import com.cloud.network.ovs.OvsCreateTunnelAnswer;
@@ -505,11 +508,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((ClusterSyncCommand)cmd);
         } else if (cmd instanceof GetDomRVersionCmd) {
             return execute((GetDomRVersionCmd)cmd);
+        } else if (clazz == CheckNetworkCommand.class) {
+            return execute((CheckNetworkCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
     
+
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String tag) throws XenAPIException, XmlRpcException {
         if (tag != null) {
             if (s_logger.isDebugEnabled()) {
@@ -4252,6 +4258,69 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException("Unable to get host information ", e);
         }
     }
+    
+    protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if network name setup is done on the resource");
+        }
+        
+        List<PhysicalNetworkSetupInfo> infoList = cmd.getPhysicalNetworkInfoList();
+        
+        try{
+            boolean errorout = false;
+            String msg = "";
+            for(PhysicalNetworkSetupInfo info : infoList){
+                if(!isNetworkSetupByName(info.getGuestNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Guest Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;
+                }
+                if(!isNetworkSetupByName(info.getPrivateNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;                }
+                if(!isNetworkSetupByName(info.getPublicNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;
+                 }
+                if(!isNetworkSetupByName(info.getStorageNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Storage Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;
+                }
+            }
+            if(errorout){
+                s_logger.error(msg);
+                return new CheckNetworkAnswer(cmd, false, msg);
+            }else{
+                return new CheckNetworkAnswer(cmd, true , "Network Setup check by names is done");
+            }
+
+        }catch (XenAPIException e) {
+            String msg = "CheckNetworkCommand failed with XenAPIException:" + e.toString() + " host:" + _host.uuid;
+            s_logger.warn(msg, e);
+            return new CheckNetworkAnswer(cmd, false, msg);
+        }catch (Exception e) {
+            String msg = "CheckNetworkCommand failed with Exception:" + e.getMessage() + " host:" + _host.uuid;
+            s_logger.warn(msg, e);
+            return new CheckNetworkAnswer(cmd, false, msg);
+        }
+    }
+    
+    protected boolean isNetworkSetupByName(String nameTag) throws XenAPIException, XmlRpcException{
+        if (nameTag != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Looking for network setup by name " + nameTag);
+            }
+            Connection conn = getConnection();
+            XsLocalNetwork network = getNetworkByName(conn, nameTag);
+            if (network == null) {
+                return false;
+            }
+        }
+        return true;
+    }    
 
     protected List<File> getPatchFiles() {
         return null;

@@ -1,0 +1,8 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+#### router commands
+createVirtualRouterElement=com.cloud.api.commands.CreateVirtualRouterElementCmd;7
+createRedundantVirtualRouterElement=com.cloud.api.commands.CreateRedundantVirtualRouterElementCmd;7
+configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
+configureRedundantVirtualRouterElement=com.cloud.api.commands.ConfigureRedundantVirtualRouterElementCmd;7

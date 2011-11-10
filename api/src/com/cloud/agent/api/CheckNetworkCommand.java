@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,16 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+package com.cloud.agent.api;
 
-package com.cloud.network.vpn;
+import java.util.List;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 
-public interface PasswordResetElement {
+public class CheckNetworkCommand extends Command {
+
+    List<PhysicalNetworkSetupInfo> networkInfoList;
     
-    boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException;
+    public CheckNetworkCommand(List<PhysicalNetworkSetupInfo> networkInfoList) {
+        this.networkInfoList = networkInfoList;
+    }
+    
+    public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfoList() {
+        return networkInfoList;
+    }
+    
+    protected CheckNetworkCommand() {
+    }
+    
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }

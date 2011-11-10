@@ -18,8 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -35,6 +33,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Updates a network", responseObject=NetworkResponse.class)
@@ -55,9 +55,6 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the new display text for the network")
     private String displayText;
-    
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="tags for the network")
-    private List<String> tags;
     
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
@@ -82,16 +79,12 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         return displayText;
     }
     
-    public List<String> getTags() {
-        return tags;
-    }
-    
     private String getNetworkDomain() {
         return networkDomain;
     }
     
     private Long getNetworkOfferingId() {
-        return networkOfferingId == null ? 0 : networkOfferingId;
+        return networkOfferingId;
     }
     
     /////////////////////////////////////////////////////
@@ -115,7 +108,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
-        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), tags, UserContext.current().getCaller(), getNetworkDomain(), getNetworkOfferingId());
+        User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
+        Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());      
+        Network result = _networkService.updateNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());
@@ -125,6 +120,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         }
     }
     
+    @Override
     public String getEventDescription() {
         return  "Updating network: " + getId();
     }

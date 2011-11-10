@@ -250,7 +250,7 @@ listVpnUsers=com.cloud.api.commands.ListVpnUsersCmd;15
 #### network offering commands
 createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
 updateNetworkOffering=com.cloud.api.commands.UpdateNetworkOfferingCmd;1
-#### deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
+deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
 listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
 
 #### network commands
@@ -288,3 +288,23 @@ listFirewallRules=com.cloud.api.commands.ListFirewallRulesCmd;15
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=com.cloud.api.commands.UpdateHypervisorCapabilitiesCmd;1
 listHypervisorCapabilities=com.cloud.api.commands.ListHypervisorCapabilitiesCmd;1
+
+#### Physical Network commands
+createPhysicalNetwork=com.cloud.api.commands.CreatePhysicalNetworkCmd;1
+deletePhysicalNetwork=com.cloud.api.commands.DeletePhysicalNetworkCmd;1
+listPhysicalNetworks=com.cloud.api.commands.ListPhysicalNetworksCmd;1
+updatePhysicalNetwork=com.cloud.api.commands.UpdatePhysicalNetworkCmd;1
+
+#### Physical Network Service Provider commands
+listNetworkServices=com.cloud.api.commands.ListNetworkServicesCmd;1
+listSupportedNetworkServiceProviders=com.cloud.api.commands.ListSupportedNetworkServiceProvidersCmd;1
+addNetworkServiceProvider=com.cloud.api.commands.AddNetworkServiceProviderCmd;1
+deleteNetworkServiceProvider=com.cloud.api.commands.DeleteNetworkServiceProviderCmd;1
+listNetworkServiceProviders=com.cloud.api.commands.ListNetworkServiceProvidersCmd;1
+updateNetworkServiceProvider=com.cloud.api.commands.UpdateNetworkServiceProviderCmd;1
+
+#### Physical Network Traffic Type commands
+addTrafficType=com.cloud.api.commands.AddTrafficTypeCmd;1
+deleteTrafficType=com.cloud.api.commands.DeleteTrafficTypeCmd;1
+listTrafficTypes=com.cloud.api.commands.ListTrafficTypesCmd;1
+updateTrafficType=com.cloud.api.commands.UpdateTrafficTypeCmd;1

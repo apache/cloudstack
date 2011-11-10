@@ -131,7 +131,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
                 }
                 continue;
             }
-			DataCenterDeployment newPlan = new DataCenterDeployment(plan.getDataCenterId(), p.getPod().getId(), clusterId, null, null);
+			DataCenterDeployment newPlan = new DataCenterDeployment(plan.getDataCenterId(), p.getPod().getId(), clusterId, null, null, null);
 			hosts = super.allocateTo(vm, newPlan, type, avoid, returnUpTo);
 			if (hosts != null && !hosts.isEmpty()) {
 				return hosts;

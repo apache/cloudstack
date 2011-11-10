@@ -15,20 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.vpn;
+package com.cloud.api;
 
-import java.util.List;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
-import com.cloud.utils.component.Adapter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-public interface RemoteAccessVpnElement extends Adapter {
-    String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
+import com.cloud.utils.component.PluggableService;
 
-    boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
-    
-    boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
+@Target(FIELD)
+@Retention(RUNTIME)
+public @interface PlugService {
+    Class<? extends PluggableService> pluggableService() default PluggableService.class;
 }

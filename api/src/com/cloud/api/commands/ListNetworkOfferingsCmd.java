@@ -66,13 +66,23 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability;
     
-    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
-    private String guestIpType;
-    
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="list netowrk offerings available for network creation in specific zone")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
+    private String state;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
+    private Long networkId;
+    
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="list network offerings by guest type: Shared or Isolated")
+    private String guestIpType;
 
+    //Network information
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
+    private List<String> supportedServices;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -109,12 +119,24 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
         return availability;
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
     public String getGuestIpType() {
         return guestIpType;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    public List<String> getSupportedServices() {
+        return supportedServices;
     }
 
     /////////////////////////////////////////////////////

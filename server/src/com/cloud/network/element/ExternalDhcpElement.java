@@ -19,7 +19,7 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -37,34 +37,32 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalDhcpElement extends AdapterBase implements NetworkElement, PasswordResetElement {
+public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
 	@Inject ExternalDhcpManager _dhcpMgr;
-	private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
+	private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+	
+	private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
 		DataCenter dc = dest.getDataCenter();
 		Pod pod = dest.getPod();
 		
-		if (pod.getExternalDhcp() && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
-				&& ipType == GuestIpType.Direct) {
+		if ((pod != null && pod.getExternalDhcp()) && dc.getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest
+				&& networkType == Network.GuestType.Shared) {
 			s_logger.debug("External DHCP can handle");
 			return true;
 		}
@@ -72,14 +70,15 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 		return false;
 	}
 
-	@Override
-	public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException {
-		return true;
-	}
-
+    private static Map<Service, Map<Capability, String>> setCapabilities() {
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        capabilities.put(Service.Dhcp, null);
+        return capabilities;
+    }
+    
 	@Override
 	public Map<Service, Map<Capability, String>> getCapabilities() {
-		return null;
+		return capabilities;
 	}
 
 	@Override
@@ -90,7 +89,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 	@Override
 	public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-		if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+		if (!canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
 			return false;
 		}
 		return true;
@@ -100,7 +99,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
 			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 		Host host = dest.getHost();
-		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(network.getGuestType(), dest, network.getTrafficType())) {
+		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
 			//BareMetalElement or DhcpElement handle this
 			return false;
 		}
@@ -115,34 +114,30 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
 	}
 
 	@Override
-	public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+	public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
-
-	@Override
-	public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		return true;
-	}
-
+	
+	
 	@Override
 	public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
 
-	@Override
-	public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-		return true;
-	}
-	
     @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
     }
 
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

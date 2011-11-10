@@ -294,7 +294,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	    	avoid.addPool(pool.getId());
 	    }
 	    
-	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null, null);
+	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
 	    return allocateToPool(dskCh, VMtemplate, plan, avoid, returnUpTo);
 	}
 

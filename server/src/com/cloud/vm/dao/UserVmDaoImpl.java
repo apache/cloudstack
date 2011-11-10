@@ -458,9 +458,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
         
         
-        boolean is_data_center_security_group_enabled = rs.getBoolean("data_center.is_security_group_enabled");
-        //security_group.id, security_group.name, security_group.description, , data_center.is_security_group_enabled
-        if (is_data_center_security_group_enabled){
+        Long securityGroupId = rs.getLong("security_group.id");
+        if (securityGroupId != null && securityGroupId.longValue() != 0){
             SecurityGroupData resp = userVmData.newSecurityGroupData();
             resp.setId(rs.getLong("security_group.id"));
             resp.setName(rs.getString("security_group.name"));
@@ -469,9 +468,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             userVmData.addSecurityGroup(resp);
         }
         
-        
-        //nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics. mac_address, nics.broadcast_uri, nics.isolation_uri, " +
-        //"networks.traffic_type, networks.guest_type, networks.is_default from vm_instance, "
         long nic_id = rs.getLong("nics.id");
         if (nic_id > 0){
             NicData nicResponse = userVmData.newNicData();
@@ -519,7 +515,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
 
     public static class DetailSql {
-        private DetailsMask _details;
+        private final DetailsMask _details;
         
         private static String VM_DETAILS = "select vm_instance.id, " +
         "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +

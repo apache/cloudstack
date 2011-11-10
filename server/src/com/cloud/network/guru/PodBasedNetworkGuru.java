@@ -34,7 +34,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
@@ -47,6 +46,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -58,7 +58,6 @@ import com.cloud.vm.VirtualMachineProfile;
 public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
-    @Inject NetworkManager _networkMgr;
     Random _rand = new Random(System.currentTimeMillis());
 
     @Override
@@ -69,7 +68,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         
-        NetworkVO config = new NetworkVO(type, null, Mode.Static, BroadcastDomainType.Native, offering.getId(), plan.getDataCenterId(), Network.State.Setup);
+        NetworkVO config = new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         return config;
     }
     
@@ -152,5 +151,15 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean trash(Network config, NetworkOffering offering, Account owner) {
         return true;
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

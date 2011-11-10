@@ -63,6 +63,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
@@ -910,7 +912,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @DB
     public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
         if (!isVmSecurityGroupEnabled(userVmId)) {
-            s_logger.warn("User vm " + userVmId + " is not security group enabled, can't add it to security group");
+            s_logger.trace("User vm " + userVmId + " is not security group enabled, not adding it to security group");
             return false;
         }
         if (groups != null && !groups.isEmpty()) {
@@ -1278,7 +1280,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         VirtualMachine vm = _vmDao.findByIdIncludingRemoved(vmId);
         List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
         for (NicProfile nic : nics) {
-            if (nic.isSecurityGroupEnabled() && vm.getHypervisorType() != HypervisorType.VMware) {
+            Network network = _networkMgr.getNetwork(nic.getNetworkId());
+            if (_networkMgr.isSecurityGroupSupportedInNetwork(network) && vm.getHypervisorType() != HypervisorType.VMware) {
                 return true;
             }
         }

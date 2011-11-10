@@ -18,7 +18,6 @@
 package com.cloud.network;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -68,9 +67,6 @@ public class NetworkVO implements Network, Identity {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
 
-    @Column(name="guest_type")
-    GuestIpType guestType;
-
     @Column(name="name")
     String name;
 
@@ -89,6 +85,9 @@ public class NetworkVO implements Network, Identity {
     @Column(name="network_offering_id")
     long networkOfferingId;
 
+    @Column(name="physical_network_id")
+    Long physicalNetworkId;
+    
     @Column(name="data_center_id")
     long dataCenterId;
 
@@ -155,6 +154,10 @@ public class NetworkVO implements Network, Identity {
     
     @Column(name="uuid")
     String uuid;
+    
+    @Column(name="guest_type")
+    @Enumerated(value=EnumType.STRING)
+    Network.GuestType guestType;
 
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
@@ -166,15 +169,17 @@ public class NetworkVO implements Network, Identity {
      * @param mode
      * @param broadcastDomainType
      * @param networkOfferingId
-     * @param dataCenterId
      * @param state TODO
+     * @param dataCenterId
+     * @param physicalNetworkId TODO
      */
-    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, State state) {
+    public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId, Long physicalNetworkId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
+        this.physicalNetworkId = physicalNetworkId;
         if (state == null) {
             state = State.Allocated;
         } else {
@@ -185,15 +190,14 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled, boolean isDomainSpecific, String networkDomain) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault, isDomainSpecific, networkDomain);
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, GuestType guestType, boolean isShared, long dcId, Long physicalNetworkId) {
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, isDefault,isDomainSpecific, networkDomain, guestType, isShared, dcId, physicalNetworkId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
         this.broadcastDomainType = that.getBroadcastDomainType();
         this.guruName = guruName;
         this.state = that.getState();
-        this.securityGroupEnabled = isSecurityGroupEnabled;
         if (state == null) {
             state = State.Allocated;
         }
@@ -206,29 +210,32 @@ public class NetworkVO implements Network, Identity {
      * @param mode
      * @param broadcastDomainType
      * @param networkOfferingId
-     * @param dataCenterId
      * @param domainId
      * @param accountId
      * @param name
      * @param displayText
-     * @param isShared
      * @param isDefault
      * @param isDomainSpecific
      * @param networkDomain
+     * @param guestType TODO
+     * @param isShared TODO
+     * @param isShared
+     * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isDomainSpecific, String networkDomain) {
-        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, State.Allocated);
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, GuestType guestType, boolean isShared, long dcId, Long physicalNetworkId) {
+        this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
         this.id = id;
         this.name = name;
         this.displayText = displayText;
-        this.isShared = isShared;
         this.isDefault = isDefault;
         this.isDomainSpecific = isDomainSpecific;
         this.networkDomain = networkDomain;
     	this.uuid = UUID.randomUUID().toString();
+        this.guestType = guestType;
+        this.isShared = isShared;
     }
 
     @Override
@@ -257,27 +264,6 @@ public class NetworkVO implements Network, Identity {
     @Override
     public long getId() {
         return id;
-    }
-
-    @Override
-    public List<String> getTags() {
-        return tags != null ? tags : new ArrayList<String>();
-    }
-
-    public void addTag(String tag) {
-        if (tags == null) {
-            tags = new ArrayList<String>();
-        }
-        tags.add(tag);
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
-    }
-
-    @Override
-    public GuestIpType getGuestType() {
-        return guestType;
     }
 
     @Override
@@ -384,6 +370,16 @@ public class NetworkVO implements Network, Identity {
     }
 
     @Override
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+    
+    @Override
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
@@ -423,22 +419,8 @@ public class NetworkVO implements Network, Identity {
     }
 
     @Override
-    public boolean getIsShared() {
-        return isShared;
-    }
-
-    @Override
     public boolean isDefault() {
         return isDefault;
-    }
-
-    @Override
-    public boolean isSecurityGroupEnabled() {
-        return securityGroupEnabled;
-    }
-
-    public void setSecurityGroupEnabled(boolean enabled) {
-        this.securityGroupEnabled = enabled;
     }
 
     public void setShared(boolean isShared) {
@@ -463,6 +445,11 @@ public class NetworkVO implements Network, Identity {
 
     public boolean isDomainSpecific() {
         return isDomainSpecific;
+    }
+    
+    @Override
+    public Network.GuestType getGuestType() {
+        return guestType;
     }
 
     @Override
@@ -500,5 +487,10 @@ public class NetworkVO implements Network, Identity {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+
+    @Override
+    public boolean getIsShared() {
+        return isShared;
     }
 }

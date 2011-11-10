@@ -71,7 +71,6 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                 } 
             }
         }
-
     }
     
     @Override
@@ -116,10 +115,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
             s_logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + 
                            newJobs + " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
         }
-    }
-
-   
-    
+    } 
 
     @Override
     public boolean start() {
@@ -157,8 +153,6 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
         } catch (InterruptedException e1) {
            s_logger.warn("SG work: caught InterruptException", e1);
         }
-
-
     }
     
     public void sendRulesetUpdates(SecurityGroupWork work){

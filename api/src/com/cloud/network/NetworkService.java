@@ -19,6 +19,7 @@ package com.cloud.network;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
@@ -30,16 +31,15 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 
 public interface NetworkService {
 
-    List<? extends Network> getVirtualNetworksOwnedByAccountInZone(long zoneId, Account owner);
-
-    List<? extends NetworkOffering> listNetworkOfferings();
+    List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
@@ -72,17 +72,61 @@ public interface NetworkService {
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
-    Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
-
-    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId);
+    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
 
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateNetwork(long networkId, String name, String displayText, List<String> tags, Account caller, String domainSuffix, long networkOfferingId);
+    Network updateNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId);
 
     Integer getNetworkRate(long networkId, Long vmId);
 
     Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+    
+    Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId);
+
+    PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags);
+
+    List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize);
+
+    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state);
+
+    boolean deletePhysicalNetwork(Long id);
+
+    List<? extends Service> listNetworkServices(String providerName);
+
+    List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName);
+
+    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId, List<String> enabledServices);
+
+    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId);
+
+    PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices);
+
+    boolean deleteNetworkServiceProvider(Long id) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    PhysicalNetwork getPhysicalNetwork(Long physicalNetworkId);
+
+    PhysicalNetwork getCreatedPhysicalNetwork(Long physicalNetworkId);
+
+    PhysicalNetworkServiceProvider getPhysicalNetworkServiceProvider(Long providerId);
+
+    PhysicalNetworkServiceProvider getCreatedPhysicalNetworkServiceProvider(Long providerId);
+    
+    long findPhysicalNetworkId(long zoneId, String tag);
+
+    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String vlan);
+
+    PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
+
+    PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel);
+
+    boolean deletePhysicalNetworkTrafficType(Long id);
+
+    List<? extends PhysicalNetworkTrafficType> listTrafficTypes(Long physicalNetworkId);
+
+    PhysicalNetwork getDefaultPhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+    
+    Network getExclusiveGuestNetwork(long zoneId);
 }

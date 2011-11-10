@@ -103,7 +103,17 @@ public class Networks {
         Storage,
         Management,
         Control,
-        Vpn
+        Vpn;
+        
+        public static boolean isSystemNetwork(TrafficType trafficType) {
+            if(Storage.equals(trafficType)
+                    || Management.equals(trafficType)
+                    || Control.equals(trafficType)){
+                return true;
+            }
+            return false;
+        }
+        
     };
     
     public enum IsolationType {

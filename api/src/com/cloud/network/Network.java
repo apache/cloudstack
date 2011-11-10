@@ -22,6 +22,7 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -37,21 +38,26 @@ import com.cloud.utils.fsm.StateMachine;
  * owned by an account. 
  */
 public interface Network extends ControlledEntity {
-
-    public enum GuestIpType {
-        Virtual,
-        Direct,
+    
+    public enum GuestType {
+        Shared,
+        Isolated
     }
 
     public static class Service {
+        private static List<Service> supportedServices = new ArrayList<Service>();
 
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnTypes);
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
-        public static final Service Gateway = new Service("Gateway", Capability.Redundancy);
-        public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
-        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
+        public static final Service Gateway = new Service("Gateway");
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
+        public static final Service SourceNat = new Service("SourceNat");
+        public static final Service StaticNat = new Service("StaticNat");
+        public static final Service PortForwarding = new Service("PortForwarding");
+        public static final Service SecurityGroup = new Service("SecurityGroup");
 
         private String name;
         private Capability[] caps;
@@ -59,6 +65,7 @@ public interface Network extends ControlledEntity {
         public Service(String name, Capability... caps) {
             this.name = name;
             this.caps = caps;
+            supportedServices.add(this);
         }  
 
         public String getName() {
@@ -83,45 +90,79 @@ public interface Network extends ControlledEntity {
 
             return success;
         }
+        
+        public static Service getService(String serviceName) {
+            for (Service service : supportedServices) {
+                if (service.getName().equalsIgnoreCase(serviceName)) {
+                    return service;
+                }
+            }
+            return null;
+        }
+        
+        public static List<Service> listAllServices(){
+            return supportedServices;
+        }
     }
 
+    /**
+     * Provider -> NetworkElement must always be one-to-one mapping. Thus for each NetworkElement we need a separate Provider added in here.
+     */
     public static class Provider {
-
-        public static final Provider VirtualRouter = new Provider("VirtualRouter");
-        public static final Provider DhcpServer = new Provider("DhcpServer");
-        public static final Provider JuniperSRX = new Provider("JuniperSRX");
-        public static final Provider F5BigIp = new Provider("F5BigIp");
-        public static final Provider NetscalerMPX = new Provider("NetscalerMPX");        
-        public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer");
-        public static final Provider ExternalGateWay = new Provider("ExternalGateWay");
-        public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm");
-
-        public static final Provider None = new Provider("None");
+        private static List<Provider> supportedProviders = new ArrayList<Provider>();
+        
+        public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
+        public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
+        public static final Provider F5BigIp = new Provider("F5BigIp", true);
+        public static final Provider Netscaler = new Provider("Netscaler", true);
+        public static final Provider ExternalDhcpServer = new Provider("ExternalDhcpServer", true);
+        public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
+        public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
+        public static final Provider RedundantVirtualRouter = new Provider("RedundantVirtualRouter", false);
+        public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
+        public static final Provider None = new Provider("None", false);
+        
+        //the default provider
+        public static final Provider defaultProvider = VirtualRouter;
 
         private String name;
+        private boolean isExternal;
 
-        public Provider(String name) {
+        public Provider(String name, boolean isExternal) {
             this.name = name;
+            this.isExternal = isExternal;
+            supportedProviders.add(this);
         }
 
         public String getName() {
             return name;
         }
+        
+        public boolean isExternal() {
+            return isExternal;
+        }
+        
+        public static Provider getProvider(String providerName) {
+            for (Provider provider : supportedProviders) {
+                if (provider.getName().equalsIgnoreCase(providerName)) {
+                    return provider;
+                }
+            }
+            return null;
+        }
     }
 
     public static class Capability {
 
-        public static final Capability PortForwarding = new Capability("PortForwarding");
-        public static final Capability StaticNat = new Capability("StaticNat");
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
+        public static final Capability SupportedLBIsolation = new Capability("SupportedLBIsolation");
         public static final Capability MultipleIps = new Capability("MultipleIps");
         public static final Capability SupportedSourceNatTypes = new Capability("SupportedSourceNatTypes");
         public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
-        public static final Capability Redundancy = new Capability("Redundancy");
 
         private String name;
 
@@ -219,11 +260,7 @@ public interface Network extends ControlledEntity {
 
     URI getBroadcastUri();
 
-    GuestIpType getGuestType();
-
     String getDisplayText();
-
-    boolean getIsShared();
 
     String getReservationId();
 
@@ -231,8 +268,11 @@ public interface Network extends ControlledEntity {
 
     String getNetworkDomain();
 
-    boolean isSecurityGroupEnabled();
+    GuestType getGuestType();
+    
+    boolean getIsShared();
 
-    List<String> getTags();
+    Long getPhysicalNetworkId();
 
+    void setPhysicalNetworkId(Long physicalNetworkId);
 }

@@ -64,7 +64,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
@@ -100,6 +99,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected String                                                    _serverName;
     protected Object                                                    _component;
     protected HashMap<Class<?>, Class<?>>                               _factories;
+    protected HashMap<String, ComponentInfo<PluggableService>>          _pluggableServicesMap;
     
     static {
         if (s_janitor == null) {
@@ -134,6 +134,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             _checkerMap = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
             _factories = new HashMap<Class<?>, Class<?>>();
+            _pluggableServicesMap = new LinkedHashMap<String, ComponentInfo<PluggableService>>();
             File file = PropertiesUtil.findConfigFile(filename);
             if (file == null) {
                 s_logger.info("Unable to find " + filename);
@@ -157,6 +158,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _daoMap.putAll(parentLocator._daoMap);
                 _managerMap.putAll(parentLocator._managerMap);
                 _factories.putAll(parentLocator._factories);
+                _pluggableServicesMap.putAll(parentLocator._pluggableServicesMap);
             }
 
             ComponentLibrary library = null;
@@ -167,12 +169,14 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
+                _pluggableServicesMap.putAll(library.getPluggableServices());
             }
 
             _daoMap.putAll(handler.daos);
             _managerMap.putAll(handler.managers);
             _checkerMap.putAll(handler.checkers);
             adapters.putAll(handler.adapters);
+            _pluggableServicesMap.putAll(handler.pluggableServices);
             
             return new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(handler, adapters);
         } catch (ParserConfigurationException e) {
@@ -215,6 +219,9 @@ public class ComponentLocator implements ComponentLocatorMBean {
             configureAdapters();
             startManagers();
             startAdapters();
+            //TODO do we need to follow the instantiate -> inject -> configure -> start -> stop flow of singletons like managers/adapters?
+            //TODO do we need to expose pluggableServices to MBean (provide getNames?)
+            instantiatePluggableServices();
         } catch (CloudRuntimeException e) {
             s_logger.error("Unable to load configuration for " + _serverName + " from " + filename, e);
             System.exit(1);
@@ -634,6 +641,47 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
     }
 
+    protected void instantiatePluggableServices() {
+        Set<Map.Entry<String, ComponentInfo<PluggableService>>> entries = _pluggableServicesMap.entrySet();
+        for (Map.Entry<String, ComponentInfo<PluggableService>> entry : entries) {
+            ComponentInfo<PluggableService> info = entry.getValue();
+            if (info.instance == null) {
+                s_logger.info("Instantiating PluggableService: " + info.name);
+                info.instance = (PluggableService)createInstance(info.clazz, false, info.singleton);
+            }
+        }
+    }
+    
+    protected ComponentInfo<PluggableService> getPluggableService(String name) {
+        ComponentInfo<PluggableService> mgr = _pluggableServicesMap.get(name);
+        return mgr;
+    }
+
+    public <T> T getPluggableService(Class<T> clazz) {
+        ComponentInfo<PluggableService> info = getPluggableService(clazz.getName());
+        if (info == null) {
+            return null;
+        }
+        if (info.instance == null) {
+            info.instance = (PluggableService)createInstance(info.clazz, false, info.singleton);
+        }
+        return (T)info.instance;
+    }
+
+    public <T> List<T> getAllPluggableServices() {
+        List<T> services = new ArrayList<T>();
+        Set<Map.Entry<String, ComponentInfo<PluggableService>>> entries = _pluggableServicesMap.entrySet();
+        for (Map.Entry<String, ComponentInfo<PluggableService>> entry : entries) {
+            ComponentInfo<PluggableService> info = entry.getValue();
+            if (info.instance == null) {
+                s_logger.info("Instantiating PluggableService: " + info.name);
+                info.instance = (PluggableService)createInstance(info.clazz, false, info.singleton);
+            }
+            services.add((T) info.instance);
+        }
+        return services;
+    }
+    
     public static <T> T inject(Class<T> clazz) {
         return (T)createInstance(clazz, true, false);
     }
@@ -868,6 +916,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         public HashMap<String, ComponentInfo<Manager>>          managers;
         public LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>> checkers;
         public LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>> daos;
+        public HashMap<String, ComponentInfo<PluggableService>>    pluggableServices;
         public String                                  parent;
         public String                                  library;
 
@@ -886,6 +935,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             managers = new HashMap<String, ComponentInfo<Manager>>();
             checkers = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
             daos = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>();
+            pluggableServices = new HashMap<String, ComponentInfo<PluggableService>>();
             value = null;
             parent = null;
         }
@@ -992,6 +1042,17 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 checkers.put(info.name, info);
                 s_logger.info("Adding system integrity checker: " + info.name);
                 currentInfo = info;
+            } else if (qName.equals("pluggableservice")) {
+                ComponentInfo<PluggableService> info = new ComponentInfo<PluggableService>();
+                fillInfo(atts, PluggableService.class, info);
+                s_logger.info("Adding PluggableService: " + info.name);
+                String key = getAttribute(atts, "key");
+                if (key == null) {
+                    throw new CloudRuntimeException("Missing key attribute for pluggableservice: "+info.name);
+                }                
+                s_logger.info("Linking " + key + " to " + info.name);
+                pluggableServices.put(key, info);
+                currentInfo = info;
             } else {
                 // ignore
             }
@@ -1019,6 +1080,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             } else if (qName.equals("adapter")) {
             } else if (qName.equals("manager")) {
             } else if (qName.equals("dao")) {
+            } else if (qName.equals("pluggableservice")) {
             } else if (qName.equals("param")) {
                 currentInfo.params.put(paramName, value.toString());
                 paramName = null;

@@ -155,7 +155,6 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
     public static final String SECURITY_GROUP_ID = "securitygroupid";
-    public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
@@ -211,7 +210,6 @@ public class ApiConstants {
     public static final String IS_SYSTEM = "issystem";
     public static final String AVAILABILITY = "availability";
     public static final String NETWORKRATE = "networkrate";
-    public static final String GUEST_IP_TYPE = "guestiptype";
     public static final String HOST_TAGS = "hosttags";
     public static final String SSH_KEYPAIR = "keypair";
     public static final String HOST_CPU_CAPACITY = "hostcpucapacity";
@@ -241,8 +239,6 @@ public class ApiConstants {
     public static final String PING_CIFS_PASSWORD = "pingcifspassword";
     public static final String CHECKSUM="checksum";
     public static final String NETWORK_DEVICE_TYPE = "networkdevicetype";
-    public static final String EXTERNAL_LB_TYPE = "externallbtype";
-    public static final String EXTERNAL_FIREWALL_TYPE = "externalfirewalltype";    
     public static final String NETWORK_DEVICE_PARAMETER_LIST = "networkdeviceparameterlist";
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
@@ -272,4 +268,38 @@ public class ApiConstants {
     public static final String ACCEPT = "accept";
     public static final String SORT_KEY = "sortkey";
     public static final String ACCOUNT_DETAILS = "accountdetails";
+    public static final String DHCP_SERVICE = "dhcpservice";
+    public static final String DNS_SERVICE = "dnsservice";
+    public static final String SOURCE_NAT_SERVICE = "sourcenatservice";
+    public static final String STATIC_NAT_SERVICE = "staticnatservice";
+    public static final String PORT_FORWARDING_SERVICE = "staticnatservice";
+    public static final String VPN_SERVICE = "vpnservice";
+    public static final String USERDATA_SERVICE = "userdataservice";
+    public static final String LB_SERVICE = "lbservice";
+    public static final String FIREWALL_SERVICE = "firewallservice";
+    public static final String GATEWAY_SERVICE = "gatewayservice";
+    public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
+    public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
+    public static final String PROVIDER = "provider";
+    public static final String NETWORK_SPEED = "networkspeed";
+    public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";
+    public static final String ISOLATION_METHODS = "isolationmethods";
+    public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
+    public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
+    public static final String ENABLED = "enabled";
+    public static final String SERVICE_NAME = "servicename";
+    public static final String DHCP_RANGE = "dhcprange";
+    public static final String UUID = "uuid";
+    public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
+    public static final String GUEST_IP_TYPE = "guestiptype";
+    public static final String XEN_NETWORK_LABEL = "xennetworklabel";
+    public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
+    public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
+    public static final String NETWORK_SERVICE_PROVIDER_ID = "nspid";
+    public static final String SECURITY_GROUP_SERVICE = "securitygroupservice";
+    public static final String SERVICE_LIST = "servicelist";
+    public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
+    public static final String SUPPORTED_SERVICES = "supportedservices";
+    public static final String SOURCE_NAT_ENABLED = "sourcenatenabled";
+    
 }

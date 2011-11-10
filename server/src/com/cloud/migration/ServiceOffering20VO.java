@@ -29,7 +29,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Network;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -69,7 +70,7 @@ public class ServiceOffering20VO {
     
     @Column(name="guest_ip_type")
     @Enumerated(EnumType.STRING)
-    private Network.GuestIpType guestIpType = Network.GuestIpType.Virtual;
+    private Vlan.VlanType guestIpType = Vlan.VlanType.VirtualNetwork;
     
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
@@ -84,10 +85,10 @@ public class ServiceOffering20VO {
     }
 
     public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean localStorageRequired) {
-        this(id, name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, Network.GuestIpType.Virtual, localStorageRequired);
+        this(id, name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, Vlan.VlanType.VirtualNetwork, localStorageRequired);
     }
     
-    public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage) {
+    public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, VlanType guestIpType, boolean useLocalStorage) {
         this.id = id;
         this.name = name;
         this.cpu = cpu;
@@ -185,11 +186,11 @@ public class ServiceOffering20VO {
 		return multicastRateMbps;
 	}
 
-	public void setGuestIpType(Network.GuestIpType guestIpType) {
+	public void setGuestIpType(Vlan.VlanType guestIpType) {
 		this.guestIpType = guestIpType;
 	}
 
-	public Network.GuestIpType getGuestIpType() {
+	public Vlan.VlanType getGuestIpType() {
 		return guestIpType;
 	}
 	

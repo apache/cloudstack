@@ -43,15 +43,18 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
+import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
+import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
@@ -60,6 +63,7 @@ import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
@@ -80,6 +84,11 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -238,5 +247,15 @@ public interface ResponseGenerator {
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
 
     SwiftResponse createSwiftResponse(Swift swift);
+
+    PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
+
+    ServiceResponse createNetworkServiceResponse(Service service);
+
+    ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider);
+
+    ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result);
+
+    TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result);
 
 }

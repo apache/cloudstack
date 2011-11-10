@@ -22,21 +22,22 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.utils.component.PluggableService;
 
-public interface VirtualNetworkApplianceService{
+public interface VirtualNetworkApplianceService {
     /**
      * Starts domain router
      * @param cmd the command specifying router's id
      * @return DomainRouter object
      */
-    VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Reboots domain router
      * @param cmd the command specifying router's id
      * @return router if successful
      */
-    VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd);
     

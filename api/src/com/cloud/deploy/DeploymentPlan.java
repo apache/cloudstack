@@ -63,4 +63,6 @@ public interface DeploymentPlan {
      * the ExcludeList to avoid for deployment
      */
     public ExcludeList getAvoids();
+
+    Long getPhysicalNetworkId();
 }

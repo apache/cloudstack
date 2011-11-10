@@ -62,10 +62,12 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
+import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
@@ -81,6 +83,7 @@ import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
@@ -99,7 +102,6 @@ import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -117,9 +119,13 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -643,7 +649,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateAccount(vlanResponse, owner.getId());
             populateDomain(vlanResponse, owner.getDomainId());
         }
-
+        
+        vlanResponse.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
+        
         vlanResponse.setObjectName("vlan");
         return vlanResponse;
     }
@@ -806,7 +814,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             zoneResponse.setDns2(dataCenter.getDns2());
             zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
             zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
-            zoneResponse.setVlan(dataCenter.getVnet());
+            // FIXME zoneResponse.setVlan(dataCenter.get.getVnet());
             zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
         }
 
@@ -1301,17 +1309,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(vm);
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
-                if (network != null) {
-                    TrafficType trafficType = TrafficType.Public;
-                    if (zone.getNetworkType() == NetworkType.Basic || zone.isSecurityGroupEnabled()) {
-                        trafficType = TrafficType.Guest;
-                    }
-                    if (network.getTrafficType() == trafficType) {
-                        vmResponse.setPublicIp(singleNicProfile.getIp4Address());
-                        vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
-                        vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
-                        vmResponse.setGateway(singleNicProfile.getGateway());
-                    } else if (network.getTrafficType() == TrafficType.Management) {
+                if (network != null) { 
+                    if (network.getTrafficType() == TrafficType.Management) {
                         vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
                         vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setPrivateNetmask(singleNicProfile.getNetmask());
@@ -1319,6 +1318,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                         vmResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
+                    } else {
+                        vmResponse.setPublicIp(singleNicProfile.getIp4Address());
+                        vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
+                        vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
+                        vmResponse.setGateway(singleNicProfile.getGateway());
                     }
                 }
             }
@@ -2329,12 +2333,29 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setRedundantRouter(offering.getRedundantRouter());
-
+        response.setIsLBShared(!offering.getDedicatedLB());
+        response.setIsSourceNatShared(offering.getSharedSourceNat());
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }
-
+        
+        response.setState(offering.getState().name());
+        
+        Map<String, Set<String>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (String service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            svcRsp.setName(service);
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (String provider : serviceProviderMap.get(service)) {
+                ProviderResponse providerRsp = new ProviderResponse();
+                providerRsp.setName(provider);
+                providers.add(providerRsp);
+            }
+            svcRsp.setProviders(providers);
+            serviceResponses.add(svcRsp);
+        }
+        response.setServices(serviceResponses);
         response.setObjectName("networkoffering");
         return response;
     }
@@ -2357,9 +2378,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getTrafficType() != null) {
             response.setTrafficType(network.getTrafficType().name());
         }
-
+        
         if (network.getGuestType() != null) {
-            response.setType(network.getGuestType().name());
+            response.setGuestIpType(network.getGuestType().toString());
         }
 
         // get start ip and end ip of corresponding vlan
@@ -2376,6 +2397,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setZoneId(network.getDataCenterId());
+        response.setPhysicalNetworkId(network.getPhysicalNetworkId());
 
         // populate network offering information
         NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
@@ -2395,12 +2417,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
-
-        response.setIsSecurityGroupEnabled(network.isSecurityGroupEnabled());
-        response.setTags(network.getTags());
-
         // populate capability
-        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(networkOffering.getId(), network.getDataCenterId());
+        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId(), network.getDataCenterId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
             for (Service service : serviceCapabilitiesMap.keySet()) {
@@ -2470,6 +2488,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     
+    @Override
     public FirewallResponse createFirewallResponse(FirewallRule fwRule) {
         FirewallResponse response = new FirewallResponse();
 
@@ -2536,7 +2555,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserVmResponse newUserVmResponse(UserVmData userVmData, boolean caller_is_admin){
         UserVmResponse userVmResponse = new UserVmResponse();
         userVmResponse.setHypervisor(userVmData.getHypervisor());
-    	userVmResponse.setId(userVmData.getId());
+        userVmResponse.setId(userVmData.getId());
         userVmResponse.setName(userVmData.getName());
         userVmResponse.setDisplayName(userVmData.getDisplayName());
         userVmResponse.setIpAddress(userVmData.getIpAddress());
@@ -2580,19 +2599,21 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Set<SecurityGroupResponse> securityGroupResponse = new HashSet<SecurityGroupResponse>();
         for (SecurityGroupData sgd: userVmData.getSecurityGroupList()){
-            SecurityGroupResponse sgr = new SecurityGroupResponse();
-            sgr.setId(sgd.getId());
-            sgr.setName(sgd.getName());
-            sgr.setDescription(sgd.getDescription());
-            
-            Account account = ApiDBUtils.findAccountByNameDomain(sgd.getAccountName(), sgd.getDomainId());
-            if (account != null) {
-            	populateAccount(sgr, account.getId());
-            	populateDomain(sgr, sgd.getDomainId());
+            if (sgd.getId() != null) {
+                SecurityGroupResponse sgr = new SecurityGroupResponse();
+                sgr.setId(sgd.getId());
+                sgr.setName(sgd.getName());
+                sgr.setDescription(sgd.getDescription());
+                
+                Account account = ApiDBUtils.findAccountByNameDomain(sgd.getAccountName(), sgd.getDomainId());
+                if (account != null) {
+                    populateAccount(sgr, account.getId());
+                    populateDomain(sgr, account.getDomainId());
+                }
+                
+                sgr.setObjectName(sgd.getObjectName());
+                securityGroupResponse.add(sgr);
             }
-
-            sgr.setObjectName(sgd.getObjectName());
-            securityGroupResponse.add(sgr);
         }
         userVmResponse.setSecurityGroupList(new ArrayList<SecurityGroupResponse>(securityGroupResponse));
 
@@ -2618,6 +2639,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return userVmResponse;
     }
     
+    @Override
     public HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities){
         HypervisorCapabilitiesResponse hpvCapabilitiesResponse = new HypervisorCapabilitiesResponse();
         hpvCapabilitiesResponse.setId(hpvCapabilities.getId());
@@ -2641,10 +2663,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
      
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
-        if (domain != null) {
-            response.setDomainId(domain.getId());
-            response.setDomainName(domain.getName());
-        }
+        response.setDomainId(domain.getId());
+        response.setDomainName(domain.getName());
     }
     
     private void populateAccount(ControlledEntityResponse response, long accountId) {
@@ -2738,5 +2758,100 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         vmResponse.setObjectName("systemvminstance");
         return vmResponse;
+    }
+
+    @Override
+    public PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result) {
+        PhysicalNetworkResponse response = new PhysicalNetworkResponse();
+        
+        response.setZoneId(result.getDataCenterId());
+        response.setNetworkSpeed(result.getSpeed());
+        response.setVlan(result.getVnet());
+        response.setDomainId(result.getDomainId());
+        response.setId(result.getId());
+        if(result.getBroadcastDomainRange() != null){
+            response.setBroadcastDomainRange(result.getBroadcastDomainRange().toString());
+        }
+        response.setIsolationMethods(result.getIsolationMethods());
+        response.setTags(result.getTags());
+        if(result.getState() != null){
+            response.setState(result.getState().toString());
+        }
+        response.setObjectName("physicalnetwork");
+        return response;
+    }
+
+    @Override
+    public ServiceResponse createNetworkServiceResponse(Service service){
+        ServiceResponse response = new ServiceResponse();
+        response.setName(service.getName());
+        
+        // set list of capabilities required for the service
+        List<CapabilityResponse> capabilityResponses = new ArrayList<CapabilityResponse>();
+        Capability[] capabilities = service.getCapabilities();
+        for(Capability cap : capabilities){
+            CapabilityResponse capabilityResponse = new CapabilityResponse();
+            capabilityResponse.setName(cap.getName());
+            capabilityResponse.setObjectName("capability");
+            capabilityResponses.add(capabilityResponse);
+        }
+        response.setCapabilities(capabilityResponses);
+
+        response.setObjectName("networkservice");
+        return response;
+        
+    }
+
+    @Override
+    public ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider) {
+        ProviderResponse response = new ProviderResponse();
+        response.setName(serviceProvider.getName());
+        
+        //set details from network element
+        List<Service> supportedServices = ApiDBUtils.getElementServices(serviceProvider);
+        List<String> services = new ArrayList<String>();
+        for (Service service: supportedServices){
+            services.add(service.getName());
+        }
+        response.setServices(services);
+        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+        response.setCanEnableIndividualServices(canEnableIndividualServices);
+        
+        response.setObjectName("networkserviceprovider");
+        return response;
+    }
+    
+    @Override
+    public ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result){
+        ProviderResponse response = new ProviderResponse();
+        response.setId(result.getId());
+        response.setName(result.getProviderName());
+        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        response.setDestinationPhysicalNetworkId(result.getDestinationPhysicalNetworkId());
+        response.setState(result.getState().toString());
+        
+        //set enabled services
+        List<String> services = new ArrayList<String>();
+        for (Service service: result.getEnabledServices()){
+            services.add(service.getName());
+        }
+        response.setServices(services);
+        
+        response.setObjectName("networkserviceprovider");
+        return response;
+    }
+
+    @Override
+    public TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result) {
+        TrafficTypeResponse response = new TrafficTypeResponse();
+        response.setId(result.getId());
+        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        response.setTrafficType(result.getTrafficType().toString());
+        response.setXenLabel(result.getXenNetworkLabel());
+        response.setKvmLabel(result.getKvmNetworkLabel());
+        response.setVmwareLabel(result.getVmwareNetworkLabel());
+        
+        response.setObjectName("traffictype");
+        return response;
     }
 }

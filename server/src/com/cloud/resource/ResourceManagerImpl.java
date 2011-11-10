@@ -1203,6 +1203,18 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     public String getName() {
         return _name;
     }
+    
+    @Override
+    public List<HypervisorType> getSupportedHypervisorTypes(long zoneId) {
+        List<HypervisorType> hypervisorTypes = new ArrayList<HypervisorType>();
+        
+        List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
+        for (ClusterVO cluster : clustersForZone) {
+            hypervisorTypes.add(cluster.getHypervisorType());
+        }
+        
+        return hypervisorTypes;
+    }
 
 	@Override
 	public void registerResourceStateAdapter(String name, ResourceStateAdapter adapter) {

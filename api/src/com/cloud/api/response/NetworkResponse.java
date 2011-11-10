@@ -91,8 +91,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the network")
     private String dns2;
     
-    @SerializedName(ApiConstants.TYPE) @Param(description="the type of the network")
-    private String type;
+    @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="the guest type of the network")
+    private String guestIpType;
     
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the network")
     private String vlan;
@@ -121,11 +121,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
     
-    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")
-    private Boolean isSecurityGroupEnabled;
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
+    private Long physicalNetworkId;
     
-    @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
-    private String tags;
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -179,8 +177,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.dns2 = dns2;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setGuestIpType(String type) {
+        this.guestIpType = type;
     }
 
     public void setAccountName(String accountName) {
@@ -243,23 +241,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.networkDomain = networkDomain;
     }
     
-    public void setIsSecurityGroupEnabled(Boolean sgEnabled) {
-        this.isSecurityGroupEnabled = sgEnabled;
-    }
-    
-    public void setTags(List<String> tags) {
-        if (tags == null || tags.size() == 0) {
-            return;
-        }
-        
-        StringBuilder buf = new StringBuilder();
-        for (String tag : tags) {
-            buf.append(tag).append(",");
-        }
-        
-        this.tags = buf.delete(buf.length()-1, buf.length()).toString();
-    }
-    
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -269,7 +250,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
-    
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
     
 }

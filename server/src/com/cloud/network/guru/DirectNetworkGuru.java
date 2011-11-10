@@ -34,7 +34,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -53,6 +53,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -75,14 +76,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // this guru handles only non-system network with guestIpType = Direct
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getGuestType() == GuestIpType.Direct && offering.getTrafficType() == TrafficType.Guest) {
-            if (dc.isSecurityGroupEnabled()) {
-                return true;
-            } else if (!offering.isSystemOnly()) {
-                return true;
-            }
-            return false;
+        // this guru handles only Guest networks in Advance zone with source nat service disabled
+        if (dc.getNetworkType() == NetworkType.Advanced && !_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)&& offering.getTrafficType() == TrafficType.Guest) {
+            return true;
         } else {
             s_logger.trace("We only take care of Guest Direct networks");
             return false;
@@ -98,18 +94,16 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         State state = State.Allocated;
-        if (offering.isSystemOnly()) {
+        if (dc.getNetworkType() == NetworkType.Basic) {
             state = State.Setup;
         }
 
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), state);
+        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), state, plan.getDataCenterId(), plan.getPhysicalNetworkId());
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
             }
-
-            config.setSecurityGroupEnabled(userSpecified.isSecurityGroupEnabled());
 
             if (userSpecified.getCidr() != null) {
                 config.setCidr(userSpecified.getCidr());
@@ -127,7 +121,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             
         }
 
-        if (config.isSecurityGroupEnabled()) {
+        boolean isSecurityGroupEnabled = _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
+        if (isSecurityGroupEnabled) {
             config.setName("SecurityGroupEnabledNetwork");
             config.setDisplayText("SecurityGroupEnabledNetwork");
         }
@@ -171,11 +166,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-        if (!canHandle(offering, dc)) {
-            return null;
-        }
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());    
 
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
@@ -241,5 +232,15 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

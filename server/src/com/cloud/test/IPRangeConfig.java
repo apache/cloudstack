@@ -72,7 +72,7 @@ public class IPRangeConfig {
             }
 			
 			long zoneId = PodZoneConfig.getZoneId(zone);
-			result = changeRange(op, "public", -1, zoneId, startIP, endIP, null);
+			result = changeRange(op, "public", -1, zoneId, startIP, endIP, null, -1);
 			result.replaceAll("<br>", "/n");
 			System.out.println(result);
 		} else if (type.equals("private")) {
@@ -94,7 +94,7 @@ public class IPRangeConfig {
 			
 			long podId = PodZoneConfig.getPodId(pod, zone);
 			long zoneId = PodZoneConfig.getZoneId(zone);
-			result = changeRange(op, "private", podId, zoneId, startIP, endIP, null);
+			result = changeRange(op, "private", podId, zoneId, startIP, endIP, null, -1);
 			result.replaceAll("<br>", "/n");
 			System.out.println(result);
 		} else {
@@ -102,14 +102,14 @@ public class IPRangeConfig {
 		}
 	}
 	
-	public List<String> changePublicIPRangeGUI(String op, String zone, String startIP, String endIP) {
+	public List<String> changePublicIPRangeGUI(String op, String zone, String startIP, String endIP, long physicalNetworkId) {
 		String result = checkErrors("public", op, null, zone, startIP, endIP);
 		if (!result.equals("success")) {
             return DatabaseConfig.genReturnList("false", result);
         }
 		
 		long zoneId = PodZoneConfig.getZoneId(zone);
-		result = changeRange(op, "public", -1, zoneId, startIP, endIP, null);
+		result = changeRange(op, "public", -1, zoneId, startIP, endIP, null, physicalNetworkId);
 		
 		return DatabaseConfig.genReturnList("true", result);
 	}
@@ -122,7 +122,7 @@ public class IPRangeConfig {
 		
 		long podId = PodZoneConfig.getPodId(pod, zone);
 		long zoneId = PodZoneConfig.getZoneId(zone);
-		result = changeRange(op, "private", podId, zoneId, startIP, endIP, null);
+		result = changeRange(op, "private", podId, zoneId, startIP, endIP, null, -1);
 		
 		return DatabaseConfig.genReturnList("true", result);
 	}
@@ -226,12 +226,12 @@ public class IPRangeConfig {
 		}
 	}
 	
-	private String changeRange(String op, String type, long podId, long zoneId, String startIP, String endIP, Long networkId) {
+	private String changeRange(String op, String type, long podId, long zoneId, String startIP, String endIP, Long networkId, long physicalNetworkId) {
 		
 		// Go through all the IPs and add or delete them
 		List<String> problemIPs = null;
 		if (op.equals("add")) {
-			problemIPs = saveIPRange(type, podId, zoneId, 1, startIP, endIP, networkId);
+			problemIPs = saveIPRange(type, podId, zoneId, 1, startIP, endIP, networkId, physicalNetworkId);
 		} else if (op.equals("delete")) {
 			problemIPs = deleteIPRange(type, podId, zoneId, 1, startIP, endIP);
 		}
@@ -424,7 +424,7 @@ public class IPRangeConfig {
 	}
 	
 	@DB
-	public List<String> saveIPRange(String type, long podId, long zoneId, long vlanDbId, String startIP, String endIP, Long sourceNetworkId) {
+	public List<String> saveIPRange(String type, long podId, long zoneId, long vlanDbId, String startIP, String endIP, Long sourceNetworkId, long physicalNetworkId) {
     	long startIPLong = NetUtils.ip2Long(startIP);
     	long endIPLong = startIPLong;
     	if (endIP != null) {
@@ -435,7 +435,7 @@ public class IPRangeConfig {
     	List<String> problemIPs = null;
     	
     	if (type.equals("public")) {
-            problemIPs = savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkId);
+            problemIPs = savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkId, physicalNetworkId);
         } else if (type.equals("private")) {
             problemIPs = savePrivateIPRange(txn, startIPLong, endIPLong, podId, zoneId);
         }
@@ -449,8 +449,8 @@ public class IPRangeConfig {
     	return problemIPs;
     }
     
-	public Vector<String> savePublicIPRange(Transaction txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId) {
-		String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?)";
+	public Vector<String> savePublicIPRange(Transaction txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId, long physicalNetworkId) {
+		String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id, physical_network_id) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?)";
 		String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
 		Vector<String> problemIPs = new Vector<String>();
 		PreparedStatement stmt = null;
@@ -470,6 +470,7 @@ public class IPRangeConfig {
     		stmt.setLong(3, vlanDbId);
     		stmt.setLong(4, zoneId);
     		stmt.setLong(5, sourceNetworkId);
+    		stmt.setLong(6, physicalNetworkId);
     		stmt.executeUpdate();
     		stmt.close();
     		stmt = conn.prepareStatement(updateSql);

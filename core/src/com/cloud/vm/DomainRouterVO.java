@@ -36,6 +36,9 @@ import com.cloud.network.router.VirtualRouter;
 @PrimaryKeyJoinColumn(name="id")
 @DiscriminatorValue(value="DomainRouter")
 public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
+    @Column(name="element_id")
+    private long elementId;
+    
     @Column(name="public_ip_address")
     private String publicIpAddress;
     
@@ -79,6 +82,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     public DomainRouterVO(long id,
             long serviceOfferingId,
+            long elementId,
             String name,
             long templateId,
             HypervisorType hypervisorType,
@@ -90,9 +94,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             int priority,
             boolean isPriorityBumpUp,
             RedundantState redundantState,
-            boolean haEnabled,
-            boolean stopPending) {
+            boolean haEnabled, boolean stopPending) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        this.elementId = elementId;
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
@@ -103,6 +107,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     public DomainRouterVO(long id,
             long serviceOfferingId,
+            long elementId,
             String name,
             long templateId,
             HypervisorType hypervisorType,
@@ -115,15 +120,19 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             boolean isPriorityBumpUp,
             RedundantState redundantState,
             boolean haEnabled,
-            boolean stopPending,
-            VirtualMachine.Type vmType) {
+            boolean stopPending, VirtualMachine.Type vmType) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        this.elementId = elementId;
         this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
         this.isPriorityBumpUp = isPriorityBumpUp;
         this.stopPending = stopPending;
+    }
+
+    public long getElementId() {
+        return elementId;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {

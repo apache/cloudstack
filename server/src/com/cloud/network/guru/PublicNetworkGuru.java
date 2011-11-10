@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -49,13 +48,13 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -74,28 +73,19 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkManager _networkMgr;
     @Inject
     IPAddressDao _ipAddressDao;
-    @Inject
-    NetworkOfferingDao _networkOfferingDao;
 
-    protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (((dc.getNetworkType() == NetworkType.Advanced && !dc.isSecurityGroupEnabled()) || dc.getNetworkType() == NetworkType.Basic) && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
-            return true;
-        } else {
-            s_logger.trace("We only take care of System only Public Virtual Network");
-            return false;
-        }
+    protected boolean canHandle(NetworkOffering offering) {
+        return offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly();
     }
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
-        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
-
-        if (!canHandle(offering, dc)) {
+        if (!canHandle(offering)) {
             return null;
         }
 
         if (offering.getTrafficType() == TrafficType.Public) {
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), null, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
+            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
             return ntwk;
         } else {
             return null;
@@ -138,11 +128,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
 
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
-        if (!canHandle(offering, dc)) {
-            return null;
-        }
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());       
         
         if (nic != null && nic.getRequestedIp() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
@@ -217,5 +203,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

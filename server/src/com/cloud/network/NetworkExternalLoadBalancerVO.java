@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.dao;
+package com.cloud.network;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,13 +24,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-/**
- * This class is just used to work with the DAO. It shouldn't be used anywhere.
- * 
- */
 @Entity
-@Table(name = "network_tags")
-public class NetworkTagVO {
+@Table(name="network_external_lb_device_map")
+public class NetworkExternalLoadBalancerVO {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -39,19 +36,24 @@ public class NetworkTagVO {
     @Column(name = "network_id")
     private long networkId;
 
-    @Column(name = "tag")
-    private String tag;
+    @Column(name = "external_load_balancer_device_id")
+    private long externalLBDeviceId;
 
-    /**
-     * There should never be a public constructor for this class. Since it's
-     * only here to define the table for the DAO class.
-     */
-    protected NetworkTagVO() {
+    @Column(name = "subscribed_capacity")
+    private long subscribedCapacity;
+
+    public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID) {
+        this.networkId = networkId;
+        this.externalLBDeviceId = externalLBDeviceID;
+        this.subscribedCapacity = 0;
+    }
+    public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID, long subscribedCapacity) {
+        this(networkId, externalLBDeviceID);
+        this.subscribedCapacity = subscribedCapacity;
     }
 
-    protected NetworkTagVO(long networkId, String tag) {
-        this.networkId = networkId;
-        this.tag = tag;
+    public NetworkExternalLoadBalancerVO(){
+
     }
 
     public long getId() {
@@ -62,7 +64,11 @@ public class NetworkTagVO {
         return networkId;
     }
 
-    public String getTag() {
-        return tag;
+    public long getExternalLBDeviceId() {
+        return externalLBDeviceId;
+    }
+
+    public long getSubscribedCapacity() {
+        return subscribedCapacity;
     }
 }

@@ -130,7 +130,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -561,10 +560,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         Account systemAcct = _accountMgr.getSystemAccount();
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
-        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
+        NetworkOfferingVO defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
 
         if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
+            defaultOffering = _networkMgr.getExclusiveGuestNetworkOffering();
         }
 
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
@@ -572,7 +571,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering, plan, null, null, false, false).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }

@@ -65,9 +65,6 @@ public class UpdateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the Zone")
     private String zoneName;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the Zone")
-    private String vlan;
-
     @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="updates a private zone to public if set, but not vice-versa")
     private Boolean isPublic;
     
@@ -118,10 +115,6 @@ public class UpdateZoneCmd extends BaseCmd {
         return zoneName;
     }
 
-    public String getVlan() {
-        return vlan;
-    }
-    
     public Boolean isPublic() {
         return isPublic;
     }

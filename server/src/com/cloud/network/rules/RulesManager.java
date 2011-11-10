@@ -44,7 +44,7 @@ public interface RulesManager extends RulesService {
     
     boolean revokeAllPFAndStaticNatRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException;
     
-    boolean revokeAllRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
+    boolean revokeAllPFStaticNatRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
     
     List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId);
     

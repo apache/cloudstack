@@ -74,7 +74,7 @@ class NitroError {
     static final int NS_NO_SERIVCE = 344;
 }
 
-public class NetscalerMPXResource implements ServerResource {
+public class NetscalerResource implements ServerResource {
 
     // deployment configuration
     private String _name;
@@ -88,7 +88,7 @@ public class NetscalerMPXResource implements ServerResource {
     private String _guid;
     private boolean _inline;
 
-    private static final Logger s_logger = Logger.getLogger(NetscalerMPXResource.class);
+    private static final Logger s_logger = Logger.getLogger(NetscalerResource.class);
     protected Gson _gson;
     private String _objectNamePathSep = "-";
 
@@ -96,7 +96,7 @@ public class NetscalerMPXResource implements ServerResource {
     Long timeout = new Long(100000);
     base_response apiCallResult;
 
-    public NetscalerMPXResource () {
+    public NetscalerResource () {
         _gson = GsonHelper.getGsonLogger();
     }
 

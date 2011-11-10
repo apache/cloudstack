@@ -98,19 +98,28 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
@@ -130,7 +139,6 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -142,7 +150,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -216,10 +223,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     ResourceLimitService _resourceLimitMgr;
     @Inject
     ProjectManager _projectMgr;
-
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
-
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
+    @Inject PhysicalNetworkDao _physicalNetworkDao;
+    
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
 
@@ -270,11 +279,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public boolean start() {
 
-        // TODO : this may not be a good place to do integrity check here, we put it here as we need _alertMgr to be properly
+        // TODO : this may not be a good place to do integrity check here, we
+        // put it here as we need _alertMgr to be properly
         // configured
         // before we can use it
 
-        // As it is so common for people to forget about configuring management.network.cidr,
+        // As it is so common for people to forget about configuring
+        // management.network.cidr,
         String mgtCidr = _configDao.getValue(Config.ManagementNetwork.key());
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             String[] localCidrs = NetUtils.getLocalCidrs();
@@ -315,7 +326,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
-        if ( Config.XenGuestNetwork.key().equals(name) ) {
+        if (Config.XenGuestNetwork.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
             Transaction txn = Transaction.currentTxn();
             PreparedStatement pstmt = null;
@@ -328,7 +339,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } catch (SQLException e) {
             } catch (Throwable e) {
             }
-        } else if ( Config.XenPrivateNetwork.key().equals(name) ) {
+        } else if (Config.XenPrivateNetwork.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
             Transaction txn = Transaction.currentTxn();
             PreparedStatement pstmt = null;
@@ -341,7 +352,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } catch (SQLException e) {
             } catch (Throwable e) {
             }
-        } else if ( Config.XenPublicNetwork.key().equals(name) ) {
+        } else if (Config.XenPublicNetwork.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
             Transaction txn = Transaction.currentTxn();
             PreparedStatement pstmt = null;
@@ -354,7 +365,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } catch (SQLException e) {
             } catch (Throwable e) {
             }
-        } else if ( Config.XenStorageNetwork1.key().equals(name) ) {
+        } else if (Config.XenStorageNetwork1.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
             Transaction txn = Transaction.currentTxn();
             PreparedStatement pstmt = null;
@@ -367,7 +378,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } catch (SQLException e) {
             } catch (Throwable e) {
             }
-        } else if ( Config.XenStorageNetwork2.key().equals(name) ) {
+        } else if (Config.XenStorageNetwork2.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
             Transaction txn = Transaction.currentTxn();
             PreparedStatement pstmt = null;
@@ -412,12 +423,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     }
 
-    @Override @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(UpdateCfgCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getCfgName();
         String value = cmd.getValue();
-        UserContext.current().setEventDetails(" Name: "+name +" New Value: "+((value == null) ? "" : value));
+        UserContext.current().setEventDetails(" Name: " + name + " New Value: " + ((value == null) ? "" : value));
         // check if config value exists
         if (_configDao.findByName(name) == null) {
             throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
@@ -510,7 +522,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         return "Please enter valid hypervisor type";
                     }
                 }
-            }else {
+            } else {
                 String[] options = range.split(",");
                 for (String option : options) {
                     if (option.trim().equalsIgnoreCase(value)) {
@@ -613,7 +625,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private void checkPodAttributes(long podId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationStateStr, boolean checkForDuplicates, boolean skipGatewayOverlapCheck) {
+    private void checkPodAttributes(long podId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationStateStr, boolean checkForDuplicates,
+            boolean skipGatewayOverlapCheck) {
         if (checkForDuplicates) {
             // Check if the pod already exists
             if (validPod(podName, zoneId)) {
@@ -623,7 +636,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         String cidrAddress;
         long cidrSize;
-        // Get the individual cidrAddress and cidrSize values, if the CIDR is valid. If it's not valid, return an error.
+        // Get the individual cidrAddress and cidrSize values, if the CIDR is
+        // valid. If it's not valid, return an error.
         if (NetUtils.isValidCIDR(cidr)) {
             cidrAddress = getCidrAddress(cidr);
             cidrSize = getCidrSize(cidr);
@@ -647,7 +661,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Don't allow gateway to overlap with start/endIp
-        if(!skipGatewayOverlapCheck){
+        if (!skipGatewayOverlapCheck) {
             if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
                 throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
             }
@@ -693,7 +707,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public boolean deletePod(DeletePodCmd cmd) {
         Long podId = cmd.getId();
-        
+
         Transaction txn = Transaction.currentTxn();
 
         // Make sure the pod exists
@@ -706,18 +720,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         HostPodVO pod = _podDao.findById(podId);
 
         txn.start();
-        
+
         // Delete private ip addresses for the pod if there are any
         List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(Long.valueOf(podId), pod.getDataCenterId());
         if (!privateIps.isEmpty()) {
             if (!(_privateIpAddressDao.deleteIpAddressByPod(podId))) {
                 throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
             }
-            
+
             // Delete corresponding capacity record
             _capacityDao.removeBy(Capacity.CAPACITY_TYPE_PRIVATE_IP, null, podId, null, null);
         }
-        
+
         // Delete link local ip addresses for the pod
         List<DataCenterLinkLocalIpAddressVO> localIps = _LinkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
         if (!localIps.isEmpty()) {
@@ -738,7 +752,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (!(_podDao.remove(podId))) {
             throw new CloudRuntimeException("Failed to delete pod " + podId);
         }
-        
+
         txn.commit();
 
         return true;
@@ -765,7 +779,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String[] rightRangeToAdd = null;
         boolean allowToDownsize = false;
 
-        // If the gateway, CIDR, private IP range is being changed, check if the pod has allocated private IP addresses
+        // If the gateway, CIDR, private IP range is being changed, check if the
+        // pod has allocated private IP addresses
         if (podHasAllocatedPrivateIPs(id)) {
 
             if (netmask != null) {
@@ -929,7 +944,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String cidrAddress = getCidrAddress(cidr);
         int cidrSize = getCidrSize(cidr);
 
-        // endIp is an optional parameter; if not specified - default it to the end ip of the pod's cidr
+        // endIp is an optional parameter; if not specified - default it to the
+        // end ip of the pod's cidr
         if (startIp != null) {
             if (endIp == null) {
                 endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
@@ -974,15 +990,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return pod;
     }
 
-    private boolean zoneHasVMs(long zoneId) {
-        List<VMInstanceVO> vmInstances = _vmInstanceDao.listByZoneId(zoneId);
-        return !vmInstances.isEmpty();
-    }
-
-    private boolean zoneHasAllocatedVnets(long zoneId) {
-        return !_zoneDao.listAllocatedVnets(zoneId).isEmpty();
-    }
-
     @DB
     protected void checkIfZoneIsDeletable(long zoneId) {
         List<List<String>> tablesToCheck = new ArrayList<List<String>>();
@@ -1023,11 +1030,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         volumes.add(2, "there are storage volumes for this zone");
         tablesToCheck.add(volumes);
 
-        List<String> vnet = new ArrayList<String>();
-        vnet.add(0, "op_dc_vnet_alloc");
-        vnet.add(1, "data_center_id");
-        vnet.add(2, "there are allocated vnets for this zone");
-        tablesToCheck.add(vnet);
+        List<String> physicalNetworks = new ArrayList<String>();
+        physicalNetworks.add(0, "physical_network");
+        physicalNetworks.add(1, "data_center_id");
+        physicalNetworks.add(2, "there are physical networks in this zone");
+        tablesToCheck.add(physicalNetworks);
 
         for (List<String> table : tablesToCheck) {
             String tableName = table.get(0);
@@ -1050,7 +1057,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 selectSql += " AND taken IS NOT NULL";
             }
 
-            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes")) {
+            if (tableName.equals("host_pod_ref") || tableName.equals("host") || tableName.equals("volumes") || tableName.equals("physical_network")) {
                 selectSql += " AND removed is NULL";
             }
 
@@ -1164,24 +1171,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         txn.start();
 
-        // Delete vNet
-        _zoneDao.deleteVnet(zoneId);
-
         // delete vlans for this zone
         List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
         for (VlanVO vlan : vlans) {
             _vlanDao.remove(vlan.getId());
         }
 
-        // Delete networks
-        List<NetworkVO> networks = _networkDao.listByZoneIncludingRemoved(zoneId);
-        if (networks != null && !networks.isEmpty()) {
-            for (NetworkVO network : networks) {
-                _networkDao.remove(network.getId());
-            }
-        }
         success = _zoneDao.remove(zoneId);
-        
+
         if (success) {
             //delete all capacity records for the zone
             _capacityDao.removeBy(null, zoneId, null, null, null);
@@ -1193,7 +1190,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     }
 
-    @Override @DB
+    @Override
+    @DB
     public DataCenter editZone(UpdateZoneCmd cmd) {
         // Parameter validation as from execute() method in V1
         Long zoneId = cmd.getId();
@@ -1202,12 +1200,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String newVnetRangeString = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
         List<String> dnsSearchOrder = cmd.getDnsSearchOrder();
         Boolean isPublic = cmd.isPublic();
         String allocationStateStr = cmd.getAllocationState();
-        String dhcpProvider = cmd.getDhcpProvider();        
+        String dhcpProvider = cmd.getDhcpProvider();
         Map<?, ?> detailsMap = cmd.getDetails();
         String networkDomain = cmd.getDomain();
 
@@ -1216,27 +1213,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             Collection<?> zoneDetailsCollection = detailsMap.values();
             Iterator<?> iter = zoneDetailsCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<?, ?> detail = (HashMap<?, ?>)iter.next();
-                String key = (String)detail.get("key");
-                String value = (String)detail.get("value");
+                HashMap<?, ?> detail = (HashMap<?, ?>) iter.next();
+                String key = (String) detail.get("key");
+                String value = (String) detail.get("value");
                 if ((key == null) || (value == null)) {
-                    throw new InvalidParameterValueException("Invalid Zone Detail specified, fields 'key' and 'value' cannot be null, please specify details in the form:  details[0].key=XXX&details[0].value=YYY");
-                } 
-                //validate the zone detail keys are known keys
-                /*if(!ZoneConfig.doesKeyExist(key)){
-    					throw new InvalidParameterValueException("Invalid Zone Detail parameter: "+ key);
-    				}*/
+                    throw new InvalidParameterValueException(
+                            "Invalid Zone Detail specified, fields 'key' and 'value' cannot be null, please specify details in the form:  details[0].key=XXX&details[0].value=YYY");
+                }
+                // validate the zone detail keys are known keys
+                /*
+                 * if(!ZoneConfig.doesKeyExist(key)){ throw new
+                 * InvalidParameterValueException
+                 * ("Invalid Zone Detail parameter: "+ key); }
+                 */
                 newDetails.put(key, value);
             }
-        }  
-        
+        }
+
         // add the domain prefix list to details if not null
-        if (dnsSearchOrder != null){
-            for(String dom : dnsSearchOrder){
+        if (dnsSearchOrder != null) {
+            for (String dom : dnsSearchOrder) {
                 if (!NetUtils.verifyDomainName(dom)) {
                     throw new InvalidParameterValueException(
                             "Invalid network domain suffixes. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                            + "and the hyphen ('-'); can't start or end with \"-\"");
+                                    + "and the hyphen ('-'); can't start or end with \"-\"");
                 }
             }
             newDetails.put(ZoneConfig.DnsSearchOrder.getName(), StringUtils.join(dnsSearchOrder, ","));
@@ -1251,15 +1251,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             zoneName = zone.getName();
         }
 
-        // if zone is of Basic type, don't allow to add vnet range and cidr
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            if (newVnetRangeString != null) {
-                throw new InvalidParameterValueException("Can't add vnet range for the zone that supports " + zone.getNetworkType() + " network");
-            } else if (guestCidr != null) {
-                throw new InvalidParameterValueException("Can't add cidr for the zone that supports " + zone.getNetworkType() + " network");
-            }
-        }
-
         if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
@@ -1267,63 +1258,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Make sure the zone exists
         if (!validZone(zoneId)) {
             throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
-        }
-
-        // Vnet range can be extended only
-        boolean replaceVnet = false;
-        ArrayList<Pair<Integer, Integer>> vnetsToAdd = new ArrayList<Pair<Integer, Integer>>(2); 
-        
-        if (newVnetRangeString != null) {
-            Integer newStartVnet = 0;
-            Integer newEndVnet = 0;
-            String[] newVnetRange = newVnetRangeString.split("-");
-
-            if (newVnetRange.length < 2) {
-                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
-            }
-
-            if (newVnetRange[0] == null || newVnetRange[1] == null) {
-                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
-            }
-
-            try {
-                newStartVnet = Integer.parseInt(newVnetRange[0]);
-                newEndVnet = Integer.parseInt(newVnetRange[1]);
-            } catch (NumberFormatException e) {
-                s_logger.warn("Unable to parse vnet range:", e);
-                throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
-            }
-
-            if (newStartVnet < 0 || newEndVnet > 4096) {
-                throw new InvalidParameterValueException("Vnet range has to be between 0-4096");
-            }
-
-            if (newStartVnet > newEndVnet) {
-                throw new InvalidParameterValueException("Vnet range has to be between 0-4096 and start range should be lesser than or equal to stop range");
-            } 
-            
-            if (zoneHasAllocatedVnets(zoneId)) {
-                String[] existingRange = zone.getVnet().split("-");
-                int existingStartVnet = Integer.parseInt(existingRange[0]);
-                int existingEndVnet = Integer.parseInt(existingRange[1]);
-                
-                //check if vnet is being extended
-                if (!(newStartVnet.intValue() <= existingStartVnet && newEndVnet.intValue() >= existingEndVnet)) {
-                    throw new InvalidParameterValueException("Can's shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
-                }
-                
-                if (newStartVnet < existingStartVnet) {
-                    vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, existingStartVnet - 1));
-                }
-                
-                if (newEndVnet > existingEndVnet) {
-                    vnetsToAdd.add(new Pair<Integer, Integer>(existingEndVnet + 1, newEndVnet));
-                }
-                
-            } else {
-                vnetsToAdd.add(new Pair<Integer, Integer>(newStartVnet, newEndVnet));
-                replaceVnet = true;
-            }
         }
 
         String oldZoneName = zone.getName();
@@ -1347,13 +1281,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (guestCidr == null) {
             guestCidr = zone.getGuestNetworkCidr();
         }
-        
-        //validate network domain
+
+        // validate network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         } else {
             networkDomain = zone.getDomain();
@@ -1379,10 +1313,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone.setGuestNetworkCidr(guestCidr);
         zone.setDomain(networkDomain);
 
-        if (newVnetRangeString != null) {
-            zone.setVnet(newVnetRangeString);
-        }
-
         // update a private zone to public; not vice versa
         if (isPublic != null && isPublic) {
             zone.setDomainId(null);
@@ -1391,79 +1321,50 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
+
         Map<String, String> updatedDetails = new HashMap<String, String>();
         _zoneDao.loadDetails(zone);
-        if(zone.getDetails() != null){
+        if (zone.getDetails() != null) {
             updatedDetails.putAll(zone.getDetails());
         }
         updatedDetails.putAll(newDetails);
-        zone.setDetails(updatedDetails);        
+        zone.setDetails(updatedDetails);
 
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
             zone.setAllocationState(allocationState);
         }
 
-        if(dhcpProvider != null){
+        if (dhcpProvider != null) {
             zone.setDhcpProvider(dhcpProvider);
         }
-        
+
         if (!_zoneDao.update(zoneId, zone)) {
             throw new CloudRuntimeException("Failed to edit zone. Please contact Cloud Support.");
         }
 
-        if (replaceVnet) {
-            s_logger.debug("Deleting existing vnet range for the zone id=" + zoneId + " as a part of updateZone call");
-            _zoneDao.deleteVnet(zoneId);
-        }
-
-        for (Pair<Integer, Integer> vnetToAdd : vnetsToAdd) {
-            s_logger.debug("Adding vnet range " + vnetToAdd.first() + "-" + vnetToAdd.second() + " for the zone id=" + zoneId + " as a part of updateZone call");
-            _zoneDao.addVnet(zone.getId(), vnetToAdd.first(), vnetToAdd.second());
-        }
-        
         txn.commit();
         return zone;
     }
 
     @Override
     @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationStateStr, String networkDomain) {
-        int vnetStart = 0;
-        int vnetEnd = 0;
-        if (vnetRange != null) {
-            String[] tokens = vnetRange.split("-");
-            try {
-                vnetStart = Integer.parseInt(tokens[0]);
-                if (tokens.length == 1) {
-                    vnetEnd = vnetStart;
-                } else {
-                    vnetEnd = Integer.parseInt(tokens[1]);
-                }
-            } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
-            }
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
+            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled) {
 
-            if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
-                s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
-                throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
-            }
-        }
-
-        // checking the following params outside checkzoneparams method as we do not use these params for updatezone
+        // checking the following params outside checkzoneparams method as we do
+        // not use these params for updatezone
         // hence the method below is generic to check for common params
         if ((guestCidr != null) && !NetUtils.validateGuestCidr(guestCidr)) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
-        
-        //Validate network domain 
+
+        // Validate network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -1475,20 +1376,24 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, isSecurityGroupEnabled, zoneToken, networkDomain);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
+            }else{
+                //Zone will be disabled since 3.0. Admin shoul enable it after physical network and providers setup.
+                zone.setAllocationState(Grouping.AllocationState.Disabled);
             }
             zone = _zoneDao.persist(zone);
 
-            // Add vnet entries for the new zone if zone type is Advanced
-            if (vnetRange != null) {
-                _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-            }
-
+            // Create default Physical Network
+            long physicalNetworkId = createDefaultPhysicalNetwork(zone.getId(), domainId);
+            
+            //add VirtualRouter as the defualt network service provider 
+            PhysicalNetworkServiceProvider nsp = _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
+            
             // Create deafult networks
-            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled);
+            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled, physicalNetworkId);
             txn.commit();
             return zone;
         } catch (Exception ex) {
@@ -1500,16 +1405,37 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
+    private long createDefaultPhysicalNetwork(long zoneId, Long domainId){
+        //create entry
+        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zoneId, null, null, null, PhysicalNetwork.BroadcastDomainRange.ZONE.toString(), domainId, null);
+        
+        String defaultXenLabel = "cloud-private";
+        
+        //add default Traffic types to the physical network
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Guest.toString(), defaultXenLabel, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Public.toString(), defaultXenLabel, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Management.toString(), defaultXenLabel, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Storage.toString(), defaultXenLabel, null, null, null);
+
+        return defaultNetwork.getId();
+    }
+        
     @Override
-    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException {
+    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled, long physicalNetworkId) throws ConcurrentOperationException {
         DataCenterVO zone = _zoneDao.findById(zoneId);
         String networkDomain = null;
-        // Create public, management, control and storage networks as a part of the zone creation
+        // Create public, management, control and storage networks as a part of
+        // the zone creation
         if (zone != null) {
             List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
+            
+            //for Advance security group enabled zone and Basic zone we have to find only one guest network offering enabled in the system
+            if (zone.getNetworkType() == NetworkType.Basic || isSecurityGroupEnabled) {
+                ntwkOff.add(_networkMgr.getExclusiveGuestNetworkOffering());
+            }
 
             for (NetworkOfferingVO offering : ntwkOff) {
-                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null);
+                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
                 NetworkVO userNetwork = new NetworkVO();
 
                 Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -1530,10 +1456,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
-                        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
-                    } else if (offering.getGuestType() == GuestIpType.Direct && isSecurityGroupEnabled) {
+                        //set physicalnetworkId to the default Guest network in a basic Zone.
+                        plan = new DataCenterDeployment(zone.getId(), null, null, null, null, physicalNetworkId);
+                    } else if (offering.getGuestType() == GuestType.Shared && isSecurityGroupEnabled) {
                         isNetworkDefault = true;
-                        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
                     } else {
                         continue;
                     }
@@ -1542,7 +1468,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, isNetworkDefault, false, null, null);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, true);
             }
         }
     }
@@ -1556,14 +1482,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dns2 = cmd.getDns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
-        String vnetRange = cmd.getVlan();
         String guestCidr = cmd.getGuestCidrAddress();
         Long domainId = cmd.getDomainId();
         String type = cmd.getNetworkType();
         Boolean isBasic = false;
         String allocationState = cmd.getAllocationState();
         String networkDomain = cmd.getDomain();
-        
+        boolean isSecurityGroupEnabled = cmd.getSecuritygroupenabled();
+
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
         }
@@ -1574,12 +1500,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             isBasic = true;
         }
 
-        Boolean securityGroupEnabled = cmd.isSecurityGroupEnabled();
-
         NetworkType zoneType = isBasic ? NetworkType.Basic : NetworkType.Advanced;
 
-        // Guest cidr is required for Advanced zone creation; error out when the parameter specified for Basic zone
-        if (zoneType == NetworkType.Advanced && guestCidr == null && !securityGroupEnabled) {
+        // Guest cidr is required for Advanced zone creation; error out when the
+        // parameter specified for Basic zone
+        if (zoneType == NetworkType.Advanced && guestCidr == null && !isSecurityGroupEnabled) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is required for Advanced zone creation");
         } else if (zoneType == NetworkType.Basic && guestCidr != null) {
             throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
@@ -1595,23 +1520,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             domainVO = _domainDao.findById(domainId);
         }
 
-        // Verify zone type
-        if (zoneType == NetworkType.Basic && vnetRange != null) {
-            vnetRange = null;
-        }
-
         if (zoneType == NetworkType.Basic) {
-            securityGroupEnabled = true;
+            isSecurityGroupEnabled = true;
         }
 
-        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, securityGroupEnabled,
-                allocationState, networkDomain);
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
+                isSecurityGroupEnabled);
     }
 
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
-      
+
         String name = cmd.getServiceOfferingName();
         if ((name == null) || (name.length() == 0)) {
             throw new InvalidParameterValueException("Failed to create service offering: specify the name that has non-zero length");
@@ -1661,39 +1581,42 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (limitCpuUse == null) {
             limitCpuUse = false;
         }
-        
+
         String vmTypeString = cmd.getSystemVmType();
         VirtualMachine.Type vmType = null;
         boolean allowNetworkRate = false;
         if (cmd.getIsSystem()) {
-            if (vmTypeString == null || VirtualMachine.Type.DomainRouter.toString().toLowerCase().equals(vmTypeString)){
+            if (vmTypeString == null || VirtualMachine.Type.DomainRouter.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.DomainRouter;
                 allowNetworkRate = true;
-            } else if (VirtualMachine.Type.ConsoleProxy.toString().toLowerCase().equals(vmTypeString)){
+            } else if (VirtualMachine.Type.ConsoleProxy.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.ConsoleProxy;
-            } else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vmTypeString)){
+            } else if (VirtualMachine.Type.SecondaryStorageVm.toString().toLowerCase().equals(vmTypeString)) {
                 vmType = VirtualMachine.Type.SecondaryStorageVm;
             } else {
-                throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy + ", " + VirtualMachine.Type.SecondaryStorageVm);
+                throw new InvalidParameterValueException("Invalid systemVmType. Supported types are: " + VirtualMachine.Type.DomainRouter + ", " + VirtualMachine.Type.ConsoleProxy + ", "
+                        + VirtualMachine.Type.SecondaryStorageVm);
             }
         } else {
-            allowNetworkRate = true;;
+            allowNetworkRate = true;
+            ;
         }
-        
+
         if (cmd.getNetworkRate() != null && !allowNetworkRate) {
             throw new InvalidParameterValueException("Network rate can be specified only for non-System offering and system offerings having \"domainrouter\" systemvmtype");
         }
 
-        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(), localStorageRequired, offerHA,
-                limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
+        return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
+                localStorageRequired, offerHA, limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
-    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, 
-            boolean offerHA, boolean limitResourceUse, String tags,  Long domainId, String hostTag, Integer networkRate) {
+    public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
+            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type, domainId, hostTag);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type,
+                domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             UserContext.current().setEventDetails("Service offering id=" + offering.getId());
@@ -1742,7 +1665,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	offering.setSortKey(sortKey);
         }
 
-        // Note: tag editing commented out for now; keeping the code intact, might need to re-enable in next releases
+        // Note: tag editing commented out for now; keeping the code intact,
+        // might need to re-enable in next releases
         // if (tags != null)
         // {
         // if (tags.trim().isEmpty() && offeringHandle.getTags() == null)
@@ -1809,10 +1733,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
         Long numGibibytes = cmd.getDiskSize();
-        boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; // false by default
+        boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; // false
+                                                                                        // by
+                                                                                        // default
         String tags = cmd.getTags();
-        // Long domainId = cmd.getDomainId() != null ? cmd.getDomainId() : Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering
-        // always gets created under the root domain.Bug # 6055 if not passed in cmd
+        // Long domainId = cmd.getDomainId() != null ? cmd.getDomainId() :
+        // Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering
+        // always gets created under the root domain.Bug # 6055 if not passed in
+        // cmd
         Long domainId = cmd.getDomainId();
 
         if (!isCustomized && numGibibytes == null) {
@@ -1856,7 +1784,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	diskOffering.setSortKey(sortKey);
         }
 
-        // Note: tag editing commented out for now;keeping the code intact, might need to re-enable in next releases
+        // Note: tag editing commented out for now;keeping the code intact,
+        // might need to re-enable in next releases
         // if (tags != null)
         // {
         // if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null)
@@ -1864,7 +1793,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // //no new tags; no existing tags
         // diskOffering.setTagsArray(csvTagsToList(null));
         // }
-        // else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() != null)
+        // else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() !=
+        // null)
         // {
         // //new tags + existing tags
         // List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
@@ -1921,9 +1851,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         ServiceOffering offering = getServiceOffering(offeringId);
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find service offering " + offeringId);
-        } 
+        }
 
-        if(offering.getDefaultUse()){
+        if (offering.getDefaultUse()) {
             throw new InvalidParameterValueException("Default service offerings cannot be deleted");
         }
 
@@ -1969,13 +1899,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
         String networkVlanId = null;
-        
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
         //projectId and accountName can't be specified together
         String accountName = cmd.getAccountName();
         Long projectId = cmd.getProjectId();
         Long domainId = cmd.getDomainId();
         Account account = null;
-        
+
         if (projectId != null) {
             if (accountName != null) {
                 throw new InvalidParameterValueException("Account and projectId are mutually exclusive");
@@ -1984,7 +1914,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id " + projectId);
             }
-            
+
             account = _accountMgr.getAccount(project.getProjectAccountId());
         }
 
@@ -1994,7 +1924,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Please specify a valid account.");
             }
         }
-
+        
         // Verify that network exists
         Network network = null;
         if (networkId != null) {
@@ -2003,15 +1933,50 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Unable to find network by id " + networkId);
             } else {
                 zoneId = network.getDataCenterId();
+                physicalNetworkId = network.getPhysicalNetworkId();
             }
         }
 
+        //verify that physical network exists
+        PhysicalNetworkVO pNtwk = null;
+        if(physicalNetworkId != null){
+            pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
+            if (pNtwk == null) {
+                throw new InvalidParameterValueException("Unable to find Physical Network with id=" + physicalNetworkId);
+            }
+        }
+        if(zoneId == null && pNtwk != null){
+            zoneId = pNtwk.getDataCenterId();
+        }
         // Verify that zone exists
         DataCenterVO zone = _zoneDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
-
+        
+        if(physicalNetworkId == null){
+            //deduce physicalNetworkFrom Zone or Network.
+            if(network != null && network.getPhysicalNetworkId() != null){
+                physicalNetworkId = network.getPhysicalNetworkId();
+            }else{
+                if (forVirtualNetwork) {
+                    //default physical network with public traffic in the zone
+                    physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
+                }else{
+                    if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
+                        //default physical network with guest traffic in the zone
+                        physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
+                    }else if(zone.getNetworkType() == DataCenter.NetworkType.Advanced) {
+                        if(zone.isSecurityGroupEnabled()){
+                            physicalNetworkId = _networkMgr.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
+                        }else{
+                            throw new InvalidParameterValueException("Physical Network Id is null, please provide the Network id for Direct vlan creation ");
+                        }
+                    }
+                }
+            }
+        }
+        
         // Check if zone is disabled
         Account caller = UserContext.current().getCaller();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
@@ -2022,7 +1987,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Can't add virtual network into a zone with security group enabled");
         }
 
-        // If networkId is not specified, and vlan is Virtual or Direct Untagged, try to locate default networks
+        // If networkId is not specified, and vlan is Virtual or Direct
+        // Untagged, try to locate default networks
         if (forVirtualNetwork) {
             if (network == null) {
                 // find default public network in the zone
@@ -2033,7 +1999,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         } else {
             if (network == null) {
                 if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
-                    networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
+                    networkId = _networkMgr.getExclusiveGuestNetwork(zoneId).getId();
                 } else {
                     network = _networkMgr.getNetworkWithSecurityGroupEnabled(zoneId);
                     if (network == null) {
@@ -2041,8 +2007,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     networkId = network.getId();
                 }
-            } else if (network.getGuestType() == null || network.getGuestType() == GuestIpType.Virtual) {
-                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with GuestType: " + network.getGuestType());
+            } else if (network.getGuestType() == null || network.getGuestType() == Network.GuestType.Isolated) {
+                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
             }
         }
 
@@ -2051,7 +2017,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             endIP = startIP;
         }
 
-        // if vlan is specified, throw an error if it's not equal to network's vlanId
+        // if vlan is specified, throw an error if it's not equal to network's
+        // vlanId
         if (network != null) {
             URI uri = network.getBroadcastUri();
             if (uri != null) {
@@ -2064,7 +2031,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Vlan doesn't match vlan of the network");
         }
 
-        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || network.isSecurityGroupEnabled()) {
+        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || zone.isSecurityGroupEnabled()) {
             if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
                 throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
             }
@@ -2097,7 +2064,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        // if it's an account specific range, associate ip address list to the account
+        // if it's an account specific range, associate ip address list to the
+        // account
         boolean associateIpRangeToAccount = false;
 
         if (forVirtualNetwork) {
@@ -2108,7 +2076,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);
                 }
-                if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit) { // -1 means infinite
+                if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit) { // -1
+                                                                                 // means
+                                                                                 // infinite
                     throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit + " which is less than the IP range of " + accountIpRange + " provided");
                 }
                 associateIpRangeToAccount = true;
@@ -2118,12 +2088,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Vlan vlan = createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId);
+        Vlan vlan = createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId, physicalNetworkId);
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId(), network);
             if (network == null) {
-                List<? extends Network> networks = _networkMgr.getVirtualNetworksOwnedByAccountInZone(zoneId, account);
+                List<? extends Network> networks = _networkMgr.getIsolatedNetworksOwnedByAccountInZone(zoneId, account);
                 network = networks.get(0);
             }
             if (network == null) {
@@ -2150,7 +2120,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId,
-            Account account, Long networkId) {
+            Account account, Long networkId, Long physicalNetworkId) {
         // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
@@ -2168,6 +2138,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
+        
+        PhysicalNetworkVO pNtwk;
+        if (physicalNetworkId == null || ((pNtwk = _physicalNetworkDao.findById(physicalNetworkId)) == null)) {
+            throw new InvalidParameterValueException("Please specify a valid physical network.");
+        }
+        
 
         // Allow adding untagged direct vlan only for Basic zone
         if (zone.getNetworkType() == NetworkType.Advanced && vlanId.equals(Vlan.UNTAGGED) && (!forVirtualNetwork || zone.isSecurityGroupEnabled())) {
@@ -2176,9 +2152,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Only Direct Untagged and Virtual networks are supported in the zone " + zone.getId() + " of type " + zone.getNetworkType());
         }
 
-        // don't allow to create a virtual vlan when zone's vnet is NULL in Advanced zone
-        if ((zone.getNetworkType() == NetworkType.Advanced && zone.getVnet() == null) && forVirtualNetwork) {
-            throw new InvalidParameterValueException("Can't add virtual network to the zone id=" + zone.getId() + " as zone doesn't have guest vlan configured");
+        //  don't allow to create a virtual vlan when physical networks's vnet is NULL in Advanced zone
+        if ((zone.getNetworkType() == NetworkType.Advanced && pNtwk.getVnet() == null) && forVirtualNetwork) {
+            throw new InvalidParameterValueException("Can't add virtual network to the physical Network id="+pNtwk.getId() +" in zone id=" + zone.getId() + " as there is no guest vlan configured");
         }
 
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
@@ -2231,7 +2207,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
 
-        // Check if the new VLAN's subnet conflicts with the guest network in the specified zone (guestCidr is null for basic
+        // Check if the new VLAN's subnet conflicts with the guest network in
+        // the specified zone (guestCidr is null for basic
         // zone)
         String guestNetworkCidr = zone.getGuestNetworkCidr();
         if (guestNetworkCidr != null) {
@@ -2259,13 +2236,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
 
         // Throw an exception if any of the following is true:
-        // 1. Another VLAN in the same zone has a different tag but the same subnet as the new VLAN. Make an exception for the
+        // 1. Another VLAN in the same zone has a different tag but the same
+        // subnet as the new VLAN. Make an exception for the
         // case when both vlans are Direct.
-        // 2. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has IPs that overlap with the IPs
+        // 2. Another VLAN in the same zone that has the same tag and subnet as
+        // the new VLAN has IPs that overlap with the IPs
         // being added
-        // 3. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has a different gateway than the
+        // 3. Another VLAN in the same zone that has the same tag and subnet as
+        // the new VLAN has a different gateway than the
         // new VLAN
-        // 4. If VLAN is untagged and Virtual, and there is existing UNTAGGED vlan with different subnet 
+        // 4. If VLAN is untagged and Virtual, and there is existing UNTAGGED
+        // vlan with different subnet
         List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
         for (VlanVO vlan : vlans) {
             String otherVlanGateway = vlan.getVlanGateway();
@@ -2302,11 +2283,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Check if a guest VLAN is using the same tag
-        if (_zoneDao.findVnet(zoneId, vlanId).size() > 0) {
+        if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for the guest network in zone " + zone.getName());
         }
 
-        // For untagged vlan check if vlan per pod already exists. If yes, verify that new vlan range has the same netmask and
+        // For untagged vlan check if vlan per pod already exists. If yes,
+        // verify that new vlan range has the same netmask and
         // gateway
         if (zone.getNetworkType() == NetworkType.Basic && vlanId.equalsIgnoreCase(Vlan.UNTAGGED) && podId != null) {
             List<VlanVO> podVlans = _vlanDao.listVlansForPodByType(podId, VlanType.DirectAttached);
@@ -2329,16 +2311,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId);
+        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId);
         vlan = _vlanDao.persist(vlan);
 
-        if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId)) {
+        if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
             throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); // It can be Direct IP or
             // Public IP.
         }
 
         if (account != null) {
-            // This VLAN is account-specific, so create an AccountVlanMapVO entry
+            // This VLAN is account-specific, so create an AccountVlanMapVO
+            // entry
             AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(account.getId(), vlan.getId());
             _accountVlanMapDao.persist(accountVlanMapVO);
         } else if (podId != null) {
@@ -2493,13 +2476,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @DB
-    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid) {
+    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid, long physicalNetworkId) {
         long startIPLong = NetUtils.ip2Long(startIP);
         long endIPLong = NetUtils.ip2Long(endIP);
         Transaction txn = Transaction.currentTxn();
         txn.start();
         IPRangeConfig config = new IPRangeConfig();
-        List<String> problemIps = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid);
+        List<String> problemIps = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId);
         txn.commit();
         return problemIps != null && problemIps.size() == 0;
     }
@@ -2566,7 +2549,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Please specify a valid IP range.");
         }
 
-        // Check that the IPs that are being added are compatible with the VLAN's gateway and netmask
+        // Check that the IPs that are being added are compatible with the
+        // VLAN's gateway and netmask
         if (vlanNetmask == null) {
             throw new InvalidParameterValueException("Please ensure that your IP range's netmask is specified");
         }
@@ -2603,7 +2587,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Please specify a valid IP range.");
         }
 
-        // Check that the IPs that are being added are compatible with the pod's CIDR
+        // Check that the IPs that are being added are compatible with the pod's
+        // CIDR
         String cidrAddress = getCidrAddress(podId);
         long cidrSize = getCidrSize(podId);
 
@@ -2643,7 +2628,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     private void checkPodCidrSubnets(long dcId, HashMap<Long, List<Object>> currentPodCidrSubnets) {
         // For each pod, return an error if any of the following is true:
         // 1. The pod's CIDR subnet conflicts with the guest network subnet
-        // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other pod
+        // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other
+        // pod
         DataCenterVO dcVo = _zoneDao.findById(dcId);
         String guestNetworkCidr = dcVo.getGuestNetworkCidr();
 
@@ -2864,23 +2850,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to zone:" + zone.getId());
     }
 
-    @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_CREATE, eventDescription = "creating network offering")
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_CREATE, eventDescription = "creating network offering")
     public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) {
         Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getNetworkOfferingName();
         String displayText = cmd.getDisplayText();
         String tags = cmd.getTags();
         String trafficTypeString = cmd.getTraffictype();
-        Boolean specifyVlan = cmd.getSpecifyVlan();
+        boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
-        String guestIpTypeString = cmd.getGuestIpType();
-        Boolean redundantRouter = cmd.getRedundantRouter();
 
         Integer networkRate = cmd.getNetworkRate();
 
         TrafficType trafficType = null;
-        GuestIpType guestIpType = null;
         Availability availability = null;
+        Network.GuestType guestType = null;
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -2892,17 +2877,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (trafficType == null) {
             throw new InvalidParameterValueException("Invalid value for traffictype. Supported traffic types: Public, Management, Control, Guest, Vlan or Storage");
         }
-
-        // Verify guest ip type
-        for (GuestIpType gType : GuestIpType.values()) {
-            if (gType.name().equalsIgnoreCase(guestIpTypeString)) {
-                guestIpType = gType;
+        
+        //Only GUEST traffic type is supported in Acton
+        if (trafficType != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Only traffic type " + TrafficType.Guest + " is supported in the current release");
+        }
+        
+        // Verify offering type
+        for (Network.GuestType offType : Network.GuestType.values()) {
+            if (offType.name().equalsIgnoreCase(cmd.getGuestIpType())) {
+                guestType = offType;
                 break;
             }
         }
 
-        if (guestIpType == null) {
-            throw new InvalidParameterValueException("Invalid guest IP type; can have Direct or Virtual value");
+        if (guestType == null) {
+            throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
         }
 
         // Verify availability
@@ -2918,38 +2908,191 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         Integer maxConnections = cmd.getMaxconnections();
 
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType, redundantRouter, networkRate);
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        
+        if (serviceOfferingId != null) {
+            ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
+            if (offering == null) {
+                throw new InvalidParameterValueException("Cannot find specified service offering: " + serviceOfferingId);
+            }
+            if (!VirtualMachine.Type.DomainRouter.toString().equalsIgnoreCase(offering.getSystemVmType())) {
+                throw new InvalidParameterValueException("The specified service offering " + serviceOfferingId + " cannot be used by virtual router!");
+            }
+        }
+        
+        // configure service provider map
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        defaultProviders.add(Network.Provider.defaultProvider);
+        // populate all services first
+        if (cmd.getDhcpService()) {
+            serviceProviderMap.put(Network.Service.Dhcp, defaultProviders);
+        }
+
+        if (cmd.getDnsService()) {
+            serviceProviderMap.put(Network.Service.Dns, defaultProviders);
+        }
+
+        if (cmd.getFirewallService()) {
+            serviceProviderMap.put(Network.Service.Firewall, defaultProviders);
+        }
+
+        if (cmd.getGatewayService()) {
+            serviceProviderMap.put(Network.Service.Gateway, defaultProviders);
+        }
+
+        if (cmd.getLbService()) {
+            serviceProviderMap.put(Network.Service.Lb, defaultProviders);
+        }
+
+        if (cmd.getSourceNatService()) {
+            if (guestType == GuestType.Shared) {
+                throw new InvalidParameterValueException("Source nat service is is not supported for network offerings with guest ip type " + GuestType.Shared);
+            }
+            serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);
+        }
+
+        if (cmd.getStaticNatService()) {
+            serviceProviderMap.put(Network.Service.StaticNat, defaultProviders);
+        }
+
+        if (cmd.getPortForwardingService()) {
+            serviceProviderMap.put(Network.Service.PortForwarding, defaultProviders);
+        }
+
+        if (cmd.getUserdataService()) {
+            serviceProviderMap.put(Network.Service.UserData, defaultProviders);
+        }
+
+        if (cmd.getVpnService()) {
+            serviceProviderMap.put(Network.Service.Vpn, defaultProviders);
+        }
+        
+        if (cmd.getSecurityGroupService()) {
+            //allow security group service for Shared networks only
+            if (guestType != GuestType.Shared) {
+                throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+            }
+            Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
+            sgProviders.add(Provider.SecurityGroupProvider);
+            serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
+        }
+
+        // populate providers
+        Map<String, List<String>> svcPrv = cmd.getServiceProviders();
+        if (svcPrv != null) {
+            for (String serviceStr : svcPrv.keySet()) {
+                Network.Service service = Network.Service.getService(serviceStr);
+                if (serviceProviderMap.containsKey(service)) {
+                    Set<Provider> providers = new HashSet<Provider>();
+                    for (String prvNameStr : svcPrv.get(serviceStr)) {
+                        // check if provider is supported
+                        Network.Provider provider;
+                        provider = Network.Provider.getProvider(prvNameStr);
+                        if (provider == null) {
+                            throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
+                        }
+                        providers.add(provider);
+                    }
+                    serviceProviderMap.put(service, providers);
+                } else {
+                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+                }
+            }
+        }
+
+        // verify the LB service capabilities specified in the network offering
+        Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
+        if (!cmd.getLbService() && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
+        }
+        validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
+
+        // verify the Firewall service capabilities specified in the network offering
+        Map<Capability, String> fwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Firewall);
+        if (!cmd.getFirewallService() && fwServiceCapabilityMap != null && !fwServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
+        }
+        validateFirewallServiceCapablities(fwServiceCapabilityMap);
+
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false,
+                guestType, false, serviceOfferingId, lbServiceCapabilityMap, fwServiceCapabilityMap);
     }
 
+    void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
+        if ((lbServiceCapabilityMap != null) && (lbServiceCapabilityMap.keySet().size() > 1 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation.getName()))) {
+            throw new InvalidParameterValueException("Only Load balancer isolation capability can be sepcified for LB service");
+        } else {
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation.getName());
+            boolean dedicatedLb = isolationCapability.contains("dedicated");
+            boolean sharedLB = isolationCapability.contains("shared"); 
+            if ((dedicatedLb && sharedLB) || (!dedicatedLb && !sharedLB)){
+                throw new InvalidParameterValueException("Either dedicated or shared isolation can be specified for " + Capability.SupportedLBIsolation.getName());
+            }
+        }
+    }
+
+    void validateFirewallServiceCapablities(Map<Capability, String> fwServiceCapabilityMap) {
+        if ((fwServiceCapabilityMap != null) && (fwServiceCapabilityMap.keySet().size() > 1) || !fwServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes.getName())) {
+            throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
+        } else {
+            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            boolean perAccount = sourceNatType.contains("peraccount");
+            boolean perZone = sourceNatType.contains("perzone");
+            if ((perAccount && perZone) || (!perAccount && !perZone)) {
+                throw new InvalidParameterValueException("Either perAccount or perZone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
+            }
+        }
+    }
+    
     @Override
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, 
-            Availability availability, GuestIpType guestIpType, boolean redundantRouter, Integer networkRate) {
+    @DB
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
+            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, 
+            boolean systemOnly, Long serviceOfferingId, Map<Capability, String> lbServiceCapabilityMap, Map<Capability, String> fwServiceCapabilityMap) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
-        boolean firewallService = false;
-        boolean lbService = false;
-        boolean vpnService = false;
-        boolean gatewayService = false;
-
-        if (trafficType == TrafficType.Guest) {
-            firewallService = true;
-            lbService = true;
-            vpnService = true;
-            gatewayService = true;
+        boolean dedicatedLb = true;
+        if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
+            dedicatedLb = isolationCapability.contains("dedicated");
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true,
-                gatewayService, firewallService, lbService, vpnService, guestIpType, redundantRouter);
-
-        if ((offering = _networkOfferingDao.persist(offering)) != null) {
-            UserContext.current().setEventDetails(" Id: "+offering.getId()+" Name: "+name);
-            return offering;
-        } else {
-            return null;
+        boolean sharedSourceNat = false;
+        if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
+            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            sharedSourceNat = sourceNatType.contains("perzone");
         }
+
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat);
+        
+        if (serviceOfferingId != null) {
+            offering.setServiceOfferingId(serviceOfferingId);
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        // create network offering object
+        s_logger.debug("Adding network offering " + offering);
+        offering = _networkOfferingDao.persist(offering);
+        // populate services and providers
+        if (serviceProviderMap != null) {
+            for (Network.Service service : serviceProviderMap.keySet()) {
+                for (Network.Provider provider : serviceProviderMap.get(service)) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
+                    _ntwkOffServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+            }
+        }
+
+        txn.commit();
+
+        UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        return offering;
     }
 
     @Override
@@ -2957,9 +3100,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
     	isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Account caller = UserContext.current().getCaller();
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
 
-        Object id = cmd.getId();
+        Long id = cmd.getId();
         Object name = cmd.getNetworkOfferingName();
         Object displayText = cmd.getDisplayText();
         Object trafficType = cmd.getTrafficType();
@@ -2967,9 +3111,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object specifyVlan = cmd.getSpecifyVlan();
         Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
-        Object guestIpType = cmd.getGuestIpType();
+        Object state = cmd.getState();
         Long zoneId = cmd.getZoneId();
         DataCenter zone = null;
+        Long networkId = cmd.getNetworkId();
+        String guestIpType = cmd.getGuestIpType();
+        List<String> supportedServicesStr = cmd.getSupportedServices();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -2985,17 +3132,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
         if (guestIpType != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
         }
 
-        if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
-        }
         if (displayText != null) {
             sc.addAnd("displayText", SearchCriteria.Op.LIKE, "%" + displayText + "%");
         }
@@ -3020,26 +3164,83 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sc.addAnd("availability", SearchCriteria.Op.EQ, availability);
         }
 
+        if (state != null) {
+            sc.addAnd("state", SearchCriteria.Op.EQ, state);
+        }
+
         if (zone != null) {
             if (zone.getNetworkType() == NetworkType.Basic) {
-                // return empty list as we don't allow to create networks in basic zone, and shouldn't display networkOfferings
+                // return empty list as we don't allow to create networks in
+                // basic zone, and shouldn't display networkOfferings
                 return new ArrayList<NetworkOffering>();
-            } else if (zone.isSecurityGroupEnabled()) {
-                sc.addAnd("guestType", SearchCriteria.Op.EQ, GuestIpType.Direct);
             }
         }
 
         // Don't return system network offerings to the user
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
 
-        return _networkOfferingDao.search(sc, searchFilter);
+        // if networkId is specified, list offerings available for upgrade only (for this network)
+        if (networkId != null) {
+            // check if network exists and the caller can operate with it
+            Network network = _networkMgr.getNetwork(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find the network by id=" + networkId);
+            }
+            // Don't allow to update system network
+            NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+            if (offering.isSystemOnly()) {
+                throw new InvalidParameterValueException("Can't update system networks");
+            }
+
+            _accountMgr.checkAccess(caller, null, network);
+
+            List<Long> offeringIds = _networkMgr.listNetworkOfferingsForUpgrade(networkId);
+
+            if (!offeringIds.isEmpty()) {
+                sc.addAnd("id", SearchCriteria.Op.IN, offeringIds.toArray());
+            } else {
+                return new ArrayList<NetworkOffering>();
+            }
+        }
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);;
+        
+        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty()) {
+            List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
+            Service[] suppportedServices = new Service[supportedServicesStr.size()];
+            int i = 0;
+            for (String supportedServiceStr : supportedServicesStr) {
+                Service service = Service.getService(supportedServiceStr);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
+                } else {
+                    suppportedServices[i] = service;
+                }
+                i++;
+            }
+           
+            for (NetworkOfferingVO offering : offerings) {
+                if (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices)) {
+                    supportedOfferings.add(offering);
+                }
+            }
+            
+            return supportedOfferings;
+        } else {
+            return offerings;
+        }
     }
 
-    @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
     public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) {
         Long offeringId = cmd.getId();
-        UserContext.current().setEventDetails(" Id: "+offeringId);
-        
+        UserContext.current().setEventDetails(" Id: " + offeringId);
+
         // Verify network offering id
         NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
         if (offering == null) {
@@ -3060,7 +3261,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    @Override @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_EDIT, eventDescription = "updating network offering")
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_EDIT, eventDescription = "updating network offering")
+    @DB
     public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
         String displayText = cmd.getDisplayText();
         Long id = cmd.getId();
@@ -3068,8 +3271,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String availabilityStr = cmd.getAvailability();
         Integer sortKey = cmd.getSortKey();
         Availability availability = null;
-        UserContext.current().setEventDetails(" Id: "+id);
-        
+        String state = cmd.getState();
+        UserContext.current().setEventDetails(" Id: " + id);
+
         // Verify input parameters
         NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
         if (offeringToUpdate == null) {
@@ -3079,11 +3283,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Don't allow to update system network offering
         if (offeringToUpdate.isSystemOnly()) {
             throw new InvalidParameterValueException("Can't update system network offerings");
-        }
-
-        // Don't allow to update default Direct network offering
-        if (offeringToUpdate.isDefault() && offeringToUpdate.getGuestType() == GuestIpType.Direct) {
-            throw new InvalidParameterValueException("Can't update Default Direct network offering");
         }
 
         NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
@@ -3100,6 +3299,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	offering.setSortKey(sortKey);
         }
 
+        if (state != null) {
+            boolean validState = false;
+            for (NetworkOffering.State st : NetworkOffering.State.values()) {
+                if (st.name().equalsIgnoreCase(state)) {
+                    validState = true;
+                    offering.setState(st);
+                }
+            }
+            if (!validState) {
+                throw new InvalidParameterValueException("Incorrect state value: " + state);
+            }
+        }
+
         // Verify availability
         if (availabilityStr != null) {
             for (Availability avlb : Availability.values()) {
@@ -3114,15 +3326,156 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        if (_networkOfferingDao.update(id, offering)) {
-            offering = _networkOfferingDao.findById(id);
-            return offering;
+        // All parameters below can be updated only when there are no networks
+        // using this offering
+        Long networks = _networkDao.getNetworkCountByOfferingId(id);
+        boolean networksExist = (networks != null && networks.longValue() > 0);
+
+        // configure service provider map
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
+        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        defaultProviders.add(Network.Provider.defaultProvider);
+        // populate all services first
+        if (cmd.getDhcpService()) {
+            serviceProviderMap.put(Network.Service.Dhcp, defaultProviders);
+        }
+
+        if (cmd.getDnsService()) {
+            serviceProviderMap.put(Network.Service.Dns, defaultProviders);
+        }
+
+        if (cmd.getFirewallService()) {
+            serviceProviderMap.put(Network.Service.Firewall, defaultProviders);
+        }
+
+        if (cmd.getGatewayService()) {
+            serviceProviderMap.put(Network.Service.Gateway, defaultProviders);
+        }
+
+        if (cmd.getLbService()) {
+            serviceProviderMap.put(Network.Service.Lb, defaultProviders);
+        }
+
+        if (cmd.getSourceNatService()) {
+            if (offering.getGuestType() == GuestType.Shared) {
+                throw new InvalidParameterValueException("Source nat service is is not supported for network offerings with guest ip type " + GuestType.Shared);
+            }
+            serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);
+        }
+
+        if (cmd.getStaticNatService()) {
+            serviceProviderMap.put(Network.Service.StaticNat, defaultProviders);
+        }
+
+        if (cmd.getPortForwardingService()) {
+            serviceProviderMap.put(Network.Service.PortForwarding, defaultProviders);
+        }
+
+        if (cmd.getUserdataService()) {
+            serviceProviderMap.put(Network.Service.UserData, defaultProviders);
+        }
+
+        if (cmd.getVpnService()) {
+            serviceProviderMap.put(Network.Service.Vpn, defaultProviders);
+        }
+        
+        if (cmd.getSecurityGroupService()) {
+            //allow security group service for Shared networks only
+            if (offering.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+            }
+            Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
+            sgProviders.add(Provider.SecurityGroupProvider);
+            serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
+        }
+
+        // populate providers
+        Map<String, List<String>> svcPrv = cmd.getServiceProviders();
+        if (svcPrv != null) {
+            for (String serviceStr : svcPrv.keySet()) {
+                Network.Service service = Network.Service.getService(serviceStr);
+                if (serviceProviderMap.containsKey(service)) {
+                    Set<Provider> providers = new HashSet<Provider>();
+                    for (String prvNameStr : svcPrv.get(serviceStr)) {
+                        // check if provider is supported
+                        Network.Provider provider;
+                        provider = Network.Provider.getProvider(prvNameStr);
+                        if (provider == null) {
+                            throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
+                        }
+                        providers.add(provider);
+                    }
+                    serviceProviderMap.put(service, providers);
+                } else {
+                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+                }
+            }
+        }
+
+        // verify and update the LB service capabilities specified in the network offering
+        Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
+        boolean dedicatedLb = true;
+        if (!cmd.getLbService() && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
+        }
+        validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
+
+        if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
+            dedicatedLb = isolationCapability.contains("dedicated");
+        }
+        offering.setDedicatedLb(dedicatedLb);
+
+        // verify the Firewall service capabilities specified in the network offering
+        Map<Capability, String> fwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Firewall);
+        boolean sharedSourceNat = false;
+
+        if (!cmd.getFirewallService() && fwServiceCapabilityMap != null && !fwServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
+        }
+        validateFirewallServiceCapablities(fwServiceCapabilityMap);
+
+        if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
+            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            sharedSourceNat = sourceNatType.contains("perzone");
+        }
+        offering.setSharedSourceNat(sharedSourceNat);
+
+        if (svcPrv != null && !svcPrv.isEmpty()) {
+            if (networksExist) {
+                throw new InvalidParameterValueException("Unable to reset service providers as there are existing networks using this network offering");
+            }
+        }
+
+        boolean success = true;
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        // update network offering
+        success = success && _networkOfferingDao.update(id, offering);
+       
+        if (!serviceProviderMap.isEmpty()) {
+            _ntwkOffServiceMapDao.deleteByOfferingId(id);
+            // update services/providers - delete old ones, insert new ones
+            for (Network.Service service : serviceProviderMap.keySet()) {
+                for (Network.Provider provider : serviceProviderMap.get(service)) {
+                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
+                    _ntwkOffServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+            }
+        }
+
+        txn.commit();
+
+        if (success) {
+            return _networkOfferingDao.findById(id);
         } else {
             return null;
         }
     }
 
-    // Note: This method will be used for entity name validations in the coming releases (place holder for now)
+    // Note: This method will be used for entity name validations in the coming
+    // releases (place holder for now)
     private void validateEntityName(String str) {
         String forbidden = "~!@#$%^&*()+=";
         char[] searchChars = forbidden.toCharArray();
@@ -3165,8 +3518,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             networkRate = Integer.parseInt(_configDao.getValue(Config.NetworkThrottlingRate.key()));
         }
 
-        // networkRate is unsigned int in netowrkOfferings table, and can't be set to -1
-        // so 0 means unlimited; we convert it to -1, so we are consistent with all our other resources where -1 means unlimited
+        // networkRate is unsigned int in netowrkOfferings table, and can't be
+        // set to -1
+        // so 0 means unlimited; we convert it to -1, so we are consistent with
+        // all our other resources where -1 means unlimited
         if (networkRate == 0) {
             networkRate = -1;
         }
@@ -3179,7 +3534,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Vlan vlan = _vlanDao.findById(vlanId);
         Long accountId = null;
 
-        // if vlan is Virtual Account specific, get vlan information from the accountVlanMap; otherwise get account information
+        // if vlan is Virtual Account specific, get vlan information from the
+        // accountVlanMap; otherwise get account information
         // from the network
         if (vlan.getVlanType() == VlanType.VirtualNetwork) {
             List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanId);
@@ -3246,7 +3602,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     private boolean allowIpRangeOverlap(VlanVO vlan, boolean forVirtualNetwork, long networkId) {
-        //FIXME - delete restriction for virtual network in the future
+        // FIXME - delete restriction for virtual network in the future
         if (vlan.getVlanType() == VlanType.DirectAttached && !forVirtualNetwork) {
             return true;
         } else {
@@ -3282,7 +3638,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (offering.getRateMbps() != null) {
             networkRate = offering.getRateMbps();
         } else {
-            //for domain router service offering, get network rate from 
+            // for domain router service offering, get network rate from
             if (offering.getSystemVmType() != null && offering.getSystemVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
                 networkRate = Integer.parseInt(_configDao.getValue(Config.NetworkThrottlingRate.key()));
             } else {
@@ -3290,8 +3646,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        // networkRate is unsigned int in serviceOffering table, and can't be set to -1
-        // so 0 means unlimited; we convert it to -1, so we are consistent with all our other resources where -1 means unlimited
+        // networkRate is unsigned int in serviceOffering table, and can't be
+        // set to -1
+        // so 0 means unlimited; we convert it to -1, so we are consistent with
+        // all our other resources where -1 means unlimited
         if (networkRate == 0) {
             networkRate = -1;
         }

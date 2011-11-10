@@ -56,6 +56,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	protected SearchBuilder<VlanVO> ZoneTypePodSearch;
 	protected SearchBuilder<VlanVO> ZoneVlanSearch;
 	protected SearchBuilder<VlanVO> NetworkVlanSearch;
+	protected SearchBuilder<VlanVO> PhysicalNetworkVlanSearch;
 
 	protected PodVlanMapDaoImpl _podVlanMapDao = new PodVlanMapDaoImpl();
 	protected AccountVlanMapDao _accountVlanMapDao = new AccountVlanMapDaoImpl();
@@ -94,6 +95,10 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         NetworkVlanSearch = createSearchBuilder();
         NetworkVlanSearch.and("networkOfferingId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkVlanSearch.done();
+        
+        PhysicalNetworkVlanSearch = createSearchBuilder();
+        PhysicalNetworkVlanSearch.and("physicalNetworkId", PhysicalNetworkVlanSearch.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
+        PhysicalNetworkVlanSearch.done();
     }
 
     @Override
@@ -306,5 +311,11 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         sc.setParameters("networkOfferingId", networkOfferingId);
         return listBy(sc);
     }
-	
+
+    @Override
+    public List<VlanVO> listVlansByPhysicalNetworkId(long physicalNetworkId) {
+       SearchCriteria<VlanVO> sc = PhysicalNetworkVlanSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        return listBy(sc);
+    }	
 }

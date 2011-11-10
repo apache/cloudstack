@@ -91,6 +91,9 @@ public class IPAddressVO implements IpAddress, Identity {
 	
 	@Column(name="uuid")
 	private String uuid;
+	
+    @Column(name="physical_network_id")
+    private Long physicalNetworkId;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
@@ -244,5 +247,13 @@ public class IPAddressVO implements IpAddress, Identity {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 }
