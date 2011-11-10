@@ -67,8 +67,7 @@
                 ],
                 
                 //???
-                dataProvider: function(args) {  
-                  debugger;
+                dataProvider: function(args) {                    
                   var showPublicNetwork = true;
                   var zoneObj = args.context.zones[0];
                   if(zoneObj.networktype == "Basic") {
@@ -103,7 +102,7 @@
                       async: false,
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
-                        args.response.success({data: items});
+                        args.response.success({data: items[0]});
                       }
                     });
                   }
@@ -114,7 +113,7 @@
                       async: false,
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
-                        args.response.success({data: items});
+                        args.response.success({data: items[0]});
                       }
                     });
                   }
