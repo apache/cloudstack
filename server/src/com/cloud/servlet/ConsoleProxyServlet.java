@@ -248,7 +248,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		}
 		
 		StringBuffer sb = new StringBuffer();
-		sb.append("<html><title>").append(vmName).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
+		sb.append("<html><title>").append(escapeHTML(vmName)).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
 		sb.append("\"></frame></frameset></html>");
 		sendResponse(resp, sb.toString());
 	}
@@ -554,4 +554,23 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
         return false;
     }
+    
+    public static final String escapeHTML(String content){
+        if(content == null || content.isEmpty())
+            return content;
+        
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < content.length(); i++) {
+           char c = content.charAt(i);
+           switch (c) {
+              case '<': sb.append("&lt;"); break;
+              case '>': sb.append("&gt;"); break;
+              case '&': sb.append("&amp;"); break;
+              case '"': sb.append("&quot;"); break;
+              case ' ': sb.append("&nbsp;");break;         
+              default:  sb.append(c); break;
+           }
+        }
+        return sb.toString();
+     }    
 }
