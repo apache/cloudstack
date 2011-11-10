@@ -187,11 +187,6 @@ ALTER TABLE `cloud`.`firewall_rules` ADD CONSTRAINT `uc_firewall_rules__uuid` UN
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `uc_cluster__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`security_ingress_rule` ADD COLUMN `uuid` varchar(40); 
-ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `uc_security_ingress_rule__uuid` UNIQUE (`uuid`);
-
-ALTER TABLE `cloud`.`security_egress_rule` ADD COLUMN `uuid` varchar(40); 
-ALTER TABLE `cloud`.`security_egress_rule` ADD CONSTRAINT `uc_security_egress_rule__uuid` UNIQUE (`uuid`);
 
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`network_offerings` ADD CONSTRAINT `uc_network_offerings__uuid` UNIQUE (`uuid`);
@@ -217,3 +212,8 @@ ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uu
 ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`);
 
+ALTER TABLE `cloud`.`security_ingress_rule` RENAME TO `security_group_rule`;
+ALTER TABLE `cloud`.`security_group_rule` ADD COLUMN `type` varchar(10) default 'ingress' AFTER security_group_id;
+
+ALTER TABLE `cloud`.`security_group_rule` ADD COLUMN `uuid` varchar(40); 
+ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `uc_security_group_rule__uuid` UNIQUE (`uuid`);

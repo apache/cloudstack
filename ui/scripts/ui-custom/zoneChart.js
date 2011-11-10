@@ -34,13 +34,14 @@
           var status = networkStatus[name];
 
           var $item = $('<li>').addClass('provider')
+                .attr('rel', name)
+                .attr('network-status', status)
                 .addClass(name).addClass(status)
                 .appendTo($networkProviders)
                 .append($('<div>').addClass('name').html(type.label))
                 .append($('<div>').addClass('status')
                         .append($('<span>').html(status)))
-                .append($('<div>').addClass('view-all normal').html('View all'))
-                .append($('<div>').addClass('view-all enable').html('Enable'));
+                .append($('<div>').addClass('view-all configure').html('Configure'));
         });
 
         // View all action
@@ -242,14 +243,80 @@
 
                   $browser.cloudBrowser('addPanel', {
                     title: itemID + ' details',
+                    maximizeIfSelected: true,
                     complete: function($newPanel) {
                       $newPanel.detailView(
-                         naas.mainNetworks[itemID].detailView
+                        $.extend(true, {}, naas.mainNetworks[itemID].detailView, {
+                          context: { zones: context.physicalResources }
+                        })
                       );
                     }
                   });
 
                   return false;
+                });
+
+                // Provider configure event
+                $tabContent.find('li.provider .view-all.configure').click(function() {
+                  var $li = $(this).closest('li');
+                  var itemID = $li.attr('rel');
+                  var status = $li.attr('network-status');
+                  var networkProviderArgs = naas.networkProviders.types[itemID];
+                  var createForm = networkProviderArgs.actions.add.createForm;
+                  var action = networkProviderArgs.actions.add;
+
+                  $browser.cloudBrowser('addPanel', {
+                    title: itemID + ' details',
+                    maximizeIfSelected: true,
+                    complete: function($newPanel) {
+                      if (status == 'disabled') {
+                        // Create form
+                        var formData = cloudStack.dialog.createForm({
+                          form: createForm,
+                          context: { zones: listViewArgs.context.physicalResources },
+                          after: function(args) {
+                            action.action($.extend(args, {
+                              response: {
+                                success: function(args) {
+                                  $('div.notifications').notifications('add', {
+                                    desc: action.messages.notification({}),
+                                    interval: 1000,
+                                    poll: action.notification.poll
+                                  });
+                                  $newPanel.html('').listView({
+                                    listView: naas.networkProviders.types[itemID]
+                                  });
+                                }
+                              }
+                            }));
+                          },
+                          noDialog: true
+                        });
+
+                        var $formContainer = formData.$formContainer;
+                        var $form = $formContainer.find('form');
+                        var completeAction = formData.completeAction;
+
+                        $newPanel.append(
+                          $.merge(
+                            $formContainer,
+                            $('<div>')
+                              .addClass('button submit')
+                              .append($('<span>').html('Add'))
+                              .click(function() {
+                                if ($form.valid()) {
+                                  completeAction($formContainer);
+                                }
+                              })
+                          )
+                        );
+                      } else {
+                        $newPanel.listView({
+                          listView: naas.networkProviders.types[itemID]
+                        });
+                      }
+                    }
+                  });
                 });
               });
 

@@ -22,11 +22,11 @@ import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class IngressRuleResponse extends BaseResponse {
-    @SerializedName("ruleid") @Param(description="the id of the ingress rule")
-    private IdentityProxy ruleId = new IdentityProxy("security_ingress_rule");
+public class SecurityGroupRuleResponse extends BaseResponse {
+    @SerializedName("ruleid") @Param(description="the id of the security group rule")
+    private IdentityProxy ruleId = new IdentityProxy("security_group_rule");
 
-    @SerializedName("protocol") @Param(description="the protocol of the ingress rule")
+    @SerializedName("protocol") @Param(description="the protocol of the security group rule")
     private String protocol;
 
     @SerializedName(ApiConstants.ICMP_TYPE) @Param(description="the type of the ICMP message response")
@@ -35,19 +35,19 @@ public class IngressRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ICMP_CODE) @Param(description="the code for the ICMP message response")
     private Integer icmpCode;
 
-    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting IP of the ingress rule")
+    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting IP of the security group rule")
     private Integer startPort;
 
-    @SerializedName(ApiConstants.END_PORT) @Param(description="the ending IP of the ingress rule ")
+    @SerializedName(ApiConstants.END_PORT) @Param(description="the ending IP of the security group rule ")
     private Integer endPort;
 
     @SerializedName(ApiConstants.SECURITY_GROUP_NAME) @Param(description="security group name")
     private String securityGroupName;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="account owning the ingress rule")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="account owning the security group rule")
     private String accountName;
 
-    @SerializedName(ApiConstants.CIDR) @Param(description="the CIDR notation for the base IP address of the ingress rule")
+    @SerializedName(ApiConstants.CIDR) @Param(description="the CIDR notation for the base IP address of the security group rule")
     private String cidr;
 
     public Long getRuleId() {
