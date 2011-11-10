@@ -381,7 +381,7 @@
                 name: this,
                 type: 'text'
               })
-              .addClass('required')
+              .addClass(!field.isOptional ? 'required': null)
               .attr('disabled', field.isDisabled ? 'disabled' : false)
               .appendTo(
                 $('<div>').addClass('range-item').appendTo($range)
@@ -393,7 +393,7 @@
               name: fieldName,
               type: field.isPassword ? 'password' : 'text'
             })
-            .addClass('required')
+            .addClass(!field.isOptional ? 'required': null)
             .attr('disabled', field.isDisabled ? 'disabled' : false)
             .appendTo($td);
         }

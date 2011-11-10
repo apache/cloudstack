@@ -123,7 +123,7 @@
                     fields: {
                       'gateway': { edit: true, label: 'Gateway' },
                       'netmask': { edit: true, label: 'Netmask' },
-                      'vlanid': { edit: true, label: 'VLAN' },
+                      'vlanid': { edit: true, label: 'VLAN', isOptional: true },
                       'startip': { edit: true, label: 'Start IP' },
                       'endip': { edit: true, label: 'End IP' },
                       'add-rule': { label: 'Add', addButton: true }
@@ -203,11 +203,9 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {                      
-                      var zoneId = "6e3728bf-0b13-442c-a968-a42015291662"; //temporary until Brian fixes the bug.
-                      //var zoneId = args.context.zones[0].id;                      
+                    dataProvider: function(args) {                                             
                       $.ajax({
-                        url: createURL("listVlanIpRanges&zoneid=" + zoneId),
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id),
                         dataType: "json",
                         success: function(json) {                         
                           var items = json.listvlaniprangesresponse.vlaniprange;
@@ -218,8 +216,7 @@
                   });
                 }
               }
-              //???              
-              
+              //???  
             }
           }
         },
