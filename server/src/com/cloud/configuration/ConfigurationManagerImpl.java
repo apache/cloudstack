@@ -3032,7 +3032,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (gwServiceCapabilityMap.keySet().size() > 1 || !gwServiceCapabilityMap.containsKey(Capability.RedundantRouter)) {
                 throw new InvalidParameterValueException("Only redundant router capability can be sepcified for gateway service");
             }
-            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter.getName());
+            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter);
             boolean enabled = param.contains("true");
             boolean disabled = param.contains("false");
             if (!enabled && !disabled) {
@@ -3068,8 +3068,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Map<Capability, String> gwServiceCapabilityMap = serviceCapabilityMap.get(Service.Gateway);
         boolean redundantRouter = false;
         if ((gwServiceCapabilityMap != null) && (!gwServiceCapabilityMap.isEmpty())) { 
-            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter.getName());
-            redundantRouter = param.contains("true");
+            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter);
+            if (param != null) {
+                redundantRouter = param.contains("true");
+            }
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat, redundantRouter);
@@ -3438,6 +3440,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sharedSourceNat = sourceNatType.contains("perzone");
         }
         offering.setSharedSourceNat(sharedSourceNat);
+
+        // verify the gateway service capabilities specified in the network offering
+        Map<Capability, String> gatewayServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
+        boolean redundantRouter = false;
+
+        if (!cmd.getGatewayService() && gatewayServiceCapabilityMap != null && !gatewayServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Gateway service can be specifed only when Gateway service is enabled for network offering.");
+        }
+        validateGatewayServiceCapablities(gatewayServiceCapabilityMap);
+
+        if ((gatewayServiceCapabilityMap != null) && (!gatewayServiceCapabilityMap.isEmpty())) { 
+            String param = gatewayServiceCapabilityMap.get(Capability.RedundantRouter.getName());
+            redundantRouter = param.contains("true");
+        }
+        offering.setRedundantRouter(redundantRouter);
 
         if (svcPrv != null && !svcPrv.isEmpty()) {
             if (networksExist) {

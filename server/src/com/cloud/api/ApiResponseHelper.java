@@ -2117,6 +2117,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setIsLBShared(!offering.getDedicatedLB());
         response.setIsSourceNatShared(offering.getSharedSourceNat());
+        response.setIsRedundantRouter(offering.getRedundantRouter());
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }

@@ -75,6 +75,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.IS_SHARED) @Param(description="true if soruce NAT service offered is shared by multiple networks", responseObject = ServiceResponse.class)
     private Boolean isSourceNatShared;
 
+    @SerializedName(ApiConstants.REDUNDANT_ROUTER) @Param(description="true if gateway service offered redundant router", responseObject = ServiceResponse.class)
+    private Boolean isRedundantRouter;
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -141,5 +144,9 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setIsSourceNatShared(boolean isSourceNatShared) {
         this.isSourceNatShared = isSourceNatShared;
+    }
+
+    public void setIsRedundantRouter(Boolean isRedundantRouter) {
+        this.isRedundantRouter = isRedundantRouter;
     }
 }
