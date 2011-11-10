@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
@@ -39,7 +39,7 @@ import com.cloud.utils.Profiler;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachine.State;
-
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
 /**
  * Same as the base class -- except it uses the abstracted security group work queue
@@ -147,7 +147,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                         continue;
                     }
                     work.setLogsequenceNumber(rulesetLog.getLogsequence());
-                    sendRulesetUpdates(work);
+                    sendRulesetUpdates(work, SecurityRuleType.IngressRule);
+                    sendRulesetUpdates(work, SecurityRuleType.EgressRule);
                     _mBean.logUpdateDetails(work.getInstanceId(), work.getLogsequenceNumber());
                 }catch (Exception e) {
                     s_logger.error("Problem during SG work " + work, e);
@@ -161,7 +162,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
 
     }
     
-    public void sendRulesetUpdates(SecurityGroupWork work){
+    public void sendRulesetUpdates(SecurityGroupWork work, SecurityRuleType ruleType){
         Long userVmId = work.getInstanceId();
         UserVm vm = _userVMDao.findById(userVmId);
 
@@ -176,8 +177,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
                             + ": too many messages outstanding on host " + agentId);
                     return;
                 }
-                Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId);
-                SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), 
+                Map<PortAndProto, Set<String>> rules = generateRulesForVM(userVmId, ruleType);
+                SecurityGroupRulesCmd cmd = generateRulesetCmd(ruleType, vm.getInstanceName(), vm.getPrivateIpAddress(), 
                         vm.getPrivateMacAddress(), vm.getId(), null, 
                         work.getLogsequenceNumber(), rules);
                 cmd.setMsId(_serverId);
@@ -218,14 +219,14 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
      * then we get all ips, including the default nic ip. This is also probably the correct behavior.
      */
     @Override
-    protected Map<PortAndProto, Set<String>> generateRulesForVM(Long userVmId) {
+    protected Map<PortAndProto, Set<String>> generateRulesForVM(Long userVmId, SecurityRuleType type) {
 
         Map<PortAndProto, Set<String>> allowed = new TreeMap<PortAndProto, Set<String>>();
 
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVmId);
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {
-            List<IngressRuleVO> rules = _ingressRuleDao.listBySecurityGroupId(mapVO.getSecurityGroupId());
-            for (IngressRuleVO rule : rules) {
+            List<SecurityGroupRuleVO> rules = _securityGroupRuleDao.listBySecurityGroupId(mapVO.getSecurityGroupId(), type);
+            for (SecurityGroupRuleVO rule : rules) {
                 PortAndProto portAndProto = new PortAndProto(rule.getProtocol(), rule.getStartPort(), rule.getEndPort());
                 Set<String> cidrs = allowed.get(portAndProto);
                 if (cidrs == null) {

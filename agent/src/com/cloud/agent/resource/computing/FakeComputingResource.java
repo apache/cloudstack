@@ -63,8 +63,8 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecurityIngressRuleAnswer;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -234,8 +234,8 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
                 return execute((GetStorageStatsCommand) cmd);
             }  else if (cmd instanceof ModifyStoragePoolCommand) {
                 return execute((ModifyStoragePoolCommand) cmd);
-            } else if (cmd instanceof SecurityIngressRulesCmd) {
-                return execute((SecurityIngressRulesCmd) cmd);
+            } else if (cmd instanceof SecurityGroupRulesCmd) {
+                return execute((SecurityGroupRulesCmd) cmd);
             }  else if (cmd instanceof StartCommand ) {
                 return execute((StartCommand) cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
@@ -257,9 +257,9 @@ public class FakeComputingResource extends ServerResourceBase implements ServerR
         return new Answer(cmd);
     }
 
-    private Answer execute(SecurityIngressRulesCmd cmd) {
+    private Answer execute(SecurityGroupRulesCmd cmd) {
         s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
-        return new SecurityIngressRuleAnswer(cmd);
+        return new SecurityGroupRuleAnswer(cmd);
     }
 
     private Answer execute(ModifyStoragePoolCommand cmd) {

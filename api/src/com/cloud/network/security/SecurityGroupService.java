@@ -20,10 +20,12 @@ package com.cloud.network.security;
 import java.util.List;
 
 import com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;
+import com.cloud.api.commands.AuthorizeSecurityGroupEgressCmd;
 import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteSecurityGroupCmd;
 import com.cloud.api.commands.ListSecurityGroupsCmd;
 import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
+import com.cloud.api.commands.RevokeSecurityGroupEgressCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
@@ -36,6 +38,7 @@ public interface SecurityGroupService {
      */
     public SecurityGroup createSecurityGroup(CreateSecurityGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
     boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd);
+    boolean revokeSecurityGroupEgress(RevokeSecurityGroupEgressCmd cmd);
     
     boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException;
 
@@ -46,6 +49,8 @@ public interface SecurityGroupService {
      */
     public List<? extends SecurityGroupRules> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
-    public List<? extends IngressRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
+    public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
+    
+    public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
 
 }
