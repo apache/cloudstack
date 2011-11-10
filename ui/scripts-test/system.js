@@ -48,6 +48,57 @@
                 dataProvider: function(args) {
                   args.response.success({ data: testData.data.networks[0] });
                 }
+              },
+              ipAddresses: {
+                title: 'IP Addresses',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    noSelect: true,
+                    fields: {
+                      'gateway': { edit: true, label: 'Gateway' },
+                      'netmask': { edit: true, label: 'Netmask' },
+                      'vlanid': { edit: true, label: 'VLAN' },
+                      'startip': { edit: true, label: 'Start IP' },
+                      'endip': { edit: true, label: 'End IP' },
+                      'add-rule': { label: 'Add', addButton: true }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        setTimeout(function() {
+                          args.response.success({
+                            notification: {
+                              label: 'Added IP address',
+                              poll: testData.notifications.testPoll
+                            }
+                          });
+                        }, 500);
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Remove Rule',
+                        action: function(args) {
+                          setTimeout(function() {
+                            args.response.success({
+                              notification: {
+                                label: 'Removed IP address',
+                                poll: testData.notifications.testPoll
+                              }
+                            });
+                          }, 500);
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      setTimeout(function() {
+                        args.response.success({
+                          data: []
+                        });
+                      }, 100);
+                    }
+                  });
+                }
               }
             }
           }
@@ -81,6 +132,121 @@
                 ],
                 dataProvider: function(args) {
                   args.response.success({ data: testData.data.networks[0] });
+                }
+              },
+              cidr: {
+                title: 'CIDR',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    noSelect: true,
+                    fields: {
+                      'cidr': { edit: true, label: 'CIDR' },
+                      'add-rule': {
+                        label: 'Add',
+                        addButton: true
+                      }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        setTimeout(function() {
+                          args.response.success({
+                            notification: {
+                              label: 'Added VLAN range',
+                              poll: testData.notifications.testPoll
+                            }
+                          });
+                        }, 500);
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Remove Rule',
+                        action: function(args) {
+                          setTimeout(function() {
+                            args.response.success({
+                              notification: {
+                                label: 'Removed VLAN range',
+                                poll: testData.notifications.testPoll
+                              }
+                            });
+                          }, 500);
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      setTimeout(function() {
+                        args.response.success({
+                          data: [
+                            {
+                              cidr: '0.0.0.0/0',
+                              startvlanrange: '1480', endvlanrange: '1559'
+                            }
+                          ]
+                        });
+                      }, 100);
+                    }
+                  });
+                }
+              },
+              vlanRanges: {
+                title: 'VLAN Ranges',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    noSelect: true,
+                    fields: {
+                      'startvlanrange': {
+                        edit: true, label: 'Start VLAN'
+                      },
+                      'endvlanrange': {
+                        edit: true, label: 'End VLAN'
+                      },
+                      'add-rule': {
+                        label: 'Add',
+                        addButton: true
+                      }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        setTimeout(function() {
+                          args.response.success({
+                            notification: {
+                              label: 'Added VLAN range',
+                              poll: testData.notifications.testPoll
+                            }
+                          });
+                        }, 500);
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Remove Rule',
+                        action: function(args) {
+                          setTimeout(function() {
+                            args.response.success({
+                              notification: {
+                                label: 'Removed VLAN range',
+                                poll: testData.notifications.testPoll
+                              }
+                            });
+                          }, 500);
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      setTimeout(function() {
+                        args.response.success({
+                          data: [
+                            {
+                              cidr: '0.0.0.0/0',
+                              startvlanrange: '1480', endvlanrange: '1559'
+                            }
+                          ]
+                        });
+                      }, 100);
+                    }
+                  });
                 }
               }
             }
@@ -134,7 +300,7 @@
         },
 
         types: {
-          // Virtual router
+          // Virtual router list view
           virtualRouter: {
             label: 'Virtual Router',
             fields: {
@@ -143,29 +309,31 @@
               state: { label: 'Status' }
             },
             dataProvider: function(args) {
-              args.response.success({
-                data: [
-                  {
-                    name: 'Router0001S',
-                    ipaddress: '192.168.1.1',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0001B',
-                    ipaddress: '192.168.1.155',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0002',
-                    ipaddress: '192.168.1.13',
-                    state: 'Enabled'
-                  }
-                ]
-              });
+              setTimeout(function() {
+                args.response.success({
+                  data: [
+                    {
+                      name: 'Router0001S',
+                      ipaddress: '192.168.1.1',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0001B',
+                      ipaddress: '192.168.1.155',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0002',
+                      ipaddress: '192.168.1.13',
+                      state: 'Enabled'
+                    }
+                  ]
+                });                
+              }, 500);
             }
           },
 
-          // NetScaler
+          // NetScaler list view
           netscaler: {
             label: 'NetScaler',
             fields: {
@@ -173,30 +341,71 @@
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
             },
-            dataProvider: function(args) {
-              args.response.success({
-                data: [
-                  {
-                    name: 'Router0001S',
-                    ipaddress: '192.168.1.1',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0001B',
-                    ipaddress: '192.168.1.155',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0002',
-                    ipaddress: '192.168.1.13',
-                    state: 'Enabled'
+            actions: {
+              add: {
+                label: 'Add new NetScaler',
+                createForm: {
+                  title: 'Add NetScaler Device',
+                  desc: 'Please enter your NetScaler device\'s information to add it to your network.',
+                  fields: {
+                    name: {
+                      label: 'Name',
+                      validation: { required: true }
+                    },
+                    ipaddress: {
+                      label: 'IP Address',
+                      validation: { required: true }
+                    },
+                    supportedServices: {
+                      label: 'Supported Services',
+                      isBoolean: true,
+                      multiArray: {
+                        serviceA: { label: 'Service A' },
+                        serviceB: { label: 'Service B' },
+                        serviceC: { label: 'Service C' }
+                      }
+                    }
                   }
-                ]
-              });
+                },
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Added new NetScaler';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.testPoll
+                }
+              }
+            },
+            dataProvider: function(args) {
+              setTimeout(function() {
+                args.response.success({
+                  data: [
+                    {
+                      name: 'Router0001S',
+                      ipaddress: '192.168.1.1',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0001B',
+                      ipaddress: '192.168.1.155',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0002',
+                      ipaddress: '192.168.1.13',
+                      state: 'Enabled'
+                    }
+                  ]
+                });                
+              }, 500);
             }
           },
 
-          // F5
+          // F5 list view
           f5: {
             label: 'F5',
             fields: {
@@ -205,29 +414,31 @@
               state: { label: 'Status' }
             },
             dataProvider: function(args) {
-              args.response.success({
-                data: [
-                  {
-                    name: 'Router0001S',
-                    ipaddress: '192.168.1.1',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0001B',
-                    ipaddress: '192.168.1.155',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0002',
-                    ipaddress: '192.168.1.13',
-                    state: 'Enabled'
-                  }
-                ]
-              });
+              setTimeout(function() {
+                args.response.success({
+                  data: [
+                    {
+                      name: 'Router0001S',
+                      ipaddress: '192.168.1.1',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0001B',
+                      ipaddress: '192.168.1.155',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0002',
+                      ipaddress: '192.168.1.13',
+                      state: 'Enabled'
+                    }
+                  ]
+                });
+              }, 500);
             }
           },
 
-          // SRX
+          // SRX list view
           srx: {
             label: 'SRX',
             fields: {
@@ -236,29 +447,31 @@
               state: { label: 'Status' }
             },
             dataProvider: function(args) {
-              args.response.success({
-                data: [
-                  {
-                    name: 'Router0001S',
-                    ipaddress: '192.168.1.1',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0001B',
-                    ipaddress: '192.168.1.155',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0002',
-                    ipaddress: '192.168.1.13',
-                    state: 'Enabled'
-                  }
-                ]
+              setTimeout(function() {
+                args.response.success({
+                  data: [
+                    {
+                      name: 'Router0001S',
+                      ipaddress: '192.168.1.1',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0001B',
+                      ipaddress: '192.168.1.155',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0002',
+                      ipaddress: '192.168.1.13',
+                      state: 'Enabled'
+                    }
+                  ]
+                });
               });
             }
           },
 
-          // Security groups
+          // Security groups list view
           securityGroups: {
             label: 'Security Groups',
             fields: {
@@ -267,24 +480,26 @@
               state: { label: 'Status' }
             },
             dataProvider: function(args) {
-              args.response.success({
-                data: [
-                  {
-                    name: 'Router0001S',
-                    ipaddress: '192.168.1.1',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0001B',
-                    ipaddress: '192.168.1.155',
-                    state: 'Enabled'
-                  },
-                  {
-                    name: 'Router0002',
-                    ipaddress: '192.168.1.13',
-                    state: 'Enabled'
-                  }
-                ]
+              setTimeout(function() {
+                args.response.success({
+                  data: [
+                    {
+                      name: 'Router0001S',
+                      ipaddress: '192.168.1.1',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0001B',
+                      ipaddress: '192.168.1.155',
+                      state: 'Enabled'
+                    },
+                    {
+                      name: 'Router0002',
+                      ipaddress: '192.168.1.13',
+                      state: 'Enabled'
+                    }
+                  ]
+                });
               });
             }
           }
