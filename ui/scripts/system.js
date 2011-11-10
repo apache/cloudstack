@@ -155,12 +155,17 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {
-                      setTimeout(function() {
-                        args.response.success({
-                          data: []
-                        });
-                      }, 100);
+                    dataProvider: function(args) {                      
+                      var zoneId = "6e3728bf-0b13-442c-a968-a42015291662"; //temporary until Brian fixes the bug.
+                      //var zoneId = args.context.zones[0].id;                      
+                      $.ajax({
+                        url: createURL("listVlanIpRanges&zoneid=" + zoneId),
+                        dataType: "json",
+                        success: function(json) {                         
+                          var items = json.listvlaniprangesresponse.vlaniprange;
+                          args.response.success({data: items});
+                        }
+                      });  
                     }
                   });
                 }
