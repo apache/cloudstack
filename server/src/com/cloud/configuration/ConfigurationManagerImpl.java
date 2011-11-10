@@ -2982,9 +2982,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
         }
         validateFirewallServiceCapablities(fwServiceCapabilityMap);
-
+        
+        Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
+        serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
+        serviceCapabilityMap.put(Service.Firewall, fwServiceCapabilityMap);
+        
         return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false,
-                guestType, false, serviceOfferingId, lbServiceCapabilityMap, fwServiceCapabilityMap);
+                guestType, false, serviceOfferingId, serviceCapabilityMap);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3019,18 +3023,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
             Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, 
-            boolean systemOnly, Long serviceOfferingId, Map<Capability, String> lbServiceCapabilityMap, Map<Capability, String> fwServiceCapabilityMap) {
+            boolean systemOnly, Long serviceOfferingId, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
+        Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
         boolean dedicatedLb = true;
         if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
             String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
             dedicatedLb = isolationCapability.contains("dedicated");
         }
 
+        Map<Capability, String> fwServiceCapabilityMap = serviceCapabilityMap.get(Service.Firewall);
         boolean sharedSourceNat = false;
         if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
             String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
