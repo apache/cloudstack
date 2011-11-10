@@ -46,11 +46,7 @@
                   }
                 ],
                 dataProvider: function(args) {
-                  args.response.success({ _custom: {
-                    physicalNetwork: {
-                      ip: '192.168.1.1'
-                    }
-                  }, data: testData.data.networks[0] });
+                  args.response.success({ data: testData.data.networks[0] });
                 }
               },
               ipAddresses: {
@@ -286,7 +282,7 @@
           return {
             virtualRouter: 'enabled',
             netscaler: 'disabled',
-            f5: 'shutdown',
+            f5: 'enabled',
             srx: 'enabled',
             securityGroups: 'enabled'
           };
@@ -391,16 +387,6 @@
                     {
                       name: 'Router0001S',
                       ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
                       state: 'Enabled'
                     }
                   ]
