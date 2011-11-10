@@ -118,6 +118,7 @@
                 title: 'IP Addresses',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
+                    context: args.context,
                     noSelect: true,
                     fields: {
                       'gateway': { edit: true, label: 'Gateway' },
@@ -129,12 +130,9 @@
                     },
                     add: {
                       label: 'Add',
-                      action: function(args) {                        
-                        var zoneId = "6e3728bf-0b13-442c-a968-a42015291662"; //temporary until Brian fixes the bug.
-                        //var zoneId = args.context.zones[0].id; 
-                                                
+                      action: function(args) {                       
                         var array1 = [];
-                        array1.push("&zoneId=" + zoneId);
+                        array1.push("&zoneId=" + args.context.zones[0].id);
 
                         if (args.data.vlanid != null && args.data.vlanid.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlanid));
@@ -162,39 +160,32 @@
                         array1.push("&startip=" + args.data.startip);
                         if(args.data.endip != null && args.data.endip.length > 0)
                           array1.push("&endip=" + args.data.endip);
-
-                        //uncomment when Brian fixes the bug that args.context shouldn't be undefined
-                        /*
+                       
                         if(args.context.zones[0].securitygroupsenabled == false)
                           array1.push("&forVirtualNetwork=true");
                         else
                           array1.push("&forVirtualNetwork=false");
-                        */
-
+                       
                         $.ajax({
                           url: createURL("createVlanIpRange" + array1.join("")),
                           dataType: "json",
                           success: function(json) {                            
-                            var item = json.createvlaniprangeresponse.vlan;
-                            args.response.success({data: item});
+                            var item = json.createvlaniprangeresponse.vlan;                            
+                            args.response.success({
+                              data: item,
+                              notification: {
+                                label: 'Added IP address',
+                                poll: function(args) {
+                                  args.complete();
+                                }
+                              }
+                            });
                           },
                           error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                             args.response.error(errorMsg);
                           }
-                        });   
-                        
-                        /*
-                        setTimeout(function() {
-                          args.response.success({
-                            notification: {
-                              label: 'Added IP address',
-                              poll: testData.notifications.testPoll
-                            }
-                          });
-                        }, 500);
-                        */
-                        
+                        });                          
                       }
                     },
                     actions: {
