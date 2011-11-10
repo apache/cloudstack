@@ -163,6 +163,7 @@ public interface Network extends ControlledEntity {
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
+        public static final Capability RedundantRouter = new Capability("RedundantRouter");
 
         private String name;
 

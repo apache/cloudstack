@@ -100,4 +100,6 @@ public interface NetworkOffering {
     boolean getDedicatedLB();
 
     boolean getSharedSourceNat();
+    
+    boolean getRedundantRouter();
 }

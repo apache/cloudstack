@@ -103,6 +103,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="shared_source_nat_service")
     boolean sharedSourceNat;
 
+    @Column(name="redundant_router_service")
+    boolean redundantRouter;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -237,6 +240,15 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.sharedSourceNat = sharedSourceNat;
     }
 
+    @Override
+    public boolean getRedundantRouter() {
+        return redundantRouter;
+    }
+
+    public void setRedundantRouter(boolean redundantRouter) {
+        this.redundantRouter = redundantRouter;
+    }
+
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections,
             boolean isDefault, Availability availability, String tags, Network.GuestType guestType) {
         this.name = name;
@@ -254,13 +266,15 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.guestType = guestType;
         this.dedicatedLB = true;
         this.sharedSourceNat =false;
+        this.redundantRouter= false;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections,
-            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean dedicatedLb, boolean sharedSourceNat) {
+            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter) {
         this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, concurrentConnections, isDefault,  availability,  tags, guestType);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
+        this.redundantRouter = redundantRouter;
     }
     
     public NetworkOfferingVO() {
