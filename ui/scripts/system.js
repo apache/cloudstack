@@ -139,6 +139,8 @@
                         else
                           array1.push("&vlan=untagged");
 
+                          
+                        array1.push("&isshared=true"); //temporary, will add scope, domain, account field, then uncommment the following section later.
                         /*
                         if($form.find('.form-item[rel=domainId]').css("display") != "none") {
                           if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
@@ -190,16 +192,26 @@
                     },
                     actions: {
                       destroy: {
-                        label: 'Remove Rule',
-                        action: function(args) {
-                          setTimeout(function() {
-                            args.response.success({
-                              notification: {
-                                label: 'Removed IP address',
-                                poll: testData.notifications.testPoll
-                              }
-                            });
-                          }, 500);
+                        label: 'Delete',
+                        action: function(args) {                         
+                          $.ajax({
+                            url: createURL('deleteVlanIpRange'),
+                            data: {
+                              id: args.context.multiRule[0].id
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {                                                  
+                              args.response.success({                                
+                                notification: {
+                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  poll: function(args) {                                   
+                                    args.complete();
+                                  }
+                                }
+                              });                              
+                            }
+                          });                          
                         }
                       }
                     },
