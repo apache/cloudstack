@@ -1275,7 +1275,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     @Override
-    public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, Provider provider) throws InsufficientCapacityException,
+    public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
@@ -1289,7 +1289,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 + guestNetwork;
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
-        List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner, provider == Provider.RedundantVirtualRouter);
+        List<DomainRouterVO> routers = findOrCreateVirtualRouters(guestNetwork, dest, owner, isRedundant);
         List<DomainRouterVO> runningRouters = null;
         
         if (routers != null) {

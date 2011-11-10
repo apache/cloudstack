@@ -107,7 +107,6 @@
         </adapters>
 
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
-        <pluggableservice name="RedundantVirtualRouterElementService" key="com.cloud.network.element.RedundantVirtualRouterElementService" class="com.cloud.network.element.RedundantVirtualRouterElement"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">
