@@ -26,11 +26,12 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.utils.net.NetUtils;
 
 
-public class SecurityIngressRulesCmd extends Command {
-    private static Logger s_logger = Logger.getLogger(SecurityIngressRulesCmd.class);
+public class SecurityGroupRulesCmd extends Command {
+    private static Logger s_logger = Logger.getLogger(SecurityGroupRulesCmd.class);
     public static class IpPortAndProto {
         String proto;
         int startPort;
@@ -80,13 +81,14 @@ public class SecurityIngressRulesCmd extends Command {
     Long vmId;
     Long msId;
     IpPortAndProto [] ruleSet;
+    SecurityRuleType ruleType;
 
-    public SecurityIngressRulesCmd() {
+    public SecurityGroupRulesCmd() {
         super();
     }
 
 
-    public SecurityIngressRulesCmd(String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ruleSet) {
+    public SecurityGroupRulesCmd(SecurityRuleType ruleType, String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ruleSet) {
         super();
         this.guestIp = guestIp;
         this.vmName = vmName;
@@ -95,12 +97,17 @@ public class SecurityIngressRulesCmd extends Command {
         this.signature = signature;
         this.seqNum = seqNum;
         this.vmId  = vmId;
+        this.ruleType = ruleType;
         if (signature == null) {
             String stringified = stringifyRules();
             this.signature = DigestUtils.md5Hex(stringified);
         }
     }
 
+    public String getRuleType(){
+    	if (this.ruleType == SecurityRuleType.EgressRule) return SecurityRuleType.EgressRule.getType();  
+    	return SecurityRuleType.IngressRule.getType();
+    }
 
     @Override
     public boolean executeInSequence() {
@@ -129,7 +136,7 @@ public class SecurityIngressRulesCmd extends Command {
 
     public String stringifyRules() {
         StringBuilder ruleBuilder = new StringBuilder();
-        for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+        for (SecurityGroupRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
             ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
             for (String cidr: ipPandP.getAllowedCidrs()) {
                 ruleBuilder.append(cidr).append(",");
@@ -150,7 +157,7 @@ public class SecurityIngressRulesCmd extends Command {
     
     public String stringifyCompressedRules() {
         StringBuilder ruleBuilder = new StringBuilder();
-        for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+        for (SecurityGroupRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
             ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
             for (String cidr: ipPandP.getAllowedCidrs()) {
                 //convert cidrs in the form "a.b.c.d/e" to "hexvalue of 32bit ip/e"
@@ -162,12 +169,12 @@ public class SecurityIngressRulesCmd extends Command {
         return ruleBuilder.toString();
     }
     /*
-     * Compress the ingress rules using zlib compression to allow the call to the hypervisor
+     * Compress the security group rules using zlib compression to allow the call to the hypervisor
      * to scale beyond 8k cidrs.
      */
     public String compressStringifiedRules() {
         StringBuilder ruleBuilder = new StringBuilder();
-        for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+        for (SecurityGroupRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
             ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
             for (String cidr: ipPandP.getAllowedCidrs()) {
                 ruleBuilder.append(cidr).append(",");
@@ -184,7 +191,7 @@ public class SecurityIngressRulesCmd extends Command {
             dzip.write(stringified.getBytes());
             dzip.close();
         } catch (IOException e) {
-            s_logger.warn("Exception while compressing ingress rules");
+            s_logger.warn("Exception while compressing security group rules");
             return null;
         }
         return Base64.encodeBase64String(out.toByteArray());

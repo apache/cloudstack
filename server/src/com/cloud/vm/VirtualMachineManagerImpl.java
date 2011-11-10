@@ -129,6 +129,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1712,6 +1713,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             AgentVmInfo info = infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
             if (info == null) {
+                // the vm is not there on cluster, check the vm status in DB
+                if (vm.getState() == State.Starting && (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) < 10*60*1000){
+                    continue; // ignoring this VM as it is still settling
+                }
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
                 castedVm = info.guru.findById(vm.getId());
                 hId = vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId();

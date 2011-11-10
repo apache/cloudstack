@@ -18,9 +18,10 @@
 
 package com.cloud.api.response;
 
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.serializer.Param;
 
-public class IngressRuleResultObject {
+public class SecurityGroupRuleResultObject {
     @Param(name="id")
     private Long id;
 
@@ -41,10 +42,12 @@ public class IngressRuleResultObject {
 
     @Param(name="cidr")
     private String allowedSourceIpCidr = null;
+    
+    private SecurityRuleType type;
 
-    public IngressRuleResultObject() { }
+    public SecurityGroupRuleResultObject() { }
 
-    public IngressRuleResultObject(Long id, int startPort, int endPort, String protocol, String allowedSecurityGroup, String allowedSecGroupAcct, String allowedSourceIpCidr) {
+    public SecurityGroupRuleResultObject(Long id, int startPort, int endPort, String protocol, String allowedSecurityGroup, String allowedSecGroupAcct, String allowedSourceIpCidr) {
         this.id = id;
         this.startPort = startPort;
         this.endPort = endPort;
@@ -66,6 +69,15 @@ public class IngressRuleResultObject {
         return startPort;
     }
 
+    public void setRuleType(SecurityRuleType type) {
+    	this.type = type;
+    }
+    
+
+    public SecurityRuleType getRuleType() {
+    	return type;
+    }
+    
     public void setStartPort(int startPort) {
         this.startPort = startPort;
     }

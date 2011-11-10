@@ -13,7 +13,8 @@ from OvmObjectModule import *
 import types
 import logging
 import popen2
-from OvmFaultConstants import toErrCode, dispatchErrCode, NoVmFoundException
+import subprocess
+from OvmFaultConstants import toErrCode, dispatchErrCode, NoVmFoundException, ShellExceutedFailedException
 from xmlrpclib import Fault as XmlRpcFault
 from OVSCommons import *
 from OvmLoggerModule import OvmLogger
@@ -26,6 +27,7 @@ HEARTBEAT_DIR='heart_beat'
 ETC_HOSTS='/etc/hosts'
 HOSTNAME_FILE='/etc/sysconfig/network'
 OWNER_FILE_PREFIX='host_'
+OCFS2_CONF='/etc/ocfs2/cluster.conf'
 
 logger = OvmLogger('OvmCommon')
 
@@ -93,10 +95,18 @@ def BytesToM(bytes):
 def BytesToG(bytes):
     return bytes/(1024*1024*1024)
 
+def runCmd(cmds):
+    process = subprocess.Popen(cmds, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        raise ShellExceutedFailedException(stderr, process.returncode)
+    return stdout
+
 def doCmd(lst):
     cmds = [str(i) for i in lst]
-    logger.debug(doCmd, ' '.join(cmds))
-    res = run_cmd(cmds)
+    cmdStr = ' '.join(cmds)
+    logger.debug(doCmd, cmdStr)
+    res = runCmd(cmdStr)
     logger.debug(doCmd, 'result:' + res)
     return res
 

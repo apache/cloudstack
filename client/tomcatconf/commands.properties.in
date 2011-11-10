@@ -224,6 +224,8 @@ createSecurityGroup=com.cloud.api.commands.CreateSecurityGroupCmd;15
 deleteSecurityGroup=com.cloud.api.commands.DeleteSecurityGroupCmd;15
 authorizeSecurityGroupIngress=com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;15
 revokeSecurityGroupIngress=com.cloud.api.commands.RevokeSecurityGroupIngressCmd;15
+authorizeSecurityGroupEgress=com.cloud.api.commands.AuthorizeSecurityGroupEgressCmd;15
+revokeSecurityGroupEgress=com.cloud.api.commands.RevokeSecurityGroupEgressCmd;15
 listSecurityGroups=com.cloud.api.commands.ListSecurityGroupsCmd;15
 
 #### vm group commands
