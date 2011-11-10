@@ -11,16 +11,7 @@
       mainNetworks: {
         'public': {
           detailView: {
-            actions: {
-              /*
-              edit: {
-                label: 'Edit network details',
-                action: function(args) {
-                  args.response.success();
-                }
-              }
-              */
-            },
+            actions: {},
             tabs: {
               details: {
                 title: 'Details',                
@@ -65,8 +56,7 @@
                     account: { label: 'Account' }
                   }
                 ],
-                
-                //???
+                                
                 dataProvider: function(args) {                    
                   var showPublicNetwork = true;
                   var zoneObj = args.context.zones[0];
@@ -120,9 +110,63 @@
                   else {
                     args.response.success({data: null});
                   }
-                }	
-                //???
+                }               
+              },
+              
+              //???
+              ipAddresses: {
+                title: 'IP Addresses',
+                custom: function(args) {
+                  return $('<div></div>').multiEdit({
+                    noSelect: true,
+                    fields: {
+                      'gateway': { edit: true, label: 'Gateway' },
+                      'netmask': { edit: true, label: 'Netmask' },
+                      'vlanid': { edit: true, label: 'VLAN' },
+                      'startip': { edit: true, label: 'Start IP' },
+                      'endip': { edit: true, label: 'End IP' },
+                      'add-rule': { label: 'Add', addButton: true }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {
+                        setTimeout(function() {
+                          args.response.success({
+                            notification: {
+                              label: 'Added IP address',
+                              poll: testData.notifications.testPoll
+                            }
+                          });
+                        }, 500);
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Remove Rule',
+                        action: function(args) {
+                          setTimeout(function() {
+                            args.response.success({
+                              notification: {
+                                label: 'Removed IP address',
+                                poll: testData.notifications.testPoll
+                              }
+                            });
+                          }, 500);
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {
+                      setTimeout(function() {
+                        args.response.success({
+                          data: []
+                        });
+                      }, 100);
+                    }
+                  });
+                }
               }
+              //???              
+              
             }
           }
         },
