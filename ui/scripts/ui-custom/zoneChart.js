@@ -246,7 +246,9 @@
                     maximizeIfSelected: true,
                     complete: function($newPanel) {
                       $newPanel.detailView(
-                         naas.mainNetworks[itemID].detailView
+                        $.extend(true, {}, naas.mainNetworks[itemID].detailView, {
+                          context: { zones: context.physicalResources }
+                        })
                       );
                     }
                   });
