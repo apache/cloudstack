@@ -142,9 +142,29 @@
             selectFn(selectArgs);
           }
         } else if (this.isBoolean) {
-          $input = $('<input>').attr({ name: key, type: 'checkbox' }).appendTo($value);
-          if (this.isChecked) {
-            $input.attr('checked', 'checked');
+          if (this.multiArray) {
+            $input = $('<div>')
+              .addClass('multi-array').addClass(key).appendTo($value);
+
+            $.each(this.multiArray, function(itemKey, itemValue) {
+              $input.append(
+                $('<div>').addClass('item')
+                  .append(
+                    $.merge(
+                      $('<div>').addClass('name').html(itemValue.label),
+                      $('<div>').addClass('value').append(
+                        $('<input>').attr({ name: itemKey, type: 'checkbox' }).appendTo($value)
+                      )
+                    )
+                  )
+              );
+            });
+
+          } else {
+            $input = $('<input>').attr({ name: key, type: 'checkbox' }).appendTo($value);
+            if (this.isChecked) {
+              $input.attr('checked', 'checked');
+            }
           }
         } else {
           $input = $('<input>').attr({

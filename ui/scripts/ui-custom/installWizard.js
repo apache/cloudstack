@@ -48,5 +48,7 @@
         }
       }
     });
+
+    $installWizard.append(steps.addZone).appendTo($container);
   };
 }(jQuery, cloudStack, testData));
