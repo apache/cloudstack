@@ -1817,23 +1817,28 @@ CREATE TABLE `cloud`.`physical_network_service_providers` (
 
 CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network to which the device is added in to',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which the device is added',
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the load balancer device',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state of the device',
+  `managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device is provisioned and its life cycle is managed by by cloudstack',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
+  `parent_host_id` bigint unsigned COMMENT 'if cloudstack managed, then host id on which this device is provisioned',
   `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the load balancer device',
-  `capacity_type` varchar(32) NOT NULL DEFAULT 'Throughput' COMMENT 'Type of the capacity',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_external_lb_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_lb_devices_parent_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_lb_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`external_firewall_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external firewall device',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network to which the device is added in to',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which the device is added',
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this device',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state of the device',
   `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the external firewall device',
   `capacity_type` varchar(32) NOT NULL DEFAULT 'Throughput' COMMENT 'Type of the capacity',
   PRIMARY KEY (`id`),
@@ -1846,6 +1851,8 @@ CREATE TABLE `cloud`.`network_external_lb_device_map` (
   `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
   `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external LB device',
   `subscribed_capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the device this network is subscrbed to',
+  `created` datetime COMMENT 'Date from when network started using the device',
+  `removed` datetime COMMENT 'Date till the network stopped using the device ',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_network_external_lb_devices_network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_network_external_lb_devices_device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
@@ -1855,6 +1862,8 @@ CREATE TABLE `cloud`.`network_external_firewall_device_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
   `external_firewall_device_id` bigint unsigned NOT NULL COMMENT 'id of external firewall device',
+  `created` datetime COMMENT 'Date from when network started using the device',
+  `removed` datetime COMMENT 'Date till the network stopped using the device ',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_network_external_firewall_devices_network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_network_external_firewall_devices_device_id` FOREIGN KEY (`external_firewall_device_id`) REFERENCES `external_firewall_devices`(`id`) ON DELETE CASCADE

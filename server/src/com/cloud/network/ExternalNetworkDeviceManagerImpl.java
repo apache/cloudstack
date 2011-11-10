@@ -82,7 +82,10 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
@@ -93,6 +96,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -110,8 +114,8 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
@@ -177,6 +181,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject ExternalFirewallDeviceDao _externalFirewallDeviceDao;
     @Inject NetworkExternalLoadBalancerDao _networkExternalLBDao;
     @Inject NetworkExternalFirewallDao _networkExternalFirewallDao;
+    @Inject NetworkServiceMapDao _ntwkSrvcProviderDao;
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
@@ -221,7 +226,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
-        if (cmd.getType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
+        if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             String type = (String) params.get(ApiConstants.DHCP_SERVER_TYPE);
@@ -230,7 +235,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             String password = (String) params.get(ApiConstants.PASSWORD);
 
             return _dhcpMgr.addDhcpServer(zoneId, podId, type, url, username, password);
-        } else if (cmd.getType().equalsIgnoreCase(NetworkDevice.PxeServer.getName())) {
+        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.PxeServer.getName())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             String type = (String) params.get(ApiConstants.PXE_SERVER_TYPE);
@@ -245,20 +250,19 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             PxeServerProfile profile = new PxeServerProfile(zoneId, podId, url, username, password, type, pingStorageServerIp, pingDir, tftpDir,
                     pingCifsUsername, pingCifsPassword);
             return _pxeMgr.addPxeServer(profile);
-        } else if (cmd.getType().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
-            return addExternalFirewall(zoneId, networkId, NetworkDevice.JuniperSRXFirewall.getName(), cmd.getParamList());
-        } else if (cmd.getType().equalsIgnoreCase(NetworkDevice.NetscalerLoadBalancer.getName())) {
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
+            return addExternalFirewall(zoneId, physicalNetworkId, NetworkDevice.JuniperSRXFirewall.getName(), cmd.getParamList());
+        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName()) ||
+                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerVPXLoadBalancer.getName()) ||
+                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerSDXLoadBalancer.getName()) ||
+                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
-            return addExternalLoadBalancer(zoneId, networkId, NetworkDevice.NetscalerLoadBalancer.getName(), cmd.getParamList());
-        } else if (cmd.getType().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
-            return addExternalLoadBalancer(zoneId, networkId, NetworkDevice.F5BigIpLoadBalancer.getName(), cmd.getParamList());
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
+            return addExternalLoadBalancer(zoneId, physicalNetworkId, cmd.getDeviceType(), cmd.getParamList());
         } else {
-            throw new CloudRuntimeException("Unsupported network device type:" + cmd.getType());
+            throw new CloudRuntimeException("Unsupported network device type:" + cmd.getDeviceType());
         }
     }
 
@@ -289,6 +293,10 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             } else {
                 throw new CloudRuntimeException("Unsupported PXE server type:" + pxeType);
             }
+        } else if (host.getType() == Host.Type.ExternalLoadBalancer) {
+            response = createExternalLoadBalancerResponse(host);
+        } else if (host.getType() == Host.Type.ExternalFirewall) {
+            response = createExternalFirewallResponse(host);
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + host.getType());
         }
@@ -324,34 +332,33 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         List<Host> res;
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
-        if (NetworkDevice.ExternalDhcp.getName().equalsIgnoreCase(cmd.getType())) {
+        if (NetworkDevice.ExternalDhcp.getName().equalsIgnoreCase(cmd.getDeviceType())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             res = listNetworkDevice(zoneId, null, podId, Host.Type.ExternalDhcp);
-        } else if (NetworkDevice.PxeServer.getName().equalsIgnoreCase(cmd.getType())) {
+        } else if (NetworkDevice.PxeServer.getName().equalsIgnoreCase(cmd.getDeviceType())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             res = listNetworkDevice(zoneId, null, podId, Host.Type.PxeServer);
-        } else if (NetworkDevice.F5BigIpLoadBalancer.getName().equalsIgnoreCase(cmd.getType())) {
+        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName()) ||
+                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerVPXLoadBalancer.getName()) ||
+                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerSDXLoadBalancer.getName()) ||
+                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
-            return listExternalLoadBalancers(zoneId, networkId, NetworkDevice.F5BigIpLoadBalancer.getName());
-        } else if (NetworkDevice.NetscalerLoadBalancer.getName().equalsIgnoreCase(cmd.getType())) {
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
+            return listExternalLoadBalancers(zoneId, physicalNetworkId, cmd.getDeviceType());
+        } else if (NetworkDevice.JuniperSRXFirewall.getName().equalsIgnoreCase(cmd.getDeviceType())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
-            return listExternalLoadBalancers(zoneId, networkId, NetworkDevice.NetscalerLoadBalancer.getName());            
-        } else if (NetworkDevice.JuniperSRXFirewall.getName().equalsIgnoreCase(cmd.getType())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;
-            return listExternalFirewalls(zoneId, networkId, NetworkDevice.JuniperSRXFirewall.getName());
-        } else if (cmd.getType() == null){
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
+            return listExternalFirewalls(zoneId, physicalNetworkId, NetworkDevice.JuniperSRXFirewall.getName());
+        } else if (cmd.getDeviceType() == null){
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            Long networkId = (params.get(ApiConstants.NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.NETWORK_ID)):null;            
-            List<Host> res1 = listNetworkDevice(zoneId, networkId, podId, Host.Type.PxeServer);
-            List<Host> res2 = listNetworkDevice(zoneId, networkId, podId, Host.Type.ExternalDhcp);
-            List<Host> res3 = listNetworkDevice(zoneId, networkId, podId, Host.Type.ExternalLoadBalancer);
-            List<Host> res4 = listNetworkDevice(zoneId, networkId, podId, Host.Type.ExternalFirewall);
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;            
+            List<Host> res1 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.PxeServer);
+            List<Host> res2 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalDhcp);
+            List<Host> res3 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalLoadBalancer);
+            List<Host> res4 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalFirewall);
             List<Host> deviceAll = new ArrayList<Host>();
             deviceAll.addAll(res1);
             deviceAll.addAll(res2);
@@ -359,7 +366,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             deviceAll.addAll(res4);
             res = deviceAll;
         } else {
-            throw new CloudRuntimeException("Unknown network device type:" + cmd.getType());
+            throw new CloudRuntimeException("Unknown network device type:" + cmd.getDeviceType());
         }
         
         return res;
@@ -412,23 +419,63 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         _networkExternalFirewallDao.persist(fwDeviceForNetwork);
     }
 
-    protected long findSuitableLBDeviceForNetwork(Network network) throws InsufficientCapacityException {
+    protected long findSuitableLoadBalancerForNetwork(Network network, boolean dedicatedLb) throws InsufficientCapacityException {
         long physicalNetworkId = network.getPhysicalNetworkId();
-        List<ExternalLoadBalancerDeviceVO> lbDevices = _externalLoadBalancerDeviceDao.listByPhysicalNetwork(physicalNetworkId);
+        List<ExternalLoadBalancerDeviceVO> lbDevices =null;
+        String provider = _ntwkSrvcProviderDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+        assert(provider != null);
 
-        // loop through the LB device in the physical network and pick the first-fit 
-        for (ExternalLoadBalancerDeviceVO lbdevice: lbDevices) {
-            // max number of guest networks that can be mapped to this device
-            long fullCapacity = lbdevice.getCapacity();
+        if (dedicatedLb) {
+            lbDevices = _externalLoadBalancerDeviceDao.listByDeviceAllocationState(physicalNetworkId, provider, LBDeviceAllocationState.Free);
+            if (lbDevices != null && !lbDevices.isEmpty()) {
+                for (ExternalLoadBalancerDeviceVO lbdevice : lbDevices) {
+                    if (lbdevice.getState() == LBDeviceState.Enabled) {
+                        return lbdevice.getId(); //return first device that is free and fully configured
+                    }
+                }
+            }
+        } else {
+            // get the LB devices that are already allocated for shared use
+            lbDevices = _externalLoadBalancerDeviceDao.listByDeviceAllocationState(physicalNetworkId, provider, LBDeviceAllocationState.InSharedUse);
 
-            // get the list of guest networks that are mapped to this load balancer
-            List<NetworkExternalLoadBalancerVO> mappedNetworks = _networkExternalLBDao.listByLBDeviceId(lbdevice.getId()); 
+            if (lbDevices != null) {
+                // loop through the LB device in the physical network and pick the first-fit 
+                for (ExternalLoadBalancerDeviceVO lbdevice: lbDevices) {
 
-            long usedCapacity = (mappedNetworks == null) ? 0 : mappedNetworks.size();
-            if ((fullCapacity - usedCapacity) > 0) {
-                return lbdevice.getId();
+                    // skip if device is not enabled 
+                    if (lbdevice.getState() != LBDeviceState.Enabled) {
+                        continue;
+                    }
+
+                    // get max number of guest networks that can be mapped to this device
+                    long fullCapacity = lbdevice.getCapacity();
+                    assert (fullCapacity != 0) : "How did the capacity of device ended up as zero?";
+
+                    // get the list of guest networks that are mapped to this load balancer
+                    List<NetworkExternalLoadBalancerVO> mappedNetworks = _networkExternalLBDao.listByLBDeviceId(lbdevice.getId()); 
+
+                    long usedCapacity = ((mappedNetworks == null) || (mappedNetworks.isEmpty()))? 0 : mappedNetworks.size();
+                    if ((fullCapacity - usedCapacity) > 0) {
+                        return lbdevice.getId();
+                    }
+                }
+            }
+
+            // if we are here then there are no existing LB devices in shared use or the devices in shared use has no free capacity
+            // so allocate a new one from the pool of free LB devices
+            lbDevices = _externalLoadBalancerDeviceDao.listByDeviceAllocationState(physicalNetworkId, provider, LBDeviceAllocationState.Free);
+            if (lbDevices != null && !lbDevices.isEmpty()) {
+                for (ExternalLoadBalancerDeviceVO lbdevice : lbDevices) {
+                    if (lbdevice.getState() == LBDeviceState.Enabled) {
+                        return lbdevice.getId(); //return first device that is free and fully configured
+                    }
+                }
             }
         }
+
+        // there are no LB device or there is no free capacity on the devices in the physical network 
+        // FIXME: check if new device from SDX can be provisioned
+
         throw new InsufficientNetworkCapacityException("Unable to find a load balancing provider with sufficient capcity " +
                 " to implement the network", Network.class, network.getId());
     }
@@ -550,7 +597,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (deviceName.equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
             resource = new F5BigIpResource();
             guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.F5BigIp, ipAddress);
-        } else if (deviceName.equalsIgnoreCase(NetworkDevice.NetscalerLoadBalancer.getName())) {
+        } else if (Provider.Netscaler.getName().equalsIgnoreCase(ntwkDevice.getNetworkServiceProvder())) {
             resource = new NetscalerResource();
             guid = getExternalNetworkResourceGuid(zoneId, ExternalNetworkResourceName.NetscalerMPX, ipAddress);
         } else {
@@ -569,6 +616,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         hostDetails.put("guid", guid);
         hostDetails.put("name", guid);
         hostDetails.put("inline", String.valueOf(inline));
+        hostDetails.put("deviceName", deviceName);
 
         try {
             resource.configure(guid, hostDetails);
@@ -580,7 +628,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (host != null) {
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            ExternalLoadBalancerDeviceVO device = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName());
+            ExternalLoadBalancerDeviceVO device = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(), deviceName);
             _externalLoadBalancerDeviceDao.persist(device);
             txn.commit();
             return host;
@@ -630,7 +678,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         PhysicalNetworkVO pNetwork=null;
 
         if (((zoneId == null) && (physicalNetworkId == null)) || (lbNetworkDevice == null)) {
-            throw new InvalidParameterValueException("Atleast one of ther required parameter zone Id, physical networkId, device name is missing or invalid.");
+            throw new InvalidParameterValueException("Atleast one of the required parameter zone Id, physical networkId, device name is missing or invalid.");
         }
 
         if (physicalNetworkId != null) {
@@ -649,6 +697,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (physicalNetworkId == null) {
             return lbHostsInZone;
         }
+
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(),
                 lbNetworkDevice.getNetworkServiceProvder());
         //if provider not configured in to physical network, then there can be no instances
@@ -680,7 +729,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Override
     public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException {
         if (guestConfig.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("External load balancer can only be user for add/remove guest networks.");
+            s_logger.trace("External load balancer can only be user for guest networks.");
             return false;
         }
 
@@ -689,25 +738,47 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         HostVO externalLoadBalancer = null;
 
         if (add) {
-            GlobalLock deviceMapLock =  GlobalLock.getInternLock("NetworkLBDeviceMap");
+            GlobalLock deviceMapLock =  GlobalLock.getInternLock("LoadBalancerAllocLock");
+            Transaction txn = Transaction.currentTxn();
             try {
                 if (deviceMapLock.lock(120)) {
                     try {
-                        long externalLoadBalancerId = findSuitableLBDeviceForNetwork(guestConfig);
-                        NetworkExternalLoadBalancerVO networkLB = new NetworkExternalLoadBalancerVO(guestConfig.getId(), externalLoadBalancerId);
+                        NetworkOfferingVO offering = _networkOfferingDao.findById(guestConfig.getNetworkOfferingId());
+                        long lbDeviceId;
+                        txn.start();
+
+                        // find a load balancer device as per the network offering
+                        boolean dedicatedLB = offering.getDedicatedLB();
+                        lbDeviceId = findSuitableLoadBalancerForNetwork(guestConfig, dedicatedLB);
+
+                        // persist the load balancer device id that will be used for this network. Once a network
+                        // is implemented on a LB device then later on all rules will be programmed on to same device
+                        NetworkExternalLoadBalancerVO networkLB = new NetworkExternalLoadBalancerVO(guestConfig.getId(), lbDeviceId);
                         _networkExternalLBDao.persist(networkLB);
-                        
-                        ExternalLoadBalancerDeviceVO device = _externalLoadBalancerDeviceDao.findById(externalLoadBalancerId);
-                        externalLoadBalancer = _hostDao.findById(device.getHostId());
+
+                        // mark device to be in use
+                        ExternalLoadBalancerDeviceVO lbDevice = _externalLoadBalancerDeviceDao.findById(lbDeviceId);
+                        lbDevice.setAllocationState(dedicatedLB ? LBDeviceAllocationState.InDedicatedUse : LBDeviceAllocationState.InSharedUse);
+                        _externalLoadBalancerDeviceDao.update(lbDeviceId, lbDevice);
+
+                        // return the HostVO for the lb device
+                        externalLoadBalancer = _hostDao.findById(lbDevice.getHostId());
+
+                        txn.commit();
                     } finally {
                         deviceMapLock.unlock();
+                        if (externalLoadBalancer == null) {
+                            txn.rollback();
+                        }
                     }
                 }
             } finally {
                 deviceMapLock.releaseRef();
             }
         } else {
+            // find the load balancer device allocated for the network
             externalLoadBalancer = getExternalLoadBalancerForNetwork(guestConfig);
+            assert (externalLoadBalancer != null) : "There is no device assigned to this network how did shutdown network ended up here??";
         }
 
         // Send a command to the external load balancer to implement or shutdown the guest network
@@ -736,6 +807,26 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             savePlaceholderNic(guestConfig, selfIp);
         }
 
+        if (!add) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+
+            // since network is shutdown remove the network mapping to the load balancer device
+            NetworkExternalLoadBalancerVO networkLBDevice = _networkExternalLBDao.findByNetworkId(guestConfig.getId());
+            _networkExternalLBDao.remove(networkLBDevice.getId());
+
+            // if this is the last network mapped to the load balancer device then set device allocation state to be free
+            List<NetworkExternalLoadBalancerVO> ntwksMapped = _networkExternalLBDao.listByLBDeviceId(networkLBDevice.getExternalLBDeviceId());
+            if (ntwksMapped == null || ntwksMapped.isEmpty()) {
+                ExternalLoadBalancerDeviceVO lbDevice = _externalLoadBalancerDeviceDao.findById(networkLBDevice.getExternalLBDeviceId());
+                lbDevice.setAllocationState(LBDeviceAllocationState.Free);
+                _externalLoadBalancerDeviceDao.update(lbDevice.getId(), lbDevice);
+                
+                //TODO: if device is cloud managed then take action
+            }
+            txn.commit();
+        }
+
         Account account = _accountDao.findByIdIncludingRemoved(guestConfig.getAccountId());
         String action = add ? "implemented" : "shut down";
         s_logger.debug("External load balancer has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() + ") with VLAN tag " + guestVlanTag);
@@ -750,9 +841,9 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         DataCenterVO zone = _dcDao.findById(zoneId);
 
         HostVO externalLoadBalancer = getExternalLoadBalancerForNetwork(network);
-        assert(externalLoadBalancer != null);
+        assert(externalLoadBalancer != null) : "There is no device assigned to this network how apply rules ended up here??";
 
-        // If the load balancer is inline, find the external firewall in this zone
+        // FIXME: remove this restriction for in-line case firewall provider need not be external firewall
         boolean externalLoadBalancerIsInline = externalLoadBalancerIsInline(externalLoadBalancer);
         HostVO externalFirewall = null;
         if (externalLoadBalancerIsInline) {

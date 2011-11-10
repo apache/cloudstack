@@ -25,6 +25,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+/**
+ * NetworkExternalFirewallVO contains information on the networks that are using external firewall
+  */
+
+
 @Entity
 @Table(name="network_external_firewall_device_map")
 public class NetworkExternalFirewallVO {

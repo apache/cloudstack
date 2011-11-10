@@ -26,12 +26,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
 import com.cloud.network.PhysicalNetworkServiceProvider.State;
 
 /**
- * ExternalFirewallDeviceVO contains information of a external firewall device (Juniper SRX)
- * added into a deployment
+ * ExternalFirewallDeviceVO contains information of a external firewall device (Juniper SRX) added into a deployment
   */
 
 @Entity
@@ -61,11 +59,21 @@ public class ExternalFirewallDeviceVO {
     @Column(name = "capacity_type")
     private String capacity_type;
 
+    @Column(name = "allocation_state")
+    @Enumerated(value=EnumType.STRING)
+    private AllocationState allocationState;
+
+    public enum AllocationState {
+        Free,
+        Allocated
+    }
+
     public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
         this.hostId = hostId;
         this.state = PhysicalNetworkServiceProvider.State.Disabled;
+        this.allocationState = AllocationState.Free;
     }
 
     public ExternalFirewallDeviceVO() {
@@ -102,5 +110,13 @@ public class ExternalFirewallDeviceVO {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    public AllocationState getAllocationState() {
+        return allocationState;
+    }
+
+    public void setAllocationState(AllocationState allocationState) {
+        this.allocationState = allocationState;
     }
 }

@@ -19,14 +19,8 @@
 
 package com.cloud.network.resource;
 
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
 import javax.naming.ConfigurationException;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -64,8 +58,6 @@ import com.citrix.netscaler.nitro.resource.config.network.*;
 import com.citrix.netscaler.nitro.resource.config.ns.*;
 import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
-
-import org.apache.axis.types.*;
 import org.apache.log4j.Logger;
 
 class NitroError {
@@ -87,6 +79,7 @@ public class NetscalerResource implements ServerResource {
     private Integer _numRetries; 
     private String _guid;
     private boolean _inline;
+    private boolean _isSdx;
 
     private static final Logger s_logger = Logger.getLogger(NetscalerResource.class);
     protected Gson _gson;
@@ -144,7 +137,12 @@ public class NetscalerResource implements ServerResource {
             if (_guid == null) {
                 throw new ConfigurationException("Unable to find the guid");
             }
-            
+
+            String deviceName = (String) params.get("deviceName");
+            if (deviceName.equalsIgnoreCase("NetscalerSDXLoadBalancer")) {
+                _isSdx = true;
+            }
+
             _inline = Boolean.parseBoolean((String) params.get("inline"));
 
             login();          

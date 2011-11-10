@@ -20,11 +20,13 @@ package com.cloud.network.dao;
 
 import java.util.List;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.utils.db.GenericDao;
 
 public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBalancerDeviceVO, Long> {
 
     List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkServiceProvider(long physicalNetworkId, String provider_name);
     List<ExternalLoadBalancerDeviceVO> listByPhysicalNetwork(long physicalNetworkId);
+    List<ExternalLoadBalancerDeviceVO> listByDeviceAllocationState(long physicalNetworkId, String provider_name, LBDeviceAllocationState state);
 
 }

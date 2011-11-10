@@ -49,7 +49,9 @@ public interface ExternalNetworkDeviceManager extends Manager {
 
         public static final NetworkDevice ExternalDhcp = new NetworkDevice("ExternalDhcp", null);
         public static final NetworkDevice PxeServer = new NetworkDevice("PxeServer", null);
-        public static final NetworkDevice NetscalerLoadBalancer = new NetworkDevice("NetscalerLoadBalancer", Network.Provider.Netscaler.getName());
+        public static final NetworkDevice NetscalerMPXLoadBalancer = new NetworkDevice("NetscalerMPXLoadBalancer", Network.Provider.Netscaler.getName());
+        public static final NetworkDevice NetscalerVPXLoadBalancer = new NetworkDevice("NetscalerVPXLoadBalancer", Network.Provider.Netscaler.getName());
+        public static final NetworkDevice NetscalerSDXLoadBalancer = new NetworkDevice("NetscalerSDXLoadBalancer", Network.Provider.Netscaler.getName());
         public static final NetworkDevice F5BigIpLoadBalancer = new NetworkDevice("F5BigIpLoadBalancer", Network.Provider.F5BigIp.getName());
         public static final NetworkDevice JuniperSRXFirewall = new NetworkDevice("JuniperSRXFirewall", Network.Provider.JuniperSRX.getName());
         
