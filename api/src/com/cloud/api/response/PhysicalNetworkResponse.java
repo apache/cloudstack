@@ -25,6 +25,7 @@ import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class PhysicalNetworkResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.ID) @Param(description="the uuid of the physical network")

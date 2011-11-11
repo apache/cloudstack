@@ -1156,8 +1156,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (publicNetwork) {
             routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
         } else {
-            Long podId = dest.getPod().getId();
             if (isPodBased) {
+            	Long podId = dest.getPod().getId();
                 routers = _routerDao.listByNetworkAndPodAndRole(guestNetwork.getId(), podId, Role.VIRTUAL_ROUTER);
                 plan = new DataCenterDeployment(dcId, podId, null, null, null, null);
             } else {
