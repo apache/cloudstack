@@ -2,6 +2,7 @@
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
   var selectedClusterObj;
+  var publicNetworkObj;
 
   cloudStack.sections.system = {
     title: 'System',
@@ -85,6 +86,7 @@
                     //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
                   }
 
+                  //var publicNetworkObj;
                   if(showPublicNetwork == true && zoneObj.securitygroupsenabled == false) { //public network
                     $.ajax({
                       url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
@@ -92,7 +94,7 @@
                       async: false,
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
-                        args.response.success({data: items[0]});
+                        publicNetworkObj = items[0];                        
                       }
                     });
                   }
@@ -103,20 +105,20 @@
                       async: false,
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
-                        args.response.success({data: items[0]});
+                        publicNetworkObj = items[0]; 
                       }
                     });
                   }
-                  else {
-                    args.response.success({data: null});
-                  }
+                                    
+                  args.response.success({data: publicNetworkObj});
+                  
                 }               
               },
               
               //???
               ipAddresses: {
                 title: 'IP Addresses',
-                custom: function(args) {
+                custom: function(args) {                  
                   return $('<div></div>').multiEdit({
                     context: args.context,
                     noSelect: true,
@@ -215,9 +217,9 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {                                             
+                    dataProvider: function(args) {     
                       $.ajax({
-                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id),
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
                         dataType: "json",
                         success: function(json) {                         
                           var items = json.listvlaniprangesresponse.vlaniprange;
