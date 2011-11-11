@@ -140,7 +140,7 @@
                           array1.push("&vlan=untagged");
 
                           
-                        array1.push("&isshared=true"); //temporary, will add scope, domain, account field, then uncommment the following section later.
+                        //array1.push("&isshared=true"); //temporary, will add scope, domain, account field, then uncommment the following section later.
                         /*
                         if($form.find('.form-item[rel=domainId]').css("display") != "none") {
                           if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
