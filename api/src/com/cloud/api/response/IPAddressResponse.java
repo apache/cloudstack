@@ -187,27 +187,6 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         return getId();
     }
 
-/*    
-    @Override
-    public Long getJobId() {
-        return super.getJobId();
-    }
-
-    @Override
-    public void setJobId(Long jobId) {
-        super.setJobId(jobId);
-    }
-    
-    @Override
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    @Override
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-*/    
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);

@@ -132,22 +132,6 @@ public class SystemVmResponse extends BaseResponse {
         this.systemVmType = systemVmType;
     }
 
-    public Long getJobId() {
-        return jobId.getValue();
-    }
-
-    public void setJobId(Long jobId) {
-        this.jobId.setValue(jobId);
-    }
-
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-
     public Long getZoneId() {
         return zoneId.getValue();
     }

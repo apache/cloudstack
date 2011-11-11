@@ -229,23 +229,6 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
-/*
-    public Long getJobId() {
-        return super.getJobId();
-    }
-
-    public void setJobId(Long jobId) {
-        super.setJobId(jobId);
-    }
-
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-*/    
     
     @Override
     public void setDomainName(String domainName) {
