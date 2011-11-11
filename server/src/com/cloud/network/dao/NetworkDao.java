@@ -89,4 +89,5 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 	void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap);
 	
 	boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
+	
 }

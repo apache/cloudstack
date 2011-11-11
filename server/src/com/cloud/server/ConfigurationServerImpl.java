@@ -866,7 +866,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultSharedNetworkOfferingWithSGService, 
                 "Offering for Shared Security group enabled networks", 
                 TrafficType.Guest, 
-                false, false, null, null, null, true, 
+                false, true, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Shared);
         
         deafultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
