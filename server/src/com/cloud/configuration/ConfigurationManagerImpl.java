@@ -35,7 +35,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateCfgCmd;

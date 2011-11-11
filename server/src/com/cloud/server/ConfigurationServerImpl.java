@@ -47,7 +47,6 @@ import javax.crypto.SecretKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource;
@@ -68,7 +67,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
@@ -820,7 +818,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         return tags;
     }
     
-    private void createDefaultNetworkOfferings() {
+    @DB
+    protected void createDefaultNetworkOfferings() {
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -859,6 +858,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         
         //The only one diff between 1 and 2 network offerings is that the first one has SG enabled. In Basic zone only first network offering has to be enabled, in Advance zone - the second one
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         
         //Offering #1
         NetworkOfferingVO deafultSharedSGNetworkOffering = new NetworkOfferingVO(
@@ -868,6 +869,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 false, false, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Shared);
         
+        deafultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         deafultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(deafultSharedSGNetworkOffering);
         
         for (Service service : defaultSharedSGNetworkOfferingProviders.keySet()) {
@@ -884,6 +886,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 false, true, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Shared);
         
+        defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
         
         for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
@@ -900,6 +903,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 false, false, null, null, null, true, 
                 Availability.Required, null, Network.GuestType.Isolated);
         
+        defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
         
         
@@ -917,13 +921,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 false, true, null, null, null, true, 
                 Availability.Optional, null, Network.GuestType.Isolated);
         
-        defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
+        defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+        defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
         
         for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedEnabledNetworkOffering.getId(), service, defaultIsolatedNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
+        
+        txn.commit();
        
     }
     
