@@ -22,7 +22,7 @@ import com.cloud.host.Host;
 public class StartupSecondaryStorageCommand extends StartupCommand {
     
 	public StartupSecondaryStorageCommand() {
-        super(Host.Type.ConsoleProxy);
+        super(Host.Type.SecondaryStorageVM);
         setIqn("NoIqn");
     }
 	
