@@ -38,6 +38,7 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -393,6 +394,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((BumpUpPriorityCommand)cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
                 answer = execute((GetDomRVersionCmd)cmd);
+            } else if (cmd instanceof CheckNetworkCommand) {
+                //answer = execute((CheckNetworkCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }

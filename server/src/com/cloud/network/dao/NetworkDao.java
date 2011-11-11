@@ -76,7 +76,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     Long getNetworkCountByOfferingId(long offeringId);
 
-    List<NetworkVO> listByPhysicalNetworkIncludingRemoved(long physicalNetworkId);
+    List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId);
 
     List<NetworkVO> listSecurityGroupEnabledNetworks();
 

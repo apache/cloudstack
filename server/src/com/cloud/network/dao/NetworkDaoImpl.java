@@ -346,10 +346,10 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listByPhysicalNetworkIncludingRemoved(long physicalNetworkId) {
+    public List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId) {
         SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
-        return listIncludingRemovedBy(sc);
+        return listBy(sc);
     }
     
     @Override

@@ -90,7 +90,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update service provider");
         }
     }
 

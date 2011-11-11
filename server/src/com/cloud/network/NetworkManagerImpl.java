@@ -3912,7 +3912,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         // Delete networks
-        List<NetworkVO> networks = _networksDao.listByPhysicalNetworkIncludingRemoved(physicalNetworkId);
+        List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
         if (networks != null && !networks.isEmpty()) {
             for (NetworkVO network : networks) {
                 _networksDao.remove(network.getId());
@@ -4170,6 +4170,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if(element != null && element.isReady(provider)){
                         provider.setState(PhysicalNetworkServiceProvider.State.Enabled);
                         update = true;
+                    }else{
+                        throw new CloudRuntimeException("Provider is not ready, cannot Enable the provider, please configure the provider first");                        
                     }
                     break;
                 case Disabled:
