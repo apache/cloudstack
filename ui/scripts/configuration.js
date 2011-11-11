@@ -894,7 +894,7 @@
                         var items = [];
                         items.push({id: 'Required', description: 'Required'});
                         items.push({id: 'Optional', description: 'Optional'});
-                        items.push({id: 'Unavailable', description: 'Unavailable'});
+                        //items.push({id: 'Unavailable', description: 'Unavailable'});
                         args.response.success({data: items});
                       }
                     },                  
