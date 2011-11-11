@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -25,13 +26,13 @@ import com.google.gson.annotations.SerializedName;
 public class TrafficTypeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID) @Param(description="id of the network provider")
-    private Long id;
+    private String id;
 
     @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the trafficType to be added to the physical network")
     private String trafficType;
     
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private Long physicalNetworkId;
+    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
     
     @SerializedName(ApiConstants.XEN_NETWORK_LABEL) @Param(description="The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenNetworkLabel;
@@ -43,18 +44,18 @@ public class TrafficTypeResponse extends BaseResponse {
     private String vmwareNetworkLabel;
 
     public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId = physicalNetworkId;
+        this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
     public long getphysicalNetworkId() {
-        return physicalNetworkId;
+        return physicalNetworkId.getValue();
     }
     
-    public void setId(Long id) {
-        this.id = id;
+    public void setId(String uuid) {
+        this.id = uuid;
     }
     
-    public Long getId() {
+    public String getId() {
         return this.id;
     }
     

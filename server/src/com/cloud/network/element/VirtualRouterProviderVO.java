@@ -18,6 +18,7 @@
 package com.cloud.network.element;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -56,12 +57,13 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
     Date removed;
 
     public VirtualRouterProviderVO() {
+        this.uuid = UUID.randomUUID().toString();
     }
     
-    public VirtualRouterProviderVO(long nspId, String uuid, VirtualRouterProviderType type) {
+    public VirtualRouterProviderVO(long nspId, VirtualRouterProviderType type) {
         this.nspId = nspId;
-        this.uuid = uuid;
         this.type = type;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override

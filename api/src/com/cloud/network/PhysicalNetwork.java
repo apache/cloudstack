@@ -65,4 +65,6 @@ public interface PhysicalNetwork {
 
     String getSpeed();
 
+    String getUuid();
+
 }

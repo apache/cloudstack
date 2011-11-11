@@ -119,7 +119,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String networkDomain;
     
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
-    private Long physicalNetworkId;
+    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
     
     @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")
     private String aclType;
@@ -248,7 +248,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     }
 
     public void setPhysicalNetworkId(Long physicalNetworkId) {
-        this.physicalNetworkId = physicalNetworkId;
+        this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
 	public void setAclType(String aclType) {

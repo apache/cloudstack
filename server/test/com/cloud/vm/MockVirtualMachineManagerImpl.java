@@ -21,6 +21,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -82,7 +83,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 
     @Override
     public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -113,7 +114,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 
     @Override
     public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException {
+    VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -133,7 +134,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     @Override
     public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<Param, Object> params, DeploymentPlan plan, HypervisorType hyperType, Account owner)
-            throws InsufficientCapacityException {
+                    throws InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -160,21 +161,21 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 
     @Override
     public <T extends VMInstanceVO> T start(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException,
-            ConcurrentOperationException, OperationTimedoutException {
+    ConcurrentOperationException, OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException {
+    ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -187,7 +188,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 
     @Override
     public <T extends VMInstanceVO> T advanceReboot(T vm, Map<Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException,
-            ConcurrentOperationException, OperationTimedoutException {
+    ConcurrentOperationException, OperationTimedoutException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -198,10 +199,10 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
         return null;
     }
 
-	@Override
-    public VMInstanceVO findById(long vmId) {
-	    // TODO Auto-generated method stub
-	    return null;
+    @Override
+    public <T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

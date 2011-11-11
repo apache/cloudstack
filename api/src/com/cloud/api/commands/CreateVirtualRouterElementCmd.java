@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
@@ -50,6 +51,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.NETWORK_SERVICE_PROVIDER_ID, type=CommandType.LONG, required=true, description="the network service provider ID of the virtual router element")
+    @IdentityMapper(entityTableName="physical_network_service_providers")
     private Long nspId;
 
     /////////////////////////////////////////////////////

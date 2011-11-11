@@ -77,6 +77,10 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list ips by project")
     private Long projectId;
+    
+    @IdentityMapper(entityTableName="physical_network")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses by physical network id")
+    private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -115,6 +119,10 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     
     public Long getProjectId() {
         return projectId;
+    }
+    
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 
     /////////////////////////////////////////////////////

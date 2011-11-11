@@ -17,6 +17,8 @@
  */
 package com.cloud.network.dao;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -36,6 +38,9 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
+    
+    @Column(name="uuid")
+    private String uuid;   
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
@@ -66,6 +71,7 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
         this.kvmNetworkLabel = kvmLabel;
         this.vmwareNetworkLabel = vmwareLabel;
         this.setVlan(vlan);
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -116,6 +122,15 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
 
     public String getVlan() {
         return vlan;
-    }    
+    }  
+    
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
 }
