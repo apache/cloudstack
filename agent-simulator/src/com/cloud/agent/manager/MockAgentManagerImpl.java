@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -28,8 +27,6 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
-import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.AgentResourceBase;
@@ -41,9 +38,7 @@ import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.simulator.dao.MockVMDao;
-
 import com.cloud.utils.Pair;
-
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;

@@ -193,16 +193,17 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
         return null;
     }
 
-    @Override
-    public VMInstanceVO findById(long vmId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public <T extends VMInstanceVO> T storageMigration(T vm,
+			StoragePool storagePoolId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public <T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public VMInstanceVO findById(long vmId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
