@@ -56,6 +56,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -355,15 +356,12 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             dcs.add(_dcDao.findById(zoneId));
         }
         long templateId = template.getId();
-        boolean isPublic = template.isFeatured() || template.isPublicTemplate(); 
         for ( DataCenterVO dc : dcs ) {
     	    List<HostVO> ssHosts = _hostDao.listAllSecondaryStorageHosts(dc.getId());
     	    for ( HostVO ssHost : ssHosts ) {
         		if (isTemplateUpdateable(templateId, ssHost.getId())) {
        				initiateTemplateDownload(templateId, ssHost);
-       				if (! isPublic ) {
-       				    break;
-       				}
+       				break;
         		}
     	    }
 	    }
@@ -624,6 +622,14 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request download to start/resume shortly");
 
             } else if (tmpltHost == null) {
+            	//if the template is already downloaded into one of secondary storage in the zone, don't duplicate right now.
+            	if (tmplt.getTemplateType() != TemplateType.BUILTIN) {
+            		List<VMTemplateHostVO> readyTmplts = _vmTemplateHostDao.listByZoneTemplate(zoneId, tmplt.getId(), true);
+            		if (readyTmplts.size() > 0) {
+            			toBeDownloaded.remove(tmplt);
+            			continue;
+            		}
+            	}
                 s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request download shortly");
                 VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, null, null, tmplt.getUrl());
                 _vmTemplateHostDao.persist(templtHost);
