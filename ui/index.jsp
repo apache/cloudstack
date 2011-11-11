@@ -477,18 +477,6 @@
                   </div>
 
                   <div class="conditional vlan">
-                    <!-- VLAN Range -->
-                    <div class="field odd">
-                      <div class="name">
-                        <span>VLAN Range</span>
-                      </div>
-                      <div class="value multi-range">
-                        <input type="text" name="vlan-range-start" />
-                        <span class="divider">-</span>
-                        <input type="text" name="vlan-range-end" />
-                      </div>
-                    </div>
-
                     <!-- Guest CIDR -->
                     <div class="field">
                       <div class="name">
