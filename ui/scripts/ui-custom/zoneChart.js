@@ -262,11 +262,12 @@
                   var itemID = $li.attr('rel');
                   var status = $li.attr('network-status');
                   var networkProviderArgs = naas.networkProviders.types[itemID];
-                  var createForm = networkProviderArgs.actions.add.createForm;
-                  var action = networkProviderArgs.actions.add;
+                  var action = networkProviderArgs.actions ? networkProviderArgs.actions.add : null;
+                  var createForm = action ? networkProviderArgs.actions.add.createForm : null;
+                  var itemName = networkProviderArgs.label;
 
                   $browser.cloudBrowser('addPanel', {
-                    title: itemID + ' details',
+                    title: itemName + ' details',
                     maximizeIfSelected: true,
                     complete: function($newPanel) {
                       if (status == 'disabled') {
@@ -278,13 +279,17 @@
                             action.action($.extend(args, {
                               response: {
                                 success: function(args) {
+                                  $newPanel.find('form').prepend($('<div>').addClass('loading-overlay'));
                                   $('div.notifications').notifications('add', {
                                     desc: action.messages.notification({}),
                                     interval: 1000,
-                                    poll: action.notification.poll
-                                  });
-                                  $newPanel.html('').listView({
-                                    listView: naas.networkProviders.types[itemID]
+                                    poll: action.notification.poll,
+                                    complete: function(args) {
+                                      refreshChart();
+                                      $newPanel.html('').listView({
+                                        listView: naas.networkProviders.types[itemID]
+                                      }); 
+                                    }
                                   });
                                 }
                               }
@@ -293,22 +298,25 @@
                           noDialog: true
                         });
 
-                        var $formContainer = formData.$formContainer;
+                        var $formContainer = formData.$formContainer.addClass('add-first-network-resource');
                         var $form = $formContainer.find('form');
                         var completeAction = formData.completeAction;
 
                         $newPanel.append(
-                          $.merge(
-                            $formContainer,
-                            $('<div>')
-                              .addClass('button submit')
-                              .append($('<span>').html('Add'))
-                              .click(function() {
-                                if ($form.valid()) {
-                                  completeAction($formContainer);
-                                }
-                              })
-                          )
+                          $formContainer
+                            .prepend(
+                              $('<div>').addClass('title').html('Add new ' + itemName + ' device')
+                            )
+                            .append(
+                              $('<div>')
+                                .addClass('button submit')
+                                .append($('<span>').html('Add'))
+                                .click(function() {
+                                  if ($form.valid()) {
+                                    completeAction($formContainer);
+                                  }
+                                }) 
+                            )
                         );
                       } else {
                         $newPanel.listView({
@@ -327,10 +335,13 @@
           }
         });
 
-        $refresh.click(function() {
+        var refreshChart = function() {
           $charts.children().remove();
           loadNetworkData();
+        };
 
+        $refresh.click(function() {
+          refreshChart();
           return false;
         });
       };

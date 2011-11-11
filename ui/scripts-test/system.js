@@ -46,22 +46,21 @@
                   }
                 ],
                 dataProvider: function(args) {
-                  args.response.success({ _custom: {
-                    physicalNetwork: {
-                      ip: '192.168.1.1'
-                    }
-                  }, data: testData.data.networks[0] });
+                  args.response.success({
+                    data: testData.data.networks[0]
+                  });
                 }
               },
               ipAddresses: {
                 title: 'IP Addresses',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
+                    context: args.context,
                     noSelect: true,
                     fields: {
                       'gateway': { edit: true, label: 'Gateway' },
                       'netmask': { edit: true, label: 'Netmask' },
-                      'vlanid': { edit: true, label: 'VLAN' },
+                      'vlanid': { edit: true, label: 'VLAN', isOptional: true },
                       'startip': { edit: true, label: 'Start IP' },
                       'endip': { edit: true, label: 'End IP' },
                       'add-rule': { label: 'Add', addButton: true }
@@ -97,7 +96,13 @@
                     dataProvider: function(args) {
                       setTimeout(function() {
                         args.response.success({
-                          data: []
+                          data: [
+                            {
+                              gateway: '10.223.110.223',
+                              netmask: '255.255.255.0',
+                              vlanid: '1480'
+                            }
+                          ]
                         });
                       }, 100);
                     }
@@ -286,7 +291,7 @@
           return {
             virtualRouter: 'enabled',
             netscaler: 'disabled',
-            f5: 'shutdown',
+            f5: 'enabled',
             srx: 'enabled',
             securityGroups: 'enabled'
           };
@@ -332,7 +337,7 @@
                       state: 'Enabled'
                     }
                   ]
-                });                
+                });
               }, 500);
             }
           },
@@ -392,19 +397,9 @@
                       name: 'Router0001S',
                       ipaddress: '192.168.1.1',
                       state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
                     }
                   ]
-                });                
+                });
               }, 500);
             }
           },

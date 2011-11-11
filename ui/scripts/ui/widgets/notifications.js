@@ -58,6 +58,7 @@
             .append(
               $('<div>').addClass('remove')
             );
+      var additionalComplete = args.complete;
 
       // Get information for specified section path
       $item.data('notification-section', args.section);
@@ -77,6 +78,8 @@
             notifications.cornerAlert({ message: $item.html() });
             notifications.activeTasks.pop(pollTimer);
             $item.removeClass('pending');
+
+            if (additionalComplete) additionalComplete();
           },
           incomplete: function(args) {},
           error: function(args) {

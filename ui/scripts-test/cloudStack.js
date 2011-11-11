@@ -28,11 +28,11 @@
 
   $(function() {
     var $container = $('#cloudStack3-container');
-    
+
     // Login
     cloudStack.uiCustom.login({
       $container: $container,
-      
+
       // Use this for checking the session, to bypass login screen
       bypassLoginCheck: function(args) {
         var disabledLogin = document.location.href.split('?')[1] == 'login=disabled';
@@ -66,13 +66,31 @@
         return args.response.error();
       },
 
-      // Show cloudStack main UI widget
       complete: function(args) {
-        $container.cloudStack($.extend(cloudStack, {
-          context: {
-            users: [args.user]
+        var context = {
+          users: [args.user]
+        };
+        var cloudStackArgs = $.extend(cloudStack, {
+          context: context
+        });
+
+        // Check to invoke install wizard
+        cloudStack.installWizard.check({
+          context: context,
+          response: {
+            success: function(args) {
+              if (args.doInstall) {
+                cloudStack.uiCustom.installWizard({
+                  $container: $container,
+                  context: context
+                });
+              } else {
+                // Show cloudStack main UI
+                $container.cloudStack(cloudStackArgs);
+              }
+            }
           }
-        }));
+        });
       }
     });
   });

@@ -2047,12 +2047,14 @@ Dialogs*/
 }
 
 .ui-dialog .ui-widget-content {
-  padding: 10px;
+  padding: 8px;
   text-align: center;
+  display: inline-block;
 }
 
 .ui-dialog-buttonset {
   width: 285px;
+  margin: 0;
 }
 
 .ui-dialog .ui-button {
@@ -2069,10 +2071,6 @@ Dialogs*/
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
-  /*+placement:shift 0px -35px;*/
-  position: relative;
-  left: 0px;
-  top: -35px;
 }
 
 .ui-dialog .ui-button:hover {
@@ -2126,8 +2124,8 @@ Dialogs*/
 .ui-dialog span.message {
   display: block;
   text-align: center;
-  margin: 0 0 30px;
   color: #445361;
+  font-size: 15px;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
@@ -2184,10 +2182,8 @@ Dialogs*/
 .ui-dialog div.form-container {
   height: 106px;
   width: 100%;
-  overflow: hidden;
-  display: block;
-  padding-bottom: 37px;
   text-align: left;
+  display: inline-block;
 }
 
 .ui-dialog div.form-container span.message {
@@ -2198,7 +2194,7 @@ Dialogs*/
 
 .ui-dialog div.form-container div.form-item {
   display: inline-block;
-  height: 38px;
+  margin: 0 0 12px;
 }
 
 .ui-dialog div.form-container div.name {
@@ -2217,9 +2213,9 @@ Dialogs*/
 
 .ui-dialog div.form-container div.name label {
   display: block;
-  width: 100%;
+  width: 119px;
   text-align: right;
-  font-size: 14px;
+  font-size: 13px;
   margin-top: 2px;
 }
 
@@ -2228,6 +2224,7 @@ Dialogs*/
   overflow: hidden;
   float: right;
   margin: 0 0 0 15px;
+  display: inline-block;
 }
 
 .ui-dialog div.form-container div.value input {
@@ -2239,6 +2236,12 @@ Dialogs*/
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
+  border: 1px solid #AFAFAF;
+  /*+box-shadow:inset 0px 1px 0px #727272;*/
+  -moz-box-shadow: inset 0px 1px 0px #727272;
+  -webkit-box-shadow: inset 0px 1px 0px #727272;
+  -o-box-shadow: inset 0px 1px 0px #727272;
+  box-shadow: inset 0px 1px 0px #727272;
   float: left;
 }
 
@@ -2257,6 +2260,46 @@ Dialogs*/
   font-size: 10px;
   color: #FA0000;
   display: none;
+}
+
+.ui-dialog div.form-container div.multi-array {
+  display: inline-block;
+  background: #FFFFFF;
+  padding: 4px;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px 10px 10px 10px;
+  border: 1px solid #808080;
+  /*+box-shadow:inset 0px 1px 1px #929292;*/
+  -moz-box-shadow: inset 0px 1px 1px #929292;
+  -webkit-box-shadow: inset 0px 1px 1px #929292;
+  -o-box-shadow: inset 0px 1px 1px #929292;
+  box-shadow: inset 0px 1px 1px #929292;
+}
+
+.ui-dialog div.form-container div.multi-array .item {
+  width: 111px;
+  float: left;
+  margin: 0 0 13px;
+}
+
+.ui-dialog div.form-container div.multi-array .item .name {
+  font-size: 11px;
+  width: 61px;
+  float: left;
+}
+
+.ui-dialog div.form-container div.multi-array .item .value {
+  width: 13px;
+  float: left;
+}
+
+.ui-dialog div.form-container div.multi-array .item .value input {
+  float: left;
+  margin: 0;
+  padding: 0;
 }
 
 .ui-dialog.create-form .ui-button.ok {
@@ -3013,8 +3056,12 @@ Dialogs*/
   background-position: 0px -767px;
 }
 
-.zone-chart ul li.disabled .view-all.normal {
-  display: none;
+.zone-chart ul li .view-all.configure {
+  /*+placement:anchor-bottom-right -1px 11px;*/
+  position: absolute;
+  right: -1px;
+  bottom: 11px;
+  text-indent: -2px;
 }
 
 .zone-chart ul li .view-details {
@@ -3069,10 +3116,10 @@ Dialogs*/
 }
 
 .zone-chart .resources.naas ul.system-main li.main .view-all {
-  /*+placement:shift 43px 30px;*/
+  /*+placement:shift 65px 29px;*/
   position: relative;
-  left: 43px;
-  top: 30px;
+  left: 65px;
+  top: 29px;
   position: absolute;
   text-align: left;
   text-indent: -2px;
@@ -3180,6 +3227,114 @@ Dialogs*/
 .zone-chart li.primary-storage {
   clear: both;
   margin-left: 92px;
+}
+
+/*** Add initial resource form*/
+.panel .add-first-network-resource {
+  padding: 37px;
+  font-size: 14px;
+}
+
+.panel .add-first-network-resource .title {
+  font-size: 26px;
+  color: #3984D1;
+  /*+text-shadow:0px 1px 2px #BCBCBC;*/
+  -moz-text-shadow: 0px 1px 2px #BCBCBC;
+  -webkit-text-shadow: 0px 1px 2px #BCBCBC;
+  -o-text-shadow: 0px 1px 2px #BCBCBC;
+  text-shadow: 0px 1px 2px #BCBCBC;
+  margin: 0 0 17px;
+}
+
+.panel .add-first-network-resource .message {
+  display: block;
+  color: #545151;
+  margin: 0 0 30px;
+}
+
+.panel .add-first-network-resource .form-item {
+  width: 409px;
+  height: 39px;
+  padding: 5px;
+  position: relative;
+}
+
+.panel .add-first-network-resource .form-item label {
+  float: left;
+}
+
+.panel .add-first-network-resource .form-item label.error {
+  display: none;
+  font-size: 10px;
+  position: absolute;
+  top: 30px;
+  left: 137px;
+}
+
+.panel .add-first-network-resource .form-item input {
+  float: right;
+  /*+border-radius:6px;*/
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  -khtml-border-radius: 6px;
+  border-radius: 6px 6px 6px 6px;
+  font-size: 16px;
+  border: 1px solid #B7B7B7;
+}
+
+.panel .add-first-network-resource .form-item input[type=text] {
+  width: 276px;
+}
+
+.panel .add-first-network-resource .button {
+  padding: 11px 23px 11px 21px;
+  cursor: pointer;
+  background: url(../images/bg-gradients.png) repeat-x 0px -221px;
+  margin: 29px 0 0;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px 10px 10px 10px;
+  border: 1px solid #858585;
+  color: #FFFFFF;
+  clear: both;
+  /*[empty]font-size:;*/
+}
+
+.panel .add-first-network-resource .multi-array {
+  background: #FFFFFF;
+  border: 1px solid #DCDCDC;
+  display: inline-block;
+  float: left;
+  padding: 12px;
+  clear: both;
+  width: 383px;
+  margin: 3px 0 0;
+  /*+border-radius:7px;*/
+  -moz-border-radius: 7px;
+  -webkit-border-radius: 7px;
+  -khtml-border-radius: 7px;
+  border-radius: 7px 7px 7px 7px;
+}
+
+.panel .add-first-network-resource .multi-array .item {
+  max-width: 155px;
+  float: left;
+  margin: 6px 0 0 24px;
+}
+
+.panel .add-first-network-resource .multi-array .item .name {
+  float: left;
+}
+
+.panel .add-first-network-resource .multi-array .item .value {
+  float: right;
+  margin: 0 0 0 13px;
+}
+
+.panel .add-first-network-resource .multi-array .item .value input {
+  margin: 0;
 }
 
 /*Form validation*/
@@ -3456,7 +3611,7 @@ label.error {
   border: 1px solid #E2DDDD;
   clear: both;
   height: 72% !important;
-  width: 94%;
+  width: 95%;
   margin: auto;
   overflow: auto;
   height: 591px;
@@ -3466,6 +3621,10 @@ label.error {
   -khtml-border-radius: 0 3px 10px 10px;
   border-radius: 0 3px 10px 10px;
   background: #FFFFFF;
+}
+
+.multi-wizard .content.tab-view div.ui-tabs-panel.ui-tabs-hide {
+  display: none;
 }
 
 .multi-wizard.instance-wizard .select-iso .content .select .hypervisor {
@@ -4274,7 +4433,7 @@ div.detail-group td.view-all div.view-all div.end {
 
 div.panel.ui-dialog div.list-view div.fixed-header {
   top: 33px;
-  left: 22px;
+  left: 20px;
   width: 759px;
   height: 49px;
   background-color: #EAECEF;
@@ -4658,6 +4817,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
+.recurring-snapshots .schedule .forms > div {
+}
+
 .recurring-snapshots .schedule .forms form {
   font-size: 12px;
   color: #4F6171;
@@ -4905,6 +5067,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: -89px;
   top: 0px;
+}
+
+.recurring-snapshots .ui-tabs div.ui-tabs-panel.ui-tabs-hide {
+  display: none;
 }
 
 /*Network detail chat*/
@@ -5711,6 +5877,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .new-project .review .ui-tabs .ui-widget-content {
   width: 695px;
   height: 185px;
+}
+
+.new-project .review .ui-tabs .ui-widget-content.ui-tabs-hide {
+  display: none;
 }
 
 .new-project .review .ui-tabs li {
