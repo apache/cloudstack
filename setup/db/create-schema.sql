@@ -1983,12 +1983,13 @@ CREATE TABLE `cloud`.`network_external_firewall_device_map` (
 CREATE TABLE `cloud`.`virtual_router_providers` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
-  `uuid` varchar(255) UNIQUE,
+  `uuid` varchar(40),
   `type` varchar(255) NOT NULL COMMENT 'Virtual router, or ElbVM',
   `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_virtual_router_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_virtual_router_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_virtual_router_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

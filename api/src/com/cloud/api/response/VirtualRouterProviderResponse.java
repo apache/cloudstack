@@ -1,15 +1,16 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class VirtualRouterProviderResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the router")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("virtual_router_providers");
  
     @SerializedName(ApiConstants.NSP_ID) @Param(description="the physical network service provider id of the provider")
-    private Long nspId;
+    private IdentityProxy nspId = new IdentityProxy("physical_network_service_providers");
  
     @SerializedName(ApiConstants.ENABLED) @Param(description="Enabled/Disabled the service provider")
     private Boolean enabled;
@@ -35,11 +36,7 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
     }
 
     public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getId() {
-        return id;
+        this.id.setValue(id);
     }
 
     @Override
@@ -63,19 +60,10 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
     }
 
     public void setNspId(Long nspId) {
-        this.nspId = nspId;
-    }
-
-    public Long getNspId() {
-        return nspId;
+        this.nspId.setValue(nspId);
     }
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
 }

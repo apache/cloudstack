@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
@@ -31,9 +32,11 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName = "virtual_router_providers")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list virtual router elements by id")
     private Long id;
     
+    @IdentityMapper(entityTableName = "physical_network_service_providers")
     @Parameter(name=ApiConstants.NSP_ID, type=CommandType.LONG, description="list virtual router elements by network service provider id")
     private Long nspId;
     
