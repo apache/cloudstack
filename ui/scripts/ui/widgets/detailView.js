@@ -604,6 +604,12 @@
       }).appendTo($tabContent);
     }
 
+    if (tabs.listView) {
+      return $('<div>').listView({
+        listView: tabs.listView
+      }).appendTo($tabContent);
+    }
+
     $.extend(
       $detailView.data('view-args'),
       { activeTab: targetTabID }
