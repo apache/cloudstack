@@ -33,10 +33,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer.FailureReason;
+import com.cloud.agent.api.SecurityIngressRuleAnswer.FailureReason;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
@@ -89,8 +89,8 @@ public class SecurityGroupListener implements Listener {
         List<Long> affectedVms = new ArrayList<Long>();
         int commandNum = 0;
         for (Answer ans: answers) {
-            if (ans instanceof SecurityGroupRuleAnswer) {
-                SecurityGroupRuleAnswer ruleAnswer = (SecurityGroupRuleAnswer) ans;
+            if (ans instanceof SecurityIngressRuleAnswer) {
+                SecurityIngressRuleAnswer ruleAnswer = (SecurityIngressRuleAnswer) ans;
                 if (ans.getResult()) {
                     s_logger.debug("Successfully programmed rule " + ruleAnswer.toString() + " into host " + agentId);
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Done);

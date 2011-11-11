@@ -34,8 +34,8 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
 
 @Entity
-@Table(name = ("security_group_rule"))
-public class SecurityGroupRuleVO implements SecurityRule {
+@Table(name = ("security_ingress_rule"))
+public class IngressRuleVO implements IngressRule, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -49,9 +49,6 @@ public class SecurityGroupRuleVO implements SecurityRule {
 
     @Column(name = "end_port")
     private int endPort;
-
-    @Column(name = "type")
-    private String type;
 
     @Column(name = "protocol")
     private String protocol;
@@ -70,62 +67,38 @@ public class SecurityGroupRuleVO implements SecurityRule {
     @Column(name = "uuid")
     private String uuid;
     
-    public SecurityGroupRuleVO() {
+    public IngressRuleVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public SecurityGroupRuleVO(SecurityRuleType type,long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId ) {
+    public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId) {
         this.securityGroupId = securityGroupId;
         this.startPort = fromPort;
         this.endPort = toPort;
         this.protocol = protocol;
         this.allowedNetworkId = allowedNetworkId;
     	this.uuid = UUID.randomUUID().toString();
-        if (type == SecurityRuleType.IngressRule)
-        {
-        	this.type = SecurityRuleType.IngressRule.getType();
-        }else{
-        	this.type = SecurityRuleType.EgressRule.getType();
-        }
     }
 
-    public SecurityGroupRuleVO(SecurityRuleType type,long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
+    public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
         this.securityGroupId = securityGroupId;
         this.startPort = fromPort;
         this.endPort = toPort;
         this.protocol = protocol;
         this.allowedSourceIpCidr = allowedIpCidr;
     	this.uuid = UUID.randomUUID().toString();
-        if (type == SecurityRuleType.IngressRule)
-        {
-            this.type = SecurityRuleType.IngressRule.getType();
-        }else{
-            this.type = SecurityRuleType.EgressRule.getType();
-        }
     }
 
     @Override
     public long getId() {
         return id;
     }
-    
-    @Override
-    public String getType() {
-        return type;
-    }
 
     @Override
     public long getSecurityGroupId() {
         return securityGroupId;
     }
-    
-    public SecurityRuleType getRuleType() {
-    	if ("ingress".equalsIgnoreCase(this.type))
-            return SecurityRuleType.IngressRule;
-    	else
-    		return SecurityRuleType.EgressRule;
-    }
-    
+
     @Override
     public int getStartPort() {
         return startPort;

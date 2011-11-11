@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.api.response.SecurityGroupRuleResponse;
+import com.cloud.api.response.IngressRuleResponse;
 
 public class UserVmData {
     private Long id;
@@ -580,7 +580,7 @@ public class UserVmData {
         private String domainName;
         private Long jobId;
         private Integer jobStatus;
-        private List<SecurityGroupRuleResponse> securityGroupRules;
+        private List<IngressRuleResponse> ingressRules;
         
         public String getObjectName() {
             return objectName;
@@ -637,15 +637,16 @@ public class UserVmData {
         public void setDomainName(String domainName) {
             this.domainName = domainName;
         }
-/* FIXME : the below functions are not used, so commenting out later need to include egress list 
-        public List<SecurityGroupRuleResponse> getIngressRules() {
-            return securityGroupRules;
+
+        public List<IngressRuleResponse> getIngressRules() {
+            return ingressRules;
         }
 
-        public void setIngressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
-            this.securityGroupRules = securityGroupRules;
-        } */
+        public void setIngressRules(List<IngressRuleResponse> ingressRules) {
+            this.ingressRules = ingressRules;
+        }
 
+       
         @Override
         public int hashCode() {
             final int prime = 31;

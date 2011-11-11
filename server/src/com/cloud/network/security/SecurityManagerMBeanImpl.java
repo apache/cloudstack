@@ -14,7 +14,6 @@ import com.cloud.network.security.LocalSecurityGroupWorkQueue.LocalSecurityGroup
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
 public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityGroupManagerMBean, RuleUpdateLog {
     SecurityGroupManagerImpl2 _sgMgr;
@@ -119,8 +118,7 @@ public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityG
     @Override
     public void tryRulesetUpdateForVmBypassSchedulerVeryDangerous(Long vmId, Long seqno) {
        LocalSecurityGroupWork work = new LocalSecurityGroupWorkQueue.LocalSecurityGroupWork(vmId, seqno, Step.Scheduled);
-        _sgMgr.sendRulesetUpdates(work, SecurityRuleType.IngressRule);
-        _sgMgr.sendRulesetUpdates(work, SecurityRuleType.EgressRule);
+        _sgMgr.sendRulesetUpdates(work);
     }
     
     @Override

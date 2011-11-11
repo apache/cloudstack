@@ -49,20 +49,20 @@ public class SecurityGroupResultObject implements ControlledEntity{
     @Param(name = "accountname")
     private String accountName = null;
 
-    @Param(name = "securitygrouprules")
-    private List<SecurityGroupRuleResultObject> securityGroupRules = null;
+    @Param(name = "ingressrules")
+    private List<IngressRuleResultObject> ingressRules = null;
 
     public SecurityGroupResultObject() {
     }
 
-    public SecurityGroupResultObject(Long id, String name, String description, long domainId, long accountId, String accountName, List<SecurityGroupRuleResultObject> ingressRules) {
+    public SecurityGroupResultObject(Long id, String name, String description, long domainId, long accountId, String accountName, List<IngressRuleResultObject> ingressRules) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
         this.accountName = accountName;
-        this.securityGroupRules = ingressRules;
+        this.ingressRules = ingressRules;
     }
 
     public Long getId() {
@@ -113,22 +113,21 @@ public class SecurityGroupResultObject implements ControlledEntity{
         this.accountName = accountName;
     }
 
-    public List<SecurityGroupRuleResultObject> getSecurityGroupRules() {
-        return securityGroupRules;
+    public List<IngressRuleResultObject> getIngressRules() {
+        return ingressRules;
     }
 
-    public void setSecurityGroupRules(List<SecurityGroupRuleResultObject> securityGroupRules) {
-        this.securityGroupRules = securityGroupRules;
+    public void setIngressRules(List<IngressRuleResultObject> ingressRules) {
+        this.ingressRules = ingressRules;
     }
 
-    public static List<SecurityGroupResultObject> transposeNetworkGroups(
-            List<? extends SecurityGroupRules> groups) {
+    public static List<SecurityGroupResultObject> transposeNetworkGroups(List<? extends SecurityGroupRules> groups) {
         List<SecurityGroupResultObject> resultObjects = new ArrayList<SecurityGroupResultObject>();
         Map<Long, SecurityGroup> allowedSecurityGroups = new HashMap<Long, SecurityGroup>();
         Map<Long, Account> accounts = new HashMap<Long, Account>();
 
         if ((groups != null) && !groups.isEmpty()) {
-            List<SecurityGroupRuleResultObject> securityGroupRuleDataList = new ArrayList<SecurityGroupRuleResultObject>();
+            List<IngressRuleResultObject> ingressDataList = new ArrayList<IngressRuleResultObject>();
             SecurityGroupResultObject currentGroup = null;
 
             List<Long> processedGroups = new ArrayList<Long>();
@@ -138,10 +137,9 @@ public class SecurityGroupResultObject implements ControlledEntity{
                     processedGroups.add(groupId);
 
                     if (currentGroup != null) {
-                        if (!securityGroupRuleDataList.isEmpty()) {
-                            currentGroup
-                                    .setSecurityGroupRules(securityGroupRuleDataList);
-                            securityGroupRuleDataList = new ArrayList<SecurityGroupRuleResultObject>();
+                        if (!ingressDataList.isEmpty()) {
+                            currentGroup.setIngressRules(ingressDataList);
+                            ingressDataList = new ArrayList<IngressRuleResultObject>();
                         }
                         resultObjects.add(currentGroup);
                     }
@@ -155,8 +153,7 @@ public class SecurityGroupResultObject implements ControlledEntity{
 
                     Account account = accounts.get(netGroupRule.getAccountId());
                     if (account == null) {
-                        account = ApiDBUtils.findAccountById(netGroupRule
-                                .getAccountId());
+                        account = ApiDBUtils.findAccountById(netGroupRule.getAccountId());
                         accounts.put(account.getId(), account);
                     }
 
@@ -167,60 +164,41 @@ public class SecurityGroupResultObject implements ControlledEntity{
                 }
 
                 if (netGroupRule.getRuleId() != null) {
-                    // there's at least one securitygroup rule for this network
-                    // group, add the securitygroup rule data
-                    SecurityGroupRuleResultObject securityGroupRuleData = new SecurityGroupRuleResultObject();
-                    securityGroupRuleData.setEndPort(netGroupRule.getEndPort());
-                    securityGroupRuleData.setStartPort(netGroupRule
-                            .getStartPort());
-                    securityGroupRuleData.setId(netGroupRule.getRuleId());
-                    securityGroupRuleData.setProtocol(netGroupRule
-                            .getProtocol());
-                    securityGroupRuleData.setRuleType(netGroupRule
-                            .getRuleType());
+                    // there's at least one ingress rule for this network group, add the ingress rule data
+                    IngressRuleResultObject ingressData = new IngressRuleResultObject();
+                    ingressData.setEndPort(netGroupRule.getEndPort());
+                    ingressData.setStartPort(netGroupRule.getStartPort());
+                    ingressData.setId(netGroupRule.getRuleId());
+                    ingressData.setProtocol(netGroupRule.getProtocol());
 
-                    Long allowedSecurityGroupId = netGroupRule
-                            .getAllowedNetworkId();
+                    Long allowedSecurityGroupId = netGroupRule.getAllowedNetworkId();
                     if (allowedSecurityGroupId != null) {
-                        SecurityGroup allowedSecurityGroup = allowedSecurityGroups
-                                .get(allowedSecurityGroupId);
+                        SecurityGroup allowedSecurityGroup = allowedSecurityGroups.get(allowedSecurityGroupId);
                         if (allowedSecurityGroup == null) {
-                            allowedSecurityGroup = ApiDBUtils
-                                    .findSecurityGroupById(allowedSecurityGroupId);
-                            allowedSecurityGroups.put(allowedSecurityGroupId,
-                                    allowedSecurityGroup);
+                            allowedSecurityGroup = ApiDBUtils.findSecurityGroupById(allowedSecurityGroupId);
+                            allowedSecurityGroups.put(allowedSecurityGroupId, allowedSecurityGroup);
                         }
 
-                        securityGroupRuleData
-                                .setAllowedSecurityGroup(allowedSecurityGroup
-                                        .getName());
+                        ingressData.setAllowedSecurityGroup(allowedSecurityGroup.getName());
 
-                        Account allowedAccount = accounts
-                                .get(allowedSecurityGroup.getAccountId());
+                        Account allowedAccount = accounts.get(allowedSecurityGroup.getAccountId());
                         if (allowedAccount == null) {
-                            allowedAccount = ApiDBUtils
-                                    .findAccountById(allowedSecurityGroup
-                                            .getAccountId());
+                            allowedAccount = ApiDBUtils.findAccountById(allowedSecurityGroup.getAccountId());
                             accounts.put(allowedAccount.getId(), allowedAccount);
                         }
 
-                        securityGroupRuleData
-                                .setAllowedSecGroupAcct(allowedAccount
-                                        .getAccountName());
+                        ingressData.setAllowedSecGroupAcct(allowedAccount.getAccountName());
                     } else if (netGroupRule.getAllowedSourceIpCidr() != null) {
-                        securityGroupRuleData
-                                .setAllowedSourceIpCidr(netGroupRule
-                                        .getAllowedSourceIpCidr());
+                        ingressData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
                     }
-                    securityGroupRuleDataList.add(securityGroupRuleData);
+                    ingressDataList.add(ingressData);
                 }
             }
 
             // all rules have been processed, add the final data into the list
             if (currentGroup != null) {
-                if (!securityGroupRuleDataList.isEmpty()) {
-                    currentGroup
-                            .setSecurityGroupRules(securityGroupRuleDataList);
+                if (!ingressDataList.isEmpty()) {
+                    currentGroup.setIngressRules(ingressDataList);
                 }
                 resultObjects.add(currentGroup);
             }

@@ -20,16 +20,15 @@ package com.cloud.network.security.dao;
 
 import java.util.List;
 
-import com.cloud.network.security.SecurityGroupRuleVO;
-import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.security.EgressRuleVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface SecurityGroupRuleDao extends GenericDao<SecurityGroupRuleVO, Long> {
-    List<SecurityGroupRuleVO> listBySecurityGroupId(long securityGroupId, SecurityRuleType type);
-    List<SecurityGroupRuleVO> listByAllowedSecurityGroupId(long networkGroupId);
-    SecurityGroupRuleVO findByProtoPortsAndCidr(long networkGroupId, String proto, int startPort, int endPort, String cidr);
-    SecurityGroupRuleVO findByProtoPortsAndGroup(String proto, int startPort, int endPort, String networkGroup);
-    SecurityGroupRuleVO findByProtoPortsAndAllowedGroupId(long networkGroupId, String proto, int startPort, int endPort, Long allowedGroupId);
+public interface EgressRuleDao extends GenericDao<EgressRuleVO, Long> {
+    List<EgressRuleVO> listBySecurityGroupId(long networkGroupId);
+    List<EgressRuleVO> listByAllowedSecurityGroupId(long networkGroupId);
+    EgressRuleVO findByProtoPortsAndCidr(long networkGroupId, String proto, int startPort, int endPort, String cidr);
+    EgressRuleVO findByProtoPortsAndGroup(String proto, int startPort, int endPort, String networkGroup);
+    EgressRuleVO findByProtoPortsAndAllowedGroupId(long networkGroupId, String proto, int startPort, int endPort, Long allowedGroupId);
     int deleteBySecurityGroup(long securityGroupId);
 	int deleteByPortProtoAndGroup(long securityGroupId, String protocol, int startPort,int endPort, Long id);
 	int deleteByPortProtoAndCidr(long securityGroupId, String protocol, int startPort,int endPort, String cidr);

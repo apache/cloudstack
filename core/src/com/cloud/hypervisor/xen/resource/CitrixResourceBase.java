@@ -115,8 +115,10 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SecurityEgressRuleAnswer;
+import com.cloud.agent.api.SecurityEgressRulesCmd;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -478,8 +480,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((VpnUsersCfgCommand)cmd);
         } else if (clazz == CheckSshCommand.class) {
             return execute((CheckSshCommand)cmd);
-        } else if (clazz == SecurityGroupRulesCmd.class) {
-            return execute((SecurityGroupRulesCmd) cmd);
+        } else if (clazz == SecurityIngressRulesCmd.class) {
+            return execute((SecurityIngressRulesCmd) cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
         	return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (clazz == OvsSetTagAndFlowCommand.class) {
@@ -4745,8 +4747,38 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     	
 		return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip, bridge);
     }
-        
-    private Answer execute(SecurityGroupRulesCmd cmd) {
+    
+    private Answer execute(SecurityEgressRulesCmd cmd) {
+        Connection conn = getConnection();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Sending network rules command to " + _host.ip);
+        }
+
+        if (!_canBridgeFirewall) {
+            s_logger.info("Host " + _host.ip + " cannot do bridge firewalling");
+            return new SecurityEgressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
+        }
+      
+        String result = callHostPlugin(conn, "vmops", "network_rules",
+                "vmName", cmd.getVmName(),
+                "vmIP", cmd.getGuestIp(),
+                "vmMAC", cmd.getGuestMac(),
+                "type", "egress",
+                "vmID", Long.toString(cmd.getVmId()),
+                "signature", cmd.getSignature(),
+                "seqno", Long.toString(cmd.getSeqNum()),
+                "rules", cmd.stringifyRules());
+
+        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+            s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
+            return new SecurityEgressRuleAnswer(cmd, false, "programming network rules failed");
+        } else {
+            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
+            return new SecurityEgressRuleAnswer(cmd);
+        }
+    }
+    
+    private Answer execute(SecurityIngressRulesCmd cmd) {
         Connection conn = getConnection();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Sending network rules command to " + _host.ip);
@@ -4754,16 +4786,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (!_canBridgeFirewall) {
             s_logger.warn("Host " + _host.ip + " cannot do bridge firewalling");
-            return new SecurityGroupRuleAnswer(cmd, false, 
+            return new SecurityIngressRuleAnswer(cmd, false, 
                                                  "Host " + _host.ip + " cannot do bridge firewalling",
-                                                 SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
+                                                 SecurityIngressRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
-        
+      
         String result = callHostPlugin(conn, "vmops", "network_rules",
                 "vmName", cmd.getVmName(),
                 "vmIP", cmd.getGuestIp(),
                 "vmMAC", cmd.getGuestMac(),
-                "type", cmd.getRuleType(),
+                "type", "ingress",
                 "vmID", Long.toString(cmd.getVmId()),
                 "signature", cmd.getSignature(),
                 "seqno", Long.toString(cmd.getSeqNum()),
@@ -4772,10 +4804,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
-            return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
+            return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
         } else {
             s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
-            return new SecurityGroupRuleAnswer(cmd);
+            return new SecurityIngressRuleAnswer(cmd);
         }
     }
 

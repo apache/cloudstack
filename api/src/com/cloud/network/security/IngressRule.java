@@ -17,18 +17,16 @@
  */
 package com.cloud.network.security;
 
-public interface SecurityGroupRules {
+import com.cloud.async.AsyncInstanceCreateStatus;
+
+/**
+ * @author ahuang
+ * 
+ */
+public interface IngressRule {
     long getId();
 
-    String getName();
-
-    String getDescription();
-
-    Long getDomainId();
-
-    Long getAccountId();
-
-    Long getRuleId();
+    long getSecurityGroupId();
 
     int getStartPort();
 
@@ -36,7 +34,10 @@ public interface SecurityGroupRules {
 
     String getProtocol();
 
+    AsyncInstanceCreateStatus getCreateStatus();
+
     Long getAllowedNetworkId();
 
     String getAllowedSourceIpCidr();
+
 }

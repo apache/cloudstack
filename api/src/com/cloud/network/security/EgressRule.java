@@ -19,25 +19,7 @@ package com.cloud.network.security;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
 
-/**
- * @author ahuang
- * 
- */
-public interface SecurityRule {
-
-    public static class SecurityRuleType {
-        public static final SecurityRuleType IngressRule = new SecurityRuleType("ingress");
-        public static final SecurityRuleType EgressRule = new SecurityRuleType("egress");
-        
-        public SecurityRuleType(String type) {
-            this._type = type;
-        }
-        
-        public String getType(){
-            return _type;
-        }
-        private String _type;
-    }
+public interface EgressRule {
     long getId();
 
     long getSecurityGroupId();
@@ -45,19 +27,13 @@ public interface SecurityRule {
     int getStartPort();
 
     int getEndPort();
-    
-    String getType();
-    
-    SecurityRuleType getRuleType();
-    
-    String getProtocol();
 
-    String getUuid();
+    String getProtocol();
 
     AsyncInstanceCreateStatus getCreateStatus();
 
     Long getAllowedNetworkId();
 
-    String getAllowedSourceIpCidr();
+    String getAllowedDestinationIpCidr();
 
 }
