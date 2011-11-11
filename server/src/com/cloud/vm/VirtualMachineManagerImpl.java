@@ -2062,7 +2062,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean isRecurring() {
-        return false;
+        return true;
     }
 
     @Override
