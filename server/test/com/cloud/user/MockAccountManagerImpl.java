@@ -24,12 +24,6 @@ import com.cloud.utils.component.Manager;
 public class MockAccountManagerImpl implements Manager, AccountManager {
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean deleteUserAccount(long accountId) {
         // TODO Auto-generated method stub
         return false;
@@ -229,45 +223,53 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     public void checkAccess(Account account, AccessType accessType, ControlledEntity... entities) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
-    
+
     @Override
     public void logoutUser(Long userId) {
-     // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
     }
-    
+
     @Override
     public UserAccount getUserAccount(String username, Long domainId) {
         return null;
     }
-    
+
     @Override
     public UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         return null;
     }
-    
+
     @Override
     public Pair<User, Account> findUserByApiKey(String apiKey) {
         return null;
     }
-    
+
     @Override
     public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone) {
         return null;
     }
-    
-    @Override
-    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain) {
-        return null;
-    }
-    
+
     @Override
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         return null;
     }
-    
+
     @Override
     public boolean lockAccount(long accountId) {
         return true;
+    }
+
+    @Override
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
+            Map details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

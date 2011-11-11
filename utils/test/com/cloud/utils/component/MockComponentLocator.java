@@ -38,37 +38,37 @@ import com.cloud.utils.db.GenericDao;
  */
 public class MockComponentLocator extends ComponentLocator {
     MockComponentLibrary _library = new MockComponentLibrary();
-    
+
     public MockComponentLocator(String server) {
         super(server);
     }
-    
+
     public ComponentInfo<? extends GenericDao<?, ? extends Serializable>> addDao(String name, Class<? extends GenericDao<?, ? extends Serializable>> dao) {
         return _library.addDao(name, dao);
     }
-    
+
     public ComponentInfo<Manager> addManager(String name, Class<? extends Manager> manager) {
         return _library.addManager(name, manager);
     }
-    
+
     public <T> ComponentInfo<Adapter> addOneAdapter(Class<T> interphace, String name, Class<? extends T> adapterClass) {
         return _library.addOneAdapter(interphace, name, adapterClass);
     }
-    
+
     public <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
         return _library.addAdapterChain(interphace, adapters);
     }
-    
+
     public <T> ComponentInfo<PluggableService> addService(String name, Class<T> serviceInterphace, Class<? extends PluggableService> service) {
         return _library.addService(name, serviceInterphace, service);
     }
-    
+
     @Override
     protected Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> parse2(String filename) {
         Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>> result = new Pair<XmlHandler, HashMap<String, List<ComponentInfo<Adapter>>>>(new XmlHandler("fake"), new HashMap<String, List<ComponentInfo<Adapter>>>());
         _daoMap = new LinkedHashMap<String, ComponentInfo<GenericDao<?, ? extends Serializable>>>();
         _managerMap = new LinkedHashMap<String, ComponentInfo<Manager>>();
-        _checkerMap = new HashMap<String, ComponentInfo<SystemIntegrityChecker>>();
+        _checkerMap = new LinkedHashMap<String, ComponentInfo<SystemIntegrityChecker>>();
         _adapterMap = new HashMap<String, Adapters<? extends Adapter>>();
         _factories = new HashMap<Class<?>, Class<?>>();
         _daoMap.putAll(_library.getDaos());
@@ -77,7 +77,7 @@ public class MockComponentLocator extends ComponentLocator {
         _factories.putAll(_library.getFactories());
         return result;
     } 
-    
+
     public void makeActive(InterceptorLibrary interceptors) {
         s_singletons.clear();
         s_locators.clear();
@@ -86,24 +86,24 @@ public class MockComponentLocator extends ComponentLocator {
         s_callbackFilter = new DatabaseCallbackFilter();
         s_interceptors.clear();
         if (interceptors != null) {
-        	resetInterceptors(interceptors);
+            resetInterceptors(interceptors);
         }
         s_tl.set(this);
         parse("fake file");
     }
-    
+
     protected class MockComponentLibrary extends ComponentLibraryBase implements ComponentLibrary { 
-                
+
         @Override
         public Map<String, List<ComponentInfo<Adapter>>> getAdapters() {
             return _adapters;
         }
-    
+
         @Override
         public Map<Class<?>, Class<?>> getFactories() {
             return new HashMap<Class<?>, Class<?>>();
         }
-        
+
         @Override
         public Map<String, ComponentInfo<GenericDao<?, ?>>> getDaos() {
             return _daos;
@@ -116,7 +116,7 @@ public class MockComponentLocator extends ComponentLocator {
 
         @Override
         public Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
-             return _pluggableServices;
+            return _pluggableServices;
         }
     }
 }
