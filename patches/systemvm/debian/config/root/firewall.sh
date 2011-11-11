@@ -258,8 +258,13 @@ then
     one_to_one_fw_entry $publicIp $instanceIp  $protocol $dport $op
   fi
   result=$?
-  [ "$result" -ne 0 ] && cat $OUTFILE >&2
+  if [ "$result" -ne 0 ] && [ "$op" != "-D" ]; then
+      cat $OUTFILE >&2
+  fi
   rm -f $OUTFILE
+  if [ "$op" == "-D" ];then
+     result=0
+  fi
   unlock_exit $result $lock $locked
 fi
 
@@ -271,14 +276,22 @@ fi
 case $protocol  in
   tcp|udp)    
         tcp_or_udp_entry $instanceIp $dport $publicIp $ports $op $protocol $cidrs
-                result=$?
-                [ "$result" -ne 0 ] && cat $OUTFILE >&2
-                rm -f $OUTFILE
+        result=$?
+        if [ "$result" -ne 0 ] && [ "$op" != "-D" ];then
+           cat $OUTFILE >&2
+        fi
+        rm -f $OUTFILE
+        if [ "$op" == "-D" ];then
+           result=0
+        fi
         unlock_exit $result $lock $locked
         ;;
   "icmp")  
   
         icmp_entry $instanceIp $icmptype $publicIp $op 
+        if [ "$op" == "-D" ];then
+           result=0
+        fi
         unlock_exit $? $lock $locked
         ;;
       *)
