@@ -17,6 +17,9 @@
     action: function(args) {
       var complete = args.response.success;
 
+      /**
+       * Step 1: add zone
+       */
       var createZone = function(args) {
         $.ajax({
           url: createURL('createZone'),
@@ -38,6 +41,9 @@
         });
       };
 
+      /**
+       * Step 2: add pod
+       */
       var createPod = function(args) {
         $.ajax({
           url: createURL('createPod'),
@@ -61,6 +67,9 @@
         });
       };
 
+      /**
+       * Step 3: add public IP range
+       */
       var createIPRange = function(args) {
         $.ajax({
           url: createURL('createVlanIpRange'),
@@ -85,6 +94,9 @@
         });
       };
 
+      /**
+       * Step 4: add cluster
+       */
       var createCluster = function(args) {
         $.ajax({
           url: createURL('addCluster'),
@@ -107,6 +119,9 @@
         });
       };
 
+      /**
+       * Step 5: add host
+       */
       var createHost = function(args) {
         $.ajax({
           url: createURL('addHost'),
@@ -132,6 +147,9 @@
         });
       };
 
+      /**
+       * Step 6: add primary storage
+       */
       var createPrimaryStorage = function(args) {
         $.ajax({
           url: createURL('createStoragePool'),
@@ -156,6 +174,9 @@
         });
       };
 
+      /**
+       * Step 7: add secondary storage
+       */
       var createSecondaryStorage = function(args) {
         $.ajax({
           url: createURL('addSecondaryStorage'),
@@ -172,6 +193,9 @@
         });
       };
 
+      /**
+       * Final step: poll for system VMs, wait until they are active to complete wizard
+       */
       var pollSystemVMs = function() {
         var poll = setInterval(function() {
           $.ajax({
