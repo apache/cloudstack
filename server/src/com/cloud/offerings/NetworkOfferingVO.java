@@ -103,11 +103,11 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     boolean dedicatedLB;
     
     @Column(name="shared_source_nat_service")
-    boolean sharedSourceNatService;
+    boolean sharedSourceNat;
     
     @Column(name="sort_key")
     int sortKey;
-    boolean sharedSourceNat;
+
 
     @Column(name="uuid")
     String uuid;

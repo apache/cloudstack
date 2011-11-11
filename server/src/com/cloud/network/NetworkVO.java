@@ -143,14 +143,6 @@ public class NetworkVO implements Network, Identity {
 
     @Column(name="is_default")
     boolean isDefault;
-
-    @Column(name="is_security_group_enabled")
-    boolean securityGroupEnabled;
-
-    @ElementCollection(targetClass = String.class, fetch=FetchType.EAGER)
-    @Column(name="tag")
-    @CollectionTable(name="network_tags", joinColumns=@JoinColumn(name="network_id"))
-    List<String> tags;
     
     @Column(name="uuid")
     String uuid;

@@ -57,7 +57,7 @@ ALTER TABLE `cloud`.`launch_permission` ADD INDEX `i_launch_permission_template_
 ALTER TABLE `cloud`.`guest_os` ADD CONSTRAINT `fk_guest_os__category_id` FOREIGN KEY `fk_guest_os__category_id` (`category_id`) REFERENCES `guest_os_category` (`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__domain_id` FOREIGN KEY `fk_security_group__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
+ALTER TABLE `cloud`.`security_group` ADD COrNSTRAINT `fk_security_group__domain_id` FOREIGN KEY `fk_security_group__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
 ALTER TABLE `cloud`.`security_group` ADD INDEX `i_security_group_name`(`name`);
 
 ALTER TABLE `cloud`.`security_group_vm_map` ADD CONSTRAINT `fk_security_group_vm_map___security_group_id` FOREIGN KEY `fk_security_group_vm_map___security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
