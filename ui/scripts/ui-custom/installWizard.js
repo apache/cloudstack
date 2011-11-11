@@ -333,6 +333,9 @@
       addCluster: function(args) {
         var $addCluster = $('<div></div>').addClass('add-cluster');
         var addClusterForm = cloudStack.dialog.createForm({
+          context: {
+            zones: [{}]
+          },
           noDialog: true,
           form: cloudStack.sections.system
             .subsections.clusters.listView
@@ -398,10 +401,35 @@
       addHost: function(args) {
         var $addHost = $('<div></div>').addClass('add-host');
         var addHostForm = cloudStack.dialog.createForm({
+          context: { zones: [{}] },
           noDialog: true,
-          form: cloudStack.sections.system
-            .subsections.hosts.listView
-            .actions.add.createForm,
+          form: {
+            title: 'Add new host',
+            desc: 'Please fill in the following information to add a new host fro the specified zone configuration.',
+            fields: {
+              hostname: {
+                label: 'Host name',
+                validation: { required: true }
+              },
+
+              username: {
+                label: 'User name',
+                validation: { required: true }
+              },
+
+              password: {
+                label: 'Password',
+                validation: { required: true },
+                isPassword: true
+              },
+              //always appear (begin)
+              hosttags: {
+                label: 'Host tags',
+                validation: { required: false }
+              }
+              //always appear (end)
+            }
+          },
           after: function(args) {
             goTo('addPrimaryStorageIntro', 'host', $addHostForm);
           }
@@ -433,7 +461,7 @@
        * Add primary storage intro text
        * @param args
        */
-      addHostIntro: function(args) {
+      addPrimaryStorageIntro: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
               .html('Let\'s add primary storage.');
@@ -463,9 +491,31 @@
         var $addPrimaryStorage = $('<div></div>').addClass('add-primary-storage');
         var addPrimaryStorageForm = cloudStack.dialog.createForm({
           noDialog: true,
-          form: cloudStack.sections.system
-            .subsections['primary-storage'].listView
-            .actions.add.createForm,
+          form: {
+            title: 'Add new primary storage',
+            desc: 'Please fill in the following information to add a new primary storage',
+            fields: {
+              name: {
+                label: 'Name',
+                validation: { required: true }
+              },
+
+              server: {
+                label: 'Server',
+                validation: { required: true }
+              },
+
+              path: {
+                label: 'Path',
+                validation: { required: true }
+              },
+
+              storageTags: {
+                label: 'Storage Tags',
+                validation: { required: false }
+              }
+            }
+          },
           after: function(args) {
             goTo('addSecondaryStorageIntro', 'primaryStorage', $addPrimaryStorageForm);
           }
@@ -497,7 +547,7 @@
        * Add secondary storage intro text
        * @param args
        */
-      addHostIntro: function(args) {
+      addSecondaryStorageIntro: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
               .html('Let\'s add secondary storage.');
@@ -527,9 +577,20 @@
         var $addSecondaryStorage = $('<div></div>').addClass('add-secondary-storage');
         var addSecondaryStorageForm = cloudStack.dialog.createForm({
           noDialog: true,
-          form: cloudStack.sections.system
-            .subsections['secondary-storage'].listView
-            .actions.add.createForm,
+          form: {
+            title: 'Add new secondary storage',
+            desc: 'Please fill in the following information to add a new secondary storage',
+            fields: {
+              nfsServer: {
+                label: 'NFS Server',
+                validation: { required: true }
+              },
+              path: {
+                label: 'Path',
+                validation: { required: true }
+              }
+            }
+          },
           after: function(args) {
             goTo('launchInfo', 'secondaryStorage', $addSecondaryStorageForm);
           }
@@ -593,6 +654,7 @@
               .html('You may want to get a cup of coffee right now.');
 
         cloudStack.installWizard.action({
+          data: state,
           response: {
             success: function() {
               complete();
