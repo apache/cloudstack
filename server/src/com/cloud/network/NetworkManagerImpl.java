@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -80,6 +81,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -1043,15 +1045,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean isShared)
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, isDefault, false, null, isShared);
+        return setupNetwork(owner, offering, null, plan, name, displayText, isDefault, false, null, null);
     }
 
     @Override
     @DB
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, boolean isShared) throws ConcurrentOperationException {
+            Long domainId, ACLType aclType) throws ConcurrentOperationException {
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
@@ -1111,7 +1113,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 
                 NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
-                        (domainId != null), predefined.getNetworkDomain(), offering.getGuestType(), isShared, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+                        predefined.getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null) {
@@ -1730,11 +1732,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
         boolean isDomainSpecific = false;
-        Boolean isShared = cmd.getIsShared();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         Long zoneId = cmd.getZoneId();
-
-        Transaction txn = Transaction.currentTxn();
+        String aclTypeStr = cmd.getAclType();
 
         // Check if network offering exists
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
@@ -1746,21 +1746,40 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Can't use network offering id=" + networkOfferingId + " as its state is not " + NetworkOffering.State.Enabled);
         }
 
-        // Check if the network is domain specific. If yes, only guestType = Shared is allowed
-        if (cmd.getDomainId() != null && cmd.getAccountName() == null) {
-            if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Shared) {
-                throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and type " + Network.GuestType.Shared);
-            } else if (isShared == null || !isShared) {
-                throw new InvalidParameterValueException("Network dedicated to domain should be shared");
-            } else {
+        //Only domain and account ACL types are supported in Acton
+        ACLType aclType = null;
+        if (aclTypeStr != null) {
+        	if (aclTypeStr.equalsIgnoreCase(ACLType.Account.toString())) {
+        		aclType = ACLType.Account;
+        	} else if (aclTypeStr.equalsIgnoreCase(ACLType.Domain.toString())){
+        		aclType = ACLType.Domain;
+        	} else {
+            	throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
+        	}
+        }
+
+        // Check if the network is domain specific
+        if (aclType == ACLType.Domain) {
+        	//only Admin can create domain with aclType=Domain
+        	if (!_accountMgr.isAdmin(caller.getType())) {
+        		throw new PermissionDeniedException("Only admin can create networks with aclType=Domain");
+        	}
+        	
+        	if (cmd.getDomainId() != null) {
+        		if (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Shared) {
+                    throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest type " + Network.GuestType.Shared);
+                } 
+            	
                 DomainVO domain = _domainDao.findById(cmd.getDomainId());
                 if (domain == null) {
                     throw new InvalidParameterValueException("Unable to find domain by id " + cmd.getDomainId());
+
                 }
                 _accountMgr.checkAccess(caller, domain);
-                isDomainSpecific = true;
-            }
+        	}
+        	isDomainSpecific = true;
         }
+        
 
         Account owner = null;
         if (cmd.getAccountName() != null && cmd.getDomainId() != null) {
@@ -1796,11 +1815,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
         }
 
-        // Check if network offering is Available
-        if (networkOffering.getAvailability() == Availability.Unavailable) {
-            throw new InvalidParameterValueException("Can't create network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability());
-        }
-
         // If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
         ArrayList<String> networkConfigs = new ArrayList<String>();
         networkConfigs.add(gateway);
@@ -1830,7 +1844,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && (networkOffering.getTrafficType() != TrafficType.Guest || networkOffering.getGuestType() != Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest + " and network type "
-                    + Network.GuestType.Isolated + " with a service " + Service.SourceNat + " enabled");
+                    + Network.GuestType.Isolated + " with a service " + Service.SourceNat.getName() + " enabled");
         }
 
         // Don't allow to specify cidr if the caller is a regular user
@@ -1849,20 +1863,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
+        Transaction txn = Transaction.currentTxn();
         txn.start();
 
         Long domainId = null;
         if (isDomainSpecific) {
-            domainId = cmd.getDomainId();
+        	if (cmd.getDomainId() != null) {
+        		domainId = cmd.getDomainId();
+        	} else {
+        		domainId = _domainMgr.getDomain(Domain.ROOT_DOMAIN).getId();
+        	}
         }
 
-        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, domainId, isShared, pNtwk, zoneId);
-
-        // Don't pass owner to create vlan when network offering is of type Shared - done to prevent accountVlanMap entry
-        // creation when vlan is mapped to network
-        if (network.getGuestType() == Network.GuestType.Shared) {
-            owner = null;
-        }
+        Network network = createNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, domainId, pNtwk, zoneId, aclType);
         
         //Vlan is created in 2 cases:
         //1) GuestType is Shared
@@ -1871,7 +1884,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan && defineNetworkConfig) {
             // Create vlan ip range
-            _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId(), physicalNetworkId);
+            _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, null, network.getId(), physicalNetworkId);
         }
 
         txn.commit();
@@ -1881,8 +1894,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
-            boolean isSecurityGroupEnabled, Long domainId, Boolean isShared, PhysicalNetwork pNtwk, long zoneId) throws ConcurrentOperationException, InsufficientCapacityException {
+	public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
+            boolean isSecurityGroupEnabled, Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType) throws ConcurrentOperationException, InsufficientCapacityException {
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -1896,42 +1909,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 //            throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
 //        }
 //
-//		if (isDefault == null) {
-//			if (networkOffering.getGuestType() == GuestIpType.Virtual) {
-//				isDefault = true;
-//			} else {
-//				isDefault = false;
-//			}
-//		}
-//
-//		// allow isDefault/isShared to be set only for Direct network
-//		if (networkOffering.getGuestType() == GuestIpType.Virtual && isShared != null && isShared) {
-//			throw new InvalidParameterValueException("Can specify isShared parameter for Direct networks only");
-//		}
-//
-//        // if network is shared, defult its owner to be system
         
-        // allow isDefault to be set only for Shared network
-        if (networkOffering.getGuestType() == Network.GuestType.Isolated) {
-            if (isDefault != null && !isDefault) {
-                throw new InvalidParameterValueException("Can specify isDefault parameter only for network of type " + Network.GuestType.Shared);
-            } else if (areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)){
-                isDefault = true;
-            } else {
+        // allow isDefault to be set only for Shared network and Isolated networks with source nat disabled service
+        boolean allowSettingDefault = (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        if (allowSettingDefault) {
+        	if (isDefault == null) {
                 isDefault = false;
-            }
-            
-            if (isShared != null && isShared) {
-                throw new InvalidParameterValueException("Can specify isShared parameter for " + Network.GuestType.Shared + " networks only");
             }
         } else {
-            if (isDefault == null) {
-                isDefault = false;
+        	if (isDefault == null) {
+                isDefault = true;
             }
-        }
-        
-        if (isShared) {
-            owner = _accountMgr.getSystemAccount();
         }
 
         // Don't allow to create network with vlan that already exists in the system
@@ -1959,12 +1947,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 if (networkDomain == null) {
                     //1) Get networkDomain from the corresponding account/domain/zone
-                    if (isShared) {
-                        if (domainId != null) {
-                            networkDomain = getDomainNetworkDomain(domainId, zoneId);
-                        } else {
-                            networkDomain = getZoneNetworkDomain(zoneId);
-                        }
+                    if (aclType == ACLType.Domain) {
+                        networkDomain = getDomainNetworkDomain(domainId, zoneId);
                     } else {
                         networkDomain = getAccountNetworkDomain(owner.getId(), zoneId);
                     }
@@ -1987,8 +1971,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Cidr for Direct network can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges
         // with different Cidrs for the same Shared network
-        if (cidr == null && networkOffering.getTrafficType() == TrafficType.Guest && networkOffering.getGuestType() == Network.GuestType.Shared) {
-            throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required for Direct network creation");
+        boolean cidrRequired = networkOffering.getTrafficType() == TrafficType.Guest && (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        if (cidr == null && cidrRequired) {
+            throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of type " + Network.GuestType.Shared + " and network of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
         }
 
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated
@@ -2023,7 +2008,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isDefault, true, domainId, isShared);
+        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isDefault, true, domainId, aclType);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
@@ -2058,7 +2043,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String guestIpType = cmd.getGuestIpType();
         String trafficType = cmd.getTrafficType();
         Boolean isSystem = cmd.getIsSystem();
-        Boolean isShared = cmd.getIsShared();
+        String aclType = cmd.getAclType();
         Boolean isDefault = cmd.isDefault();
         Long projectId = cmd.getProjectId();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -2098,9 +2083,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (!_accountMgr.isAdmin(caller.getType())) {
             permittedAccounts.add(caller.getId());
+            sharedNetworkDomainId = caller.getDomainId();
         }
         
-      //set project information
+        //set project information
         if (projectId != null) {
             permittedAccounts.clear();
             Project project = _projectMgr.getProject(projectId);
@@ -2117,14 +2103,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         path = _domainDao.findById(caller.getDomainId()).getPath();
 
-        if ((isSystem == null || !isSystem) && (isShared == null || isShared)) {
-            if (isShared != null && isShared && caller.getId() != Account.ACCOUNT_ID_SYSTEM && domainId == null) {
-                sharedNetworkDomainId = caller.getDomainId();
-            } else if (isShared == null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN && domainId == null) {
-                sharedNetworkDomainId = caller.getDomainId();
-            }else{
+        if ((isSystem == null || !isSystem) && (aclType != null && aclType.equalsIgnoreCase(ACLType.Domain.toString()))) {
+        	if (domainId == null) {
                 sharedNetworkDomainId = domainId;
-            }
+        	} else {
+                sharedNetworkDomainId = caller.getDomainId();
+        	}
         }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2151,23 +2135,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
 
         List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
+        
         if (isSystem == null || !isSystem) {
-            //Get domain level + account/zone level networks
+            //Get domain level + account level networks
             if (sharedNetworkDomainId != null) {
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, sharedNetworkDomainId));
-            } else {
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, ACLType.Domain.toString()), searchFilter, sharedNetworkDomainId));
+            } else if (permittedAccounts.isEmpty()){
                 SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
                 sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-                networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, path));
+                networksToReturn.addAll(listDomainSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, aclType), searchFilter, path));
             }
-
-            //if user requested only domain specific networks, don't return account/zone wide networks
-            if (!permittedAccounts.isEmpty() || (domainId == null && accountName == null && projectId == null)) {
-                networksToReturn.addAll(listAccountSpecificAndZoneLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter, path, permittedAccounts));
+            
+            if (!permittedAccounts.isEmpty()) {
+                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, ACLType.Account.toString()), searchFilter, path, permittedAccounts));
             }
         } else {
-            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter);
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, null), searchFilter);
         }
         
         
@@ -2197,7 +2181,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, Boolean isDefault, String trafficType, Boolean isShared, Long physicalNetworkId) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, Boolean isDefault, String trafficType, Long physicalNetworkId, String aclType) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -2230,8 +2214,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
 
-        if (isShared != null) {
-            sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+        if (aclType != null) {
+            sc.addAnd("aclType", SearchCriteria.Op.EQ, aclType.toString());
         }
         
         if (physicalNetworkId != null) {
@@ -2255,41 +2239,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networksDao.search(sc, searchFilter);
     }
 
-    private List<NetworkVO> listAccountSpecificAndZoneLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, List<Long> permittedAccounts) {
-
-        SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-
+    private List<NetworkVO> listAccountSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, List<Long> permittedAccounts) {
         //account level networks
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
         if (!permittedAccounts.isEmpty()) {
             accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
         }
 
-        accountSC.addAnd("isShared", SearchCriteria.Op.EQ, false);
+        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
         if (path != null) {
             Set<Long> allowedDomains = _domainMgr.getDomainChildrenIds(path);
             accountSC.addAnd("domainId", SearchCriteria.Op.IN, allowedDomains.toArray());
         }
 
-        ssc.addOr("id", SearchCriteria.Op.SC, accountSC);
-
-        //zone level networks
-        SearchCriteria<NetworkVO> zoneSC = _networksDao.createSearchCriteria();
-        zoneSC.addAnd("isDomainSpecific", SearchCriteria.Op.EQ, false);
-        zoneSC.addAnd("isShared", SearchCriteria.Op.EQ, true);
-        ssc.addOr("id", SearchCriteria.Op.SC, zoneSC);
-
-        sc.addAnd("id", SearchCriteria.Op.SC, ssc);
+        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
 
         return _networksDao.search(sc, searchFilter);
     }
 
-
     private List<NetworkVO> listDomainSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path) {
 
         if (path != null) {
-            sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
-            sc.addAnd("isDomainSpecific", SearchCriteria.Op.EQ, true);
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
@@ -2956,7 +2926,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
             PhysicalNetwork physicalNetwork = translateZoneIdToPhysicalNetwork(zoneId);
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, null, owner, false, null, false, physicalNetwork, zoneId);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, null, owner, false, null, physicalNetwork, zoneId, ACLType.Account);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -3311,8 +3281,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network offering " + networkOffering + " is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it");
             }
             
-            if (networkOffering.getAvailability() == Availability.Unavailable || networkOffering.getState() == NetworkOffering.State.Disabled || networkOffering.getState() == NetworkOffering.State.Inactive) {
-                throw new InvalidParameterValueException("Can't update network; network offering id=" + networkOfferingId + " is " + networkOffering.getAvailability() + " and " + networkOffering.getState());
+            if (networkOffering.getState() != NetworkOffering.State.Enabled) {
+                throw new InvalidParameterValueException("Can't update network; network offering id=" + networkOfferingId + " is " + networkOffering.getState());
             }
             
             if (networkOfferingId != oldNetworkOfferingId) {

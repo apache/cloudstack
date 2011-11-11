@@ -19,22 +19,18 @@ package com.cloud.network;
 
 import java.net.URI;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
-import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.Identity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -123,12 +119,6 @@ public class NetworkVO implements Network, Identity {
     @Column(name="dns2")
     String dns2;
 
-    @Column(name="shared")
-    boolean isShared;
-    
-    @Column(name="is_domain_specific")
-    boolean isDomainSpecific;
-
     @Column(name="network_domain")
     String networkDomain;
 
@@ -150,6 +140,10 @@ public class NetworkVO implements Network, Identity {
     @Column(name="guest_type")
     @Enumerated(value=EnumType.STRING)
     Network.GuestType guestType;
+    
+    @Column(name="acl_type")
+    @Enumerated(value=EnumType.STRING)
+    ControlledEntity.ACLType aclType;
 
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
@@ -182,8 +176,8 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, GuestType guestType, boolean isShared, long dcId, Long physicalNetworkId) {
-        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, isDefault,isDomainSpecific, networkDomain, guestType, isShared, dcId, physicalNetworkId);
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType) {
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, isDefault,networkDomain, guestType, dcId, physicalNetworkId, aclType);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -207,14 +201,14 @@ public class NetworkVO implements Network, Identity {
      * @param name
      * @param displayText
      * @param isDefault
-     * @param isDomainSpecific
      * @param networkDomain
      * @param guestType TODO
+     * @param aclType TODO
      * @param isShared TODO
      * @param isShared
      * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, boolean isDomainSpecific, String networkDomain, GuestType guestType, boolean isShared, long dcId, Long physicalNetworkId) {
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, boolean isDefault, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType) {
         this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -223,11 +217,10 @@ public class NetworkVO implements Network, Identity {
         this.name = name;
         this.displayText = displayText;
         this.isDefault = isDefault;
-        this.isDomainSpecific = isDomainSpecific;
+        this.aclType = aclType;
         this.networkDomain = networkDomain;
     	this.uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
-        this.isShared = isShared;
     }
 
     @Override
@@ -415,10 +408,6 @@ public class NetworkVO implements Network, Identity {
         return isDefault;
     }
 
-    public void setShared(boolean isShared) {
-        this.isShared = isShared;
-    }
-
     public Date getRemoved() {
         return removed;
     }
@@ -433,10 +422,6 @@ public class NetworkVO implements Network, Identity {
 
     public void setCreated(Date created) {
         this.created = created;
-    }
-
-    public boolean isDomainSpecific() {
-        return isDomainSpecific;
     }
     
     @Override
@@ -471,8 +456,8 @@ public class NetworkVO implements Network, Identity {
         buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
     }
-    
-    @Override
+
+
     public String getUuid() {
     	return this.uuid;
     }
@@ -481,8 +466,8 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = uuid;
     }
 
-    @Override
-    public boolean getIsShared() {
-        return isShared;
-    }
+	public ControlledEntity.ACLType getAclType() {
+		return aclType;
+	}
+
 }

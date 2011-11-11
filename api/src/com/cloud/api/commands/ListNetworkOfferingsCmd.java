@@ -60,9 +60,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="the tags for the network offering.")
     private Boolean specifyVlan;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
-    private Boolean isShared; 
-    
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability;
     
@@ -111,10 +108,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
         return specifyVlan;
     }
 
-    public Boolean getIsShared() {
-        return isShared;
-    }
-    
     public String getAvailability() {
         return availability;
     }

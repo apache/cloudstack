@@ -291,8 +291,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     NetworkRuleConfigDao _networkRuleConfigDao;
     @Inject
-    AccountVlanMapDao _accountVlanMapDao;
-    @Inject
     UserStatisticsDao _statsDao = null;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
@@ -1217,12 +1215,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
                 NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
                 if (publicNetwork) {
                     NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-                    List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
+                    List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
                     networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
                 }
 

@@ -96,7 +96,6 @@ public class ApiConstants {
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
-    public static final String IS_SHARED = "isshared";
     public static final String IS_LB_SHARED = "islbshared";
     public static final String ISO_FILTER = "isofilter";
     public static final String ISO_GUEST_OS_NONE = "None";
@@ -301,7 +300,8 @@ public class ApiConstants {
     public static final String SERVICE_LIST = "servicelist";
     public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
     public static final String SUPPORTED_SERVICES = "supportedservices";
-    public static final String SOURCE_NAT_ENABLED = "sourcenatenabled";
     public static final String NSP_ID= "nspid";
+    public static final String ACL_TYPE= "acltype";
+    public static final String IS_SOURCE_NAT_SHARED = "isshared";
     
 }

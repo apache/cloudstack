@@ -77,7 +77,7 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.IS_LB_SHARED) @Param(description="true if load balncer service offered is shared by multiple networks", responseObject = ServiceResponse.class)
     private Boolean isLbShared;
 
-    @SerializedName(ApiConstants.IS_SHARED) @Param(description="true if soruce NAT service offered is shared by multiple networks", responseObject = ServiceResponse.class)
+    @SerializedName(ApiConstants.IS_SOURCE_NAT_SHARED) @Param(description="true if soruce NAT service offered is shared by multiple networks", responseObject = ServiceResponse.class)
     private Boolean isSourceNatShared;
 
     @SerializedName(ApiConstants.REDUNDANT_ROUTER) @Param(description="true if gateway service offered redundant router", responseObject = ServiceResponse.class)

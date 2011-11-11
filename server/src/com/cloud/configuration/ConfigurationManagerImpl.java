@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateCfgCmd;
@@ -83,6 +84,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -1468,7 +1470,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, null, true);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, Domain.ROOT_DOMAIN, null);
             }
         }
     }
@@ -2903,7 +2905,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         if (availability == null) {
-            throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional + ", " + Availability.Unavailable);
+            throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
         }
 
         Integer maxConnections = cmd.getMaxconnections();
@@ -3148,7 +3150,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object trafficType = cmd.getTrafficType();
         Object isDefault = cmd.getIsDefault();
         Object specifyVlan = cmd.getSpecifyVlan();
-        Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
         Object state = cmd.getState();
         Long zoneId = cmd.getZoneId();
@@ -3193,10 +3194,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (specifyVlan != null) {
             sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, specifyVlan);
-        }
-
-        if (isShared != null) {
-            sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
         }
 
         if (availability != null) {
@@ -3359,7 +3356,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
             if (availability == null) {
-                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional + ", " + Availability.Unavailable);
+                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
             } else {
                 offering.setAvailability(availability);
             }

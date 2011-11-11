@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
@@ -91,8 +92,8 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
-    private Boolean isShared;
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+    private String aclType;
     
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
@@ -151,12 +152,12 @@ public class CreateNetworkCmd extends BaseCmd {
     public Long getProjectId() {
         return projectId;
     }
-    
-    public Boolean getIsShared() {
-        return isShared == null ? false : isShared;
-    }
-    
-    public Long getZoneId() {
+
+    public String getAclType() {
+		return aclType == null ? ControlledEntity.ACLType.Account.toString() : aclType;
+	}
+
+	public Long getZoneId() {
         Long physicalNetworkId = getPhysicalNetworkId();
         
         if (physicalNetworkId == null && zoneId == null) {

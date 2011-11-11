@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -305,8 +306,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected VlanDao _vlanDao;
     @Inject
     protected ClusterDao _clusterDao;
-    @Inject
-    protected AccountVlanMapDao _accountVlanMapDao;
     @Inject
     protected StoragePoolDao _storagePoolDao;
     @Inject
@@ -2218,7 +2217,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, null, owner, false, null, false, physicalNetwork, zone.getId());
+                            null, null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + owner + "; please specify networkIds");
@@ -2231,7 +2230,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
                         s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
                         Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                                null, null, null, owner, false, null, false, physicalNetwork, zone.getId());
+                                null, null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account);
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     } else {
                         throw new InvalidParameterValueException("Unable to find default networks for account " + owner);
@@ -2242,13 +2241,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 } else {
                     defaultNetwork = defaultNetworks.get(0);
                 }
-            }
-
-            // Check that network offering doesn't have Availability=Unavailable
-            NetworkOffering networkOffering = _configMgr.getNetworkOffering(defaultNetwork.getNetworkOfferingId());
-
-            if (networkOffering.getAvailability() == Availability.Unavailable) {
-                throw new InvalidParameterValueException("Unable to find default network; please specify networkOfferingIds");
             }
 
             networkList.add(defaultNetwork);
@@ -2281,15 +2273,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new PermissionDeniedException("Shared network id=" + networkId + " is not available in domain id=" + owner.getDomainId());
                     }
                 }
-
-                // check that corresponding offering is available
-                NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-
-                if (networkOffering.getAvailability() == Availability.Unavailable) {
-                    throw new InvalidParameterValueException("Network id=" + network.getId() + " can't be used; corresponding network offering is " + Availability.Unavailable);
-                }
-
+                
                 //don't allow to use system networks 
+                NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
                 if (networkOffering.isSystemOnly()) {
                     throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
                 }
@@ -3441,7 +3427,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated, true);
                 if (virtualNetworks.isEmpty()) {
                     Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                            null, null, null, newAccount, false, null, false, physicalNetwork, zone.getId());
+                            null, null, null, newAccount, false, null, physicalNetwork, zone.getId(), ACLType.Account);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");

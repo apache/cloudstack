@@ -28,8 +28,7 @@ public interface NetworkOffering {
     
     public enum Availability {
         Required,
-        Optional,
-        Unavailable;
+        Optional
     }
     
     public enum State {

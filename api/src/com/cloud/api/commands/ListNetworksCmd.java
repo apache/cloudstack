@@ -28,7 +28,6 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.network.Network;
@@ -63,8 +62,8 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
     private Boolean isSystem;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true if network is shared across accounts in the Zone, false otherwise")
-    private Boolean isShared;
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="list networks by ACL (access control list) type. Supported values are Account and Domain")
+    private String aclType;
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
     private Boolean isDefault;
@@ -109,12 +108,12 @@ public class ListNetworksCmd extends BaseListCmd {
     public Boolean getIsSystem() {
         return isSystem;
     }
-
-    public Boolean getIsShared() {
-        return isShared;
-    }
     
-    public Boolean isDefault() {
+    public String getAclType() {
+		return aclType;
+	}
+
+	public Boolean isDefault() {
         return isDefault;
     }
 

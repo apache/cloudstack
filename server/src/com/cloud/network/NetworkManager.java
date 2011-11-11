@@ -21,6 +21,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
@@ -110,11 +111,11 @@ public interface NetworkManager extends NetworkService {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean isShared)
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException;
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, boolean isShared) throws ConcurrentOperationException;
+            Long domainId, ACLType aclType) throws ConcurrentOperationException;
 
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
 
@@ -155,7 +156,7 @@ public interface NetworkManager extends NetworkService {
     boolean destroyNetwork(long networkId, ReservationContext context);
 
     Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
-            Long domainId, Boolean isShared, PhysicalNetwork physicalNetwork, long zoneId) throws ConcurrentOperationException, InsufficientCapacityException;
+            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * @throws InsufficientCapacityException

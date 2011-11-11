@@ -47,6 +47,7 @@ import javax.crypto.SecretKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource;
@@ -67,6 +68,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
@@ -980,7 +982,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, isNetworkDefault, false, networkDomain, Network.GuestType.Shared, true, zoneId, null);
+                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, isNetworkDefault, networkDomain, Network.GuestType.Shared, zoneId, null, null);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

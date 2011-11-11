@@ -47,8 +47,8 @@ public class NetworkProfile implements Network {
     private boolean isDefault;
     private String networkDomain;
     private Network.GuestType guestType;
-    private boolean isShared;
     private Long physicalNetworkId;
+    private ACLType aclType;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -70,8 +70,8 @@ public class NetworkProfile implements Network {
         this.networkDomain = network.getNetworkDomain();
         this.domainId = network.getDomainId();
         this.guestType = network.getGuestType();
-        this.isShared = network.getIsShared();
         this.physicalNetworkId = network.getPhysicalNetworkId();
+        this.aclType = network.getAclType();
     }
 
     public String getDns1() {
@@ -190,11 +190,6 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public boolean getIsShared() {
-        return isShared;
-    }
-    
-    @Override
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
@@ -203,4 +198,9 @@ public class NetworkProfile implements Network {
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
+
+    @Override
+	public ACLType getAclType() {
+		return aclType;
+	}
 }

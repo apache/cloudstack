@@ -2365,7 +2365,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
         }
 
-        response.setIsShared(network.getIsShared());
+        if (network.getAclType() != null) {
+            response.setAclType(network.getAclType().toString());
+        }
         response.setIsDefault(network.isDefault());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());
@@ -2810,6 +2812,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("traffictype");
         return response;
     }
+
 
     @Override
     public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
