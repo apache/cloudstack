@@ -268,7 +268,7 @@
                             for (var i = 0; i < networks.length; i++) {
                               if (networks[i].type == 'Isolated') {
                                 //loop through
-                                var sourceNatObj = ipFindNetworkServiceByName("SourceNat", networkObj);
+                                var sourceNatObj = ipFindNetworkServiceByName("SourceNat", networks[i]);
                                 if(sourceNatObj != null) {
                                   virtualNetwork = networks[i];
                                   break;
