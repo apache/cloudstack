@@ -27,8 +27,8 @@ import com.google.gson.annotations.SerializedName;
 
 public class PhysicalNetworkResponse extends BaseResponse{
     
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the physical network")
-    private IdentityProxy id = new IdentityProxy("physical_networks");
+    @SerializedName(ApiConstants.ID) @Param(description="the uuid of the physical network")
+    private String id;
     
     @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE) @Param(description="Broadcast domain range of the physical network")
     private String broadcastDomainRange;
@@ -43,7 +43,7 @@ public class PhysicalNetworkResponse extends BaseResponse{
     private String vlan;
     
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the physical network owner")
-    private Long domainId;
+    private IdentityProxy domainId = new IdentityProxy("domain");
     
     @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
     private String tags;
@@ -54,8 +54,8 @@ public class PhysicalNetworkResponse extends BaseResponse{
     @SerializedName(ApiConstants.NETWORK_SPEED) @Param(description="the speed of the physical network")
     private String networkSpeed;
 
-    public void setId(long id) {
-        this.id.setValue(id);
+    public void setId(String uuid) {
+        this.id = uuid;
     }
 
     public void setZoneId(Long zoneId) {
@@ -68,7 +68,7 @@ public class PhysicalNetworkResponse extends BaseResponse{
     
 
     public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+        this.domainId.setValue(domainId);
     }
     
     public void setVlan(String vlan) {

@@ -76,7 +76,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String projectName;
     
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
-    private Long physicalNetworkId;    
+    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -149,10 +149,10 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     }
     
     public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId = physicalNetworkId;
+        this.physicalNetworkId.setValue(physicalNetworkId);
     }
 
     public long getphysicalNetworkId() {
-        return physicalNetworkId;
+        return physicalNetworkId.getValue();
     }    
 }

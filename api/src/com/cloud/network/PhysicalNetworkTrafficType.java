@@ -42,4 +42,6 @@ public interface PhysicalNetworkTrafficType {
     String getKvmNetworkLabel();
     
     String getVmwareNetworkLabel();
+
+    String getUuid();
 }

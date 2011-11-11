@@ -88,6 +88,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
+    
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");    
 
 /*    
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
@@ -196,4 +199,12 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
+    
+    public void setPhysicalNetworkId(long physicalNetworkId) {
+        this.physicalNetworkId.setValue(physicalNetworkId);
+    }
+
+    public long getphysicalNetworkId() {
+        return physicalNetworkId.getValue();
+    }     
 }

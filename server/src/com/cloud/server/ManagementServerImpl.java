@@ -1147,6 +1147,7 @@ public class ManagementServerImpl implements ManagementServer {
         Boolean forVirtual = cmd.getForVirtualNetwork();
         String vlanType = null;
         Long projectId = cmd.getProjectId();
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
 
         if (accountName != null && domainId != null) {
             if (projectId != null) {
@@ -1192,6 +1193,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("vlan", sb.entity().getVlanTag(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         sb.and("vlanType", sb.entity().getVlanType(), SearchCriteria.Op.EQ);
+        sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
 
         if (accountId != null) {
             SearchBuilder<AccountVlanMapVO> accountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
@@ -1237,6 +1239,10 @@ public class ManagementServerImpl implements ManagementServer {
             }
             if (vlanType != null) {
                 sc.setParameters("vlanType", vlanType);
+            }
+
+            if (physicalNetworkId != null) {
+                sc.setParameters("physicalNetworkId", physicalNetworkId);
             }
         }
 
@@ -2038,6 +2044,7 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Object keyword = cmd.getKeyword();
         Long projectId = cmd.getProjectId();
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
         
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -2107,6 +2114,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
 
         if ((permittedAccounts.isEmpty()) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
@@ -2168,6 +2176,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (vlan != null) {
             sc.setParameters("vlanDbId", vlan);
+        }
+        
+        if (physicalNetworkId != null) {
+            sc.setParameters("physicalNetworkId", physicalNetworkId);
         }
 
         return _publicIpAddressDao.search(sc, searchFilter);

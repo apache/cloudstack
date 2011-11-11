@@ -19,6 +19,7 @@ package com.cloud.network.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -39,6 +40,9 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
+    
+    @Column(name="uuid")
+    private String uuid; 
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
@@ -94,6 +98,7 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = name;
         this.state = State.Disabled;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -226,6 +231,15 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
 
     public void setSecuritygroupServiceProvided(boolean securitygroupServiceProvided) {
         this.securitygroupServiceProvided = securitygroupServiceProvided;
+    }
+    
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
     
     public void setEnabledServices(List<Service> services){

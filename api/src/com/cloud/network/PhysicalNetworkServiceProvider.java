@@ -70,4 +70,6 @@ public interface PhysicalNetworkServiceProvider {
     boolean isSecuritygroupServiceProvided();
 
     List<Service> getEnabledServices();
+
+    String getUuid();
 }

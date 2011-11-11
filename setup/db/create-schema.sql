@@ -118,6 +118,10 @@ DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud`.`op_host_transfer`;
 DROP TABLE IF EXISTS `cloud`.`projects`;
 DROP TABLE IF EXISTS `cloud`.`physical_network`;
+DROP TABLE IF EXISTS `cloud`.`physical_network_tags`;
+DROP TABLE IF EXISTS `cloud`.`physical_network_isolation_methods`;
+DROP TABLE IF EXISTS `cloud`.`physical_network_traffic_types`;
+DROP TABLE IF EXISTS `cloud`.`physical_network_service_providers`;
 DROP TABLE IF EXISTS `cloud`.`virtual_router_elements`;
 
 CREATE TABLE `cloud`.`version` (
@@ -458,10 +462,9 @@ CREATE TABLE `cloud`.`vlan` (
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  #CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
   CONSTRAINT `uc_vlan__uuid` UNIQUE (`uuid`),
-  #CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vlan__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1851,6 +1854,7 @@ CREATE TABLE  `ntwk_service_map` (
 
 CREATE TABLE `cloud`.`physical_network` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',
   `vnet` varchar(255),
   `speed` varchar(32),  
@@ -1862,6 +1866,7 @@ CREATE TABLE `cloud`.`physical_network` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_physical_network__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_physical_network__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  CONSTRAINT `uc_physical_networks__uuid` UNIQUE (`uuid`),
   INDEX `i_physical_network__removed`(`removed`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1885,6 +1890,7 @@ CREATE TABLE `cloud`.`physical_network_isolation_methods` (
 
 CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `xen_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
@@ -1893,11 +1899,13 @@ CREATE TABLE `cloud`.`physical_network_traffic_types` (
   `vlan` varchar(255) COMMENT 'The vlan tag to be sent down to a VMware host',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_physical_network_traffic_types__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_traffic_types__uuid` UNIQUE (`uuid`),
   UNIQUE KEY(`physical_network_id`, `traffic_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`physical_network_service_providers` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'provider state',
@@ -1914,7 +1922,8 @@ CREATE TABLE `cloud`.`physical_network_service_providers` (
   `user_data_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is UserData service provided',
   `security_group_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is SG service provided',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_service_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`external_load_balancer_devices` (
