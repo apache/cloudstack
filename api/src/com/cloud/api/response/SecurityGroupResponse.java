@@ -50,12 +50,12 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the security group")
     private String domainName;
 
-    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
-    private List<SecurityGroupRuleResponse> ingressRules;
+    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = IngressRuleResponse.class)
+    private List<IngressRuleResponse> ingressRules;
 
-    @SerializedName("egressrule")  @Param(description="the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
-    private List<SecurityGroupRuleResponse> egressRules;
-    
+    @SerializedName("egressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = EgressRuleResponse.class)
+    private List<EgressRuleResponse> egressRules;
+
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -84,14 +84,14 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
         this.domainName = domainName;
     }
 
-    public void setSecurityGroupIngressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
-        this.ingressRules = securityGroupRules;
-    }
-
-    public void setSecurityGroupEgressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
-        this.egressRules = securityGroupRules;
+    public void setIngressRules(List<IngressRuleResponse> ingressRules) {
+        this.ingressRules = ingressRules;
     }
     
+    public void setEgressRules(List<EgressRuleResponse> egressRules) {
+        this.egressRules = egressRules;
+    }
+
     @Override
     public Long getObjectId() {
         return getId();

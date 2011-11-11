@@ -55,8 +55,8 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -1045,7 +1045,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		}
 	}
 	
-	private Answer execute(SecurityGroupRulesCmd cmd) {
+	private Answer execute(SecurityIngressRulesCmd cmd) {
         boolean result = false;        
         try {
         	OvmVif.Details vif = getVifFromVm(cmd.getVmName(), null);
@@ -1059,10 +1059,10 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
         if (!result) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
-            return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
+            return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
         } else {
             s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
-            return new SecurityGroupRuleAnswer(cmd);
+            return new SecurityIngressRuleAnswer(cmd);
         }	    
     }	
 	
@@ -1270,8 +1270,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 			return execute((FenceCommand)cmd);
 		} else if (clazz == AttachIsoCommand.class) {
 			return execute((AttachIsoCommand)cmd);
-		} else if (clazz == SecurityGroupRulesCmd.class) {
-		    return execute((SecurityGroupRulesCmd) cmd);
+		} else if (clazz == SecurityIngressRulesCmd.class) {
+		    return execute((SecurityIngressRulesCmd) cmd);
 		} else if (clazz == CleanupNetworkRulesCmd.class) {
 		    return execute((CleanupNetworkRulesCmd) cmd);
 		} else if (clazz == PrepareOCFS2NodesCommand.class) {

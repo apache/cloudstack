@@ -28,10 +28,10 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.host.HostStats;
-import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.service.ServiceOfferingVO;
@@ -43,7 +43,7 @@ import com.cloud.utils.fsm.NoTransitionException;
  * ResourceManager manages how physical resources are organized within the
  * CloudStack. It also manages the life cycle of the physical resources.
  */
-public interface ResourceManager {
+public interface ResourceManager extends ResourceService{
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
@@ -89,6 +89,7 @@ public interface ResourceManager {
 	
 	public boolean maintain(final long hostId) throws AgentUnavailableException;
 	
+    @Override
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
     
     public List<HostVO> findDirectlyConnectedHosts();

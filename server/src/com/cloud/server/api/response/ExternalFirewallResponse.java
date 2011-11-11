@@ -25,7 +25,7 @@ import com.cloud.api.response.BaseResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class ExternalFirewallResponse extends BaseResponse {
+public class ExternalFirewallResponse extends NetworkDeviceResponse {
 
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the external firewall")
     private IdentityProxy id = new IdentityProxy("host");

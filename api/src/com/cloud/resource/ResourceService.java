@@ -29,10 +29,10 @@ import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.storage.Swift;
 
@@ -90,4 +90,6 @@ public interface ResourceService {
     Cluster getCluster(Long clusterId);
 
     List<? extends Swift> discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
+    
+    List<HypervisorType> getSupportedHypervisorTypes(long zoneId);
 }

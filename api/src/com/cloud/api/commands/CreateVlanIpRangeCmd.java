@@ -84,6 +84,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the network id")
     private Long networkID;
 
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the physical network id")
+    private Long physicalNetworkId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -139,6 +142,11 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return networkID;
     }
 
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    
     @Override
     public String getCommandName() {
         return s_name;

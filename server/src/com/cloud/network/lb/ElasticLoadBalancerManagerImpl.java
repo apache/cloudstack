@@ -75,14 +75,18 @@ import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -119,7 +123,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
@@ -180,6 +183,10 @@ public class ElasticLoadBalancerManagerImpl implements
     NetworkDao _networksDao;
     @Inject 
     AccountDao _accountDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao _physicalProviderDao;
+    @Inject
+    VirtualRouterProviderDao _vrProviderDao;
 
 
     String _name;
@@ -219,7 +226,7 @@ public class ElasticLoadBalancerManagerImpl implements
         Pod pod = podId == null?null:_podDao.findById(podId);
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(
                 1);
-        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
+        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
         Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
         s_logger.debug("About to deploy ELB vm ");
@@ -460,8 +467,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
         try {
 
-            NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
-            if (offering.isSystemOnly() || guestNetwork.getIsShared()) {
+            if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
                 owner = _accountService.getSystemAccount();
             }
 
@@ -476,7 +482,7 @@ public class ElasticLoadBalancerManagerImpl implements
             DataCenterDeployment plan = null;
             DomainRouterVO elbVm = null;
             
-            plan = new DataCenterDeployment(dcId, dest.getPod().getId(), null, null, null);
+            plan = new DataCenterDeployment(dcId, dest.getPod().getId(), null, null, null, null);
 
             if (elbVm == null) {
                 long id = _routerDao.getNextInSequence(Long.class, "id");
@@ -486,7 +492,7 @@ public class ElasticLoadBalancerManagerImpl implements
  
                 List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
                 NetworkOfferingVO controlOffering = offerings.get(0);
-                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
+                NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
                 NicProfile guestNic = new NicProfile();
@@ -496,9 +502,19 @@ public class ElasticLoadBalancerManagerImpl implements
                 
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 
+                String typeString = "ElasticLoadBalancerVm";
+                Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(guestNetwork);
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
+                if (provider == null) {
+                    throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
+                }
+                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.ElasticLoadBalancerVm);
+                if (vrProvider == null) {
+                    throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
+                }
                
-                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
+                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
+                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
                 //TODO: create usage stats
@@ -574,12 +590,16 @@ public class ElasticLoadBalancerManagerImpl implements
     @DB
     public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
         //TODO: this only works in the guest network. Handle the public network case also.
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeAndGuestType(true, _frontendTrafficType, GuestIpType.Direct);
-        if (offerings == null || offerings.size() == 0) {
-            s_logger.warn("ELB: Could not find system offering for direct networks of type " + _frontendTrafficType);
+        NetworkOfferingVO frontEndOffering = null;
+        if (_frontendTrafficType == TrafficType.Guest) {
+            frontEndOffering = _networkMgr.getExclusiveGuestNetworkOffering();
+        }
+        
+        if (frontEndOffering == null) {
+            s_logger.warn("ELB: Could not find offering for direct networks of type " + _frontendTrafficType);
             return null;
         }
-        NetworkOffering frontEndOffering = offerings.get(0);
+        
         List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, frontEndOffering.getId(), lb.getZoneId());
         if (networks == null || networks.size() == 0) {
             s_logger.warn("ELB: Could not find network of offering type " + frontEndOffering +  " in zone " + lb.getZoneId());
@@ -613,8 +633,8 @@ public class ElasticLoadBalancerManagerImpl implements
         NetworkVO network=_networkDao.findById(networkId);
 
 
-        if (network.getGuestType() != GuestIpType.Direct) {
-            s_logger.info("ELB: not handling guest traffic of type " + network.getGuestType());
+        if (network.getGuestType() != Network.GuestType.Shared) {
+            s_logger.info("ELB: not handling traffic for network of type " + network.getGuestType());
             return null;
         }
         return network;
@@ -686,7 +706,6 @@ public class ElasticLoadBalancerManagerImpl implements
                         s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
                         if (newIp)
                             releaseIp(ipId, UserContext.current().getCallerUserId(), account);
-                       
                     }
                 }
 

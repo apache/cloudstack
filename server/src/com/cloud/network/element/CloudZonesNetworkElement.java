@@ -33,7 +33,6 @@
 package com.cloud.network.element;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -43,16 +42,11 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -61,42 +55,32 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpAddress;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.Nic.ReservationStrategy;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement, PasswordResetElement{
+public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(CloudZonesNetworkElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -112,7 +96,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     @Inject AgentManager _agentManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     
-    private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
+    private boolean canHandle(DeployDestination dest, TrafficType trafficType) {
         DataCenterVO dc = (DataCenterVO)dest.getDataCenter();
         
         if (dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())){
@@ -128,7 +112,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+        if (!canHandle(dest, offering.getTrafficType())) {
             return false;
         }
         
@@ -137,7 +121,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), dest, network.getTrafficType())) {
+        if (canHandle(dest, network.getTrafficType())) {
             
             if (vmProfile.getType() != VirtualMachine.Type.User) {
                 return false;
@@ -185,7 +169,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
     
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
        return false; //assume that the agent will remove userdata etc
     }
     
@@ -194,22 +178,6 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         return false; //assume that the agent will remove userdata etc
     }
 
-    @Override
-    public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return false;
-    }
-
-    @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return false;
-    }
-    
-    @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
-    }
-    
-    
     @Override
     public Provider getProvider() {
         return Provider.ExternalDhcpServer;
@@ -228,20 +196,6 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         return capabilities;
     }
     
-    @Override
-    public boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-
-        s_logger.trace("Cloudzones element doesn't handle network restart for the network " + network);
-        return true;
-
-    }
-    
-    @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException{
-        s_logger.trace("Cloudzones element doesn't handle saving passwords for " + network);
-        return true;
-    }
-    
     private VmDataCommand generateVmDataCommand( String vmPrivateIpAddress,
             String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
@@ -258,5 +212,22 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
+    }
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
     }
 }

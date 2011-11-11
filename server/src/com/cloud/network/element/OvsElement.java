@@ -18,7 +18,6 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -28,17 +27,14 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.Networks;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.element.NetworkElement;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -52,20 +48,6 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 	@Inject OvsNetworkManager _ovsVlanMgr;
 	@Inject OvsTunnelManager _ovsTunnelMgr;
 	
-	@Override
-	public boolean applyIps(Network network,
-			List<? extends PublicIpAddress> ipAddress)
-			throws ResourceUnavailableException {
-		return true;
-	}
-
-	@Override
-	public boolean applyRules(Network network,
-			List<? extends FirewallRule> rules)
-			throws ResourceUnavailableException {
-		return true;
-	}
-
 	@Override
 	public boolean destroy(Network network)
 			throws ConcurrentOperationException, ResourceUnavailableException {
@@ -130,23 +112,27 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 		_ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine());
 		return true;
 	}
-
+	
+	
 	@Override
-	public boolean restart(Network network, ReservationContext context, boolean cleanup)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		return true;
-	}
-
-	@Override
-	public boolean shutdown(Network network, ReservationContext context)
+	public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
 			throws ConcurrentOperationException, ResourceUnavailableException {
 		return true;
 	}
-	
-   @Override
-    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
-        return false;
+
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        return true;
     }
 
+    @Override
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
+    throws ConcurrentOperationException, ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean canEnableIndividualServices() {
+        return false;
+    }
 }

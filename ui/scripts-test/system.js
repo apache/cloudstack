@@ -46,18 +46,25 @@
                   }
                 ],
                 dataProvider: function(args) {
+<<<<<<< HEAD
                   args.response.success({ data: testData.data.networks[0] });
+=======
+                  args.response.success({
+                    data: testData.data.networks[0]
+                  });
+>>>>>>> master
                 }
               },
               ipAddresses: {
                 title: 'IP Addresses',
                 custom: function(args) {
                   return $('<div></div>').multiEdit({
+                    context: args.context,
                     noSelect: true,
                     fields: {
                       'gateway': { edit: true, label: 'Gateway' },
                       'netmask': { edit: true, label: 'Netmask' },
-                      'vlanid': { edit: true, label: 'VLAN' },
+                      'vlanid': { edit: true, label: 'VLAN', isOptional: true },
                       'startip': { edit: true, label: 'Start IP' },
                       'endip': { edit: true, label: 'End IP' },
                       'add-rule': { label: 'Add', addButton: true }
@@ -93,7 +100,13 @@
                     dataProvider: function(args) {
                       setTimeout(function() {
                         args.response.success({
-                          data: []
+                          data: [
+                            {
+                              gateway: '10.223.110.223',
+                              netmask: '255.255.255.0',
+                              vlanid: '1480'
+                            }
+                          ]
                         });
                       }, 100);
                     }
@@ -105,6 +118,7 @@
         },
         'management': {
           detailView: {
+            viewAll: { path: '_zone.pods', label: 'Pods' },
             tabs: {
               details: {
                 title: 'Details',
@@ -134,119 +148,60 @@
                   args.response.success({ data: testData.data.networks[0] });
                 }
               },
-              cidr: {
-                title: 'CIDR',
-                custom: function(args) {
-                  return $('<div></div>').multiEdit({
-                    noSelect: true,
-                    fields: {
-                      'cidr': { edit: true, label: 'CIDR' },
-                      'add-rule': {
-                        label: 'Add',
-                        addButton: true
-                      }
-                    },
+              network: {
+                title: 'Network',
+                listView: {
+                  section: 'networks',
+                  id: 'networks',
+                  fields: {
+                    name: { label: 'Name' },
+                    startip: { label: 'Start IP' },
+                    endip: { label: 'End IP' },
+                    vlan: { label: 'VLAN' }
+                  },
+                  actions: {
                     add: {
-                      label: 'Add',
-                      action: function(args) {
-                        setTimeout(function() {
-                          args.response.success({
-                            notification: {
-                              label: 'Added VLAN range',
-                              poll: testData.notifications.testPoll
-                            }
-                          });
-                        }, 500);
-                      }
-                    },
-                    actions: {
-                      destroy: {
-                        label: 'Remove Rule',
-                        action: function(args) {
-                          setTimeout(function() {
-                            args.response.success({
-                              notification: {
-                                label: 'Removed VLAN range',
-                                poll: testData.notifications.testPoll
-                              }
-                            });
-                          }, 500);
+                      label: 'Add network',
+                      createForm: {
+                        title: 'Add network',
+                        desc: 'Please fill in the following to add a guest network',
+                        fields: {
+                          vlan: {
+                            label: 'VLAN ID',
+                            validation: { required: true }
+                          },
+                          gateway: {
+                            label: 'Gateway',
+                            validation: { required: true }
+                          },
+                          netmask: {
+                            label: 'Netmask',
+                            validation: { required: true }
+                          },
+                          startip: {
+                            label: 'Start IP',
+                            validation: { required: true }
+                          },
+                          endip: {
+                            label: 'Start IP',
+                            validation: { required: true }
+                          }
                         }
-                      }
-                    },
-                    dataProvider: function(args) {
-                      setTimeout(function() {
-                        args.response.success({
-                          data: [
-                            {
-                              cidr: '0.0.0.0/0',
-                              startvlanrange: '1480', endvlanrange: '1559'
-                            }
-                          ]
-                        });
-                      }, 100);
-                    }
-                  });
-                }
-              },
-              vlanRanges: {
-                title: 'VLAN Ranges',
-                custom: function(args) {
-                  return $('<div></div>').multiEdit({
-                    noSelect: true,
-                    fields: {
-                      'startvlanrange': {
-                        edit: true, label: 'Start VLAN'
                       },
-                      'endvlanrange': {
-                        edit: true, label: 'End VLAN'
-                      },
-                      'add-rule': {
-                        label: 'Add',
-                        addButton: true
-                      }
-                    },
-                    add: {
-                      label: 'Add',
+
                       action: function(args) {
-                        setTimeout(function() {
-                          args.response.success({
-                            notification: {
-                              label: 'Added VLAN range',
-                              poll: testData.notifications.testPoll
-                            }
-                          });
-                        }, 500);
-                      }
-                    },
-                    actions: {
-                      destroy: {
-                        label: 'Remove Rule',
-                        action: function(args) {
-                          setTimeout(function() {
-                            args.response.success({
-                              notification: {
-                                label: 'Removed VLAN range',
-                                poll: testData.notifications.testPoll
-                              }
-                            });
-                          }, 500);
+                        args.response.success();
+                      },
+
+                      messages: {
+                        notification: function(args) {
+                          return 'Added guest network';
                         }
-                      }
-                    },
-                    dataProvider: function(args) {
-                      setTimeout(function() {
-                        args.response.success({
-                          data: [
-                            {
-                              cidr: '0.0.0.0/0',
-                              startvlanrange: '1480', endvlanrange: '1559'
-                            }
-                          ]
-                        });
-                      }, 100);
+                      },
+                      notification: { poll: testData.notifications.testPoll }
                     }
-                  });
+                  },
+                  dataProvider: testData.dataProvider.listView('networks')
                 }
               }
             }
@@ -328,7 +283,7 @@
                       state: 'Enabled'
                     }
                   ]
-                });                
+                });
               }, 500);
             }
           },
@@ -390,7 +345,7 @@
                       state: 'Enabled'
                     }
                   ]
-                });                
+                });
               }, 500);
             }
           },

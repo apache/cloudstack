@@ -329,8 +329,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             addr = InetAddress.getLocalHost();
         } catch (final UnknownHostException e) {
             s_logger.warn("unknow host? ", e);
-            // ignore
-            return;
+            throw new CloudRuntimeException("Cannot get local IP address");
         }
 
         final Script command = new Script("hostname", 500, s_logger);

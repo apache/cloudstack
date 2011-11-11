@@ -28,7 +28,6 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.network.Network;
@@ -58,13 +57,13 @@ public class ListNetworksCmd extends BaseListCmd {
     private Long zoneId;
     
     @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network")
-    private String type;
+    private String guestIpType;
     
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
     private Boolean isSystem;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true if network is shared across accounts in the Zone, false otherwise")
-    private Boolean isShared;
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="list networks by ACL (access control list) type. Supported values are Account and Domain")
+    private String aclType;
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
     private Boolean isDefault;
@@ -75,6 +74,12 @@ public class ListNetworksCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list networks by project id")
     private Long projectId;
+    
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
+    private Long physicalNetworkId;
+    
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
+    private List<String> supportedServices;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -96,19 +101,19 @@ public class ListNetworksCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getType() {
-        return type;
+    public String getGuestIpType() {
+        return guestIpType;
     }
 
     public Boolean getIsSystem() {
         return isSystem;
     }
-
-    public Boolean getIsShared() {
-        return isShared;
-    }
     
-    public Boolean isDefault() {
+    public String getAclType() {
+		return aclType;
+	}
+
+	public Boolean isDefault() {
         return isDefault;
     }
 
@@ -118,6 +123,14 @@ public class ListNetworksCmd extends BaseListCmd {
     
     public Long getProjectId() {
         return projectId;
+    }
+
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    public List<String> getSupportedServices() {
+        return supportedServices;
     }
 
     /////////////////////////////////////////////////////

@@ -780,11 +780,8 @@ public class ManagementServerImpl implements ManagementServer {
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
             }
-            if ((caller != null) && !isAdmin(caller.getType())) {
-                if (caller.getId() != vmInstance.getAccountId()) {
-                    throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
-                }
-            }
+            
+            _accountMgr.checkAccess(caller, null, vmInstance);
 
             ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
@@ -1034,7 +1031,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
 
-        DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
         while (enHost.hasMoreElements()) {
@@ -3358,8 +3355,8 @@ public class ManagementServerImpl implements ManagementServer {
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
         String supportELB = "false";
-        List<DataCenterVO> dc = _dcDao.listSecurityGroupEnabledZones();
-        if (dc != null && !dc.isEmpty()) {
+        List<NetworkVO> networks = _networkDao.listSecurityGroupEnabledNetworks();
+        if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
             String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
             elasticLoadBalancerEnabled = elbEnabled==null?false:Boolean.parseBoolean(elbEnabled);

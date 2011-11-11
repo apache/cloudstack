@@ -42,6 +42,8 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.ClusterSyncAnswer;
+import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
@@ -58,8 +60,6 @@ import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
@@ -71,7 +71,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -618,8 +617,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterIdToDeployIn() + " and podId: " + vm.getPodIdToDeployIn());
         }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null);
-        if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null, null);
+        if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() + ", clusterId: "
                         + planToDeploy.getClusterId() + ", hostId: " + planToDeploy.getHostId() + ", poolId: " + planToDeploy.getPoolId());
@@ -683,9 +682,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                         + vm, Cluster.class, clusterIdSpecified);
                             }
                         }
-                        plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId());
-                    } else {
-                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId());
+                        plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), vol.getPoolId(), null);
+                    }else{
+                        plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug(vol + " is READY, changing deployment plan to use this pool's dcId: " + rootVolDcId + " , podId: " + rootVolPodId + " , and clusterId: " + rootVolClusterId);
                         }
@@ -1204,7 +1203,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     			//if the vm is migrated to different pod in basic mode, need to reallocate ip
     			
     			if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
-    				DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destPool.getPodId(), null, null, null);
+                    DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destPool.getPodId(), null, null, null, null);
     				VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, null, null, null, null);
     				_networkMgr.reallocate(vmProfile, plan);
     			}
@@ -1449,7 +1448,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         Host host = _hostDao.findById(hostId);
 
-        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(hostId);
 
@@ -2031,7 +2030,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
         for (NicVO nic : nics) {
             Network network = _networkMgr.getNetwork(nic.getNetworkId());
-            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null);
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTags(profile.getHypervisorType(), network));
             profile.addNic(nicProfile);
         }
 
@@ -2063,7 +2062,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean isRecurring() {
-        return false;
+        return true;
     }
 
     @Override
@@ -2150,7 +2149,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         Long clusterId = agent.getClusterId();
         long agentId = agent.getId();
-        if (agent.getHypervisorType() == HypervisorType.XenServer || agent.getHypervisorType() == HypervisorType.Xen){ // only fro Xen
+        if (agent.getHypervisorType() == HypervisorType.XenServer) { // only fro Xen
             ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()),
                     Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
             try {

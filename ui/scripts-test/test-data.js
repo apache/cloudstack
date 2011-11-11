@@ -5070,6 +5070,376 @@
             }
           ],
           "securitygroupenabled": false
+        },
+        {
+          "id": 269,
+          "name": "vlan100",
+          "displaytext": "sumi-network-vlan-100",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "182.172.161.1",
+          "netmask": "255.255.255.0",
+          "startip": "182.172.161.10",
+          "endip": "182.172.161.100",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 269,
+          "broadcasturi": "vlan://100",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "100",
+          "isdefault": false,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 263,
+          "name": "CustomerNet",
+          "displaytext": "Dedicated Customer Network",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "192.168.129.1",
+          "netmask": "255.255.255.0",
+          "startip": "192.168.129.10",
+          "endip": "192.168.129.50",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 263,
+          "broadcasturi": "vlan://129",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "129",
+          "isdefault": true,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 269,
+          "name": "vlan100",
+          "displaytext": "sumi-network-vlan-100",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "182.172.161.1",
+          "netmask": "255.255.255.0",
+          "startip": "182.172.161.10",
+          "endip": "182.172.161.100",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 269,
+          "broadcasturi": "vlan://100",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "100",
+          "isdefault": false,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 263,
+          "name": "CustomerNet",
+          "displaytext": "Dedicated Customer Network",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "192.168.129.1",
+          "netmask": "255.255.255.0",
+          "startip": "192.168.129.10",
+          "endip": "192.168.129.50",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 263,
+          "broadcasturi": "vlan://129",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "129",
+          "isdefault": true,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 269,
+          "name": "vlan100",
+          "displaytext": "sumi-network-vlan-100",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "182.172.161.1",
+          "netmask": "255.255.255.0",
+          "startip": "182.172.161.10",
+          "endip": "182.172.161.100",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 269,
+          "broadcasturi": "vlan://100",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "100",
+          "isdefault": false,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 263,
+          "name": "CustomerNet",
+          "displaytext": "Dedicated Customer Network",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "192.168.129.1",
+          "netmask": "255.255.255.0",
+          "startip": "192.168.129.10",
+          "endip": "192.168.129.50",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 263,
+          "broadcasturi": "vlan://129",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "129",
+          "isdefault": true,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 269,
+          "name": "vlan100",
+          "displaytext": "sumi-network-vlan-100",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "182.172.161.1",
+          "netmask": "255.255.255.0",
+          "startip": "182.172.161.10",
+          "endip": "182.172.161.100",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 269,
+          "broadcasturi": "vlan://100",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "100",
+          "isdefault": false,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 263,
+          "name": "CustomerNet",
+          "displaytext": "Dedicated Customer Network",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "192.168.129.1",
+          "netmask": "255.255.255.0",
+          "startip": "192.168.129.10",
+          "endip": "192.168.129.50",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 263,
+          "broadcasturi": "vlan://129",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "129",
+          "isdefault": true,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 269,
+          "name": "vlan100",
+          "displaytext": "sumi-network-vlan-100",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "182.172.161.1",
+          "netmask": "255.255.255.0",
+          "startip": "182.172.161.10",
+          "endip": "182.172.161.100",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 269,
+          "broadcasturi": "vlan://100",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "100",
+          "isdefault": false,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
+        },
+        {
+          "id": 263,
+          "name": "CustomerNet",
+          "displaytext": "Dedicated Customer Network",
+          "broadcastdomaintype": "Vlan",
+          "traffictype": "Guest",
+          "gateway": "192.168.129.1",
+          "netmask": "255.255.255.0",
+          "startip": "192.168.129.10",
+          "endip": "192.168.129.50",
+          "zoneid": 1,
+          "networkofferingid": 7,
+          "networkofferingname": "DefaultDirectNetworkOffering",
+          "networkofferingdisplaytext": "Direct",
+          "networkofferingavailability": "Optional",
+          "isshared": true,
+          "issystem": false,
+          "state": "Setup",
+          "related": 263,
+          "broadcasturi": "vlan://129",
+          "dns1": "8.8.8.8",
+          "type": "Direct",
+          "vlan": "129",
+          "isdefault": true,
+          "service": [
+            {
+              "name": "Dns"
+            },
+            {
+              "name": "UserData"
+            },
+            {
+              "name": "Dhcp"
+            }
+          ],
+          "securitygroupenabled": false
         }
       ],
 

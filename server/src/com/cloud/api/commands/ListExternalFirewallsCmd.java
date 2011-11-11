@@ -29,9 +29,10 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.utils.component.ComponentLocator;
@@ -48,7 +49,6 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="zone Id")
     private long zoneId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -70,7 +70,7 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
     @Override
     public void execute(){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        ExternalNetworkManager externalNetworkMgr = locator.getManager(ExternalNetworkManager.class);
+        ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
     	List<? extends Host> externalFirewalls = externalNetworkMgr.listExternalFirewalls(this);
 
         ListResponse<ExternalFirewallResponse> listResponse = new ListResponse<ExternalFirewallResponse>();

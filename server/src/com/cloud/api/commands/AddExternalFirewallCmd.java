@@ -30,7 +30,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
@@ -49,7 +49,7 @@ public class AddExternalFirewallCmd extends BaseCmd {
     @IdentityMapper(entityTableName="data_center")
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external firewall appliance.")
 	private Long zoneId;
-	
+
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external firewall appliance.")
 	private String url;	 
 	
@@ -59,8 +59,6 @@ public class AddExternalFirewallCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external firewall appliance.")
 	private String password;
 	
-	@Parameter(name=ApiConstants.EXTERNAL_FIREWALL_TYPE, type=CommandType.STRING, description="External firewall type. Now supports JuniperSRX.")
-	private String type;
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
 	/////////////////////////////////////////////////////
@@ -68,7 +66,7 @@ public class AddExternalFirewallCmd extends BaseCmd {
 	public Long getZoneId() {
 		return zoneId;
 	}
-	
+
 	public String getUrl() {
 		return url;
 	}
@@ -81,9 +79,6 @@ public class AddExternalFirewallCmd extends BaseCmd {
 		return password;
 	}
 	
-	public String getType() {
-		return type;
-	}
 
 	/////////////////////////////////////////////////////
 	/////////////// API Implementation///////////////////
@@ -102,8 +97,8 @@ public class AddExternalFirewallCmd extends BaseCmd {
 	@Override
     public void execute(){
 		try {
-		    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-		    ExternalNetworkManager externalNetworkMgr = locator.getManager(ExternalNetworkManager.class);
+			ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+			ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
 			Host externalFirewall = externalNetworkMgr.addExternalFirewall(this);
 			ExternalFirewallResponse response = externalNetworkMgr.createExternalFirewallResponse(externalFirewall);
 			response.setObjectName("externalfirewall");

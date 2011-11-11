@@ -514,10 +514,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
-        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
+        NetworkOfferingVO defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
 
         if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
+            defaultOffering = _networkMgr.getExclusiveGuestNetworkOffering();
         }
 
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
@@ -526,9 +526,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
+            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering, plan, null, null, false).get(0), defaultNic));
             for (NetworkOfferingVO offering : offerings) {
-                networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
+                networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
             }
         } catch (ConcurrentOperationException e) {
             s_logger.info("Unable to setup due to concurrent operation. " + e);

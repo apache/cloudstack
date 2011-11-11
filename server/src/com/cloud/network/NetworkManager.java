@@ -1,4 +1,5 @@
 /**
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -20,6 +21,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
@@ -29,19 +31,20 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpn.PasswordResetElement;
-import com.cloud.network.vpn.RemoteAccessVpnElement;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -108,11 +111,11 @@ public interface NetworkManager extends NetworkService {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault)
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException;
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault,
-            boolean errorIfAlreadySetup, Long domainId, List<String> tags) throws ConcurrentOperationException;
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
+            Long domainId, ACLType aclType) throws ConcurrentOperationException;
 
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
 
@@ -129,21 +132,13 @@ public interface NetworkManager extends NetworkService {
 
     List<? extends Nic> getNics(long vmId);
 
-    List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm);
-
     List<NicProfile> getNicProfiles(VirtualMachine vm);
-
-    List<AccountVO> getAccountsUsingNetwork(long configurationId);
-
-    AccountVO getNetworkOwner(long configurationId);
-
-    List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId);
 
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 
-    List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
+    List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements();
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 
@@ -156,12 +151,12 @@ public interface NetworkManager extends NetworkService {
 
     <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
 
-    void shutdownNetwork(long networkId, ReservationContext context);
+    void shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
     boolean destroyNetwork(long networkId, ReservationContext context);
 
-    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain,
-            Account owner, boolean isSecurityGroupEnabled, Long domainId, List<String> tags) throws ConcurrentOperationException, InsufficientCapacityException;
+    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
+            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * @throws InsufficientCapacityException
@@ -187,15 +182,15 @@ public interface NetworkManager extends NetworkService {
 
     Nic getDefaultNic(long vmId);
 
-    List<? extends PasswordResetElement> getPasswordResetElements();
+    List<? extends UserDataServiceProvider> getPasswordResetElements();
+        
+    boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId);
 
-    boolean zoneIsConfiguredForExternalNetworking(long zoneId);
-
-    Map<Capability, String> getServiceCapabilities(long zoneId, Long networkOfferingId, Service service);
+    Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
-    boolean isServiceSupported(long networkId, Network.Service service);
+    boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
     NetworkVO getNetworkWithSecurityGroupEnabled(Long zoneId);
 
@@ -203,7 +198,7 @@ public interface NetworkManager extends NetworkService {
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 
-    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestIpType guestType, Boolean isDefault);
+    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
     
@@ -220,8 +215,39 @@ public interface NetworkManager extends NetworkService {
     String getIpInNetworkIncludingRemoved(long vmId, long networkId);
     
     Long getPodIdForVlan(long vlanDbId);
+    
+    boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider);
+    
+    List<Long> listNetworkOfferingsForUpgrade(long networkId);
+
+    PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId);
+
+    boolean isSecurityGroupSupportedInNetwork(Network network);
+    
+    boolean isProviderEnabled(PhysicalNetworkServiceProvider provider);
+    
+    boolean isProviderAvailable(long physicalNetowrkId, String providerName);
+    
+    boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service);
+
+    List<String> getNetworkTags(HypervisorType hType, Network network);
+
+    List<Service> getElementServices(Provider provider);
+
+    boolean canElementEnableIndividualServices(Provider provider);
+
+    NetworkOfferingVO getExclusiveGuestNetworkOffering();
+    
+    PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId);
+    
+    boolean areServicesSupportedInNetwork(long networkId, Service... services);
+
+    boolean isNetworkSystem(Network network);
 
 	boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm,
 			DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
 
+    Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
+
+    Long getPhysicalNetworkId(Network network);
 }

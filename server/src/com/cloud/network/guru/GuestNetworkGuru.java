@@ -17,6 +17,11 @@
  */
 package com.cloud.network.guru;
 
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -34,7 +39,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -49,6 +54,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.net.Ip4Address;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -70,6 +76,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     protected NicDao _nicDao;
     @Inject
     protected NetworkDao _networkDao;
+    Random _rand = new Random(System.currentTimeMillis());
 
     String _defaultGateway;
     String _defaultCidr;
@@ -79,11 +86,11 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // This guru handles only non-system Guest network
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == GuestIpType.Virtual && !offering.isSystemOnly()) {
+        // This guru handles only Guest Isolated network that supports Source nat service
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == Network.GuestType.Isolated  && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest Virtual networks in zone of type " + NetworkType.Advanced);
+            s_logger.trace("We only take care of Guest networks with service  " + Service.SourceNat + " enabled in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -95,7 +102,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Allocated);
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
@@ -139,12 +146,15 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
+        
+        //get physical network id
+        long physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags());
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
-                network.getDataCenterId(), State.Allocated);
+        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+                network.getDataCenterId(), physicalNetworkId);
 
         if (network.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, network.getAccountId(), context.getReservationId());
+            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId());
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
@@ -235,10 +245,11 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         s_logger.debug("Releasing vnet for the network id=" + profile.getId());
         if (profile.getBroadcastUri() != null) {
-            _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
+            _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
             profile.setBroadcastUri(null);
+            profile.setPhysicalNetworkId(null);
         }
     }
 
@@ -252,5 +263,51 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
+    }
+
+    @Override 
+    public Ip4Address acquireIp4Address(Network network, String requestedIp, String reservationId) throws InsufficientAddressCapacityException {
+        assert requestedIp == null || requestedIp.equals(reservationId) : "The GuestNetworkGuru relies on the fact that the reservationId is always the same as the requestedIp because at this point, there's no way for the GuestNetworkGuru to record down the reservation id.  It can be done but I'm just lazy so don't you be lazy when you hit this assert!";
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        String[] cidr = network.getCidr().split("/");
+        Set<Long> usedIps = new TreeSet<Long>();
+        
+        int size = Integer.parseInt(cidr[1]);
+        
+        // Let's prepare the list of ips already taken.
+        usedIps.add(NetUtils.ip2Long(network.getGateway()));
+        for (String ip : ips) {
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+        
+        if (requestedIp != null) { // Make sure requestedIp is not already taken.
+            if (usedIps.contains(requestedIp)) {
+                throw new InsufficientAddressCapacityException("The ip requested " + requestedIp + " is already assigned within " + network, DataCenter.class, network.getDataCenterId());
+            }
+            
+            if (!NetUtils.sameSubnetCIDR(requestedIp, cidr[0], size)) {
+                throw new IllegalArgumentException("The ip requested " + requestedIp + " does not match the cidr, " + network.getCidr() + ", of " + network);
+            }
+            
+            return new Ip4Address(requestedIp);
+        }
+        
+        long base = NetUtils.ip2Long(cidr[0]);
+        int diff = 1 << size - usedIps.size();
+        for (diff = 1 << size - usedIps.size(); diff > 0; diff--) {
+            long nextIp = _rand.nextInt(1 << size);
+            nextIp += base;
+            if (!usedIps.contains(nextIp)) {
+                return new Ip4Address(nextIp);
+            }
+        }
+        
+        throw new InsufficientAddressCapacityException("Unable to map more ip addresses into a cidr of " + network.getCidr(), DataCenter.class, network.getDataCenterId());
+    }
+
+    @Override public boolean releaseIp4Address(Network network, String reservationId) {
+        
+        // TODO Auto-generated method stub
+        return false;
     }
 }

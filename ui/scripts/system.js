@@ -2,6 +2,7 @@
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
   var selectedClusterObj;
+  var publicNetworkObj;
 
   cloudStack.sections.system = {
     title: 'System',
@@ -11,16 +12,7 @@
       mainNetworks: {
         'public': {
           detailView: {
-            actions: {
-              /*
-              edit: {
-                label: 'Edit network details',
-                action: function(args) {
-                  args.response.success();
-                }
-              }
-              */
-            },
+            actions: {},
             tabs: {
               details: {
                 title: 'Details',                
@@ -65,8 +57,7 @@
                     account: { label: 'Account' }
                   }
                 ],
-                
-                //???
+                                
                 dataProvider: function(args) {                    
                   var showPublicNetwork = true;
                   var zoneObj = args.context.zones[0];
@@ -95,6 +86,7 @@
                     //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
                   }
 
+                  //var publicNetworkObj;
                   if(showPublicNetwork == true && zoneObj.securitygroupsenabled == false) { //public network
                     $.ajax({
                       url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
@@ -102,7 +94,7 @@
                       async: false,
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
-                        args.response.success({data: items[0]});
+                        publicNetworkObj = items[0];                        
                       }
                     });
                   }
@@ -113,16 +105,132 @@
                       async: false,
                       success: function(json) {
                         var items = json.listnetworksresponse.network;
-                        args.response.success({data: items[0]});
+                        publicNetworkObj = items[0]; 
                       }
                     });
                   }
-                  else {
-                    args.response.success({data: null});
-                  }
-                }	
-                //???
+                                    
+                  args.response.success({data: publicNetworkObj});
+                  
+                }               
+              },
+              
+              //???
+              ipAddresses: {
+                title: 'IP Addresses',
+                custom: function(args) {                  
+                  return $('<div></div>').multiEdit({
+                    context: args.context,
+                    noSelect: true,
+                    fields: {
+                      'gateway': { edit: true, label: 'Gateway' },
+                      'netmask': { edit: true, label: 'Netmask' },
+                      'vlanid': { edit: true, label: 'VLAN', isOptional: true },
+                      'startip': { edit: true, label: 'Start IP' },
+                      'endip': { edit: true, label: 'End IP' },
+                      'add-rule': { label: 'Add', addButton: true }
+                    },
+                    add: {
+                      label: 'Add',
+                      action: function(args) {                       
+                        var array1 = [];
+                        array1.push("&zoneId=" + args.context.zones[0].id);
+
+                        if (args.data.vlanid != null && args.data.vlanid.length > 0)
+                          array1.push("&vlan=" + todb(args.data.vlanid));
+                        else
+                          array1.push("&vlan=untagged");
+
+                          
+                        //array1.push("&isshared=true"); //temporary, will add scope, domain, account field, then uncommment the following section later.
+                        /*
+                        if($form.find('.form-item[rel=domainId]').css("display") != "none") {
+                          if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+                            array1.push("&domainId=" + args.data.domainId);
+                            array1.push("&account=" + args.data.account);
+                          }
+                          else {  //domain-specific
+                            array1.push("&domainId=" + args.data.domainId);
+                            array1.push("&isshared=true");
+                          }
+                        }
+                        else { //zone-wide
+                          array1.push("&isshared=true");
+                        }
+                        */
+                        
+                        array1.push("&gateway=" + args.data.gateway);
+                        array1.push("&netmask=" + args.data.netmask);
+                        array1.push("&startip=" + args.data.startip);
+                        if(args.data.endip != null && args.data.endip.length > 0)
+                          array1.push("&endip=" + args.data.endip);
+                       
+                        if(args.context.zones[0].securitygroupsenabled == false)
+                          array1.push("&forVirtualNetwork=true");
+                        else
+                          array1.push("&forVirtualNetwork=false");
+                       
+                        $.ajax({
+                          url: createURL("createVlanIpRange" + array1.join("")),
+                          dataType: "json",
+                          success: function(json) {                            
+                            var item = json.createvlaniprangeresponse.vlan;                            
+                            args.response.success({
+                              data: item,
+                              notification: {
+                                label: 'Added IP address',
+                                poll: function(args) {
+                                  args.complete();
+                                }
+                              }
+                            });
+                          },
+                          error: function(XMLHttpResponse) {
+                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                            args.response.error(errorMsg);
+                          }
+                        });                          
+                      }
+                    },
+                    actions: {
+                      destroy: {
+                        label: 'Delete',
+                        action: function(args) {                         
+                          $.ajax({
+                            url: createURL('deleteVlanIpRange'),
+                            data: {
+                              id: args.context.multiRule[0].id
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {                                                  
+                              args.response.success({                                
+                                notification: {
+                                  label: 'Remove IP range ' + args.context.multiRule[0].id,
+                                  poll: function(args) {                                   
+                                    args.complete();
+                                  }
+                                }
+                              });                              
+                            }
+                          });                          
+                        }
+                      }
+                    },
+                    dataProvider: function(args) {     
+                      $.ajax({
+                        url: createURL("listVlanIpRanges&zoneid=" + args.context.zones[0].id + "&networkId=" + publicNetworkObj.id),
+                        dataType: "json",
+                        success: function(json) {                         
+                          var items = json.listvlaniprangesresponse.vlaniprange;
+                          args.response.success({data: items});
+                        }
+                      });  
+                    }
+                  });
+                }
               }
+              //???  
             }
           }
         },
@@ -593,7 +701,50 @@
                               }
                             });
                             
-                            if(networkServiceProviderId != null) {                              
+                            if(networkServiceProviderId != null) {   
+                              var virtualRouterElementId;
+                              $.ajax({
+                                url: createURL("listVirtualRouterElements&nspid=" + networkServiceProviderId),
+                                dataType: "json",
+                                async: false,
+                                success: function(json) {
+                                  var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
+                                  if(items != null && items.length > 0)
+                                    virtualRouterElementId = items[0].id
+                                }
+                              });
+                              if(virtualRouterElementId != null) {                               
+                                $.ajax({
+                                  url: createURL("configureVirtualRouterElement&id=" + virtualRouterElementId + "&enabled=true"),
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {
+                                    var jid = json.configurevirtualrouterelementresponse.jobid;                               
+                                    $.ajax({
+                                      url: createURL("queryAsyncJobResult&jobId=" + jid),
+                                      dataType: "json",
+                                      async: false,
+                                      success: function(json) {
+                                        var result = json.queryasyncjobresultresponse;
+                                        if (result.jobstatus == 0) {
+                                          return; //Job has not completed
+                                        } else {
+                                          if (result.jobstatus == 1) { // Succeeded                                        
+                                            args.complete();                                        
+                                          }
+                                          else if (result.jobstatus == 2) { // Failed
+                                            args.error({message:result.jobresult.errortext});
+                                          }
+                                        }
+                                      },
+                                      error: function(XMLHttpResponse) {
+                                        args.error();
+                                      }
+                                    });                            
+                                  }
+                                });                                                                 
+                              }      
+                            
                               $.ajax({
                                 url: createURL("updateNetworkServiceProvider&id=" + networkServiceProviderId + "&state=Enabled"),
                                 dataType: "json",

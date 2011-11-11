@@ -476,7 +476,6 @@ def ipset(ipsetname, proto, start, end, ips):
 def destroy_network_rules_for_vm(session, args):
     vm_name = args.pop('vmName')
     vmchain = chain_name(vm_name)
-    vmchain_egress = chain_name(vm_name) + "-eg"
     vmchain_default = chain_name_def(vm_name)
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
@@ -493,14 +492,9 @@ def destroy_network_rules_for_vm(session, args):
         util.pread2(['iptables', '-F', vmchain])
         util.pread2(['iptables', '-X', vmchain])
     except:
-        util.SMlog("Ignoring failure to delete ingress chain " + vmchain)
+        util.SMlog("Ignoring failure to delete  chain " + vmchain)
         
    
-    try:
-        util.pread2(['iptables', '-F', vmchain_egress])
-        util.pread2(['iptables', '-X', vmchain_egress])
-    except:
-        util.SMlog("Ignoring failure to delete egress chain " + vmchain_egress)
     
     remove_rule_log_for_vm(vm_name)
     
@@ -677,7 +671,6 @@ def default_network_rules(session, args):
 
      
     vmchain =  chain_name(vm_name)
-    vmchain_egress =  chain_name(vm_name) +"-eg"
     vmchain_default = chain_name_def(vm_name)
     
     destroy_ebtables_rules(vmchain)
@@ -687,11 +680,6 @@ def default_network_rules(session, args):
         util.pread2(['iptables', '-N', vmchain])
     except:
         util.pread2(['iptables', '-F', vmchain])
-    
-    try:
-        util.pread2(['iptables', '-N', vmchain_egress])
-    except:
-        util.pread2(['iptables', '-F', vmchain_egress])
         
     try:
         util.pread2(['iptables', '-N', vmchain_default])
@@ -710,8 +698,7 @@ def default_network_rules(session, args):
 
         #don't let vm spoof its ip address
         for v in vifs:
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip,'-p', 'udp', '--dport', '53', '-j', 'RETURN'])
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', 'RETURN'])
         util.pread2(['iptables', '-A', vmchain_default, '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
@@ -913,7 +900,7 @@ def cleanup_rules(session, args):
     instance = 'VM'
  
   try:
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/' | sed 's/-eg//' |sort|uniq" % instance
+    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'|sort|uniq" % instance
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     cleaned = 0
     cleanup = []
@@ -1039,7 +1026,6 @@ def network_rules(session, args):
     vm_name = args.get('vmName')
     vm_ip = args.get('vmIP')
     vm_id = args.get('vmID')
-    type = args.get('type')
     signature = args.pop('signature')
     seqno = args.pop('seqno')
     deflated = 'false'
@@ -1069,14 +1055,7 @@ def network_rules(session, args):
     except:
         pass
    
-    if type == 'egress':
-        vmchain = chain_name(vm_name) + "-eg"
-        direction = "dst"
-        action = "RETURN"
-    else:
-        vmchain = chain_name(vm_name)
-        direction = "src"
-        action = "ACCEPT"
+    vmchain = chain_name(vm_name)
     reason = 'seqno_change_or_sig_change'
     [reprogramDefault, reprogramChain, rewriteLog] = \
              check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
@@ -1135,39 +1114,32 @@ def network_rules(session, args):
                 util.SMlog(" failed to create ipset for rule " + str(tokens))
 
             if protocol == 'all':
-                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, direction, '-j', action]
+                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             elif protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, direction, '-j', action]
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, direction, '-j', action]
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', '--match-set', ipsetname, 'src', '-j', 'ACCEPT']
             cmds.append(iptables)
             util.SMlog(iptables)
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
-                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-j', action]
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-j', 'ACCEPT']
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', action]
+                    iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', 'ACCEPT']
             cmds.append(iptables)
             util.SMlog(iptables)
             
     util.pread2(['iptables', '-F', vmchain])
     for cmd in cmds:
         util.pread2(cmd)
-        
-    if type == 'egress':  
-        if len(cmds) == 0 :
-            util.pread2(['iptables', '-A', vmchain, '-j', 'RETURN'])
-        else:
-            util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
-    else:    
-        util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
+    util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
 
     if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno) == False:
         return 'false'

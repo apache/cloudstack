@@ -25,7 +25,7 @@ import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.SystemIntegrityChecker;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;
 
 
@@ -62,6 +62,18 @@ public class AgentComponentLibraryBase extends ComponentLibraryBase {
     
     protected void populateAdapters() {
         
+    }
+    
+    protected void populateServices() {
+        
+    }
+
+    @Override
+    public Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
+        if (_pluggableServices.size() == 0) {
+            populateServices();
+        }
+        return _pluggableServices;
     }
 
 }

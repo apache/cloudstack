@@ -18,7 +18,6 @@
 package com.cloud.utils.component;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,8 +27,6 @@ import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.NoOp;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
@@ -60,6 +57,10 @@ public class MockComponentLocator extends ComponentLocator {
     
     public <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
         return _library.addAdapterChain(interphace, adapters);
+    }
+    
+    public <T> ComponentInfo<PluggableService> addService(String name, Class<T> serviceInterphace, Class<? extends PluggableService> service) {
+        return _library.addService(name, serviceInterphace, service);
     }
     
     @Override
@@ -111,6 +112,11 @@ public class MockComponentLocator extends ComponentLocator {
         @Override
         public Map<String, ComponentInfo<Manager>> getManagers() {
             return _managers;
+        }
+
+        @Override
+        public Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
+             return _pluggableServices;
         }
     }
 }

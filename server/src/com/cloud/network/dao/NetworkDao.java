@@ -18,50 +18,75 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+import java.util.Map;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 
 public interface NetworkDao extends GenericDao<NetworkVO, Long> {
-    List<NetworkVO> listBy(long accountId);
-    List<NetworkVO> listByOwner(long ownerId);
-    List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
-    List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr);
-    List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type);
-    NetworkVO persist(NetworkVO network, boolean gc);
-    void addAccountToNetwork(long networkId, long accountId);
-    SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
-    List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
-    List<NetworkVO> getRelatedNetworks(long related);
 
-    @Override @Deprecated
+    List<NetworkVO> listByOwner(long ownerId);
+
+    List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
+
+    List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr);
+
+    List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type);
+
+    NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap);
+
+    SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
+
+    List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
+
+    @Override
+    @Deprecated
     NetworkVO persist(NetworkVO vo);
     
     /**
      * Retrieves the next available mac address in this network configuration.
-     * @param networkConfigId id 
-     * @return mac address if there is one.  null if not.
+     * 
+     * @param networkConfigId
+     *            id
+     * @return mac address if there is one. null if not.
      */
     String getNextAvailableMacAddress(long networkConfigId);
-    
+
     List<NetworkVO> listBy(long accountId, long networkId);
-    
+
     List<NetworkVO> listBy(long zoneId, String broadcastUri);
-    
+
     List<NetworkVO> listByZone(long zoneId);
-    
+
     void changeActiveNicsBy(long networkId, int nicsCount);
-    
+
     int getActiveNicsIn(long networkId);
+
     List<Long> findNetworksToGarbageCollect();
+
     void clearCheckForGc(long networkId);
+
     List<NetworkVO> listByZoneSecurityGroup(Long zoneId);
+
     void addDomainToNetwork(long networkId, long domainId);
-    
-    List<NetworkVO> listNetworksBy(boolean isShared);
-    
-    List<NetworkVO> listByZoneIncludingRemoved(long zoneId);
+
+    Long getNetworkCountByOfferingId(long offeringId);
+
+    List<NetworkVO> listByPhysicalNetworkIncludingRemoved(long physicalNetworkId);
+
+    List<NetworkVO> listSecurityGroupEnabledNetworks();
+
+    List<NetworkVO> listByPhysicalNetworkTrafficType(long physicalNetworkId, TrafficType trafficType);
+
+    List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type, TrafficType trafficType);
+
+    List<NetworkVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName);
+
+	void persistNetworkServiceProviders(long networkId, Map<String, String> serviceProviderMap);
+	
+	boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
 }

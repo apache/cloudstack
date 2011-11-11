@@ -146,7 +146,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             }
 
             //search for storage under the zone, pod, cluster of the host.
-            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId());
+            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), hostIdSpecified, plan.getPoolId(), null);
 
             Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
@@ -187,7 +187,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                         s_logger.debug("The last host of this VM is UP and has enough capacity");
                         s_logger.debug("Now checking for suitable pools under zone: "+host.getDataCenterId() +", pod: "+ host.getPodId()+", cluster: "+ host.getClusterId());
                         //search for storage under the zone, pod, cluster of the last host.
-                        DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId());
+                        DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
                         Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
                         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
                         List<Volume> readyAndReusedVolumes = result.second();
@@ -428,7 +428,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             
             s_logger.debug("Checking resources in Cluster: "+clusterId + " under Pod: "+clusterVO.getPodId());
             //search for resources(hosts and storage) under this zone, pod, cluster.
-            DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId());
+            DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId(), null);
 
             //find suitable hosts under this cluster, need as many hosts as we get.
             List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);

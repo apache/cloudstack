@@ -21,7 +21,6 @@ public class Hypervisor {
 
     public static enum HypervisorType {
         None, //for storage hosts
-        Xen,
         XenServer,
         KVM,
         VMware,
@@ -38,10 +37,7 @@ public class Hypervisor {
             if (hypervisor == null) {
                 return HypervisorType.None;
             }
-
-            if (hypervisor.equalsIgnoreCase("Xen")) {
-                return HypervisorType.Xen;
-            } else if (hypervisor.equalsIgnoreCase("XenServer")) {
+            if (hypervisor.equalsIgnoreCase("XenServer")) {
                 return HypervisorType.XenServer;
             } else if (hypervisor.equalsIgnoreCase("KVM")) {
                 return HypervisorType.KVM;

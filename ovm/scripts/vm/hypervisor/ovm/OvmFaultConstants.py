@@ -4,9 +4,19 @@ OvmVmErrCodeStub = 2000
 OvmStoragePoolErrCodeStub = 3000
 OvmNetworkErrCodeStub = 4000
 OvmVolumeErrCodeStub = 5000
+OvmOCFS2ErrCodeStub = 6000
 
 class NoVmFoundException(Exception):
     pass
+
+class ShellExceutedFailedException(Exception):
+    stderr = ''
+    errCode = -1000
+    
+    def __init__(self, err, code):
+        Exception.__init__(self, "%s, return code:%s"%(err, code))
+        self.stderr = err
+        self.errCode = code
 
 errCode = {
        # OvmDispatch is not class, these error codes are reserved
@@ -55,6 +65,8 @@ errCode = {
        "OvmVolume.createDataDisk":OvmVolumeErrCodeStub+1,
        "OvmVolume.createFromTemplate":OvmVolumeErrCodeStub+2,
        "OvmVolume.destroy":OvmVolumeErrCodeStub+3,
+       
+       "OvmOCFS2._addNode":OvmOCFS2ErrCodeStub+1,
 }
 
 

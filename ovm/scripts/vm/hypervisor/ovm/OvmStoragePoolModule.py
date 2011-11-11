@@ -3,6 +3,7 @@ from OVSSiteSR import sp_create, sr_create, sr_do
 from OVSParser import parse_ocfs2_cluster_conf
 from OVSXCluster import clusterm_set_ocfs2_cluster_conf, clusterm_start_o2cb_service
 from OVSSiteRMServer import get_master_ip
+from OvmOCFS2Module import OvmOCFS2
 import re
 
 class OvmStoragePoolDecoder(json.JSONDecoder):
@@ -193,39 +194,7 @@ class OvmStoragePool(OvmObject):
                     logger.error(OvmStoragePool.downloadTemplate, 'unmount secondary storage at %s failed, %s'%(secMountPoint, errmsg))
 
     @staticmethod
-    def prepareOCFS2Nodes(clusterName, nodeString):
-        def compareClusterConfig(nodes):
-            def sortNodes(nodes):
-                ns = []
-                for n in nodes:
-                    ns.insert(int(n["number"]), n)
-                return ns
-            
-            def compareNodes(ns1, ns2):
-                if len(ns1) != len(ns2):
-                    return False
-                
-                for i in range(0, len(ns1)):
-                    n1 = ns1[i]
-                    n2 = ns2[i]
-                    if n1["ip_address"] != n2["ip_address"] or n1["number"] != n2["number"] \
-                       or n1["name"] != n2["name"]:
-                        return False
-                return True
-                    
-            if exists(OCFS2_CLUSTER_CONF):
-                oldConf = parse_ocfs2_cluster_conf()
-                cluster = oldConf["cluster"]
-                nodesNum = cluster["node_count"]
-                if len(nodes) != nodesNum:
-                    return False
-                
-                new = sortNodes(nodes)
-                old = sortNodes(oldConf["nodes"])
-                return compareNodes(new, old)
-            else:
-                return False
-        
+    def prepareOCFS2Nodes(clusterName, nodeString):        
         def configureEtcHosts(nodes):
             if not exists(ETC_HOSTS):
                 orignalConf = ""
@@ -275,6 +244,16 @@ class OvmStoragePool(OvmObject):
             fd.write(originalConf)
             fd.close()
             doCmd(['hostname', nodeName])
+        
+        def addNodes(nodes, clusterName):
+            ocfs2 = OvmOCFS2()
+            ocfs2._load()
+            isOnline = ocfs2._isClusterOnline(clusterName)
+            if not isOnline:
+                ocfs2._prepareConf(clusterName)
+            
+            for n in nodes:
+                ocfs2._addNode(n['name'], n['number'], n['ip_address'], 7777, clusterName, isOnline)
             
         def checkStaleCluster(clusterName):
             if exists('/sys/kernel/config/cluster/'):
@@ -287,7 +266,7 @@ class OvmStoragePool(OvmObject):
 3) /etc/init.d/o2cb offline %s
 4) /etc/init.d/o2cb restart
 if this doesn't resolve the problem, please check oracle manual to see how to offline a cluster
-    ''' % (dir, get_master_ip, dir)
+    ''' % (dir, successToMap(get_master_ip())['ip'], dir)
                         raise Exception(errMsg)
             
         try:
@@ -303,31 +282,14 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             if len(nodes) > 255:
                 raise Exception("%s nodes beyond maximum 255 allowed by OCFS2"%len(nodes))
             
-            if compareClusterConfig(nodes):
-               logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Nodes configure are the same, return")
-               rs = SUCC()
-               return rs
-    
-            lines = []
-            for n in nodes:
-                lines.append("node:\n")
-                lines.append("\tip_port     = %s\n" % "7777")
-                lines.append("\tip_address  = %s\n" % n["ip_address"])
-                lines.append("\tnumber      = %s\n" % n["number"])
-                lines.append("\tname        = %s\n" % n["name"])
-                lines.append("\tcluster     = %s\n" % clusterName)
-                lines.append("\n")
-            lines.append("cluster:\n")
-            lines.append("\tnode_count  = %d\n" % len(nodes))
-            lines.append("\tname        = %s\n" % clusterName)
-            lines.append("\n")
-            conf = "".join(lines)
-            
             configureHostName(nodes)
             configureEtcHosts(nodes)
-            clusterm_set_ocfs2_cluster_conf(conf)
-            clusterm_start_o2cb_service()
-            logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Configure cluster.conf to:\n%s"%conf)
+            addNodes(nodes, clusterName)
+            OvmOCFS2()._start(clusterName)
+            fd = open(OCFS2_CONF, 'r')
+            conf = fd.readlines()
+            fd.close()
+            logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Configure cluster.conf to:\n%s"%' '.join(conf))
             rs = SUCC()
             return rs
         

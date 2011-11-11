@@ -74,6 +74,9 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vlan range")
     private String projectName;
+    
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    private Long physicalNetworkId;    
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -144,4 +147,12 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
+    
+    public void setPhysicalNetworkId(long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+
+    public long getphysicalNetworkId() {
+        return physicalNetworkId;
+    }    
 }

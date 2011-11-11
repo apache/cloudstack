@@ -21,8 +21,8 @@ package com.cloud.api;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -54,6 +54,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -595,8 +596,8 @@ public class ApiDBUtils {
         return _networkDao.findById(id);
     }
 
-    public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkOfferingId, long zoneId) {
-        return _networkMgr.getNetworkCapabilities(networkOfferingId, zoneId);
+    public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
+        return _networkMgr.getNetworkCapabilities(networkId);
     }
 
     public static long getPublicNetworkIdByZone(long zoneId) {
@@ -673,5 +674,17 @@ public class ApiDBUtils {
     
     public static Map getAccountDetails(long accountId) {
     	return _accountDetailsDao.findDetails(accountId);
+    }
+
+    public static Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
+        return _networkMgr.listNetworkOfferingServices(networkOfferingId);
+    }
+    
+    public static List<Service> getElementServices(Provider provider) {
+         return _networkMgr.getElementServices(provider);
+    }
+
+    public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
+        return _networkMgr.canElementEnableIndividualServices(serviceProvider);
     }
 }

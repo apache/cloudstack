@@ -171,4 +171,9 @@ public class PublicIp implements PublicIpAddress {
     public String toString() {
         return _addr.getAddress().toString();
     }
+
+    @Override
+    public Long getPhysicalNetworkId() {
+        return _vlan.getPhysicalNetworkId();
+    }
 }

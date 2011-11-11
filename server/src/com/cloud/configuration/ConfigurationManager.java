@@ -18,6 +18,8 @@
 package com.cloud.configuration;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -30,7 +32,10 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -109,16 +114,16 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param dns2
      * @param internalDns1
      * @param internalDns2
-     * @param vnetRange
      * @param guestCidr
      * @param zoneType
      * @param allocationState
      * @param networkDomain TODO
+     * @param isSecurityGroupEnabled TODO
      * @return
      * @throws 
      * @throws 
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled, String allocationState, String networkDomain);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled);
 
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -171,18 +176,23 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param trafficType
 	 * @param tags
 	 * @param maxConnections
-	 * @param guestIpType TODO
 	 * @param networkRate TODO
+	 * @param serviceProviderMap TODO
+	 * @param isDefault TODO
+	 * @param type TODO
+	 * @param systemOnly TODO
 	 * @param id
 	 * @param specifyVlan;
+	 * @param serviceOfferingId
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType, boolean redundantRouter, Integer networkRate);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
+            Map<Service, Map<Capability, String>> serviceCapabilityMap);
+
+    Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId, Long physicalNetworkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     
-    Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
-    
-    void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException;
+    void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled, long physicalNetworkId) throws ConcurrentOperationException;
     
     HostPodVO getPod(long id);
     

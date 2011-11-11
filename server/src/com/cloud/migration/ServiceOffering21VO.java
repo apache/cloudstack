@@ -21,13 +21,10 @@ package com.cloud.migration;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.network.Network;
 import com.cloud.offering.ServiceOffering;
 
 @Entity
@@ -53,10 +50,6 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     @Column(name="ha_enabled")
     private boolean offerHA;
     
-    @Column(name="guest_ip_type")
-    @Enumerated(EnumType.STRING)
-    private Network.GuestIpType guestIpType;
-    
     @Column(name="host_tag")
     private String hostTag;    
     
@@ -64,7 +57,7 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         super();
     }
 
-    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
+    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags) {
         super(name, displayText, false, tags, recreatable, useLocalStorage);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -72,11 +65,10 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.guestIpType = guestIpType;
     }
     
-    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
-    	this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, guestIpType, useLocalStorage, recreatable, tags);
+    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
+    	this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, useLocalStorage, recreatable, tags);
        	this.hostTag = hostTag;
     }
     
@@ -149,10 +141,6 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	@Override
     public Integer getMulticastRateMbps() {
 		return multicastRateMbps;
-	}
-
-	public void setGuestIpType(Network.GuestIpType guestIpType) {
-		this.guestIpType = guestIpType;
 	}
 
 	public String gethypervisorType() {

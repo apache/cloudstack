@@ -63,7 +63,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.resource.TrafficSentinelResource;
@@ -251,7 +250,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     public List<IPAddressVO> listAllocatedDirectIps(long zoneId) {
         SearchCriteria<IPAddressVO> sc = AllocatedIpSearch.create();
         sc.setParameters("dc", zoneId);
-        sc.setJoinParameters("network", "guestType", GuestIpType.Direct);
+        sc.setJoinParameters("network", "guestType", Network.GuestType.Shared);
         return _ipAddressDao.search(sc, null);
     }
 

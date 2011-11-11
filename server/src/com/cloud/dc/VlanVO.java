@@ -58,6 +58,9 @@ public class VlanVO implements Vlan, Identity {
     @Column(name="network_id")
     Long networkId;
 	
+    @Column(name="physical_network_id")
+    Long physicalNetworkId;
+    
 	@Column(name="vlan_type")
 	@Enumerated(EnumType.STRING) 
 	VlanType vlanType;
@@ -65,7 +68,7 @@ public class VlanVO implements Vlan, Identity {
     @Column(name="uuid")
     String uuid;
 	
-	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId) {
+	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId, Long physicalNetworkId) {
 		this.vlanType = vlanType;
 		this.vlanTag = vlanTag;
 		this.vlanGateway = vlanGateway;
@@ -74,40 +77,49 @@ public class VlanVO implements Vlan, Identity {
 		this.ipRange = ipRange;
 		this.networkId = networkId;
 		this.uuid = UUID.randomUUID().toString();
+		this.physicalNetworkId = physicalNetworkId;
 	}
 	
 	public VlanVO() {
 		this.uuid = UUID.randomUUID().toString();
 	}
 	
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	
-	public String getVlanTag() {
+	@Override
+    public String getVlanTag() {
 		return vlanTag;
 	}
 
-	public String getVlanGateway() {
+	@Override
+    public String getVlanGateway() {
 		return vlanGateway;
 	}
     
-	public String getVlanNetmask() {
+	@Override
+    public String getVlanNetmask() {
         return vlanNetmask;
     }
 	
-	public long getDataCenterId() {
+	@Override
+    public long getDataCenterId() {
 		return dataCenterId;
 	}
 
-	public String getIpRange() {
+	@Override
+    public String getIpRange() {
 		return ipRange;
 	}
 
-	public VlanType getVlanType() {
+	@Override
+    public VlanType getVlanType() {
 		return vlanType;
 	}
 
+    @Override
     public Long getNetworkId() {
         return networkId;
     }
@@ -124,4 +136,13 @@ public class VlanVO implements Vlan, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+    @Override
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+    
 }

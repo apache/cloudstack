@@ -845,7 +845,7 @@
               success: function(json) {
                 var items = json.listnetworkofferingsresponse.networkoffering;
                 args.response.success({
-                  actionFilter: networkOfferingsActionfilter,
+                  actionFilter: networkOfferingActionfilter,
                   data:items
                 });
               }
@@ -869,7 +869,81 @@
                     }
                   });                 
                 }
-              }           
+              },
+              //???
+enable: {
+                label: 'Enable network offering',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to enable this network offering?';
+                  },
+                  success: function(args) {
+                    return 'This network offering is being enabled.';
+                  },
+                  notification: function(args) {
+                    return 'Enabling network offering';
+                  },
+                  complete: function(args) {
+                    return 'Network offering has been enabled.';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + "&state=Enabled"),  
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                    
+                      var item = json.updatenetworkofferingresponse.networkoffering;   	                                    
+                      args.response.success({ 
+                        actionFilter: networkOfferingActionfilter,
+                        data:item 
+                      });
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              },
+
+              disable: {
+                label: 'Disable network offering',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to disable this network offering?';
+                  },
+                  success: function(args) {
+                    return 'This network offering is being disabled.';
+                  },
+                  notification: function(args) {
+                    return 'Disabling network offering';
+                  },
+                  complete: function(args) {
+                    return 'Network offering has been disabled.';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + "&state=Disabled"),  
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {                     
+                      var item = json.updatenetworkofferingresponse.networkoffering;   	                                    
+                      args.response.success({ 
+                        actionFilter: networkOfferingActionfilter,
+                        data:item 
+                      });                      
+                    }
+                  });
+                },
+                notification: {
+                  poll: function(args) {
+                    args.complete();
+                  }
+                }
+              }                           
             },            
             tabs: {
               details: {
@@ -887,6 +961,7 @@
                       label: 'Description',
                       isEditable: true
                     },
+                    state: { label: 'State' },
                     availability: { 
                       label: 'Availability',
                       isEditable: true,
@@ -894,7 +969,7 @@
                         var items = [];
                         items.push({id: 'Required', description: 'Required'});
                         items.push({id: 'Optional', description: 'Optional'});
-                        items.push({id: 'Unavailable', description: 'Unavailable'});
+                        //items.push({id: 'Unavailable', description: 'Unavailable'});
                         args.response.success({data: items});
                       }
                     },                  
@@ -928,7 +1003,7 @@
                 dataProvider: function(args) {                  
                   args.response.success(
                     {
-                      actionFilter: networkOfferingsActionfilter,
+                      actionFilter: networkOfferingActionfilter,
                       data:args.context.networkOfferings[0]
                     }
                   );
@@ -965,10 +1040,14 @@
     return allowedActions;
   } 
   
-  var networkOfferingsActionfilter = function(args) {
+  var networkOfferingActionfilter = function(args) {
     var jsonObj = args.context.item;    
     var allowedActions = [];
-    allowedActions.push("edit");
+    allowedActions.push("edit");    
+    if(jsonObj.state == "Enabled")
+      allowedActions.push("disable");
+    else if(jsonObj.state == "Disabled")
+      allowedActions.push("enable");
     return allowedActions;
   }
   

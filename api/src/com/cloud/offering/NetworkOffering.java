@@ -17,7 +17,7 @@
  */
 package com.cloud.offering;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 
 /**
@@ -28,19 +28,24 @@ public interface NetworkOffering {
     
     public enum Availability {
         Required,
-        Optional,
-        Unavailable;
+        Optional
+    }
+    
+    public enum State {
+        Disabled,
+        Enabled, 
+        Inactive
     }
     
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
     public final static String SystemStorageNetwork = "System-Storage-Network";
-    public final static String SystemGuestNetwork = "System-Guest-Network";
     
-    public final static String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
-    public final static String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
-    public final static String DefaultDirectChooseVlanNetworkOffering = "DefaultDirectChooseVlanNetworkOffering";
+    public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
+    public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
+    public final static String DefaultIsolatedNetworkOffering= "DefaultIsolatedNetworkOffering";
 
     long getId();
 
@@ -80,27 +85,20 @@ public interface NetworkOffering {
     boolean isSystemOnly();
     
     Availability getAvailability();
-    
-    
-    boolean isDnsService();
-    
-    boolean isGatewayService();
-    
-    boolean isFirewallService();
-    
-    boolean isLbService();
-    
-    boolean isUserdataService();
-    
-    boolean isVpnService();
-    
-    boolean isDhcpService();
-    
-    boolean isSharedSourceNatService();
-    
-    GuestIpType getGuestType();
 
     String getUniqueName();
 
+    void setState(State state);
+
+    State getState();
+    
+    GuestType getGuestType();
+    
+    Long getServiceOfferingId();
+
+    boolean getDedicatedLB();
+
+    boolean getSharedSourceNat();
+    
     boolean getRedundantRouter();
 }

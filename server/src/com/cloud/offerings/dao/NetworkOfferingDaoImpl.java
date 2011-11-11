@@ -27,26 +27,25 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value=NetworkOfferingDao.class) @DB(txn=false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
-    
-    private final static Logger s_logger = Logger.getLogger(NetworkOfferingDaoImpl.class);
-    
     final SearchBuilder<NetworkOfferingVO> NameSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
-    final SearchBuilder<NetworkOfferingVO> TrafficTypeGuestTypeSearch;
+    final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
+    private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -65,11 +64,21 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         AvailabilitySearch.and("isSystem", AvailabilitySearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
         AvailabilitySearch.done();
         
-        TrafficTypeGuestTypeSearch = createSearchBuilder();
-        TrafficTypeGuestTypeSearch.and("trafficType", TrafficTypeGuestTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.and("guestType", TrafficTypeGuestTypeSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.and("isSystem", TrafficTypeGuestTypeSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
-        TrafficTypeGuestTypeSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("isSystem", AllFieldsSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
+
+        UpgradeSearch = createSearchBuilder(Long.class);
+        UpgradeSearch.selectField(UpgradeSearch.entity().getId());
+        UpgradeSearch.and("physicalNetworkId", UpgradeSearch.entity().getId(), Op.NEQ);
+        UpgradeSearch.and("physicalNetworkId", UpgradeSearch.entity().isSystemOnly(), Op.EQ);
+        UpgradeSearch.and("trafficType", UpgradeSearch.entity().getTrafficType(), Op.EQ);
+        UpgradeSearch.and("guestType", UpgradeSearch.entity().getGuestType(), Op.EQ);
+        UpgradeSearch.and("state", UpgradeSearch.entity().getState(), Op.EQ);
+        UpgradeSearch.done();
     }
     
     @Override
@@ -99,13 +108,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public List<NetworkOfferingVO> listNonSystemNetworkOfferings() {
-        SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
-        sc.setParameters("system", false);
-        return this.listIncludingRemovedBy(sc, null);
-    }
-    
-    @Override
     public List<NetworkOfferingVO> listSystemNetworkOfferings() {
         SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
         sc.setParameters("system", true);
@@ -121,12 +123,39 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public List<NetworkOfferingVO> listByTrafficTypeAndGuestType(boolean isSystem, TrafficType trafficType, GuestIpType guestType) {
-        SearchCriteria<NetworkOfferingVO> sc = TrafficTypeGuestTypeSearch.create();
-        sc.setParameters("trafficType", trafficType);
-        sc.setParameters("guestType", guestType);
-        sc.setParameters("isSystem", isSystem);
-        return listBy(sc, null);
+    public boolean remove(Long networkOfferingId){
+        NetworkOfferingVO offering = findById(networkOfferingId);
+        offering.setName(null);
+        update(networkOfferingId, offering);
+        return super.remove(networkOfferingId);
     }
     
+    @Override
+    public List<Long> getOfferingIdsToUpgradeFrom(NetworkOffering originalOffering) {
+        SearchCriteria<Long> sc = UpgradeSearch.create();
+        //exclude original offering
+        sc.addAnd("id", SearchCriteria.Op.NEQ, originalOffering.getId());
+        
+        //list only non-system offerings
+        sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
+        
+        //Type of the network should be the same
+        sc.addAnd("guestType", SearchCriteria.Op.EQ, originalOffering.getGuestType());
+        
+        //Traffic types should be the same 
+        sc.addAnd("trafficType", SearchCriteria.Op.EQ, originalOffering.getTrafficType());
+        
+        sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
+        
+        return customSearch(sc, null);
+    }
+    
+    @Override
+    public List<NetworkOfferingVO> listByTrafficTypeGuestTypeAndState(NetworkOffering.State state, TrafficType trafficType, Network.GuestType type) {
+        SearchCriteria<NetworkOfferingVO> sc = AllFieldsSearch.create();
+        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("guestType", type);
+        sc.setParameters("state", state);
+        return listBy(sc, null);
+    }
 }

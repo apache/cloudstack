@@ -49,7 +49,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setBroadcastUri(profile.getBroadCastUri());
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());
-        to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
         to.setTags(profile.getTags());
         return to;
     }

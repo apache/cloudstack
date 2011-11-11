@@ -19,7 +19,7 @@ package com.cloud.vm.dao;
 
 import java.util.List;
 
-import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.DomainRouterVO;
@@ -97,11 +97,13 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * List domain routers by state and network type which reside on Host managed by the specified management server
      * @return
      */    
-    List<DomainRouterVO> listByStateAndNetworkType(State state, GuestIpType ipType, long mgmtSrvrId);
+    List<DomainRouterVO> listByStateAndNetworkType(State state, Network.GuestType type, long mgmtSrvrId);
     
     List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state, Role role);
     
     List<DomainRouterVO> listByNetworkAndPodAndRole(long networkId, long podId, Role role);
     
     List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role);
+    
+    List<DomainRouterVO> listByElementId(long elementId);
 }

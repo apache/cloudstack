@@ -70,9 +70,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
     private String networkOfferingAvailability;
     
-    @SerializedName(ApiConstants.IS_SHARED) @Param(description="true if network is shared, false otherwise")
-    private Boolean isShared;
-    
     @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="true if network is system, false otherwise")
     private Boolean isSystem;
     
@@ -121,11 +118,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
     
-    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")
-    private Boolean isSecurityGroupEnabled;
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
+    private Long physicalNetworkId;
     
-    @SerializedName(ApiConstants.TAGS) @Param(description="comma separated tag")
-    private String tags;
+    @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")
+    private String aclType;
+    
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -203,10 +201,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.displaytext = displaytext;
     }
 
-    public void setIsShared(Boolean isShared) {
-        this.isShared = isShared;
-    }
-
     public void setStartIp(String startIp) {
         this.startIp = startIp;
     }
@@ -243,23 +237,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.networkDomain = networkDomain;
     }
     
-    public void setIsSecurityGroupEnabled(Boolean sgEnabled) {
-        this.isSecurityGroupEnabled = sgEnabled;
-    }
-    
-    public void setTags(List<String> tags) {
-        if (tags == null || tags.size() == 0) {
-            return;
-        }
-        
-        StringBuilder buf = new StringBuilder();
-        for (String tag : tags) {
-            buf.append(tag).append(",");
-        }
-        
-        this.tags = buf.delete(buf.length()-1, buf.length()).toString();
-    }
-    
     @Override
     public void setProjectId(Long projectId) {
         this.projectId.setValue(projectId);
@@ -269,7 +246,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
-    
+
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
+
+	public void setAclType(String aclType) {
+		this.aclType = aclType;
+	}
     
 }

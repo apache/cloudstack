@@ -64,6 +64,8 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -113,8 +115,10 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SecurityEgressRuleAnswer;
+import com.cloud.agent.api.SecurityEgressRulesCmd;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -174,6 +178,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.ovs.OvsCreateGreTunnelAnswer;
 import com.cloud.network.ovs.OvsCreateGreTunnelCommand;
 import com.cloud.network.ovs.OvsCreateTunnelAnswer;
@@ -475,8 +480,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((VpnUsersCfgCommand)cmd);
         } else if (clazz == CheckSshCommand.class) {
             return execute((CheckSshCommand)cmd);
-        } else if (clazz == SecurityGroupRulesCmd.class) {
-            return execute((SecurityGroupRulesCmd) cmd);
+        } else if (clazz == SecurityIngressRulesCmd.class) {
+            return execute((SecurityIngressRulesCmd) cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
         	return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (clazz == OvsSetTagAndFlowCommand.class) {
@@ -503,11 +508,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((ClusterSyncCommand)cmd);
         } else if (cmd instanceof GetDomRVersionCmd) {
             return execute((GetDomRVersionCmd)cmd);
+        } else if (clazz == CheckNetworkCommand.class) {
+            return execute((CheckNetworkCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
     
+
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String tag) throws XenAPIException, XmlRpcException {
         if (tag != null) {
             if (s_logger.isDebugEnabled()) {
@@ -4250,6 +4258,69 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             throw new CloudRuntimeException("Unable to get host information ", e);
         }
     }
+    
+    protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking if network name setup is done on the resource");
+        }
+        
+        List<PhysicalNetworkSetupInfo> infoList = cmd.getPhysicalNetworkInfoList();
+        
+        try{
+            boolean errorout = false;
+            String msg = "";
+            for(PhysicalNetworkSetupInfo info : infoList){
+                if(!isNetworkSetupByName(info.getGuestNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Guest Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;
+                }
+                if(!isNetworkSetupByName(info.getPrivateNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;                }
+                if(!isNetworkSetupByName(info.getPublicNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;
+                 }
+                if(!isNetworkSetupByName(info.getStorageNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Storage Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    errorout = true;
+                    break;
+                }
+            }
+            if(errorout){
+                s_logger.error(msg);
+                return new CheckNetworkAnswer(cmd, false, msg);
+            }else{
+                return new CheckNetworkAnswer(cmd, true , "Network Setup check by names is done");
+            }
+
+        }catch (XenAPIException e) {
+            String msg = "CheckNetworkCommand failed with XenAPIException:" + e.toString() + " host:" + _host.uuid;
+            s_logger.warn(msg, e);
+            return new CheckNetworkAnswer(cmd, false, msg);
+        }catch (Exception e) {
+            String msg = "CheckNetworkCommand failed with Exception:" + e.getMessage() + " host:" + _host.uuid;
+            s_logger.warn(msg, e);
+            return new CheckNetworkAnswer(cmd, false, msg);
+        }
+    }
+    
+    protected boolean isNetworkSetupByName(String nameTag) throws XenAPIException, XmlRpcException{
+        if (nameTag != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Looking for network setup by name " + nameTag);
+            }
+            Connection conn = getConnection();
+            XsLocalNetwork network = getNetworkByName(conn, nameTag);
+            if (network == null) {
+                return false;
+            }
+        }
+        return true;
+    }    
 
     protected List<File> getPatchFiles() {
         return null;
@@ -4676,8 +4747,38 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     	
 		return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip, bridge);
     }
-        
-    private Answer execute(SecurityGroupRulesCmd cmd) {
+    
+    private Answer execute(SecurityEgressRulesCmd cmd) {
+        Connection conn = getConnection();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Sending network rules command to " + _host.ip);
+        }
+
+        if (!_canBridgeFirewall) {
+            s_logger.info("Host " + _host.ip + " cannot do bridge firewalling");
+            return new SecurityEgressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
+        }
+      
+        String result = callHostPlugin(conn, "vmops", "network_rules",
+                "vmName", cmd.getVmName(),
+                "vmIP", cmd.getGuestIp(),
+                "vmMAC", cmd.getGuestMac(),
+                "type", "egress",
+                "vmID", Long.toString(cmd.getVmId()),
+                "signature", cmd.getSignature(),
+                "seqno", Long.toString(cmd.getSeqNum()),
+                "rules", cmd.stringifyRules());
+
+        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+            s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
+            return new SecurityEgressRuleAnswer(cmd, false, "programming network rules failed");
+        } else {
+            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
+            return new SecurityEgressRuleAnswer(cmd);
+        }
+    }
+    
+    private Answer execute(SecurityIngressRulesCmd cmd) {
         Connection conn = getConnection();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Sending network rules command to " + _host.ip);
@@ -4685,16 +4786,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (!_canBridgeFirewall) {
             s_logger.warn("Host " + _host.ip + " cannot do bridge firewalling");
-            return new SecurityGroupRuleAnswer(cmd, false, 
+            return new SecurityIngressRuleAnswer(cmd, false, 
                                                  "Host " + _host.ip + " cannot do bridge firewalling",
-                                                 SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
+                                                 SecurityIngressRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
-        
+      
         String result = callHostPlugin(conn, "vmops", "network_rules",
                 "vmName", cmd.getVmName(),
                 "vmIP", cmd.getGuestIp(),
                 "vmMAC", cmd.getGuestMac(),
-                "type", cmd.getRuleType(),
+                "type", "ingress",
                 "vmID", Long.toString(cmd.getVmId()),
                 "signature", cmd.getSignature(),
                 "seqno", Long.toString(cmd.getSeqNum()),
@@ -4703,10 +4804,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
-            return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
+            return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
         } else {
             s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
-            return new SecurityGroupRuleAnswer(cmd);
+            return new SecurityIngressRuleAnswer(cmd);
         }
     }
 

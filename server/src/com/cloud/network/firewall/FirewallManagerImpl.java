@@ -358,10 +358,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         
         if (purpose == Purpose.LoadBalancing) {
             if (!_elbEnabled) {
-                protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Lb);
+                protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
         } else {
-            protocolCapabilities = _networkMgr.getServiceCapabilities(network.getDataCenterId(), network.getNetworkOfferingId(), Service.Firewall);
+            protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
         }
         
         if (protocolCapabilities != null) {
@@ -375,25 +375,27 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
     
     @Override
-    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException {
         boolean success = true;
         if (!_networkMgr.applyRules(rules, continueOnError)) {
             s_logger.warn("Rules are not completely applied");
             return false;
         } else {
-            for (FirewallRule rule : rules) {
-                if (rule.getState() == FirewallRule.State.Revoke) {
-                    FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
-                    if (relatedRule != null) {
-                        s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
-                        success = false;
-                    } else {
-                        _firewallDao.remove(rule.getId());
+            if (updateRulesInDB) {
+                for (FirewallRule rule : rules) {
+                    if (rule.getState() == FirewallRule.State.Revoke) {
+                        FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
+                        if (relatedRule != null) {
+                            s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+                            success = false;
+                        } else {
+                            _firewallDao.remove(rule.getId());
+                        }
+                    } else if (rule.getState() == FirewallRule.State.Add) {
+                        FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
+                        ruleVO.setState(FirewallRule.State.Active);
+                        _firewallDao.update(ruleVO.getId(), ruleVO);
                     }
-                } else if (rule.getState() == FirewallRule.State.Add) {
-                    FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
-                    ruleVO.setState(FirewallRule.State.Active);
-                    _firewallDao.update(ruleVO.getId(), ruleVO);
                 }
             }
         }
@@ -420,14 +422,13 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             // load cidrs if any
             rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));  
         }
-        
 
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, rules.toArray(new FirewallRuleVO[rules.size()]));
         }
 
         try {
-            if (!applyRules(rules, continueOnError)) {
+            if (!applyRules(rules, continueOnError, true)) {
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
@@ -566,7 +567,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         // now send everything to the backend
         List<FirewallRuleVO> rulesToApply = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
-        applyFirewallRules(rulesToApply, true, caller);
+        boolean success = applyFirewallRules(rulesToApply, true, caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.Firewall));
@@ -575,7 +576,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             s_logger.debug("Successfully released firewall rules for network id=" + networkId + " and # of rules now = " + rules.size());
         }
 
-        return rules.size() == 0;
+        return success && rules.size() == 0;
     }
     
     @Override

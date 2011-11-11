@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -183,11 +184,17 @@ public class PodZoneConfig {
 		"Unable to start DB connection to read vlan DB id. Please contact Cloud Support.");
     }
 	
-	public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange, long networkId) {
+	public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange, long networkId, long physicalNetworkId) {
     	// Check if the zone is valid
     	long zoneId = getZoneId(zone);
     	if (zoneId == -1)
     		return genReturnList("false", "Please specify a valid zone.");
+    	
+    	//check if physical network is valid
+        long physicalNetworkDbId = checkPhysicalNetwork(physicalNetworkId);
+        if (physicalNetworkId == -1)
+            return genReturnList("false", "Please specify a valid physical network.");
+    	
     	
     	Long podId = pod!=null?getPodId(pod, zone):null;
     	if (podId != null && podId == -1)
@@ -219,7 +226,7 @@ public class PodZoneConfig {
     		*/
     		
     		// Everything was fine, so persist the VLAN
-    		saveVlan(zoneId, podId, vlanId, vlanGateway, vlanNetmask, vlanType, ipRange, networkId);
+    		saveVlan(zoneId, podId, vlanId, vlanGateway, vlanNetmask, vlanType, ipRange, networkId, physicalNetworkDbId);
             if (podId != null) {
             	long vlanDbId = getVlanDbId(zone, vlanId);
             	String sql = "INSERT INTO `cloud`.`pod_vlan_map` (pod_id, vlan_db_id) " + "VALUES ('" + podId + "','" + vlanDbId  + "')";
@@ -254,7 +261,7 @@ public class PodZoneConfig {
     }
 	
 	@DB
-	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, int vnetStart, int vnetEnd, String guestNetworkCidr, String networkType) {
+	public void saveZone(boolean printOutput, long id, String name, String dns1, String dns2, String dns3, String dns4, String guestNetworkCidr, String networkType) {
 		
 		if (printOutput) System.out.println("Saving zone, please wait...");
 		
@@ -299,10 +306,6 @@ public class PodZoneConfig {
 			values += ",'" + networkType + "'";
 		}
 		
-		//save vnet information
-		columns += ", vnet";
-        values += ",'" + vnetStart + "-" + vnetEnd + "'";
-			
 			
 		columns += ")";
 		values += ")";
@@ -311,18 +314,46 @@ public class PodZoneConfig {
 		
 		DatabaseConfig.saveSQL(sql, "Failed to save zone due to exception. Please contact Cloud Support.");
 		
-		// Hardcode the vnet range to be the full range
-		int begin = 0x64;
+		if (printOutput) System.out.println("Successfully saved zone.");
+	}
+	
+	@DB
+    public void savePhysicalNetwork(boolean printOutput, long id, long dcId, int vnetStart, int vnetEnd) {
+        
+        if (printOutput) System.out.println("Saving physical network, please wait...");
+        
+        String columns = null;
+        String values = null;
+        
+        columns = "(id ";
+        values = "('" + id + "'";
+        
+        columns += ", data_center_id ";
+        values += ",'" + dcId + "'";
+        
+        //save vnet information
+        columns += ", vnet";
+        values += ",'" + vnetStart + "-" + vnetEnd + "'";
+            
+            
+        columns += ")";
+        values += ")";
+        
+        String sql = "INSERT INTO `cloud`.`physical_network` " + columns +  " VALUES " + values;
+        
+        DatabaseConfig.saveSQL(sql, "Failed to save physical network due to exception. Please contact Cloud Support.");
+        
+        // Hardcode the vnet range to be the full range
+        int begin = 0x64;
         int end = 64000;
         
         // If vnet arguments were passed in, use them
         if (vnetStart != -1 && vnetEnd != -1) {
-        	begin = vnetStart;
-        	end = vnetEnd;
+            begin = vnetStart;
+            end = vnetEnd;
         }
         
-        long dcId = getZoneId(name);
-        String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id) VALUES ( ?, ?)";
+        String insertVnet = "INSERT INTO `cloud`.`op_dc_vnet_alloc` (vnet, data_center_id, physical_network_id) VALUES ( ?, ?, ?)";
 
         Transaction txn = Transaction.currentTxn();
         try {
@@ -330,23 +361,44 @@ public class PodZoneConfig {
             for (int i = begin; i <= end; i++) {
                 stmt.setString(1, Integer.toString(i));
                 stmt.setLong(2, dcId);
+                stmt.setLong(3, id);
                 stmt.addBatch();
             }
             stmt.executeBatch();
         } catch (SQLException ex) {
-            printError("Error creating vnet for the data center. Please contact Cloud Support.");
+            printError("Error creating vnet for the physical network. Please contact Cloud Support.");
         }
-		
-		if (printOutput) System.out.println("Successfully saved zone.");
-	}
+        
+        //add default traffic types
+        String defaultXenLabel = "cloud-private";
+        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
+
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);
+            for (TrafficType traffic : TrafficType.values()) {
+                if(traffic.equals(TrafficType.Control) || traffic.equals(TrafficType.Vpn)){
+                    continue;
+                }
+                stmt.setLong(1, id);
+                stmt.setString(2, traffic.toString());
+                stmt.setString(3, defaultXenLabel);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        } catch (SQLException ex) {
+            printError("Error adding default traffic types for the physical network. Please contact Cloud Support.");
+        }
+        
+        if (printOutput) System.out.println("Successfully saved physical network.");
+    }	
 	
 	public void deleteZone(String name) {
 		String sql = "DELETE FROM `cloud`.`data_center` WHERE name=\"" + name + "\"";
 		DatabaseConfig.saveSQL(sql, "Failed to delete zone due to exception. Please contact Cloud Support.");
 	}
 	
-	public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId) {
-		String sql = "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id) " + "VALUES ('" + vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange +  "','" + networkId + "')";
+	public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId, long physicalNetworkId) {
+		String sql = "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id, physical_network_id) " + "VALUES ('" + vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange +  "','" + networkId +  "','" + physicalNetworkId + "')";
         DatabaseConfig.saveSQL(sql, "Failed to save vlan due to exception. Please contact Cloud Support.");
 	}
 	
@@ -368,6 +420,12 @@ public class PodZoneConfig {
 		String errorMsg = "Could not read zone ID from database. Please contact Cloud Support.";
 		return DatabaseConfig.getDatabaseValueLong(selectSql, "id", errorMsg);
 	}
+	
+    public static long checkPhysicalNetwork(long physicalNetworkId) {
+        String selectSql = "SELECT * FROM `cloud`.`physical_network` WHERE id = \"" + physicalNetworkId + "\"";
+        String errorMsg = "Could not read physicalNetwork ID from database. Please contact Cloud Support.";
+        return DatabaseConfig.getDatabaseValueLong(selectSql, "id", errorMsg);
+    }	
 	
 	@DB
 	public Vector<Long> getAllZoneIDs() {

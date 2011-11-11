@@ -152,6 +152,10 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         public boolean isRevoked() {
             return revoked;
         }
+       
+        public void setRevoked(boolean revoked) {
+            this.revoked = revoked;
+        }
     }
     
     @Override

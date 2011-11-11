@@ -33,7 +33,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
@@ -64,7 +64,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     NetworkManager _networkMgr;
     @Inject
-    ExternalNetworkManager _externalNetworkMgr;
+    ExternalNetworkDeviceManager _externalNetworkMgr;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -80,7 +80,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-
         if (_ovsNetworkMgr.isOvsNetworkEnabled() || _tunnelMgr.isOvsTunnelEnabled()) {
             return null;
         }
@@ -88,7 +87,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
-        } else if (_networkMgr.zoneIsConfiguredForExternalNetworking(plan.getDataCenterId())) {
+        } else if (_networkMgr.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             config.setState(State.Allocated);
         }
 
@@ -103,18 +102,18 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        if (!_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (!_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             return super.implement(config, offering, dest, context);
         }
 
         DataCenter zone = dest.getDataCenter();
-        NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getGuestType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(),
-                config.getDataCenterId(), State.Allocated);
+        NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
+                config.getDataCenterId(), config.getPhysicalNetworkId());
 
         // Get a vlan tag
         int vlanTag;
         if (config.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(zone.getId(), config.getAccountId(), context.getReservationId());
+            String vnet = _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId());
 
             try {
                 vlanTag = Integer.parseInt(vnet);
@@ -130,7 +129,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         // Determine the offset from the lowest vlan tag
-        int offset = _externalNetworkMgr.getVlanOffset(zone, vlanTag);
+        int offset = _externalNetworkMgr.getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
 
         // Determine the new gateway and CIDR
         String[] oldCidr = config.getCidr().split("/");
@@ -176,7 +175,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId()) && nic != null && nic.getRequestedIp() != null) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIp() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
         
@@ -186,7 +185,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             profile.setStrategy(ReservationStrategy.Start);
             profile.setIp4Address(null);
             profile.setGateway(null);
@@ -204,7 +203,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
 
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setIp4Address(null);
             nic.setGateway(null);
             nic.setNetmask(null);
@@ -221,7 +220,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
-        if (_networkMgr.zoneIsConfiguredForExternalNetworking(config.getDataCenterId())) {
+        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
             nic.setIsolationUri(config.getBroadcastUri());
             nic.setDns1(dc.getDns1());
@@ -246,7 +245,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         } else {
             super.reserve(nic, config, vm, dest, context);
         }
-
     }
 
     @Override
@@ -256,7 +254,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        if (network != null && _networkMgr.zoneIsConfiguredForExternalNetworking(network.getDataCenterId())) {
+        if (network != null && _networkMgr.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
             return true;
         } else {
             return super.release(nic, vm, reservationId);

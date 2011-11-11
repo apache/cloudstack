@@ -56,7 +56,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.migration.DiskOffering21VO.Type;
-import com.cloud.network.Network;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
@@ -305,8 +304,8 @@ public class Db20to21MigrationUtil {
 		List<ServiceOffering20VO> oldServiceOfferings = _serviceOffering20Dao.listAllIncludingRemoved();
 		for(ServiceOffering20VO so20 : oldServiceOfferings) {
 			ServiceOffering21VO so21 = new ServiceOffering21VO(so20.getName(), so20.getCpu(), so20.getRamSize(), so20.getSpeed(), so20.getRateMbps(),
-				so20.getMulticastRateMbps(), so20.getOfferHA(), so20.getDisplayText(), so20.getGuestIpType(),
-				so20.getUseLocalStorage(), false, null);
+				so20.getMulticastRateMbps(), so20.getOfferHA(), so20.getDisplayText(), so20.getUseLocalStorage(),
+				false, null);
 			so21.setId(seq++);
 			so21.setDiskSize(0);
 			so21 = _serviceOffering21Dao.persist(so21);
@@ -324,8 +323,8 @@ public class Db20to21MigrationUtil {
 			_configDao.getValue(Config.ConsoleProxyRamSize.key()), 
 			ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
 		ServiceOffering21VO soConsoleProxy = new ServiceOffering21VO("Fake Offering For DomP", 1,
-			proxyRamSize, 0, 0, 0, false, null, Network.GuestIpType.Virtual,
-			useLocalStorage, true, null);
+			proxyRamSize, 0, 0, 0, false, null, useLocalStorage,
+			true, null);
 		soConsoleProxy.setId(seq++);
 		soConsoleProxy.setUniqueName("Cloud.com-ConsoleProxy");
 		soConsoleProxy = _serviceOffering21Dao.persist(soConsoleProxy);
@@ -335,7 +334,7 @@ public class Db20to21MigrationUtil {
 			_configDao.getValue(Config.SecStorageVmRamSize.key()), 
 			SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
 		ServiceOffering21VO soSecondaryVm = new ServiceOffering21VO("Fake Offering For Secondary Storage VM", 1, 
-			secStorageVmRamSize, 0, 0, 0, false, null, Network.GuestIpType.Virtual, useLocalStorage, true, null);
+			secStorageVmRamSize, 0, 0, 0, false, null, useLocalStorage, true, null);
 		soSecondaryVm.setId(seq++);
 		soSecondaryVm.setUniqueName("Cloud.com-SecondaryStorage");
 		soSecondaryVm = _serviceOffering21Dao.persist(soSecondaryVm);
@@ -343,7 +342,7 @@ public class Db20to21MigrationUtil {
 		
         int routerRamSize = NumbersUtil.parseInt(_configDao.getValue("router.ram.size"), 128);
         ServiceOffering21VO soDomainRouter = new ServiceOffering21VO("Fake Offering For DomR", 1, 
-        	routerRamSize, 0, 0, 0, false, null, Network.GuestIpType.Virtual, useLocalStorage, true, null);
+        	routerRamSize, 0, 0, 0, false, null, useLocalStorage, true, null);
         soDomainRouter.setId(seq++);
         soDomainRouter.setUniqueName("Cloud.Com-SoftwareRouter");
         soDomainRouter = _serviceOffering21Dao.persist(soDomainRouter);

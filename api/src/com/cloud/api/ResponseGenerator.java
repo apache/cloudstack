@@ -43,15 +43,18 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
+import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
+import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
@@ -60,8 +63,10 @@ import com.cloud.api.response.SystemVmInstanceResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.api.response.VpnUsersResponse;
@@ -80,14 +85,21 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.security.SecurityRule;
+import com.cloud.network.security.EgressRule;
+import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
@@ -186,7 +198,9 @@ public interface ResponseGenerator {
 
     ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
 
-    SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
+    SecurityGroupResponse createSecurityGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
+
+    SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends EgressRule> egressRules);
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
@@ -235,5 +249,17 @@ public interface ResponseGenerator {
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
 
     SwiftResponse createSwiftResponse(Swift swift);
+
+    PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
+
+    ServiceResponse createNetworkServiceResponse(Service service);
+
+    ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider);
+
+    ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result);
+
+    TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result);
+    
+    VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
 
 }

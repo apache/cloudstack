@@ -1110,6 +1110,11 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("create template with id : " + templateId + " for account: " + event.getAccountId());
             }
+            List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
+            if (storageVOs.size() > 0) {
+        		s_logger.warn("Usage entry for Template: " + templateId + " assigned to account: " + event.getAccountId() + "already exists in zone "+zoneId);
+        		return;
+        	}
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO(templateId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.TEMPLATE, event.getTemplateId(),
             							templateSize, event.getCreateDate(), null);
@@ -1147,6 +1152,11 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("create iso with id : " + isoId + " for account: " + event.getAccountId());
     		}
+    		 List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
+             if (storageVOs.size() > 0) {
+         		s_logger.warn("Usage entry for ISO: " + isoId + " assigned to account: " + event.getAccountId() + "already exists in zone "+zoneId);
+         		return;
+         	}
     		Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
     		UsageStorageVO storageVO = new UsageStorageVO( isoId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.ISO, null,
     				isoSize, event.getCreateDate(), null);

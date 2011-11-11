@@ -23,10 +23,14 @@ import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class ServiceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME) @Param(description="the service name")
     private String name;
+    
+    @SerializedName(ApiConstants.PROVIDER) @Param(description="the service provider name")
+    private List<ProviderResponse> providers;
     
     @SerializedName("capability") @Param(description="the list of capabilities", responseObject = CapabilityResponse.class)
     private List<CapabilityResponse> capabilities;
@@ -39,11 +43,11 @@ public class ServiceResponse extends BaseResponse {
         this.name = name;
     }
 
-    public List<CapabilityResponse> getCapabilities() {
-        return capabilities;
-    }
-
     public void setCapabilities(List<CapabilityResponse> capabilities) {
         this.capabilities = capabilities;
+    }
+
+    public void setProviders(List<ProviderResponse> providers) {
+        this.providers = providers;
     }
 }

@@ -72,6 +72,8 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -80,9 +82,18 @@ import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
+import com.cloud.network.dao.NetworkExternalFirewallDaoImpl;
+import com.cloud.network.dao.NetworkExternalLoadBalancerDaoImpl;
 import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
+import com.cloud.network.dao.NetworkServiceMapDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
+import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
+import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
@@ -100,7 +111,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
-import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
+import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -108,6 +119,7 @@ import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
@@ -158,6 +170,7 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLibraryBase;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ClusteredVirtualMachineManagerImpl;
 import com.cloud.vm.ItWorkDaoImpl;
@@ -210,7 +223,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("LoadBalancerVMMapDao", LoadBalancerVMMapDaoImpl.class);
         addDao("DataCenterIpAddressDao", DataCenterIpAddressDaoImpl.class);
         addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
-        addDao("SecurityGroupRuleDao", SecurityGroupRuleDaoImpl.class);
+        addDao("IngressRuleDao", IngressRuleDaoImpl.class);
         addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         addDao("SecurityGroupWorkDao", SecurityGroupWorkDaoImpl.class);
@@ -286,9 +299,19 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ProjectInvitationDao", ProjectInvitationDaoImpl.class);
         addDao("IdentityDao", IdentityDaoImpl.class);
         addDao("AccountDetailsDao", AccountDetailsDaoImpl.class);
+        addDao("NetworkOfferingServiceMapDao", NetworkOfferingServiceMapDaoImpl.class);
         info = addDao("HypervisorCapabilitiesDao",HypervisorCapabilitiesDaoImpl.class);
         info.addParameter("cache.size", "100");
         info.addParameter("cache.time.to.live", "600");
+        addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
+        addDao("PhysicalNetworkServiceProviderDao", PhysicalNetworkServiceProviderDaoImpl.class);
+        addDao("VirtualRouterProviderDao", VirtualRouterProviderDaoImpl.class);
+        addDao("ExternalLoadBalancerDeviceDao", ExternalLoadBalancerDeviceDaoImpl.class);
+        addDao("ExternalFirewallDeviceDao", ExternalFirewallDeviceDaoImpl.class);
+        addDao("NetworkExternalLoadBalancerDao", NetworkExternalLoadBalancerDaoImpl.class);
+        addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
+        addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
+        addDao("NetworkServiceMapDao", NetworkServiceMapDaoImpl.class);
     }
 
     @Override
@@ -372,5 +395,17 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         HashMap<Class<?>, Class<?>> factories = new HashMap<Class<?>, Class<?>>();
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;
+    }
+    
+    protected void populateServices() {
+        addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
+    }
+    
+    @Override
+    public synchronized Map<String, ComponentInfo<PluggableService>> getPluggableServices() {
+        if (_pluggableServices.size() == 0) {
+            populateServices();
+        }
+        return _pluggableServices;
     }
 }

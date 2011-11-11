@@ -18,22 +18,22 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.acl.ControlledEntity;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import com.cloud.user.Account;
+import com.cloud.network.Network.GuestType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Creates a network", responseObject=NetworkResponse.class)
@@ -86,31 +86,23 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a network")
     private Long domainId;
     
-    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network is shared across accounts in the Zone")
-    private Boolean isShared;
-    
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
     private Boolean isDefault;
     
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the network")
-    private List<String> tags;
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+    private String aclType;
+    
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
+    private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     public Long getNetworkOfferingId() {
         return networkOfferingId;
-    }
-    
-    public List<String> getTags() {
-        return tags;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     public String getGateway() {
@@ -149,10 +141,6 @@ public class CreateNetworkCmd extends BaseCmd {
         return displayText;
     }
     
-    public boolean getIsShared() {
-        return isShared == null ? false : isShared;
-    }
-    
     public Boolean isDefault() {
         return isDefault;
     }
@@ -164,11 +152,44 @@ public class CreateNetworkCmd extends BaseCmd {
     public Long getProjectId() {
         return projectId;
     }
+
+    public String getAclType() {
+		return aclType == null ? ControlledEntity.ACLType.Account.toString() : aclType;
+	}
+
+	public Long getZoneId() {
+        Long physicalNetworkId = getPhysicalNetworkId();
+        
+        if (physicalNetworkId == null && zoneId == null) {
+            throw new InvalidParameterValueException("Zone id is required");
+        }
+        
+        return zoneId;
+    }
     
+    public Long getPhysicalNetworkId() {
+        NetworkOffering offering = _configService.getNetworkOffering(networkOfferingId);
+        if (offering == null) {
+            throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
+        }
+        
+        if (physicalNetworkId != null) {
+            if (offering.getGuestType() == GuestType.Shared) {
+                return physicalNetworkId;
+            } else {
+                throw new InvalidParameterValueException("Physical network id can be specified for networks of guest ip type " + GuestType.Shared + " only.");
+            }
+        } else {
+            if (zoneId == null) {
+                throw new InvalidParameterValueException("ZoneId is required as physicalNetworkId is null");
+            }
+            return _networkService.findPhysicalNetworkId(zoneId, offering.getTags());
+        }
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
     @Override
     public String getCommandName() {
         return s_name;

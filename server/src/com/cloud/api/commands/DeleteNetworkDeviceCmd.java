@@ -14,7 +14,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.NetworkDeviceManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -41,9 +41,9 @@ public class DeleteNetworkDeviceCmd extends BaseCmd {
 	public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
 			ResourceAllocationException {
 		try {
-			NetworkDeviceManager nwDeviceMgr;
+			ExternalNetworkDeviceManager nwDeviceMgr;
 			ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-			nwDeviceMgr = locator.getManager(NetworkDeviceManager.class);
+			nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
 			boolean result = nwDeviceMgr.deleteNetworkDevice(this);
 			if (result) {
 				SuccessResponse response = new SuccessResponse(getCommandName());

@@ -29,7 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkManager;
+import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
@@ -48,7 +48,7 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
     @IdentityMapper(entityTableName="data_center")
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external load balancer appliance.")
 	private Long zoneId;
-	
+
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external load balancer appliance.")
 	private String url;	 
 	
@@ -57,9 +57,6 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
 	
 	@Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external load balancer appliance.")
 	private String password;	 
-
-	@Parameter(name=ApiConstants.EXTERNAL_LB_TYPE, type=CommandType.STRING, description="External load balancer type. Now supports F5BigIP.")
-	private String type;
 
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
@@ -81,10 +78,6 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
 		return password;
 	}
 	
-	public String getType() {
-		return type;
-	}
-
 	/////////////////////////////////////////////////////
 	/////////////// API Implementation///////////////////
 	/////////////////////////////////////////////////////
@@ -103,7 +96,7 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
     public void execute(){
 		try {
 		    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-		    ExternalNetworkManager externalNetworkMgr = locator.getManager(ExternalNetworkManager.class);
+		    ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
 			Host externalLoadBalancer = externalNetworkMgr.addExternalLoadBalancer(this);
 			ExternalLoadBalancerResponse response = externalNetworkMgr.createExternalLoadBalancerResponse(externalLoadBalancer);
 			response.setObjectName("externalloadbalancer");

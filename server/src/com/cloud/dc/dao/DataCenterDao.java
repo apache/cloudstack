@@ -36,9 +36,9 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     String[] getNextAvailableMacAddressPair(long id, long mask);
     Pair<String, Long> allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
     String allocateLinkLocalIpAddress(long id, long podId, long instanceId, String reservationId);
-    String allocateVnet(long dcId, long accountId, String reservationId);
+    String allocateVnet(long dcId, long physicalNetworkId, long accountId, String reservationId);
     
-    void releaseVnet(String vnet, long dcId, long accountId, String reservationId);
+    void releaseVnet(String vnet, long dcId, long physicalNetworkId, long accountId, String reservationId);
     void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId);
     void releasePrivateIpAddress(long nicId, String reservationId);
     void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId);
@@ -50,13 +50,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     void addPrivateIpAddress(long dcId,long podId, String start, String end);
     void addLinkLocalIpAddress(long dcId,long podId, String start, String end);
     
-    List<DataCenterVnetVO> findVnet(long dcId, String vnet);
-    
-    void addVnet(long dcId, int start, int end);
-    
-    void deleteVnet(long dcId);
-    
-    List<DataCenterVnetVO> listAllocatedVnets(long dcId);
+    List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet);
 
     String allocatePodVlan(long podId, long accountId);
 
@@ -66,8 +60,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
 	List<DataCenterVO> findChildZones(Object[] ids);
 
-    List<DataCenterVO> listSecurityGroupEnabledZones();
-    
     void loadDetails(DataCenterVO zone);
     void saveDetails(DataCenterVO zone);
     
@@ -77,4 +69,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     DataCenterVO findByTokenOrIdOrName(String tokenIdOrName);
 
 	int countZoneVlans(long dcId, boolean onlyCountAllocated);
+    
+    void addVnet(long dcId, long physicalNetworkId, int start, int end);
+    void deleteVnet(long physicalNetworkId);
+    List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId);
 }

@@ -174,8 +174,6 @@ public class EventTypes {
 	// Security Groups
 	public static final String EVENT_SECURITY_GROUP_AUTHORIZE_INGRESS = "SG.AUTH.INGRESS";
     public static final String EVENT_SECURITY_GROUP_REVOKE_INGRESS = "SG.REVOKE.INGRESS";
-	public static final String EVENT_SECURITY_GROUP_AUTHORIZE_EGRESS = "SG.AUTH.EGRESS";
-    public static final String EVENT_SECURITY_GROUP_REVOKE_EGRESS = "SG.REVOKE.EGRESS";
     public static final String EVENT_SECURITY_GROUP_CREATE = "SG.CREATE";
     public static final String EVENT_SECURITY_GROUP_DELETE = "SG.DELETE";
 
@@ -217,4 +215,23 @@ public class EventTypes {
 	public static final String EVENT_PROJECT_INVITATION_UPDATE = "PROJECT.INVITATION.UPDATE";
 	public static final String EVENT_PROJECT_INVITATION_REMOVE = "PROJECT.INVITATION.REMOVE";
 	public static final String EVENT_PROJECT_ACCOUNT_REMOVE = "PROJECT.ACCOUNT.REMOVE";
+	
+	//Network as a Service
+	public static final String EVENT_NETWORK_ELEMENT_CONFIGURE = "NETWORK.ELEMENT.CONFIGURE";
+
+	//Physical Network Events
+    public static final String EVENT_PHYSICAL_NETWORK_CREATE = "PHYSICAL.NETWORK.CREATE";
+    public static final String EVENT_PHYSICAL_NETWORK_DELETE = "PHYSICAL.NETWORK.DELETE";
+    public static final String EVENT_PHYSICAL_NETWORK_UPDATE = "PHYSICAL.NETWORK.UPDATE";
+    
+    //Physical Network Service Provider Events
+    public static final String EVENT_SERVICE_PROVIDER_CREATE = "SERVICE.PROVIDER.CREATE";
+    public static final String EVENT_SERVICE_PROVIDER_DELETE = "SERVICE.PROVIDER.DELETE";
+    public static final String EVENT_SERVICE_PROVIDER_UPDATE = "SERVICE.PROVIDER.UPDATE";
+
+    //Physical Network TrafficType Events
+    public static final String EVENT_TRAFFIC_TYPE_CREATE = "TRAFFIC.TYPE.CREATE";
+    public static final String EVENT_TRAFFIC_TYPE_DELETE = "TRAFFIC.TYPE.DELETE";
+    public static final String EVENT_TRAFFIC_TYPE_UPDATE = "TRAFFIC.TYPE.UPDATE";
+
 }

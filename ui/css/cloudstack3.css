@@ -563,9 +563,25 @@ div.panel div.list-view {
   border-bottom: 1px solid #E7E7E7;
 }
 
+.detail-view div.list-view {
+  width: 730px;
+  border: 1px solid #DAD4D4;
+  margin: 41px auto auto !important;
+  height: 536px !important;
+  background: #F7F7F7;
+}
+
 div.panel div.list-view div.data-table table {
   width: 755px;
   margin-top: 44px;
+}
+
+.detail-view div.list-view div.data-table table {
+  width: 703px !important;
+}
+
+.detail-view div.list-view div.data-table table td {
+  border-left: 1px solid #CACACA;
 }
 
 div.panel div.list-view div.fixed-header {
@@ -578,6 +594,17 @@ div.panel div.list-view div.fixed-header {
   background-color: #F7F7F7;
   margin: 0;
   z-index: 1;
+}
+
+.detail-view div.list-view div.fixed-header {
+  width: 703px !important;
+  top: 49px !important;
+  left: 32px !important;
+  background: #FFFFFF;
+}
+
+.detail-view div.list-view div.fixed-header table {
+  width: 100% !important;
 }
 
 .project-view div.panel div.list-view div.fixed-header {
@@ -645,10 +672,10 @@ div.list-view td.state.off {
   overflow: hidden;
   display: inline-block;
   z-index: 2;
-  /*+placement:shift 0px 1px;*/
+  /*+placement:shift 0px 2px;*/
   position: relative;
   left: 0px;
-  top: 1px;
+  top: 2px;
 }
 
 .project-view .ui-tabs ul {
@@ -1448,6 +1475,10 @@ div.detail-group.actions td {
   top: -1px;
   z-index: 6;
   position: absolute;
+}
+
+.detail-view .ui-tabs-panel div.toolbar {
+  width: 768px;
 }
 
 .project-view div.toolbar {
@@ -3420,10 +3451,11 @@ label.error {
 }
 
 .multi-wizard .progress ul li span.multiline {
-  /*+placement:shift -22px 12px;*/
+  /*+placement:shift -154px 16px;*/
   position: relative;
-  left: -22px;
-  top: 12px;
+  left: -154px;
+  top: 16px;
+  width: 87px;
 }
 
 .multi-wizard .progress ul li span.arrow {
@@ -4176,12 +4208,12 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .progress ul li {
-  width: 128px;
+  width: 288px;
   padding: 0 32px 0 0;
 }
 
 .multi-wizard.zone-wizard .progress ul li span.arrow {
-  margin: 0 0 0 32px;
+  margin: 0 0 0 193px;
 }
 
 .multi-wizard.zone-wizard .select-network .content .section {

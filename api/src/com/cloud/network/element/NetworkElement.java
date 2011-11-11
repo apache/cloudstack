@@ -21,7 +21,6 @@
  */
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.deploy.DeployDestination;
@@ -33,9 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
@@ -50,6 +47,10 @@ public interface NetworkElement extends Adapter {
     
     Map<Service, Map<Capability, String>> getCapabilities();
     
+    /**
+     * NOTE:  
+     * NetworkElement -> Network.Provider is a one-to-one mapping. While adding a new NetworkElement, one must add a new Provider name to Network.Provider.
+     */
     Provider getProvider();
     
     /**
@@ -91,22 +92,12 @@ public interface NetworkElement extends Adapter {
      * The network is being shutdown.
      * @param network
      * @param context
+     * @param cleanup TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
-    
-    /**
-     * The network is being restarted.
-     * @param network
-     * @param context
-     * @param cleanup If need to clean up old network elements
-     * @return
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     */
-    boolean restart(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * The network is being destroyed.
@@ -116,32 +107,26 @@ public interface NetworkElement extends Adapter {
      */
     boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException;
     
+    /**
+     * Check if the instances of this Element are configured to be used on the physical network referred by this provider.
+     * @param provider
+     * @return boolean true/false
+     */
+    boolean isReady(PhysicalNetworkServiceProvider provider);
     
     /**
-     * Apply ip addresses to this network
-     * @param network
-     * @param ipAddress
-     * @return
+     * The network service provider is being shutdown. This should shutdown all instances of this element deployed for this provider.
+     * @param context
+     * @param networkServiceProvider
+     * @return boolean success/failure
+     * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
-     * Apply rules
-     * @param network
-     * @param rules
-     * @return
-     * @throws ResourceUnavailableException
+     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 
+     * @return true/false
      */
-    boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
-    
-    /**
-     * Creates static nat rule (public IP to private IP mapping) on the network element
-     * @param config
-     * @param rules
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException;
-
+    boolean canEnableIndividualServices();
 }
