@@ -108,11 +108,7 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
             throw new CloudRuntimeException("Cannot get cluster for id " + clusterId);
         }
         
-        String clusterName = cluster.getName(); 
-        if (clusterName == null) {
-            clusterName = "cluster" + cluster.getId();
-        }
-        
+		String clusterName = "OvmCluster" + cluster.getId();      
         return clusterName;
     }
     

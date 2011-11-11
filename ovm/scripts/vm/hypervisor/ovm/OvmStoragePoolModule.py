@@ -247,10 +247,11 @@ class OvmStoragePool(OvmObject):
         
         def addNodes(nodes, clusterName):
             ocfs2 = OvmOCFS2()
+            ocfs2._load()
             isOnline = ocfs2._isClusterOnline(clusterName)
             if not isOnline:
                 ocfs2._prepareConf(clusterName)
-                
+            
             for n in nodes:
                 ocfs2._addNode(n['name'], n['number'], n['ip_address'], 7777, clusterName, isOnline)
             
