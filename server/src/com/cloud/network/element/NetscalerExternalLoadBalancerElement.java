@@ -160,7 +160,7 @@ public class NetscalerExternalLoadBalancerElement extends AdapterBase implements
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        // TODO Auto-generated method stub
+        // FIXME: return true if atleast one Netscaler device is added in to physical network and is configured (in enabled state) 
         return true;
     }
 

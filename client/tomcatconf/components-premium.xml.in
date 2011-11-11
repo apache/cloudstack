@@ -25,7 +25,6 @@
         	<adapter name="NetscalerExternalLoadBalancer" class="com.cloud.network.element.NetscalerExternalLoadBalancerElement"/>
         	<adapter name="F5ExternalLoadBalancer" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
             <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
-            <adapter name="RedundantVirtualRouter" class="com.cloud.network.element.RedundantVirtualRouterElement"/>
             <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
             <adapter name="ExternalDhcp" class="com.cloud.network.element.ExternalDhcpElement"/>
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>

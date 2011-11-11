@@ -247,4 +247,6 @@ public interface NetworkManager extends NetworkService {
 			DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
 
     Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
+
+    Long getPhysicalNetworkId(Network network);
 }

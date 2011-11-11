@@ -28,6 +28,7 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.network.Network;
@@ -56,7 +57,7 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the network")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest type of the network")
+    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="the type of the network")
     private String guestIpType;
     
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
@@ -78,8 +79,8 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
     private Long physicalNetworkId;
     
-    @Parameter(name=ApiConstants.SOURCE_NAT_ENABLED, type=CommandType.BOOLEAN, description="list networks that support/don't support sourceNat service")
-    private Boolean sourceNatEnabled;
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
+    private List<String> supportedServices;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -129,8 +130,8 @@ public class ListNetworksCmd extends BaseListCmd {
         return physicalNetworkId;
     }
 
-    public Boolean getSourceNatEnabled() {
-        return sourceNatEnabled;
+    public List<String> getSupportedServices() {
+        return supportedServices;
     }
 
     /////////////////////////////////////////////////////

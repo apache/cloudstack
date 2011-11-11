@@ -77,11 +77,16 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -178,6 +183,10 @@ public class ElasticLoadBalancerManagerImpl implements
     NetworkDao _networksDao;
     @Inject 
     AccountDao _accountDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao _physicalProviderDao;
+    @Inject
+    VirtualRouterProviderDao _vrProviderDao;
 
 
     String _name;
@@ -493,8 +502,18 @@ public class ElasticLoadBalancerManagerImpl implements
                 
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 
+                String typeString = "ElasticLoadBalancerVm";
+                Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(guestNetwork);
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
+                if (provider == null) {
+                    throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
+                }
+                VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.ElasticLoadBalancerVm);
+                if (vrProvider == null) {
+                    throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
+                }
                
-                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), 0, VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
+                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
                         template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);

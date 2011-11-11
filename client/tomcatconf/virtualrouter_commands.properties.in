@@ -3,6 +3,5 @@
 
 #### router commands
 createVirtualRouterElement=com.cloud.api.commands.CreateVirtualRouterElementCmd;7
-createRedundantVirtualRouterElement=com.cloud.api.commands.CreateRedundantVirtualRouterElementCmd;7
 configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
-configureRedundantVirtualRouterElement=com.cloud.api.commands.ConfigureRedundantVirtualRouterElementCmd;7
+listVirtualRouterElements=com.cloud.api.commands.ListVirtualRouterElementsCmd;7

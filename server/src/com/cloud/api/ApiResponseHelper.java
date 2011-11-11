@@ -85,6 +85,7 @@ import com.cloud.api.response.TemplateResponse;
 import com.cloud.api.response.TrafficTypeResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.api.response.VpnUsersResponse;
@@ -126,6 +127,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
@@ -2288,6 +2290,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setIsLBShared(!offering.getDedicatedLB());
         response.setIsSourceNatShared(offering.getSharedSourceNat());
+        response.setIsRedundantRouter(offering.getRedundantRouter());
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }
@@ -2333,7 +2336,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         
         if (network.getGuestType() != null) {
-            response.setGuestIpType(network.getGuestType().toString());
+            response.setType(network.getGuestType().toString());
         }
 
         // get start ip and end ip of corresponding vlan
@@ -2807,5 +2810,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("traffictype");
         return response;
     }
-}
 
+    @Override
+    public VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result) {
+        VirtualRouterProviderResponse response = new VirtualRouterProviderResponse();
+        response.setId(result.getId());
+        response.setNspId(result.getNspId());
+        response.setEnabled(result.isEnabled());
+        return response;
+    }
+}

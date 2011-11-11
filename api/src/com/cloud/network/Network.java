@@ -154,6 +154,8 @@ public interface Network extends ControlledEntity {
 
     public static class Capability {
 
+        private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
+        
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
         public static final Capability SupportedLBIsolation = new Capability("SupportedLBIsolation");
@@ -163,15 +165,26 @@ public interface Network extends ControlledEntity {
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
+        public static final Capability RedundantRouter = new Capability("RedundantRouter");
 
         private String name;
 
         public Capability(String name) {
             this.name = name;
+            supportedCapabilities.add(this);
         }
 
         public String getName() {
             return name;
+        }
+
+        public static Capability getCapability(String capabilityName) {
+            for (Capability capability : supportedCapabilities) {
+                if (capability.getName().equalsIgnoreCase(capabilityName)) {
+                    return capability;
+                }
+            }
+            return null;
         }
     }
 

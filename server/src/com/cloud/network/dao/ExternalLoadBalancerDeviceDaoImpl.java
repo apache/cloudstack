@@ -21,6 +21,7 @@ package com.cloud.network.dao;
 import java.util.List;
 import javax.ejb.Local;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -31,6 +32,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLoadBalancerDeviceVO, Long> implements ExternalLoadBalancerDeviceDao {
     final SearchBuilder<ExternalLoadBalancerDeviceVO> physicalNetworkServiceProviderSearch;
     final SearchBuilder<ExternalLoadBalancerDeviceVO> physicalNetworkIdSearch;
+    final SearchBuilder<ExternalLoadBalancerDeviceVO> allocationStateSearch;
 
     public ExternalLoadBalancerDeviceDaoImpl() {
         super();
@@ -42,6 +44,11 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
         physicalNetworkIdSearch = createSearchBuilder();
         physicalNetworkIdSearch.and("physicalNetworkId", physicalNetworkIdSearch.entity().getPhysicalNetworkId(), Op.EQ);
         physicalNetworkIdSearch.done();
+
+        allocationStateSearch = createSearchBuilder();
+        allocationStateSearch.and("physicalNetworkId", allocationStateSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        allocationStateSearch.and("allocationState", allocationStateSearch.entity().getAllocationState(), Op.EQ);
+        allocationStateSearch.done();
     }
 
     @Override
@@ -54,8 +61,17 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
     @Override
     public List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkServiceProvider(long physicalNetworkId, String provider_name) {
         SearchCriteria<ExternalLoadBalancerDeviceVO> sc = physicalNetworkServiceProviderSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("provider_name", provider_name);
         return search(sc, null);
     }
-   
+
+    @Override
+    public List<ExternalLoadBalancerDeviceVO> listByDeviceAllocationState(long physicalNetworkId, String provider_name, LBDeviceAllocationState state) {
+        SearchCriteria<ExternalLoadBalancerDeviceVO> sc = allocationStateSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("provider_name", provider_name);
+        sc.setParameters("allocationState", state);
+        return search(sc, null);
+    }
 }

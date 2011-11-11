@@ -3008,22 +3008,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
 
-        // verify the Firewall service capabilities specified in the network offering
-        Map<Capability, String> fwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Firewall);
-        if (!cmd.getFirewallService() && fwServiceCapabilityMap != null && !fwServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
+        // verify the Source NAT service capabilities specified in the network offering
+        Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
+        if (!cmd.getSourceNatService() && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for source NAT service can be specifed only when source NAT service is enabled for network offering.");
         }
-        validateFirewallServiceCapablities(fwServiceCapabilityMap);
-
+        validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        
+        // verify the Gateway service capabilities specified in the network offering
+        Map<Capability, String> gwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
+        if (!cmd.getGatewayService() && gwServiceCapabilityMap != null && !gwServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Gateway service can be specifed only when Gateway service is enabled for network offering.");
+        }
+        validateGatewayServiceCapablities(gwServiceCapabilityMap);
+        
+        Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
+        serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
+        serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
+        serviceCapabilityMap.put(Service.Gateway, gwServiceCapabilityMap);
+        
         return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false,
-                guestType, false, serviceOfferingId, lbServiceCapabilityMap, fwServiceCapabilityMap);
+                guestType, false, serviceOfferingId, serviceCapabilityMap);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
-        if ((lbServiceCapabilityMap != null) && (lbServiceCapabilityMap.keySet().size() > 1 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation.getName()))) {
-            throw new InvalidParameterValueException("Only Load balancer isolation capability can be sepcified for LB service");
-        } else {
-            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation.getName());
+        if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+            if (lbServiceCapabilityMap.keySet().size() > 1 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
+                throw new InvalidParameterValueException("Only Load balancer isolation capability can be sepcified for LB service");
+            }
+            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
             boolean dedicatedLb = isolationCapability.contains("dedicated");
             boolean sharedLB = isolationCapability.contains("shared"); 
             if ((dedicatedLb && sharedLB) || (!dedicatedLb && !sharedLB)){
@@ -3032,11 +3045,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    void validateFirewallServiceCapablities(Map<Capability, String> fwServiceCapabilityMap) {
-        if ((fwServiceCapabilityMap != null) && (fwServiceCapabilityMap.keySet().size() > 1) || !fwServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes.getName())) {
-            throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
-        } else {
-            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+    void validateSourceNatServiceCapablities(Map<Capability, String> sourceNatServiceCapabilityMap) {
+        if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
+            if (sourceNatServiceCapabilityMap.keySet().size() > 1 || !sourceNatServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes)) {
+                throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
+            }
+            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
             boolean perAccount = sourceNatType.contains("peraccount");
             boolean perZone = sourceNatType.contains("perzone");
             if ((perAccount && perZone) || (!perAccount && !perZone)) {
@@ -3044,30 +3058,55 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
     }
-    
+
+    void validateGatewayServiceCapablities(Map<Capability, String> gwServiceCapabilityMap) {
+        if (gwServiceCapabilityMap != null && !gwServiceCapabilityMap.isEmpty()) {
+            if (gwServiceCapabilityMap.keySet().size() > 1 || !gwServiceCapabilityMap.containsKey(Capability.RedundantRouter)) {
+                throw new InvalidParameterValueException("Only redundant router capability can be sepcified for gateway service");
+            }
+            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter);
+            boolean enabled = param.contains("true");
+            boolean disabled = param.contains("false");
+            if (!enabled && !disabled) {
+                throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
+            }
+        }
+    }
+
     @Override
     @DB
     public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
             Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, 
-            boolean systemOnly, Long serviceOfferingId, Map<Capability, String> lbServiceCapabilityMap, Map<Capability, String> fwServiceCapabilityMap) {
+            boolean systemOnly, Long serviceOfferingId, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
 
+        Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
         boolean dedicatedLb = true;
         if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
             String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
             dedicatedLb = isolationCapability.contains("dedicated");
         }
 
+        Map<Capability, String> fwServiceCapabilityMap = serviceCapabilityMap.get(Service.Firewall);
         boolean sharedSourceNat = false;
         if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
             String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
             sharedSourceNat = sourceNatType.contains("perzone");
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat);
+        Map<Capability, String> gwServiceCapabilityMap = serviceCapabilityMap.get(Service.Gateway);
+        boolean redundantRouter = false;
+        if ((gwServiceCapabilityMap != null) && (!gwServiceCapabilityMap.isEmpty())) { 
+            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter);
+            if (param != null) {
+                redundantRouter = param.contains("true");
+            }
+        }
+
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat, redundantRouter);
         
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);
@@ -3426,20 +3465,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         offering.setDedicatedLb(dedicatedLb);
 
-        // verify the Firewall service capabilities specified in the network offering
-        Map<Capability, String> fwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Firewall);
+        // verify the source NAT service capabilities specified in the network offering
+        Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
         boolean sharedSourceNat = false;
 
-        if (!cmd.getFirewallService() && fwServiceCapabilityMap != null && !fwServiceCapabilityMap.isEmpty()) {
+        if (!cmd.getSourceNatService() && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
             throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
         }
-        validateFirewallServiceCapablities(fwServiceCapabilityMap);
+        validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
 
-        if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
-            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+        if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) { 
+            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
             sharedSourceNat = sourceNatType.contains("perzone");
         }
         offering.setSharedSourceNat(sharedSourceNat);
+
+        // verify the gateway service capabilities specified in the network offering
+        Map<Capability, String> gatewayServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
+        boolean redundantRouter = false;
+
+        if (!cmd.getGatewayService() && gatewayServiceCapabilityMap != null && !gatewayServiceCapabilityMap.isEmpty()) {
+            throw new InvalidParameterValueException("Capabilities for Gateway service can be specifed only when Gateway service is enabled for network offering.");
+        }
+        validateGatewayServiceCapablities(gatewayServiceCapabilityMap);
+
+        if ((gatewayServiceCapabilityMap != null) && (!gatewayServiceCapabilityMap.isEmpty())) { 
+            String param = gatewayServiceCapabilityMap.get(Capability.RedundantRouter.getName());
+            redundantRouter = param.contains("true");
+        }
+        offering.setRedundantRouter(redundantRouter);
 
         if (svcPrv != null && !svcPrv.isEmpty()) {
             if (networksExist) {

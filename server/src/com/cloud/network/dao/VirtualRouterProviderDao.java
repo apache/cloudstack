@@ -17,10 +17,16 @@
  */
 package com.cloud.network.dao;
 
+import java.util.List;
+
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.utils.db.GenericDao;
 
 public interface VirtualRouterProviderDao extends GenericDao<VirtualRouterProviderVO, Long> {
     public VirtualRouterProviderVO findByNspIdAndType(long nspId, VirtualRouterProviderType type);
+    public List<VirtualRouterProviderVO> listByEnabledAndType(boolean enabled, VirtualRouterProviderType type);
+    public VirtualRouterProviderVO findByIdAndEnabledAndType(long id, boolean enabled, VirtualRouterProviderType type);
+    public List<VirtualRouterProviderVO> listByType(VirtualRouterProviderType type);
 }

@@ -17,12 +17,20 @@
  */
 package com.cloud.network;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.cloud.utils.db.GenericDao;
+
+/**
+ * NetworkExternalLoadBalancerVO contains information on the networks that are using external load balancers
+  */
 
 @Entity
 @Table(name="network_external_lb_device_map")
@@ -41,6 +49,12 @@ public class NetworkExternalLoadBalancerVO {
 
     @Column(name = "subscribed_capacity")
     private long subscribedCapacity;
+
+    @Column(name=GenericDao.CREATED_COLUMN)
+    Date created;
+
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    Date removed;
 
     public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID) {
         this.networkId = networkId;

@@ -122,6 +122,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkElement;
@@ -901,22 +902,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, null, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, null);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, null, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, null);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, null, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, null);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, null, null);
+            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, null);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
@@ -1427,6 +1428,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
+    protected void prepareElement(NetworkElement element, NetworkVO network, NicProfile profile, VirtualMachineProfile<? extends VMInstanceVO> vmProfile,
+                                  DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
+                                                                                             ConcurrentOperationException, ResourceUnavailableException {
+        element.prepare(network, profile, vmProfile, dest, context);
+        if (vmProfile.getType() == Type.User && element.getProvider() != null) {
+            if (areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
+                    isProviderSupportedInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
+                    (element instanceof DhcpServiceProvider)) {
+                DhcpServiceProvider sp = (DhcpServiceProvider)element;
+                sp.addDhcpEntry(network, profile, vmProfile, dest, context);
+            }
+            if (areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
+                    isProviderSupportedInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
+                    (element instanceof UserDataServiceProvider)) {
+                UserDataServiceProvider sp = (UserDataServiceProvider)element;
+                sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
+            }
+        }
+    }
+ 
     @DB
     protected void updateNic(NicVO nic, long networkId, int count) {
         Transaction txn = Transaction.currentTxn();
@@ -1505,7 +1526,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
                 }
-                element.prepare(network, profile, vmProfile, dest, context);
+                prepareElement(element, network, profile, vmProfile, dest, context);
             }
             
             profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
@@ -2044,7 +2065,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String path = null;
         Long sharedNetworkDomainId = null;
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
-        Boolean sourceNatEnabled = cmd.getSourceNatEnabled();
+        List<String> supportedServicesStr = cmd.getSupportedServices();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -2149,16 +2170,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, isShared, physicalNetworkId), searchFilter);
         }
         
-        //sort networks by sourceNatEnabled parameter
-        if (sourceNatEnabled != null) {
-            List<Network> supportedNetworks = new ArrayList<Network>();
-            for (Network network : networksToReturn) {
-                boolean isSupported = areServicesSupportedInNetwork(network.getId(), Service.SourceNat);
-                if (isSupported == sourceNatEnabled.booleanValue()) {
+        
+        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
+            List<NetworkVO> supportedNetworks = new ArrayList<NetworkVO>();
+            Service[] suppportedServices = new Service[supportedServicesStr.size()];
+            int i = 0;
+            for (String supportedServiceStr : supportedServicesStr) {
+                Service service = Service.getService(supportedServiceStr);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
+                } else {
+                    suppportedServices[i] = service;
+                }
+                i++;
+            }
+           
+            for (NetworkVO network : networksToReturn) {
+                if (areServicesSupportedInNetwork(network.getId(), suppportedServices)) {
                     supportedNetworks.add(network);
                 }
             }
-
+            
             return supportedNetworks;
         } else {
             return networksToReturn;
@@ -4909,6 +4941,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return svcProviders;
+    }
+    
+    @Override
+    public Long getPhysicalNetworkId(Network network) {
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+        if (physicalNetworkId == null) {
+            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null);
+        }
+        return physicalNetworkId;
     }
     
 }

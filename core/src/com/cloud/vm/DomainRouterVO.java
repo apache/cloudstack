@@ -72,7 +72,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     @Column(name="role")
     @Enumerated(EnumType.STRING)
-    private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
+    private Role role = Role.VIRTUAL_ROUTER;
     
     @Column(name="template_version")
     private String templateVersion;

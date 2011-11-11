@@ -92,8 +92,6 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
-import com.cloud.network.element.RedundantVirtualRouterElement;
-import com.cloud.network.element.RedundantVirtualRouterElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
@@ -401,7 +399,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
-        addService("RedundantVirtualRouterElementService", RedundantVirtualRouterElementService.class, RedundantVirtualRouterElement.class);
     }
     
     @Override

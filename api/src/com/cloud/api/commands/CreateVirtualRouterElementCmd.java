@@ -27,7 +27,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.VirtualRouterProviderResponse;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.VirtualRouterProvider;
@@ -35,7 +37,7 @@ import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(responseObject=SuccessResponse.class, description="Create a virtual router element.")
+@Implementation(responseObject=VirtualRouterProviderResponse.class, description="Create a virtual router element.")
 public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
     private static final String s_name = "createvirtualrouterelementresponse";
@@ -86,9 +88,8 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
         UserContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
         VirtualRouterProvider result = _service.getCreatedElement(getEntityId());
         if (result != null) {
-            SuccessResponse response = new SuccessResponse();
+            VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
             response.setResponseName(getCommandName());
-            response.setSuccess(true);
             this.setResponseObject(response);
         }else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");

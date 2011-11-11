@@ -27,11 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.PhysicalNetworkServiceProvider.State;
-
 /**
- * ExternalLoadBalancerDeviceVO contains information of a external load balancer device (F5/Netscaler)
- * added into a deployment
+ * ExternalLoadBalancerDeviceVO contains information of a external load balancer devices (F5/Netscaler VPX,MPX,SDX) added into a deployment
   */
 
 @Entity
@@ -52,29 +49,63 @@ public class ExternalLoadBalancerDeviceVO {
     @Column(name = "provider_name")
     private String providerName;
 
+    @Column(name = "device_name")
+    private String deviceName;
+
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
-    private State state;
+    private LBDeviceState state;
+
+    @Column(name = "allocation_state")
+    @Enumerated(value=EnumType.STRING)
+    private LBDeviceAllocationState allocationState;
+
+    @Column(name="managed")
+    boolean managedDevice;
+    
+    @Column(name = "parent_host_id")
+    private long parentHostId;
 
     @Column(name = "capacity")
     private long capacity;
 
-    @Column(name = "capacity_type")
-    private String capacity_type;
+    public enum LBDeviceState {
+        Enabled,
+        Disabled
+    }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name) {
+    public enum LBDeviceAllocationState {
+        Free,           // In this state no networks are using this device for load balancing
+        InSharedUse,    // In this state one or more networks will be using this device for load balancing
+        InDedicatedUse  // In this state this device is dedicated for a single network
+    }
+
+    public enum LBDeviceManagedType {
+        CloudManaged,     // Cloudstack managed load balancer (e.g. VPX instances on SDX for now, in future releases load balancer provisioned from template)
+        ExternalManaged   // Externally managed
+    }
+
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
+        this.deviceName = device_name;
         this.hostId = hostId;
-        this.state = PhysicalNetworkServiceProvider.State.Disabled;
+        this.state = LBDeviceState.Disabled;
+        this.allocationState = LBDeviceAllocationState.Free;
+        this.managedDevice = false;
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, long capacity, String capacityType) {
-    	this(hostId, physicalNetworkId, provider_name);
-        this.capacity = capacity;
-        this.capacity_type = capacityType;
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, boolean managed, long parentHostId) {
+        this(hostId, physicalNetworkId, provider_name, device_name);
+        this.managedDevice = managed;
+        this.parentHostId = parentHostId;
     }
     
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity) {
+        this(hostId, physicalNetworkId, provider_name, device_name);
+        this.capacity = capacity;
+    }
+
     public ExternalLoadBalancerDeviceVO() {
     
     }
@@ -91,24 +122,43 @@ public class ExternalLoadBalancerDeviceVO {
         return providerName;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
     public long getHostId() {
         return hostId;
+    }
+
+    public long getParentHostId() {
+        return parentHostId;
+    }
+
+    public void setParentHostId(long parentHostId) {
+        this.parentHostId = parentHostId;
     }
 
     public long getCapacity() {
         return capacity;
     }
 
-    public String getCapacityType() {
-        return capacity_type;
+    public void setCapacity(long capacity) {
+        this.capacity = capacity;
     }
 
-    public State getState() {
+    public LBDeviceState getState() {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(LBDeviceState state) {
         this.state = state;
     }    
 
+    public LBDeviceAllocationState getAllocationState() {
+        return allocationState;
+    }
+
+    public void setAllocationState(LBDeviceAllocationState allocationState) {
+        this.allocationState = allocationState;
+    }
 }
