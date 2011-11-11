@@ -129,6 +129,7 @@
           .html('Subtitle text goes here');
         var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
         var $continue = elems.nextButton('Continue with basic installation');
+        var $advanced = elems.nextButton('Setup advanced installation').addClass('advanced-installation');
 
         $continue.click(function() {
           goTo('addZoneIntro');
@@ -136,9 +137,16 @@
           return false;
         });
 
+        $advanced.click(function() {
+          complete();
+          
+          return false;
+        });
+
         return $intro.append(
           $title, $subtitle,
           $copy,
+          $advanced,
           $continue
         );
       },

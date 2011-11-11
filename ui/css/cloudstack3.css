@@ -405,7 +405,7 @@ body.login {
 
 .install-wizard .button {
   background: url(../images/bg-gradients.png) 0px -221px;
-  padding: 7px 25px;
+  padding: 7px 16px 7px 18px;
   /*+border-radius:10px;*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
@@ -413,7 +413,7 @@ body.login {
   border-radius: 10px 10px 10px 10px;
   border: 1px solid #505050;
   color: #FFFFFF;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: bold;
   /*+text-shadow:0px -1px 3px #3F4351;*/
   -moz-text-shadow: 0px -1px 3px #3F4351;
@@ -423,6 +423,18 @@ body.login {
   float: right;
   cursor: pointer;
   margin-top: 15px;
+}
+
+.install-wizard .button.advanced-installation {
+  background: #E0DEDE;
+  color: #7D7D7D;
+  border: 1px solid #C7C2C2;
+  /*+text-shadow:0px 0px #FFFFFF;*/
+  -moz-text-shadow: 0px 0px #FFFFFF;
+  -webkit-text-shadow: 0px 0px #FFFFFF;
+  -o-text-shadow: 0px 0px #FFFFFF;
+  text-shadow: 0px 0px #FFFFFF;
+  float: left;
 }
 
 /*** Setup form*/
