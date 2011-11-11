@@ -374,10 +374,8 @@
       <div class="multi-wizard zone-wizard">
         <div class="progress">
           <ul>
-            <li class="first"><span class="number">1</span><span class="multiline">Select Network</span><span class="arrow"></span></li>
-            <li><span class="number">2</span><span>Setup Zone</span><span class="arrow"></span></li>
-            <li><span class="number">3</span><span>Setup Pod</span><span class="arrow"></span></li>
-            <li class="last"><span class="number">4</span><span class="multiline">Setup IP Range</span></li>
+            <li class="first"><span class="number">1</span><span class="multiline">Select Zone Type</span><span class="arrow"></span></li>
+            <li class="last"><span class="number">2</span><span>Setup Zone</span></li>
           </ul>
         </div>
         <div class="steps">
@@ -387,8 +385,8 @@
               <div class="content">
                 <!-- Select template -->
                 <div class="section select-network-model">
-                  <h3>Setup network model</h3>
-                  <p>Please select a network model for your zone.</p>
+                  <h3>Setup zone type</h3>
+                  <p>Please select a configuration for your zone.</p>
                   <div class="select-area">
                     <div class="desc">Choose this network model if you do <em>not</em> want to enable any VLAN support. All virtual instances created under this network model will be assigned an IP directly from the network and security groups are used to provide security and segregation.</div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
@@ -516,7 +514,7 @@
           </div>
 
           <!-- Step 3: Setup pod -->
-          <div class="setup-pod">
+          <div class="setup-pod disabled">
             <form>
               <div class="main-desc">Please enter the following information to add a new pod</div>
               <div class="content input-area">
@@ -568,7 +566,7 @@
           </div>
 
           <!-- Step 4: Add IP range -->
-          <div class="add-ip-range">
+          <div class="add-ip-range disabled">
             <form>
               <div class="main-desc">Please add an IP range for your zone</div>
               <div class="content input-area">

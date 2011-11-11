@@ -3451,10 +3451,11 @@ label.error {
 }
 
 .multi-wizard .progress ul li span.multiline {
-  /*+placement:shift -22px 12px;*/
+  /*+placement:shift -154px 16px;*/
   position: relative;
-  left: -22px;
-  top: 12px;
+  left: -154px;
+  top: 16px;
+  width: 87px;
 }
 
 .multi-wizard .progress ul li span.arrow {
@@ -4207,12 +4208,12 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .progress ul li {
-  width: 128px;
+  width: 288px;
   padding: 0 32px 0 0;
 }
 
 .multi-wizard.zone-wizard .progress ul li span.arrow {
-  margin: 0 0 0 32px;
+  margin: 0 0 0 193px;
 }
 
 .multi-wizard.zone-wizard .select-network .content .section {
