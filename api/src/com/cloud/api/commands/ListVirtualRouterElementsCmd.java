@@ -34,6 +34,9 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list virtual router elements by id")
     private Long id;
     
+    @Parameter(name=ApiConstants.NSP_ID, type=CommandType.LONG, description="list virtual router elements by network service provider id")
+    private Long nspId;
+    
     @Parameter(name=ApiConstants.ENABLED, type=CommandType.BOOLEAN, description="list network offerings by enabled state")
     private Boolean enabled;
     
@@ -47,6 +50,14 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public void setNspId(Long nspId) {
+        this.nspId = nspId;
+    }
+
+    public Long getNspId() {
+        return nspId;
     }
 
     public void setEnabled(Boolean enabled) {

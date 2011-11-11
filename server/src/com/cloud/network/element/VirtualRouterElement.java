@@ -68,6 +68,10 @@ import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -572,18 +576,20 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public List<? extends VirtualRouterProvider> searchForVirtualRouterElement(ListVirtualRouterElementsCmd cmd) {
-        if (cmd.getEnabled() == null && cmd.getId() == null) {
-            return _vrProviderDao.listByType(VirtualRouterProviderType.VirtualRouter);
+        Long id = cmd.getId();
+        Long nspId = cmd.getNspId();
+        Boolean enabled = cmd.getEnabled();
+        
+        SearchCriteriaService<VirtualRouterProviderVO, VirtualRouterProviderVO> sc = SearchCriteria2.create(VirtualRouterProviderVO.class);
+        if (id != null) {
+            sc.addAnd(sc.getEntity().getId(), Op.EQ, id);
         }
-        if (cmd.getId() == null) {
-            return _vrProviderDao.listByEnabledAndType(cmd.getEnabled(), VirtualRouterProviderType.VirtualRouter);
+        if (nspId != null) {
+            sc.addAnd(sc.getEntity().getNspId(), Op.EQ, nspId);
         }
-        //Search by Id
-        List<VirtualRouterProviderVO> list = new ArrayList<VirtualRouterProviderVO>();
-        VirtualRouterProviderVO provider = _vrProviderDao.findById(cmd.getId());
-        if (provider != null) {
-            list.add(provider);
+        if (enabled != null) {
+            sc.addAnd(sc.getEntity().isEnabled(), Op.EQ, enabled);
         }
-        return list;
+        return sc.list();
     }
 }
