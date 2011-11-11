@@ -42,6 +42,7 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
@@ -244,6 +245,8 @@ public class HypervResource extends ServerResourceBase implements ServerResource
             //return execute((VpnUsersCfgCommand) cmd);
         } else if (cmd instanceof CheckSshCommand) {
             return execute((CheckSshCommand)cmd);
+        } else if (cmd instanceof CheckNetworkCommand) {
+            //return execute((CheckNetworkCommand) cmd);
         } else {
             s_logger.info("SCVMM agent recived unimplemented command: " + _gson.toJson(cmd));
             return Answer.createUnsupportedCommandAnswer(cmd);
