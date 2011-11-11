@@ -708,6 +708,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setNetworkId(networkId);
         ipResponse.setState(ipAddress.getState().toString());
+        ipResponse.setPhysicalNetworkId(ipAddress.getPhysicalNetworkId());
 
         // show this info to admin only
         Account account = UserContext.current().getCaller();
@@ -2773,7 +2774,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkSpeed(result.getSpeed());
         response.setVlan(result.getVnet());
         response.setDomainId(result.getDomainId());
-        response.setId(result.getId());
+        response.setId(result.getUuid());
         if(result.getBroadcastDomainRange() != null){
             response.setBroadcastDomainRange(result.getBroadcastDomainRange().toString());
         }
@@ -2829,7 +2830,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result){
         ProviderResponse response = new ProviderResponse();
-        response.setId(result.getId());
+        response.setId(result.getUuid());
         response.setName(result.getProviderName());
         response.setPhysicalNetworkId(result.getPhysicalNetworkId());
         response.setDestinationPhysicalNetworkId(result.getDestinationPhysicalNetworkId());
@@ -2849,7 +2850,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result) {
         TrafficTypeResponse response = new TrafficTypeResponse();
-        response.setId(result.getId());
+        response.setId(result.getUuid());
         response.setPhysicalNetworkId(result.getPhysicalNetworkId());
         response.setTrafficType(result.getTrafficType().toString());
         response.setXenLabel(result.getXenNetworkLabel());

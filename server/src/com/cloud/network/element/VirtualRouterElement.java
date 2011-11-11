@@ -371,7 +371,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
-            s_logger.trace("Can't find dhcp element in network " + network.getId());
+            s_logger.debug("Can't find virtual router element in network " + network.getId());
             return true;
         }
         
@@ -390,7 +390,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     public VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd) {
         VirtualRouterProviderVO element = _vrProviderDao.findById(cmd.getId());
         if (element == null) {
-            s_logger.trace("Can't find element with network service provider id " + cmd.getId());
+            s_logger.debug("Can't find element with network service provider id " + cmd.getId());
             return null;
         }
         
@@ -404,10 +404,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     public VirtualRouterProvider addElement(Long nspId) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.VirtualRouter);
         if (element != null) {
-            s_logger.trace("There is already a virtual router element with service provider id " + nspId);
+            s_logger.debug("There is already a virtual router element with service provider id " + nspId);
             return null;
         }
-        element = new VirtualRouterProviderVO(nspId, null, VirtualRouterProviderType.VirtualRouter);
+        element = new VirtualRouterProviderVO(nspId, VirtualRouterProviderType.VirtualRouter);
         _vrProviderDao.persist(element);
         return element;
     }

@@ -297,6 +297,224 @@ body.login {
   background: #FFFFFF;
 }
 
+/*Install wizard*/
+.install-wizard {
+  width: 1024px;
+  height: 768px;
+  margin: auto;
+  overflow: hidden;
+  border: 1px solid #E2E2E2;
+  border-top: none;
+  position: relative;
+}
+
+.install-wizard .header {
+  text-align: center;
+  background: #0D6CAA;
+  color: #FFFFFF;
+  padding: 32px 0 89px;
+  /*+text-shadow:0px 2px 2px #4B4B4B;*/
+  -moz-text-shadow: 0px 2px 2px #4B4B4B;
+  -webkit-text-shadow: 0px 2px 2px #4B4B4B;
+  -o-text-shadow: 0px 2px 2px #4B4B4B;
+  text-shadow: 0px 2px 2px #4B4B4B;
+  z-index: 9;
+}
+
+.install-wizard .step {
+  max-width: 691px;
+  margin: auto;
+  padding: 56px 0 0;
+}
+
+.install-wizard .step .title {
+  width: 303px;
+  margin: auto auto 30px;
+  font-size: 22px;
+  clear: both;
+  color: #1D4E7D;
+}
+
+.install-wizard .step .subtitle {
+  color: #808080;
+  font-weight: bold;
+}
+
+.install-wizard .step p {
+  color: #4A4A4A;
+  font-size: 15px;
+  line-height: 23px;
+}
+
+.install-wizard .step .field {
+  text-align: left;
+  margin: 0 0 12px;
+}
+
+.install-wizard .step .field label {
+  display: block;
+  clear: both;
+  font-size: 13px;
+  color: #4D4D4D;
+}
+
+.install-wizard .step .field label.error {
+  color: #FF2424;
+  font-size: 11px;
+}
+
+.install-wizard .body {
+  width: 987px;
+  height: 626px;
+  margin: -52px auto auto;
+  z-index: 10;
+  /*+box-shadow:0px 3px 15px #696767;*/
+  -moz-box-shadow: 0px 3px 15px #696767;
+  -webkit-box-shadow: 0px 3px 15px #696767;
+  -o-box-shadow: 0px 3px 15px #696767;
+  box-shadow: 0px 3px 15px #696767;
+  background: #FFFFFF;
+}
+
+.install-wizard h2 {
+  font-size: 24px;
+  margin: 0 0 19px;
+}
+
+.install-wizard input[type=text],
+.install-wizard input[type=password],
+.install-wizard input[type=text],
+.install-wizard select {
+  width: 288px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  border: 1px solid #CDCDCD;
+  /*+box-shadow:inset 0px 1px 0px #AEAEAE;*/
+  -moz-box-shadow: inset 0px 1px 0px #AEAEAE;
+  -webkit-box-shadow: inset 0px 1px 0px #AEAEAE;
+  -o-box-shadow: inset 0px 1px 0px #AEAEAE;
+  box-shadow: inset 0px 1px 0px #AEAEAE;
+  font-size: 14px;
+  color: #232323;
+  padding: 6px;
+  background: #F7F7F7;
+}
+
+.install-wizard .button {
+  background: url(../images/bg-gradients.png) 0px -221px;
+  padding: 7px 16px 7px 18px;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px 10px 10px 10px;
+  border: 1px solid #505050;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: bold;
+  /*+text-shadow:0px -1px 3px #3F4351;*/
+  -moz-text-shadow: 0px -1px 3px #3F4351;
+  -webkit-text-shadow: 0px -1px 3px #3F4351;
+  -o-text-shadow: 0px -1px 3px #3F4351;
+  text-shadow: 0px -1px 3px #3F4351;
+  float: right;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.install-wizard .button.advanced-installation {
+  background: #E0DEDE;
+  color: #7D7D7D;
+  border: 1px solid #C7C2C2;
+  /*+text-shadow:0px 0px #FFFFFF;*/
+  -moz-text-shadow: 0px 0px #FFFFFF;
+  -webkit-text-shadow: 0px 0px #FFFFFF;
+  -o-text-shadow: 0px 0px #FFFFFF;
+  text-shadow: 0px 0px #FFFFFF;
+  float: left;
+}
+
+/*** Setup form*/
+.install-wizard .step .setup-form {
+  display: inline-block;
+  background: #F0F0F0;
+  width: 469px;
+  border: 1px solid #CFCFCF;
+  /*+text-shadow:0px 1px 0px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 0px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 0px #FFFFFF;
+  -o-text-shadow: 0px 1px 0px #FFFFFF;
+  text-shadow: 0px 1px 0px #FFFFFF;
+}
+
+.install-wizard .step .setup-form .title {
+  float: left;
+  margin: 17px 0 0 29px;
+  color: #626F7C;
+}
+
+.install-wizard .step .setup-form .field {
+  width: 389px;
+  display: inline-block;
+  margin: 6px 0 1px 31px;
+  padding: 9px;
+  background: #E2E2E2;
+  color: #57646D;
+}
+
+.install-wizard .step .setup-form .field .name {
+  width: 93px;
+  text-align: right;
+  float: left;
+  font-size: 13px;
+  padding: 10px 0 0 0px;
+}
+
+.install-wizard .step .setup-form .field .value {
+  float: right;
+}
+
+.install-wizard .step .setup-form input[type=text],
+.install-wizard .step .setup-form input[type=password] {
+  width: 278px;
+  border: 1px solid #8D8D8D;
+  padding: 2px 2px 1px;
+  margin: 6px 4px 0 0;
+}
+
+.install-wizard .step .setup-form .multi-range input[type=text] {
+  width: 128px;
+}
+
+.install-wizard .step .setup-form input.button {
+  margin: 0 30px 14px 15px;
+}
+
+/*** Step: Change user*/
+.install-wizard .step.change-user {
+  text-align: center;
+  padding-top: 95px;
+  width: 316px;
+  margin: auto;
+}
+
+.install-wizard .step.intro {
+}
+
+.install-wizard .step.intro .title {
+  color: #565454;
+  margin-left: 0;
+  margin-bottom: 21px;
+  font-size: 25px;
+}
+
+.install-wizard .step.intro .subtitle {
+  margin-bottom: 9px;
+}
+
 /*Notifications*/
 div.notification-box {
   width: 323px;
@@ -3451,10 +3669,11 @@ label.error {
 }
 
 .multi-wizard .progress ul li span.multiline {
-  /*+placement:shift -22px 12px;*/
+  /*+placement:shift -21px 12px;*/
   position: relative;
-  left: -22px;
+  left: -21px;
   top: 12px;
+  width: 71px;
 }
 
 .multi-wizard .progress ul li span.arrow {
@@ -4207,12 +4426,12 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .progress ul li {
-  width: 128px;
+  width: 288px;
   padding: 0 32px 0 0;
 }
 
 .multi-wizard.zone-wizard .progress ul li span.arrow {
-  margin: 0 0 0 32px;
+  margin: 0 0 0 193px;
 }
 
 .multi-wizard.zone-wizard .select-network .content .section {

@@ -45,7 +45,7 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
-    @IdentityMapper(entityTableName="physical_networks")
+    @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list physical network by id")
     private Long id;
 

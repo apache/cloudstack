@@ -1070,6 +1070,7 @@
 
                   password: {
                     label: 'Password',
+                    isPassword: true,
                     validation: { required: true }
                   },
 

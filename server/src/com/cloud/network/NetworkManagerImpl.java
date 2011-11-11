@@ -905,21 +905,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null, null, false, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, null);
+            offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, null);
+            offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM,NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, null);
+            offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         } 
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, null);
+            offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
         
@@ -2606,7 +2610,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _accountMgr.checkAccess(callerAccount, null, network);
 
-        boolean success = restartNetwork(networkId, callerAccount, callerUser, null, cleanup);
+        boolean success = restartNetwork(networkId, callerAccount, callerUser, cleanup);
 
         if (success) {
             s_logger.debug("Network id=" + networkId + " is restarted successfully.");
@@ -2637,7 +2641,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private boolean restartNetwork(long networkId, Account callerAccount, User callerUser, Long newNetworkOfferingId, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    private boolean restartNetwork(long networkId, Account callerAccount, User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         NetworkVO network = _networksDao.findById(networkId);
 
@@ -2650,13 +2654,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!shutdownNetworkElementsAndResources(context, cleanup, network)) {
             s_logger.debug("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
             return false;
-        }
-        
-        //Only after network was shutdown properly, change the network offering
-        if (newNetworkOfferingId != null) {
-            s_logger.debug("Updating network " + network + " with the new network offering id=" + newNetworkOfferingId + " as a part of network restart");
-            network.setNetworkOfferingId(newNetworkOfferingId);
-            _networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(newNetworkOfferingId), network.getPhysicalNetworkId()));
         }
         
         //implement the network elements and rules again
@@ -3328,31 +3325,43 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             //have to restart the network
             restartNetwork = true;
         }
+        
+        //1) Shutdown all the elements and cleanup all the rules
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
+        if (restartNetwork) {
+            s_logger.debug("Shutting down elements and resources for network id=" + networkId + " as a part of network update");
             
-        _networksDao.update(networkId, network); 
-
-        boolean success = true;
-        if (restartNetwork && (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
-        	//network offering id will be updated in the restartNetowrk call aftet the network elements are shutdown properly
-            s_logger.info("Restarting network " + network + " as a part of update network call");
-
-            try {
-                success = restartNetwork(networkId, callerAccount, callerUser, networkOfferingId, true);
-            } catch (Exception e) {
-                success = false;
+            if (!shutdownNetworkElementsAndResources(context, true, network)) {
+                s_logger.warn("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
+                throw new CloudRuntimeException("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
             }
-
-            if (success) {
-                s_logger.debug("Successully restarted the network " + network + " as a part of updateNetwork call");
-            } else {
-                s_logger.warn("Failed to restart the network " + network + " as a part of updateNetwork call");
-            }
-        } else if (networkOfferingId != null) {
-        	network.setNetworkOfferingId(networkOfferingId);
-        	_networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
         }
         
-        return network;
+        //2) Only after all the elements and rules are shutdown properly, update the network VO
+        if (networkOfferingId != null) {
+        	network.setNetworkOfferingId(networkOfferingId);
+        	_networksDao.update(networkId, network, finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
+        } else {
+            _networksDao.update(networkId, network); 
+        }
+        
+        //get updated network
+        network = _networksDao.findById(networkId);
+        
+        //3) Implement the elements and rules again
+        if (restartNetwork) {
+        	 DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+             
+             s_logger.debug("Implementing the network " + network + " elements and resources as a part of network update");        
+             try {
+                 implementNetworkElementsAndResources(dest, context, network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+             } catch (Exception ex) {
+                 s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
+                 throw new CloudRuntimeException("Failed to implement network " + network + " elements and resources as a part of network update");
+             }
+        }
+        
+        return getNetwork(network.getId());
     }
 
     @Override
@@ -3903,7 +3912,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         // Delete networks
-        List<NetworkVO> networks = _networksDao.listByPhysicalNetworkIncludingRemoved(physicalNetworkId);
+        List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
         if (networks != null && !networks.isEmpty()) {
             for (NetworkVO network : networks) {
                 _networksDao.remove(network.getId());
@@ -4161,6 +4170,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if(element != null && element.isReady(provider)){
                         provider.setState(PhysicalNetworkServiceProvider.State.Enabled);
                         update = true;
+                    }else{
+                        throw new CloudRuntimeException("Provider is not ready, cannot Enable the provider, please configure the provider first");                        
                     }
                     break;
                 case Disabled:

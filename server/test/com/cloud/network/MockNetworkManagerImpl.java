@@ -168,7 +168,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    
+
 
     @Override
     public PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
@@ -216,7 +216,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO Auto-generated method stub
 
     }
@@ -277,7 +277,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -315,7 +315,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -433,12 +433,12 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     @Override
     public Map<String, Set<String>> listNetworkOfferingServices(long networkOfferingId) {
         return null;
     }
-    
+
     @Override
     public List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements() {
         return null;
@@ -570,17 +570,17 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-	@Override
+    @Override
     public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-	    // TODO Auto-generated method stub
-	    return false;
+    InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return false;
     }
 
-	@Override
+    @Override
     public Long getPodIdForVlan(long vlanDbId) {
-	    // TODO Auto-generated method stub
-	    return null;
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Override
@@ -707,5 +707,11 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public Long getPhysicalNetworkId(Network network) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

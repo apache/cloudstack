@@ -69,6 +69,8 @@ public interface IpAddress extends ControlledEntity {
     
     Long getAssociatedWithVmId();
     
+    public Long getPhysicalNetworkId();
+    
     /**
      * @return database id.
      */

@@ -6,7 +6,7 @@
     return function(listViewArgs) {
       var $wizard = $('#template').find('div.zone-wizard').clone();
       var $progress = $wizard.find('div.progress ul li');
-      var $steps = $wizard.find('div.steps').children().hide();
+      var $steps = $wizard.find('div.steps').children().hide().filter(':not(.disabled)');
       var $diagramParts = $wizard.find('div.diagram').children().hide();
 
       // Close wizard

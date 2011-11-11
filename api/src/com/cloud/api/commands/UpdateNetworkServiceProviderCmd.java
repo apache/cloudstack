@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -45,6 +46,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled/Shutdown the physical network service provider")
     private String state;
     
+    @IdentityMapper(entityTableName="physical_network_service_providers")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="network service provider id")
     private Long id;    
 
@@ -88,7 +90,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider to physical network");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update service provider");
         }
     }
 

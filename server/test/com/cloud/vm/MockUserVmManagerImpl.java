@@ -10,6 +10,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.manager.Commands;
+import com.cloud.api.commands.AssignVMCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
@@ -18,10 +19,10 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.ListVMsCmd;
-import com.cloud.api.commands.MoveUserVMCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
+import com.cloud.api.commands.RestoreVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
@@ -38,6 +39,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -234,7 +236,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException, ResourceAllocationException {
+    InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -269,7 +271,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
         return null;
     }
 
-   
+
 
     @Override
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -310,7 +312,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     @Override
     public void deletePrivateTemplateRecord(Long templateId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -327,7 +329,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException,
-            ResourceAllocationException {
+    ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -365,14 +367,26 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public UserVm moveVMToUser(MoveUserVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+    VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException {
+    public UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserVm restoreVM(RestoreVMCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

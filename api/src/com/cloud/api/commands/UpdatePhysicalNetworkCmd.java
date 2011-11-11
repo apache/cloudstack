@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -42,7 +43,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+    @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="physical network id")
     private Long id;
 

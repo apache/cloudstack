@@ -95,6 +95,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
     private String aclType;
     
+    @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 

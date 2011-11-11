@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -47,6 +48,9 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     @TableGenerator(name="physical_networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="physical_networks_seq", allocationSize=1)
     @Column(name="id")
     long id;
+    
+    @Column(name="uuid")
+    private String uuid;    
 
     @Column(name="data_center_id")
     long dataCenterId;
@@ -99,6 +103,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
             this.broadcastDomainRange = BroadcastDomainRange.ZONE;
         }
         this.state = State.Disabled;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -203,5 +208,14 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     @Override
     public String getSpeed() {
         return speed;
-    }    
+    }
+    
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }
