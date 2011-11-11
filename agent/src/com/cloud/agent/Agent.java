@@ -314,7 +314,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
         synchronized (this) {
             _startup = new StartupTask(link);
-            _timer.schedule(_startup, 180000);
+            _timer.schedule(_startup, 180000 * 3);
         }
         try {
             link.send(request.toBytes());
