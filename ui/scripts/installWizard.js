@@ -2,16 +2,20 @@
   cloudStack.installWizard = {
     // Check if install wizard should be invoked
     check: function(args) {
-      $.ajax({
-        url: createURL('listZones'),
-        dataType: 'json',
-        async: true,
-        success: function(data) {
-          args.response.success({
-            doInstall: !data.listzonesresponse.zone
-          });
-        }
+      args.response.success({
+        doInstall: false
       });
+      
+      // $.ajax({
+      //   url: createURL('listZones'),
+      //   dataType: 'json',
+      //   async: true,
+      //   success: function(data) {
+      //     args.response.success({
+      //       doInstall: !data.listzonesresponse.zone
+      //     });
+      //   }
+      // });
     },
 
     changeUser: function(args) {
