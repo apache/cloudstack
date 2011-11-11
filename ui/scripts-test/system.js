@@ -46,13 +46,9 @@
                   }
                 ],
                 dataProvider: function(args) {
-<<<<<<< HEAD
-                  args.response.success({ data: testData.data.networks[0] });
-=======
                   args.response.success({
                     data: testData.data.networks[0]
                   });
->>>>>>> master
                 }
               },
               ipAddresses: {
@@ -1074,6 +1070,7 @@
 
                   password: {
                     label: 'Password',
+                    isPassword: true,
                     validation: { required: true }
                   },
 
