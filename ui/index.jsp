@@ -1399,6 +1399,8 @@
     <script src="scripts/ui-custom/login.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/projects.js" type="text/javascript"></script>
     <script src="scripts/cloudStack.js" type="text/javascript"></script>
+    <script src="scripts-test/installWizard.js" type="text/javascript"></script>
+    <script src="scripts/ui-custom/installWizard.js" type="text/javascript"></script>
     <script src="scripts/projects.js" type="text/javascript"></script>
     <script src="scripts/dashboard.js" type="text/javascript"></script>
     <script src="scripts/ui-custom/instanceWizard.js" type="text/javascript"></script>
