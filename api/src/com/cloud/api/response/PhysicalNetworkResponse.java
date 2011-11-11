@@ -21,19 +21,20 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class PhysicalNetworkResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.ID) @Param(description="the id of the physical network")
-    private Long id;
+    private IdentityProxy id = new IdentityProxy("physical_networks");
     
     @SerializedName(ApiConstants.BROADCAST_DOMAIN_RANGE) @Param(description="Broadcast domain range of the physical network")
     private String broadcastDomainRange;
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the physical network")
-    private Long zoneId;
+    private IdentityProxy zoneId = new IdentityProxy("data_center");
     
     @SerializedName(ApiConstants.STATE) @Param(description="state of the physical network")
     private String state;
@@ -53,45 +54,25 @@ public class PhysicalNetworkResponse extends BaseResponse{
     @SerializedName(ApiConstants.NETWORK_SPEED) @Param(description="the speed of the physical network")
     private String networkSpeed;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getId() {
-        return this.id;
+    public void setId(long id) {
+        this.id.setValue(id);
     }
 
     public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
-    }
-
-    public Long getZoneId() {
-        return this.zoneId;
+        this.zoneId.setValue(zoneId);
     }
 
     public void setState(String state) {
         this.state = state;
     }
     
-    public String getState() {
-        return this.state;
-    }
-    
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
-
-    public Long getDomainId() {
-        return this.domainId;
-    }
     
     public void setVlan(String vlan) {
         this.vlan = vlan;
-    }
-
-    public String getVlan() {
-        return this.vlan;
     }
     
 
@@ -107,25 +88,13 @@ public class PhysicalNetworkResponse extends BaseResponse{
         
         this.tags = buf.delete(buf.length()-1, buf.length()).toString();
     }
-
-    public String getTags() {
-        return tags;
-    }
-
+    
     public void setBroadcastDomainRange(String broadcastDomainRange) {
         this.broadcastDomainRange = broadcastDomainRange;
     }
 
-    public String getBroadcastDomainRange() {
-        return broadcastDomainRange;
-    }
-
     public void setNetworkSpeed(String networkSpeed) {
         this.networkSpeed = networkSpeed;
-    }
-
-    public String getNetworkSpeed() {
-        return networkSpeed;
     }
 
     public void setIsolationMethods(List<String> isolationMethods) {
@@ -141,8 +110,5 @@ public class PhysicalNetworkResponse extends BaseResponse{
         this.isolationMethods = buf.delete(buf.length()-1, buf.length()).toString();
     }
 
-    public String getIsolationMethods() {
-        return isolationMethods;
-    }
 
 }

@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -44,9 +45,11 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
+    @IdentityMapper(entityTableName="physical_networks")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list physical network by id")
     private Long id;
 
+    @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the physical network")
     private Long zoneId;
 
