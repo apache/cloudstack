@@ -368,27 +368,29 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-    VirtualMachineMigrationException {
+            VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;
     }
 
-    @Override
-    public UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public UserVm moveVMToUser(AssignVMCmd moveUserVMCmd)
+			throws ResourceAllocationException, ConcurrentOperationException,
+			ResourceUnavailableException, InsufficientCapacityException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public UserVm restoreVM(RestoreVMCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public UserVm restoreVM(RestoreVMCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

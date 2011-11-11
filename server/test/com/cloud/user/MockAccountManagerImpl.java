@@ -23,6 +23,7 @@ import com.cloud.utils.component.Manager;
 @Local(value = { AccountManager.class, AccountService.class })
 public class MockAccountManagerImpl implements Manager, AccountManager {
 
+
     @Override
     public boolean deleteUserAccount(long accountId) {
         // TODO Auto-generated method stub
@@ -259,17 +260,21 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
         return true;
     }
 
-    @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
-    @Override
-    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public UserAccount createUserAccount(String userName, String password,
+			String firstName, String lastName, String email, String timezone,
+			String accountName, short accountType, Long domainId,
+			String networkDomain, Map details) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Account createAccount(String accountName, short accountType,
+			Long domainId, String networkDomain, Map details) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

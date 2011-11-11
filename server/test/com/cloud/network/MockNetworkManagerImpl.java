@@ -709,9 +709,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
-    @Override
-    public Long getPhysicalNetworkId(Network network) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public Long getPhysicalNetworkId(Network network) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
