@@ -40,11 +40,13 @@ class OvmOCFS2(OvmObject):
         for line in res.split('\n'):
             if not 'Checking O2CB cluster' in line: continue
             return not 'Offline' in line
+    
+    def _load(self):
+        cmd = ['service o2cb load']
+        doCmd(cmd)
         
     def _start(self, cluster):
         #blank line are answer by clicking enter
-        cmd = ['service o2cb load']
-        doCmd(cmd)
         config='''
 y
 o2cb
