@@ -2,20 +2,16 @@
   cloudStack.installWizard = {
     // Check if install wizard should be invoked
     check: function(args) {
-      args.response.success({
-        doInstall: false
+      $.ajax({
+        url: createURL('listZones'),
+        dataType: 'json',
+        async: true,
+        success: function(data) {
+          args.response.success({
+            doInstall: !data.listzonesresponse.zone
+          });
+        }
       });
-      
-      // $.ajax({
-      //   url: createURL('listZones'),
-      //   dataType: 'json',
-      //   async: true,
-      //   success: function(data) {
-      //     args.response.success({
-      //       doInstall: !data.listzonesresponse.zone
-      //     });
-      //   }
-      // });
     },
 
     changeUser: function(args) {
@@ -88,12 +84,13 @@
        * Step 1: add zone
        */
       var createZone = function(args) {
-        debugger;
         $.ajax({
           url: createURL('createZone'),
           data: {
             name: data.zone.name,
             networktype: 'Basic',
+            dns1: data.zone.dns1,
+            dns2: data.zone.dns2,
             internaldns1: data.zone.internaldns1,
             internaldns2: data.zone.internaldns2
           },
@@ -116,12 +113,12 @@
         $.ajax({
           url: createURL('createPod'),
           data: {
-            name: data['pod-name'],
+            name: data.pod['pod-name'],
             zoneid: args.data.zone.id,
-            gateway: data['pod-gateway'],
-            netmask: data['pod-netmask'],
-            startip: data['pod-ip-range-start'],
-            endip: data['pod-ip-range-end']
+            gateway: data.pod['pod-gateway'],
+            netmask: data.pod['pod-netmask'],
+            startip: data.pod['pod-ip-range-start'],
+            endip: data.pod['pod-ip-range-end']
           },
           dataType: 'json',
           async: true,
@@ -144,10 +141,10 @@
           data: {
             zoneid: args.data.zone.id,
             vlan: 'untagged',
-            gateway: data['guest-gateway'],
-            netmask: data['guest-netmask'],
-            startip: data['guest-ip-range-start'],
-            endip: data['guest-ip-range-end']
+            gateway: data.zoneIPRange['guest-gateway'],
+            netmask: data.zoneIPRange['guest-netmask'],
+            startip: data.zoneIPRange['guest-ip-range-start'],
+            endip: data.zoneIPRange['guest-ip-range-end']
           },
           dataType: 'json',
           async: true,
