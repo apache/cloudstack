@@ -82,7 +82,7 @@
 
     action: function(args) {
       var complete = args.response.success;
-      var data = args.data
+      var data = args.data;
 
       /**
        * Step 1: add zone

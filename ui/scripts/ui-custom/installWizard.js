@@ -54,6 +54,13 @@
      * Generic page elements
      */
     var elems = {
+      tooltip: function(title, content) {
+        return $('<div>').addClass('tooltip-info').append(
+          $('<div>').addClass('arrow'),
+          $('<div>').addClass('title').html(title),
+          $('<div>').addClass('content').append($('<p>').html(content))
+        );
+      },
       header: function() {
         return $('<div></div>').addClass('header')
           .append(
@@ -72,7 +79,43 @@
           $('<input>').attr({ type: 'submit' }).addClass('button goTo').val(label);
 
         return $button;
+      },
+
+      diagramParts: function() {
+        return $('<div>').addClass('diagram').append(
+          $('<div>').addClass('part zone'),
+          $('<div>').addClass('part pod'),
+          $('<div>').addClass('part cluster'),
+          $('<div>').addClass('part host'),
+          $('<div>').addClass('part primaryStorage'),
+          $('<div>').addClass('part secondaryStorage'),
+          $('<div>').addClass('part loading').append($('<div>').addClass('icon'))
+        );
       }
+    };
+
+    var $diagramParts = elems.diagramParts();
+
+    var showDiagram = function(parts) {
+      $diagramParts.children().hide();
+      $diagramParts.find(parts).show();
+    };
+
+    /**
+     * Show tooltip for focused form elements
+     */
+    var showTooltip = function($formContainer) {
+      var $tooltip = elems.tooltip('Hints', 'Help content goes here.');
+      $formContainer.find('input').focus(function() {
+        $tooltip.appendTo($formContainer);
+        $tooltip.css({
+          top: $(this).position().top - 20
+        });
+      });
+
+      $formContainer.find('input').blur(function() {
+        $tooltip.remove();
+      });
     };
 
     /**
@@ -170,6 +213,8 @@
           return false;
         });
 
+        showDiagram('.part.zone');
+
         return $intro.append(
           $title, $subtitle,
           $copy,
@@ -203,6 +248,9 @@
         $addZoneForm.find('.main-desc, .conditional').remove();
         $addZoneForm.find('.field:last').remove();
 
+        showDiagram('.part.zone');
+        showTooltip($addZoneForm);
+
         return $addZone.append(
           $addZoneForm
             .prepend($title)
@@ -232,6 +280,9 @@
           return false;
         });
 
+        showDiagram('.part.zone');
+        showTooltip($addIPRangeForm);
+
         // Remove unneeded fields
         $addIPRangeForm.find('.main-desc, .conditional').remove();
 
@@ -260,6 +311,8 @@
 
           return false;
         });
+
+        showDiagram('.part.zone, .part.pod');
 
         return $intro.append(
           $title, $subtitle,
@@ -293,6 +346,9 @@
         // Remove unneeded fields
         $addPodForm.find('.main-desc, .conditional').remove();
 
+        showDiagram('.part.zone, .part.pod');
+        showTooltip($addPodForm);
+
         return $addPod.append(
           $addPodForm
             .prepend($title)
@@ -318,6 +374,8 @@
 
           return false;
         });
+
+        showDiagram('.part.zone, .part.cluster');
 
         return $intro.append(
           $title, $subtitle,
@@ -357,6 +415,9 @@
           return false;
         });
 
+        showDiagram('.part.zone, .part.cluster');
+        showTooltip($addClusterForm);
+
         // Cleanup
         $addClusterForm.find('.message').remove();
         $addClusterForm.find('.form-item').addClass('field').find('label.error').hide();
@@ -386,6 +447,8 @@
 
           return false;
         });
+
+        showDiagram('.part.zone, .part.host');
 
         return $intro.append(
           $title, $subtitle,
@@ -446,6 +509,9 @@
           return false;
         });
 
+        showDiagram('.part.zone, .part.host');
+        showTooltip($addHostForm);
+
         // Cleanup
         $addHostForm.find('.message').remove();
         $addHostForm.find('.form-item').addClass('field').find('label.error').hide();
@@ -475,6 +541,8 @@
 
           return false;
         });
+
+        showDiagram('.part.zone, .part.primaryStorage');
 
         return $intro.append(
           $title, $subtitle,
@@ -532,6 +600,9 @@
           return false;
         });
 
+        showDiagram('.part.zone, .part.primaryStorage');
+        showTooltip($addPrimaryStorageForm);
+
         // Cleanup
         $addPrimaryStorageForm.find('.message').remove();
         $addPrimaryStorageForm.find('.form-item').addClass('field').find('label.error').hide();
@@ -561,6 +632,8 @@
 
           return false;
         });
+
+        showDiagram('.part.zone, .part.secondaryStorage');
 
         return $intro.append(
           $title, $subtitle,
@@ -607,6 +680,9 @@
           return false;
         });
 
+        showDiagram('.part.zone, .part.secondaryStorage');
+        showTooltip($addSecondaryStorageForm);
+
         // Cleanup
         $addSecondaryStorageForm.find('.message').remove();
         $addSecondaryStorageForm.find('.form-item').addClass('field').find('label.error').hide();
@@ -635,6 +711,8 @@
           return false;
         });
 
+        showDiagram('.part.zone, .part.secondaryStorage');
+
         return $intro.append(
           $title, $subtitle,
           $copy,
@@ -648,8 +726,7 @@
       launch: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-              .html('Now building your cloud...')
-              .append($('<img>').attr({ src: 'images/ajax-loader.gif' }));
+              .html('Now building your cloud...');
         var $subtitle = $('<div></div>').addClass('subtitle')
               .html('You may want to get a cup of coffee right now.');
 
@@ -662,6 +739,8 @@
           }
         });
 
+        showDiagram('.part.loading');
+
         return $intro.append(
           $title, $subtitle
         );
@@ -671,10 +750,9 @@
     var initialStep = steps.changeUser().addClass('step');
 
     $installWizard.append(
-      $.merge(
-        elems.header(),
-        elems.body().append(initialStep)
-      )
+      elems.header(),
+      elems.body().append(initialStep),
+      $diagramParts
     ).appendTo($container);
   };
 

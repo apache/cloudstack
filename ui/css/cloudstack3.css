@@ -310,8 +310,9 @@ body.login {
 
 .install-wizard .header {
   text-align: center;
-  background: #0D6CAA;
+  background: url(../images/bg-install-wizard-header.png);
   color: #FFFFFF;
+  height: 365px;
   padding: 32px 0 89px;
   /*+text-shadow:0px 2px 2px #4B4B4B;*/
   -moz-text-shadow: 0px 2px 2px #4B4B4B;
@@ -319,6 +320,10 @@ body.login {
   -o-text-shadow: 0px 2px 2px #4B4B4B;
   text-shadow: 0px 2px 2px #4B4B4B;
   z-index: 9;
+}
+
+.install-wizard .header h3 {
+  font-size: 20px;
 }
 
 .install-wizard .step {
@@ -364,20 +369,15 @@ body.login {
 }
 
 .install-wizard .body {
-  width: 987px;
+  width: 1012px;
   height: 626px;
-  margin: -52px auto auto;
+  margin: -352px auto auto;
   z-index: 10;
-  /*+box-shadow:0px 3px 15px #696767;*/
-  -moz-box-shadow: 0px 3px 15px #696767;
-  -webkit-box-shadow: 0px 3px 15px #696767;
-  -o-box-shadow: 0px 3px 15px #696767;
-  box-shadow: 0px 3px 15px #696767;
-  background: #FFFFFF;
+  background: #FFFFFF -114px -141px;
 }
 
 .install-wizard h2 {
-  font-size: 24px;
+  font-size: 28px;
   margin: 0 0 19px;
 }
 
@@ -435,6 +435,123 @@ body.login {
   -o-text-shadow: 0px 0px #FFFFFF;
   text-shadow: 0px 0px #FFFFFF;
   float: left;
+}
+
+.install-wizard .step {
+  z-index: 11;
+  position: relative;
+}
+
+.install-wizard .step .tooltip-info {
+  /*+placement:shift 547px 50px;*/
+  position: relative;
+  left: 547px;
+  top: 50px;
+  position: absolute;
+}
+
+/*** Diagram*/
+.install-wizard .diagram {
+  width: 910px;
+  height: 385px;
+  /*+placement:shift 65px 397px;*/
+  position: relative;
+  left: 65px;
+  top: 397px;
+  position: absolute;
+  z-index: 10;
+}
+
+.install-wizard .diagram .part {
+  background: url(../images/install-wizard-parts.png) no-repeat;
+  display: none;
+}
+
+.install-wizard .diagram .part.zone {
+  width: 742px;
+  height: 135px;
+  background-position: -267px -580px;
+  /*+placement:shift 77px 222px;*/
+  position: relative;
+  left: 77px;
+  top: 222px;
+  position: absolute;
+}
+
+.install-wizard .diagram .part.loading {
+  width: 742px;
+  height: 432px;
+  background-position: -1264px -487px;
+  /*+placement:shift 105px -67px;*/
+  position: relative;
+  left: 105px;
+  top: -67px;
+  position: absolute;
+}
+
+.install-wizard .diagram .part.loading .icon {
+  width: 61px;
+  height: 76px;
+  background: url(../images/ajax-loader.gif) no-repeat;
+  /*+placement:shift 322px 130px;*/
+  position: relative;
+  left: 322px;
+  top: 130px;
+}
+
+.install-wizard .diagram .part.pod {
+  width: 266px;
+  height: 396px;
+  background-position: -47px -3px;
+  /*+placement:shift 313px -76px;*/
+  position: relative;
+  left: 313px;
+  top: -76px;
+  position: absolute;
+}
+
+.install-wizard .diagram .part.cluster {
+  width: 266px;
+  height: 396px;
+  background-position: -364px 1px;
+  /*+placement:shift 313px -76px;*/
+  position: relative;
+  left: 313px;
+  top: -76px;
+  position: absolute;
+}
+
+.install-wizard .diagram .part.host {
+  width: 266px;
+  height: 396px;
+  background-position: -688px 1px;
+  /*+placement:shift 313px -76px;*/
+  position: relative;
+  left: 313px;
+  top: -76px;
+  position: absolute;
+}
+
+.install-wizard .diagram .part.primaryStorage {
+  width: 275px;
+  height: 396px;
+  background-position: -1046px 1px;
+  /*+placement:shift 306px -76px;*/
+  position: relative;
+  left: 306px;
+  top: -76px;
+  position: absolute;
+}
+
+.install-wizard .diagram .part.secondaryStorage {
+  width: 385px;
+  height: 396px;
+  background-position: -1469px 1px;
+  /*+placement:shift 306px -76px;*/
+  position: relative;
+  left: 306px;
+  top: -76px;
+  position: absolute;
 }
 
 /*** Setup form*/
