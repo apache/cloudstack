@@ -574,7 +574,7 @@
                       }
                     ],
 
-                    action: function(args) {
+                    action: function(args) {                 
                       var array1 = [];
 
                       //var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"
@@ -596,34 +596,23 @@
                         array1.push("&internaldns2=" + todb(internaldns2));
 
                       if(networktype == "Advanced") {
-                        if(args.data["isolation-mode"] == "security-groups") {
-                          array1.push("&securitygroupenabled=true");
-                        }
-                        else { //args.data["isolation-mode"] == "vlan"
+                        //if(args.data["isolation-mode"] == "security-groups") {
+                        //  array1.push("&securitygroupenabled=true");
+                        //}
+                        //else { //args.data["isolation-mode"] == "vlan"
                           array1.push("&securitygroupenabled=false");
 
-                          /*
-                          var vlanStart = args.data["vlan-range-start"];
-                          if(vlanStart != null && vlanStart.length > 0) {
-                            var vlanEnd = args.data["vlan-range-end"];
-                            if (vlanEnd != null && vlanEnd.length > 0)
-                              array1.push("&vlan=" + todb(vlanStart + "-" + vlanEnd));
-                            else
-                              array1.push("&vlan=" + todb(vlanStart));
-                          }
-                          */
-                          
                           var guestcidraddress = args.data["guest-cidr"];
                           if(guestcidraddress != null && guestcidraddress.length > 0) {
                             array1.push("&guestcidraddress="+todb(guestcidraddress));
                           }
-                        }
+                        //}
                       }
 
                       if(args.data["public"] == null) //public checkbox is unchecked
                         array1.push("&domainid=" + args.data["zone-domain"]);
 
-                      var zoneId, podId;
+                      var zoneId;
                       $.ajax({
                         url: createURL("createZone" + array1.join("")),
                         dataType: "json",
@@ -634,7 +623,7 @@
 
                           zoneId = item.id;
                           
-                          //???                          
+                          //NaaS (begin)                          
                           var physicalNetworkId;
                           $.ajax({
                             url: createURL("listPhysicalNetworks&zoneId=" + zoneId),
@@ -647,48 +636,7 @@
                             }
                           });
                           
-                          if(physicalNetworkId != null) {
-                            /*
-                            var array1 = [];                            
-                            var vlanStart = args.data["vlan-range-start"];
-                            if(vlanStart != null && vlanStart.length > 0) {
-                              var vlanEnd = args.data["vlan-range-end"];
-                              if (vlanEnd != null && vlanEnd.length > 0)
-                                array1.push("&vlan=" + todb(vlanStart + "-" + vlanEnd));
-                              else
-                                array1.push("&vlan=" + todb(vlanStart));
-                            }                          
-                            $.ajax({
-                              url: createURL("updatePhysicalNetwork&id=" + physicalNetworkId + "&state=Enabled" + array1.join("")),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var jid = json.updatephysicalnetworkresponse.jobid;                               
-                                $.ajax({
-                                  url: createURL("queryAsyncJobResult&jobId=" + jid),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    var result = json.queryasyncjobresultresponse;
-                                    if (result.jobstatus == 0) {
-                                      return; //Job has not completed
-                                    } else {
-                                      if (result.jobstatus == 1) { // Succeeded                                        
-                                        args.complete();                                        
-                                      }
-                                      else if (result.jobstatus == 2) { // Failed
-                                        args.error({message:result.jobresult.errortext});
-                                      }
-                                    }
-                                  },
-                                  error: function(XMLHttpResponse) {
-                                    args.error();
-                                  }
-                                });                            
-                              }
-                            });     
-                            */
-                            
+                          if(physicalNetworkId != null) {                            
                             var networkServiceProviderId;
                             $.ajax({
                               url: createURL("listNetworkServiceProviders&physicalNetworkId=" + physicalNetworkId),
@@ -730,15 +678,18 @@
                                           return; //Job has not completed
                                         } else {
                                           if (result.jobstatus == 1) { // Succeeded                                        
-                                            args.complete();                                        
+                                            //args.complete();                                        
                                           }
                                           else if (result.jobstatus == 2) { // Failed
-                                            args.error({message:result.jobresult.errortext});
+                                            //args.error({message:result.jobresult.errortext});
+                                            alert(fromdb(result.jobresult.errortext));
                                           }
                                         }
                                       },
                                       error: function(XMLHttpResponse) {
-                                        args.error();
+                                        //args.error();
+                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                        alert(errorMsg);                                        
                                       }
                                     });                            
                                   }
@@ -761,22 +712,25 @@
                                         return; //Job has not completed
                                       } else {
                                         if (result.jobstatus == 1) { // Succeeded                                        
-                                          args.complete();                                        
+                                          //args.complete();                                        
                                         }
                                         else if (result.jobstatus == 2) { // Failed
-                                          args.error({message:result.jobresult.errortext});
+                                          //args.error({message:result.jobresult.errortext});
+                                          alert(fromdb(result.jobresult.errortext));
                                         }
                                       }
                                     },
                                     error: function(XMLHttpResponse) {
-                                      args.error();
+                                      //args.error();
+                                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                      alert(errorMsg);
                                     }
                                   });                            
                                 }
                               });   
                             }                                                        
                           }
-                          //???
+                          //NaaS (end) 
 
                           $.ajax({
                             url: createURL("listCapabilities"),
@@ -809,124 +763,7 @@
                           var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                           args.response.error(errorMsg);
                         }
-                      });
-
-                      if(zoneId != null) {
-                        // create pod (begin)
-                        var array1 = [];
-                        array1.push("&zoneId=" + zoneId);
-                        array1.push("&name=" + todb(args.data["pod-name"]));
-                        array1.push("&netmask=" + todb(args.data["pod-netmask"]));
-                        array1.push("&startIp=" + todb(args.data["pod-ip-range-start"]));
-
-                        var endip = args.data["pod-ip-range-end"];   //optional
-                        if (endip != null && endip.length > 0)
-                          array1.push("&endIp=" + todb(endip));
-
-                        array1.push("&gateway=" + todb(args.data["pod-gateway"]));
-
-                        $.ajax({
-                          url: createURL("createPod"+array1.join("")),
-                          dataType: "json",
-                          async: false,
-                          success: function(json) {
-                            var item = json.createpodresponse.pod;
-                            //args.response.success({data:item});  //do nothing until Brian extends zoneWizard to support 3 API call
-                            podId = item.id;
-                          },
-                          error: function(XMLHttpResponse) {
-                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            //args.response.error(errorMsg);     //do nothing until Brian extends zoneWizard to support 3 API call
-                          }
-                        });
-                        // create pod (end)
-
-
-                        // create direct VLAN (basic zone, advanced zone + security group)
-                        //var $createDirectVlan = $thisWizard.find("#step4").find("#create_direct_vlan");
-                        //if ($createDirectVlan.css("display") != "none") {
-                        if(networktype == "Basic" || (networktype == "Advanced" && args.data["isolation-mode"] == "security-groups")) {
-                          var array1 = [];
-
-                          array1.push("&gateway=" + todb(args.data["guest-gateway"]));
-                          array1.push("&netmask=" + todb(args.data["guest-netmask"]));
-                          array1.push("&startip=" + todb(args.data["guest-ip-range-start"]));
-
-                          var endip = args.data["guest-ip-range-end"];
-                          if(endip != null && endip.length > 0)
-                            array1.push("&endip=" + todb(endip));
-
-                          array1.push("&forVirtualNetwork=false"); //direct VLAN
-                          array1.push("&zoneid=" + zoneId);
-
-                          var isValid = true;
-                          if(networktype == "Basic") { //Basic zone (default VLAN is at pod-level)
-                            array1.push("&vlan=untagged");
-                            array1.push("&podId=" + podId);
-                            if(podId == null)
-                              isValid = false;
-                          }
-                          else { //Advanced zone + security group  (default VLAN is at zone-level)
-                            array1.push("&vlan=" + args.data["vlan-id"]);
-                          }
-
-                          if(isValid) {
-                            $.ajax({
-                              url: createURL("createVlanIpRange" + array1.join("")),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var item = json.createvlaniprangeresponse.vlan;
-                                //args.response.success({data:item});  //do nothing until Brian extends zoneWizard to support 3 API call
-                              },
-                              error: function(XMLHttpResponse) {
-                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                //args.response.error(errorMsg);       //do nothing until Brian extends zoneWizard to support 3 API call
-                              }
-                            });
-                          }
-                        }
-
-
-                        // create virtual VLAN (advanced zone + virtual)
-                        //var $createVirtualVlan = $thisWizard.find("#step4").find("#create_virtual_vlan");
-                        //if ($createVirtualVlan.css("display") != "none") {
-                        else if (networktype == "Advanced" && args.data["isolation-mode"] == "vlan") {
-                          var array1 = [];
-                          //if ($createVirtualVlan.find("#add_publicip_vlan_tagged").val() == "tagged")
-                          if(args.data["vlan-type"] == "tagged") {
-                            array1.push("&vlan=" + args.data["vlan-id"]);
-                            if(args.data["ip-scope-tagged"] == "account-specific") {
-                              array1.push("&domainId=" + args.data["ip-domain"]);
-                              array1.push("&account=" + args.data.account);
-                            }
-                          }
-                          else { //args.data["vlan-type"] == "untagged"
-                            array1.push("&vlan=untagged");
-                          }
-
-                          array1.push("&gateway=" + todb(args.data["guest-gateway"]));
-                          array1.push("&netmask=" + todb(args.data["guest-netmask"]));
-                          array1.push("&startip=" + todb(args.data["guest-ip-range-start"]));
-
-                          var endip = args.data["guest-ip-range-end"];	//optional field (might be empty)
-                          if(endip != null && endip.length > 0)
-                            array1.push("&endip=" + todb(endip));
-
-                          $.ajax({
-                            url: createURL("createVlanIpRange&forVirtualNetwork=true&zoneId=" + zoneId + array1.join("")),
-                            dataType: "json",
-                            success: function(json) {
-                              var item = json.createvlaniprangeresponse.vlan;
-                              //args.response.success({data:item});  //do nothing until Brian extends zoneWizard to support 3 API call
-                            },
-                            error: function(XMLHttpResponse) {
-                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                              //args.response.error(errorMsg);     //do nothing until Brian extends zoneWizard to support 3 API call
-                            }
-                          });
-                        }
-                      }
+                      });                      
                     }
                   })
                 },
