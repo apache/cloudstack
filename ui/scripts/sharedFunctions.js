@@ -38,8 +38,7 @@ var pollAsyncJobResult = function(args) {
       if (result.jobstatus == 0) {
         return; //Job has not completed
       } else {
-        if (result.jobstatus == 1) { // Succeeded
-          //debugger;
+        if (result.jobstatus == 1) { // Succeeded         
           if(args._custom.getUpdatedItem != null && args._custom.getActionFilter != null) {
             args.complete({
               data: args._custom.getUpdatedItem(json),

@@ -7,8 +7,7 @@
       actions: {
         edit: {
           label: 'Change value',
-          action: function(args) {
-            debugger;
+          action: function(args) {           
             var name = args.data.jsonObj.name;
             var value = args.data.value;
 
