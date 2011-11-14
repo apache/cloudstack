@@ -701,8 +701,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
-        if( !Status.BackedUp.equals(snapshotCheck.getStatus() ) ) {
-            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is not in BackedUp Status");
+        if( !Status.BackedUp.equals(snapshotCheck.getStatus()) && !Status.Error.equals(snapshotCheck.getStatus())) {
+            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is not in BackedUp or Error Status");
         }
 
        _accountMgr.checkAccess(caller, null, snapshotCheck);

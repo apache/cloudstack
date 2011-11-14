@@ -1031,22 +1031,27 @@ public class Transaction {
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
             
             // configure the simulator db
-            final int simulatorMaxActive = Integer.parseInt(dbProps.getProperty("db.simulator.maxActive"));
-            final int simulatorMaxIdle = Integer.parseInt(dbProps.getProperty("db.simulator.maxIdle"));
-            final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
-            final String simulatorUsername = dbProps.getProperty("db.simulator.username");
-            final String simulatorPassword = dbProps.getProperty("db.simulator.password");
-            final String simulatorHost = dbProps.getProperty("db.simulator.host");
-            final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
-            final String simulatorDbName = dbProps.getProperty("db.simulator.name");
-            final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
-            final GenericObjectPool simulatorConnectionPool = new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-            		simulatorMaxWait, simulatorMaxIdle);
-            final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+simulatorHost + ":" + simulatorPort + "/" + simulatorDbName +
-                    "?autoReconnect="+simulatorAutoReconnect, simulatorUsername, simulatorPassword);
-            final PoolableConnectionFactory simulatorPoolableConnectionFactory = new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool,
-                    new StackKeyedObjectPoolFactory(), null, false, false);
-            s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
+            try {
+            	final int simulatorMaxActive = Integer.parseInt(dbProps.getProperty("db.simulator.maxActive"));
+            	final int simulatorMaxIdle = Integer.parseInt(dbProps.getProperty("db.simulator.maxIdle"));
+            	final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
+            	final String simulatorUsername = dbProps.getProperty("db.simulator.username");
+            	final String simulatorPassword = dbProps.getProperty("db.simulator.password");
+            	final String simulatorHost = dbProps.getProperty("db.simulator.host");
+            	final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
+            	final String simulatorDbName = dbProps.getProperty("db.simulator.name");
+            	final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
+            	final GenericObjectPool simulatorConnectionPool = new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
+            			simulatorMaxWait, simulatorMaxIdle);
+            	final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+simulatorHost + ":" + simulatorPort + "/" + simulatorDbName +
+            			"?autoReconnect="+simulatorAutoReconnect, simulatorUsername, simulatorPassword);
+            	final PoolableConnectionFactory simulatorPoolableConnectionFactory = new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool,
+            			new StackKeyedObjectPoolFactory(), null, false, false);
+            	s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
+            } catch (Exception e) {
+            	s_logger.warn("Unable to load db for simulator");
+            	s_simulatorDS = null;
+            }
         } catch (final Exception e) {
             final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
             final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud", "cloud", "cloud");
