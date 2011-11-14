@@ -114,8 +114,7 @@
                   
                 }               
               },
-              
-              //???
+                           
               ipAddresses: {
                 title: 'IP Addresses',
                 custom: function(args) {                  
@@ -319,7 +318,66 @@
                     data: physicalNetworkObj
                   });                  
                 }
-              }
+              },
+			  //???
+			  network: {
+                title: 'Network',
+                listView: {
+                  section: 'networks',
+                  id: 'networks',
+                  fields: {
+                    name: { label: 'Name' },
+                    startip: { label: 'Start IP' },
+                    endip: { label: 'End IP' },
+                    vlan: { label: 'VLAN' }
+                  },
+                  actions: {
+                    add: {
+                      label: 'Add network',
+                      createForm: {
+                        title: 'Add network',
+                        desc: 'Please fill in the following to add a guest network',
+                        fields: {
+                          vlan: {
+                            label: 'VLAN ID',
+                            validation: { required: true }
+                          },
+                          gateway: {
+                            label: 'Gateway',
+                            validation: { required: true }
+                          },
+                          netmask: {
+                            label: 'Netmask',
+                            validation: { required: true }
+                          },
+                          startip: {
+                            label: 'Start IP',
+                            validation: { required: true }
+                          },
+                          endip: {
+                            label: 'Start IP',
+                            validation: { required: true }
+                          }
+                        }
+                      },
+
+                      action: function(args) {
+                        args.response.success();
+                      },
+
+                      messages: {
+                        notification: function(args) {
+                          return 'Added guest network';
+                        }
+                      },
+                      notification: { poll: testData.notifications.testPoll }
+                    }
+                  },
+                  dataProvider: function(args) {
+				    return args.response.success({data: {}});
+				  }
+                }
+              }			  
             }
           }
         }

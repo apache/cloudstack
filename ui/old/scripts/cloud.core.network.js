@@ -1390,7 +1390,8 @@ function bindAddNetworkButton() {
 				
 				// Creating network for the direct networking				
 				$.ajax({
-					data: createURL("command=listNetworkOfferings&guestiptype=Direct"),
+					//data: createURL("command=listNetworkOfferings&guestiptype=Direct"),
+					data: createURL("command=listNetworkOfferings&guestiptype=Shared"),
 					dataType: "json",
 					async: false,
 					success: function(json) {
