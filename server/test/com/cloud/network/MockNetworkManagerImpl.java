@@ -656,12 +656,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public NetworkOfferingVO getExclusiveGuestNetworkOffering() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public List<? extends UserDataServiceProvider> getPasswordResetElements() {
         // TODO Auto-generated method stub
         return null;

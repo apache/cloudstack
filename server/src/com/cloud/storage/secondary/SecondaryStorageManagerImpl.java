@@ -71,7 +71,9 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
@@ -208,6 +210,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     protected ResourceManager _resourceMgr;
     @Inject
     protected SecondaryStorageVmManager _ssvmMgr;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao;
+    
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
@@ -513,12 +520,20 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
-
-        NetworkOfferingVO defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-
+        
+        TrafficType defaultTrafficType = TrafficType.Public;
         if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-            defaultOffering = _networkMgr.getExclusiveGuestNetworkOffering();
+        	defaultTrafficType = TrafficType.Guest;
         }
+        
+        List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
+        
+        //api should never allow this situation to happen
+        if (defaultNetworks.size() != 1) {
+        	throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
+        }
+        
+        NetworkVO defaultNetwork = defaultNetworks.get(0);
 
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
@@ -526,7 +541,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering, plan, null, null, false).get(0), defaultNic));
+        	networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), null, plan, null, null, false, false, null, null).get(0), defaultNic));
             for (NetworkOfferingVO offering : offerings) {
                 networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
             }

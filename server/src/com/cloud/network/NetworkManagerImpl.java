@@ -1148,22 +1148,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return offerings;
     }
-    
-    
-    @Override
-    public NetworkOfferingVO getExclusiveGuestNetworkOffering() {
-        //this method should return Guest network offering in Enabled state; and this network offering should be unique, otherwise Runtime exception is going to be thrown
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.listByTrafficTypeGuestTypeAndState(NetworkOffering.State.Enabled, TrafficType.Guest, GuestType.Shared);
-        if (offerings.isEmpty()) {
-            throw new CloudRuntimeException("Unable to find network offering in state " + NetworkOffering.State.Enabled + ", traffic type " + TrafficType.Guest + " and guest type " + GuestType.Shared);
-        }
-        
-        if (offerings.size() > 1) {
-            throw new CloudRuntimeException("Found more than 1 network offering in state " + NetworkOffering.State.Enabled + ", traffic type " + TrafficType.Guest + " and guest type " + GuestType.Shared);
-
-        }
-        return offerings.get(0);
-    }
 
     @Override
     @DB
@@ -1886,12 +1870,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Network network = createNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, sharedDomainId, pNtwk, zoneId, aclType);
         
-        //Vlan is created in 2 cases:
+        //Vlan is created in 2 cases - works in Advance zone only:
         //1) GuestType is Shared
         //2) GuestType is Isolated, but SourceNat service is disabled
         boolean createVlan = ((network.getGuestType() == Network.GuestType.Shared) || (network.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan && defineNetworkConfig) {
+        if (zone.getNetworkType() == NetworkType.Advanced && caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan && defineNetworkConfig) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, pNtwk.getDataCenterId(), null, startIP, endIP, gateway, netmask, false, vlanId, null, network.getId(), physicalNetworkId);
         }
@@ -1908,25 +1892,31 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         DataCenterVO zone = _dcDao.findById(zoneId);
-// removed during the merge for network as service 
-// Only Direct Account specific networks can be created in Advanced Security Group enabled zone
-//        if (zone.isSecurityGroupEnabled() && (networkOffering.getGuestType() == GuestIpType.Virtual || (isShared != null && isShared))) {
-//            throw new InvalidParameterValueException("Virtual Network and Direct Shared Network creation is not allowed if zone is security group enabled");
-//        }
-//
-//        if (zone.getNetworkType() == NetworkType.Basic) {
-//            throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
-//        }
-//
-		
-        //Only one guest network is supported in Basic zone
-        if (zone.getNetworkType() == NetworkType.Basic) {
-        	throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
-        }
         
+        
+        if (zone.getNetworkType() == NetworkType.Basic) {
+        	//Only one guest network is supported in Basic zone
+        	List<NetworkVO> guestNetworks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+        	if (!guestNetworks.isEmpty()) {
+            	throw new InvalidParameterValueException("Can't have more than one Guest network in zone with network type " + NetworkType.Basic);
+        	}
+        	
+        	//if zone is basic, only Shared network offerings w/o source nat service are allowed
+        	if (!(networkOffering.getGuestType() == GuestType.Shared && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))) {
+        		throw new InvalidParameterValueException("For zone of type " + NetworkType.Basic + " only offerings of guestType " + GuestType.Shared + " with disabled " + Service.SourceNat.getName() + " service are allowed");
+        	}
+            
+        } else if (zone.isSecurityGroupEnabled()) {
+            //Only Account specific Isolated network with sourceNat service disabled are allowed in security group enabled zone
+        	boolean allowCreation = (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat));
+        	if (!allowCreation) {
+        		throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat service disabled are allowed in security group enabled zone");
+        	}
+        }
+
         
         // allow isDefault to be set only for Shared network and Isolated networks with source nat disabled service
-        boolean allowSettingDefault = (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        boolean allowSettingDefault = (zone.getNetworkType() == NetworkType.Advanced && (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))));
         if (allowSettingDefault) {
         	if (isDefault == null) {
                 isDefault = false;
@@ -1934,18 +1924,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
         	if (isDefault == null) {
                 isDefault = true;
+            } else {
+            	throw new InvalidParameterValueException("isDefault parameter can be passed in only for network creation of guestType Shared or Isolated with source nat service disabled; and only in Advance zone");
             }
         }
-
-        // Don't allow to create network with vlan that already exists in the system
-        if (vlanId != null) {
-            String uri = "vlan://" + vlanId;
-            List<NetworkVO> networks = _networksDao.listBy(zoneId, uri);
-            if ((networks != null && !networks.isEmpty())) {
-                throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
-            }
-        }
-
+         
         // VlanId can be specified only when network offering supports it
         if (vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
@@ -1961,6 +1944,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         		}
         	}
         }
+
+        // Don't allow to create network with vlan that already exists in the system
+        if (vlanId != null) {
+            String uri = "vlan://" + vlanId;
+            List<NetworkVO> networks = _networksDao.listBy(zoneId, uri);
+            if ((networks != null && !networks.isEmpty())) {
+                throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
+            }
+        }
+        
 
         // If networkDomain is not specified, take it from the global configuration
         if (areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
@@ -1995,11 +1988,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // Cidr for Shared networks and Isolated networks w/o source nat service can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges
+        // In Advance zone Cidr for Shared networks and Isolated networks w/o source nat service can't be NULL - 2.2.x limitation, remove after we introduce support for multiple ip ranges
         // with different Cidrs for the same Shared network
-        boolean cidrRequired = networkOffering.getTrafficType() == TrafficType.Guest && (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
+        boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced && networkOffering.getTrafficType() == TrafficType.Guest && (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat)));
         if (cidr == null && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of type " + Network.GuestType.Shared + " and network of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
+        } 
+        
+        //No cidr can be specified in Basic zone
+        if (zone.getNetworkType() == NetworkType.Basic && cidr != null) {
+            throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask can't be specified for zone of type " + NetworkType.Basic);
         }
 
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated
@@ -3285,6 +3283,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         long oldNetworkOfferingId = network.getNetworkOfferingId();
         if (networkOfferingId != null) {
+        	
             NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
             if (networkOffering == null || networkOffering.isSystemOnly()) {
                 throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);

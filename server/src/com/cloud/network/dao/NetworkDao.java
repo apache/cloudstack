@@ -90,4 +90,5 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 	
 	boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
 	
+	List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 }

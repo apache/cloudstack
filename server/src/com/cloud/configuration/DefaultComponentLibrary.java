@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.identity.IdentityServiceImpl;
+import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
@@ -65,8 +67,6 @@ import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl;
-import com.cloud.identity.IdentityServiceImpl;
-import com.cloud.identity.dao.IdentityDaoImpl;
 import com.cloud.keystore.KeystoreDaoImpl;
 import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;

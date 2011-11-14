@@ -235,8 +235,6 @@ public interface NetworkManager extends NetworkService {
     List<Service> getElementServices(Provider provider);
 
     boolean canElementEnableIndividualServices(Provider provider);
-
-    NetworkOfferingVO getExclusiveGuestNetworkOffering();
     
     PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId);
     

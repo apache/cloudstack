@@ -1429,11 +1429,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // the zone creation
         if (zone != null) {
             List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
-            
-            //for Advance security group enabled zone and Basic zone we have to find only one guest network offering enabled in the system
-            if (zone.getNetworkType() == NetworkType.Basic || isSecurityGroupEnabled) {
-                ntwkOff.add(_networkMgr.getExclusiveGuestNetworkOffering());
-            }
 
             for (NetworkOfferingVO offering : ntwkOff) {
                 DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
@@ -1453,20 +1448,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     } else {
                         continue;
                     }
-                } else if (offering.getTrafficType() == TrafficType.Guest) {
-                    if (zone.getNetworkType() == NetworkType.Basic) {
-                        isNetworkDefault = true;
-                        broadcastDomainType = BroadcastDomainType.Native;
-                        //set physicalnetworkId to the default Guest network in a basic Zone.
-                        plan = new DataCenterDeployment(zone.getId(), null, null, null, null, physicalNetworkId);
-                    } else if (offering.getGuestType() == GuestType.Shared && isSecurityGroupEnabled) {
-                        isNetworkDefault = true;
-                    } else {
-                        continue;
-                    }
-                    
-                    networkDomain = "cs" + Long.toHexString(Account.ACCOUNT_ID_SYSTEM) + _networkMgr.getGlobalGuestDomainSuffix();
                 }
+                
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
                 _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, Domain.ROOT_DOMAIN, null);
