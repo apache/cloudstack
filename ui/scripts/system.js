@@ -257,7 +257,7 @@
                 label: 'Edit',
                 action: function(args) {                                    
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork&id=" + args._custom.physicalNetworkObj.id + "&state=Enabled&vlan=" + todb(args.data.vlan)),                    
+                    url: createURL("updatePhysicalNetwork&id=" + args._custom.physicalNetworkObj.id + "&vlan=" + todb(args.data.vlan)),                    
                     dataType: "json",
                     success: function(json) {                      
                       
