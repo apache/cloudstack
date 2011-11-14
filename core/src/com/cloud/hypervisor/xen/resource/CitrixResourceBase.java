@@ -2580,8 +2580,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         s_vms.put(_cluster, _name, cmd.getVmName(), State.Starting);
         try {
+            Host host = null;
             Set<VM> vms = null;
             try {
+                host = Host.getByUuid(conn, _host.uuid);
                 vms = VM.getByNameLabel(conn, cmd.getVmName());
             } catch (XenAPIException e0) {
                 s_logger.debug("getByNameLabel failed " + e0.toString());
@@ -2592,6 +2594,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             for (VM vm : vms) {
                 try {
+                    vm.setAffinity(conn, host);
                     rebootVM(conn, vm, vm.getNameLabel(conn));
                 } catch (Exception e) {
                     String msg = e.toString();
