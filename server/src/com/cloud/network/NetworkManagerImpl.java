@@ -1734,17 +1734,49 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkOffering.getState() != NetworkOffering.State.Enabled) {
             throw new InvalidParameterValueException("Can't use network offering id=" + networkOfferingId + " as its state is not " + NetworkOffering.State.Enabled);
         }
+        
+        //validate physical network and zone
+        // Check if physical network exists
+        PhysicalNetwork pNtwk = null;
+        if (physicalNetworkId != null) {
+            pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
+            if (pNtwk == null) {
+                throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
+            }
+            
+            //check that the physical network is enabled
+            if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
+                throw new InvalidParameterValueException("Physical network id " + physicalNetworkId + " is in incorrect state: " + pNtwk.getState());
+            }
+        }
+        
+        if (zoneId == null) {
+        	zoneId = pNtwk.getDataCenterId();
+        }
+
+        DataCenter zone = _dcDao.findById(zoneId);
+
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
+        }
 
         //Only domain and account ACL types are supported in Acton
         ACLType aclType = null;
         if (aclTypeStr != null) {
         	if (aclTypeStr.equalsIgnoreCase(ACLType.Account.toString())) {
+        		if (zone.getNetworkType() == NetworkType.Basic) {
+            		throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
+            	}
         		aclType = ACLType.Account;
         	} else if (aclTypeStr.equalsIgnoreCase(ACLType.Domain.toString())){
         		aclType = ACLType.Domain;
         	} else {
             	throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
         	}
+        } else if (zone.getNetworkType() == NetworkType.Advanced) {
+        	aclType = ACLType.Account;
+        } else {
+        	aclType = ACLType.Domain;
         }
 
         // Check if the network is domain specific
@@ -1786,26 +1818,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
             endIP = startIP;
-        }
-
-        // Check if physical network exists
-        PhysicalNetwork pNtwk = null;
-        if (physicalNetworkId != null) {
-            pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
-            if (pNtwk == null) {
-                throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
-            }
-            
-            //check that the physical network is enabled
-            if (pNtwk.getState() != PhysicalNetwork.State.Enabled) {
-                throw new InvalidParameterValueException("Physical network id " + physicalNetworkId + " is in incorrect state: " + pNtwk.getState());
-            }
-        }
-
-        DataCenter zone = _dcDao.findById(zoneId);
-
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
-            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
         }
 
         // If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
@@ -1966,11 +1978,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 if (networkDomain == null) {
                     //1) Get networkDomain from the corresponding account/domain/zone
-                    if (aclType == ACLType.Domain) {
+                	if (aclType == null) {
+                    	networkDomain = getZoneNetworkDomain(zoneId);
+                	} else if (aclType == ACLType.Domain) {
                         networkDomain = getDomainNetworkDomain(domainId, zoneId);
-                    } else {
+                    } else if (aclType == ACLType.Account){
                         networkDomain = getAccountNetworkDomain(owner.getId(), zoneId);
-                    }
+                    } 
                     
                     //2) If null, generate networkDomain using domain suffix from the global config variables
                     if (networkDomain == null) {

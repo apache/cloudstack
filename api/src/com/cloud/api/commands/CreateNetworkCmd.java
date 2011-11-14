@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
@@ -92,7 +91,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
-    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account in Adavnce zone, and to Domain in Basic zone. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
     private String aclType;
     
     @IdentityMapper(entityTableName="physical_network")
@@ -155,7 +154,7 @@ public class CreateNetworkCmd extends BaseCmd {
     }
 
     public String getAclType() {
-		return aclType == null ? ControlledEntity.ACLType.Account.toString() : aclType;
+		return aclType;
 	}
 
 	public Long getZoneId() {
