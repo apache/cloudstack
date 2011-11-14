@@ -17,7 +17,9 @@
  */
 package com.cloud.utils.net;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
@@ -33,6 +35,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -140,22 +144,50 @@ public class NetUtils {
         return cidrList.toArray(new String[0]);
     }
 
+    private static boolean isWindows() {
+    	String os = System.getProperty("os.name");
+    	if(os != null && os.startsWith("Windows"))
+    		return true;
+    	
+    	return false;
+    }
+    
 	public static String getDefaultHostIp() {
-		NetworkInterface nic = null;
-		String pubNic = getDefaultEthDevice();
-		
-		if (pubNic == null) {
-			return null;
+		if(isWindows()) {
+	        Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
+	    	try {
+	    	    Process result = Runtime.getRuntime().exec("route print -4");
+	    	    BufferedReader output = new BufferedReader
+	    	        (new InputStreamReader(result.getInputStream()));
+
+	    	    String line = output.readLine();
+	    	    while(line != null){
+	    	    	Matcher matcher = pattern.matcher(line);
+	    	        if (matcher.find()) {
+	    	        	return matcher.group(2);
+	    	        }
+	    	        line = output.readLine();
+	    	    }
+	    	} catch( Exception e ) { 
+	    	}    	
+	    	return null;
+		} else {
+			NetworkInterface nic = null;
+			String pubNic = getDefaultEthDevice();
+			
+			if (pubNic == null) {
+				return null;
+			}
+			
+			try {
+				nic = NetworkInterface.getByName(pubNic);
+			} catch (final SocketException e) {
+				return null;
+			}
+			
+			String[] info = NetUtils.getNetworkParams(nic);
+			return info[0];
 		}
-		
-		try {
-			nic = NetworkInterface.getByName(pubNic);
-		} catch (final SocketException e) {
-			return null;
-		}
-		
-		String[] info = NetUtils.getNetworkParams(nic);
-		return info[0];
 	}
 	
 	public static String getDefaultEthDevice() {
