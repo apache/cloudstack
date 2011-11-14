@@ -694,7 +694,15 @@
                             }
                           });
                           
-                          if(physicalNetworkId != null) {                            
+                          if(physicalNetworkId != null) {     
+														$.ajax({
+															url: createURL("updatePhysicalNetwork&id=" + physicalNetworkId + "&state=Enabled"),                    
+															dataType: "json",
+															success: function(json) {                      
+																//async job
+															}
+														});
+																				  
                             var networkServiceProviderId;
                             $.ajax({
                               url: createURL("listNetworkServiceProviders&physicalNetworkId=" + physicalNetworkId),
@@ -706,9 +714,20 @@
                                   networkServiceProviderId = items[0].id
                               }
                             });
-                            
+                            //debugger;
                             if(networkServiceProviderId != null) {   
+														  //debugger;
+                              $.ajax({
+                                url: createURL("updateNetworkServiceProvider&id=" + networkServiceProviderId + "&state=Enabled"),
+                                dataType: "json",
+                                async: false,
+                                success: function(json) {
+								                  //async job                                                
+                                }
+                              });   														
+														
                               var virtualRouterElementId;
+															//debugger;
                               $.ajax({
                                 url: createURL("listVirtualRouterElements&nspid=" + networkServiceProviderId),
                                 dataType: "json",
@@ -719,73 +738,17 @@
                                     virtualRouterElementId = items[0].id
                                 }
                               });
+															//debugger;
                               if(virtualRouterElementId != null) {                               
                                 $.ajax({
                                   url: createURL("configureVirtualRouterElement&id=" + virtualRouterElementId + "&enabled=true"),
                                   dataType: "json",
                                   async: false,
                                   success: function(json) {
-                                    var jid = json.configurevirtualrouterelementresponse.jobid;                               
-                                    $.ajax({
-                                      url: createURL("queryAsyncJobResult&jobId=" + jid),
-                                      dataType: "json",
-                                      async: false,
-                                      success: function(json) {
-                                        var result = json.queryasyncjobresultresponse;
-                                        if (result.jobstatus == 0) {
-                                          return; //Job has not completed
-                                        } else {
-                                          if (result.jobstatus == 1) { // Succeeded                                        
-                                            //args.complete();                                        
-                                          }
-                                          else if (result.jobstatus == 2) { // Failed
-                                            //args.error({message:result.jobresult.errortext});
-                                            alert(fromdb(result.jobresult.errortext));
-                                          }
-                                        }
-                                      },
-                                      error: function(XMLHttpResponse) {
-                                        //args.error();
-                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                        alert(errorMsg);                                        
-                                      }
-                                    });                            
+                                    //async job    
                                   }
                                 });                                                                 
-                              }      
-                            
-                              $.ajax({
-                                url: createURL("updateNetworkServiceProvider&id=" + networkServiceProviderId + "&state=Enabled"),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-                                  var jid = json.updatephysicalnetworkresponse.jobid;                               
-                                  $.ajax({
-                                    url: createURL("queryAsyncJobResult&jobId=" + jid),
-                                    dataType: "json",
-                                    async: false,
-                                    success: function(json) {
-                                      var result = json.queryasyncjobresultresponse;
-                                      if (result.jobstatus == 0) {
-                                        return; //Job has not completed
-                                      } else {
-                                        if (result.jobstatus == 1) { // Succeeded                                        
-                                          //args.complete();                                        
-                                        }
-                                        else if (result.jobstatus == 2) { // Failed
-                                          //args.error({message:result.jobresult.errortext});
-                                          alert(fromdb(result.jobresult.errortext));
-                                        }
-                                      }
-                                    },
-                                    error: function(XMLHttpResponse) {
-                                      //args.error();
-                                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                      alert(errorMsg);
-                                    }
-                                  });                            
-                                }
-                              });   
+                              }                               
                             }                                                        
                           }
                           //NaaS (end) 
