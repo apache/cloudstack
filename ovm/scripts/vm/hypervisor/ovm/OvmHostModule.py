@@ -183,6 +183,10 @@ class OvmHost(OvmObject):
             mps = OvmStoragePool()._getAllMountPoints()
             for mountPoint in mps:
                 runningPool = join(mountPoint, 'running_pool')
+                if not exists(runningPool):
+                    logger.debug(OvmHost.getAllVms,, "Primary storage %s not existing, skip it. this should be first getAllVms() called from Ovm resource configure"%runningPool)
+                    continue
+                    
                 for dir in os.listdir(runningPool):
                     vmDir = join(runningPool, dir)
                     if not isMyVmDirLink(vmDir):
