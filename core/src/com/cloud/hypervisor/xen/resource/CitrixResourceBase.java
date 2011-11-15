@@ -103,7 +103,6 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -123,7 +122,6 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -2858,7 +2856,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             task = vm.poolMigrateAsync(conn, destHost, other);
             try {
                 // poll every 1 seconds 
-                long timeout = (long)(_migratewait) * 1000L;
+                long timeout = (_migratewait) * 1000L;
                 waitForTask(conn, task, 1000, timeout);
                 checkForSuccess(conn, task);
             } catch (Types.HandleInvalid e) {
@@ -3043,9 +3041,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     @Override
     public StopAnswer execute(StopCommand cmd) {
-        Connection conn = getConnection();
         String vmName = cmd.getVmName();
         try {
+            Connection conn = getConnection();
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
@@ -3161,6 +3159,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String msg = "Stop Vm " + vmName + " fail due to " + e.getMessage();
             s_logger.warn(msg, e);
             return new StopAnswer(cmd, msg);
+        } catch (Exception e) {
+            s_logger.warn("Unable to stop " + vmName + " due to ",  e);
+            return new StopAnswer(cmd, e);
         }
         return new StopAnswer(cmd, "Stop VM failed");
     }
