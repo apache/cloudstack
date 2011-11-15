@@ -100,7 +100,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
         if(broadcastDomainRange != null){
             this.broadcastDomainRange = broadcastDomainRange;
         }else{
-            this.broadcastDomainRange = BroadcastDomainRange.ZONE;
+            this.broadcastDomainRange = BroadcastDomainRange.POD;
         }
         this.state = State.Disabled;
         this.uuid = UUID.randomUUID().toString();

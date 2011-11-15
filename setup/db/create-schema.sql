@@ -1859,7 +1859,7 @@ CREATE TABLE `cloud`.`physical_network` (
   `vnet` varchar(255),
   `speed` varchar(32),  
   `domain_id` bigint unsigned COMMENT 'foreign key to domain id',
-  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'ZONE' COMMENT 'range of broadcast domain : POD/ZONE', 
+  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'POD' COMMENT 'range of broadcast domain : POD/ZONE', 
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'what state is this configuration in',
   `created` datetime COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',

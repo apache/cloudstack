@@ -3759,6 +3759,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        if(broadcastDomainRange == null){
+            if(zone.getNetworkType() == NetworkType.Basic){
+                broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.POD;
+            }else{
+                broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.ZONE;
+            }
+        }
+        
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();

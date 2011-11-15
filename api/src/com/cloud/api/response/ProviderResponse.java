@@ -81,7 +81,7 @@ public class ProviderResponse extends BaseResponse {
     }
 
     public void setId(String uuid) {
-        this.id = id;
+        this.id = uuid;
     }
     
     public String getId() {

@@ -1388,7 +1388,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             zone = _zoneDao.persist(zone);
 
             // Create default Physical Network
-            long physicalNetworkId = createDefaultPhysicalNetwork(zone.getId(), domainId);
+            long physicalNetworkId = createDefaultPhysicalNetwork(zone, domainId);
             
             //add VirtualRouter as the defualt network service provider 
             PhysicalNetworkServiceProvider nsp = _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
@@ -1406,9 +1406,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
-    private long createDefaultPhysicalNetwork(long zoneId, Long domainId){
+    private long createDefaultPhysicalNetwork(DataCenter zone, Long domainId){
         //create entry
-        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zoneId, null, null, null, PhysicalNetwork.BroadcastDomainRange.ZONE.toString(), domainId, null);
+        String broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.POD.toString();
+        if(zone.getNetworkType() == NetworkType.Basic){
+            broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.POD.toString();
+        }else{
+            broadcastDomainRange = PhysicalNetwork.BroadcastDomainRange.ZONE.toString();
+        }
+        PhysicalNetwork defaultNetwork = _networkMgr.createPhysicalNetwork(zone.getId(), null, null, null, broadcastDomainRange, domainId, null);
         
         String defaultXenLabel = "cloud-private";
         
