@@ -126,6 +126,7 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     @Column(name="sort_key")
     int sortKey;
     
+    @Transient
     Map details;
 
     @Override

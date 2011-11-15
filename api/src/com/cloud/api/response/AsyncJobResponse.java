@@ -59,14 +59,6 @@ public class AsyncJobResponse extends BaseResponse {
     @SerializedName(ApiConstants.CREATED) @Param(description="	the created date of the job")
     private Date created;
 
-    public Long getId() {
-        return getJobId();
-    }
-
-    public void setId(Long id) {
-        setJobId(id);
-    }
-
     public Long getAccountId() {
         return accountId.getValue();
     }

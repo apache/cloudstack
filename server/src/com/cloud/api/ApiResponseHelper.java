@@ -1874,7 +1874,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         jobResponse.setAccountId(job.getAccountId());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
-    	jobResponse.setId(job.getId());
+    	jobResponse.setJobId(job.getId());
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
@@ -2165,7 +2165,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         AsyncJobResult result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
         AsyncJobResponse response = new AsyncJobResponse();
         
-    	response.setId(result.getJobId());
+    	response.setJobId(result.getJobId());
         response.setJobStatus(result.getJobStatus());
         response.setJobProcStatus(result.getProcessStatus());
         response.setJobResultCode(result.getResultCode());

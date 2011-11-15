@@ -22,6 +22,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -158,12 +160,22 @@ public class ApiResponseSerializer {
         }
     }
 
+    public static Field[] getFlattenFields(Class<?> clz) {
+        List<Field> fields = new ArrayList<Field>();
+        fields.addAll(Arrays.asList(clz.getDeclaredFields()));
+        if (clz.getSuperclass() != null) {
+            fields.addAll(Arrays.asList(getFlattenFields(clz.getSuperclass())));
+        }
+        return fields.toArray(new Field[] {});
+    }
+    
     private static void serializeResponseObjFieldsXML(StringBuilder sb, ResponseObject obj) {
         boolean isAsync = false;
         if (obj instanceof AsyncJobResponse)
             isAsync = true;
 
-        Field[] fields = obj.getClass().getDeclaredFields();
+        //Field[] fields = obj.getClass().getDeclaredFields();
+        Field[] fields = getFlattenFields(obj.getClass());
         for (Field field : fields) {
             if ((field.getModifiers() & Modifier.TRANSIENT) != 0) {
                 continue; // skip transient fields
@@ -214,7 +226,8 @@ public class ApiResponseSerializer {
                 		IdentityDao identityDao = new IdentityDaoImpl();
                 		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
                 	}
-                    sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
+                	if(id != null && !id.isEmpty())
+                		sb.append("<" + serializedName.value() + ">" + id + "</" + serializedName.value() + ">");
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {
