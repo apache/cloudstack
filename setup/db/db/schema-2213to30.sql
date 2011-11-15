@@ -217,3 +217,11 @@ ALTER TABLE `cloud`.`guest_os_category` ADD CONSTRAINT `uc_guest_os_category__uu
 ALTER TABLE `cloud`.`nics` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `uc_nics__uuid` UNIQUE (`uuid`);
 
+CREATE TABLE `cloud`.`vm_template_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `template_id` bigint unsigned NOT NULL COMMENT 'template id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

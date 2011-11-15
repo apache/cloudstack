@@ -185,7 +185,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
         try {
             TemplateProfile tmplProfile;
             tmplProfile = adapter.prepare(false, userId, cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), false, false, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), false,
-                    "BareMetal", cmd.getOsTypeId(), pxe.getDataCenterId(), HypervisorType.BareMetal, account.getAccountName(), account.getDomainId(), "0", true);
+                    "BareMetal", cmd.getOsTypeId(), pxe.getDataCenterId(), HypervisorType.BareMetal, account.getAccountName(), account.getDomainId(), "0", true, cmd.getDetails());
  
             if (!_pxeMgr.prepareCreateTemplate(_pxeMgr.getPxeServerType(pxe), pxe.getId(), vm, cmd.getUrl())) {
                 throw new Exception("Prepare PXE boot file for host  " + hostId + " failed");

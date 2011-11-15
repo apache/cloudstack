@@ -18,7 +18,9 @@
 
 package com.cloud.api.commands;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -91,7 +93,10 @@ import com.cloud.user.UserContext;
     private String url;
 
     @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
-    private String templateTag;    
+    private String templateTag;
+    
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
+    protected Map details;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -151,7 +156,18 @@ import com.cloud.user.UserContext;
 
     public String getTemplateTag() {
         return templateTag;
-    }    
+    }
+    
+    public Map getDetails() {
+    	if (details == null || details.isEmpty()) {
+    		return null;
+    	}
+    	
+    	Collection paramsCollection = details.values();
+    	Map params = (Map) (paramsCollection.toArray())[0];
+    	return params;
+    }
+    
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////

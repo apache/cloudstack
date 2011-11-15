@@ -906,6 +906,15 @@ CREATE TABLE  `cloud`.`vm_template` (
   CONSTRAINT `uc_vm_template__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`vm_template_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `template_id` bigint unsigned NOT NULL COMMENT 'template id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `cloud`.`vm_instance` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL,

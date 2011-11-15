@@ -148,6 +148,7 @@ import com.cloud.storage.dao.StoragePoolWorkDaoImpl;
 import com.cloud.storage.dao.SwiftDaoImpl;
 import com.cloud.storage.dao.UploadDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
+import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
 import com.cloud.storage.dao.VMTemplateHostDaoImpl;
 import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateSwiftDaoImpl;
@@ -195,6 +196,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     protected void populateDaos() {
         addDao("StackMaidDao", StackMaidDaoImpl.class);
         addDao("VMTemplateZoneDao", VMTemplateZoneDaoImpl.class);
+        addDao("VMTemplateDetailsDao", VMTemplateDetailsDaoImpl.class);
         addDao("DomainRouterDao", DomainRouterDaoImpl.class);
         addDao("HostDao", HostDaoImpl.class);
         addDao("VMInstanceDao", VMInstanceDaoImpl.class);
