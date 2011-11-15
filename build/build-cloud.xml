@@ -13,7 +13,6 @@
     -->
   <dirname property="base.dir" file="${ant.file.Cloud Stack}/.." />
   <property name="build.dir" location="${base.dir}/build" />
-  <property name="test.classes.dir" location="${test.target.dir}/classes" />
 
   <!-- Import anything that the user wants to set-->
   <!-- Import properties files and environment variables here -->
@@ -102,9 +101,6 @@
   <property name="console-viewer.dir" location="${base.dir}/console-viewer" />
   <property name="console-viewer.dist.dir" location="${dist.dir}/console-viewer" />
 
-  <property name="test.target.dir" location="${target.dir}/test" />
-  <property name="test.classes.dir" location="${test.target.dir}/classes" />
-
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
   <property name="deploy.dir" location="${build.dir}/deploy" />
@@ -114,10 +110,6 @@
 
   <!-- directory for vmware-base library -->
   <property name="vmware-base.dir" location="${base.dir}/vmware-base" />
-
-  <!-- directories for testing -->
-  <property name="test.target.dir" location="${target.dir}/test" />
-  <property name="test.classes.dir" location="${test.target.dir}/classes" />
 
   <!-- directories for branding -->
   <property name="branding.dir" location="${build.dir}/deploy/branding/${branding.name}" />

@@ -18,9 +18,14 @@
 package com.cloud.offering;
 
 /**
+ * An offering is a package of features offered to the end user.  OfferingManager
+ * is responsible for the life cycle of the offerings available from CloudStack.
+ * An administrator can create, delete, enable, and disable offerings.  
  * 
- * OfferingManager manages the different type of service offerings 
- * available to the administrators of the system. 
+ * There are three types of offerings:
+ *   - Service Offering - package of computing power and the root disk.
+ *   - Disk Offering - package of disk performance and size specification.
+ *   - Network Offering - package of services available on a network.
  *
  */
 public interface OfferingManager {
@@ -29,18 +34,16 @@ public interface OfferingManager {
      * @return ServiceOffering
      */
     ServiceOffering createServiceOffering();
-    
+
     /**
      * Creates a disk offering.
      * @return DiskOffering
      */
     DiskOffering createDiskOffering();
-    
+
     /**
      * Creates a network offering.
      * @return NetworkOffering
      */
     NetworkOffering createNetworkOffering();
-    
-
 }

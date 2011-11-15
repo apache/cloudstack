@@ -28,6 +28,7 @@
   <property name="tools.dist.dir" location="${dist.dir}/cloudapitools" />
 
   <property name="test.target.dir" location="${target.dir}/test" />
+  <property name="test.classes.dir" location="${test.target.dir}/classes"/>
 
   <property name="agent-simulator.jar" value="cloud-agent-simulator.jar" />
   <property name="testclient.jar" value="cloud-test.jar" />
