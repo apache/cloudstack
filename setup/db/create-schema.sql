@@ -1929,15 +1929,17 @@ CREATE TABLE `cloud`.`physical_network_service_providers` (
 
 CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which the device is added',
-  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this device',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which load balancer device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this load balancer device',
   `device_name` varchar(255) NOT NULL COMMENT 'name of the load balancer device',
-  `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
-  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state of the device',
-  `managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device is provisioned and its life cycle is managed by by cloudstack',
-  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
-  `parent_host_id` bigint unsigned COMMENT 'if cloudstack managed, then host id on which this device is provisioned',
   `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the load balancer device',
+  `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
+  `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance meant for dedicated use only',
+  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned and its life cycle is managed by by cloudstack',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
+  `parent_host_id` bigint unsigned COMMENT 'if the device/appliance is cloudstack managed, then host id on which this device/appliance is provisioned',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_external_lb_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_lb_devices_parent_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
@@ -1946,13 +1948,14 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
 
 CREATE TABLE `cloud`.`external_firewall_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external firewall device',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which the device is added',
-  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this device',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which firewall device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this firewall device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the firewall device',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
-  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state of the device',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Allocated) of the device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external firewall device',
   `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the external firewall device',
-  `capacity_type` varchar(32) NOT NULL DEFAULT 'Throughput' COMMENT 'Type of the capacity',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_external_firewall_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_firewall_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
@@ -1960,9 +1963,9 @@ CREATE TABLE `cloud`.`external_firewall_devices` (
 
 CREATE TABLE `cloud`.`network_external_lb_device_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
   `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
-  `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external LB device',
-  `subscribed_capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the device this network is subscrbed to',
+  `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device assigned for this network',
   `created` datetime COMMENT 'Date from when network started using the device',
   `removed` datetime COMMENT 'Date till the network stopped using the device ',
   PRIMARY KEY (`id`),
@@ -1972,8 +1975,9 @@ CREATE TABLE `cloud`.`network_external_lb_device_map` (
 
 CREATE TABLE `cloud`.`network_external_firewall_device_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
   `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
-  `external_firewall_device_id` bigint unsigned NOT NULL COMMENT 'id of external firewall device',
+  `external_firewall_device_id` bigint unsigned NOT NULL COMMENT 'id of external firewall device assigned for this device',
   `created` datetime COMMENT 'Date from when network started using the device',
   `removed` datetime COMMENT 'Date till the network stopped using the device ',
   PRIMARY KEY (`id`),

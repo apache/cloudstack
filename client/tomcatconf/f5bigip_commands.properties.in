@@ -1,0 +1,7 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+#### f5 big ip load balancer commands
+addExternalLoadBalancer = com.cloud.api.commands.AddExternalLoadBalancerCmd;7
+deleteExternalLoadBalancer = com.cloud.api.commands.DeleteExternalLoadBalancerCmd;7
+listExternalLoadBalancer = com.cloud.api.commands.ListExternalLoadBalancerCmd;7

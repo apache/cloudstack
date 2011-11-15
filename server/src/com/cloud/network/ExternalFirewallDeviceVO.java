@@ -18,6 +18,8 @@
 
 package com.cloud.network;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,7 +28,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import com.cloud.network.PhysicalNetworkServiceProvider.State;
 
 /**
  * ExternalFirewallDeviceVO contains information of a external firewall device (Juniper SRX) added into a deployment
@@ -40,6 +41,9 @@ public class ExternalFirewallDeviceVO {
     @Column(name = "id")
     private long id;
 
+    @Column(name="uuid")
+    private String uuid;
+
     @Column(name = "host_id")
     private long hostId;
 
@@ -49,35 +53,43 @@ public class ExternalFirewallDeviceVO {
     @Column(name = "provider_name")
     private String providerName;
 
+    @Column(name = "device_name")
+    private String deviceName;
+
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
-    State state;
+    FirewallDeviceState state;
 
     @Column(name = "capacity")
     private long capacity;
 
-    @Column(name = "capacity_type")
-    private String capacity_type;
-
     @Column(name = "allocation_state")
     @Enumerated(value=EnumType.STRING)
-    private AllocationState allocationState;
+    private FirewallDeviceAllocationState allocationState;
 
-    public enum AllocationState {
+    //keeping it enum for future possible states Maintenance, Shutdown
+    public enum FirewallDeviceState {
+        Enabled,
+        Disabled
+    }
+
+    public enum FirewallDeviceAllocationState {
         Free,
         Allocated
     }
 
-    public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name) {
+    public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
+        this.deviceName = device_name;
         this.hostId = hostId;
-        this.state = PhysicalNetworkServiceProvider.State.Disabled;
-        this.allocationState = AllocationState.Free;
+        this.state = FirewallDeviceState.Disabled;
+        this.allocationState = FirewallDeviceAllocationState.Free;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public ExternalFirewallDeviceVO() {
-
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public long getId() {
@@ -92,6 +104,10 @@ public class ExternalFirewallDeviceVO {
         return providerName;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
     public long getHostId() {
         return hostId;
     }
@@ -100,23 +116,27 @@ public class ExternalFirewallDeviceVO {
         return capacity;
     }
 
-    public String getCapacityType() {
-        return capacity_type;
-    }
-
-    public State getState() {
+    public FirewallDeviceState getState() {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(FirewallDeviceState state) {
         this.state = state;
     }
 
-    public AllocationState getAllocationState() {
+    public FirewallDeviceAllocationState getAllocationState() {
         return allocationState;
     }
 
-    public void setAllocationState(AllocationState allocationState) {
+    public void setAllocationState(FirewallDeviceAllocationState allocationState) {
         this.allocationState = allocationState;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

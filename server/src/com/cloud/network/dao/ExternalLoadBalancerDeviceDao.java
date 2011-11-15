@@ -21,12 +21,50 @@ package com.cloud.network.dao;
 import java.util.List;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.utils.db.GenericDao;
 
 public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBalancerDeviceVO, Long> {
 
-    List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkServiceProvider(long physicalNetworkId, String provider_name);
+    /**
+     * list all the load balancer devices added in to this physical network?
+     * @param physicalNetworkId physical Network Id
+     * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network.
+     */
     List<ExternalLoadBalancerDeviceVO> listByPhysicalNetwork(long physicalNetworkId);
-    List<ExternalLoadBalancerDeviceVO> listByDeviceAllocationState(long physicalNetworkId, String provider_name, LBDeviceAllocationState state);
 
+    /**
+     * list the load balancer devices added in to this physical network of certain provider type?
+     * @param physicalNetworkId physical Network Id
+     * @param provider_name netwrok service provider name
+     * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network of a provider type
+     */
+    List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String provider_name);
+
+    /**
+     * list the load balancer devices added in to this physical network by their allocation state
+     * @param physicalNetworkId physical Network Id
+     * @param provider_name netwrok service provider name
+     * @param allocationState load balancer device allocation state
+     * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network with a device allocation state
+     */
+    List<ExternalLoadBalancerDeviceVO> listByProviderAndDeviceAllocationState(long physicalNetworkId, String provider_name, LBDeviceAllocationState allocationState);
+
+    /**
+     * list the load balancer devices added in to this physical network by the device status (enabled/disabled)
+     * @param physicalNetworkId physical Network Id
+     * @param provider_name netwrok service provider name
+     * @param state load balancer device status
+     * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network with a device state
+     */
+    List<ExternalLoadBalancerDeviceVO> listByProviderAndDeviceStaus(long physicalNetworkId, String provider_name, LBDeviceState state);
+
+    /**
+     * list the load balancer devices added in to this physical network by the managed type (external/cloudstack managed)
+     * @param physicalNetworkId physical Network Id
+     * @param provider_name netwrok service provider name
+     * @param managed managed type
+     * @return list of ExternalLoadBalancerDeviceVO for the devices in to this physical network of a managed type
+     */
+    List<ExternalLoadBalancerDeviceVO> listByProviderAndManagedType(long physicalNetworkId, String provider_name, boolean managed);
 }

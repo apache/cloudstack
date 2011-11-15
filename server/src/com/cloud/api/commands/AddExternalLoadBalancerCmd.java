@@ -26,22 +26,22 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkDeviceManager;
-import com.cloud.server.ManagementService;
+import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="Adds an external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
+@Implementation(description="Adds F5 external load balancer appliance.", responseObject = ExternalLoadBalancerResponse.class)
+@Deprecated // API supported only for backward compatibility.
 public class AddExternalLoadBalancerCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(AddExternalLoadBalancerCmd.class.getName());
-	private static final String s_name = "addexternalloadbalancerresponse";
-	
-	/////////////////////////////////////////////////////
+    public static final Logger s_logger = Logger.getLogger(AddExternalLoadBalancerCmd.class.getName());
+    private static final String s_name = "addexternalloadbalancerresponse";
+    
+    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 	
@@ -49,65 +49,64 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external load balancer appliance.")
 	private Long zoneId;
 
-	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external load balancer appliance.")
-	private String url;	 
-	
-	@Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Username of the external load balancer appliance.")
-	private String username;	 
-	
-	@Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external load balancer appliance.")
-	private String password;	 
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external load balancer appliance.")
+    private String url;
 
-	///////////////////////////////////////////////////
-	/////////////////// Accessors ///////////////////////
-	/////////////////////////////////////////////////////
-	 
-	public Long getZoneId() {
-		return zoneId;
-	}
-	
-	public String getUrl() {
-		return url;
-	}
-	
-	public String getUsername() {
-		return username;
-	}
-	
-	public String getPassword() {
-		return password;
-	}
-	
-	/////////////////////////////////////////////////////
-	/////////////// API Implementation///////////////////
-	/////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Username of the external load balancer appliance.")
+    private String username;
 
-	@Override
-	public String getCommandName() {
-		return s_name;
-	}
-	
-	@Override
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external load balancer appliance.")
+    private String password;
+
+    ///////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+     
+    public Long getZoneId() {
+        return zoneId;
+    }
+    
+    public String getUrl() {
+        return url;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public String getPassword() {
+        return password;
+    }
+
+    @PlugService
+    F5ExternalLoadBalancerElementService _f5DeviceManagerService;
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
+
+    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-	 
-	@Override
+
+    @Override
     public void execute(){
-		try {
-		    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-		    ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
-			Host externalLoadBalancer = externalNetworkMgr.addExternalLoadBalancer(this);
-			ExternalLoadBalancerResponse response = externalNetworkMgr.createExternalLoadBalancerResponse(externalLoadBalancer);
-			response.setObjectName("externalloadbalancer");
-			response.setResponseName(getCommandName());
-			this.setResponseObject(response);
-		} catch (InvalidParameterValueException ipve) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
-		} catch (CloudRuntimeException cre) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
-		}
+        try {
+            Host externalLoadBalancer = _f5DeviceManagerService.addExternalLoadBalancer(this);
+            ExternalLoadBalancerResponse response = _f5DeviceManagerService.createExternalLoadBalancerResponse(externalLoadBalancer);
+            response.setObjectName("externalloadbalancer");
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } catch (InvalidParameterValueException ipve) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+        } catch (CloudRuntimeException cre) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+        }
     }
-
 }
-

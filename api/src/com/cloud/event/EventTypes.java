@@ -234,4 +234,12 @@ public class EventTypes {
     public static final String EVENT_TRAFFIC_TYPE_DELETE = "TRAFFIC.TYPE.DELETE";
     public static final String EVENT_TRAFFIC_TYPE_UPDATE = "TRAFFIC.TYPE.UPDATE";
 
+    // external network device events
+    public static final String EVENT_EXTERAL_LB_DEVICE_ADD = "PHYSICAL.LOADBALANCER.ADD" ;
+    public static final String EVENT_EXTERAL_LB_DEVICE_DELETE = "PHYSICAL.LOADBALANCER.DELETE";
+    public static final String EVENT_EXTERAL_LB_DEVICE_CONFIGURE = "PHYSICAL.LOADBALANCER.CONFIGURE";
+
+    public static final String EVENT_EXTERAL_FIREWALL_DEVICE_ADD = "PHYSICAL.FIREWALL.ADD" ;
+    public static final String EVENT_EXTERAL_FIREWALL_DEVICE_DELETE = "PHYSICAL.FIREWALL.DELETE";
+    public static final String EVENT_EXTERAL_FIREWALL_DEVICE_CONFIGURE = "PHYSICAL.FIREWALL.CONFIGURE";
 }

@@ -1,0 +1,7 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+#### juniper srx firewall commands
+addExternalFirewall = com.cloud.api.commands.AddExternalFirewallCmd;7
+deleteExternalFirewall = com.cloud.api.commands.DeleteExternalFirewallCmd;7
+listExternalFirewall = com.cloud.api.commands.ListExternalFirewallCmd;7

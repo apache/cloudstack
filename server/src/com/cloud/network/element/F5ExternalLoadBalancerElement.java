@@ -19,23 +19,36 @@
 
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.AddExternalLoadBalancerCmd;
+import com.cloud.api.commands.DeleteExternalLoadBalancerCmd;
+import com.cloud.api.commands.ListExternalLoadBalancersCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalNetworkDeviceManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.network.ExternalLoadBalancerDeviceManager;
+import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
+import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.Network;
+import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -43,25 +56,31 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.resource.F5BigIpResource;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.utils.component.AdapterBase;
+import com.cloud.resource.ServerResource;
+import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@SuppressWarnings("deprecation")
 @Local(value=NetworkElement.class)
-public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider {
+public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
 
     private static final Logger s_logger = Logger.getLogger(F5ExternalLoadBalancerElement.class);
     
     @Inject NetworkManager _networkManager;
-    @Inject ExternalNetworkDeviceManager _externalNetworkManager;
     @Inject ConfigurationManager _configMgr;
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
-    
+    @Inject DataCenterDao _dcDao;
+    @Inject PhysicalNetworkDao _physicalNetworkDao;
+    @Inject HostDao _hostDao;
+
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
@@ -81,7 +100,7 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
         }
 
         try {
-            return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
+            return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception
             return false;
@@ -105,7 +124,7 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
         }
         
         try {
-            return _externalNetworkManager.manageGuestNetworkWithExternalLoadBalancer(false, guestConfig); 
+            return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig); 
         } catch (InsufficientCapacityException capacityException) {
             // TODO: handle out of capacity exception
             return false;
@@ -123,7 +142,7 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
             return false;
         }
     	
-    	return _externalNetworkManager.applyLoadBalancerRules(config, rules);
+    	return applyLoadBalancerRules(config, rules);
     }
     
     @Override
@@ -175,5 +194,77 @@ public class F5ExternalLoadBalancerElement extends AdapterBase implements LoadBa
     public boolean canEnableIndividualServices() {
         return false;
     }
-   
+
+    @Override
+    public String getPropertiesFile() {
+        return "f5bigip_commands.properties";
+    }
+
+    @Override
+    @Deprecated
+    public Host addExternalLoadBalancer(AddExternalLoadBalancerCmd cmd) {
+        Long zoneId = cmd.getZoneId();
+        DataCenterVO zone =null;
+        PhysicalNetworkVO pNetwork=null;
+        ExternalLoadBalancerDeviceVO lbDeviceVO = null;
+        HostVO lbHost = null;
+
+        zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+        }
+
+        List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
+        if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
+            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
+                    + zoneId + " to add this device.");
+        }
+        pNetwork = physicalNetworks.get(0);
+
+        String deviceType = NetworkDevice.F5BigIpLoadBalancer.getName();
+        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, (ServerResource) new F5BigIpResource());
+
+        if (lbDeviceVO != null) {
+            lbHost =  _hostDao.findById(lbDeviceVO.getHostId());
+        }
+
+        return lbHost;
+    }
+
+    @Override
+    @Deprecated
+    public boolean deleteExternalLoadBalancer(DeleteExternalLoadBalancerCmd cmd) {
+        return deleteExternalLoadBalancer(cmd.getId());
+    }
+
+    @Override
+    @Deprecated
+    public List<Host> listExternalLoadBalancers(ListExternalLoadBalancersCmd cmd) {
+        Long zoneId = cmd.getZoneId();
+        DataCenterVO zone =null;
+        PhysicalNetworkVO pNetwork=null;
+
+        if (zoneId != null) {
+            zone = _dcDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+            }
+
+            List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
+            if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
+                throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
+                        + zoneId + " to add this device.");
+            }
+            pNetwork = physicalNetworks.get(0);
+            return listExternalLoadBalancers(pNetwork.getId(), NetworkDevice.F5BigIpLoadBalancer.getName());
+        } else {
+            throw new InvalidParameterValueException("Zone Id must be specified to list the external load balancers");
+        }
+    }
+
+    @Override
+    @Deprecated
+    public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLb) {
+        return super.createExternalLoadBalancerResponse(externalLb);
+    }
 }

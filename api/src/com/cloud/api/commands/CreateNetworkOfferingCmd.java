@@ -259,6 +259,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 if ((capability == null) || (capabilityName == null) || (capabilityValue == null) ) {
                     throw new InvalidParameterValueException("Invalid capability:" + capabilityName + " capability value:" + capabilityValue);
                 }
+
                 if (svc.equalsIgnoreCase(service.getName())) {
                     capabilityMap.put(capability, capabilityValue);
                 }

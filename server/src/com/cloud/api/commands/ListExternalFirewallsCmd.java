@@ -29,13 +29,11 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.PlugService;
 import com.cloud.api.response.ListResponse;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalNetworkDeviceManager;
-import com.cloud.server.ManagementService;
+import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.server.api.response.ExternalFirewallResponse;
-import com.cloud.utils.component.ComponentLocator;
 
 @Implementation(description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {
@@ -62,21 +60,23 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @PlugService JuniperSRXFirewallElementService _srxElementService;
+
     @Override
     public String getCommandName() {
         return s_name;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void execute(){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        ExternalNetworkDeviceManager externalNetworkMgr = locator.getManager(ExternalNetworkDeviceManager.class);
-    	List<? extends Host> externalFirewalls = externalNetworkMgr.listExternalFirewalls(this);
+
+    	List<? extends Host> externalFirewalls = _srxElementService.listExternalFirewalls(this);
 
         ListResponse<ExternalFirewallResponse> listResponse = new ListResponse<ExternalFirewallResponse>();
         List<ExternalFirewallResponse> responses = new ArrayList<ExternalFirewallResponse>();
         for (Host externalFirewall : externalFirewalls) {
-        	ExternalFirewallResponse response = externalNetworkMgr.createExternalFirewallResponse(externalFirewall);
+        	ExternalFirewallResponse response = _srxElementService.createExternalFirewallResponse(externalFirewall);
         	response.setObjectName("externalfirewall");
         	response.setResponseName(getCommandName());
         	responses.add(response);

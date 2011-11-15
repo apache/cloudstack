@@ -53,7 +53,7 @@ public class NetworkExternalLoadBalancerDaoImpl extends GenericDaoBase<NetworkEx
     }
 
     @Override
-    public List<NetworkExternalLoadBalancerVO> listByLBDeviceId(long lbDeviceId) {
+    public List<NetworkExternalLoadBalancerVO> listByLoadBalancerDeviceId(long lbDeviceId) {
         SearchCriteria<NetworkExternalLoadBalancerVO> sc = deviceIdSearch.create();
         sc.setParameters("externalLBDeviceId", lbDeviceId);
         return search(sc, null);

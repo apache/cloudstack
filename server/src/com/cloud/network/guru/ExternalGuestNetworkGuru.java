@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
@@ -35,11 +36,13 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.ExternalNetworkDeviceManager;
 import com.cloud.network.Network;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -64,8 +67,6 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     NetworkManager _networkMgr;
     @Inject
-    ExternalNetworkDeviceManager _externalNetworkMgr;
-    @Inject
     NetworkDao _networkDao;
     @Inject
     DataCenterDao _zoneDao;
@@ -77,6 +78,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     OvsNetworkManager _ovsNetworkMgr;
     @Inject
     OvsTunnelManager _tunnelMgr;
+    @Inject PhysicalNetworkDao _physicalNetworkDao;
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
@@ -129,12 +131,12 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         // Determine the offset from the lowest vlan tag
-        int offset = _externalNetworkMgr.getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
+        int offset = getVlanOffset(config.getPhysicalNetworkId(), vlanTag);
 
         // Determine the new gateway and CIDR
         String[] oldCidr = config.getCidr().split("/");
         String oldCidrAddress = oldCidr[0];
-        int cidrSize = _externalNetworkMgr.getGloballyConfiguredCidrSize();
+        int cidrSize = getGloballyConfiguredCidrSize();
 
         // If the offset has more bits than there is room for, return null
         long bitsInOffset = 32 - Integer.numberOfLeadingZeros(offset);
@@ -169,6 +171,29 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         return implemented;
+    }
+
+    public int getVlanOffset(long physicalNetworkId, int vlanTag) {
+        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (pNetwork == null) {
+            throw new CloudRuntimeException("Could not find the physical Network " + physicalNetworkId + ".");
+        }
+
+        if (pNetwork.getVnet() == null) {
+            throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
+        }
+        String vlanRange[] = pNetwork.getVnet().split("-");
+        int lowestVlanTag = Integer.valueOf(vlanRange[0]);
+        return vlanTag - lowestVlanTag;
+    }
+
+    public int getGloballyConfiguredCidrSize() {
+        try {
+            String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
+            return 8 + Integer.parseInt(globalVlanBits);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
+        }
     }
 
     @Override
@@ -227,7 +252,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             nic.setDns2(dc.getDns2());
             nic.setNetmask(NetUtils.cidr2Netmask(config.getCidr()));
             long cidrAddress = NetUtils.ip2Long(config.getCidr().split("/")[0]);
-            int cidrSize = _externalNetworkMgr.getGloballyConfiguredCidrSize();
+            int cidrSize = getGloballyConfiguredCidrSize();
             nic.setGateway(config.getGateway());
 
             if (nic.getIp4Address() == null) {

@@ -18,6 +18,8 @@
 
 package com.cloud.network;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -28,7 +30,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * ExternalLoadBalancerDeviceVO contains information of a external load balancer devices (F5/Netscaler VPX,MPX,SDX) added into a deployment
+ * ExternalLoadBalancerDeviceVO contains information on external load balancer devices (F5/Netscaler VPX,MPX,SDX) added into a deployment
   */
 
 @Entity
@@ -39,6 +41,9 @@ public class ExternalLoadBalancerDeviceVO {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
+
+    @Column(name="uuid")
+    private String uuid;
 
     @Column(name = "host_id")
     private long hostId;
@@ -60,29 +65,29 @@ public class ExternalLoadBalancerDeviceVO {
     @Enumerated(value=EnumType.STRING)
     private LBDeviceAllocationState allocationState;
 
-    @Column(name="managed")
-    boolean managedDevice;
+    @Column(name="is_managed")
+    private boolean isManagedDevice;
     
+    @Column(name="is_dedicated")
+    private boolean isDedicatedDevice;
+
     @Column(name = "parent_host_id")
     private long parentHostId;
 
     @Column(name = "capacity")
     private long capacity;
 
+    //keeping it enum for future possible states Maintenance, Shutdown
     public enum LBDeviceState {
         Enabled,
         Disabled
     }
 
     public enum LBDeviceAllocationState {
-        Free,           // In this state no networks are using this device for load balancing
-        InSharedUse,    // In this state one or more networks will be using this device for load balancing
-        InDedicatedUse  // In this state this device is dedicated for a single network
-    }
-
-    public enum LBDeviceManagedType {
-        CloudManaged,     // Cloudstack managed load balancer (e.g. VPX instances on SDX for now, in future releases load balancer provisioned from template)
-        ExternalManaged   // Externally managed
+        Free,      // In this state no networks are using this device for load balancing
+        Shared,    // In this state one or more networks will be using this device for load balancing
+        Dedicated, // In this state this device is dedicated for a single network
+        Provider   // This state is set only for device that can dynamically provision LB appliances
     }
 
     public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name) {
@@ -92,22 +97,22 @@ public class ExternalLoadBalancerDeviceVO {
         this.hostId = hostId;
         this.state = LBDeviceState.Disabled;
         this.allocationState = LBDeviceAllocationState.Free;
-        this.managedDevice = false;
+        this.isManagedDevice = false;
+        this.uuid = UUID.randomUUID().toString();
+
+        if (device_name.equalsIgnoreCase(ExternalNetworkDeviceManager.NetworkDevice.NetscalerSDXLoadBalancer.getName())) {
+            this.allocationState = LBDeviceAllocationState.Provider;
+        }
     }
 
     public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, boolean managed, long parentHostId) {
         this(hostId, physicalNetworkId, provider_name, device_name);
-        this.managedDevice = managed;
+        this.isManagedDevice = managed;
         this.parentHostId = parentHostId;
-    }
-    
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity) {
-        this(hostId, physicalNetworkId, provider_name, device_name);
-        this.capacity = capacity;
     }
 
     public ExternalLoadBalancerDeviceVO() {
-    
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public long getId() {
@@ -160,5 +165,29 @@ public class ExternalLoadBalancerDeviceVO {
 
     public void setAllocationState(LBDeviceAllocationState allocationState) {
         this.allocationState = allocationState;
+    }
+    
+    public boolean getIsManagedDevice() {
+        return isManagedDevice;
+    }
+
+    public void setIsManagedDevice(boolean managed) {
+        this.isManagedDevice = managed;
+    }
+
+    public boolean getIsDedicatedDevice() {
+        return isDedicatedDevice;
+    }
+
+    public void setIsDedicatedDevice(boolean isDedicated) {
+        isDedicatedDevice = isDedicated;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }

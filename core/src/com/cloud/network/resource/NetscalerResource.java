@@ -24,6 +24,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.routing.CreateLBApplianceCommand;
+import com.cloud.agent.api.routing.DestroyLBApplianceCommand;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
 import com.cloud.agent.api.MaintainAnswer;
@@ -53,7 +55,6 @@ import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.config.ns.nsconfig;
 import com.citrix.netscaler.nitro.resource.config.lb.lbvserver;
-import com.citrix.netscaler.nitro.resource.config.basic.service;
 import com.citrix.netscaler.nitro.resource.config.network.*;
 import com.citrix.netscaler.nitro.resource.config.ns.*;
 import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
@@ -145,7 +146,7 @@ public class NetscalerResource implements ServerResource {
 
             _inline = Boolean.parseBoolean((String) params.get("inline"));
 
-            login();          
+            login();
             enableNetScalerLoadBalancing();
                        
             return true;
@@ -209,6 +210,10 @@ public class NetscalerResource implements ServerResource {
             return execute((LoadBalancerConfigCommand) cmd, numRetries);
         } else if (cmd instanceof ExternalNetworkResourceUsageCommand) {
             return execute((ExternalNetworkResourceUsageCommand) cmd);
+        } else if (cmd instanceof CreateLBApplianceCommand) {
+            return execute((CreateLBApplianceCommand) cmd, numRetries);
+        } else if (cmd instanceof DestroyLBApplianceCommand) {
+            return execute((DestroyLBApplianceCommand) cmd, numRetries);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -223,6 +228,10 @@ public class NetscalerResource implements ServerResource {
     }
 
     private synchronized Answer execute(IpAssocCommand cmd, int numRetries) {
+        if (_isSdx) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
         try {        
@@ -257,7 +266,11 @@ public class NetscalerResource implements ServerResource {
     }
     
     private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {
-        try {            
+        try {
+            if (_isSdx) {
+                return Answer.createUnsupportedCommandAnswer(cmd);
+            }
+
             String lbProtocol;
             String lbMethod;
             LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
@@ -438,6 +451,18 @@ public class NetscalerResource implements ServerResource {
                 return new Answer(cmd, e);
             }
         } 
+    }
+
+    private synchronized Answer execute(CreateLBApplianceCommand cmd, int numRetries) {
+        assert(_isSdx) : "CreateLBApplianceCommand can only be sent to SDX device";
+        // FIXME: use nitro API to spin a new VPX instance on SDX
+        return new CreateLBApplianceAnswer(cmd, true);
+    }
+
+    private synchronized Answer execute(DestroyLBApplianceCommand cmd, int numRetries) {
+        assert(_isSdx) : "DestroyLBApplianceCommand can only be sent to SDX device";
+        // FIXME: use nitro API to destroy VPX instance on SDX
+        return new DestroyLBApplianceAnswer(cmd, true);
     }
 
     private synchronized ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
@@ -733,7 +758,7 @@ public class NetscalerResource implements ServerResource {
         return answer;
     }
 
-    private Answer retry(Command cmd, int numRetries) {                
+    private Answer retry(Command cmd, int numRetries) {
         int numRetriesRemaining = numRetries - 1;
         s_logger.error("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
         return executeRequest(cmd, numRetriesRemaining);    

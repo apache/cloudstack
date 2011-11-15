@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,7 +30,7 @@ import javax.persistence.Table;
 import com.cloud.utils.db.GenericDao;
 
 /**
- * NetworkExternalLoadBalancerVO contains information on the networks that are using external load balancers
+ * NetworkExternalLoadBalancerVO contains mapping of a network and the external load balancer device id assigned to the network
   */
 
 @Entity
@@ -41,14 +42,14 @@ public class NetworkExternalLoadBalancerVO {
     @Column(name = "id")
     private long id;
 
+    @Column(name="uuid")
+    private String uuid;
+
     @Column(name = "network_id")
     private long networkId;
 
     @Column(name = "external_load_balancer_device_id")
     private long externalLBDeviceId;
-
-    @Column(name = "subscribed_capacity")
-    private long subscribedCapacity;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
@@ -59,15 +60,11 @@ public class NetworkExternalLoadBalancerVO {
     public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID) {
         this.networkId = networkId;
         this.externalLBDeviceId = externalLBDeviceID;
-        this.subscribedCapacity = 0;
-    }
-    public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID, long subscribedCapacity) {
-        this(networkId, externalLBDeviceID);
-        this.subscribedCapacity = subscribedCapacity;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public NetworkExternalLoadBalancerVO(){
-
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public long getId() {
@@ -82,7 +79,11 @@ public class NetworkExternalLoadBalancerVO {
         return externalLBDeviceId;
     }
 
-    public long getSubscribedCapacity() {
-        return subscribedCapacity;
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 }
