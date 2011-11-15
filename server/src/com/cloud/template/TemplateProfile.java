@@ -1,5 +1,7 @@
 package com.cloud.template;
 
+import java.util.Map;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
@@ -27,10 +29,11 @@ public class TemplateProfile {
 	Long templateId;
 	VMTemplateVO template;
 	String templateTag;
+	Map details;
 	
 	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
 			String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
-			HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable) {
+			HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details) {
 		this.templateId = templateId;
 		this.userId = userId;
 		this.name = name;
@@ -51,6 +54,7 @@ public class TemplateProfile {
 		this.accountId = accountId;
 		this.chksum = chksum;
 		this.bootable = bootable;
+		this.details = details;
 	}
 	
 	public TemplateProfile(Long userId, VMTemplateVO template, Long zoneId) {
@@ -61,9 +65,9 @@ public class TemplateProfile {
 	
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
             String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
-            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag) {
+            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details) {
         this(templateId, userId, name, displayText, bits, passwordEnabled, requiresHvm, url, isPublic, featured, isExtractable, format, guestOsId, zoneId,
-                hypervisorType, accountName, domainId, accountId, chksum, bootable);
+                hypervisorType, accountName, domainId, accountId, chksum, bootable, details);
         this.templateTag = templateTag;
     }	
 	
@@ -215,4 +219,11 @@ public class TemplateProfile {
         this.templateTag = templateTag;
     }  	
 	
+    public Map getDetails() {
+    	return this.details;
+    }
+    
+    public void setDetails(Map details) {
+    	this.details = details;
+    }
 }

@@ -167,6 +167,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -234,6 +235,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected UserStatisticsDao _userStatsDao = null;
     @Inject
     protected VMTemplateDao _templateDao = null;
+    @Inject
+    protected VMTemplateDetailsDao _templateDetailsDao = null;
     @Inject
     protected VMTemplateHostDao _templateHostDao = null;
     @Inject
@@ -1469,7 +1472,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue, bitsValue, accountId,
-                null, description, passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag);
+                null, description, passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails());
         if(sourceTemplateId != null){
             if(s_logger.isDebugEnabled()){
                 s_logger.debug("This template is getting created from other template, setting source template Id to: "+sourceTemplateId);
@@ -1481,6 +1484,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Increment the number of templates
         if (template != null) {
             _accountMgr.incrementResourceCount(accountId, ResourceType.template);
+            if(cmd.getDetails() != null) {
+                _templateDetailsDao.persist(template.getId(), cmd.getDetails());
+            }
         }
 
         return template;
