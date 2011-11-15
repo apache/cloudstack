@@ -373,6 +373,28 @@
 														}
 													},
 													vlanId: { label: "VLAN ID" },
+													networkOfferingId: {
+													  label: 'Network offering',
+														select: function(args) {			
+                              var array1 = [];														
+															$.ajax({
+																url: createURL("listNetworkOfferings&guestiptype=Shared"),
+																dataType: "json",
+																async: false,
+																success: function(json) {
+																	var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+																	if (networkOfferings != null && networkOfferings.length > 0) {
+																		for (var i = 0; i < networkOfferings.length; i++) {																		  
+																			if (networkOfferings[i].isdefault) {																				
+																				array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});
+																			}
+																		}
+																	}
+																}
+															});															
+															args.response.success({data: array1});															
+														}
+													},
 													scope: {
 														label: 'Scope',
 														select: function(args) {													
@@ -503,32 +525,9 @@
 
 												if(args.data.tags != null && args.data.tags.length > 0)
 													array1.push("&tags=" + todb(args.data.tags));
-
-												//get network offering ID
-												var networkOfferingId;
-												$.ajax({
-													url: createURL("listNetworkOfferings&guestiptype=Shared"),
-													dataType: "json",
-													async: false,
-													success: function(json) {
-														var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-														if (networkOfferings != null && networkOfferings.length > 0) {
-															for (var i = 0; i < networkOfferings.length; i++) {
-																if (networkOfferings[i].isdefault) {
-																  networkOfferingId = networkOfferings[i].id;
-																}
-															}
-														}
-													}
-												});
 													
-												if(networkOfferingId == null) {
-												  alert("error: listNetworkOfferings API doesn't return Network Offering ID");
-													return;
-												}												
-												array1.push("&networkOfferingId=" + networkOfferingId);
-												
-												// Create direct network
+												array1.push("&networkOfferingId=" + args.data.networkOfferingId);  
+																								
 												$.ajax({
 													url: createURL("createNetwork" + array1.join("")),
 													dataType: "json",
