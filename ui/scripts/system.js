@@ -693,75 +693,82 @@
                                 physicalNetworkId = items[0].id
                             }
                           });
-                          
-                          if(physicalNetworkId != null) {     
-														$.ajax({
-															url: createURL("updatePhysicalNetwork&id=" + physicalNetworkId + "&state=Enabled"),                    
-															dataType: "json",
-															success: function(json) {                      
-																//async job
-															}
-														});
-																				  
-                            var networkServiceProviderId;
-                            $.ajax({
-                              url: createURL("listNetworkServiceProviders&physicalNetworkId=" + physicalNetworkId),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-                                if(items != null && items.length > 0)
-                                  networkServiceProviderId = items[0].id
-                              }
-                            });
-                            //debugger;
-                            if(networkServiceProviderId != null) {   
-														  //debugger;
-                              $.ajax({
-                                url: createURL("updateNetworkServiceProvider&id=" + networkServiceProviderId + "&state=Enabled"),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-								                  //async job                                                
-                                }
-                              });   														
-														
-                              var virtualRouterElementId;
-															//debugger;
-                              $.ajax({
-                                url: createURL("listVirtualRouterElements&nspid=" + networkServiceProviderId),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-                                  var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
-                                  if(items != null && items.length > 0)
-                                    virtualRouterElementId = items[0].id
-                                }
-                              });
-															//debugger;
-                              if(virtualRouterElementId != null) {                               
-                                $.ajax({
-                                  url: createURL("configureVirtualRouterElement&id=" + virtualRouterElementId + "&enabled=true"),
-                                  dataType: "json",
-                                  async: false,
-                                  success: function(json) {
-                                    //async job    
-                                  }
-                                });                                                                 
-                              }                               
-                            }                                                        
-                          }
+                          													
+													if(physicalNetworkId == null) {     
+													  alert("error: listPhysicalNetworks API doesn't return Physical Network ID");
+													  return;
+													}
+													                             
+													$.ajax({
+														url: createURL("updatePhysicalNetwork&id=" + physicalNetworkId + "&state=Enabled"),                    
+														dataType: "json",
+														success: function(json) {                      
+															//async job
+														}
+													});
+																				
+													var networkServiceProviderId;
+													$.ajax({
+														url: createURL("listNetworkServiceProviders&physicalNetworkId=" + physicalNetworkId),
+														dataType: "json",
+														async: false,
+														success: function(json) {
+															var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+															if(items != null && items.length > 0)
+																networkServiceProviderId = items[0].id
+														}
+													});
+																								
+													if(networkServiceProviderId == null) {     
+													  alert("error: listNetworkServiceProviders API doesn't return Network Service Provider ID");
+													  return;
+													}
+																										
+													$.ajax({
+														url: createURL("updateNetworkServiceProvider&id=" + networkServiceProviderId + "&state=Enabled"),
+														dataType: "json",
+														async: false,
+														success: function(json) {
+															//async job                                                
+														}
+													});   														
+												
+													var virtualRouterElementId;													
+													$.ajax({
+														url: createURL("listVirtualRouterElements&nspid=" + networkServiceProviderId),
+														dataType: "json",
+														async: false,
+														success: function(json) {
+															var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
+															if(items != null && items.length > 0)
+																virtualRouterElementId = items[0].id
+														}
+													});
+																								
+													if(virtualRouterElementId == null) {     
+													  alert("error: listVirtualRouterElements API doesn't return Virtual Router Element ID");
+													  return;
+													}
+																										                             
+													$.ajax({
+														url: createURL("configureVirtualRouterElement&id=" + virtualRouterElementId + "&enabled=true"),
+														dataType: "json",
+														async: false,
+														success: function(json) {
+															//async job    
+														}
+													});     
                           //NaaS (end) 
 
+													/*
                           $.ajax({
                             url: createURL("listCapabilities"),
                             dataType: "json",
                             async: false,
                             success: function(json) {
-                              /* g_supportELB: "guest"   � ips are allocated on guest network (so use 'forvirtualnetwork' = false)
-                               * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-                               * g_supportELB: "false"   � no ELB support
-                               */
+                              // g_supportELB: "guest"   � ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+                              // g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+                              // g_supportELB: "false"   � no ELB support                              
                               g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
                               $.cookie('supportELB', g_supportELB, { expires: 1});
 
@@ -779,6 +786,7 @@
                               }
                             }
                           });
+													*/
                         },
                         error: function(XMLHttpResponse) {
                           var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
