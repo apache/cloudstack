@@ -24,7 +24,7 @@ import com.cloud.network.NetworkDomainVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkDomainDao extends GenericDao<NetworkDomainVO, Long>{
-    List<NetworkDomainVO> listDomainNetworkMapByDomain(long domainId);
-    List<NetworkDomainVO> listDomainNetworkMapByNetworkId(long networkId);
+    List<NetworkDomainVO> listDomainNetworkMapByDomain(Object... domainId);
+    NetworkDomainVO getDomainNetworkMapByNetworkId(long networkId);
     List<Long> listNetworkIdsByDomain(long domainId);
 }

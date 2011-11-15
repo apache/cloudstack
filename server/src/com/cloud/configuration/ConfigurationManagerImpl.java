@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
@@ -1458,7 +1459,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, Domain.ROOT_DOMAIN, null);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, isNetworkDefault, false, Domain.ROOT_DOMAIN, null, null);
             }
         }
     }

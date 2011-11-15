@@ -541,7 +541,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
-        	networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), null, plan, null, null, false, false, null, null).get(0), defaultNic));
+        	networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic));
             for (NetworkOfferingVO offering : offerings) {
                 networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
             }

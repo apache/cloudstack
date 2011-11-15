@@ -1,5 +1,6 @@
 /**
 
+
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -115,7 +116,7 @@ public interface NetworkManager extends NetworkService {
             throws ConcurrentOperationException;
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, ACLType aclType) throws ConcurrentOperationException;
+            Long domainId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException;
 
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
 
@@ -156,7 +157,7 @@ public interface NetworkManager extends NetworkService {
     boolean destroyNetwork(long networkId, ReservationContext context);
 
     Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
-            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws ConcurrentOperationException, InsufficientCapacityException;
+            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * @throws InsufficientCapacityException
@@ -248,4 +249,6 @@ public interface NetworkManager extends NetworkService {
     Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
 
     Long getPhysicalNetworkId(Network network);
+
+	boolean getAllowSubdomainAccessGlobal();
 }

@@ -1710,6 +1710,7 @@ CREATE TABLE `cloud`.`domain_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  `subdomain_access` int(1) unsigned COMMENT '1 if network can be accessible from the subdomain',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_network_ref__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_domain_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE

@@ -94,6 +94,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.VLAN) @Param(description="the vlan of the network")
     private String vlan;
     
+    @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")
+    private String aclType;
+    
+    @SerializedName(ApiConstants.SUBDOMAIN_ACCESS) @Param(description="true if users from subdomains can access the domain level network")
+    private Boolean subdomainAccess;
+    
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the network")
     private String accountName;
     
@@ -121,10 +127,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
     
-    @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")
-    private String aclType;
-    
-
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -254,5 +256,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 	public void setAclType(String aclType) {
 		this.aclType = aclType;
 	}
-    
+
+	public void setSubdomainAccess(Boolean subdomainAccess) {
+		this.subdomainAccess = subdomainAccess;
+	}
 }

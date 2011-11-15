@@ -72,7 +72,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listByZoneSecurityGroup(Long zoneId);
 
-    void addDomainToNetwork(long networkId, long domainId);
+    void addDomainToNetwork(long networkId, long domainId, Boolean subdomainAccess);
 
     Long getNetworkCountByOfferingId(long offeringId);
 

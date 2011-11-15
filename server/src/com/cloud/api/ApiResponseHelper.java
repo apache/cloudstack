@@ -32,6 +32,7 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
@@ -175,6 +176,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -2452,7 +2454,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setServices(serviceResponses);
         
-        populateOwner(response, network);
+        if (network.getAclType() == null || network.getAclType() == ACLType.Account) {
+        	populateOwner(response, network);
+        } else {
+        	//get domain from network_domain table
+        	Pair<Long, Boolean> domainNetworkDetails = ApiDBUtils.getDomainNetworkDetails(network.getId());
+        	response.setDomainId(domainNetworkDetails.first());
+        	response.setSubdomainAccess(domainNetworkDetails.second());
+        }
 
         Long dedicatedDomainId = ApiDBUtils.getDedicatedNetworkDomain(network.getId());
         if (dedicatedDomainId != null) {

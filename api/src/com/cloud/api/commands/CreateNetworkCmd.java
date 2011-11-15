@@ -94,6 +94,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account in Adavnce zone, and to Domain in Basic zone. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
     private String aclType;
     
+    @Parameter(name=ApiConstants.SUBDOMAIN_ACCESS, type=CommandType.BOOLEAN, description="Defines whether to allow subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to true if not specified")
+    private Boolean subdomainAccess;
+    
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
@@ -155,6 +158,10 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getAclType() {
 		return aclType;
+	}
+
+	public Boolean getSubdomainAccess() {
+		return subdomainAccess;
 	}
 
 	public Long getZoneId() {

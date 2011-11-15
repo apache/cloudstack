@@ -303,5 +303,6 @@ public class ApiConstants {
     public static final String NSP_ID= "nspid";
     public static final String ACL_TYPE= "acltype";
     public static final String IS_SOURCE_NAT_SHARED = "isshared";
+    public static final String SUBDOMAIN_ACCESS = "subdomainaccess";
     
 }

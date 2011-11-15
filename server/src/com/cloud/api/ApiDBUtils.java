@@ -56,6 +56,7 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkDomainVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
@@ -65,6 +66,7 @@ import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
@@ -116,6 +118,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -180,6 +183,7 @@ public class ApiDBUtils {
     private static ProjectService _projectMgr;
     private static ResourceManager _resourceMgr;
     private static AccountDetailsDao _accountDetailsDao;
+    private static NetworkDomainDao _networkDomainDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -229,6 +233,7 @@ public class ApiDBUtils {
         _projectMgr = locator.getManager(ProjectService.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
         _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
+        _networkDomainDao = locator.getDao(NetworkDomainDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -686,5 +691,13 @@ public class ApiDBUtils {
 
     public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
         return _networkMgr.canElementEnableIndividualServices(serviceProvider);
+    }
+    
+    public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
+    	NetworkDomainVO map = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
+    	
+    	boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkMgr.getAllowSubdomainAccessGlobal();
+    	
+    	return new Pair<Long, Boolean>(map.getDomainId(), subdomainAccess);
     }
 }

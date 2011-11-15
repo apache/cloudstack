@@ -321,12 +321,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public void addDomainToNetwork(long networkId, long domainId) {
-        addDomainToNetworknetwork(networkId, domainId);
+    public void addDomainToNetwork(long networkId, long domainId, Boolean subdomainAccess) {
+        addDomainToNetworknetwork(networkId, domainId, subdomainAccess);
     }
 
-    protected void addDomainToNetworknetwork(long networkId, long domainId) {
-        NetworkDomainVO domain = new NetworkDomainVO(networkId, domainId);
+    protected void addDomainToNetworknetwork(long networkId, long domainId, Boolean subdomainAccess) {
+        NetworkDomainVO domain = new NetworkDomainVO(networkId, domainId, subdomainAccess);
         _domainsDao.persist(domain);
     }
 

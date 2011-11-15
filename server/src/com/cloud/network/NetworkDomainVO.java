@@ -42,13 +42,17 @@ public class NetworkDomainVO implements PartOf {
     
     @Column(name="network_id")
     long networkId;
+    
+    @Column(name="subdomain_access")
+    Boolean subdomainAccess;
 
     protected NetworkDomainVO() {
     }
     
-    public NetworkDomainVO(long networkId, long domainId) {
+    public NetworkDomainVO(long networkId, long domainId, Boolean subdomainAccess) {
         this.networkId = networkId;
         this.domainId = domainId;
+        this.subdomainAccess = subdomainAccess;
     }
     
     @Override
@@ -59,5 +63,8 @@ public class NetworkDomainVO implements PartOf {
     public long getNetworkId() {
         return networkId;
     }
-    
+
+	public Boolean isSubdomainAccess() {
+		return subdomainAccess;
+	}
 }

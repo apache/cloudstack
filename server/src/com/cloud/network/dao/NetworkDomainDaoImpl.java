@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value=NetworkDomainDao.class) @DB(txn=false)
 public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> implements NetworkDomainDao {
     final SearchBuilder<NetworkDomainVO> AllFieldsSearch;
-    
+    final SearchBuilder<NetworkDomainVO> DomainsSearch;
     
     protected NetworkDomainDaoImpl() {
         super();
@@ -42,22 +42,24 @@ public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> 
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.done();
         
+        DomainsSearch = createSearchBuilder();
+        DomainsSearch.and("domainId", DomainsSearch.entity().getDomainId(), Op.IN);
+        DomainsSearch.done();
     }
     
     @Override
-    public List<NetworkDomainVO> listDomainNetworkMapByDomain(long domainId) {
-        SearchCriteria<NetworkDomainVO> sc = AllFieldsSearch.create();
-        sc.setParameters("domainId", domainId);
+    public List<NetworkDomainVO> listDomainNetworkMapByDomain(Object... domainId) {
+        SearchCriteria<NetworkDomainVO> sc = DomainsSearch.create();
+        sc.setParameters("domainId", (Object[])domainId);
         
         return listBy(sc);
     }
     
     @Override
-    public List<NetworkDomainVO> listDomainNetworkMapByNetworkId(long networkId) {
+    public NetworkDomainVO getDomainNetworkMapByNetworkId(long networkId) {
         SearchCriteria<NetworkDomainVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
-        
-        return listBy(sc);
+        return findOneBy(sc);
     }
     
     @Override
@@ -66,8 +68,7 @@ public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> 
         List<NetworkDomainVO> maps = listDomainNetworkMapByDomain(domainId);
         for (NetworkDomainVO map : maps) {
             networkIdsToReturn.add(map.getNetworkId());
-        }
-        
+        } 
         return networkIdsToReturn;
     }
 }

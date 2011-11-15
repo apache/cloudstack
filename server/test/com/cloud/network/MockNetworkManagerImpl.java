@@ -197,7 +197,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, ACLType aclType) throws ConcurrentOperationException {
+            Long domainId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -308,7 +308,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
-            boolean isSecurityGroupEnabled, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws ConcurrentOperationException, InsufficientCapacityException {
+            boolean isSecurityGroupEnabled, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
