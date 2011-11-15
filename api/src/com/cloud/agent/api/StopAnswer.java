@@ -34,6 +34,11 @@ public class StopAnswer extends RebootAnswer {
 
     }
     
+    public StopAnswer(StopCommand cmd, Exception e) {
+        super(cmd, e);
+    }
+    
+    @Override
     public Integer getVncPort() {
         return vncPort;
     }

@@ -45,6 +45,10 @@ public class RebootAnswer extends Answer {
         bytesReceived = null;
     }
     
+    public RebootAnswer(RebootCommand cmd, Exception e) {
+        super(cmd, e);
+    }
+    
     public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }

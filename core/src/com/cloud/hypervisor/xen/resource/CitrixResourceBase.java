@@ -3072,9 +3072,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public StopAnswer execute(StopCommand cmd) {
-        Connection conn = getConnection();
         String vmName = cmd.getVmName();
         try {
+            Connection conn = getConnection();
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             // stop vm which is running on this host or is in halted state
             Iterator<VM> iter = vms.iterator();
@@ -3190,6 +3190,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String msg = "Stop Vm " + vmName + " fail due to " + e.getMessage();
             s_logger.warn(msg, e);
             return new StopAnswer(cmd, msg);
+        } catch (Exception e) {
+            s_logger.warn("Unable to stop " + vmName + " due to ",  e);
+            return new StopAnswer(cmd, e);
         }
         return new StopAnswer(cmd, "Stop VM failed");
     }
