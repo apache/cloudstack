@@ -1,7 +1,7 @@
 (function($, cloudStack, testData) {
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
-  var selectedClusterObj;
+  var selectedClusterObj, selectedZoneObj;
   var publicNetworkObj;
 
   cloudStack.sections.system = {
@@ -228,8 +228,7 @@
                     }
                   });
                 }
-              }
-              //???  
+              }              
             }
           }
         },
@@ -312,15 +311,16 @@
                   });  
                   
                   physicalNetworkObj["guestcidraddress"] = args.context.zones[0].guestcidraddress;
-                  
+                  selectedZoneObj = args.context.zones[0];
+									
                   args.response.success({
                     _custom: {"physicalNetworkObj": physicalNetworkObj},
                     data: physicalNetworkObj
                   });                  
                 }
               },
-			  //???
-			  network: {
+			        
+			        network: {
                 title: 'Network',
                 listView: {
                   section: 'networks',
@@ -332,50 +332,227 @@
                     vlan: { label: 'VLAN' }
                   },
                   actions: {
-                    add: {
-                      label: 'Add network',
-                      createForm: {
-                        title: 'Add network',
-                        desc: 'Please fill in the following to add a guest network',
-                        fields: {
-                          vlan: {
-                            label: 'VLAN ID',
-                            validation: { required: true }
-                          },
-                          gateway: {
-                            label: 'Gateway',
-                            validation: { required: true }
-                          },
-                          netmask: {
-                            label: 'Netmask',
-                            validation: { required: true }
-                          },
-                          startip: {
-                            label: 'Start IP',
-                            validation: { required: true }
-                          },
-                          endip: {
-                            label: 'Start IP',
-                            validation: { required: true }
-                          }
-                        }
-                      },
+									  //???
+										add: {
+											label: 'Create network',
 
-                      action: function(args) {
-                        args.response.success();
-                      },
+											messages: {
+												confirm: function(args) {
+													return 'Are you sure you want to create a network?';
+												},
+												success: function(args) {
+													return 'Your new network is being created.';
+												},
+												notification: function(args) {
+													return 'Creating new network';
+												},
+												complete: function(args) {
+													return 'Network has been created successfully!';
+												}
+											},
 
-                      messages: {
-                        notification: function(args) {
-                          return 'Added guest network';
-                        }
-                      },
-                      notification: { poll: testData.notifications.testPoll }
-                    }
+											createForm: {
+												title: 'Create network',
+												fields: {
+													name: {
+														label: 'Name',
+														validation: { required: true }
+													},
+													description: {
+														label: 'Description',
+														validation: { required: true }
+													},
+													isDefault: {
+														label: "Default",
+														isBoolean: true
+													},
+													vlanTagged: {
+														label: 'VLAN',
+														select: function(args) {
+															args.response.success({data: {id: "tagged", description: "tagged"}});
+														}
+													},
+													vlanId: { label: "VLAN ID" },
+													scope: {
+														label: 'Scope',
+														select: function(args) {													
+														  var zoneObj = selectedZoneObj;
+															//var zoneObj = args.context.zones[0];  //args.context should include zones. Waiting for Brian to fix it in widget code.
+															var array1 = [];
+															if(zoneObj.securitygroupsenabled) {
+																array1.push({id: 'account-specific', description: 'account-specific'});
+															}
+															else {
+																array1.push({id: 'zone-wide', description: 'zone-wide'});
+																array1.push({id: 'domain-specific', description: 'domain-specific'});
+																array1.push({id: 'account-specific', description: 'account-specific'});
+															}
+															args.response.success({data: array1});
+
+															args.$select.change(function() {
+																var $form = $(this).closest('form');
+																if($(this).val() == "zone-wide") {
+																	$form.find('.form-item[rel=domainId]').hide();
+																	$form.find('.form-item[rel=account]').hide();
+																}
+																else if ($(this).val() == "domain-specific") {
+																	$form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+																	$form.find('.form-item[rel=account]').hide();
+																}
+																else if($(this).val() == "account-specific") {
+																	$form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+																	$form.find('.form-item[rel=account]').css('display', 'inline-block');
+																}
+															});
+														}
+													},
+													domainId: {
+														label: 'Domain',
+														validation: { required: true },
+														select: function(args) {
+															var items = [];
+															 var zoneObj = selectedZoneObj;
+															//var zoneObj = args.context.zones[0];  //args.context should include zones. Waiting for Brian to fix it in widget code.
+															if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+																$.ajax({
+																	url: createURL("listDomainChildren&id=" + zoneObj.domainid + "&isrecursive=true"),
+																	dataType: "json",
+																	async: false,
+																	success: function(json) {
+																		var domainObjs = json.listdomainchildrenresponse.domain;
+																		$(domainObjs).each(function() {
+																			items.push({id: this.id, description: this.name});
+																		});
+																	}
+																});
+																$.ajax({
+																	url: createURL("listDomains&id=" + zoneObj.domainid),
+																	dataType: "json",
+																	async: false,
+																	success: function(json) {
+																		var domainObjs = json.listdomainsresponse.domain;
+																		$(domainObjs).each(function() {
+																			items.push({id: this.id, description: this.name});
+																		});
+																	}
+																});
+															}
+															else { //list all domains
+																$.ajax({
+																	url: createURL("listDomains"),
+																	dataType: "json",
+																	async: false,
+																	success: function(json) {
+																		var domainObjs = json.listdomainsresponse.domain;
+																		$(domainObjs).each(function() {
+																			items.push({id: this.id, description: this.name});
+																		});
+																	}
+																});
+															}
+															args.response.success({data: items});
+														}
+													},
+													account: { label: 'Account' },
+													gateway: { label: 'Gateway' },
+													netmask: { label: 'Netmask' },
+													startip: { label: 'Start IP' },
+													endip: { label: 'End IP' },
+													networkdomain: { label: 'Network domain' },
+													tags: { label: 'Tags' }
+												}
+											},
+
+											action: function(args) {
+												var array1 = [];											
+												var zoneObj = selectedZoneObj;
+												//var zoneObj = args.context.zones[0];  //args.context should include zones. Waiting for Brian to fix it in widget code.
+												array1.push("&zoneId=" + zoneObj.id);
+												array1.push("&name=" + todb(args.data.name));
+												array1.push("&displayText=" + todb(args.data.description));
+
+												if (args.data.vlanTagged == "tagged")
+													array1.push("&vlan=" + todb(args.data.vlanId));
+												else
+													array1.push("&vlan=untagged");
+
+												var $form = args.$form;
+
+												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
+													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+														array1.push("&domainId=" + args.data.domainId);
+														array1.push("&account=" + args.data.account);
+													}
+													else {  //domain-specific
+														array1.push("&domainId=" + args.data.domainId);
+														array1.push("&isshared=true");
+													}
+												}
+												else { //zone-wide
+													array1.push("&isshared=true");
+												}
+
+												array1.push("&isDefault=" + (args.data.isDefault=="on"));
+												array1.push("&gateway=" + args.data.gateway);
+												array1.push("&netmask=" + args.data.netmask);
+												array1.push("&startip=" + args.data.startip);
+												array1.push("&endip=" + args.data.endip);
+
+												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+													array1.push("&networkdomain=" + todb(args.data.networkdomain));
+
+												if(args.data.tags != null && args.data.tags.length > 0)
+													array1.push("&tags=" + todb(args.data.tags));
+
+												//get network offering ID
+												var networkOfferingId;
+												$.ajax({
+													url: createURL("listNetworkOfferings&guestiptype=Shared"),
+													dataType: "json",
+													async: false,
+													success: function(json) {
+														var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+														if (networkOfferings != null && networkOfferings.length > 0) {
+															for (var i = 0; i < networkOfferings.length; i++) {
+																if (networkOfferings[i].isdefault) {
+																  networkOfferingId = networkOfferings[i].id;
+																}
+															}
+														}
+													}
+												});
+													
+												if(networkOfferingId == null) {
+												  alert("error: listNetworkOfferings API doesn't return Network Offering ID");
+													return;
+												}												
+												array1.push("&networkOfferingId=" + networkOfferingId);
+												
+												// Create direct network
+												$.ajax({
+													url: createURL("createNetwork" + array1.join("")),
+													dataType: "json",
+													success: function(json) {
+														var item = json.createnetworkresponse.network;
+														args.response.success({data:item});
+													},
+													error: function(XMLHttpResponse) {
+														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+														args.response.error(errorMsg);
+													}
+												});		
+											},
+
+											notification: {
+												poll: function(args) {
+													args.complete();
+												}
+											}
+										}										                 
                   },
                   dataProvider: function(args) {
-				    return args.response.success({data: {}});
-				  }
+										return args.response.success({data: {}});
+									}
                 }
               }			  
             }
@@ -2054,211 +2231,7 @@
                 traffictype:  { label: "Traffic type" }
               },
               actions: {
-                add: {
-                  label: 'Create network',
-
-                  messages: {
-                    confirm: function(args) {
-                      return 'Are you sure you want to create a network?';
-                    },
-                    success: function(args) {
-                      return 'Your new network is being created.';
-                    },
-                    notification: function(args) {
-                      return 'Creating new network';
-                    },
-                    complete: function(args) {
-                      return 'Network has been created successfully!';
-                    }
-                  },
-
-                  createForm: {
-                    title: 'Create network',
-                    fields: {
-                      name: {
-                        label: 'Name',
-                        validation: { required: true }
-                      },
-                      description: {
-                        label: 'Description',
-                        validation: { required: true }
-                      },
-                      isDefault: {
-                        label: "Default",
-                        isBoolean: true
-                      },
-                      vlanTagged: {
-                        label: 'VLAN',
-                        select: function(args) {
-                          args.response.success({data: {id: "tagged", description: "tagged"}});
-                        }
-                      },
-                      vlanId: { label: "VLAN ID" },
-                      scope: {
-                        label: 'Scope',
-                        select: function(args) {
-                          var zoneObj = args.context.zones[0];
-                          var array1 = [];
-                          if(zoneObj.securitygroupsenabled) {
-                            array1.push({id: 'account-specific', description: 'account-specific'});
-                          }
-                          else {
-                            array1.push({id: 'zone-wide', description: 'zone-wide'});
-                            array1.push({id: 'domain-specific', description: 'domain-specific'});
-                            array1.push({id: 'account-specific', description: 'account-specific'});
-                          }
-                          args.response.success({data: array1});
-
-                          args.$select.change(function() {
-                            var $form = $(this).closest('form');
-                            if($(this).val() == "zone-wide") {
-                              $form.find('.form-item[rel=domainId]').hide();
-                              $form.find('.form-item[rel=account]').hide();
-                            }
-                            else if ($(this).val() == "domain-specific") {
-                              $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=account]').hide();
-                            }
-                            else if($(this).val() == "account-specific") {
-                              $form.find('.form-item[rel=domainId]').css('display', 'inline-block');
-                              $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                            }
-                          });
-                        }
-                      },
-                      domainId: {
-                        label: 'Domain',
-                        validation: { required: true },
-                        select: function(args) {
-                          var items = [];
-                          var zoneObj = args.context.zones[0];
-                          if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
-                            $.ajax({
-                              url: createURL("listDomainChildren&id=" + zoneObj.domainid + "&isrecursive=true"),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var domainObjs = json.listdomainchildrenresponse.domain;
-                                $(domainObjs).each(function() {
-                                  items.push({id: this.id, description: this.name});
-                                });
-                              }
-                            });
-                            $.ajax({
-                              url: createURL("listDomains&id=" + zoneObj.domainid),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var domainObjs = json.listdomainsresponse.domain;
-                                $(domainObjs).each(function() {
-                                  items.push({id: this.id, description: this.name});
-                                });
-                              }
-                            });
-                          }
-                          else { //list all domains
-                            $.ajax({
-                              url: createURL("listDomains"),
-                              dataType: "json",
-                              async: false,
-                              success: function(json) {
-                                var domainObjs = json.listdomainsresponse.domain;
-                                $(domainObjs).each(function() {
-                                  items.push({id: this.id, description: this.name});
-                                });
-                              }
-                            });
-                          }
-                          args.response.success({data: items});
-                        }
-                      },
-                      account: { label: 'Account' },
-                      gateway: { label: 'Gateway' },
-                      netmask: { label: 'Netmask' },
-                      startip: { label: 'Start IP' },
-                      endip: { label: 'End IP' },
-                      networkdomain: { label: 'Network domain' },
-                      tags: { label: 'Tags' }
-                    }
-                  },
-
-                  action: function(args) {
-                    var array1 = [];
-                    array1.push("&zoneId=" + args.context.zones[0].id);
-                    array1.push("&name=" + todb(args.data.name));
-                    array1.push("&displayText=" + todb(args.data.description));
-
-                    if (args.data.vlanTagged == "tagged")
-                      array1.push("&vlan=" + todb(args.data.vlanId));
-                    else
-                      array1.push("&vlan=untagged");
-
-                    var $form = args.$form;
-
-                    if($form.find('.form-item[rel=domainId]').css("display") != "none") {
-                      if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
-                        array1.push("&domainId=" + args.data.domainId);
-                        array1.push("&account=" + args.data.account);
-                      }
-                      else {  //domain-specific
-                        array1.push("&domainId=" + args.data.domainId);
-                        array1.push("&isshared=true");
-                      }
-                    }
-                    else { //zone-wide
-                      array1.push("&isshared=true");
-                    }
-
-                    array1.push("&isDefault=" + (args.data.isDefault=="on"));
-                    array1.push("&gateway=" + args.data.gateway);
-                    array1.push("&netmask=" + args.data.netmask);
-                    array1.push("&startip=" + args.data.startip);
-                    array1.push("&endip=" + args.data.endip);
-
-                    if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                      array1.push("&networkdomain=" + todb(args.data.networkdomain));
-
-                    if(args.data.tags != null && args.data.tags.length > 0)
-                      array1.push("&tags=" + todb(args.data.tags));
-
-                    //get network offering of direct network
-                    $.ajax({
-                      url: createURL("listNetworkOfferings&guestiptype=Direct"),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-                        if (networkOfferings != null && networkOfferings.length > 0) {
-                          for (var i = 0; i < networkOfferings.length; i++) {
-                            if (networkOfferings[i].isdefault) {
-                              array1.push("&networkOfferingId=" + networkOfferings[i].id);
-
-                              // Create a network from this.
-                              $.ajax({
-                                url: createURL("createNetwork" + array1.join("")),
-                                dataType: "json",
-                                success: function(json) {
-                                  var item = json.createnetworkresponse.network;
-                                  args.response.success({data:item});
-                                },
-                                error: function(XMLHttpResponse) {
-                                  var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                  args.response.error(errorMsg);
-                                }
-                              });
-                            }
-                          }
-                        }
-                      }
-                    });
-                  },
-
-                  notification: {
-                    poll: function(args) {
-                      args.complete();
-                    }
-                  }
-                }
+                //create direct network action has moved to Guest network
               },
               dataProvider: function(args) { //direct netwoerk
                 var zoneObj = args.context.zones[0];
