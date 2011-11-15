@@ -37,3 +37,12 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.sanity.check.interval', null, 'Interval (in days) to check sanity of usage data');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'usage.aggregation.timezone', 'GMT', 'The timezone to use for usage stats aggregation');
 INSERT IGNORE INTO `cloud`.`guest_os` (category_id, name, display_name) VALUES (6, NULL, "Windows PV");
+
+CREATE TABLE `cloud`.`vm_template_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `template_id` bigint unsigned NOT NULL COMMENT 'template id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

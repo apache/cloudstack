@@ -1,5 +1,7 @@
 package com.cloud.template;
 
+import java.util.Map;
+
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
@@ -40,10 +42,10 @@ public interface TemplateAdapter extends Adapter {
 	public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-            String accountName, Long domainId, String chksum, Boolean bootable) throws ResourceAllocationException;
+            String accountName, Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException;
 	
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-            String accountName, Long domainId, String chksum, Boolean bootable, String templateTag) throws ResourceAllocationException;	
+            String accountName, Long domainId, String chksum, Boolean bootable, String templateTag, Map details) throws ResourceAllocationException;	
 }
