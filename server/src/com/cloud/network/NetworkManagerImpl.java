@@ -2286,12 +2286,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     		}
     	}
     	
-    	SearchCriteria<NetworkVO> domainSC = _networksDao.createSearchCriteria();
-    	domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
-    	domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
-        
-        sc.addAnd("id", SearchCriteria.Op.SC, domainSC);
-        return _networksDao.search(sc, searchFilter);
+    	if (!networkIds.isEmpty()) {
+    		SearchCriteria<NetworkVO> domainSC = _networksDao.createSearchCriteria();
+        	domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
+        	domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
+            
+            sc.addAnd("id", SearchCriteria.Op.SC, domainSC);
+            return _networksDao.search(sc, searchFilter);
+    	} else {
+    		return new ArrayList<NetworkVO>();
+    	}
     }
 
     private List<NetworkVO> listAccountSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, List<Long> permittedAccounts) {
