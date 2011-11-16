@@ -326,10 +326,12 @@
                   section: 'networks',
                   id: 'networks',
                   fields: {
-                    name: { label: 'Name' },
-                    startip: { label: 'Start IP' },
-                    endip: { label: 'End IP' },
-                    vlan: { label: 'VLAN' }
+									  name: { label: 'Name' },
+									  vlan: { label: 'VLAN' },
+										isdefault: {  
+										  label: 'Default',
+											converter: cloudStack.converters.toBooleanText
+									  }									
                   },
                   actions: {									 
 										add: {

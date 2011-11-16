@@ -121,7 +121,7 @@ function networkPopulateMiddleMenu($leftmenuItem1) {
     else { // "Advanced"  
     	showPublicNetwork = true;
     	$("#add_network_button,#add_iprange_button,#tab_ipallocation").show();	
-        listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
+        listMidMenuItems2(("listNetworks&trafficType=Guest&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
     }
     
 	if(showPublicNetwork == true && zoneObj.securitygroupsenabled == false) { //public network           
@@ -1087,7 +1087,7 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").show();   
 			
 	$.ajax({
-        data: createURL("command=listNetworks&type=Direct&id="+jsonObj.id),
+        data: createURL("command=listNetworks&trafficType=Guest&id="+jsonObj.id),
         dataType: "json",
         async: false,
         success: function(json) {       
