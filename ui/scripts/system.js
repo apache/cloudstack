@@ -482,8 +482,7 @@
 													netmask: { label: 'Netmask' },
 													startip: { label: 'Start IP' },
 													endip: { label: 'End IP' },
-													networkdomain: { label: 'Network domain' },
-													tags: { label: 'Tags' }
+													networkdomain: { label: 'Network domain' }
 												}
 											},
 
@@ -525,10 +524,7 @@
 
 												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
 													array1.push("&networkdomain=" + todb(args.data.networkdomain));
-
-												if(args.data.tags != null && args.data.tags.length > 0)
-													array1.push("&tags=" + todb(args.data.tags));
-													
+																								
 												array1.push("&networkOfferingId=" + args.data.networkOfferingId);  
 																								
 												$.ajax({
@@ -570,12 +566,24 @@
 												title: 'Details',
 												fields: [
 													{
-														name: { label: 'Name' },
-														vlan: { label: 'VLAN' },
+														name: { label: 'Name' }
+                          },
+                          {
+                            id: { label: 'ID' },
+                            displaytext: { label: 'Description' },														
 														isdefault: {  
 															label: 'Default',
 															converter: cloudStack.converters.toBooleanText
-														}						
+														},
+                            vlan: { label: 'VLAN ID' },
+                            networkofferingdisplaytext: { label: 'Network offering' },
+                            domain: { label: 'Domain' },
+                            account: { label: 'Account' },                            
+                            gateway: { label: 'Gateway' },
+                            netmask: { label: 'Netmask' },
+                            startip: { label: 'Start IP' },
+                            endip: { label: 'End IP' },
+                            networkdomain: { label: 'Network domain' }                                                 
 													}
 												],
 												dataProvider: function(args) {												
@@ -583,8 +591,7 @@
 												}
 											},
 										}
-									}
-									//???
+									}									
                 }
               }			  
             }
