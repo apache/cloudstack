@@ -18,7 +18,6 @@
 package com.cloud.agent.api.to;
 
 import java.net.URI;
-import java.util.List;
 
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
@@ -39,7 +38,7 @@ public class NetworkTO {
     protected URI broadcastUri;
     protected URI isolationUri;
     protected boolean isSecurityGroupEnabled;
-    protected String[] tags;
+    protected String name;
 
     public NetworkTO() {
     }
@@ -88,12 +87,12 @@ public class NetworkTO {
         this.type = type;
     }
 
-    public void setTags(List<String> tags) {
-        this.tags = tags.toArray(new String[tags.size()]);
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String[] getTags() {
-        return tags;
+    public String getName() {
+        return name;
     }
 
     public void setSecurityGroupEnabled(boolean enabled) {

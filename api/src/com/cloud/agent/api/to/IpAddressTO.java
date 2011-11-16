@@ -18,14 +18,12 @@
 
 package com.cloud.agent.api.to;
 
-import java.util.List;
-
 import com.cloud.network.Networks.TrafficType;
 
 
 public class IpAddressTO {
-    
-	private long accountId;
+
+    private long accountId;
     private String publicIp;
     private boolean sourceNat;
     private boolean add;
@@ -38,8 +36,8 @@ public class IpAddressTO {
     private String guestIp;
     private Integer networkRate;
     private TrafficType trafficType;
-    private String[] networkTags;
-    
+    private String networkName;
+
     public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
@@ -54,12 +52,12 @@ public class IpAddressTO {
         this.networkRate = networkRate;
         this.oneToOneNat = isOneToOneNat;
     }
-    
+
     protected IpAddressTO() {
     }
-    
+
     public long getAccountId() {
-    	return accountId;
+        return accountId;
     }
 
     public String getGuestIp(){
@@ -69,24 +67,20 @@ public class IpAddressTO {
     public String getPublicIp() {
         return publicIp;
     }
-    
+
     public TrafficType getTrafficType() {
         return trafficType;
     }
-    
-    public void setNetworkTags(List<String> tagsList) {
-        if (tagsList == null || tagsList.size() == 0) {
-            networkTags = null;
-        } else {
-            networkTags = tagsList.toArray(new String[tagsList.size()]);
-        }
+
+    public void setNetworkName(String name) {
+        this.networkName = name;
     }
-    
-    public String[] getNetworkTags() {
-        return networkTags;
+
+    public String getNetworkName() {
+        return networkName;
     }
-    
-    
+
+
     public void setTrafficType(TrafficType trafficType) {
         this.trafficType = trafficType;
     }
@@ -94,11 +88,11 @@ public class IpAddressTO {
     public boolean isAdd() {
         return add;
     }
-    
+
     public boolean isOneToOneNat(){
         return this.oneToOneNat;
     }
-    
+
     public boolean isFirstIP() {
         return firstIP;
     }
@@ -110,23 +104,23 @@ public class IpAddressTO {
     public boolean isSourceNat() {
         return sourceNat;
     }
-    
+
     public String getVlanId() {
         return vlanId;
     }
-    
+
     public String getVlanGateway() {
         return vlanGateway;
     }
-    
+
     public String getVlanNetmask() {
         return vlanNetmask;
     }
-    
+
     public String getVifMacAddress() {
         return vifMacAddress;
     }
-    
+
     public Integer getNetworkRate() {
         return networkRate;
     }

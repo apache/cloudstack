@@ -123,7 +123,7 @@ public interface NetworkManager extends NetworkService {
     void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
     void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException;
+    ResourceUnavailableException;
 
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced);
 
@@ -146,7 +146,7 @@ public interface NetworkManager extends NetworkService {
     List<? extends Vlan> listPodVlans(long podId);
 
     Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException;
+    InsufficientCapacityException;
 
     List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
 
@@ -171,7 +171,7 @@ public interface NetworkManager extends NetworkService {
      * @throws
      */
     boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException, ConcurrentOperationException,
-            ResourceUnavailableException;
+    ResourceUnavailableException;
 
     Nic getNicInNetwork(long vmId, long networkId);
 
@@ -182,7 +182,7 @@ public interface NetworkManager extends NetworkService {
     Nic getDefaultNic(long vmId);
 
     List<? extends UserDataServiceProvider> getPasswordResetElements();
-        
+
     boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId);
 
     Map<Capability, String> getNetworkServiceCapabilities(long networkId, Service service);
@@ -200,51 +200,51 @@ public interface NetworkManager extends NetworkService {
     List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type, Boolean isDefault);
 
     IPAddressVO markIpAsUnavailable(long addrId);
-    
+
     public String acquireGuestIpAddress(Network network, String requestedIp);
 
     String getGlobalGuestDomainSuffix();
-    
+
     String getStartIpAddress(long networkId);
 
     boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException;
-    
+
     String getIpInNetwork(long vmId, long networkId);
 
     String getIpInNetworkIncludingRemoved(long vmId, long networkId);
-    
+
     Long getPodIdForVlan(long vlanDbId);
-    
+
     List<Long> listNetworkOfferingsForUpgrade(long networkId);
 
     PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId);
 
     boolean isSecurityGroupSupportedInNetwork(Network network);
-    
+
     boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
-    
+
     boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName);
 
-    List<String> getNetworkTags(HypervisorType hType, Network network);
+    String getNetworkTag(HypervisorType hType, Network network);
 
     List<Service> getElementServices(Provider provider);
 
     boolean canElementEnableIndividualServices(Provider provider);
-    
+
     PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId);
-    
+
     boolean areServicesSupportedInNetwork(long networkId, Service... services);
 
     boolean isNetworkSystem(Network network);
 
-	boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm,
-			DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
+    boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm,
+            DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
 
     Map<Capability, String> getNetworkOfferingServiceCapabilities(NetworkOffering offering, Service service);
 
     Long getPhysicalNetworkId(Network network);
 
-	boolean getAllowSubdomainAccessGlobal();
-	
-	boolean isProviderForNetwork(Provider provider, long networkId);
+    boolean getAllowSubdomainAccessGlobal();
+
+    boolean isProviderForNetwork(Provider provider, long networkId);
 }

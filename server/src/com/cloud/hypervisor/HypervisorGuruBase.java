@@ -49,7 +49,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setBroadcastUri(profile.getBroadCastUri());
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());
-        to.setTags(profile.getTags());
+        to.setName(profile.getName());
         return to;
     }
 
@@ -78,7 +78,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         } else {
             to.setArch("x86_64");
         }
-        
+
         to.setDetails(vm.getDetails());
 
         return to;
