@@ -502,16 +502,17 @@
 
 												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
 													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+													  array1.push("&acltype=account");
 														array1.push("&domainId=" + args.data.domainId);
 														array1.push("&account=" + args.data.account);
 													}
 													else {  //domain-specific
-														array1.push("&domainId=" + args.data.domainId);
-														array1.push("&isshared=true");
+													  array1.push("&acltype=domain");
+														array1.push("&domainId=" + args.data.domainId);														
 													}
 												}
-												else { //zone-wide
-													array1.push("&isshared=true");
+												else { //zone-wide													
+													array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
 												}
 
 												array1.push("&isDefault=" + (args.data.isDefault=="on"));
