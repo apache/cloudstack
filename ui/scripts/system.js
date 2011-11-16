@@ -331,8 +331,7 @@
                     endip: { label: 'End IP' },
                     vlan: { label: 'VLAN' }
                   },
-                  actions: {
-									  //???
+                  actions: {									 
 										add: {
 											label: 'Create network',
 
@@ -550,8 +549,15 @@
 											}
 										}										                 
                   },
-                  dataProvider: function(args) {
-										return args.response.success({data: {}});
+                  dataProvider: function(args) {									  
+										$.ajax({
+										  url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id),
+											dataType: "json",
+											success: function(json) {											  
+												var items = json.listnetworksresponse.network;											
+												args.response.success({data: items});		
+											}
+										});									
 									}
                 }
               }			  
