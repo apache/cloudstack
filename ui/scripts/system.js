@@ -884,8 +884,8 @@
                         dataType: "json",
                         async: false,
                         success: function(json) {												  
-                          var zoneObj = json.createzoneresponse.zone;                          
-                          args.response.success({data: zoneObj});
+                          var zoneObj = json.createzoneresponse.zone; 
+                          args.response.success({data: zoneObj}); //spinning wheel appears from this moment
                           zoneId = zoneObj.id;
                           
                           //NaaS (begin)                          
@@ -1001,6 +1001,35 @@
 																																	$("body").stopTime(timerKey);
 																																	if (result.jobstatus == 1) {																						    							   
 																																		//alert("updateNetworkServiceProvider succeeded.");  
+                                                                                                                                       
+                                                                    /*
+                                                                    $.ajax({
+                                                                      url: createURL("listCapabilities"),
+                                                                      dataType: "json",
+                                                                      async: false,
+                                                                      success: function(json) {                                                                        
+                                                                        // g_supportELB: "guest"   � ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+                                                                        // g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+                                                                        // g_supportELB: "false"   � no ELB support                              
+                                                                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
+                                                                        $.cookie('supportELB', g_supportELB, { expires: 1});
+
+                                                                        g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
+                                                                        $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
+
+                                                                        if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
+                                                                          g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
+                                                                          $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
+                                                                        }
+
+                                                                        if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
+                                                                          g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
+                                                                          $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
+                                                                        }
+                                                                      }
+                                                                    });  
+                                                                    */   
+                                                                    
 																																	} 
 																																	else if (result.jobstatus == 2) {
 																																		alert("updateNetworkServiceProvider failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -1044,34 +1073,6 @@
 														}
 													});													
                           //NaaS (end) 
-
-													/*
-                          $.ajax({
-                            url: createURL("listCapabilities"),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {
-                              // g_supportELB: "guest"   � ips are allocated on guest network (so use 'forvirtualnetwork' = false)
-                              // g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
-                              // g_supportELB: "false"   � no ELB support                              
-                              g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
-                              $.cookie('supportELB', g_supportELB, { expires: 1});
-
-                              g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
-                              $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
-
-                              if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                                g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
-                                $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
-                              }
-
-                              if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
-                                g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
-                                $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
-                              }
-                            }
-                          });
-													*/
                         },
                         error: function(XMLHttpResponse) {
                           var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
