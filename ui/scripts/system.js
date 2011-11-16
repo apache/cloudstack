@@ -385,7 +385,8 @@
 																success: function(json) {
 																	var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
 																	if (networkOfferings != null && networkOfferings.length > 0) {
-																		for (var i = 0; i < networkOfferings.length; i++) {																		  
+                                    //for (var i = 0; i < networkOfferings.length; i++) {						
+																		for (var i = (networkOfferings.length-1); i >= 0; i--) {																		  
 																			if (networkOfferings[i].isdefault) {																				
 																				array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});
 																			}
