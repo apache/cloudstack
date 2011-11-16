@@ -108,8 +108,8 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     }
 
     @Override
-    public boolean start() {
-        _executor.schedule(new HostCapacityCollector(), _hostCapacityCheckerDelay, TimeUnit.SECONDS);
+    public boolean start() {        
+        _executor.scheduleWithFixedDelay(new HostCapacityCollector(), _hostCapacityCheckerDelay, _hostCapacityCheckerInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -406,13 +406,10 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
         @Override
         public void run() {
-            while (!_stopped) {
-                try {
-                    Thread.sleep(_hostCapacityCheckerInterval * 1000);
-                } catch (InterruptedException e1) {
-
-                }
-                // get all hosts...even if they are not in 'UP' state
+        	
+        	try{
+        		s_logger.debug("Starting host capacity checker .....");	            
+        		// get all hosts...even if they are not in 'UP' state
                 List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
 
                 // prep the service offerings
@@ -455,6 +452,11 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
                     CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
                     CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
+                    
+                    if(cpuCap == null || memCap == null){
+                        s_logger.debug("Didnt find cpu/memory capacity for host " + host.getId() + ", skipping it");
+                    	continue;
+                    }
 
                     if (cpuCap.getUsedCapacity() == usedCpu && cpuCap.getReservedCapacity() == reservedCpu) {
                         s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpu: " + cpuCap.getUsedCapacity()
@@ -486,16 +488,16 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
                         memCap.setUsedCapacity(usedMemory);
                     }
 
-                    try {
-                        _capacityDao.update(cpuCap.getId(), cpuCap);
-                        _capacityDao.update(memCap.getId(), memCap);
-                    } catch (Exception e) {
-
-                    }
-                }
-
-            }
-        }
+                    
+                    _capacityDao.update(cpuCap.getId(), cpuCap);
+                    _capacityDao.update(memCap.getId(), memCap);
+                } 
+	            
+	            s_logger.debug("Done running host capacity checker ....");
+        	}catch (Throwable t) {
+	            s_logger.error("Caught an exception while running host capacity checker", t);	
+        	}        		           
+        } 
     }
 
     @Override
