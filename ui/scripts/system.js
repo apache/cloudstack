@@ -560,7 +560,30 @@
 												args.response.success({data: items});		
 											}
 										});									
+									},
+																		
+									detailView: {
+										name: 'Guest network details',
+										tabs: {
+											details: {
+												title: 'Details',
+												fields: [
+													{
+														name: { label: 'Name' },
+														vlan: { label: 'VLAN' },
+														isdefault: {  
+															label: 'Default',
+															converter: cloudStack.converters.toBooleanText
+														}						
+													}
+												],
+												dataProvider: function(args) {												
+												  args.response.success({data: args.context.networks[0]});
+												}
+											},
+										}
 									}
+									//???
                 }
               }			  
             }
