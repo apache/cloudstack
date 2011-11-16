@@ -606,7 +606,46 @@
                         notification: {  //notification in edit action doesn't get picked up (wait until Brian fixes Widget to support async job of Edit action)
                           poll: pollAsyncJobResult  
                         }                          
-                      }                                          
+                      },
+                      'delete': {
+                        label: 'Delete network',
+                        messages: {
+                          confirm: function(args) {
+                            return 'Are you sure you want to delete network ?';
+                          },
+                          success: function(args) {
+                            return 'Network is being deleted.';
+                          },
+                          notification: function(args) {
+                            return 'Deleting network';
+                          },
+                          complete: function(args) {
+                            return 'Network has been deleted.';
+                          }
+                        },
+                        action: function(args) {                          
+                          $.ajax({
+                            url: createURL("deleteNetwork&id=" + args.context.networks[0].id),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                              var jid = json.deletenetworkresponse.jobid;
+                              args.response.success(
+                                {_custom:
+                                 {jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    return {}; //nothing in this template needs to be updated, in fact, this whole template has being deleted
+                                  }
+                                 }
+                                }
+                              );
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      }                      
                       //???
                     },
 										tabs: {
