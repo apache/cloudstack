@@ -893,7 +893,10 @@
                         async: false,
                         success: function(json) {												  
                           var zoneObj = json.createzoneresponse.zone; 
-                          args.response.success({data: zoneObj}); //spinning wheel appears from this moment
+                          args.response.success({
+                            data: zoneObj,
+                            _custom: { zone: zoneObj }
+                          }); //spinning wheel appears from this moment
                           zoneId = zoneObj.id;
                           
                           //NaaS (begin)                          
@@ -1099,7 +1102,12 @@
                   }
                 },
                 notification: {
-                  poll: testData.notifications.testPoll
+                  poll: function(args) {
+                    args.complete({
+                      actionFilter: zoneActionfilter,
+                      data: args._custom.zone
+                    });
+                  }
                 }
               },
 
