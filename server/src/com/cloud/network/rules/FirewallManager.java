@@ -25,6 +25,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.user.Account;
 
 public interface FirewallManager extends FirewallService{
@@ -47,7 +48,7 @@ public interface FirewallManager extends FirewallService{
      */    
     void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException;
     
-    void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose);
+    void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose, FirewallRuleType type);
     
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException;
 
@@ -66,7 +67,7 @@ public interface FirewallManager extends FirewallService{
      */
     boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId);
 
-    FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId)
+    FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId, FirewallRule.FirewallRuleType type)
             throws NetworkRuleConflictException;
 
     FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId) throws NetworkRuleConflictException;
@@ -74,5 +75,7 @@ public interface FirewallManager extends FirewallService{
     boolean revokeAllFirewallRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
 
     boolean revokeFirewallRulesForVm(long vmId);
+    
+    boolean addSystemFirewallRules(IPAddressVO ip, Account acct);
 
 }

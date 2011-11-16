@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -46,6 +47,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> NotRevokedSearch;
     protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
     protected SearchBuilder<FirewallRuleVO> VmSearch;
+    protected final SearchBuilder<FirewallRuleVO> systemRuleSearch;
     
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
     
@@ -81,7 +83,19 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
         ReleaseSearch.done();
         
+        systemRuleSearch = createSearchBuilder();
+        systemRuleSearch.and("type", systemRuleSearch.entity().getType(), Op.EQ);
+        systemRuleSearch.and("ipId", systemRuleSearch.entity().getSourceIpAddressId(), Op.NULL);
+        systemRuleSearch.done();
     }
+    
+    @Override
+    public List<FirewallRuleVO> listSystemRules() {
+    	SearchCriteria<FirewallRuleVO> sc = systemRuleSearch.create();
+    	sc.setParameters("type", FirewallRuleType.System.toString());
+    	return listBy(sc);
+    }
+    
     @Override
     public boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int[] ports) {
         SearchCriteria<FirewallRuleVO> sc = ReleaseSearch.create();

@@ -612,6 +612,7 @@ CREATE TABLE `cloud`.`firewall_rules` (
   `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
   `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
   `related` bigint unsigned COMMENT 'related to what other firewall rule',
+  `type` varchar(10) NOT NULL DEFAULT 'USER',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_firewall_rules__ip_address_id` FOREIGN KEY(`ip_address_id`) REFERENCES `user_ip_address`(`id`),
   CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,

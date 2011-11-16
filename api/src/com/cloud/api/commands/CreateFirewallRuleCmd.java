@@ -53,7 +53,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required = true, description = "the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
@@ -73,7 +73,9 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
-
+    
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
+    private String type;
     
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -290,5 +292,14 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public Long getRelated() {
         return null;
     }
+
+	@Override
+	public FirewallRuleType getType() {
+		if (type != null && type.equalsIgnoreCase("system")) {
+			return FirewallRuleType.System;
+		} else {
+			return FirewallRuleType.User;
+		}
+	}
 
 }

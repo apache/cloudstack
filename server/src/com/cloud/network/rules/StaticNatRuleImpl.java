@@ -20,6 +20,8 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
+
 
 public class StaticNatRuleImpl implements StaticNatRule{
     long id;
@@ -127,5 +129,10 @@ public class StaticNatRuleImpl implements StaticNatRule{
     public Long getRelated() {
         return null;
     }
+
+	@Override
+	public FirewallRuleType getType() {
+		return FirewallRuleType.User;
+	}
 
 }

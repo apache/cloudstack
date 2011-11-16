@@ -177,4 +177,9 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     public Long getRelated() {
         return null;
     }
+
+	@Override
+	public FirewallRuleType getType() {
+		return FirewallRuleType.User;
+	}
 }

@@ -63,6 +63,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
@@ -424,7 +425,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Unable to create load balancer rule; ip id=" + ipId + " has static nat enabled");
         }                 
         
-        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), Purpose.LoadBalancing);
+        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), Purpose.LoadBalancing, FirewallRuleType.User);
 
         
          networkId = ipAddr.getAssociatedWithNetworkId();

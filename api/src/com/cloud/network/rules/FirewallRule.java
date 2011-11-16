@@ -20,6 +20,7 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 
 public interface FirewallRule extends ControlledEntity {
     enum Purpose {
@@ -28,6 +29,11 @@ public interface FirewallRule extends ControlledEntity {
         LoadBalancing,
         Vpn,
         StaticNat,
+    }
+    
+    enum FirewallRuleType {
+    	System, // The pre-defined rules created by admin, in the system wide
+    	User; // the rules created by user, to a specific ip
     }
     
     enum State {
@@ -77,5 +83,7 @@ public interface FirewallRule extends ControlledEntity {
     List<String> getSourceCidrList();
     
     Long getRelated();
+
+	FirewallRuleType getType();
 
 }

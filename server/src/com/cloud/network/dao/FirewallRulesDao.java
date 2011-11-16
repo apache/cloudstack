@@ -48,4 +48,6 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     List<FirewallRuleVO> listByIpPurposeAndProtocolAndNotRevoked(long ipAddressId, Integer startPort, Integer endPort, String protocol, FirewallRule.Purpose purpose);
 
     FirewallRuleVO findByRelatedId(long ruleId);
+
+	List<FirewallRuleVO> listSystemRules();
 }

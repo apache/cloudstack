@@ -309,4 +309,9 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return null;
     }
 
+	@Override
+	public FirewallRuleType getType() {
+		return FirewallRuleType.User;
+	}
+
 }

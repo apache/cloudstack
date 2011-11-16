@@ -99,6 +99,11 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     @Column(name="related")
     Long related;
     
+    @Column(name="type")
+    @Enumerated(value=EnumType.STRING)
+    FirewallRuleType type;
+    
+    
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call firewallrules dao to load it.
@@ -178,7 +183,11 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     public long getNetworkId() {
         return networkId;
     }
-    
+   
+    @Override
+    public FirewallRuleType getType() {
+    	return type;
+    }
     public Date getCreated() {
         return created;
     }
@@ -211,6 +220,7 @@ public class FirewallRuleVO implements FirewallRule, Identity {
         
         this.related = related;
     	this.uuid = UUID.randomUUID().toString();
+    	this.type = FirewallRuleType.User;
     }
     
     public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
@@ -244,5 +254,9 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+    
+    public void setType(FirewallRuleType type) {
+    	this.type = type;
     }
 }

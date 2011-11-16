@@ -48,6 +48,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.user.Account;
@@ -166,7 +167,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
         } 
         
-        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.PortForwarding);
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User);
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAccountId();
@@ -257,7 +258,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
         } 
         
-        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat);
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User);
         
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAccountId();

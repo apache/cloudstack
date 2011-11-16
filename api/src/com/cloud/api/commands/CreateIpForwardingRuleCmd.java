@@ -39,6 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
+import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -293,5 +294,10 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     public Long getRelated() {
         return null;
     }
+
+	@Override
+	public FirewallRuleType getType() {
+		return FirewallRuleType.User;
+	}
 
 }

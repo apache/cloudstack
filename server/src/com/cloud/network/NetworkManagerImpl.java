@@ -402,12 +402,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vlanUse != VlanType.DirectAttached) {
             addr.setAssociatedWithNetworkId(networkId);
         }
-
+        
         _ipAddressDao.update(addr.getId(), addr);
 
         txn.commit();
+        
+        if (vlanUse == VlanType.VirtualNetwork) {
+        	_firewallMgr.addSystemFirewallRules(addr, owner);
+        }
+        
         long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
 
+        
+        
         return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
     }
 
