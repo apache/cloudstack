@@ -19,12 +19,12 @@
 
 package com.cloud.network.element;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
@@ -46,15 +46,15 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.Network;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
