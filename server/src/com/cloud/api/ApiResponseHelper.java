@@ -2338,9 +2338,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setIsLBShared(!offering.getDedicatedLB());
-        response.setIsSourceNatShared(offering.getSharedSourceNat());
-        response.setIsRedundantRouter(offering.getRedundantRouter());
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }
@@ -2359,6 +2356,30 @@ public class ApiResponseHelper implements ResponseGenerator {
                 providers.add(providerRsp);
             }
             svcRsp.setProviders(providers);
+
+            if (Service.Lb.getName().equalsIgnoreCase(service)) {
+                List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
+                CapabilityResponse lbIsoaltion = new CapabilityResponse();
+                lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
+                lbIsoaltion.setValue(offering.getDedicatedLB()?"dedicated":"shared");
+                lbCapResponse.add(lbIsoaltion);
+                svcRsp.setCapabilities(lbCapResponse);
+            } else if (Service.Firewall.getName().equalsIgnoreCase(service)) {
+                List<CapabilityResponse> fwCapResponse = new ArrayList<CapabilityResponse>();
+                CapabilityResponse sharedSourceNat = new CapabilityResponse();
+                sharedSourceNat.setName(Capability.SupportedLBIsolation.getName());
+                sharedSourceNat.setValue(offering.getSharedSourceNat()?"perzone":"peraccount");
+                fwCapResponse.add(sharedSourceNat);
+                svcRsp.setCapabilities(fwCapResponse);
+            } else if (Service.Gateway.getName().equalsIgnoreCase(service)) {
+                List<CapabilityResponse> gatewayCapResponse = new ArrayList<CapabilityResponse>();
+                CapabilityResponse redundantRouter = new CapabilityResponse();
+                redundantRouter.setName(Capability.RedundantRouter.getName());
+                redundantRouter.setValue(offering.getRedundantRouter()?"true":"false");
+                gatewayCapResponse.add(redundantRouter);
+                svcRsp.setCapabilities(gatewayCapResponse);
+            }
+
             serviceResponses.add(svcRsp);
         }
         response.setServices(serviceResponses);
