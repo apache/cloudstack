@@ -507,8 +507,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             return new Ternary<String, Long, Long>(installPath + "/" + templateName + ".ova", size, size);
             
         } finally {
-            if(clonedVm != null)
+            if(clonedVm != null) {
+                clonedVm.detachAllDisks();
                 clonedVm.destroy();
+            }
         
             vmMo.removeSnapshot(tmpSnapshotName, false);
         }
@@ -656,8 +658,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             clonedVm.moveAllVmDiskFiles(primaryDsMo, "", false);
             clonedVm.detachAllDisks();
         } finally {
-            if(clonedVm != null)
+            if(clonedVm != null) {
+                clonedVm.detachAllDisks();
                 clonedVm.destroy();
+            }
         }
     }
     
