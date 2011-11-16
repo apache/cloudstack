@@ -32,37 +32,45 @@ import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.NetworkResponse;
+import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
+import com.cloud.network.ExternalFirewallDeviceVO;
+import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetworkResponse.class, description="lists network that are using a netscaler load balancer device")
-public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
+@Implementation(responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
+public class ListSrxFirewallsCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
-    private static final String s_name = "listnetscalerloadbalancernetworksresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+    public static final Logger s_logger = Logger.getLogger(ListSrxFirewallsCmd.class.getName());
+    private static final String s_name = "listsrxfirewallresponse";
+    @PlugService JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_load_balancer_devices")
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG, required = true, description="netscaler load balancer device ID")
-    private Long lbDeviceId;
+    @IdentityMapper(entityTableName="physical_network")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    private Long physicalNetworkId;
+
+    @IdentityMapper(entityTableName="external_firewall_devices")
+    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.LONG,  description="SRX firewall device ID")
+    private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getLoadBalancerDeviceId() {
-        return lbDeviceId;
+    public Long getFirewallDeviceId() {
+        return fwDeviceId;
+    }
+
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 
     /////////////////////////////////////////////////////
@@ -72,18 +80,18 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _netsclarLbService.listNetworks(this);
-            ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
-            List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+            List<ExternalFirewallDeviceVO> fwDevices = _srxFwService.listSrxFirewalls(this);
+            ListResponse<SrxFirewallResponse> response = new ListResponse<SrxFirewallResponse>();
+            List<SrxFirewallResponse> fwDevicesResponse = new ArrayList<SrxFirewallResponse>();
 
-            if (networks != null && !networks.isEmpty()) {
-                for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
-                    networkResponses.add(networkResponse);
+            if (fwDevices != null && !fwDevices.isEmpty()) {
+                for (ExternalFirewallDeviceVO fwDeviceVO : fwDevices) {
+                    SrxFirewallResponse lbdeviceResponse = _srxFwService.createSrxFirewallResponse(fwDeviceVO);
+                    fwDevicesResponse.add(lbdeviceResponse);
                 }
             }
 
-            response.setResponses(networkResponses);
+            response.setResponses(fwDevicesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {

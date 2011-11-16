@@ -18,51 +18,47 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.NetworkResponse;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
+import com.cloud.network.element.JuniperSRXFirewallElementService;
+import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetworkResponse.class, description="lists network that are using a netscaler load balancer device")
-public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
-
-    public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
-    private static final String s_name = "listnetscalerloadbalancernetworksresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+@Implementation(responseObject=SuccessResponse.class, description=" delete a SRX firewall device")
+public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteSrxFirewallCmd.class.getName());
+    private static final String s_name = "deletesrxfirewallresponse";
+    @PlugService JuniperSRXFirewallElementService _srxElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_load_balancer_devices")
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG, required = true, description="netscaler load balancer device ID")
-    private Long lbDeviceId;
+    @IdentityMapper(entityTableName="external_firewall_devices")
+    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.LONG, required=true, description="srx firewall device ID")
+    private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getLoadBalancerDeviceId() {
-        return lbDeviceId;
+    public Long getFirewallDeviceId() {
+        return fwDeviceId;
     }
 
     /////////////////////////////////////////////////////
@@ -72,20 +68,14 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _netsclarLbService.listNetworks(this);
-            ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
-            List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
-
-            if (networks != null && !networks.isEmpty()) {
-                for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
-                    networkResponses.add(networkResponse);
-                }
+            boolean result = _srxElementService.deleteSrxFirewall(this);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete SRX firewall device");
             }
-
-            response.setResponses(networkResponses);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
@@ -94,7 +84,22 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     }
 
     @Override
+    public String getEventDescription() {
+        return "Deleting SRX firewall device";
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_EXTERAL_FIREWALL_DEVICE_DELETE;
+    }
+
+    @Override
     public String getCommandName() {
         return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return UserContext.current().getCaller().getId();
     }
 }

@@ -27,8 +27,14 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.AddExternalFirewallCmd;
+import com.cloud.api.commands.AddSrxFirewallCmd;
+import com.cloud.api.commands.ConfigureSrxFirewallCmd;
 import com.cloud.api.commands.DeleteExternalFirewallCmd;
+import com.cloud.api.commands.DeleteSrxFirewallCmd;
 import com.cloud.api.commands.ListExternalFirewallsCmd;
+import com.cloud.api.commands.ListSrxFirewallNetworksCmd;
+import com.cloud.api.commands.ListSrxFirewallsCmd;
+import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -41,20 +47,27 @@ import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.ExternalFirewallDeviceManagerImpl;
+import com.cloud.network.ExternalFirewallDeviceVO;
+import com.cloud.network.NetworkExternalFirewallVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.FirewallRule;
@@ -64,6 +77,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -84,6 +98,9 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Inject NetworkDao _networksDao;
     @Inject DataCenterDao _dcDao;
     @Inject PhysicalNetworkDao _physicalNetworkDao;
+    @Inject ExternalFirewallDeviceDao _fwDevicesDao;
+    @Inject NetworkExternalFirewallDao _networkFirewallDao;
+    @Inject NetworkDao _networkDao;
 
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
@@ -112,19 +129,19 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         try {
             return manageGuestNetworkWithExternalFirewall(true, network);
         } catch (InsufficientCapacityException capacityException) {
-            // TODO: handle out of capacity exception
+            // TODO: handle out of capacity exception in more gracefule manner when multiple providers are present for the network
             return false;
         }
     }
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
-    	return true;
+        return true;
     }
 
     @Override
     public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
-    	return true;
+        return true;
     }
 
     @Override
@@ -159,7 +176,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }
         
-    	return applyIps(network, ipAddresses);
+        return applyIps(network, ipAddresses);
     }
     
 
@@ -168,29 +185,29 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         if (!canHandle(config)) {
             return false;
         }
-    	
-    	return applyFirewallRules(config, rules);
-    }
         
+        return applyFirewallRules(config, rules);
+    }
+
     @Override
     public boolean startVpn(Network config, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-    	if (!canHandle(config)) {
+        if (!canHandle(config)) {
             return false;
         }
-    	
-    	return manageRemoteAccessVpn(true, config, vpn);
+        
+        return manageRemoteAccessVpn(true, config, vpn);
 
     }
-    
+
     @Override
     public boolean stopVpn(Network config, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-    	if (!canHandle(config)) {
+        if (!canHandle(config)) {
             return false;
         }
-    	
-    	return manageRemoteAccessVpn(false, config, vpn);
+        
+        return manageRemoteAccessVpn(false, config, vpn);
     }
-    
+
     @Override
     public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException{
         Network config = _networksDao.findById(vpn.getNetworkId());
@@ -202,22 +219,22 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         boolean result = manageRemoteAccessVpnUsers(config, vpn, users);
         String[] results = new String[users.size()];
         for (int i = 0; i < results.length; i++) {
-        	results[i] = String.valueOf(result);
+            results[i] = String.valueOf(result);
         }
         
         return results;
     }
-    
+
     @Override
     public Provider getProvider() {
         return Provider.JuniperSRX;
     }
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }
-    
+
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
   
@@ -260,14 +277,23 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         if (!canHandle(network)) {
             return false;
         }
-    	
-    	return applyFirewallRules(network, rules);
+        
+        return applyFirewallRules(network, rules);
     }
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        // TODO Auto-generated method stub
-        return true;
+        
+        List<ExternalFirewallDeviceVO> fwDevices = _fwDevicesDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.JuniperSRX.getName());
+        // true if at-least one SRX device is added in to physical network and is in configured (in enabled state) state
+        if (fwDevices != null && !fwDevices.isEmpty()) {
+            for (ExternalFirewallDeviceVO fwDevice : fwDevices) {
+                if (fwDevice.getState() == FirewallDeviceState.Enabled) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -288,6 +314,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         Long zoneId = cmd.getZoneId();
         DataCenterVO zone =null;
         PhysicalNetworkVO pNetwork=null;
+        HostVO fwHost = null;
 
         zone = _dcDao.findById(zoneId);
         if (zone == null) {
@@ -302,14 +329,19 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.JuniperSRXFirewall.getName();
-        return addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, (ServerResource) new JuniperSrxResource());
+        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, (ServerResource) new JuniperSrxResource());
+        if (fwDeviceVO != null) {
+            fwHost = _hostDao.findById(fwDeviceVO.getHostId());
+        } 
+        
+        return fwHost;
     }
+
     @Override
     public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd) {
         return deleteExternalFirewall(cmd.getId());
     }
-    
- 
+
     @Override
     @Deprecated  // should use more generic listNetworkDevice command    
     public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
@@ -343,5 +375,117 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Override
     public String getPropertiesFile() {
         return "junipersrx_commands.properties";
+    }
+
+    @Override
+    public ExternalFirewallDeviceVO addSrxFirewall(AddSrxFirewallCmd cmd) {
+        String deviceName = cmd.getDeviceType();
+        if (deviceName.equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+            throw new InvalidParameterValueException("Invalid SRX firewall device type");
+        }
+        return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, 
+                (ServerResource) new JuniperSrxResource());
+    }
+
+    @Override
+    public boolean deleteSrxFirewall(DeleteSrxFirewallCmd cmd) {
+        Long fwDeviceId = cmd.getFirewallDeviceId();
+
+        ExternalFirewallDeviceVO fwDeviceVO = _fwDevicesDao.findById(fwDeviceId);
+        if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+            throw new InvalidParameterValueException("No SRX firewall device found with ID: " + fwDeviceId);
+        }
+        return deleteExternalFirewall(fwDeviceId);
+    }
+
+    @Override
+    public ExternalFirewallDeviceVO configureSrxFirewall(ConfigureSrxFirewallCmd cmd) {
+        Long fwDeviceId = cmd.getFirewallDeviceId();
+        Long deviceCapacity = cmd.getFirewallCapacity();
+
+        ExternalFirewallDeviceVO fwDeviceVO = _fwDevicesDao.findById(fwDeviceId);
+        if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+            throw new InvalidParameterValueException("No SRX firewall device found with ID: " + fwDeviceId);
+        }
+        
+        if (deviceCapacity != null) {
+            // check if any networks are using this SRX device
+            List<NetworkExternalFirewallVO> networks = _networkFirewallDao.listByFirewallDeviceId(fwDeviceId);
+            if ((networks != null) && !networks.isEmpty()) {
+                if (deviceCapacity < networks.size()) {
+                    throw new CloudRuntimeException("There are more number of networks already using this SRX firewall device than configured capacity");
+                }
+            }
+            if (deviceCapacity != null) {
+                fwDeviceVO.setCapacity(deviceCapacity);
+            }
+        }
+
+        fwDeviceVO.setState(FirewallDeviceState.Enabled);
+        _fwDevicesDao.update(fwDeviceId, fwDeviceVO);
+        return fwDeviceVO;
+    }
+
+    @Override
+    public List<ExternalFirewallDeviceVO> listSrxFirewalls(ListSrxFirewallsCmd cmd) {
+        Long physcialNetworkId = cmd.getPhysicalNetworkId();
+        Long fwDeviceId = cmd.getFirewallDeviceId();
+        PhysicalNetworkVO pNetwork = null;
+        List<ExternalFirewallDeviceVO> fwDevices = new ArrayList<ExternalFirewallDeviceVO> ();
+
+        if (physcialNetworkId == null && fwDeviceId == null) {
+            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified");
+        }
+
+        if (fwDeviceId != null) {
+            ExternalFirewallDeviceVO fwDeviceVo = _fwDevicesDao.findById(fwDeviceId);
+            if (fwDeviceVo == null || !fwDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+                throw new InvalidParameterValueException("Could not find SRX firewall device with ID: " + fwDeviceId);
+            }
+            fwDevices.add(fwDeviceVo);
+        }
+
+        if (physcialNetworkId != null) {
+            pNetwork = _physicalNetworkDao.findById(physcialNetworkId);
+            if (pNetwork == null) {
+                throw new InvalidParameterValueException("Could not find phyical network with ID: " + physcialNetworkId);
+            }
+            fwDevices = _fwDevicesDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.F5BigIp.getName());
+        }
+
+        return fwDevices;
+    }
+
+    @Override
+    public List<? extends Network> listNetworks(ListSrxFirewallNetworksCmd cmd) {
+        Long fwDeviceId = cmd.getFirewallDeviceId();
+        List<NetworkVO> networks = new ArrayList<NetworkVO>();
+
+        ExternalFirewallDeviceVO fwDeviceVo = _fwDevicesDao.findById(fwDeviceId);
+        if (fwDeviceVo == null || !fwDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+            throw new InvalidParameterValueException("Could not find SRX firewall device with ID " + fwDeviceId);
+        }
+
+        List<NetworkExternalFirewallVO> networkFirewallMaps = _networkFirewallDao.listByFirewallDeviceId(fwDeviceId);
+        if (networkFirewallMaps != null && !networkFirewallMaps.isEmpty()) {
+            for (NetworkExternalFirewallVO networkFirewallMap : networkFirewallMaps) {
+                NetworkVO network = _networkDao.findById(networkFirewallMap.getNetworkId());
+                networks.add(network);
+            }
+        }
+
+        return networks;
+    }
+
+    @Override
+    public SrxFirewallResponse createSrxFirewallResponse(ExternalFirewallDeviceVO fwDeviceVO) {
+        SrxFirewallResponse response = new SrxFirewallResponse();
+        response.setId(fwDeviceVO.getId());
+        response.setPhysicalNetworkId(fwDeviceVO.getPhysicalNetworkId());
+        response.setDeviceName(fwDeviceVO.getDeviceName());
+        response.setDeviceCapacity(fwDeviceVO.getCapacity());
+        response.setProvider(fwDeviceVO.getProviderName());
+        response.setDeviceState(fwDeviceVO.getState().name());
+        return response;
     }
 }

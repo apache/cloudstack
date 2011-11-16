@@ -41,7 +41,7 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
     /**
      * removes a Netscaler load balancer device from a physical network
      * @param DeleteNetscalerLoadBalancerCmd 
-     * @return ExternalLoadBalancerDeviceVO object for the device deleted
+     * @return true if Netscaler device is deleted successfully
      */
     public boolean deleteNetscalerLoadBalancer(DeleteNetscalerLoadBalancerCmd cmd);
 
@@ -54,14 +54,14 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
 
     /**
      * lists all the load balancer devices added in to a physical network
-     * @param physicalNetworkId physical Network Id
+     * @param ListNetscalerLoadBalancersCmd
      * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network.
      */
     public List<ExternalLoadBalancerDeviceVO> listNetscalerLoadBalancers(ListNetscalerLoadBalancersCmd cmd);
 
     /**
      * lists all the guest networks using a Netscaler load balancer device
-     * @param lbDeviceId external load balancer device Id
+     * @param ListNetscalerLoadBalancerNetworksCmd
      * @return list of the guest networks that are using this Netscaler load balancer
      */
     public List<? extends Network> listNetworks(ListNetscalerLoadBalancerNetworksCmd cmd);

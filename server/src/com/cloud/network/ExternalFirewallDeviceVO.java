@@ -116,6 +116,10 @@ public class ExternalFirewallDeviceVO {
         return capacity;
     }
 
+    public void setCapacity(long capacity) {
+        this.capacity = capacity;
+    }
+
     public FirewallDeviceState getState() {
         return state;
     }

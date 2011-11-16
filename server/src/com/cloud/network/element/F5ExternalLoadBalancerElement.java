@@ -19,6 +19,7 @@
 
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,14 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
+import com.cloud.api.commands.AddF5LoadBalancerCmd;
+import com.cloud.api.commands.ConfigureF5LoadBalancerCmd;
 import com.cloud.api.commands.DeleteExternalLoadBalancerCmd;
+import com.cloud.api.commands.DeleteF5LoadBalancerCmd;
 import com.cloud.api.commands.ListExternalLoadBalancersCmd;
+import com.cloud.api.commands.ListF5LoadBalancerNetworksCmd;
+import com.cloud.api.commands.ListF5LoadBalancersCmd;
+import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -46,6 +53,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.NetworkExternalLoadBalancerVO;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -55,6 +65,9 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -63,6 +76,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -80,6 +94,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     @Inject DataCenterDao _dcDao;
     @Inject PhysicalNetworkDao _physicalNetworkDao;
     @Inject HostDao _hostDao;
+    @Inject ExternalLoadBalancerDeviceDao _lbDeviceDao;
+    @Inject NetworkExternalLoadBalancerDao _networkLBDao;
+    @Inject NetworkDao _networkDao;
 
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
@@ -102,7 +119,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         try {
             return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
-            // TODO: handle out of capacity exception
+            // TODO: handle out of capacity exception in graceful manner when multiple providers are avaialble for the network
             return false;
         }
     }
@@ -179,8 +196,17 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        // TODO Auto-generated method stub
-        return true;
+        List<ExternalLoadBalancerDeviceVO> lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(provider.getPhysicalNetworkId(), Provider.F5BigIp.getName());
+
+        // true if at-least one F5 device is added in to physical network and is in configured (in enabled state) state
+        if (lbDevices != null && !lbDevices.isEmpty()) {
+            for (ExternalLoadBalancerDeviceVO lbDevice : lbDevices) {
+                if (lbDevice.getState() == LBDeviceState.Enabled) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -266,5 +292,121 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     @Deprecated
     public ExternalLoadBalancerResponse createExternalLoadBalancerResponse(Host externalLb) {
         return super.createExternalLoadBalancerResponse(externalLb);
+    }
+
+    @Override
+    public ExternalLoadBalancerDeviceVO addF5LoadBalancer(AddF5LoadBalancerCmd cmd) {
+        String deviceName = cmd.getDeviceType();
+        if (!deviceName.equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
+            throw new InvalidParameterValueException("Invalid F5 load balancer device type");
+        }
+
+        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, (ServerResource) new F5BigIpResource());
+
+    }
+
+    @Override
+    public boolean deleteF5LoadBalancer(DeleteF5LoadBalancerCmd cmd) {
+        Long lbDeviceId = cmd.getLoadBalancerDeviceId();
+
+        ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
+        if ((lbDeviceVo == null) || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
+            throw new InvalidParameterValueException("No F5 load balancer device found with ID: " + lbDeviceId);
+        }
+
+        return deleteExternalLoadBalancer(lbDeviceVo.getHostId());
+    }
+
+    @Override
+    public ExternalLoadBalancerDeviceVO configureF5LoadBalancer(ConfigureF5LoadBalancerCmd cmd) {
+        Long lbDeviceId = cmd.getLoadBalancerDeviceId();
+        Long capacity = cmd.getLoadBalancerCapacity();
+
+        ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
+        if ((lbDeviceVo == null) || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
+            throw new InvalidParameterValueException("No F5 load balancer device found with ID: " + lbDeviceId);
+        }
+
+        if (capacity != null) {
+            // check if any networks are using this F5 device
+            List<NetworkExternalLoadBalancerVO> networks = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
+            if ((networks != null) && !networks.isEmpty()) {
+                if (capacity < networks.size()) {
+                    throw new CloudRuntimeException("There are more number of networks already using this F5 device than configured capacity");
+                }
+            }
+            if (capacity != null) {
+                lbDeviceVo.setCapacity(capacity);
+            }
+        }
+
+        lbDeviceVo.setState(LBDeviceState.Enabled);
+        _lbDeviceDao.update(lbDeviceId, lbDeviceVo);
+        return lbDeviceVo;
+    }
+
+    @Override
+    public List<ExternalLoadBalancerDeviceVO> listF5LoadBalancers(ListF5LoadBalancersCmd cmd) {
+        Long physcialNetworkId = cmd.getPhysicalNetworkId();
+        Long lbDeviceId = cmd.getLoadBalancerDeviceId();
+        PhysicalNetworkVO pNetwork = null;
+        List<ExternalLoadBalancerDeviceVO> lbDevices = new ArrayList<ExternalLoadBalancerDeviceVO> ();
+
+        if (physcialNetworkId == null && lbDeviceId == null) {
+            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified");
+        }
+
+        if (lbDeviceId != null) {
+            ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
+            if (lbDeviceVo == null || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
+                throw new InvalidParameterValueException("Could not find F5 load balancer device with ID: " + lbDeviceId);
+            }
+            lbDevices.add(lbDeviceVo);
+            return lbDevices;
+        }
+
+        if (physcialNetworkId != null) {
+            pNetwork = _physicalNetworkDao.findById(physcialNetworkId);
+            if (pNetwork == null) {
+                throw new InvalidParameterValueException("Could not find phyical network with ID: " + physcialNetworkId);
+            }
+            lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.F5BigIp.getName());
+            return lbDevices;
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<? extends Network> listNetworks(ListF5LoadBalancerNetworksCmd cmd) {
+        Long lbDeviceId = cmd.getLoadBalancerDeviceId();
+        List<NetworkVO> networks = new ArrayList<NetworkVO>();
+
+        ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
+        if (lbDeviceVo == null || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
+            throw new InvalidParameterValueException("Could not find F5 load balancer device with ID " + lbDeviceId);
+        }
+
+        List<NetworkExternalLoadBalancerVO> networkLbMaps = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
+        if (networkLbMaps != null && !networkLbMaps.isEmpty()) {
+            for (NetworkExternalLoadBalancerVO networkLbMap : networkLbMaps) {
+                NetworkVO network = _networkDao.findById(networkLbMap.getNetworkId());
+                networks.add(network);
+            }
+        }
+
+        return networks;
+    }
+
+    @Override
+    public F5LoadBalancerResponse createF5LoadBalancerResponse(ExternalLoadBalancerDeviceVO lbDeviceVO) {
+        F5LoadBalancerResponse response = new F5LoadBalancerResponse();
+        response.setId(lbDeviceVO.getId());
+        response.setPhysicalNetworkId(lbDeviceVO.getPhysicalNetworkId());
+        response.setDeviceName(lbDeviceVO.getDeviceName());
+        response.setDeviceCapacity(lbDeviceVO.getCapacity());
+        response.setProvider(lbDeviceVO.getProviderName());
+        response.setDeviceState(lbDeviceVO.getState().name());
+        return response;
     }
 }

@@ -264,13 +264,13 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
 
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         if (lbDeviceVo == null || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
-            throw new InvalidParameterValueException("Could not find Netscaler load balancer device with ID: " + lbDeviceId);
+            throw new InvalidParameterValueException("Could not find Netscaler load balancer device with ID " + lbDeviceId);
         }
 
         List<NetworkExternalLoadBalancerVO> networkLbMaps = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
         if (networkLbMaps != null && !networkLbMaps.isEmpty()) {
             for (NetworkExternalLoadBalancerVO networkLbMap : networkLbMaps) {
-                NetworkVO network = _networkDao.findById(networkLbMap.getId());
+                NetworkVO network = _networkDao.findById(networkLbMap.getNetworkId());
                 networks.add(network);
             }
         }

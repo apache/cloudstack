@@ -39,30 +39,30 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
+import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetworkResponse.class, description="lists network that are using a netscaler load balancer device")
-public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
+@Implementation(responseObject=NetworkResponse.class, description="lists network that are using SRX firewall device")
+public class ListSrxFirewallNetworksCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
-    private static final String s_name = "listnetscalerloadbalancernetworksresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+    public static final Logger s_logger = Logger.getLogger(ListSrxFirewallNetworksCmd.class.getName());
+    private static final String s_name = "listsrxfirewallnetworksresponse";
+    @PlugService JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_load_balancer_devices")
+    @IdentityMapper(entityTableName="external_firewall_devices")
     @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG, required = true, description="netscaler load balancer device ID")
-    private Long lbDeviceId;
+    private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getLoadBalancerDeviceId() {
-        return lbDeviceId;
+    public Long getFirewallDeviceId() {
+        return fwDeviceId;
     }
 
     /////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _netsclarLbService.listNetworks(this);
+            List<? extends Network> networks  = _srxFwService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 

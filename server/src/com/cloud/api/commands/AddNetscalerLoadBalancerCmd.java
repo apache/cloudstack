@@ -54,7 +54,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external load balancer appliance.")
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the netscaler load balancer appliance.")
     private String url;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach netscaler load balancer device")
@@ -63,7 +63,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach netscaler load balancer device")
     private String password;
 
-    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall")
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "Netscaler device type supports NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer")
     private String deviceType;
 
     /////////////////////////////////////////////////////

@@ -312,4 +312,5 @@ public class ApiConstants {
     public static final String FIREWALL_DEVICE_ID = "fwdeviceid";
     public static final String FIREWALL_DEVICE_NAME = "fwdevicename";
     public static final String FIREWALL_DEVICE_STATE = "fwdevicestate";
+    public static final String FIREWALL_DEVICE_CAPACITY = "fwdevicecapacity";
 }

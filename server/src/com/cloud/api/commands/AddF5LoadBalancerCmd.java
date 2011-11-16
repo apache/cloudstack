@@ -28,7 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.NetscalerLoadBalancerResponse;
+import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -36,45 +36,59 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
+import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetscalerLoadBalancerResponse.class, description="configures a netscaler load balancer device")
-public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
+@Implementation(responseObject=F5LoadBalancerResponse.class, description="Adds a F5 BigIP load balancer device")
+public class AddF5LoadBalancerCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ConfigureNetscalerLoadBalancerCmd.class.getName());
-    private static final String s_name = "configurenetscalerloadbalancerresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+    public static final Logger s_logger = Logger.getLogger(AddF5LoadBalancerCmd.class.getName());
+    private static final String s_name = "addf5bigiploadbalancerresponse";
+    @PlugService F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_load_balancer_devices")
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG, required=true, description="Netscaler load balancer device ID")
-    private Long lbDeviceId;
+    @IdentityMapper(entityTableName="physical_network")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY, type=CommandType.LONG, required=false, description="capacity of the device, Capacity will be interpreted as number of networks device can handle")
-    private Long capacity;
+    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the F5 load balancer appliance.")
+    private String url;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED, type=CommandType.BOOLEAN, required=false, description="true if this netscaler device to dedicated for a account")
-    private Boolean dedicatedUse;
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach F5 BigIP load balancer device")
+    private String username;
+    
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach F5 BigIP load balancer device")
+    private String password;
+
+    @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, required = true, description = "supports only F5BigIpLoadBalancer")
+    private String deviceType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getLoadBalancerDeviceId() {
-        return lbDeviceId;
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
     }
 
-    public Long getLoadBalancerCapacity() {
-        return capacity;
+    public String getUrl() {
+        return url;
     }
 
-    public Boolean getLoadBalancerDedicated() {
-        return dedicatedUse;
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getDeviceType() {
+        return deviceType;
     }
 
     /////////////////////////////////////////////////////
@@ -84,14 +98,14 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            ExternalLoadBalancerDeviceVO lbDeviceVO = _netsclarLbService.configureNetscalerLoadBalancer(this);
+            ExternalLoadBalancerDeviceVO lbDeviceVO = _f5DeviceManagerService.addF5LoadBalancer(this);
             if (lbDeviceVO != null) {
-                NetscalerLoadBalancerResponse response = _netsclarLbService.createNetscalerLoadBalancerResponse(lbDeviceVO);
-                response.setObjectName("netscalerloadbalancer");
+                F5LoadBalancerResponse response = _f5DeviceManagerService.createF5LoadBalancerResponse(lbDeviceVO);
+                response.setObjectName("f5loadbalancer");
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to configure netscaler load balancer due to internal error.");
+                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to add F5 Big IP load balancer due to internal error.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
@@ -102,14 +116,14 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Configuring a netscaler load balancer device";
+        return "Adding a F5 Big Ip load balancer device";
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_EXTERAL_LB_DEVICE_CONFIGURE;
+        return EventTypes.EVENT_EXTERAL_LB_DEVICE_ADD;
     }
-
+ 
     @Override
     public String getCommandName() {
         return s_name;

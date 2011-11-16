@@ -31,30 +31,33 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
+import com.cloud.network.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=NetworkResponse.class, description="lists network that are using a netscaler load balancer device")
-public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
-
-    public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
-    private static final String s_name = "listnetscalerloadbalancernetworksresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+@Implementation(responseObject=F5LoadBalancerResponse.class, description="lists F5 load balancer devices")
+public class ListF5LoadBalancersCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListF5LoadBalancersCmd.class.getName());
+    private static final String s_name = "listf5loadbalancerresponse";
+    @PlugService F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @IdentityMapper(entityTableName="physical_network")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    private Long physicalNetworkId;
+
     @IdentityMapper(entityTableName="external_load_balancer_devices")
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG, required = true, description="netscaler load balancer device ID")
+    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.LONG,  description="f5 load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -65,6 +68,10 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
         return lbDeviceId;
     }
 
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -72,18 +79,18 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _netsclarLbService.listNetworks(this);
-            ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
-            List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+            List<ExternalLoadBalancerDeviceVO> lbDevices = _f5DeviceManagerService.listF5LoadBalancers(this);
+            ListResponse<F5LoadBalancerResponse> response = new ListResponse<F5LoadBalancerResponse>();
+            List<F5LoadBalancerResponse> lbDevicesResponse = new ArrayList<F5LoadBalancerResponse>();
 
-            if (networks != null && !networks.isEmpty()) {
-                for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
-                    networkResponses.add(networkResponse);
+            if (lbDevices != null && !lbDevices.isEmpty()) {
+                for (ExternalLoadBalancerDeviceVO lbDeviceVO : lbDevices) {
+                    F5LoadBalancerResponse lbdeviceResponse = _f5DeviceManagerService.createF5LoadBalancerResponse(lbDeviceVO);
+                    lbDevicesResponse.add(lbdeviceResponse);
                 }
             }
 
-            response.setResponses(networkResponses);
+            response.setResponses(lbDevicesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {

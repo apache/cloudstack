@@ -45,7 +45,7 @@ public interface ExternalFirewallDeviceManager extends Manager {
      * @param server resource that will handle the commands specific to this device 
      * @return Host object for the device added
      */
-    public Host addExternalFirewall(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource);
+    public ExternalFirewallDeviceVO addExternalFirewall(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource);
 
     /**
      * deletes load balancer device added in to a physical network

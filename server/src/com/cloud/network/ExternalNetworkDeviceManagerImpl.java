@@ -57,7 +57,6 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VpnUserDao;
@@ -182,7 +181,12 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             String username = (String) params.get(ApiConstants.USERNAME);
             String password = (String) params.get(ApiConstants.PASSWORD);
             ExternalFirewallDeviceManager fwDeviceManager = (ExternalFirewallDeviceManager) _srxElementService;
-            return fwDeviceManager.addExternalFirewall(physicalNetworkId, url, username, password, NetworkDevice.JuniperSRXFirewall.getName(),new JuniperSrxResource());
+            ExternalFirewallDeviceVO fwDeviceVO = fwDeviceManager.addExternalFirewall(physicalNetworkId, url, username, password, NetworkDevice.JuniperSRXFirewall.getName(),new JuniperSrxResource());
+            if (fwDeviceVO != null) {
+                return _hostDao.findById(fwDeviceVO.getHostId());
+            } else {
+                throw new CloudRuntimeException("Failed to add SRX firewall device due to internal error");
+            }
         } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName()) ||
                 cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerVPXLoadBalancer.getName()) ||
                 cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerSDXLoadBalancer.getName())) {
@@ -193,7 +197,11 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _netsclarLbService;
             ExternalLoadBalancerDeviceVO lbDeviceVO = lbDeviceMgr.addExternalLoadBalancer(physicalNetworkId, 
                     url, username, password, cmd.getDeviceType(), (ServerResource) new NetscalerResource());
-            return _hostDao.findById(lbDeviceVO.getHostId());
+            if (lbDeviceVO != null) {
+                return _hostDao.findById(lbDeviceVO.getHostId());
+            } else {
+                throw new CloudRuntimeException("Failed to add Netscaler load balancer device due to internal error");
+            }
         } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
             Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
             String url = (String) params.get(ApiConstants.URL);
@@ -202,7 +210,11 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _f5LbElementService;
             ExternalLoadBalancerDeviceVO lbDeviceVO =  lbDeviceMgr.addExternalLoadBalancer(physicalNetworkId, url, username, password,
                     cmd.getDeviceType(), (ServerResource) new F5BigIpResource());
-            return _hostDao.findById(lbDeviceVO.getHostId());
+            if (lbDeviceVO != null) {
+                return _hostDao.findById(lbDeviceVO.getHostId());
+            } else {
+                throw new CloudRuntimeException("Failed to add Netscaler load balancer device due to internal error");
+            }
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + cmd.getDeviceType());
         }
