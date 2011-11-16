@@ -285,7 +285,8 @@
               });                       
                
               args.response.success({
-                data: domainObj
+                data: domainObj,
+                actionFilter: domainActionfilter
               });
             }
           }  
@@ -330,7 +331,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];           
     if(isAdmin()) {       
-      allowedActions.push("add");    
+      allowedActions.push("create");    
     	if(jsonObj.id != 1) { //"ROOT" domain is not allowed to edit or delete
         allowedActions.push("edit"); //merge updateResourceCount into edit
 	      allowedActions.push("delete");	        
