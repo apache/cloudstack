@@ -4568,7 +4568,7 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area {
-  height: 131px;
+  height: 181px;
   width: 586px;
 }
 
@@ -4577,10 +4577,13 @@ label.error {
   overflow: hidden;
   float: left;
   margin: 5px 0 0;
+/*Hide isolation mode (always defaults to VLAN)*/
+  display: none;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .desc {
   width: 373px;
+  height: 120px;
   color: #727272;
   background: #EFEFEF;
   padding: 18px;
@@ -4593,6 +4596,7 @@ label.error {
   -webkit-border-radius: 7px;
   -khtml-border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
+  line-height: 19px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .desc em {
