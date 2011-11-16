@@ -105,6 +105,8 @@ public class DatabaseConfig {
     	objectNames.add("configuration");
     	objectNames.add("privateIpAddresses");
     	objectNames.add("publicIpAddresses");
+        objectNames.add("physicalNetworkServiceProvider");
+        objectNames.add("virtualRouterProvider");
     	
     	// initialize the fieldNames ArrayList
     	fieldNames.add("id");
@@ -157,6 +159,19 @@ public class DatabaseConfig {
     	fieldNames.add("networktype");
         fieldNames.add("clusterId");
         fieldNames.add("physicalNetworkId");
+        fieldNames.add("destPhysicalNetworkId");
+        fieldNames.add("providerName");
+        fieldNames.add("vpn");
+        fieldNames.add("dhcp");
+        fieldNames.add("dns");
+        fieldNames.add("firewall");
+        fieldNames.add("sourceNat");
+        fieldNames.add("loadBalance");
+        fieldNames.add("staticNat");
+        fieldNames.add("portForwarding");
+        fieldNames.add("userData");
+        fieldNames.add("securityGroup");
+        fieldNames.add("nspId");
     	
         s_configurationDescriptions.put("host.stats.interval", "the interval in milliseconds when host stats are retrieved from agents");
         s_configurationDescriptions.put("storage.stats.interval", "the interval in milliseconds when storage stats (per host) are retrieved from agents");
@@ -452,7 +467,11 @@ public class DatabaseConfig {
         	saveSecondaryStorage();
         } else if ("cluster".equals(_currentObjectName)) {
             saveCluster();
-        } 
+        } else if ("physicalNetworkServiceProvider".equals(_currentObjectName)) {
+            savePhysicalNetworkServiceProvider();
+        } else if ("virtualRouterProvider".equals(_currentObjectName)) {
+            saveVirtualRouterProvider();
+        }
         _currentObjectParams = null;
     }
     
@@ -663,6 +682,85 @@ public class DatabaseConfig {
         pzc.savePhysicalNetwork(false, id, zoneDbId, vnetStart, vnetEnd);
         
     }	
+    
+    private void savePhysicalNetworkServiceProvider() {
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        long physicalNetworkId = Long.parseLong(_currentObjectParams.get("physicalNetworkId"));
+        String providerName = _currentObjectParams.get("providerName");
+        long destPhysicalNetworkId = Long.parseLong(_currentObjectParams.get("destPhysicalNetworkId"));
+        String uuid = UUID.randomUUID().toString();
+        
+        int vpn = Integer.parseInt(_currentObjectParams.get("vpn"));
+        int dhcp = Integer.parseInt(_currentObjectParams.get("dhcp"));
+        int dns = Integer.parseInt(_currentObjectParams.get("dns"));
+        int gateway = Integer.parseInt(_currentObjectParams.get("gateway"));
+        int firewall = Integer.parseInt(_currentObjectParams.get("firewall"));
+        int sourceNat = Integer.parseInt(_currentObjectParams.get("sourceNat"));
+        int lb = Integer.parseInt(_currentObjectParams.get("loadBalance"));
+        int staticNat = Integer.parseInt(_currentObjectParams.get("staticNat"));
+        int pf =Integer.parseInt(_currentObjectParams.get("portForwarding"));
+        int userData =Integer.parseInt(_currentObjectParams.get("userData"));
+        int securityGroup =Integer.parseInt(_currentObjectParams.get("securityGroup"));
+        
+        String insertSql1 = "INSERT INTO `physical_network_service_providers` (`id`, `uuid`, `physical_network_id` , `provider_name`, `state` ," +
+        		"`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
+        		"`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
+        		"`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+         
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
+            stmt.setLong(1, id);
+            stmt.setString(2, uuid);
+            stmt.setLong(3, physicalNetworkId);
+            stmt.setString(4, providerName);
+            stmt.setString(5, "Enabled");
+            stmt.setLong(6, destPhysicalNetworkId);
+            stmt.setInt(7, vpn);
+            stmt.setInt(8, dhcp);
+            stmt.setInt(9, dns);
+            stmt.setInt(10, gateway);
+            stmt.setInt(11, firewall);
+            stmt.setInt(12, sourceNat);
+            stmt.setInt(13, lb);
+            stmt.setInt(14, staticNat);
+            stmt.setInt(15, pf);
+            stmt.setInt(16, userData);
+            stmt.setInt(17, securityGroup);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            System.out.println("Error creating physical network service provider: " + ex.getMessage());
+            s_logger.error("error creating physical network service provider", ex);
+            return;
+        }
+
+    }
+    
+    private void saveVirtualRouterProvider() {
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        long nspId = Long.parseLong(_currentObjectParams.get("nspId"));
+        String uuid = UUID.randomUUID().toString();
+        String type = _currentObjectParams.get("type");
+
+        String insertSql1 = "INSERT INTO `virtual_router_providers` (`id`, `nsp_id`, `uuid` , `type` , `enabled`) " +
+        		"VALUES (?,?,?,?,?)";
+
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
+            stmt.setLong(1, id);
+            stmt.setLong(2, nspId);
+            stmt.setString(3, uuid);
+            stmt.setString(4, type);
+            stmt.setInt(5, 1);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            System.out.println("Error creating virtual router provider: " + ex.getMessage());
+            s_logger.error("error creating virtual router provider ", ex);
+            return;
+        }
+
+    }
     
     private void saveVlan() {
     	String zoneId = _currentObjectParams.get("zoneId");

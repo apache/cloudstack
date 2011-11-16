@@ -30,8 +30,37 @@
       <zoneId>1</zoneId>
       <vnet>1075-1089</vnet>
     </physicalNetwork>
-  </physicalNetworks>  -->
+  </physicalNetworks>
   
+  <physicalNetworkServiceProviders>
+    <physicalNetworkServiceProvider>
+      <id>1</id>
+      <physicalNetworkId>200</physicalNetworkId>
+      <providerName>VirtualRouter</providerName>
+      <destPhysicalNetworkId>0</destPhysicalNetworkId>
+      <vpn>1</vpn>
+      <dhcp>1</dhcp>
+      <dns>1</dns>
+      <gateway>1</gateway>
+      <firewall>1</firewall>
+      <sourceNat>1</sourceNat>
+      <loadBalance>1</loadBalance>
+      <staticNat>1</staticNat>
+      <portForwarding>1</portForwarding>
+      <userData>1</userData>
+      <securityGroup>0</securityGroup>
+    </physicalNetworkServiceProvider>
+  </physicalNetworkServiceProviders>
+
+  <virtualRouterProviders>
+    <virtualRouterProvider>
+        <id>1</id>
+        <nspId>1</nspId>
+        <type>VirtualRouter</type>
+    </virtualRouterProvider>
+  </virtualRouterProviders>
+
+-->
   <!--
     ipAddressRange:  It is possible to specify a single IP address.  For example, to add 192.168.1.1
     as the only address, specify as <ipAddressRange>192.168.1.1<ipAddressRange>.  To specify 192.168.1.1
