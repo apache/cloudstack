@@ -561,8 +561,8 @@
 																		
 									detailView: {
 										name: 'Guest network details',
-                    actions: {
-                      //???
+                    viewAll: { path: '_zone.guestIpRanges', label: 'IP ranges' }, //jessica
+                    actions: {                      
                       edit: {
                         label: 'Edit',                        
                         messages: {
@@ -645,8 +645,7 @@
                         notification: {
                           poll: pollAsyncJobResult
                         }
-                      }                      
-                      //???
+                      }    
                     },
 										tabs: {
 											details: {
@@ -5360,8 +5359,7 @@
             name: { label: 'Name' },
             zonename: { label: 'Zone' }
           },
-
-          //dataProvider: testData.dataProvider.listView('clusters'),
+          
           dataProvider: function(args) {
             $.ajax({
               url: createURL("listHosts&type=SecondaryStorage&zoneid=" + args.ref.zoneID + "&page=" + args.page + "&pagesize=" + pageSize),
@@ -5523,7 +5521,117 @@
             }
           }
         }
+      },
+            
+      guestIpRanges: {
+        title: 'Guest IP Range',
+        id: 'guestIpRanges',
+        listView: {
+          section: 'guest-IP-range',
+          fields: {
+            id: { label: 'ID' },
+            vlan: { label: 'VLAN' },
+            startip: { label: 'Start IP' },
+            endip: { label: 'End IP' }          
+          },
+          
+          dataProvider: function(args) {            
+            $.ajax({
+              url: createURL("listVlanIpRanges&zoneid=" + selectedZoneObj.id + "&networkid=" + args.context.networks[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var items = json.listvlaniprangesresponse.vlaniprange;               
+                args.response.success({data: items});
+              }
+            });
+          },
+
+          actions: {
+            add: {
+              label: 'Add IP range',
+
+              createForm: {
+                title: 'Add IP range',               
+                fields: {
+                  startip: {
+                    label: 'Start IP',
+                    validation: { required: true }
+                  },
+                  endip: {
+                    label: 'End IP',
+                    validation: { required: false }
+                  }
+                }
+              },
+
+              action: function(args) {                                               
+                var array1 = [];
+                array1.push("&startip=" + args.data.startip);
+                if(args.data.endip != null && args.data.endip.length > 0)
+				          array1.push("&endip=" + args.data.endip);		
+
+                $.ajax({
+                  url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array1.join("")),
+                  dataType: "json",
+                  success: function(json) {
+                    var item = json.createvlaniprangeresponse.vlan;	
+                    args.response.success({data:item});
+                  },
+                  error: function(XMLHttpResponse) {
+                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                    args.response.error(errorMsg);
+                  }
+                });
+              },
+
+              notification: {
+                poll: function(args) {
+                  args.complete();
+                }
+              },
+
+              messages: {
+                notification: function(args) {
+                  return 'Added new IP range';
+                }
+              }
+            },
+
+            'delete': {
+              label: 'Delete' ,
+              messages: {
+                confirm: function(args) {
+                  return 'Please confirm that you want to delete this IP range.';
+                },
+                success: function(args) {
+                  return 'IP range is being deleted.';
+                },
+                notification: function(args) {
+                  return 'Deleting IP range';
+                },
+                complete: function(args) {
+                  return 'IP range has been deleted.';
+                }
+              },
+              action: function(args) {                
+                $.ajax({
+                  url: createURL("deleteVlanIpRange&id=" + args.data.id),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+                    args.response.success({data:{}});
+                  }
+                });
+              },
+              notification: {
+                poll: function(args) { args.complete(); }
+              }
+            }
+          }          
+        }
       }
+      //???
     }
   };
 
