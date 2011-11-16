@@ -709,4 +709,10 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		return null;
 	}
 
+	@Override
+	public boolean getAllowSubdomainAccessGlobal() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

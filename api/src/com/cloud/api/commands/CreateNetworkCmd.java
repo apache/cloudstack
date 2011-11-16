@@ -58,6 +58,13 @@ public class CreateNetworkCmd extends BaseCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the network")
     private Long zoneId;
+    
+    @IdentityMapper(entityTableName="physical_network")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
+    private Long physicalNetworkId;
+    
+    @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
+    private Boolean isDefault;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the network")
     private String gateway;
@@ -73,6 +80,12 @@ public class CreateNetworkCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;
+    
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
+    private String networkDomain;
+    
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account in Adavnce zone, and to Domain in Basic zone. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+    private String aclType;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the network")
     private String accountName;
@@ -84,22 +97,11 @@ public class CreateNetworkCmd extends BaseCmd {
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a network")
     private Long domainId;
-    
-    @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
-    private Boolean isDefault;
-    
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
-    private String networkDomain;
-    
-    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. If not specified, defaulted to Account in Adavnce zone, and to Domain in Basic zone. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
-    private String aclType;
-    
-    @Parameter(name=ApiConstants.SUBDOMAIN_ACCESS, type=CommandType.BOOLEAN, description="Defines whether to allow subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to true if not specified")
+   
+    @Parameter(name=ApiConstants.SUBDOMAIN_ACCESS, type=CommandType.BOOLEAN, description="Defines whether to allow subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to allow.subdomain.network.access global config if not specified")
     private Boolean subdomainAccess;
     
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
-    private Long physicalNetworkId;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
