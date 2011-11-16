@@ -22,8 +22,8 @@
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
         	<adapter name="JuniperSRXExternalFirewallElement" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-        	<adapter name="NetscalerExternalLoadBalancer" class="com.cloud.network.element.NetscalerExternalLoadBalancerElement"/>
-        	<adapter name="F5ExternalLoadBalancer" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
+        	<adapter name="NetscalerExternalLoadBalancerElement" class="com.cloud.network.element.NetscalerExternalLoadBalancerElement"/>
+        	<adapter name="F5ExternalLoadBalancerElement" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
             <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
             <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
             <adapter name="ExternalDhcp" class="com.cloud.network.element.ExternalDhcpElement"/>

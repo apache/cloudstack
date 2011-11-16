@@ -151,7 +151,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
-    protected String _name;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @Override
@@ -178,10 +177,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         if (ntwkSvcProvider == null ) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() + 
                     " is not enabled in the physical network: " + physicalNetworkId + "to add this device" );
-        } else if ((ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown)
-                || (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Disabled)) {
+        } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + 
-                    " is not added or in shutdown state in the physical network: " + physicalNetworkId + "to add this device" );
+                    " is in shutdown state in the physical network: " + physicalNetworkId + "to add this device" );
         }
 
         URI uri;
@@ -742,10 +740,10 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
+        super.configure(name, params);
         _externalNetworkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.RouterStatsInterval.key()), 300);
         if (_externalNetworkStatsInterval > 0){
-            _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));        
+            _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));
         }
 
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
