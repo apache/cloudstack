@@ -45,6 +45,11 @@ var pollAsyncJobResult = function(args) {
               actionFilter: args._custom.getActionFilter()
             });
           }
+          else if(args._custom.getUpdatedItem != null && args._custom.getActionFilter == null) {
+            args.complete({
+              data: args._custom.getUpdatedItem(json)
+            });
+          }
           else {
             args.complete();
           }

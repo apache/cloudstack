@@ -561,16 +561,70 @@
 																		
 									detailView: {
 										name: 'Guest network details',
+                    actions: {
+                      //???
+                      edit: {
+                        label: 'Edit',                        
+                        messages: {
+                          confirm: function(args) {
+                            return 'Are you sure you want to edit network?';
+                          },
+                          success: function(args) {
+                            return 'Network is being edited.';
+                          },
+                          notification: function(args) {
+                            return 'Editing network';
+                          },
+                          complete: function(args) {
+                            return 'Network has been edited.';
+                          }
+                        },                        
+                        action: function(args) {
+                          var array1 = [];                          
+                          array1.push("&name=" + todb(args.data.name));
+                          array1.push("&displaytext=" + todb(args.data.displaytext));
+                          array1.push("&networkdomain=" + args.data.networkdomain);
+                          //array1.push("&networkofferingid=" + todb(args.data.networkofferingid));                          
+                          $.ajax({
+                            url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                            dataType: "json",
+                            success: function(json) {                              
+                              var jid = json.updatenetworkresponse.jobid;
+                              args.response.success(
+                                {_custom:
+                                 {jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    var item = json.queryasyncjobresultresponse.jobresult.network;
+                                    return {data: item};
+                                  }
+                                 }
+                                }
+                              );
+                            }
+                          });
+                        },
+                        notification: {  //notification in edit action doesn't get picked up (wait until Brian fixes Widget to support async job of Edit action)
+                          poll: pollAsyncJobResult  
+                        }                          
+                      }                                          
+                      //???
+                    },
 										tabs: {
 											details: {
 												title: 'Details',
 												fields: [
 													{
-														name: { label: 'Name' }
+														name: { 
+                              label: 'Name',
+                              isEditable: true
+                            }
                           },
                           {
                             id: { label: 'ID' },
-                            displaytext: { label: 'Description' },														
+                            displaytext: { 
+                              label: 'Description',
+                              isEditable: true
+                            },														
 														isdefault: {  
 															label: 'Default',
 															converter: cloudStack.converters.toBooleanText
@@ -583,7 +637,10 @@
                             netmask: { label: 'Netmask' },
                             startip: { label: 'Start IP' },
                             endip: { label: 'End IP' },
-                            networkdomain: { label: 'Network domain' }                                                 
+                            networkdomain: { 
+                              label: 'Network domain',
+                              isEditable: true
+                            }                                                 
 													}
 												],
 												dataProvider: function(args) {												
