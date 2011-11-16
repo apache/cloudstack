@@ -79,38 +79,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, required=true, description="guest type of the network offering: Shared or Isolated")
     private String guestIptype;
     
-    @Parameter(name=ApiConstants.DHCP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports dhcp service")
-    private Boolean dhcpService; 
-    
-    @Parameter(name=ApiConstants.DNS_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports dns service")
-    private Boolean dnsService; 
-    
-    @Parameter(name=ApiConstants.GATEWAY_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports gateway service")
-    private Boolean gatewayService; 
-    
-    @Parameter(name=ApiConstants.FIREWALL_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports firewall service")
-    private Boolean firewallService; 
-    
-    @Parameter(name=ApiConstants.LB_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports lb service")
-    private Boolean lbService; 
-    
-    @Parameter(name=ApiConstants.USERDATA_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports user data service")
-    private Boolean userdataService;
-    
-    @Parameter(name=ApiConstants.SOURCE_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports source nat service")
-    private Boolean sourceNatService;
-    
-    @Parameter(name=ApiConstants.STATIC_NAT_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports static nat service")
-    private Boolean staticNatService;
-    
-    @Parameter(name=ApiConstants.PORT_FORWARDING_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports port forwarding service")
-    private Boolean portForwardingService;
-    
-    @Parameter(name=ApiConstants.VPN_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports vpn service")
-    private Boolean vpnService;
-    
-    @Parameter(name=ApiConstants.SECURITY_GROUP_SERVICE, type=CommandType.BOOLEAN, description="true if network offering supports security group service")
-    private Boolean securityGroupService;
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, required=true, collectionType=CommandType.STRING, description="services supported by the network offering")
+    private List<String> supportedServices;
     
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map serviceProviderList;
@@ -165,52 +135,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
+    
+    public List<String> getSupportedServices() {
+		return supportedServices;
+	}
 
-    public Boolean getDhcpService() {
-        return dhcpService == null ? false : dhcpService;
-    }
-
-    public Boolean getDnsService() {
-        return dnsService == null ? false : dnsService;
-    }
-
-    public Boolean getGatewayService() {
-        return gatewayService == null ? false : gatewayService;
-    }
-
-    public Boolean getFirewallService() {
-        return firewallService == null ? false : firewallService;
-    }
-
-    public Boolean getLbService() {
-        return lbService == null ? false : lbService;
-    }
-
-    public Boolean getUserdataService() {
-        return userdataService == null ? false : userdataService;
-    }
-
-    public Boolean getSourceNatService() {
-        return sourceNatService == null ? false : sourceNatService;
-    }
-
-    public Boolean getStaticNatService() {
-        return staticNatService == null ? false : staticNatService;
-    }
-
-    public Boolean getPortForwardingService() {
-        return portForwardingService == null ? false : portForwardingService;
-    }
-
-    public Boolean getVpnService() {
-        return vpnService == null ? false : vpnService;
-    }
-
-    public Boolean getSecurityGroupService() {
-        return securityGroupService == null ? false : securityGroupService;
-    }
-
-    public String getGuestIpType() {
+	public String getGuestIpType() {
         return guestIptype;
     }
 

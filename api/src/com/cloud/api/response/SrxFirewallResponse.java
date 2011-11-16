@@ -23,6 +23,7 @@ import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class SrxFirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.FIREWALL_DEVICE_ID) @Param(description="device id of the SRX firewall")

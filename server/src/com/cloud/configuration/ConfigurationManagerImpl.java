@@ -36,7 +36,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
-import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
@@ -2851,9 +2850,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String trafficTypeString = cmd.getTraffictype();
         boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
-
         Integer networkRate = cmd.getNetworkRate();
-
         TrafficType trafficType = null;
         Availability availability = null;
         Network.GuestType guestType = null;
@@ -2915,58 +2912,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
         defaultProviders.add(Network.Provider.defaultProvider);
-        // populate all services first
-        if (cmd.getDhcpService()) {
-            serviceProviderMap.put(Network.Service.Dhcp, defaultProviders);
-        }
-
-        if (cmd.getDnsService()) {
-            serviceProviderMap.put(Network.Service.Dns, defaultProviders);
-        }
-
-        if (cmd.getFirewallService()) {
-            serviceProviderMap.put(Network.Service.Firewall, defaultProviders);
-        }
-
-        if (cmd.getGatewayService()) {
-            serviceProviderMap.put(Network.Service.Gateway, defaultProviders);
-        }
-
-        if (cmd.getLbService()) {
-            serviceProviderMap.put(Network.Service.Lb, defaultProviders);
-        }
-
-        if (cmd.getSourceNatService()) {
-            if (guestType == GuestType.Shared) {
-                throw new InvalidParameterValueException("Source nat service is is not supported for network offerings with guest ip type " + GuestType.Shared);
-            }
-            serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);
-        }
-
-        if (cmd.getStaticNatService()) {
-            serviceProviderMap.put(Network.Service.StaticNat, defaultProviders);
-        }
-
-        if (cmd.getPortForwardingService()) {
-            serviceProviderMap.put(Network.Service.PortForwarding, defaultProviders);
-        }
-
-        if (cmd.getUserdataService()) {
-            serviceProviderMap.put(Network.Service.UserData, defaultProviders);
-        }
-
-        if (cmd.getVpnService()) {
-            serviceProviderMap.put(Network.Service.Vpn, defaultProviders);
-        }
         
-        if (cmd.getSecurityGroupService()) {
-            //allow security group service for Shared networks only
-            if (guestType != GuestType.Shared) {
-                throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
-            }
-            Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
-            sgProviders.add(Provider.SecurityGroupProvider);
-            serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
+        //populate the services first
+        for (String serviceName : cmd.getSupportedServices()) {
+        	//validate if the service is supported
+        	Service service = Network.Service.getService(serviceName);
+        	if (service == null) {
+        		throw new InvalidParameterValueException("Invalid service " + serviceName);
+        	}
+        	
+        	if (service == Service.SecurityGroup) {
+        		 //allow security group service for Shared networks only
+                if (guestType != GuestType.Shared) {
+                    throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
+                }
+                Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
+                sgProviders.add(Provider.SecurityGroupProvider);
+                serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
+                continue;
+        	}
+        	serviceProviderMap.put(service, defaultProviders);
         }
 
         // populate providers
@@ -2994,21 +2959,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         // verify the LB service capabilities specified in the network offering
         Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
-        if (!cmd.getLbService() && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
+        if (!serviceProviderMap.containsKey(Service.Lb) && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             throw new InvalidParameterValueException("Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
         }
         validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
 
         // verify the Source NAT service capabilities specified in the network offering
         Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
-        if (!cmd.getSourceNatService() && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
+        if (!serviceProviderMap.containsKey(Service.SourceNat) && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
             throw new InvalidParameterValueException("Capabilities for source NAT service can be specifed only when source NAT service is enabled for network offering.");
         }
         validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
         
         // verify the Gateway service capabilities specified in the network offering
         Map<Capability, String> gwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
-        if (!cmd.getGatewayService() && gwServiceCapabilityMap != null && !gwServiceCapabilityMap.isEmpty()) {
+        if (!serviceProviderMap.containsKey(Service.Gateway) && gwServiceCapabilityMap != null && !gwServiceCapabilityMap.isEmpty()) {
             throw new InvalidParameterValueException("Capabilities for Gateway service can be specifed only when Gateway service is enabled for network offering.");
         }
         validateGatewayServiceCapablities(gwServiceCapabilityMap);
@@ -3288,7 +3253,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_EDIT, eventDescription = "updating network offering")
-    @DB
     public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
         String displayText = cmd.getDisplayText();
         Long id = cmd.getId();
@@ -3351,163 +3315,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        // All parameters below can be updated only when there are no networks
-        // using this offering
-        Long networks = _networkDao.getNetworkCountByOfferingId(id);
-        boolean networksExist = (networks != null && networks.longValue() > 0);
-
-        // configure service provider map
-        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
-        Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
-        defaultProviders.add(Network.Provider.defaultProvider);
-        // populate all services first
-        if (cmd.getDhcpService()) {
-            serviceProviderMap.put(Network.Service.Dhcp, defaultProviders);
-        }
-
-        if (cmd.getDnsService()) {
-            serviceProviderMap.put(Network.Service.Dns, defaultProviders);
-        }
-
-        if (cmd.getFirewallService()) {
-            serviceProviderMap.put(Network.Service.Firewall, defaultProviders);
-        }
-
-        if (cmd.getGatewayService()) {
-            serviceProviderMap.put(Network.Service.Gateway, defaultProviders);
-        }
-
-        if (cmd.getLbService()) {
-            serviceProviderMap.put(Network.Service.Lb, defaultProviders);
-        }
-
-        if (cmd.getSourceNatService()) {
-            if (offering.getGuestType() == GuestType.Shared) {
-                throw new InvalidParameterValueException("Source nat service is is not supported for network offerings with guest ip type " + GuestType.Shared);
-            }
-            serviceProviderMap.put(Network.Service.SourceNat, defaultProviders);
-        }
-
-        if (cmd.getStaticNatService()) {
-            serviceProviderMap.put(Network.Service.StaticNat, defaultProviders);
-        }
-
-        if (cmd.getPortForwardingService()) {
-            serviceProviderMap.put(Network.Service.PortForwarding, defaultProviders);
-        }
-
-        if (cmd.getUserdataService()) {
-            serviceProviderMap.put(Network.Service.UserData, defaultProviders);
-        }
-
-        if (cmd.getVpnService()) {
-            serviceProviderMap.put(Network.Service.Vpn, defaultProviders);
-        }
-        
-        if (cmd.getSecurityGroupService()) {
-            //allow security group service for Shared networks only
-            if (offering.getGuestType() != GuestType.Shared) {
-                throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
-            }
-            Set<Network.Provider> sgProviders = new HashSet<Network.Provider>();
-            sgProviders.add(Provider.SecurityGroupProvider);
-            serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
-        }
-
-        // populate providers
-        Map<String, List<String>> svcPrv = cmd.getServiceProviders();
-        if (svcPrv != null) {
-            for (String serviceStr : svcPrv.keySet()) {
-                Network.Service service = Network.Service.getService(serviceStr);
-                if (serviceProviderMap.containsKey(service)) {
-                    Set<Provider> providers = new HashSet<Provider>();
-                    for (String prvNameStr : svcPrv.get(serviceStr)) {
-                        // check if provider is supported
-                        Network.Provider provider;
-                        provider = Network.Provider.getProvider(prvNameStr);
-                        if (provider == null) {
-                            throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
-                        }
-                        providers.add(provider);
-                    }
-                    serviceProviderMap.put(service, providers);
-                } else {
-                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
-                }
-            }
-        }
-
-        // verify and update the LB service capabilities specified in the network offering
-        Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
-        boolean dedicatedLb = true;
-        if (!cmd.getLbService() && lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for LB service can be specifed only when LB service is enabled for network offering.");
-        }
-        validateLoadBalancerServiceCapabilities(lbServiceCapabilityMap);
-
-        if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
-            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
-            dedicatedLb = isolationCapability.contains("dedicated");
-        }
-        offering.setDedicatedLb(dedicatedLb);
-
-        // verify the source NAT service capabilities specified in the network offering
-        Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
-        boolean sharedSourceNat = false;
-
-        if (!cmd.getSourceNatService() && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for Firewall service can be specifed only when Firewall service is enabled for network offering.");
-        }
-        validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
-
-        if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) { 
-            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
-            sharedSourceNat = sourceNatType.contains("perzone");
-        }
-        offering.setSharedSourceNat(sharedSourceNat);
-
-        // verify the gateway service capabilities specified in the network offering
-        Map<Capability, String> gatewayServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
-        boolean redundantRouter = false;
-
-        if (!cmd.getGatewayService() && gatewayServiceCapabilityMap != null && !gatewayServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for Gateway service can be specifed only when Gateway service is enabled for network offering.");
-        }
-        validateGatewayServiceCapablities(gatewayServiceCapabilityMap);
-
-        if ((gatewayServiceCapabilityMap != null) && (!gatewayServiceCapabilityMap.isEmpty())) { 
-            String param = gatewayServiceCapabilityMap.get(Capability.RedundantRouter.getName());
-            redundantRouter = param.contains("true");
-        }
-        offering.setRedundantRouter(redundantRouter);
-
-        if (svcPrv != null && !svcPrv.isEmpty()) {
-            if (networksExist) {
-                throw new InvalidParameterValueException("Unable to reset service providers as there are existing networks using this network offering");
-            }
-        }
-
-        boolean success = true;
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // update network offering
-        success = success && _networkOfferingDao.update(id, offering);
-       
-        if (!serviceProviderMap.isEmpty()) {
-            _ntwkOffServiceMapDao.deleteByOfferingId(id);
-            // update services/providers - delete old ones, insert new ones
-            for (Network.Service service : serviceProviderMap.keySet()) {
-                for (Network.Provider provider : serviceProviderMap.get(service)) {
-                    NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
-                    _ntwkOffServiceMapDao.persist(offService);
-                    s_logger.trace("Added service for the network offering: " + offService);
-                }
-            }
-        }
-
-        txn.commit();
-
-        if (success) {
+        if (_networkOfferingDao.update(id, offering)) {
             return _networkOfferingDao.findById(id);
         } else {
             return null;

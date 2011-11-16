@@ -268,16 +268,6 @@ public class ApiConstants {
     public static final String ACCEPT = "accept";
     public static final String SORT_KEY = "sortkey";
     public static final String ACCOUNT_DETAILS = "accountdetails";
-    public static final String DHCP_SERVICE = "dhcpservice";
-    public static final String DNS_SERVICE = "dnsservice";
-    public static final String SOURCE_NAT_SERVICE = "sourcenatservice";
-    public static final String STATIC_NAT_SERVICE = "staticnatservice";
-    public static final String PORT_FORWARDING_SERVICE = "staticnatservice";
-    public static final String VPN_SERVICE = "vpnservice";
-    public static final String USERDATA_SERVICE = "userdataservice";
-    public static final String LB_SERVICE = "lbservice";
-    public static final String FIREWALL_SERVICE = "firewallservice";
-    public static final String GATEWAY_SERVICE = "gatewayservice";
     public static final String SERVICE_PROVIDER_LIST = "serviceproviderlist";
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String PROVIDER = "provider";
@@ -296,10 +286,9 @@ public class ApiConstants {
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
     public static final String NETWORK_SERVICE_PROVIDER_ID = "nspid";
-    public static final String SECURITY_GROUP_SERVICE = "securitygroupservice";
     public static final String SERVICE_LIST = "servicelist";
     public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
-    public static final String SUPPORTED_SERVICES = "supportedservices";
+	public static final String SUPPORTED_SERVICES = "supportedservices";
     public static final String NSP_ID= "nspid";
     public static final String ACL_TYPE= "acltype";
     public static final String IS_SOURCE_NAT_SHARED = "isshared";
@@ -313,4 +302,5 @@ public class ApiConstants {
     public static final String FIREWALL_DEVICE_NAME = "fwdevicename";
     public static final String FIREWALL_DEVICE_STATE = "fwdevicestate";
     public static final String FIREWALL_DEVICE_CAPACITY = "fwdevicecapacity";
+    public static final String SERVICE = "service";
 }

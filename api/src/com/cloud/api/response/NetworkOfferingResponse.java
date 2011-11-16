@@ -60,10 +60,6 @@ public class NetworkOfferingResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
     private Integer networkRate;
-    
-    public Long getId() {
-        return id.getValue();
-    }
 
     @SerializedName(ApiConstants.STATE) @Param(description="state of the network offering. Can be Disabled/Enabled/Inactive")
     private String state;
@@ -71,7 +67,7 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="guest type of the network offering, can be Shared or Isolated")
     private String guestIpType;
    
-    @SerializedName("service") @Param(description="the list of supported services", responseObject = ServiceResponse.class)
+    @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
     @SerializedName(ApiConstants.IS_LB_SHARED) @Param(description="true if load balncer service offered is shared by multiple networks", responseObject = ServiceResponse.class)
