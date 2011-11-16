@@ -34,6 +34,24 @@
                 args.response.success({data:items});
               }
             });
+          },
+					detailView: {
+            name: 'Event details',
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    type: { label: 'Type' },
+                    description: { label: 'Description' },
+                    created: { label: 'Date' }
+                  }
+                ],
+                dataProvider: function(args) {								  
+								  args.response.success({data: args.context.events[0]});
+								}
+              },
+            }
           }
         }
       },
@@ -68,10 +86,12 @@
                   {
                     type: { label: 'Type' },
                     description: { label: 'Description' },
-                    created: { label: 'Sent' }
+                    sent: { label: 'Date' }
                   }
                 ],
-                dataProvider: testData.dataProvider.detailView('alerts')
+                dataProvider: function(args) {								  
+								  args.response.success({data: args.context.alerts[0]});
+								}
               },
             }
           }
