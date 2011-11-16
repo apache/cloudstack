@@ -1258,7 +1258,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     offering_id = _offering.getId();
                 }
                 VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
-
                 Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
                 PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
                 if (provider == null) {
