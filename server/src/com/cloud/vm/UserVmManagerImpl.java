@@ -2223,7 +2223,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                    Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                    Network newNetwork = _networkMgr.createGuestNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
                             null, null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
@@ -2236,7 +2236,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (defaultNetworks.isEmpty()) {
                     if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
                         s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                        Network newNetwork = _networkMgr.createNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                        Network newNetwork = _networkMgr.createGuestNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
                                 null, null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     } else {
@@ -3433,7 +3433,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated, true);
                 if (virtualNetworks.isEmpty()) {
-                    Network newNetwork = _networkMgr.createNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
+                    Network newNetwork = _networkMgr.createGuestNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
                             null, null, null, newAccount, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
