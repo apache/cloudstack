@@ -472,10 +472,9 @@
     var allowedActions = options.allowedActions;
 
     $.each(actions, function(actionName, action) {
-      if (allowedActions && $.inArray(actionName, allowedActions) == -1)
-        return true;
       if (actionName == 'add')
         return true;
+
       if (action.type == 'radio') {
         $td.append(
           $('<div></div>')
@@ -516,17 +515,22 @@
         return true;
       }
 
-      $td.append(
-        $('<div></div>')
-          .addClass('action')
-          .addClass(actionName)
-          .append($('<span>').addClass('icon'))
-          .attr({
-            alt: action.label,
-            title: action.label
-          })
-          .data('list-view-action-id', actionName)
-      );
+      var $action = $('<div></div>')
+            .addClass('action')
+            .addClass(actionName)
+            .append($('<span>').addClass('icon'))
+            .attr({
+              alt: action.label,
+              title: action.label
+            })
+            .data('list-view-action-id', actionName);
+
+      // Disabled appearance/behavior for filtered actions
+      if (allowedActions && $.inArray(actionName, allowedActions) == -1) {
+        $action.addClass('disabled');
+      }
+
+      $td.append($action);
 
       return true;
     });
@@ -1040,6 +1044,10 @@
         var actionID = $target.closest('.action').data('list-view-action-id');
         var $tr;
 
+        if ($target.closest('.action').is('.disabled')) {
+          return false;
+        }
+
         if ($target.closest('.action.add').size()) {
           $tr = $target.closest('div.list-view').find('tr:first'); // Dummy row
         } else {
@@ -1108,6 +1116,7 @@
     listView.find('table').dataTable('refresh');
 
     $tr.addClass('loading').find('td:last').prepend($('<div>').addClass('loading'));
+    $tr.find('.action').remove();
 
     return $tr;
   };

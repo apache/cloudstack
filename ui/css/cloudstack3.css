@@ -2387,12 +2387,27 @@ table td.actions span {
   margin: 0 0 0 2px !important;
 }
 
-table td.actions div.action span.icon {
+table td.actions .action span.icon {
   background-image: url(../images/sprites.png);
   cursor: pointer;
   width: 28px;
   height: 21px;
   float: left;
+}
+
+table td.actions .action.disabled {
+  /*+opacity:30%;*/
+  filter: alpha(opacity=30);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=30);
+  -moz-opacity: 0.3;
+  opacity: 0.3;
+}
+
+table td.actions .action.disabled:hover .icon {
+}
+
+table td.actions .action.disabled .icon {
+  cursor: not-allowed;
 }
 
 /*** Action icons
