@@ -776,8 +776,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         
             clonedVm.exportVm(exportPath, exportName, true, true);
         } finally {
-            if(clonedVm != null)
+            if(clonedVm != null) {
+                clonedVm.detachAllDisks();
                 clonedVm.destroy();
+            }
         }
     }
     
