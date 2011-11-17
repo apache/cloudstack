@@ -354,6 +354,34 @@
 
 											createForm: {
 												title: 'Create network',
+                        preFilter: function(args) {    
+                          if(selectedZoneObj.networktype == "Basic") {                            
+                            args.$form.find('.form-item[rel=isDefault]').hide();
+                            args.$form.find('.form-item[rel=vlanTagged]').hide();
+                            args.$form.find('.form-item[rel=vlanId]').hide();
+                            args.$form.find('.form-item[rel=scope]').hide();
+                            args.$form.find('.form-item[rel=domainId]').hide();
+                            args.$form.find('.form-item[rel=account]').hide();
+                            args.$form.find('.form-item[rel=gateway]').hide();
+                            args.$form.find('.form-item[rel=netmask]').hide();
+                            args.$form.find('.form-item[rel=startip]').hide();
+                            args.$form.find('.form-item[rel=endip]').hide();
+                            args.$form.find('.form-item[rel=networkdomain]').hide();                           
+                          }
+                          else {  //"Advanced"                            
+                            args.$form.find('.form-item[rel=isDefault]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=vlanTagged]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=scope]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=account]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=gateway]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=netmask]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=startip]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=endip]').css('display', 'inline-block');
+                            args.$form.find('.form-item[rel=networkdomain]').css('display', 'inline-block');                            
+                          }
+                        },
 												fields: {
 													name: {
 														label: 'Name',
@@ -493,39 +521,44 @@
 												array1.push("&zoneId=" + zoneObj.id);
 												array1.push("&name=" + todb(args.data.name));
 												array1.push("&displayText=" + todb(args.data.description));
+                        array1.push("&networkOfferingId=" + args.data.networkOfferingId);  
+                        
+                        if(selectedZoneObj.networktype == "Basic") {  
+                          array1.push("&vlan=untagged");                          
+                        }
+                        else {  //"Advanced"  
+                        
+                          if (args.data.vlanTagged == "tagged")
+                            array1.push("&vlan=" + todb(args.data.vlanId));
+                          else
+                            array1.push("&vlan=untagged");
 
-												if (args.data.vlanTagged == "tagged")
-													array1.push("&vlan=" + todb(args.data.vlanId));
-												else
-													array1.push("&vlan=untagged");
+                          var $form = args.$form;
 
-												var $form = args.$form;
+                          if($form.find('.form-item[rel=domainId]').css("display") != "none") {
+                            if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
+                              array1.push("&acltype=account");
+                              array1.push("&domainId=" + args.data.domainId);
+                              array1.push("&account=" + args.data.account);
+                            }
+                            else {  //domain-specific
+                              array1.push("&acltype=domain");
+                              array1.push("&domainId=" + args.data.domainId);														
+                            }
+                          }
+                          else { //zone-wide													
+                            array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
+                          }
 
-												if($form.find('.form-item[rel=domainId]').css("display") != "none") {
-													if($form.find('.form-item[rel=account]').css("display") != "none") {  //account-specific
-													  array1.push("&acltype=account");
-														array1.push("&domainId=" + args.data.domainId);
-														array1.push("&account=" + args.data.account);
-													}
-													else {  //domain-specific
-													  array1.push("&acltype=domain");
-														array1.push("&domainId=" + args.data.domainId);														
-													}
-												}
-												else { //zone-wide													
-													array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
-												}
+                          array1.push("&isDefault=" + (args.data.isDefault=="on"));
+                          array1.push("&gateway=" + args.data.gateway);
+                          array1.push("&netmask=" + args.data.netmask);
+                          array1.push("&startip=" + args.data.startip);
+                          array1.push("&endip=" + args.data.endip);
 
-												array1.push("&isDefault=" + (args.data.isDefault=="on"));
-												array1.push("&gateway=" + args.data.gateway);
-												array1.push("&netmask=" + args.data.netmask);
-												array1.push("&startip=" + args.data.startip);
-												array1.push("&endip=" + args.data.endip);
-
-												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-													array1.push("&networkdomain=" + todb(args.data.networkdomain));
-																								
-												array1.push("&networkOfferingId=" + args.data.networkOfferingId);  
+                          if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+                            array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                        } 					
 																								
 												$.ajax({
 													url: createURL("createNetwork" + array1.join("")),
