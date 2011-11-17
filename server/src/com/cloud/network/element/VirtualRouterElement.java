@@ -301,7 +301,10 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
-        capabilities.put(Service.Gateway, null);
+        
+        Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
+        gatewayCapabilities.put(Capability.RedundantRouter, "true");
+        capabilities.put(Service.Gateway, gatewayCapabilities);
         
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
