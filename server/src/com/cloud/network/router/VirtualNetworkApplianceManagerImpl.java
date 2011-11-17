@@ -1574,16 +1574,28 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" defaultroute=true");
         }
 
-        buf.append(" dns1=").append(defaultDns1);
-        if (defaultDns2 != null) {
-            buf.append(" dns2=").append(defaultDns2);
+        boolean dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VirtualRouter);
+        boolean dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, Provider.VirtualRouter);
+        /* If virtual router didn't provide DNS service but provide DHCP service, we need to override the DHCP response to return DNS server rather than 
+         * virtual router itself. */
+        if (dnsProvided || dhcpProvided) {
+            buf.append(" dns1=").append(defaultDns1);
+            if (defaultDns2 != null) {
+                buf.append(" dns2=").append(defaultDns2);
+            }
+            
+            boolean useExtDns = !dnsProvided;
+            /* For backward compatibility */
+            String use_external_dns =  _configDao.getValue(Config.UseExternalDnsServers.key());
+            if (use_external_dns != null && use_external_dns.equals("true")) {
+                useExtDns = true;
+            }
+            
+            if (useExtDns) {
+                buf.append(" useextdns=true");
+            }
         }
 
-        String use_external_dns =  _configDao.getValue(Config.UseExternalDnsServers.key());
-        if (use_external_dns!=null && use_external_dns.equals("true")){
-            buf.append(" useextdns=true");
-        }
-        
         if(profile.getHypervisorType() == HypervisorType.VMware) {
         	buf.append(" extra_pubnics=" + _routerExtraPublicNics);
         }
