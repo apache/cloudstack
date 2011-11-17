@@ -68,6 +68,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.FirewallRule;
@@ -101,6 +102,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Inject ExternalFirewallDeviceDao _fwDevicesDao;
     @Inject NetworkExternalFirewallDao _networkFirewallDao;
     @Inject NetworkDao _networkDao;
+    @Inject NetworkServiceMapDao _ntwkSrvcDao;
 
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
@@ -109,7 +111,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }   
         
-        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getId());
+        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getId())&& 
+        _ntwkSrvcDao.isProviderSupportedInNetwork(config.getId(), Service.Lb, Network.Provider.JuniperSRX);
     }
 
     @Override

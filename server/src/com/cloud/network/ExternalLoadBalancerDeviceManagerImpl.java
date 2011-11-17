@@ -404,6 +404,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             long lbDeviceId = lbDeviceForNetwork.getExternalLBDeviceId();
             ExternalLoadBalancerDeviceVO lbDeviceVo = _externalLoadBalancerDeviceDao.findById(lbDeviceId);
             assert(lbDeviceVo != null);
+            return lbDeviceVo;
         }
         return null;
     }
@@ -628,7 +629,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             } catch (InsufficientCapacityException exception) {
                                 if (provisionLB) {
                                     retry = false;
-                                    throw exception; // if already attempted once throw out of capacity exception
+                                    //TODO: throwing warning instead of error for now as its possible another provider can service this network 
+                                    s_logger.warn("There are no load balancer device with the capacity for implementing this network");
+                                    throw exception; // if already attempted once throw out of capacity exception,  
                                 }
                                 provisionLB = true;  // if possible provision a LB appliance in the physical network
                             }
@@ -680,7 +683,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         } else {
             // find the load balancer device allocated for the network
             ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(guestConfig); 
-            assert(lbDeviceVO != null) : "There is no device assigned to this network how did shutdown network ended up here??";
+            if (lbDeviceVO == null) {
+                s_logger.warn("network shutdwon requested on external load balancer, which did no implement the network. Did the network implement failed half way throug?");
+                return true; //bail out nothing to do here 
+            }
+
             externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             assert (externalLoadBalancer != null) : "There is no device assigned to this network how did shutdown network ended up here??";
         }
