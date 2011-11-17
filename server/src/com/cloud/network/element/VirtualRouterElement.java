@@ -104,14 +104,22 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject VirtualRouterProviderDao _vrProviderDao;
     
     protected boolean canHandle(Network network, Service service) {
-        if (!_networkMgr.isProviderExistAndEnabled(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
             return false;
         }
         
-        if (!_networkMgr.isProviderSupportedInNetwork(network.getId(), service, getProvider())) {
-            return false;
+        if (service == null) {
+        	if (!_networkMgr.isProviderInNetwork(getProvider(), network.getId())) {
+        		s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+        		return false;
+        	}
+        } else {
+        	if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+        		s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
+                return false;
+            }
         }
-
+        
         return true;
     }
 
@@ -132,11 +140,15 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (!canHandle(network, null)) {
+        	return false;
+        }
+    	
+    	NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (offering.isSystemOnly()) {
             return false;
         }
-        if (!_networkMgr.isProviderExistAndEnabled(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
             return false;
         }
         
@@ -195,13 +207,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException{
         Network network = _networksDao.findById(vpn.getNetworkId());
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-        if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Virtual router elemnt doesn't need to apply vpn users on the backend; virtual router doesn't exist in the network " + network.getId());
-            return null;
-        }
         
         if (canHandle(network, Service.Vpn)) {
+        	List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router elemnt doesn't need to apply vpn users on the backend; virtual router doesn't exist in the network " + network.getId());
+                return null;
+            }
             return _routerMgr.applyVpnUsers(network, users, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle applyVpnUsers command");
@@ -211,13 +223,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-        if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't exist in the network " + network.getId());
-            return true;
-        }
-        
         if (canHandle(network, Service.Vpn)) {
+        	 List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+             if (routers == null || routers.isEmpty()) {
+                 s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't exist in the network " + network.getId());
+                 return true;
+             }
             return _routerMgr.startRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle createVpn command");
@@ -227,13 +238,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-        if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't exist in the network " + network.getId());
-            return true;
-        }
-        
         if (canHandle(network, Service.Vpn)) {
+        	List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't exist in the network " + network.getId());
+                return true;
+            }
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
             s_logger.debug("Element " + this.getName() + " doesn't handle removeVpn command");
@@ -244,7 +254,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         if (canHandle(network, Service.Firewall)) {
-            
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual router doesn't exist in the network " + network.getId());
@@ -364,7 +373,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     @Override
     public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException{
-
+    	if (!canHandle(network, null)) {
+    		return false;
+    	}
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Can't find virtual router element in network " + network.getId());
@@ -486,7 +497,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
 
             boolean publicNetwork = false;
-            if (_networkMgr.isProviderSupportedInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+            if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
                 publicNetwork = true;
             }
             boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
@@ -534,7 +545,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
 
             boolean publicNetwork = false;
-            if (_networkMgr.isProviderSupportedInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+            if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
                 publicNetwork = true;
             }
             boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&

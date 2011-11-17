@@ -175,8 +175,6 @@ public interface NetworkManager extends NetworkService {
 
     Nic getNicInNetwork(long vmId, long networkId);
 
-    Nic getNicInNetworkIncludingRemoved(long vmId, long networkId);
-
     List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type);
 
     Network getDefaultNetworkForVm(long vmId);
@@ -217,19 +215,15 @@ public interface NetworkManager extends NetworkService {
     
     Long getPodIdForVlan(long vlanDbId);
     
-    boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider);
-    
     List<Long> listNetworkOfferingsForUpgrade(long networkId);
 
     PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId);
 
     boolean isSecurityGroupSupportedInNetwork(Network network);
     
-    boolean isProviderEnabled(PhysicalNetworkServiceProvider provider);
+    boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
     
-    boolean isProviderExistAndEnabled(long physicalNetowrkId, String providerName);
-    
-    boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service);
+    boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName);
 
     List<String> getNetworkTags(HypervisorType hType, Network network);
 
@@ -251,4 +245,6 @@ public interface NetworkManager extends NetworkService {
     Long getPhysicalNetworkId(Network network);
 
 	boolean getAllowSubdomainAccessGlobal();
+	
+	boolean isProviderInNetwork(Provider provider, long networkId);
 }

@@ -14,9 +14,10 @@ import com.cloud.utils.db.GenericDao;
  */
 public interface NetworkServiceMapDao extends GenericDao<NetworkServiceMapVO, Long>{
     boolean areServicesSupportedInNetwork(long networkId, Service... services);
-    boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider);
+    boolean canProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
     List<NetworkServiceMapVO> getServicesInNetwork(long networkId);
     String getProviderForServiceInNetwork(long networkid, Service service);
 	void deleteByNetworkId(long networkId);
 	List<String> getDistinctProviders(long networkId);
+	String isProviderForNetwork(long networkId, Provider provider);
 }

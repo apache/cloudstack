@@ -445,7 +445,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider) {
+    public boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -626,7 +626,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean isProviderExistAndEnabled(long physicalNetowrkId, String providerName) {
+    public boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName) {
         // TODO Auto-generated method stub
         return false;
     }

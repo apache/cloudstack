@@ -56,6 +56,7 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         
         DistinctProvidersSearch = createSearchBuilder(String.class);
         DistinctProvidersSearch.and("networkId", DistinctProvidersSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.select(null, Func.DISTINCT, DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
         
@@ -92,7 +93,7 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
     }
     
     @Override
-    public boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider) {
+    public boolean canProviderSupportServiceInNetwork(long networkId, Service service, Provider provider) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         sc.setParameters("service", service.getName());
@@ -150,6 +151,19 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         sc.setParameters("networkId", networkId);
         List<String> results = customSearch(sc, null);
         return results;
+    }
+    
+    @Override
+    public String isProviderForNetwork(long networkId, Provider provider) {
+    	SearchCriteria<String> sc = DistinctProvidersSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("provider", provider.getName());
+        List<String> results = customSearch(sc, null);
+        if (results.isEmpty()) {
+        	return null;
+        } else {
+        	return results.get(0);
+        }
     }
     
 }

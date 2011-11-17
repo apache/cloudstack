@@ -99,7 +99,7 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
         }
         
         return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getId()) && 
-                _ntwkSrvcDao.isProviderSupportedInNetwork(config.getId(), Service.Lb, Network.Provider.Netscaler));
+                _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.Netscaler));
     }
 
     @Override

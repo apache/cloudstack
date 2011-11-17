@@ -106,7 +106,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         }
         
         return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getId()) && 
-                _ntwkSrvcDao.isProviderSupportedInNetwork(config.getId(), Service.Lb, Network.Provider.F5BigIp));
+                _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.F5BigIp));
     }
 
     @Override

@@ -2761,7 +2761,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
             UserVmVO userVm = profile.getVirtualMachine();
             //dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
-            if (_ntwkSrvcDao.isProviderSupportedInNetwork(guestNetwork.getId(), Service.Dhcp, Provider.ExternalDhcpServer)){
+            if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(guestNetwork.getId(), Service.Dhcp, Provider.ExternalDhcpServer)){
                 _nicDao.update(guestNic.getId(), guestNic);
                 userVm.setPrivateIpAddress(guestNic.getIp4Address());
                 _vmDao.update(userVm.getId(), userVm);

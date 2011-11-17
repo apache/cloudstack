@@ -1414,7 +1414,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (NetworkElement element : _networkElements) {
         	if (providersToImplement.contains(element.getProvider())) {
-        		if (!isProviderExistAndEnabled(getPhysicalNetworkId(network), "VirtualRouter")) {
+        		if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
         			throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or not enabled in physical network id=" + network.getPhysicalNetworkId());
                 }
         		if (s_logger.isDebugEnabled()) {
@@ -1440,13 +1440,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         element.prepare(network, profile, vmProfile, dest, context);
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
-                    isProviderSupportedInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
+                    isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
                     (element instanceof DhcpServiceProvider)) {
                 DhcpServiceProvider sp = (DhcpServiceProvider)element;
                 sp.addDhcpEntry(network, profile, vmProfile, dest, context);
             }
             if (areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
-                    isProviderSupportedInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
+                    isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) &&
                     (element instanceof UserDataServiceProvider)) {
                 UserDataServiceProvider sp = (UserDataServiceProvider)element;
                 sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context);
@@ -2417,13 +2417,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }  
         
         //2) Shutdown all the network elements
-        //get providers to implement
-        List<Provider> providersToImplement = getNetworkProviders(network.getId());
+        //get providers to shutdown
+        List<Provider> providersToShutdown = getNetworkProviders(network.getId());
         boolean success = true;
         for (NetworkElement element : _networkElements) {
-        	if (providersToImplement.contains(element.getProvider())) {
+        	if (providersToShutdown.contains(element.getProvider())) {
         		try {
-        			if (!isProviderExistAndEnabled(getPhysicalNetworkId(network), "VirtualRouter")) {
+        			if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
         				s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network " + getPhysicalNetworkId(network));
                     	success = false;
                     }
@@ -2488,28 +2488,37 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         boolean success = true;
-
         if (!cleanupNetworkResources(networkId, callerAccount, context.getCaller().getId())) {
             s_logger.warn("Unable to delete network id=" + networkId + ": failed to cleanup network resources");
             return false;
         }
 
+        //get providers to destroy
+        List<Provider> providersToDestroy = getNetworkProviders(network.getId());
         for (NetworkElement element : _networkElements) {
-            try {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Sending destroy to " + element);
-                }
-                element.destroy(network);
-            } catch (ResourceUnavailableException e) {
-                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
-                success = false;
-            } catch (ConcurrentOperationException e) {
-                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
-                success = false;
-            } catch (Exception e) {
-                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
-                success = false;
-            }
+        	if (providersToDestroy.contains(element.getProvider())) {
+        		try {
+        			if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
+        				s_logger.warn("Unable to complete destroy of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network " + getPhysicalNetworkId(network));
+                    	success = false;
+                    }
+                   
+	                if (s_logger.isDebugEnabled()) {
+	                    s_logger.debug("Sending destroy to " + element);
+	                }
+                
+	                element.destroy(network);
+	            } catch (ResourceUnavailableException e) {
+	                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
+	                success = false;
+	            } catch (ConcurrentOperationException e) {
+	                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
+	                success = false;
+	            } catch (Exception e) {
+	                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
+	                success = false;
+	            }
+        	}
         }
 
         if (success) {
@@ -2964,8 +2973,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return guestNic.getIp4Address();
     }
 
-    @Override
-    public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
+    
+    private Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
         return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 
@@ -3107,10 +3116,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
         DataCenterVO zone = _dcDao.findById(zoneId);
         
-        boolean usesJuniperForGatewayService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Gateway, Network.Provider.JuniperSRX);
-        boolean usesJuniperForFirewallService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Firewall, Network.Provider.JuniperSRX);
-        boolean usesNetscalarForLBService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Lb, Network.Provider.Netscaler);
-        boolean usesF5ForLBService = _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, Service.Lb, Network.Provider.F5BigIp);
+        boolean usesJuniperForGatewayService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Gateway, Network.Provider.JuniperSRX);
+        boolean usesJuniperForFirewallService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Firewall, Network.Provider.JuniperSRX);
+        boolean usesNetscalarForLBService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Network.Provider.Netscaler);
+        boolean usesF5ForLBService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Network.Provider.F5BigIp);
         
         if (zone.getNetworkType() == NetworkType.Advanced) {
             if (usesJuniperForGatewayService && usesJuniperForFirewallService) {
@@ -3639,8 +3648,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean isProviderSupportedInNetwork(long networkId, Service service, Provider provider){
-        return _ntwkSrvcDao.isProviderSupportedInNetwork(networkId, service, provider);
+    public boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider){
+        return _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, service, provider);
     }
     
     protected boolean canUpgrade(long oldNetworkOfferingId, long newNetworkOfferingId) {
@@ -4864,9 +4873,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return false;
     }    
 
-    
-    @Override
-    public boolean isProviderEnabled(PhysicalNetworkServiceProvider provider) {
+    private boolean isProviderEnabled(PhysicalNetworkServiceProvider provider) {
         if (provider == null || provider.getState() != PhysicalNetworkServiceProvider.State.Enabled) { //TODO: check for other states: Shutdown?
             return false;
         }
@@ -4874,7 +4881,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override 
-    public boolean isProviderExistAndEnabled(long physicalNetowrkId, String providerName) {
+    public boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName) {
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _pNSPDao.findByServiceProvider(physicalNetowrkId, providerName);
         if (ntwkSvcProvider == null) {
         	s_logger.warn("Unable to find provider " + providerName + " in physical network id=" + physicalNetowrkId);
@@ -4883,8 +4890,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return isProviderEnabled(ntwkSvcProvider);
     }
     
-    @Override
-    public boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service) {
+    private boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service) {
         //check if the service is supported in the network
         if (!areServicesSupportedInNetwork(networkId, service)) {
             s_logger.debug("Service " + service.getName() + " is not supported in the network id=" + networkId);
@@ -4894,7 +4900,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //get provider for the service and check if all of them are supported
         String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(networkId, service);
         
-        if (!isProviderExistAndEnabled(physicalNetworkId, provider)) {
+        if (!isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
             s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
             return false;
         }
@@ -5015,7 +5021,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	return _allowSubdomainNetworkAccess;
     }
     
-    public List<Provider> getNetworkProviders(long networkId) {
+    private List<Provider> getNetworkProviders(long networkId) {
     	List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
     	List<Provider> providers = new ArrayList<Provider>();
     	for (String providerName : providerNames) {
@@ -5024,4 +5030,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     	
     	return providers;
     }
+    
+    @Override
+    public boolean isProviderInNetwork(Provider provider, long networkId) {
+    	if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) == null) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
+    
 }
