@@ -835,11 +835,16 @@
           label: 'Network Offerings',
           fields: {
             name: { label: 'Name' },
+            displaytext: { label: 'Description' },
             traffictype: { label: 'Traffic Type'}
           },
           dataProvider: function(args) {
             $.ajax({
-              url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL('listNetworkOfferings'),
+              data: {
+                page: args.page,
+                pagesize: pageSize
+              },
               dataType: "json",
               async: true,
               success: function(json) {
