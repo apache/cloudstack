@@ -688,6 +688,10 @@ public class ApiDBUtils {
     public static List<Service> getElementServices(Provider provider) {
          return _networkMgr.getElementServices(provider);
     }
+    
+    public static List<? extends Provider> getProvidersForService(Service service) {
+        return _networkMgr.listSupportedNetworkServiceProviders(service.getName());
+   }
 
     public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
         return _networkMgr.canElementEnableIndividualServices(serviceProvider);

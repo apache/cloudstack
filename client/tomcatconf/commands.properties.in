@@ -297,7 +297,6 @@ updatePhysicalNetwork=com.cloud.api.commands.UpdatePhysicalNetworkCmd;1
 
 #### Physical Network Service Provider commands
 listSupportedNetworkServices=com.cloud.api.commands.ListSupportedNetworkServicesCmd;1
-listSupportedNetworkServiceProviders=com.cloud.api.commands.ListSupportedNetworkServiceProvidersCmd;1
 addNetworkServiceProvider=com.cloud.api.commands.AddNetworkServiceProviderCmd;1
 deleteNetworkServiceProvider=com.cloud.api.commands.DeleteNetworkServiceProviderCmd;1
 listNetworkServiceProviders=com.cloud.api.commands.ListNetworkServiceProvidersCmd;1

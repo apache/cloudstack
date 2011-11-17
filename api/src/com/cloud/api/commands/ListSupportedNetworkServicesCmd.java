@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
 
@@ -40,6 +41,9 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING, description="network service provider name")
     private String providerName;
+    
+    @Parameter(name=ApiConstants.SERVICE, type=CommandType.STRING, description="network service name to list providers and capabilities of")
+    private String serviceName;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,6 +62,11 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
         return providerName;
     }
 
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -73,7 +82,22 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends Network.Service> services = _networkService.listNetworkServices(getProviderName());
+        List<? extends Network.Service> services; 
+        if(getServiceName() != null){
+            Network.Service service = null;
+            if(serviceName != null){
+                service = Network.Service.getService(serviceName);
+                if(service == null){
+                    throw new InvalidParameterValueException("Invalid Network Service=" + serviceName);
+                }
+            }
+            List<Network.Service> serviceList = new ArrayList<Network.Service>();
+            serviceList.add(service);
+            services = serviceList;
+        }else{
+            services = _networkService.listNetworkServices(getProviderName());
+        }
+        
         ListResponse<ServiceResponse> response = new ListResponse<ServiceResponse>();
         List<ServiceResponse> servicesResponses = new ArrayList<ServiceResponse>();
         for (Network.Service service : services) {

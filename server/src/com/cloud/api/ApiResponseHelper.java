@@ -2832,28 +2832,26 @@ public class ApiResponseHelper implements ResponseGenerator {
             capabilityResponses.add(capabilityResponse);
         }
         response.setCapabilities(capabilityResponses);
-
+        
+        //set list of providers providing this service
+        List<? extends Network.Provider> serviceProviders = ApiDBUtils.getProvidersForService(service);
+        List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
+        for (Network.Provider serviceProvider : serviceProviders) {
+            ProviderResponse serviceProviderResponse = createServiceProviderResponse(serviceProvider);
+            serviceProvidersResponses.add(serviceProviderResponse);
+        }
+        response.setProviders(serviceProvidersResponses);
+        
         response.setObjectName("networkservice");
         return response;
         
     }
 
-    @Override
-    public ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider) {
+    private ProviderResponse createServiceProviderResponse(Provider serviceProvider) {
         ProviderResponse response = new ProviderResponse();
         response.setName(serviceProvider.getName());
-        
-        //set details from network element
-        List<Service> supportedServices = ApiDBUtils.getElementServices(serviceProvider);
-        List<String> services = new ArrayList<String>();
-        for (Service service: supportedServices){
-            services.add(service.getName());
-        }
-        response.setServices(services);
         boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
         response.setCanEnableIndividualServices(canEnableIndividualServices);
-        
-        response.setObjectName("networkserviceprovider");
         return response;
     }
     

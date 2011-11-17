@@ -85,7 +85,6 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -253,8 +252,6 @@ public interface ResponseGenerator {
     PhysicalNetworkResponse createPhysicalNetworkResponse(PhysicalNetwork result);
 
     ServiceResponse createNetworkServiceResponse(Service service);
-
-    ProviderResponse createNetworkServiceProviderResponse(Provider serviceProvider);
 
     ProviderResponse createNetworkServiceProviderResponse(PhysicalNetworkServiceProvider result);
 
