@@ -384,7 +384,7 @@ public class Transaction {
         if (_stmt != null) {
             try {
                 if (s_stmtLogger.isTraceEnabled()) {
-                    s_stmtLogger.trace("Closing: " + _stmt);
+                    s_stmtLogger.trace("Closing: " + _stmt.toString());
                 }
                 try {
                     ResultSet rs = _stmt.getResultSet();
@@ -396,7 +396,7 @@ public class Transaction {
                 }
                 _stmt.close();
             } catch (final SQLException e) {
-                s_stmtLogger.trace("Unable to close statement: " + _stmt);
+                s_stmtLogger.trace("Unable to close statement: " + _stmt.toString());
             } finally {
                 _stmt = null;
             }
@@ -760,7 +760,7 @@ public class Transaction {
                 } else if (item.type == STATEMENT) {
                     try {
                         if (s_stmtLogger.isTraceEnabled()) {
-                            s_stmtLogger.trace("Closing: " + ref);
+                            s_stmtLogger.trace("Closing: " + ref.toString());
                         }
                         Statement stmt = (Statement)ref;
                         try {
