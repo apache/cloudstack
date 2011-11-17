@@ -751,14 +751,60 @@
 
       networkProviders: {
         // Returns state of each network provider type
-        statusCheck: function(args) {
-          return {
-            virtualRouter: 'enabled',
+        statusCheck: function(args) {          
+          var statusMap = {
+            virtualRouter: 'disabled',
             netscaler: 'disabled',
-            f5: 'enabled',
-            srx: 'enabled',
-            securityGroups: 'enabled'
+            f5: 'disabled',
+            srx: 'disabled',
+            securityGroups: 'disabled'
           };
+                 
+          var zoneObj = args.context.physicalResources[0];
+          var physicalNetworkObj;
+          $.ajax({
+            url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
+            dataType: "json",
+            async: false,
+            success: function(json) {                      
+              var items = json.listphysicalnetworksresponse.physicalnetwork;
+              physicalNetworkObj = items[0];                      
+            }
+          });              
+                      
+          $.ajax({
+            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + physicalNetworkObj .id),
+            dataType: "json",
+            async: false,
+            success: function(json) {    
+              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+              for(var i = 0; i < items.length; i++) {                
+                switch(items[0].name) {
+                  case "VirtualRouter":
+                    if(items[0].state == "Enabled") 
+                      statusMap["virtualRouter"] = "enabled";
+                    break;     
+                  case "Netscaler":
+                    if(items[0].state == "Enabled") 
+                      statusMap["netscaler"] = "enabled";
+                    break;      
+                  case "F5BigIp":
+                    if(items[0].state == "Enabled") 
+                      statusMap["f5"] = "enabled";
+                    break;   
+                  case "JuniperSRX":
+                    if(items[0].state == "Enabled") 
+                      statusMap["srx"] = "enabled";
+                    break;   
+                  case "SecurityGroupProvider":
+                    if(items[0].state == "Enabled") 
+                      statusMap["securityGroups"] = "enabled";
+                    break;                     
+                }              
+              }
+            }
+          });  
+          return statusMap;
         },
 
         // Actions performed on entire net. provider type
