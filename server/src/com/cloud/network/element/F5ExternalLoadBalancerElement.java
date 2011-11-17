@@ -99,13 +99,12 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     @Inject NetworkDao _networkDao;
 
     private boolean canHandle(Network config) {
-        DataCenter zone = _configMgr.getZone(config.getDataCenterId());
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
         
-        return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getId()) && 
+        return (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && 
                 _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.F5BigIp));
     }
 

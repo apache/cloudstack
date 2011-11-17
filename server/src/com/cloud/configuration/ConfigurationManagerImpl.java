@@ -2917,7 +2917,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         for (String serviceName : cmd.getSupportedServices()) {
         	//validate if the service is supported
         	Service service = Network.Service.getService(serviceName);
-        	if (service == null) {
+        	if (service == null || service == Service.Gateway) {
         		throw new InvalidParameterValueException("Invalid service " + serviceName);
         	}
         	
@@ -2932,6 +2932,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 continue;
         	}
         	serviceProviderMap.put(service, defaultProviders);
+        }
+        
+        //add gateway provider (if sourceNat provider is enabled)
+        Set<Provider> sourceNatServiceProviders = serviceProviderMap.get(Service.SourceNat);
+        if (sourceNatServiceProviders != null && !sourceNatServiceProviders.isEmpty()) {
+        	serviceProviderMap.put(Service.Gateway, sourceNatServiceProviders);
         }
 
         // populate providers
@@ -2956,6 +2962,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
         }
+        
+        //validate 
 
         // verify the LB service capabilities specified in the network offering
         Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
@@ -2971,17 +2979,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
         
-        // verify the Gateway service capabilities specified in the network offering
-        Map<Capability, String> gwServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
-        if (!serviceProviderMap.containsKey(Service.Gateway) && gwServiceCapabilityMap != null && !gwServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for Gateway service can be specifed only when Gateway service is enabled for network offering.");
-        }
-        validateGatewayServiceCapablities(gwServiceCapabilityMap);
-        
         Map<Service, Map<Capability, String>> serviceCapabilityMap = new HashMap<Service, Map<Capability, String>>();
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
-        serviceCapabilityMap.put(Service.Gateway, gwServiceCapabilityMap);
         
         return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false,
                 guestType, false, serviceOfferingId, serviceCapabilityMap);
@@ -3003,28 +3003,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     void validateSourceNatServiceCapablities(Map<Capability, String> sourceNatServiceCapabilityMap) {
         if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-            if (sourceNatServiceCapabilityMap.keySet().size() > 1 || !sourceNatServiceCapabilityMap.containsKey(Capability.SupportedSourceNatTypes)) {
-                throw new InvalidParameterValueException("Only Supported Source NAT type capability can be sepcified for firewall service");
+            if (sourceNatServiceCapabilityMap.keySet().size() > 2) {
+        		throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter + " capabilities can be sepcified for firewall service");
             }
-            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
-            boolean perAccount = sourceNatType.contains("peraccount");
-            boolean perZone = sourceNatType.contains("perzone");
-            if ((perAccount && perZone) || (!perAccount && !perZone)) {
-                throw new InvalidParameterValueException("Either perAccount or perZone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
-            }
-        }
-    }
-
-    void validateGatewayServiceCapablities(Map<Capability, String> gwServiceCapabilityMap) {
-        if (gwServiceCapabilityMap != null && !gwServiceCapabilityMap.isEmpty()) {
-            if (gwServiceCapabilityMap.keySet().size() > 1 || !gwServiceCapabilityMap.containsKey(Capability.RedundantRouter)) {
-                throw new InvalidParameterValueException("Only redundant router capability can be sepcified for gateway service");
-            }
-            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter);
-            boolean enabled = param.contains("true");
-            boolean disabled = param.contains("false");
-            if (!enabled && !disabled) {
-                throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
+            
+            for (Capability capability : sourceNatServiceCapabilityMap.keySet()) {
+            	String value = sourceNatServiceCapabilityMap.get(capability);
+            	if (capability == Capability.SupportedSourceNatTypes) {
+            		 boolean perAccount = value.contains("peraccount");
+                     boolean perZone = value.contains("perzone");
+                     if ((perAccount && perZone) || (!perAccount && !perZone)) {
+                         throw new InvalidParameterValueException("Either perAccount or perZone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
+                     }
+            	} else if (capability == Capability.RedundantRouter) {
+            		boolean enabled = value.contains("true");
+                    boolean disabled = value.contains("false");
+                    if (!enabled && !disabled) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
+                    }
+            	} else {
+            		throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter + " capabilities can be sepcified for firewall service");
+            	}
             }
         }
     }
@@ -3046,17 +3045,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             dedicatedLb = isolationCapability.contains("dedicated");
         }
 
-        Map<Capability, String> fwServiceCapabilityMap = serviceCapabilityMap.get(Service.Firewall);
+        Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
         boolean sharedSourceNat = false;
-        if ((fwServiceCapabilityMap != null) && (!fwServiceCapabilityMap.isEmpty())) { 
-            String sourceNatType = fwServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
-            sharedSourceNat = sourceNatType.contains("perzone");
-        }
-
-        Map<Capability, String> gwServiceCapabilityMap = serviceCapabilityMap.get(Service.Gateway);
         boolean redundantRouter = false;
-        if ((gwServiceCapabilityMap != null) && (!gwServiceCapabilityMap.isEmpty())) { 
-            String param = gwServiceCapabilityMap.get(Capability.RedundantRouter);
+        if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) { 
+            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
+            sharedSourceNat = sourceNatType.contains("perzone");
+            String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
             if (param != null) {
                 redundantRouter = param.contains("true");
             }

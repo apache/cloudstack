@@ -246,5 +246,5 @@ public interface NetworkManager extends NetworkService {
 
 	boolean getAllowSubdomainAccessGlobal();
 	
-	boolean isProviderInNetwork(Provider provider, long networkId);
+	boolean isProviderForNetwork(Provider provider, long networkId);
 }

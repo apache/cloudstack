@@ -35,10 +35,6 @@ public class ServiceResponse extends BaseResponse {
     @SerializedName("capability") @Param(description="the list of capabilities", responseObject = CapabilityResponse.class)
     private List<CapabilityResponse> capabilities;
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
     }

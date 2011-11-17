@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -34,7 +36,6 @@ import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -46,18 +47,18 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkExternalLoadBalancerVO;
-import com.cloud.network.NetworkVO;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
@@ -92,13 +93,12 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
     @Inject NetworkDao _networkDao;
 
     private boolean canHandle(Network config) {
-        DataCenter zone = _configMgr.getZone(config.getDataCenterId());
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
         
-        return (_networkManager.networkIsConfiguredForExternalNetworking(zone.getId(), config.getId()) && 
+        return  (_networkManager.isProviderForNetwork(getProvider(), config.getId()) && 
                 _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.Netscaler));
     }
 

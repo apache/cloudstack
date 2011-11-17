@@ -698,7 +698,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 	}
 
 	@Override
-	public boolean isProviderInNetwork(Provider provider, long networkId) {
+	public boolean isProviderForNetwork(Provider provider, long networkId) {
 		// TODO Auto-generated method stub
 		return false;
 	}

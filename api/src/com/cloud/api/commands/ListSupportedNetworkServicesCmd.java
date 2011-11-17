@@ -31,6 +31,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.user.Account;
 
 
@@ -101,6 +102,10 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
         ListResponse<ServiceResponse> response = new ListResponse<ServiceResponse>();
         List<ServiceResponse> servicesResponses = new ArrayList<ServiceResponse>();
         for (Network.Service service : services) {
+        	//skip gateway service
+        	if (service == Service.Gateway) {
+        		continue;
+        	}
             ServiceResponse serviceResponse = _responseGenerator.createNetworkServiceResponse(service);
             servicesResponses.add(serviceResponse);
         }

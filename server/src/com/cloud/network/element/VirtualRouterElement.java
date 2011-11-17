@@ -109,7 +109,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
         
         if (service == null) {
-        	if (!_networkMgr.isProviderInNetwork(getProvider(), network.getId())) {
+        	if (!_networkMgr.isProviderForNetwork(getProvider(), network.getId())) {
         		s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
         		return false;
         	}
@@ -307,12 +307,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
         
-        Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
-        gatewayCapabilities.put(Capability.RedundantRouter, "true");
-        capabilities.put(Service.Gateway, gatewayCapabilities);
+        capabilities.put(Service.Gateway, null);
         
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
+        sourceNatCapabilities.put(Capability.RedundantRouter, "true");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
         
         capabilities.put(Service.StaticNat, null);

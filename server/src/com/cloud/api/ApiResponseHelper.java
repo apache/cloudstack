@@ -2348,6 +2348,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (String service : serviceProviderMap.keySet()) {
             ServiceResponse svcRsp = new ServiceResponse();
+            //skip gateway service
+            if (service.equalsIgnoreCase(Service.Gateway.getName())) {
+            	continue;
+            }
             svcRsp.setName(service);
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
             for (String provider : serviceProviderMap.get(service)) {
@@ -2452,6 +2456,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (serviceCapabilitiesMap != null) {
             for (Service service : serviceCapabilitiesMap.keySet()) {
                 ServiceResponse serviceResponse = new ServiceResponse();
+                //skip gateway service
+                if (service == Service.Gateway) {
+                	continue;
+                }
                 serviceResponse.setName(service.getName());
 
                 // set list of capabilities for the service

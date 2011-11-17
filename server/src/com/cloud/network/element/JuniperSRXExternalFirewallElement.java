@@ -111,7 +111,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             return false;
         }   
         
-        return _networkManager.networkIsConfiguredForExternalNetworking(zone.getId(),config.getId())&& 
+        return _networkManager.isProviderForNetwork(getProvider(), config.getId()) && 
         _ntwkSrvcDao.canProviderSupportServiceInNetwork(config.getId(), Service.Lb, Network.Provider.JuniperSRX);
     }
 
@@ -242,22 +242,17 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
   
         // Set capabilities for Firewall service
-        Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
-        
-        // Specifies that NAT rules can be made for either TCP or UDP traffic
-        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
-        
+        Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();   
+        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp"); 
         firewallCapabilities.put(Capability.MultipleIps, "true");
-        
-        // Specifies that this element can measure network usage on a per public IP basis
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
+        capabilities.put(Service.Firewall, firewallCapabilities);
         
-        // Specifies supported VPN types
+        // Set VPN capabilities
         Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
         vpnCapabilities.put(Capability.SupportedVpnTypes, "ipsec");
         capabilities.put(Service.Vpn, vpnCapabilities);
         
-        capabilities.put(Service.Firewall, firewallCapabilities);
         capabilities.put(Service.Gateway, null);
         
         Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();

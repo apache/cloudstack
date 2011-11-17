@@ -3114,24 +3114,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        
-        boolean usesJuniperForGatewayService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Gateway, Network.Provider.JuniperSRX);
-        boolean usesJuniperForFirewallService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Firewall, Network.Provider.JuniperSRX);
-        boolean usesNetscalarForLBService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Network.Provider.Netscaler);
-        boolean usesF5ForLBService = _ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Service.Lb, Network.Provider.F5BigIp);
-        
-        if (zone.getNetworkType() == NetworkType.Advanced) {
-            if (usesJuniperForGatewayService && usesJuniperForFirewallService) {
-                return true;
-            } else if (_ntwkSrvcDao.areServicesSupportedInNetwork(networkId, Service.Gateway) && (usesF5ForLBService || usesNetscalarForLBService)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return usesJuniperForFirewallService;
-        }
+    	boolean netscalerInNetwork = isProviderForNetwork(Network.Provider.Netscaler, networkId);
+    	boolean juniperInNetwork = isProviderForNetwork(Network.Provider.JuniperSRX, networkId);
+    	boolean f5InNetwork = isProviderForNetwork(Network.Provider.F5BigIp, networkId);
+    	
+    	if (netscalerInNetwork || juniperInNetwork || f5InNetwork) {
+    		return true;
+    	} else {
+    		return false;
+    	}
     }    
 
     @Override
@@ -4169,17 +4160,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             
             //validate Services
+            boolean addGatewayService = false;
             for(String serviceName : enabledServices){
                 Network.Service service = Network.Service.getService(serviceName);
-                if(service == null){
+                if (service == null || service == Service.Gateway){
                     throw new InvalidParameterValueException("Invalid Network Service specified=" + serviceName);
+                } else if (service == Service.SourceNat) {
+                	addGatewayService = true;
                 }
                 services.add(service);
             }
+            
+            if (addGatewayService) {
+            	services.add(Service.Gateway);
+            }
+            
         }else{
             //enable all the default services supported by this element.
-            services = new ArrayList<Service>(element.getCapabilities().keySet());
-            
+            services = new ArrayList<Service>(element.getCapabilities().keySet()); 
         }
         
         Transaction txn = Transaction.currentTxn();
@@ -5032,7 +5030,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean isProviderInNetwork(Provider provider, long networkId) {
+    public boolean isProviderForNetwork(Provider provider, long networkId) {
     	if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) == null) {
     		return true;
     	} else {
