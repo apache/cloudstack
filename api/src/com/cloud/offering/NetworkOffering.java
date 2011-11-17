@@ -33,8 +33,7 @@ public interface NetworkOffering {
     
     public enum State {
         Disabled,
-        Enabled, 
-        Inactive
+        Enabled
     }
     
     public final static String SystemPublicNetwork = "System-Public-Network";
