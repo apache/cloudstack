@@ -162,7 +162,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		String snapshotBackupUuid = null;
 
 		VmwareContext context = hostService.getServiceContext(cmd);
-		VirtualMachineMO vmMo;
+		VirtualMachineMO vmMo = null;
 		
 		try {
 			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
@@ -205,30 +205,31 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 	                    throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
 	                }
 				}
+				
+                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId,
+                        volumeId, cmd.getVolumePath(), snapshotUuid,
+                        secondaryStoragePoolURL, prevSnapshotUuid,
+                        prevBackupUuid,
+                        UUID.randomUUID().toString().replace("-", ""));
+
+                success = (snapshotBackupUuid != null);
+                if (success) {
+                    details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
+                }
+				
 			} finally {
+                if(vmMo != null)
+                    vmMo.removeAllSnapshots();
+			    
 				try {
 		            if (workerVm != null) {
 		                // detach volume and destroy worker vm
-		            	workerVm.moveAllVmDiskFiles(dsMo, "", false);
 		                workerVm.detachAllDisks();
 		                workerVm.destroy();
 		            }
 		        } catch (Throwable e) {
 		        	s_logger.warn("Failed to destroy worker VM: " + workerVMName);
-		        }			
-			}
-
-			snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId,
-							volumeId, cmd.getVolumePath(), snapshotUuid,
-							secondaryStoragePoolURL, prevSnapshotUuid,
-							prevBackupUuid,
-							hostService.getWorkerName(context, cmd));
-
-			success = (snapshotBackupUuid != null);
-
-			if (success) {
-				details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-				vmMo.removeAllSnapshots();
+		        }
 			}
 		} catch (Throwable e) {
 			if (e instanceof RemoteException) {
