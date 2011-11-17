@@ -1731,7 +1731,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 hId = host.getId();
             }
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-            Command command = compareState(hId, castedVm, info, true, hvGuru.trackVmHostChange());
+            Command command = compareState(hId, castedVm, info, false, hvGuru.trackVmHostChange());
             if (command != null) {
                 commands.addCommand(command);
             }
