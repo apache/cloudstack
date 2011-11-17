@@ -327,12 +327,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Nic getNicInNetworkIncludingRemoved(long vmId, long networkId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type) {
         // TODO Auto-generated method stub
         return null;
@@ -620,23 +614,11 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean isProviderEnabled(PhysicalNetworkServiceProvider provider) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName) {
         // TODO Auto-generated method stub
         return false;
     }
-
-    @Override
-    public boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
+    
     @Override
     public List<String> getNetworkTags(HypervisorType hType, Network network) {
         // TODO Auto-generated method stub
@@ -711,6 +693,12 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
 	@Override
 	public boolean getAllowSubdomainAccessGlobal() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isProviderInNetwork(Provider provider, long networkId) {
 		// TODO Auto-generated method stub
 		return false;
 	}
