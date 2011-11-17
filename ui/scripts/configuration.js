@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack, testData, $) {
   cloudStack.sections.configuration = {
     title: 'Configuration',
     id: 'configuration',
@@ -851,6 +851,173 @@
               }
             });
           },
+
+          actions: {
+            add: {
+              label: 'Add network offering',
+
+              action: function(args) {
+                var formData = args.data;
+                var inputData = {};
+                var services = {};
+
+                $.each(formData, function(key, value) {
+                  var serviceData = key.split('.');
+
+                  if (serviceData.length > 1) {
+                    if (serviceData[0] == 'service' &&
+                        serviceData[2] == 'isEnabled' &&
+                        value == 'on') { // Services field
+                        services[serviceData[1]] = formData[
+                          'service.' + serviceData[1] + '.provider'
+                        ];
+                    } 
+                  } else if (value != '') { // Normal data
+                    inputData[key] = value;
+                  }
+                });
+
+                // Make supported services list
+                inputData['supportedServices'] = $.map(services, function(value, key) {
+                  return key;
+                }).join(',');
+
+                // Make service provider map
+                $.each(services, function(key, value) {
+                  inputData['serviceProviderMap[0].' + key] = value;
+                });
+
+                $.ajax({
+                  url: createURL('createNetworkOffering'),
+                  data: inputData,
+                  dataType: 'json',
+                  async: true,
+                  success: function(data) {
+                    args.response.success();
+                  }
+                });
+              },
+
+              createForm: {
+                title: 'Add network offering',
+                desc: 'Please specify the network offering',
+                fields: {
+                  name: { label: 'Name', validation: { required: true } },
+
+                  displayText: { label: 'Display Text', validation: { required: true } },
+
+                  maxConnections: { label: 'Max Connections' },
+
+                  networkRate: { label: 'Network Rate' },
+
+                  trafficType: {
+                    label: 'Traffic Type', validation: { required: true },
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'GUEST', description: 'Guest' }
+                        ]
+                      });
+                    }
+                  },
+
+                  guestIpType: {
+                    label: 'Guest Type',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'Isolated', description: 'Isolated' },
+                          { id: 'Shared', description: 'Shared' }
+                        ]
+                      });
+                    }
+                  },
+
+                  availability: {
+                    label: 'Availability',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'Required', description: 'Required' },
+                          { id: 'Optional', description: 'Optional' },
+                          { id: 'Unavailable', description: 'Unavailable' }
+                        ]
+                      });
+                    }
+                  },
+
+                  serviceOfferingId: {
+                    label: 'Service Offering',
+                    select: function(args) {
+                      args.response.success({
+                        data: []
+                      });
+                    }
+                  },
+
+                  specifyVlan: { label: 'Specify VLAN', isBoolean: true },
+
+                  vlanId: { label: 'VLAN ID', isHidden: true, dependsOn: 'specifyVlan'},
+
+                  supportedServices: { 
+                    label: 'Supported Services',
+
+                    dynamic: function(args) {
+                      $.ajax({
+                        url: createURL('listSupportedNetworkServices'),
+                        dataType: 'json',
+                        async: true,
+                        success: function(data) {
+                          var networkServices = data.listsupportednetworkservicesresponse.networkservice;
+                          var fields = {};
+                          $(networkServices).each(function() {
+                            var name = this.name;
+                            var providers = this.provider;
+                            
+                            var id = {
+                              isEnabled: 'service' + '.' + name + '.' + 'isEnabled',
+                              capabilities: 'service' + '.' + name + '.' + 'capabilities',
+                              provider: 'service' + '.' + name + '.' + 'provider'
+                            };
+
+                            fields[id.isEnabled] = { label: name, isBoolean: true };
+                            fields[id.provider] = { 
+                              label: name + ' Provider',
+                              isHidden: true,
+                              dependsOn: id.isEnabled,
+                              select: function(args) {
+                                args.response.success({
+                                  data: $.map(providers, function(provider) {
+                                    return {
+                                      id: provider.name,
+                                      description: provider.name
+                                    };
+                                  })
+                                });
+                              }
+                            };
+                          });
+
+                          args.response.success({
+                            fields: fields
+                          });
+                        }
+                      });
+                    }
+                  },
+
+                  tags: { label: 'Tags' }
+                }
+              },
+              
+              messages: {
+                notification: function(args) {
+                  return 'Added network offering';
+                }
+              }
+            }
+          },
+
           detailView: {
             name: 'Network offering details',
             actions: {
@@ -1051,4 +1218,4 @@
     return allowedActions;
   };
 
-})(cloudStack, testData);
+})(cloudStack, testData, jQuery);
