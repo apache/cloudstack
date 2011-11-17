@@ -104,16 +104,15 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject VirtualRouterProviderDao _vrProviderDao;
     
     protected boolean canHandle(Network network, Service service) {
-        boolean result = false;
-       
-        if (_networkMgr.isProviderSupportedInNetwork(network.getId(), service, getProvider())) {
-            result = true;
+        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+            return false;
+        }
+        
+        if (!_networkMgr.isProviderSupportedInNetwork(network.getId(), service, getProvider())) {
+            return false;
         }
 
-        if (!result) {
-            s_logger.trace("Virtual router element only takes care of type " + Network.GuestType.Isolated + " for provider " + getProvider().getName());
-        }
-        return result;
+        return true;
     }
 
     @Override
