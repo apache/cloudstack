@@ -44,7 +44,7 @@
             // Checkbox
             $dependsOn.bind('click', function(event) {
               var $target = $(this);
-              var $dependent = $form.find('[depends-on=' + dependsOn + ']');
+              var $dependent = $target.closest('form').find('[depends-on=\'' + dependsOn + '\']');
 
               if (($target.is(':checked') && !isReverse) ||
                   ($target.is(':unchecked') && isReverse)) {
@@ -102,6 +102,7 @@
               }
             }
           };
+
           selectFn = this.select;
           $input = $('<select>')
             .attr({ name: key })
@@ -114,9 +115,10 @@
           $.extend(selectArgs, { $select: $input });
 
           if (dependsOn) {
-            $dependsOn = $form.find('input, select').filter(function() {
+            $dependsOn = $input.closest('form').find('input, select').filter(function() {
               return $(this).attr('name') === dependsOn;
             });
+
             $dependsOn.bind('change', function(event) {
               var $target = $(this);
 
@@ -166,6 +168,30 @@
               $input.attr('checked', 'checked');
             }
           }
+        } else if (this.dynamic) {
+          // Generate a 'sub-create-form' -- append resulting fields
+          $input = $('<div>').addClass('dynamic-input').appendTo($value);
+          $form.hide();
+
+          this.dynamic({
+            response: {
+              success: function(args) {
+                var form = cloudStack.dialog.createForm({
+                  noDialog: true,
+                  form: {
+                    title: '',
+                    fields: args.fields
+                  }
+                });
+
+                var $fields = form.$formContainer.find('.form-item').appendTo($input);
+                $form.show();
+
+                // Form should be slightly wider
+                $form.closest(':ui-dialog').dialog('option', { position: 'center' });
+              }
+            }
+          });
         } else {
           $input = $('<input>').attr({
             name: key,

@@ -247,6 +247,7 @@
                     complete: function($newPanel) {
                       $newPanel.detailView(
                         $.extend(true, {}, naas.mainNetworks[itemID].detailView, {
+                          $browser: listViewArgs.$browser,
                           context: { zones: context.physicalResources }
                         })
                       );

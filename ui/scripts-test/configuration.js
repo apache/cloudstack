@@ -1,4 +1,4 @@
-(function(cloudStack, testData) {
+(function(cloudStack, testData, $) {
   cloudStack.sections.configuration = {
     title: 'Configuration',
     id: 'configuration',
@@ -72,7 +72,7 @@
             setTimeout(function() {
               args.response.success({
                 data: testData.data.serviceOfferings
-              });              
+              });
             });
           }
         }
@@ -144,7 +144,7 @@
             setTimeout(function() {
               args.response.success({
                 data: testData.data.systemServiceOfferings
-              });              
+              });
             });
           }
         }
@@ -250,6 +250,135 @@
             networkrate: { label: 'Network Rate' },
             traffictype: { label: 'Traffic Type'}
           },
+
+          actions: {
+            add: {
+              label: 'Add network offering',
+
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 200);
+              },
+
+              createForm: {
+                title: 'Add network offering',
+                desc: 'Please specify the network offering',
+                fields: {
+                  name: { label: 'Name', validation: { required: true } },
+
+                  displayText: { label: 'Display Text', validation: { required: true } },
+
+                  maxConnections: { label: 'Max Connections' },
+
+                  networkRate: { label: 'Network Rate' },
+
+                  trafficType: {
+                    label: 'Traffic Type', validation: { required: true },
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'GUEST', description: 'Guest' }
+                        ]
+                      });
+                    }
+                  },
+
+                  guestType: {
+                    label: 'Guest Type',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'Isolated', description: 'Isolated' },
+                          { id: 'Shared', description: 'Shared' }
+                        ]
+                      });
+                    }
+                  },
+
+                  availability: {
+                    label: 'Availability',
+                    select: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: 'Required', description: 'Required' },
+                          { id: 'Optional', description: 'Optional' },
+                          { id: 'Unavailable', description: 'Unavailable' }
+                        ]
+                      });
+                    }
+                  },
+
+                  serviceOfferingId: {
+                    label: 'Service Offering',
+                    select: function(args) {
+                      args.response.success({
+                        data: $.map(testData.data.serviceOfferings, function(elem) {
+                          return {
+                            id: elem.id,
+                            description: elem.name
+                          };
+                        })
+                      });
+                    }
+                  },
+
+                  specifyVlan: { label: 'Specify VLAN', isBoolean: true },
+
+                  vlanId: { label: 'VLAN ID', isHidden: true, dependsOn: 'specifyVlan'},
+
+                  supportedServices: { 
+                    label: 'Supported Services',
+
+                    dynamic: function(args) {
+                      setTimeout(function() {
+                        var fields = {};
+                        var services = ['Vpn', 'Dhcp', 'Gateway', 'Firewall', 'Lb', 'UserData', 'SourceNat', 'StaticNat', 'PortForwarding', 'SecurityGroup'];
+
+                        $(services).each(function() {
+                          var id = {
+                            isEnabled: this + '.' + 'isEnabled',
+                            capabilities: this + '.' + 'capabilities',
+                            provider: this + '.' + 'provider'
+                          };
+
+                          fields[id.isEnabled] = { label: this, isBoolean: true };
+                          fields[id.provider] = { 
+                            label: this + ' Provider',
+                            isHidden: true,
+                            dependsOn: id.isEnabled,
+                            select: function(args) {
+                              args.response.success({
+                                data: [
+                                  { id: 'NetScaler', description: 'NetScaler'},
+                                  { id: 'SRX', description: 'SRX' }
+                                ]
+                              });
+                            }
+                          };
+                        });
+
+                        args.response.success({
+                          fields: fields
+                        });
+                      }, 50);
+                    }
+                  },
+
+                  tags: { label: 'Tags' }
+                }
+              },
+              
+              notification: {
+                poll: testData.notifications.testPoll
+              },
+              messages: {
+                notification: function(args) {
+                  return 'Added network offering';
+                }
+              }
+            }
+          },
           dataProvider: function(args) {
             setTimeout(function() {
               args.response.success({
@@ -261,4 +390,4 @@
       }
     }
   };
-})(cloudStack, testData);
+})(cloudStack, testData, jQuery);

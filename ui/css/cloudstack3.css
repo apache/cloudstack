@@ -2598,7 +2598,6 @@ Dialogs*/
 /*** Create form*/
 .ui-dialog div.form-container {
   height: 106px;
-  width: 100%;
   text-align: left;
   display: inline-block;
 }
@@ -2610,6 +2609,7 @@ Dialogs*/
 }
 
 .ui-dialog div.form-container div.form-item {
+  width: 100%;
   display: inline-block;
   margin: 0 0 12px;
 }
@@ -2637,15 +2637,14 @@ Dialogs*/
 }
 
 .ui-dialog div.form-container div.value {
-  width: 232px;
-  overflow: hidden;
-  float: right;
+  width: 61%;
+  float: left;
   margin: 0 0 0 15px;
   display: inline-block;
 }
 
 .ui-dialog div.form-container div.value input {
-  width: 226px;
+  width: 98%;
   font-size: 14px;
   background: #F6F6F6;
   /*+border-radius:4px;*/
@@ -2663,7 +2662,7 @@ Dialogs*/
 }
 
 .ui-dialog div.form-container div.value select {
-  width: 231px;
+  width: 100%;
   float: right;
 }
 
@@ -2739,6 +2738,44 @@ Dialogs*/
 .ui-dialog.create-form .ui-button.cancel:hover {
   background-position: -4px -426px;
   border-color: #878787;
+}
+
+/**** Dynamic input*/
+.ui-dialog div.form-container div.value .dynamic-input {
+  background: #FFFFFF;
+  width: 98%;
+  min-height: 50px;
+  clear: both;
+  max-height: 211px;
+  overflow: auto;
+  border: 1px solid #CDCDCD;
+  /*+border-radius:6px;*/
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  -khtml-border-radius: 6px;
+  border-radius: 6px 6px 6px 6px;
+  /*+box-shadow:inset -1px 1px 1px #636363;*/
+  -moz-box-shadow: inset -1px 1px 1px #636363;
+  -webkit-box-shadow: inset -1px 1px 1px #636363;
+  -o-box-shadow: inset -1px 1px 1px #636363;
+  box-shadow: inset -1px 1px 1px #636363;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .form-item {
+  width: 97%;
+  margin: 4px 0 0 5px;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .name {
+  width: 86px;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .name label {
+  width: inherit;
+}
+
+.ui-dialog div.form-container div.value .dynamic-input .value {
+  width: 50%;
 }
 
 /*User options*/
