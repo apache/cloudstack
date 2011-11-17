@@ -615,6 +615,120 @@ public class ApiResponseHelper implements ResponseGenerator {
         return hostResponse;
     }
 
+    @Deprecated // This method is only a temporary solution.
+    @Override
+    public HostResponse createHostResponseTemporary(Host host, int details) {
+        HostResponse hostResponse = new HostResponse();
+        hostResponse.setId(host.getId());
+        hostResponse.setCapabilities(host.getCapabilities());
+        hostResponse.setClusterId(host.getClusterId());
+        hostResponse.setCpuNumber(host.getCpus());
+        hostResponse.setZoneId(host.getDataCenterId());
+        hostResponse.setDisconnectedOn(host.getDisconnectedOn());
+        hostResponse.setHypervisor(host.getHypervisorType());
+        hostResponse.setHostType(host.getType());
+        hostResponse.setLastPinged(new Date(host.getLastPinged()));
+        hostResponse.setManagementServerId(host.getManagementServerId());
+        hostResponse.setName(host.getName());
+        hostResponse.setPodId(host.getPodId());
+        hostResponse.setRemoved(host.getRemoved());
+        hostResponse.setCpuSpeed(host.getSpeed());
+        hostResponse.setState(host.getStatus());
+        hostResponse.setIpAddress(host.getPrivateIpAddress());
+        hostResponse.setVersion(host.getVersion());
+        hostResponse.setCreated(host.getCreated());
+
+        if (details > 1) {
+            GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
+            if (guestOSCategory != null) {
+                hostResponse.setOsCategoryId(guestOSCategory.getId());
+                hostResponse.setOsCategoryName(guestOSCategory.getName());
+            }
+            hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
+    
+            if (host.getPodId() != null) {
+                HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
+                if (pod != null) {
+                    hostResponse.setPodName(pod.getName());
+                }
+            }
+            
+            if (host.getClusterId() != null) {
+                ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
+                hostResponse.setClusterName(cluster.getName());
+                hostResponse.setClusterType(cluster.getClusterType().toString());
+            }
+            
+            hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host));
+        }
+        
+        if (details > 3) {
+            DecimalFormat decimalFormat = new DecimalFormat("#.##");
+    
+            // calculate cpu allocated by vm
+            if ((host.getCpus() != null) && (host.getSpeed() != null)) {
+                int cpu = 0;
+                String cpuAlloc = null;
+                List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
+                for (UserVmVO vm : instances) {
+                    ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+                    cpu += so.getCpu() * so.getSpeed();
+                }
+                cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+                hostResponse.setCpuAllocated(cpuAlloc);
+    
+                String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
+                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
+            }
+    
+            // calculate cpu utilized
+            String cpuUsed = null;
+            HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
+            if (hostStats != null) {
+                float cpuUtil = (float) hostStats.getCpuUtilization();
+                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                hostResponse.setCpuUsed(cpuUsed);
+                hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
+                hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
+            }
+    
+            if (host.getType() == Host.Type.Routing) {
+                hostResponse.setMemoryTotal(host.getTotalMemory());
+    
+                // calculate memory allocated by systemVM and userVm
+                Long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
+                hostResponse.setMemoryAllocated(mem);
+                hostResponse.setMemoryUsed(mem);
+                hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
+            } else if (host.getType().toString().equals("Storage")) {
+                hostResponse.setDiskSizeTotal(host.getTotalSize());
+                hostResponse.setDiskSizeAllocated(0L);
+            }
+        }
+        
+        if (details > 2) {
+            Set<com.cloud.host.Status.Event> possibleEvents = host.getStatus().getPossibleEvents();
+            if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
+                String events = "";
+                Iterator<com.cloud.host.Status.Event> iter = possibleEvents.iterator();
+                while (iter.hasNext()) {
+                    com.cloud.host.Status.Event event = iter.next();
+                    events += event.toString();
+                    if (iter.hasNext()) {
+                        events += "; ";
+                    }
+                }
+                hostResponse.setEvents(events);
+            } 
+        }
+        
+        hostResponse.setAllocationState(host.getHostAllocationState().toString());
+
+        hostResponse.setObjectName("host");
+
+        return hostResponse;
+    }
+    
     @Override
     public VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan) {
         Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());

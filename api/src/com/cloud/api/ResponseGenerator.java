@@ -213,5 +213,7 @@ public interface ResponseGenerator {
     FirewallResponse createFirewallResponse(FirewallRule fwRule);
 
     SystemVmInstanceResponse createSystemVmInstanceResponse(VirtualMachine systemVM);
+    @Deprecated // This method is only a temporary solution.  Do not use.
+    HostResponse createHostResponseTemporary(Host host, int details);
 
 }

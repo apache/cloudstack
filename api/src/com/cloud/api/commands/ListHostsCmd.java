@@ -68,7 +68,10 @@ public class ListHostsCmd extends BaseListCmd {
     private Long virtualMachineId;
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list hosts by allocation state")
-    private String allocationState;    
+    private String allocationState;   
+    
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.INTEGER, description="give details.  1 = minimal; 2 = include static info; 3 = include events; 4 = include allocation and statistics")
+    private Integer details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -109,6 +112,11 @@ public class ListHostsCmd extends BaseListCmd {
     public String getAllocationState() {
     	return allocationState;
     } 
+    
+    public Integer getDetails() {
+        return details;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -118,6 +126,7 @@ public class ListHostsCmd extends BaseListCmd {
         return s_name;
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Host;
     }
@@ -137,8 +146,11 @@ public class ListHostsCmd extends BaseListCmd {
 
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
+        if (details == null) {
+            details = 5;
+        }
         for (Host host : result) {
-            HostResponse hostResponse = _responseGenerator.createHostResponse(host);
+            HostResponse hostResponse = _responseGenerator.createHostResponseTemporary(host, details);
             Boolean hasEnoughCapacity = false;
             if(hostIdsWithCapacity.contains(host.getId())){
             	hasEnoughCapacity = true;
