@@ -888,8 +888,11 @@
                 }).join(',');
 
                 // Make service provider map
+                var serviceProviderIndex = 0;
                 $.each(services, function(key, value) {
-                  inputData['serviceProviderMap[0].' + key] = value;
+                  inputData['serviceProviderList[' + serviceProviderIndex + '].service'] = key;
+                  inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
+                  serviceProviderIndex++;
                 });
 
                 $.ajax({
