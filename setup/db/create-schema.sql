@@ -1172,6 +1172,8 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `reserved_capacity` bigint signed NOT NULL,
   `total_capacity` bigint signed NOT NULL,
   `capacity_type` int(1) unsigned NOT NULL,
+  `update_time` datetime COMMENT 'time the capacity was last updated',
+  `created` datetime COMMENT  'date created',
   PRIMARY KEY  (`id`),
   INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`),
   INDEX `i_op_host_capacity__pod_id`(`pod_id`),

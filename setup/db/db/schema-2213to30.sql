@@ -225,3 +225,7 @@ CREATE TABLE `cloud`.`vm_template_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vm_template_details__template_id` FOREIGN KEY `fk_vm_template_details__template_id`(`template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `created` datetime;
+ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `update_time` datetime;
+

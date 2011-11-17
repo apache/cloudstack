@@ -18,12 +18,18 @@
 
 package com.cloud.capacity;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="op_host_capacity")
@@ -56,6 +62,14 @@ public class CapacityVO implements Capacity {
 
     @Column(name="capacity_type")
     private short capacityType;
+    
+    @Column(name=GenericDao.CREATED_COLUMN)
+    protected Date created;    
+    
+    @Column(name="update_time", updatable=true, nullable=true)
+    @Temporal(value=TemporalType.TIMESTAMP)
+    protected Date updateTime;
+    
 
     public CapacityVO() {}
 
@@ -67,6 +81,7 @@ public class CapacityVO implements Capacity {
         this.usedCapacity = usedCapacity;
         this.totalCapacity = totalCapacity;
         this.capacityType = capacityType;
+        this.updateTime = new Date();
     }
 
     @Override
@@ -112,6 +127,7 @@ public class CapacityVO implements Capacity {
     }
     public void setUsedCapacity(long usedCapacity) {
         this.usedCapacity = usedCapacity;
+        this.setUpdateTime (new Date());
     }
     @Override
     public long getReservedCapacity() {
@@ -119,6 +135,7 @@ public class CapacityVO implements Capacity {
     }
     public void setReservedCapacity(long reservedCapacity) {
         this.reservedCapacity = reservedCapacity;
+        this.setUpdateTime (new Date());
     }
     @Override
     public long getTotalCapacity() {
@@ -126,6 +143,7 @@ public class CapacityVO implements Capacity {
     }
     public void setTotalCapacity(long totalCapacity) {
         this.totalCapacity = totalCapacity;
+        this.setUpdateTime (new Date());
     }
     @Override
     public short getCapacityType() {
@@ -134,4 +152,16 @@ public class CapacityVO implements Capacity {
     public void setCapacityType(short capacityType) {
         this.capacityType = capacityType;
     }
+
+	public Date getCreated() {
+		return created;
+	}
+
+	public Date getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(Date updateTime) {
+		this.updateTime = updateTime;
+	}
 }
