@@ -373,8 +373,8 @@
                             args.$form.find('.form-item[rel=vlanTagged]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=scope]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=account]').css('display', 'inline-block');
+                            //args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //depends on scope field
+                            //args.$form.find('.form-item[rel=account]').css('display', 'inline-block');  //depends on scope field
                             args.$form.find('.form-item[rel=gateway]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=netmask]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=startip]').css('display', 'inline-block');
