@@ -275,30 +275,37 @@ public class Link {
 
         SSLSession sslSession = _sslEngine.getSession();
         SSLEngineResult engResult;
+        int remaining = 0;
 
-        appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
-        engResult = _sslEngine.unwrap(_readBuffer, appBuf);
-        if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
-                engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
-            throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+        while (_readBuffer.hasRemaining()) {
+            remaining = _readBuffer.remaining();
+            appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
+            engResult = _sslEngine.unwrap(_readBuffer, appBuf);
+            if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED &&
+                    engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
+                throw new IOException("SSL: SSLEngine return bad result! " + engResult);
+            }
+            if (remaining == _readBuffer.remaining()) {
+                throw new IOException("SSL: Unable to unwrap received data! still remaining " + remaining + "bytes!");
+            }
+            
+            appBuf.flip();
+            if (_plaintextBuffer.remaining() < appBuf.limit()) {
+                // We need to expand _plaintextBuffer for more data
+                ByteBuffer newBuffer = ByteBuffer.allocate(_plaintextBuffer.capacity() + appBuf.limit() * 5);
+                _plaintextBuffer.flip();
+                newBuffer.put(_plaintextBuffer);
+                _plaintextBuffer = newBuffer;
+            }
+            _plaintextBuffer.put(appBuf);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Done with packet: " + appBuf.limit());
+            }
         }
-
-        appBuf.flip();
-        if (_plaintextBuffer.remaining() < appBuf.limit()) {
-            // We need to expand _plaintextBuffer for more data
-            ByteBuffer newBuffer = ByteBuffer.allocate(_plaintextBuffer.capacity() + appBuf.limit() * 5);
-            _plaintextBuffer.flip();
-            newBuffer.put(_plaintextBuffer);
-            _plaintextBuffer = newBuffer;
-        }
-        _plaintextBuffer.put(appBuf);
+        
         _readBuffer.clear();
         _readHeader = true;
-        
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Done with packet: " + appBuf.limit());
-        }
         
         if (!_gotFollowingPacket) {
             _plaintextBuffer.flip();
