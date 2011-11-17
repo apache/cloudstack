@@ -922,6 +922,44 @@
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
             },
+            actions: {
+              add: {
+                label: 'Add new F5',
+                createForm: {
+                  title: 'Add F5',                  
+                  fields: {
+                    name: {
+                      label: 'Name',
+                      validation: { required: true }
+                    },
+                    ipaddress: {
+                      label: 'IP Address',
+                      validation: { required: true }
+                    },
+                    supportedServices: {
+                      label: 'Supported Services',
+                      isBoolean: true,
+                      multiArray: {
+                        serviceA: { label: 'Service A' },
+                        serviceB: { label: 'Service B' },
+                        serviceC: { label: 'Service C' }
+                      }
+                    }
+                  }
+                },
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Added new F5';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.testPoll
+                }
+              }
+            },
             dataProvider: function(args) {
               setTimeout(function() {
                 args.response.success({
@@ -954,6 +992,44 @@
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
+            },
+            actions: {
+              add: {
+                label: 'Add new SRX',
+                createForm: {
+                  title: 'Add NetScaler SRX',                  
+                  fields: {
+                    name: {
+                      label: 'Name',
+                      validation: { required: true }
+                    },
+                    ipaddress: {
+                      label: 'IP Address',
+                      validation: { required: true }
+                    },
+                    supportedServices: {
+                      label: 'Supported Services',
+                      isBoolean: true,
+                      multiArray: {
+                        serviceA: { label: 'Service A' },
+                        serviceB: { label: 'Service B' },
+                        serviceC: { label: 'Service C' }
+                      }
+                    }
+                  }
+                },
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Added new SRX';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.testPoll
+                }
+              }
             },
             dataProvider: function(args) {
               setTimeout(function() {
