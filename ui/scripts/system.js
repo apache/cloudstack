@@ -234,6 +234,7 @@
         },
         'management': {
           detailView: {
+            viewAll: { path: '_zone.pods', label: 'Pods' },
             tabs: {
               details: {
                 title: 'Details',
