@@ -403,10 +403,9 @@
               edit: {
                 label: 'Edit volume details',
                 action: function(args) {
-                  args.response.success();
-                },
-                notification: {
-                  poll: testData.notifications.testPoll
+                  setTimeout(function() {
+                    args.response.success();                    
+                  }, 500);
                 }
               },
               snapshot: {

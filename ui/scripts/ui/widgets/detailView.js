@@ -60,7 +60,8 @@
      */
     standard: function($detailView, args, additional) {
       var action = args.actions[args.actionName];
-      var notification = action.notification;
+      var notification = action.notification ?
+            action.notification : {};
       var messages = action.messages;
       var messageArgs = { name: $detailView.find('tr.name td.value').html() };
       var id = args.id;
@@ -98,6 +99,10 @@
 
         var $form = options.$form;
 
+        // Set loading appearance
+        var $loading = $('<div>').addClass('loading-overlay');
+        $detailView.prepend($loading);
+
         action.action({
           data: data,
           _custom: _custom,
@@ -109,11 +114,6 @@
               args = args ? args : {};
               notification._custom = args._custom;
 
-              // Set loading appearance
-              $detailView.prepend(
-                $('<div>').addClass('loading-overlay')
-              );
-
               if (additional && additional.success) additional.success(args);
 
               // Setup notification
@@ -121,12 +121,15 @@
                 notification,
                 function(args) {
                   if ($detailView.is(':visible')) {
-                    $detailView.find('.loading-overlay').remove();
+                    $loading.remove();
 
                     // Refresh actions
                     loadTabContent(
                       $detailView.find('.detail-group:visible'),
-                      $detailView.data('view-args')
+                      $detailView.data('view-args'),
+                      {
+                        newData: args.data
+                      }
                     );
                   }
 
@@ -203,70 +206,102 @@
      * @param callback
      */
     edit: function($detailView, args) {
+      if ($detailView.find('.button.done').size()) return false;
+      
       // Convert value TDs
       var $inputs = $detailView.find('input[type=text], select');
+      var action = args.actions[args.actionName];
+      var id = $detailView.data('view-args').id;
+      var $editButton = $('<div>').addClass('button done').html('Apply')
+            .hide()
+            .appendTo(
+              $detailView.find('.ui-tabs-panel:visible')
+            )
+            .fadeIn('fast');
 
-      if ($inputs.size()) {
-        $inputs.animate({ opacity: 0.5 }, 500);
-
-        var data = {};
+      var convertInputs = function($inputs) {
+        // Save and turn back into labels
         $inputs.each(function() {
-          data[$(this).attr('name')] = $(this).val();
-        });
+          var $input = $(this);
+          var $value = $input.closest('td.value');
 
-        args.actions[args.actionName].action({
-          data: data,
-          _custom: $detailView.data('_custom'),
-          context: $detailView.data('view-args').context,
-          response: {
+          if ($input.is('input[type=text]'))
+            $value.html(
+              $input.attr('value')
+            );
+          else if ($input.is('select')) {
+            $value.html(
+              $input.find('option:selected').html()
+            );
+            $value.data('detail-view-selected-option', $input.find('option:selected').val());
+          }
+        });                
+      };
+
+      var applyEdits = function($inputs, $editButton) {
+        if ($inputs.size()) {
+          $inputs.animate({ opacity: 0.5 }, 500);
+
+          var data = {};
+          $inputs.each(function() {
+            data[$(this).attr('name')] = $(this).val();
+          });
+
+          $editButton.fadeOut('fast', function() {
+            $editButton.remove();
+          });
+
+          var $loading = $('<div>').addClass('loading-overlay');
+
+          action.action({
             data: data,
-            success: function(data) {
-              // Save and turn back into labels
-              $inputs.each(function() {
-                var $input = $(this);
-                var $value = $input.closest('td.value');
-
-                if ($input.is('input[type=text]'))
-                  $value.html(
-                    $input.attr('value')
-                  );
-                else if ($input.is('select')) {
-                  $value.html(
-                    $input.find('option:selected').html()
-                  );
-                  $value.data('detail-view-selected-option', $input.find('option:selected').val());
-                }
-              });
-
-              var id = $detailView.data('view-args').id
-
-              addNotification(
-                {
+            _custom: $detailView.data('_custom'),
+            context: $detailView.data('view-args').context,
+            response: {
+              data: data,
+              success: function(data) {
+                var notificationArgs = {
                   section: id,
                   desc: 'Changed item properties'
-                },
-                function(data) {
-                },
-                []
-              );
-            },
-            error: function(args) {
-              // Put in original values on error
-              $inputs.each(function() {
-                var $input = $(this);
-                var $value = $input.closest('td.value');
-                var originalValue = $input.data('original-value');
+                };
 
-                $value.html(originalValue);
-              });
+                if (!action.notification) {
+                  convertInputs($inputs);
+                  addNotification(
+                    notificationArgs, function(data) {}, []
+                  ); 
+                } else {
+                  $loading.appendTo($detailView);
+                  addNotification(
+                    $.extend(true, {}, action.notification, notificationArgs),
+                    function(args) {
+                      convertInputs($inputs);
+                      $loading.remove();
+                    }, []
+                  );
+                }
+              },
+              error: function(args) {
+                // Put in original values on error
+                $inputs.each(function() {
+                  var $input = $(this);
+                  var $value = $input.closest('td.value');
+                  var originalValue = $input.data('original-value');
 
-              if (args.message) cloudStack.dialog.notice({ message: args.message });
+                  $value.html(originalValue);
+                });
+
+                if (args.message) cloudStack.dialog.notice({ message: args.message });
+              }
             }
-          }
-        });
+          });
+        }
+      };
 
-        return $detailView;
-      }
+      $editButton.click(function() {
+        var $inputs = $detailView.find('input[type=text], select');
+        applyEdits($inputs, $editButton);
+      });
 
       $detailView.find('td.value').each(function() {
         var name = $(this).closest('tr').data('detail-view-field');
@@ -587,8 +622,10 @@
    *
    * @param $tabContent {jQuery} tab div to load content into
    * @param args {object} Detail view data
+   * @param options {object} Additional options
    */
-  var loadTabContent = function($tabContent, args) {
+  var loadTabContent = function($tabContent, args, options) {
+    if (!options) options = {};
     $tabContent.html('');
 
     var targetTabID = $tabContent.data('detail-view-tab-id');
@@ -622,10 +659,14 @@
     return dataProvider({
       tab: targetTabID,
       id: args.id,
-      jsonObj: args.jsonObj,
+      jsonObj: options.newData ? $.extend(true, {}, args.jsonObj, options.newData) : args.jsonObj,
       context: args.context,
       response: {
         success: function(args) {
+          if (options.newData) {
+            $.extend(args.data, options.newData);
+          }
+          
           if (args._custom) {
             $detailView.data('_custom', args._custom);
           }

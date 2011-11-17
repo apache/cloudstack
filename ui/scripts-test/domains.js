@@ -61,7 +61,7 @@
 
             messages: {
               notification: function(args) {
-                return 'Created domain'
+                return 'Created domain';
               }
             },
 
@@ -78,10 +78,6 @@
                   validation: { required: true }
                 }
               }
-            },
-
-            notification: {
-              poll: testData.notifications.testPoll
             }
           }
         },

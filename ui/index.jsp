@@ -374,7 +374,7 @@
       <div class="multi-wizard zone-wizard">
         <div class="progress">
           <ul>
-            <li class="first"><span class="number">1</span><span>Zone Type</span><span class="arrow"></span></li>
+            <li class="first"><span class="number">1</span><span>Select Type</span><span class="arrow"></span></li>
             <li class="last"><span class="number">2</span><span>Setup Zone</span></li>
           </ul>
         </div>

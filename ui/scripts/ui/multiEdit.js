@@ -535,7 +535,7 @@
         title: args.add.label,
         buttons: [
           {
-            text: 'Done',
+            text: 'Apply',
             'class': 'ok',
             click: function() {
               $dataList.fadeOut(function() {

@@ -53,7 +53,7 @@
         title: 'Select VM for Static NAT',
         buttons: [
           {
-            text: 'Done',
+            text: 'Apply',
             'class': 'ok',
             click: function() {
               var complete = args.complete;

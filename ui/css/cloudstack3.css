@@ -122,6 +122,14 @@ table tbody td.actions {
   vertical-align: middle;
 }
 
+table tbody td.actions input {
+  /*+placement:shift 10px -6px;*/
+  position: relative;
+  left: 10px;
+  top: -6px;
+  margin: 11px 0 0px;
+}
+
 table tbody tr {
   border-left: 1px solid #C4C5C5;
   border-right: 1px solid #C4C5C5;
@@ -796,7 +804,8 @@ div.notification-box .button.close:hover {
 /*** Corner alert*/
 div.notification.corner-alert {
   background: #EBE8E8;
-  width: 260px;
+  display: inline-block;
+  min-width: 260px;
   height: 70px;
   position: absolute;
   text-indent: 10px;
@@ -1013,14 +1022,6 @@ div.list-view td.state.off {
   top: 2px;
 }
 
-.project-view .ui-tabs ul {
-  /*+placement:shift 0px 0px;*/
-  position: relative;
-  left: 0px;
-  top: 0px;
-  height: 39px;
-}
-
 .ui-tabs .info {
   background: #EFEFEF;
   width: 91%;
@@ -1207,6 +1208,41 @@ div.list-view td.state.off {
 
 .detail-group.head table td.name {
   padding: 20px 0px 17px;
+}
+
+.detail-view .button.done {
+  display: inline-block;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: bold;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px 10px 10px 10px;
+  /*+text-shadow:0px -1px 2px #000000;*/
+  -moz-text-shadow: 0px -1px 2px #000000;
+  -webkit-text-shadow: 0px -1px 2px #000000;
+  -o-text-shadow: 0px -1px 2px #000000;
+  text-shadow: 0px -1px 2px #000000;
+  /*+box-shadow:0px 1px 4px #ADADAD;*/
+  -moz-box-shadow: 0px 1px 4px #ADADAD;
+  -webkit-box-shadow: 0px 1px 4px #ADADAD;
+  -o-box-shadow: 0px 1px 4px #ADADAD;
+  box-shadow: 0px 1px 4px #ADADAD;
+  cursor: pointer;
+  margin: 0 0 0 12px;
+  padding: 9px 20px;
+  background: url(../images/bg-gradients.png) 0px -221px;
+}
+
+.detail-view .button.done:hover {
+  background-position: 0px -950px;
+  /*+box-shadow:inset 0px 1px 3px #000000;*/
+  -moz-box-shadow: inset 0px 1px 3px #000000;
+  -webkit-box-shadow: inset 0px 1px 3px #000000;
+  -o-box-shadow: inset 0px 1px 3px #000000;
+  box-shadow: inset 0px 1px 3px #000000;
 }
 
 div.group-multiple div.detail-group table {
@@ -1778,7 +1814,7 @@ div.detail-group.actions td {
 }
 
 .project-view .ui-tabs div.ui-tabs-panel {
-  background: #DBDDDF;
+  background: #C7C7C7 0px 9px;
 }
 
 #browser div.panel .shadow {
@@ -5109,6 +5145,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border: none;
   width: 100%;
   margin: 0;
+  text-indent: 37px;
 }
 
 .multi-edit .data .data-body .data-item .expandable-listing tr.odd td {
