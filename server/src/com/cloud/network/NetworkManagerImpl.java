@@ -1409,12 +1409,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 assignSourceNatIpAddress(owner, network, context.getCaller().getId()); 
             }
         }
-
+        
+        //get providers to implement
+        List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (NetworkElement element : _networkElements) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
-            }
-            element.implement(network, offering, dest, context);
+        	if (providersToImplement.contains(element.getProvider())) {
+        		if (!isProviderExistAndEnabled(getPhysicalNetworkId(network), "VirtualRouter")) {
+        			throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or not enabled in physical network id=" + network.getPhysicalNetworkId());
+                }
+        		if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
+                }
+                if (!element.implement(network, offering, dest, context)) {
+                	throw new CloudRuntimeException("Failed to implement provider " + element.getProvider().getName() + " for network " + network);
+                }
+        	}
         }
 
         // reapply all the firewall/staticNat/lb rules
@@ -2408,24 +2417,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }  
         
         //2) Shutdown all the network elements
+        //get providers to implement
+        List<Provider> providersToImplement = getNetworkProviders(network.getId());
         boolean success = true;
         for (NetworkElement element : _networkElements) {
-            try {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Sending network shutdown to " + element.getName());
+        	if (providersToImplement.contains(element.getProvider())) {
+        		try {
+        			if (!isProviderExistAndEnabled(getPhysicalNetworkId(network), "VirtualRouter")) {
+        				s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network " + getPhysicalNetworkId(network));
+                    	success = false;
+                    }
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Sending network shutdown to " + element.getName());
+                    }
+                    if (!element.shutdown(network, context, cleanupElements)) {
+                    	s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName());
+                    	success = false;
+                    }
+                } catch (ResourceUnavailableException e) {
+                    s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName(), e);
+                    success = false;
+                } catch (ConcurrentOperationException e) {
+                    s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName(), e);
+                    success = false;
+                } catch (Exception e) {
+                    s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName(), e);
+                    success = false;
                 }
-
-                element.shutdown(network, context, cleanupElements);
-            } catch (ResourceUnavailableException e) {
-                s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
-                success = false;
-            } catch (ConcurrentOperationException e) {
-                s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
-                success = false;
-            } catch (Exception e) {
-                s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
-                success = false;
-            }
+        	}
         }
         return success;
     }
@@ -4855,8 +4874,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override 
-    public boolean isProviderAvailable(long physicalNetowrkId, String providerName) {
+    public boolean isProviderExistAndEnabled(long physicalNetowrkId, String providerName) {
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _pNSPDao.findByServiceProvider(physicalNetowrkId, providerName);
+        if (ntwkSvcProvider == null) {
+        	s_logger.warn("Unable to find provider " + providerName + " in physical network id=" + physicalNetowrkId);
+        	return false;
+        }
         return isProviderEnabled(ntwkSvcProvider);
     }
     
@@ -4871,7 +4894,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //get provider for the service and check if all of them are supported
         String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(networkId, service);
         
-        if (!isProviderAvailable(physicalNetworkId, provider)) {
+        if (!isProviderExistAndEnabled(physicalNetworkId, provider)) {
             s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
             return false;
         }
@@ -4990,5 +5013,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean getAllowSubdomainAccessGlobal() {
     	return _allowSubdomainNetworkAccess;
+    }
+    
+    public List<Provider> getNetworkProviders(long networkId) {
+    	List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
+    	List<Provider> providers = new ArrayList<Provider>();
+    	for (String providerName : providerNames) {
+    		providers.add(Network.Provider.getProvider(providerName));
+    	}
+    	
+    	return providers;
     }
 }

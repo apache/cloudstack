@@ -227,7 +227,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean isProviderEnabled(PhysicalNetworkServiceProvider provider);
     
-    boolean isProviderAvailable(long physicalNetowrkId, String providerName);
+    boolean isProviderExistAndEnabled(long physicalNetowrkId, String providerName);
     
     boolean isServiceEnabledInNetwork(long physicalNetworkId, long networkId, Service service);
 

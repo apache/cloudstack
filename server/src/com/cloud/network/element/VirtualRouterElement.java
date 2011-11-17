@@ -104,7 +104,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject VirtualRouterProviderDao _vrProviderDao;
     
     protected boolean canHandle(Network network, Service service) {
-        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+        if (!_networkMgr.isProviderExistAndEnabled(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
             return false;
         }
         
@@ -118,9 +118,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         if (offering.isSystemOnly()) {
-            return false;
-        }
-        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
             return false;
         }
 
@@ -139,7 +136,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (offering.isSystemOnly()) {
             return false;
         }
-        if (!_networkMgr.isProviderAvailable(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
+        if (!_networkMgr.isProviderExistAndEnabled(_networkMgr.getPhysicalNetworkId(network), "VirtualRouter")) {
             return false;
         }
         

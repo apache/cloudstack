@@ -29,13 +29,16 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkServiceMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 
 @Local(value=NetworkServiceMapDao.class) @DB(txn=false)
 public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
     final SearchBuilder<NetworkServiceMapVO> AllFieldsSearch;
     final SearchBuilder<NetworkServiceMapVO> MultipleServicesSearch;
+    final GenericSearchBuilder<NetworkServiceMapVO, String> DistinctProvidersSearch;
     
     protected NetworkServiceMapDaoImpl() {
         super();
@@ -50,6 +53,12 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         MultipleServicesSearch.and("service", MultipleServicesSearch.entity().getService(), SearchCriteria.Op.IN);
         MultipleServicesSearch.and("provider", MultipleServicesSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.done();
+        
+        DistinctProvidersSearch = createSearchBuilder(String.class);
+        DistinctProvidersSearch.and("networkId", DistinctProvidersSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        DistinctProvidersSearch.select(null, Func.DISTINCT, DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.done();
+        
     }
     
     @Override
@@ -133,6 +142,14 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         remove(sc);
+    }
+    
+    @Override
+    public List<String> getDistinctProviders(long networkId) {
+        SearchCriteria<String> sc = DistinctProvidersSearch.create();
+        sc.setParameters("networkId", networkId);
+        List<String> results = customSearch(sc, null);
+        return results;
     }
     
 }

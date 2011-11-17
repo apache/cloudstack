@@ -18,4 +18,5 @@ public interface NetworkServiceMapDao extends GenericDao<NetworkServiceMapVO, Lo
     List<NetworkServiceMapVO> getServicesInNetwork(long networkId);
     String getProviderForServiceInNetwork(long networkid, Service service);
 	void deleteByNetworkId(long networkId);
+	List<String> getDistinctProviders(long networkId);
 }

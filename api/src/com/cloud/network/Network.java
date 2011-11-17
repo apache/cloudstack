@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
