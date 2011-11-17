@@ -18,18 +18,24 @@
 package com.cloud.hypervisor;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
+	
+	@Inject VMTemplateDetailsDao _templateDetailsDao;
+	
     protected HypervisorGuruBase() {
         super();
     }
@@ -78,9 +84,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         } else {
             to.setArch("x86_64");
         }
-
-        to.setDetails(vm.getDetails());
-
+        
+        long templateId = vm.getTemplateId();
+        Map<String, String> details = _templateDetailsDao.findDetails(templateId);
+        assert(details != null);
+        Map<String, String> detailsInVm = vm.getDetails();
+        if(detailsInVm != null) {
+        	details.putAll(detailsInVm);
+        }
+        to.setDetails(details);
         return to;
     }
 
