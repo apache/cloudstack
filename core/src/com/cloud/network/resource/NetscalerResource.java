@@ -132,7 +132,7 @@ public class NetscalerResource implements ServerResource {
                 throw new ConfigurationException("Unable to find private interface");
             }
             
-            _numRetries = NumbersUtil.parseInt((String) params.get("numRetries"), 1);
+            _numRetries = NumbersUtil.parseInt((String) params.get("numRetries"), 2);
 
             _guid = (String)params.get("guid");
             if (_guid == null) {
@@ -157,10 +157,10 @@ public class NetscalerResource implements ServerResource {
 
     private void login() throws ExecutionException {
         try {
-            nsService = new nitro_service(_ip, "https");
+            nsService = new nitro_service(_ip); //FIXME: use nitro_service(_ip, "https"). secure calls are unreliable with Nitro API on MPX 9.3 nitro_service(_ip, "https")
             apiCallResult = nsService.login(_username, _password, timeout);
             if (apiCallResult.errorcode != 0) {
-            	throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to " + apiCallResult.message);
+            	throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
             }
         } catch (nitro_exception e) {
         	throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
@@ -175,7 +175,7 @@ public class NetscalerResource implements ServerResource {
             feature[0] = "LB";
             nsService.enable_features(feature);
         } catch (nitro_exception e) {
-        	throw new ExecutionException("Enabling netscaler load balancing feature failed due to " + e.getMessage());
+        	throw new ExecutionException("Enabling netscaler load balancing feature failed due to error " + apiCallResult.errorcode + " and message " + e.getMessage());
         } catch (Exception e) {
         	throw new ExecutionException("Enabling netscaler load balancing feature failed due to " + e.getMessage());
         }
@@ -253,7 +253,7 @@ public class NetscalerResource implements ServerResource {
                 results[i++] = ip.getPublicIp() + " - success";
             }
         } catch (ExecutionException e) {
-            s_logger.error("Failed to execute IPAssocCommand due to " + e);                    
+            s_logger.error("Failed to execute IPAssocCommand due to " + e);
             
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
@@ -286,19 +286,19 @@ public class NetscalerResource implements ServerResource {
                 } else {
                     throw new ExecutionException("Got invalid protocol: " + loadBalancer.getProtocol());
                 }
-                
+
                 if (loadBalancer.getAlgorithm().equals("roundrobin")) {
                     lbMethod = "ROUNDROBIN";
                 } else if (loadBalancer.getAlgorithm().equals("leastconn")) {
                     lbMethod = "LEASTCONNECTION";
                 } else {
                     throw new ExecutionException("Got invalid load balancing algorithm: " + loadBalancer.getAlgorithm());
-                }        
-                
+                }
+
                 String srcIp = loadBalancer.getSrcIp();
                 int srcPort = loadBalancer.getSrcPort();    
                 String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort, lbProtocol);
-                
+
                 boolean destinationsToAdd = false;
                 for (DestinationTO destination : loadBalancer.getDestinations()) {
                     if (!destination.isRevoked()) {
@@ -412,10 +412,10 @@ public class NetscalerResource implements ServerResource {
     
                             com.citrix.netscaler.nitro.resource.config.basic.service svc = com.citrix.netscaler.nitro.resource.config.basic.service.get(nsService, serviceName);
                             String nsServerName = svc.get_servername();
-                            
+
                             // delete the service
                             com.citrix.netscaler.nitro.resource.config.basic.service.delete(nsService, serviceName);
-                            
+
                             //delete the server if no more services attached
                             server_service_binding[] services = server_service_binding.get(nsService, nsServerName);
                             if ((services == null) || (services.length == 0)) {
