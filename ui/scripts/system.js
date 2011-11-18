@@ -1087,6 +1087,15 @@
                         items.push({id: "true", description: "inline"});  
                         args.response.success({data: items});
                       }                      
+                    },
+                    capacity: {
+                      label: 'Capacity',                      
+                      validation: { required: false, number: true }                      
+                    },
+                    dedicated: {
+                      label: 'Dedicated',
+                      isBoolean: true,
+                      isChecked: false
                     }                    
                   }
                 },
@@ -1186,7 +1195,31 @@
                                       }  		
                                       url.push("inline=" + isInline); 
                                   }
-                                          
+                                 
+                                  var capacity = args.data.capacity;				
+                                  if(capacity != null && capacity.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("capacity=" + capacity); 
+                                  }
+                                 
+                                  var dedicated = (args.data.dedicated == "on");				
+                                  if(dedicated != null && dedicated.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  
+                                      url.push("dedicated=" + dedicated.toString()); 
+                                  }
+                                       
                                   array1.push("&url=" + todb(url.join("")));	                                                                   
                                   //*** construct URL (end)	***		
                                                                     
