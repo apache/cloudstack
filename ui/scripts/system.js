@@ -860,35 +860,132 @@
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
-            },
+            },            
             actions: {
               add: {
                 label: 'Add new NetScaler',
                 createForm: {
-                  title: 'Add NetScaler Device',
-                  desc: 'Please enter your NetScaler device\'s information to add it to your network.',
+                  title: 'Add new NetScaler',                  
                   fields: {
-                    name: {
-                      label: 'Name',
-                      validation: { required: true }
+                    url: {
+                      label: 'URL'
                     },
-                    ipaddress: {
-                      label: 'IP Address',
-                      validation: { required: true }
+                    username: {
+                      label: 'Username'
                     },
-                    supportedServices: {
-                      label: 'Supported Services',
-                      isBoolean: true,
-                      multiArray: {
-                        serviceA: { label: 'Service A' },
-                        serviceB: { label: 'Service B' },
-                        serviceC: { label: 'Service C' }
+                    password: {
+                      label: 'Password',
+                      isPassword: true
+                    },
+                    networkdevicetype: {
+                      label: 'Network device type',
+                      select: function(args) {
+                        var items = [];                        
+                        items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});       
+                        items.push({id: "NetscalerVPXLoadBalancer", description: "NetScaler VPX LoadBalancer"});       
+                        items.push({id: "NetscalerSDXLoadBalancer", description: "NetScaler SDX LoadBalancer"});                               
+                        args.response.success({data: items});
                       }
-                    }
+                    }                    
                   }
                 },
-                action: function(args) {
-                  args.response.success();
+                action: function(args) {                 
+                  var zoneObj = args.context.zones[0];
+                  var physicalNetworkObj;
+                  $.ajax({
+                    url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {                      
+                      var items = json.listphysicalnetworksresponse.physicalnetwork;
+                      physicalNetworkObj = items[0];                      
+                    }
+                  });           
+                                   
+                  if(naasStatusMap["netscaler"] == "disabled") {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + physicalNetworkObj.id),
+                      dataType: "json",
+                      async: true, 
+                      success: function(json) {                             
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;				        
+                        var timerKey = "addNetworkServiceProviderJob_"+jobId;																
+                        $("body").everyTime(2000, timerKey, function() {
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {										       						   
+                              var result = json.queryasyncjobresultresponse;																	
+                              if (result.jobstatus == 0) {
+                                return; //Job has not completed
+                              } 
+                              else {											    
+                                $("body").stopTime(timerKey);
+                                if (result.jobstatus == 1) {                                                              
+                                  //alert("addNetworkServiceProvider&name=Netscaler succeeded.");                                    
+                                  var array1 = [];
+                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                                  array1.push("&url=" + todb(args.data.url));
+                                  array1.push("&username=" + todb(args.data.username));
+                                  array1.push("&password=" + todb(args.data.password));
+                                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                                  $.ajax({
+                                    url: createURL("addNetscalerLoadBalancer" + array1.join("")),
+                                    dataType: "json",
+                                    success: function(json) {                                                                        
+                                      var jid = json.addnetscalerloadbalancerresponse.jobid;                                                                          
+                                      args.response.success(
+                                        {_custom:
+                                         {jobId: jid,
+                                          getUpdatedItem: function(json) {    
+                                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                                            return {data: item};
+                                          }
+                                         }
+                                        }
+                                      );           
+                                    }
+                                  });                                     
+                                } 
+                                else if (result.jobstatus == 2) {
+                                  alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg); 
+                            }
+                          });
+                        });
+                      }
+                    });                    
+                  }
+                  else { //naasStatusMap["netscaler"] == "enabled"
+                    var array1 = [];
+                    array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                    array1.push("&url=" + todb(args.data.url));
+                    array1.push("&username=" + todb(args.data.username));
+                    array1.push("&password=" + todb(args.data.password));
+                    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                    $.ajax({
+                      url: createURL("addNetscalerLoadBalancer" + array1.join("")),
+                      dataType: "json",
+                      success: function(json) {  
+                        var jid = json.addnetscalerloadbalancerresponse.jobid;                     
+                        args.response.success(
+                          {_custom:
+                           {jobId: jid,
+                            getUpdatedItem: function(json) {                           
+                              var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                              return {data: item};
+                            }
+                           }
+                          }
+                        );           
+                      }
+                    });    
+                  }                       
                 },
                 messages: {
                   notification: function(args) {
@@ -896,10 +993,10 @@
                   }
                 },
                 notification: {
-                  poll: testData.notifications.testPoll
+                  poll: pollAsyncJobResult
                 }
               }
-            },
+            },           
             dataProvider: function(args) {
               setTimeout(function() {
                 args.response.success({
