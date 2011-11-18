@@ -901,7 +901,7 @@
                   dataType: 'json',
                   async: true,
                   success: function(data) {
-                    args.response.success();
+                    args.response.success({ data: data.createnetworkofferingresponse.networkoffering });
                   }
                 });
               },
@@ -946,8 +946,8 @@
                     select: function(args) {
                       args.response.success({
                         data: [
-                          { id: 'Required', description: 'Required' },
                           { id: 'Optional', description: 'Optional' },
+                          { id: 'Required', description: 'Required' },
                           { id: 'Unavailable', description: 'Unavailable' }
                         ]
                       });
@@ -957,8 +957,28 @@
                   serviceOfferingId: {
                     label: 'Service Offering',
                     select: function(args) {
-                      args.response.success({
-                        data: []
+                      $.ajax({
+                        url: createURL('listServiceOfferings'),
+                        dataType: 'json',
+                        async: true,
+                        success: function(data) {
+                          var serviceOfferings = data.listserviceofferingsresponse.serviceoffering;
+
+                          args.response.success({
+                            data: $.merge(
+                              [{
+                                id: null,
+                                description: 'None'
+                              }],
+                              $.map(serviceOfferings, function(elem) {
+                                return {
+                                  id: elem.id,
+                                  description: elem.name
+                                };
+                              })
+                            )
+                          });                          
+                        }
                       });
                     }
                   },
