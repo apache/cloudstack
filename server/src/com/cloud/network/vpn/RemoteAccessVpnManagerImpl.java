@@ -305,6 +305,12 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             throw new InvalidParameterValueException("Unable to add vpn user: Another operation active");
         }
         _accountMgr.checkAccess(caller, null, owner);
+        
+        //don't allow duplicated user names for the same account
+        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(owner.getId(), username);
+        if (vpnUser != null) {
+        	throw new InvalidParameterValueException("VPN User with name " + username + " is already added for account " + owner);
+        }
 
         long userCount = _vpnUsersDao.getVpnUserCount(owner.getId());
         if (userCount >= _userLimit) {

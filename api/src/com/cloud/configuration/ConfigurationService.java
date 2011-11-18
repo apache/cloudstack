@@ -23,7 +23,6 @@ import java.util.List;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
-import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.api.commands.CreateZoneCmd;
@@ -136,14 +135,18 @@ public interface ConfigurationService {
 
     /**
      * Creates a new pod based on the parameters specified in the command object
-     * 
-     * @param cmd
-     *            the command object that specifies the name, zone, gateway, cidr, and ip range for the pod
+     * @param zoneId TODO
+     * @param name TODO
+     * @param startIp TODO
+     * @param endIp TODO
+     * @param gateway TODO
+     * @param netmask TODO
+     * @param allocationState TODO
      * @return the new pod if successful, null otherwise
      * @throws
      * @throws
      */
-    Pod createPod(CreatePodCmd cmd);
+    Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

@@ -40,7 +40,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
-import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.api.commands.CreateZoneCmd;
@@ -909,16 +908,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public Pod createPod(CreatePodCmd cmd) {
-        String endIp = cmd.getEndIp();
-        String gateway = cmd.getGateway();
-        String name = cmd.getPodName();
-        String startIp = cmd.getStartIp();
-        String netmask = cmd.getNetmask();
-        Long zoneId = cmd.getZoneId();
+    public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState) {
         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         Long userId = UserContext.current().getCallerUserId();
-        String allocationState = cmd.getAllocationState();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();

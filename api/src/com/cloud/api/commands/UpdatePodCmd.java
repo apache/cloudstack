@@ -26,7 +26,6 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
@@ -41,15 +40,6 @@ public class UpdatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
-    private String netmask;
-
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
-    private String endIp;
-
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
-    private String gateway;
-
     @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the Pod")
     private Long id;
@@ -59,6 +49,15 @@ public class UpdatePodCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the starting IP address for the Pod")
     private String startIp;
+    
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
+    private String endIp;
+    
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the Pod")
+    private String netmask;
+
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway for the Pod")
+    private String gateway;
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;

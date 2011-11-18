@@ -26,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
     
     @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
-    private IdentityProxy publicIpId = new IdentityProxy("user_ip_adddress");
+    private IdentityProxy publicIpId = new IdentityProxy("user_ip_address");
     
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address of the vpn server")
     private String publicIp;
