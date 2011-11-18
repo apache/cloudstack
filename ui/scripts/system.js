@@ -3,6 +3,7 @@
   var zoneObjs, podObjs, clusterObjs, domainObjs;
   var selectedClusterObj, selectedZoneObj;
   var publicNetworkObj;
+  var naasStatusMap = {};
 
   cloudStack.sections.system = {
     title: 'System',
@@ -752,7 +753,7 @@
       networkProviders: {
         // Returns state of each network provider type
         statusCheck: function(args) {          
-          var statusMap = {
+          naasStatusMap = {
             virtualRouter: 'disabled',
             netscaler: 'disabled',
             f5: 'disabled',
@@ -782,29 +783,29 @@
                 switch(items[0].name) {
                   case "VirtualRouter":
                     if(items[0].state == "Enabled") 
-                      statusMap["virtualRouter"] = "enabled";
+                      naasStatusMap["virtualRouter"] = "enabled";
                     break;     
                   case "Netscaler":
                     if(items[0].state == "Enabled") 
-                      statusMap["netscaler"] = "enabled";
+                      naasStatusMap["netscaler"] = "enabled";
                     break;      
                   case "F5BigIp":
                     if(items[0].state == "Enabled") 
-                      statusMap["f5"] = "enabled";
+                      naasStatusMap["f5"] = "enabled";
                     break;   
                   case "JuniperSRX":
                     if(items[0].state == "Enabled") 
-                      statusMap["srx"] = "enabled";
+                      naasStatusMap["srx"] = "enabled";
                     break;   
                   case "SecurityGroupProvider":
                     if(items[0].state == "Enabled") 
-                      statusMap["securityGroups"] = "enabled";
+                      naasStatusMap["securityGroups"] = "enabled";
                     break;                     
                 }              
               }
             }
           });  
-          return statusMap;
+          return naasStatusMap;
         },
 
         // Actions performed on entire net. provider type
@@ -960,30 +961,91 @@
                       physicalNetworkObj = items[0];                      
                     }
                   });           
-                  
-                  var array1 = [];
-                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
-                  array1.push("&url=" + todb(args.data.url));
-                  array1.push("&username=" + todb(args.data.username));
-                  array1.push("&password=" + todb(args.data.password));
-                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                  $.ajax({
-                    url: createURL("addF5LoadBalancer" + array1.join("")),
-                    dataType: "json",
-                    success: function(json) {    
-                      var jid = json.addf5bigiploadbalancerresponse.jobid;                     
-                      args.response.success(
-                        {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {                           
-                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                            return {data: item};
+                                   
+                  if(naasStatusMap["f5"] == "disabled") {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + physicalNetworkObj.id),
+                      dataType: "json",
+                      async: true, 
+                      success: function(json) {                             
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;				        
+                        var timerKey = "addNetworkServiceProviderJob_"+jobId;																
+                        $("body").everyTime(2000, timerKey, function() {
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {										       						   
+                              var result = json.queryasyncjobresultresponse;																	
+                              if (result.jobstatus == 0) {
+                                return; //Job has not completed
+                              } 
+                              else {											    
+                                $("body").stopTime(timerKey);
+                                if (result.jobstatus == 1) {                                                              
+                                  //alert("ddNetworkServiceProvider&name=F5BigIp succeeded.");                                    
+                                  var array1 = [];
+                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                                  array1.push("&url=" + todb(args.data.url));
+                                  array1.push("&username=" + todb(args.data.username));
+                                  array1.push("&password=" + todb(args.data.password));
+                                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                                  $.ajax({
+                                    url: createURL("addF5LoadBalancer" + array1.join("")),
+                                    dataType: "json",
+                                    success: function(json) {    
+                                      var jid = json.addf5bigiploadbalancerresponse.jobid;                                                                          
+                                      args.response.success(
+                                        {_custom:
+                                         {jobId: jid,
+                                          getUpdatedItem: function(json) {                           
+                                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                                            return {data: item};
+                                          }
+                                         }
+                                        }
+                                      );           
+                                    }
+                                  });                                     
+                                } 
+                                else if (result.jobstatus == 2) {
+                                  alert("ddNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("ddNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg); 
+                            }
+                          });
+                        });
+                      }
+                    });                    
+                  }
+                  else { //naasStatusMap["f5"] == "enabled"
+                    var array1 = [];
+                    array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                    array1.push("&url=" + todb(args.data.url));
+                    array1.push("&username=" + todb(args.data.username));
+                    array1.push("&password=" + todb(args.data.password));
+                    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                    $.ajax({
+                      url: createURL("addF5LoadBalancer" + array1.join("")),
+                      dataType: "json",
+                      success: function(json) {  
+                        var jid = json.addf5bigiploadbalancerresponse.jobid;                     
+                        args.response.success(
+                          {_custom:
+                           {jobId: jid,
+                            getUpdatedItem: function(json) {                           
+                              var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                              return {data: item};
+                            }
+                           }
                           }
-                         }
-                        }
-                      );           
-                    }
-                  });                    
+                        );           
+                      }
+                    });    
+                  }                       
                 },
                 messages: {
                   notification: function(args) {
@@ -1055,8 +1117,7 @@
                   }
                 },
                 action: function(args) {                 
-                  var zoneObj = args.context.zones[0];
-                  debugger;
+                  var zoneObj = args.context.zones[0];                
                   var physicalNetworkObj;
                   $.ajax({
                     url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
