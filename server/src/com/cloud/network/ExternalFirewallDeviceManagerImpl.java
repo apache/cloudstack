@@ -159,8 +159,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         if (ntwkSvcProvider == null ) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() + 
                     " is not enabled in the physical network: " + physicalNetworkId + "to add this device" );
-        } else if ((ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown)
-                || (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Disabled)) {
+        } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + 
                     " is not added or in shutdown state in the physical network: " + physicalNetworkId + "to add this device" );
         }
