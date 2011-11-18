@@ -971,7 +971,6 @@
                     url: createURL("addF5LoadBalancer" + array1.join("")),
                     dataType: "json",
                     success: function(json) {    
-                      //jessica     
                       var jid = json.addf5bigiploadbalancerresponse.jobid;                     
                       args.response.success(
                         {_custom:
@@ -1033,29 +1032,65 @@
               add: {
                 label: 'Add new SRX',
                 createForm: {
-                  title: 'Add NetScaler SRX',                  
+                  title: 'Add new SRX',                  
                   fields: {
-                    name: {
-                      label: 'Name',
-                      validation: { required: true }
+                    url: {
+                      label: 'URL'
                     },
-                    ipaddress: {
-                      label: 'IP Address',
-                      validation: { required: true }
+                    username: {
+                      label: 'Username'
                     },
-                    supportedServices: {
-                      label: 'Supported Services',
-                      isBoolean: true,
-                      multiArray: {
-                        serviceA: { label: 'Service A' },
-                        serviceB: { label: 'Service B' },
-                        serviceC: { label: 'Service C' }
+                    password: {
+                      label: 'Password',
+                      isPassword: true
+                    },
+                    networkdevicetype: {
+                      label: 'Network device type',
+                      select: function(args) {
+                        var items = [];                        
+                        items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});                        
+                        args.response.success({data: items});
                       }
-                    }
+                    }                    
                   }
                 },
-                action: function(args) {
-                  args.response.success();
+                action: function(args) {                 
+                  var zoneObj = args.context.zones[0];
+                  debugger;
+                  var physicalNetworkObj;
+                  $.ajax({
+                    url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {                      
+                      var items = json.listphysicalnetworksresponse.physicalnetwork;
+                      physicalNetworkObj = items[0];                      
+                    }
+                  });           
+                  
+                  var array1 = [];
+                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                  array1.push("&url=" + todb(args.data.url));
+                  array1.push("&username=" + todb(args.data.username));
+                  array1.push("&password=" + todb(args.data.password));
+                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                  $.ajax({
+                    url: createURL("addSrxFirewall" + array1.join("")),
+                    dataType: "json",
+                    success: function(json) {    
+                      var jid = json.addsrxfirewallresponse.jobid;                     
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {                           
+                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+                            return {data: item};
+                          }
+                         }
+                        }
+                      );           
+                    }
+                  });                    
                 },
                 messages: {
                   notification: function(args) {
@@ -1063,7 +1098,7 @@
                   }
                 },
                 notification: {
-                  poll: testData.notifications.testPoll
+                  poll: pollAsyncJobResult
                 }
               }
             },
