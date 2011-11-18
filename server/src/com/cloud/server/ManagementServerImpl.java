@@ -2045,6 +2045,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
         Long projectId = cmd.getProjectId();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long associatedNetworkId = cmd.getAssociatedNetworkId();
         
         List<Long> permittedAccounts = new ArrayList<Long>();
 
@@ -2115,6 +2116,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
 
         if ((permittedAccounts.isEmpty()) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
@@ -2180,6 +2182,10 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (physicalNetworkId != null) {
             sc.setParameters("physicalNetworkId", physicalNetworkId);
+        }
+        
+        if (associatedNetworkId != null) {
+        	sc.setParameters("associatedNetworkId", associatedNetworkId);
         }
 
         return _publicIpAddressDao.search(sc, searchFilter);

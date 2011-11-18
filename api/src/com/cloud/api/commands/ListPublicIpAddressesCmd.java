@@ -81,6 +81,10 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses by physical network id")
     private Long physicalNetworkId;
+    
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.ASSOCIATED_NETWORK_ID, type=CommandType.LONG, description="lists all public IP addresses associated to the network specified")
+    private Long associatedNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -124,12 +128,15 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
+    
+    public Long getAssociatedNetworkId() {
+		return associatedNetworkId;
+	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }

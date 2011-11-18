@@ -80,7 +80,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName("virtualmachinedisplayname") @Param(description="virutal machine display name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineDisplayName;
     
-    @SerializedName("associatednetworkid") @Param(description="the ID of the Network associated with the IP address")
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID) @Param(description="the ID of the Network associated with the IP address")
     private IdentityProxy associatedNetworkId = new IdentityProxy("networks");
     
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
