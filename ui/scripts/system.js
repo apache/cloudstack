@@ -1445,9 +1445,16 @@
                     privateinterface: {
                       label: 'Private interface'
                     },
+                    usageinterface: {
+                      label: 'Usage interface'
+                    },
                     numretries: {
                       label: 'Number of retries',
                       defaultValue: '2'
+                    },
+                    timeout: {
+                      label: 'Timeout',
+                      defaultValue: '300'
                     },
                     inline: {
                       label: 'Mode',
@@ -1457,7 +1464,15 @@
                         items.push({id: "true", description: "inline"});  
                         args.response.success({data: items});
                       }                      
+                    },                    
+                    publicnetwork: {
+                      label: 'Public network',
+                      defaultValue: 'untrusted'
                     },
+                    privatenetwork: {
+                      label: 'Private network',
+                      defaultValue: 'trusted'
+                    },                    
                     capacity: {
                       label: 'Capacity',                      
                       validation: { required: false, number: true }                      
@@ -1517,7 +1532,7 @@
                                   
                                   var ip = args.data.ip;
                                   url.push("https://" + ip);	 
-                                  
+                                  debugger;
                                   var isQuestionMarkAdded = false;
                                   
                                   var publicInterface = args.data.publicinterface;
@@ -1544,6 +1559,18 @@
                                       url.push("privateinterface=" + privateInterface); 
                                   }
                                   
+                                  var usageInterface = args.data.usageinterface;
+                                  if(usageInterface != null && usageInterface.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("usageinterface=" + usageInterface); 
+                                  }
+                                  
                                   var numretries = args.data.numretries;
                                   if(numretries != null && numretries.length > 0) {
                                       if(isQuestionMarkAdded == false) {
@@ -1554,6 +1581,18 @@
                                           url.push("&");
                                       }  		
                                       url.push("numretries=" + numretries); 	
+                                  }		
+                                  
+                                  var timeout = args.data.timeout;
+                                  if(timeout != null && timeout.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("timeout=" + timeout); 	
                                   }		
                                   
                                   var isInline = args.data.inline;				
@@ -1567,7 +1606,31 @@
                                       }  		
                                       url.push("inline=" + isInline); 
                                   }
-                                 
+                                                                   
+                                  var publicNetwork = args.data.publicnetwork;
+                                  if(publicNetwork != null && publicNetwork.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  				    
+                                      url.push("publicnetwork=" + publicNetwork); 
+                                  }
+                                      
+                                  var privateNetwork = args.data.privatenetwork;
+                                  if(privateNetwork != null && privateNetwork.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("privatenetwork=" + privateNetwork); 
+                                  }
+                                                                  
                                   var capacity = args.data.capacity;				
                                   if(capacity != null && capacity.length > 0) {
                                       if(isQuestionMarkAdded == false) {
