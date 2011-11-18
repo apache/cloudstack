@@ -1052,8 +1052,8 @@
                 createForm: {
                   title: 'Add F5',                  
                   fields: {
-                    url: {
-                      label: 'URL'
+                    ip: {
+                      label: 'IP address'
                     },
                     username: {
                       label: 'Username'
@@ -1069,6 +1069,24 @@
                         items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});                        
                         args.response.success({data: items});
                       }
+                    },
+                    publicinterface: {
+                      label: 'Public interface'
+                    },
+                    privateinterface: {
+                      label: 'Private interface'
+                    },
+                    numretries: {
+                      label: 'Number of retries'
+                    },
+                    inline: {
+                      label: 'Mode',
+                      select: function(args) {
+                        var items = [];
+                        items.push({id: "false", description: "side by side"});  
+                        items.push({id: "true", description: "inline"});  
+                        args.response.success({data: items});
+                      }                      
                     }                    
                   }
                 },
@@ -1107,11 +1125,71 @@
                                 if (result.jobstatus == 1) {                                                              
                                   //alert("addNetworkServiceProvider&name=F5BigIp succeeded.");                                    
                                   var array1 = [];
-                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
-                                  array1.push("&url=" + todb(args.data.url));
+                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
                                   array1.push("&username=" + todb(args.data.username));
                                   array1.push("&password=" + todb(args.data.password));
                                   array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                                  
+                                  //???                                  
+                                  //*** construct URL (begin)	***	
+                                  var url = [];
+                                  
+                                  var ip = args.data.ip;
+                                  url.push("https://" + ip);	 
+                                  
+                                  var isQuestionMarkAdded = false;
+                                  
+                                  var publicInterface = args.data.publicinterface;
+                                  if(publicInterface != null && publicInterface.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  				    
+                                      url.push("publicinterface=" + publicInterface); 
+                                  }
+                                      
+                                  var privateInterface = args.data.privateinterface;
+                                  if(privateInterface != null && privateInterface.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("privateinterface=" + privateInterface); 
+                                  }
+                                  
+                                  var numretries = args.data.numretries;
+                                  if(numretries != null && numretries.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("numretries=" + numretries); 	
+                                  }		
+                                  
+                                  var isInline = args.data.inline;				
+                                  if(isInline != null && isInline.length > 0) {
+                                      if(isQuestionMarkAdded == false) {
+                                          url.push("?");
+                                          isQuestionMarkAdded = true;
+                                      }
+                                      else {
+                                          url.push("&");
+                                      }  		
+                                      url.push("inline=" + isInline); 
+                                  }
+                                          
+                                  array1.push("&url=" + todb(url.join("")));	                                                                   
+                                  //*** construct URL (end)	***		
+                                                                    
                                   $.ajax({
                                     url: createURL("addF5LoadBalancer" + array1.join("")),
                                     dataType: "json",
