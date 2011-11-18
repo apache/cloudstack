@@ -4168,6 +4168,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } else if (service == Service.SourceNat) {
                 	addGatewayService = true;
                 }
+                
+                //check if the service is provided by this Provider
+                if(!element.getCapabilities().containsKey(service)){
+                    throw new InvalidParameterValueException(providerName+" Provider cannot provide this Service specified=" + serviceName);
+                }
                 services.add(service);
             }
             
