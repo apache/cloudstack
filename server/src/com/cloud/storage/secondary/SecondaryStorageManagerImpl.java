@@ -405,35 +405,25 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return false;
         }
 
-        List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, State.Running, State.Migrating, State.Starting);
-
         String copyPort = _useSSlCopy? "443" : Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
         SecStorageFirewallCfgCommand cpc = new SecStorageFirewallCfgCommand();
         SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand();
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
-        for (SecondaryStorageVmVO ssVm : alreadyRunning) {
-            if ( ssVm.getDataCenterIdToDeployIn() == zoneId ) {
-                continue;
-            }
-            if (ssVm.getPublicIpAddress() != null) {
-                cpc.addPortConfig(ssVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
-            }
-            if ( ssVm.getState() != State.Running ) {
-                continue;
-            }
-            String instanceName = ssVm.getInstanceName();
-            HostVO host = _resourceMgr.findHostByName(instanceName);
-            if ( host == null ) {
-                continue;
-            }
-            Answer answer = _agentMgr.easySend(host.getId(), thiscpc);
+        
+        SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, zoneId);
+        sc.addAnd(sc.getEntity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
+        sc.addAnd(sc.getEntity().getStatus(), Op.IN, com.cloud.host.Status.Up, com.cloud.host.Status.Connecting);
+        List<HostVO> ssvms = sc.list();
+        for (HostVO ssvm : ssvms) {
+            Answer answer = _agentMgr.easySend(ssvm.getId(), thiscpc);
             if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Successfully programmed firewall rules into " + ssVm.getHostName());
+                    s_logger.debug("Successfully programmed firewall rules into SSVM " + ssvm.getName());
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("failed to program firewall rules into secondary storage vm : " + ssVm.getHostName());
+                    s_logger.debug("failed to program firewall rules into secondary storage vm : " + ssvm.getName());
                 }
                 return false;
             }
