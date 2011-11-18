@@ -464,7 +464,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
 	    }
 	    if (servers.size() > 1) {
-	    	throw new CloudRuntimeException("Find more than one PXE server, please make sure there is only one PXE server per zone");
+	    	throw new CloudRuntimeException("Find more than one PXE server, please make sure there is only one PXE server per zone in pod " + dest.getPod().getId() + " zone " + dest.getDataCenter().getId());
 	    }
 	    HostVO pxeServer = servers.get(0);
 	    
