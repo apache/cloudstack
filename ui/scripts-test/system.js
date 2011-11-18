@@ -1,4 +1,16 @@
 (function($, cloudStack) {
+  var testProviderActionFilter = function(args) {
+    if (!cloudStack._testProviderStatus) cloudStack._testProviderStatus = 'disabled';
+
+    if (cloudStack._testProviderStatus == 'disabled') {
+      cloudStack._testProviderStatus = 'enabled';
+      return ['enable', 'start'];
+    } else {
+      cloudStack._testProviderStatus = 'disabled';
+      return ['disable', 'stop'];
+    }
+  };
+
   cloudStack.sections.system = {
     title: 'System',
     id: 'system',
@@ -239,17 +251,6 @@
           };
         },
 
-        // Actions performed on entire net. provider type
-        actions: {
-          enable: function(args) {
-            args.response.success();
-          },
-
-          disable: function(args) {
-            args.response.success();
-          }
-        },
-
         types: {
           // Virtual router list view
           virtualRouter: {
@@ -259,6 +260,49 @@
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
             },
+            providerActionFilter: testProviderActionFilter,
+            providerActions: {
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Disabled virtual router provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              enable: {
+                label: 'Enable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Enable virtual router provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              stop: {
+                label: 'Shutdown',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Shutdown virtual router provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              start: {
+                label: 'Start',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Started virtual router provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              }
+            },              
             dataProvider: function(args) {
               setTimeout(function() {
                 args.response.success({
@@ -292,6 +336,49 @@
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
             },
+            providerActionFilter: testProviderActionFilter,
+            providerActions: {
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Disabled NetScaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              enable: {
+                label: 'Enable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Enable NetScaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              stop: {
+                label: 'Shutdown',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Shutdown NetScaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              start: {
+                label: 'Start',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Started NetScaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              }
+            },
             actions: {
               add: {
                 label: 'Add new NetScaler',
@@ -301,7 +388,8 @@
                   fields: {
                     name: {
                       label: 'Name',
-                      validation: { required: true }
+                      validation: { required: true },
+                      defaultValue: 'New_NetScaler'
                     },
                     ipaddress: {
                       label: 'IP Address',
@@ -315,6 +403,36 @@
                         serviceB: { label: 'Service B' },
                         serviceC: { label: 'Service C' }
                       }
+                    },
+                    username: {
+                      label: 'Username',
+                      validation: { required: true }
+                    },
+                    password: {
+                      label: 'Password',
+                      isPassword: true,
+                      validation: { required: true }
+                    },
+                    type: {
+                      label: 'NetScaler Model',
+                      select: function(args) {
+                        args.response.success({
+                          data: [
+                            {
+                              id: 'mpx',
+                              description: 'NetScaler MPX'
+                            },
+                            {
+                              id: 'adc',
+                              description: 'NetScaler ADC'
+                            }
+                          ]
+                        });
+                      }
+                    },
+                    enabled: {
+                      label: 'Enable',
+                      isBoolean: true
                     }
                   }
                 },
@@ -354,6 +472,49 @@
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
             },
+            providerActionFilter: testProviderActionFilter,
+            providerActions: {
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Disabled F5 provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              enable: {
+                label: 'Enable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Enable F5 provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              stop: {
+                label: 'Shutdown',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Shutdown F5 provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              start: {
+                label: 'Start',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Started F5 provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              }
+            },
             dataProvider: function(args) {
               setTimeout(function() {
                 args.response.success({
@@ -387,6 +548,49 @@
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
             },
+            providerActionFilter: testProviderActionFilter,
+            providerActions: {
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Disabled SRX provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              enable: {
+                label: 'Enable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Enable SRX provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              stop: {
+                label: 'Shutdown',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Shutdown SRX provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              start: {
+                label: 'Start',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Started SRX provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              }
+            },
             dataProvider: function(args) {
               setTimeout(function() {
                 args.response.success({
@@ -419,6 +623,49 @@
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
               state: { label: 'Status' }
+            },
+            providerActionFilter: testProviderActionFilter,
+            providerActions: {
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Disabled security group provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              enable: {
+                label: 'Enable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Enable security group provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              stop: {
+                label: 'Shutdown',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Shutdown security group provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              start: {
+                label: 'Start',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Started security group provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              }
             },
             dataProvider: function(args) {
               setTimeout(function() {

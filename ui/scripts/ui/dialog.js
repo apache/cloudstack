@@ -197,6 +197,10 @@
             name: key,
             type: this.password || this.isPassword ? 'password' : 'text'
           }).appendTo($value);
+
+          if (this.defaultValue) {
+            $input.val(this.defaultValue);
+          }
         }
 
         $input.data('validation-rules', this.validation);

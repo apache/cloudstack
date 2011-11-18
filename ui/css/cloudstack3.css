@@ -1946,7 +1946,9 @@ div.toolbar div.button.search:hover {
 }
 
 div.toolbar div.button.add,
-div.toolbar div.button.refresh {
+div.toolbar div.button.refresh,
+div.toolbar div.button.add,
+div.toolbar div.button.main-action {
   /*+placement:shift 0px 5px;*/
   position: relative;
   left: 0px;
@@ -1971,12 +1973,27 @@ div.toolbar div.button.refresh {
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
+  height: 12px;
 }
 
 div.toolbar div.button.add:hover,
-div.toolbar div.button.refresh:hover {
+div.toolbar div.button.refresh:hover,
+div.toolbar div.button.main-action:hover {
   background-position: 0 -132px;
   border-left: 1px solid #585D60;
+}
+
+div.toolbar div.button.main-action span.icon {
+  background-image: url(../images/sprites.png);
+  display: block;
+  cursor: pointer;
+  width: 34px;
+  height: 20px;
+  float: left;
+  /*+placement:shift 0px -7px;*/
+  position: relative;
+  left: 0px;
+  top: -7px;
 }
 
 div.toolbar div.button.refresh {
@@ -1985,10 +2002,13 @@ div.toolbar div.button.refresh {
 }
 
 div.toolbar div.button.refresh span {
-  background-position: -628px -234px;
+  background-image: url(../images/icons.png);
+  padding: 1px 1px 1px 16px;
+  background-position: -629px -232px;
+  background-repeat: no-repeat;
 }
 
-div.toolbar div.button span {
+div.toolbar div.button.add span {
   padding: 0px 0 0px 18px;
   background: url(../images/icons.png) no-repeat -626px -209px;
   /*+placement:shift 0px 1px;*/
@@ -3708,9 +3728,10 @@ Dialogs*/
 
 .panel .add-first-network-resource .form-item {
   width: 409px;
-  height: 39px;
+  display: inline-block;
   padding: 5px;
   position: relative;
+  margin: 0 0 2px;
 }
 
 .panel .add-first-network-resource .form-item label {
@@ -3736,8 +3757,21 @@ Dialogs*/
   border: 1px solid #B7B7B7;
 }
 
-.panel .add-first-network-resource .form-item input[type=text] {
+.panel .add-first-network-resource .form-item input[type=checkbox] {
+  float: right;
+  margin: 0 266px 0 0;
+}
+
+.panel .add-first-network-resource .form-item input[type=text],
+.panel .add-first-network-resource .form-item input[type=password],
+.panel .add-first-network-resource .form-item input[type=text],
+.panel .add-first-network-resource .form-item select {
   width: 276px;
+}
+
+.panel .add-first-network-resource .form-item select {
+  width: 280px;
+  margin: 0 0 0 20px;
 }
 
 .panel .add-first-network-resource .button {
@@ -3764,7 +3798,7 @@ Dialogs*/
   padding: 12px;
   clear: both;
   width: 383px;
-  margin: 3px 0 0;
+  margin: 3px 0 10px;
   /*+border-radius:7px;*/
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
@@ -6620,7 +6654,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background-position: -138px -96px;
 }
 
-.disable .icon:hover,
+.disable:hover .icon,
 .disableStaticNAT:hover .icon {
   background-position: -138px -678px;
 }

@@ -9,7 +9,50 @@
       var $charts = $('<div>').addClass('system-charts');
       var context = listViewArgs.context;
 
-      // Renders individual network's chart
+      /**
+       * Generates provider-wide actions
+       */
+      var providerActions = function(actions, options) {
+        if (!options) options = {};
+
+        var $actions = $('<div>').addClass('main-actions');
+        var allowedActions = options.actionFilter ? options.actionFilter({
+          actions: $.map(actions, function(value, key) { return key; })
+        }) : null;
+
+        $.each(actions, function(actionID, action) {
+          if (allowedActions && $.inArray(actionID, allowedActions) == -1)
+            return true;
+          
+          var $action = $('<div>').addClass('button action main-action');
+
+          $action.addClass(actionID);
+          $action.append($('<span>').addClass('icon'));
+          $action.append($('<span>').html(action.label));
+          $action.click(function() {
+            action.action({
+              context: { zones: listViewArgs.context.physicalResources },
+              response: {
+                success: function(args) {
+                  if (options.success) options.success($.extend(args, {
+                    action: action
+                  }));
+                }
+              }
+            });
+          });
+
+          $action.appendTo($actions);
+
+          return true;
+        });
+
+        return $actions;
+      };
+
+      /**
+       * Render specified network's system chart
+       */
       var chartView = function(network) {
         var $chartView = $('<div>').addClass('system-chart-view')
               .append($('#template').find('div.zone-chart').clone());
@@ -122,7 +165,7 @@
                         desc: action.messages.notification({}),
                         interval: 1000,
                         poll: action.notification.poll,
-                        _custom: args._custom
+                        _custom: args ? args._custom : null
                       });
                     }
                   }
@@ -268,6 +311,39 @@
                   var createForm = action ? networkProviderArgs.actions.add.createForm : null;
                   var itemName = networkProviderArgs.label;
 
+                  /**
+                   * Generate provider-wide actions
+                   */
+                  var loadProviderActions = function($listView) {
+                    $listView.find('.toolbar .main-actions').remove();
+
+                    var $providerActions = providerActions(
+                      networkProviderArgs.providerActions ?
+                        networkProviderArgs.providerActions : {},
+                      {
+                        success: function(args) {
+                          var action = args.action;
+                          $loading.appendTo($listView);
+
+                          $('div.notifications').notifications('add', {
+                            desc: action.messages.notification({}),
+                            interval: 2000,
+                            poll: action.notification.poll,
+                            _custom: args ? args._custom : null,
+                            complete: function(args) {
+                              $loading.remove();
+                              loadProviderActions($listView);
+                            }
+                          });
+                        },
+
+                        actionFilter: networkProviderArgs.providerActionFilter
+                      }
+                    );
+
+                    $providerActions.appendTo($listView.find('.toolbar'));
+                  };
+
                   $browser.cloudBrowser('addPanel', {
                     title: itemName + ' details',
                     maximizeIfSelected: true,
@@ -286,12 +362,14 @@
                                     desc: action.messages.notification({}),
                                     interval: 1000,
                                     poll: action.notification.poll,
-                                    _custom: args._custom,
+                                    _custom: args ? args._custom : null,
                                     complete: function(args) {
                                       refreshChart();
-                                      $newPanel.html('').listView({
+                                      var $listView = $newPanel.html('').listView({
                                         listView: naas.networkProviders.types[itemID]
-                                      }); 
+                                      });
+
+                                      loadProviderActions($listView);
                                     }
                                   });
                                 }
@@ -318,13 +396,15 @@
                                   if ($form.valid()) {
                                     completeAction($formContainer);
                                   }
-                                }) 
+                                })
                             )
                         );
                       } else {
-                        $newPanel.listView({
+                        var $listView = $newPanel.listView({
                           listView: naas.networkProviders.types[itemID]
                         });
+
+                        loadProviderActions($listView);
                       }
                     }
                   });
