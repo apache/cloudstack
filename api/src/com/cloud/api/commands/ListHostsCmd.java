@@ -19,11 +19,14 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiConstants.HostDetails;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -31,6 +34,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 
@@ -74,8 +78,11 @@ public class ListHostsCmd extends BaseListCmd {
     private Long virtualMachineId;
     
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list hosts by allocation state")
-    private String allocationState;    
-
+    private String allocationState;   
+    
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of ")
+    private List<String> viewDetails; 
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -112,9 +119,29 @@ public class ListHostsCmd extends BaseListCmd {
         return virtualMachineId;
     }
     
+    public EnumSet<HostDetails> getDetails() throws InvalidParameterValueException {
+        EnumSet<HostDetails> dv;
+        if (viewDetails==null || viewDetails.size() <=0){
+            dv = EnumSet.of(HostDetails.all);
+        }
+        else {
+            try {
+                ArrayList<HostDetails> dc = new ArrayList<HostDetails>();
+                for (String detail: viewDetails){
+                    dc.add(HostDetails.valueOf(detail));
+                }
+                dv = EnumSet.copyOf(dc);
+            }
+            catch (IllegalArgumentException e){
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(HostDetails.class));
+            }
+        }
+        return dv;
+    }
+    
     public String getAllocationState() {
     	return allocationState;
-    } 
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -144,7 +171,7 @@ public class ListHostsCmd extends BaseListCmd {
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         for (Host host : result) {
-            HostResponse hostResponse = _responseGenerator.createHostResponse(host);
+            HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
             Boolean suitableForMigration = false;
             if(hostsWithCapacity.contains(host)){
                 suitableForMigration = true;

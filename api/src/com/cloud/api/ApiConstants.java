@@ -303,4 +303,10 @@ public class ApiConstants {
     public static final String FIREWALL_DEVICE_STATE = "fwdevicestate";
     public static final String FIREWALL_DEVICE_CAPACITY = "fwdevicecapacity";
     public static final String SERVICE = "service";
+    
+    public enum HostDetails {
+        all, capacity, events, stats, min;
+    }
+    
+
 }

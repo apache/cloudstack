@@ -18,8 +18,10 @@
 package com.cloud.api;
 
 import java.text.DecimalFormat;
+import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
@@ -150,6 +152,8 @@ public interface ResponseGenerator {
 
     DomainRouterResponse createDomainRouterResponse(VirtualRouter router);
 
+    HostResponse createHostResponse(Host host, EnumSet<HostDetails> details);
+    
     HostResponse createHostResponse(Host host);
 
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
@@ -258,5 +262,6 @@ public interface ResponseGenerator {
     TrafficTypeResponse createTrafficTypeResponse(PhysicalNetworkTrafficType result);
     
     VirtualRouterProviderResponse createVirtualRouterProviderResponse(VirtualRouterProvider result);
+
 
 }

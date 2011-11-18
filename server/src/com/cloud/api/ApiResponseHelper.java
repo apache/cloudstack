@@ -20,6 +20,7 @@ package com.cloud.api;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -33,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.ControlledEntity.ACLType;
+import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
@@ -508,9 +510,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         return policyResponse;
     }
+    
 
     @Override
     public HostResponse createHostResponse(Host host) {
+        return createHostResponse(host, EnumSet.of(HostDetails.all));
+    }
+
+    @Override
+    public HostResponse createHostResponse(Host host, EnumSet<HostDetails> details) {
         HostResponse hostResponse = new HostResponse();
         hostResponse.setId(host.getId());
         hostResponse.setCapabilities(host.getCapabilities());
@@ -530,48 +538,63 @@ public class ApiResponseHelper implements ResponseGenerator {
         hostResponse.setIpAddress(host.getPrivateIpAddress());
         hostResponse.setVersion(host.getVersion());
         hostResponse.setCreated(host.getCreated());
+        
+        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)  
+                || details.contains(HostDetails.stats) || details.contains(HostDetails.events) ){
+        
+            GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
+            if (guestOSCategory != null) {
+                hostResponse.setOsCategoryId(guestOSCategory.getId());
+                hostResponse.setOsCategoryName(guestOSCategory.getName());
+            }
+            hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
+    
+            if (host.getPodId() != null) {
+                HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
+                if (pod != null) {
+                    hostResponse.setPodName(pod.getName());
+                }
+            }
 
-        GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
-        if (guestOSCategory != null) {
-            hostResponse.setOsCategoryId(guestOSCategory.getId());
-            hostResponse.setOsCategoryName(guestOSCategory.getName());
-        }
-        hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
-
-        if (host.getPodId() != null) {
-            HostPodVO pod = ApiDBUtils.findPodById(host.getPodId());
-            if (pod != null) {
-                hostResponse.setPodName(pod.getName());
+            if (host.getClusterId() != null) {
+                ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
+                hostResponse.setClusterName(cluster.getName());
+                hostResponse.setClusterType(cluster.getClusterType().toString());
             }
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");        
-        if (host.getType() == Host.Type.Routing) {            
-            //set allocated capacities
-            Long mem = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(),Capacity.CAPACITY_TYPE_MEMORY);
-            Long cpu = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(),Capacity.CAPACITY_TYPE_CPU);
-            
-            hostResponse.setMemoryAllocated(mem); 
-            hostResponse.setMemoryTotal(host.getTotalMemory());
-            hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
-            hostResponse.setHypervisorVersion(host.getHypervisorVersion());
-                        
-            String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
-            hostResponse.setCpuAllocated(cpuAlloc);
-            String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
-            hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
-            
-            // set CPU/RAM/Network stats
-            String cpuUsed = null;
-            HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
-            if (hostStats != null) {
-                float cpuUtil = (float) hostStats.getCpuUtilization();
-                cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                hostResponse.setCpuUsed(cpuUsed);
-                hostResponse.setMemoryUsed( (new Double(hostStats.getUsedMemory())).longValue());
-                hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
-                hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
+        if (host.getType() == Host.Type.Routing) { 
+
+            if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)){
+                //set allocated capacities
+                Long mem = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(),Capacity.CAPACITY_TYPE_MEMORY);
+                Long cpu = ApiDBUtils.getMemoryOrCpuCapacitybyHost(host.getId(),Capacity.CAPACITY_TYPE_CPU);
                 
+                hostResponse.setMemoryAllocated(mem); 
+                hostResponse.setMemoryTotal(host.getTotalMemory());
+                hostResponse.setHostTags(ApiDBUtils.getHostTags(host.getId()));
+                hostResponse.setHypervisorVersion(host.getHypervisorVersion());
+                            
+                String cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+                hostResponse.setCpuAllocated(cpuAlloc);
+                String cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor()).toString();
+                hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning);
+            }
+            
+            if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)){
+                // set CPU/RAM/Network stats
+                String cpuUsed = null;
+                HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
+                if (hostStats != null) {
+                    float cpuUtil = (float) hostStats.getCpuUtilization();
+                    cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                    hostResponse.setCpuUsed(cpuUsed);
+                    hostResponse.setMemoryUsed( (new Double(hostStats.getUsedMemory())).longValue());
+                    hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
+                    hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
+                    
+                }
             }
             
         }else if (host.getType() == Host.Type.SecondaryStorage){        	
@@ -582,26 +605,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         	}
         }
 
-        if (host.getClusterId() != null) {
-            ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
-            hostResponse.setClusterName(cluster.getName());
-            hostResponse.setClusterType(cluster.getClusterType().toString());
-        }
-
         hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host));
-
-        Set<com.cloud.host.Status.Event> possibleEvents = host.getStatus().getPossibleEvents();
-        if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
-            String events = "";
-            Iterator<com.cloud.host.Status.Event> iter = possibleEvents.iterator();
-            while (iter.hasNext()) {
-                com.cloud.host.Status.Event event = iter.next();
-                events += event.toString();
-                if (iter.hasNext()) {
-                    events += "; ";
+        
+        if (details.contains(HostDetails.all) || details.contains(HostDetails.events)){
+            Set<com.cloud.host.Status.Event> possibleEvents = host.getStatus().getPossibleEvents();
+            if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
+                String events = "";
+                Iterator<com.cloud.host.Status.Event> iter = possibleEvents.iterator();
+                while (iter.hasNext()) {
+                    com.cloud.host.Status.Event event = iter.next();
+                    events += event.toString();
+                    if (iter.hasNext()) {
+                        events += "; ";
+                    }
                 }
+                hostResponse.setEvents(events);
             }
-            hostResponse.setEvents(events);
         }
 
         hostResponse.setAllocationState(host.getResourceState().toString());
@@ -2908,4 +2927,5 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("virtualrouterelement");
         return response;
     }
+
 }
