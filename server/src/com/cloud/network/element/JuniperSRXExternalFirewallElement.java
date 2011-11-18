@@ -378,7 +378,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Override
     public ExternalFirewallDeviceVO addSrxFirewall(AddSrxFirewallCmd cmd) {
         String deviceName = cmd.getDeviceType();
-        if (deviceName.equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+        if (!deviceName.equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
             throw new InvalidParameterValueException("Invalid SRX firewall device type");
         }
         return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, 
