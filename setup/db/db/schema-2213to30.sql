@@ -230,6 +230,6 @@ ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `created` datetime;
 ALTER TABLE `cloud`.`op_host_capacity` ADD COLUMN `update_time` datetime;
 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'apply.allocation.algorithm.to.pods', 'false', 'If true, deployment planner applies the allocation heuristics at pods first in the given datacenter during VM resource allocation');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.user.dispersion.weight', 1, 'Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 – weight of user dispersion)');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.user.dispersion.weight', 1, 'Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)');
 DELETE FROM configuration WHERE name='use.user.concentrated.pod.allocation';
 UPDATE configuration SET description = '[''random'', ''firstfit'', ''userdispersing'', ''userconcentratedpod''] : Order in which hosts within a cluster will be considered for VM/volume allocation.' WHERE name = 'vm.allocation.algorithm';
