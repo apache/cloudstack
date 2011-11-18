@@ -31,12 +31,12 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class Upgrade2213to30 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade2213to30.class);
+public class Upgrade2214to30 implements DbUpgrade {
+    final static Logger s_logger = Logger.getLogger(Upgrade2214to30.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.13", "3.0.0"};
+        return new String[] { "2.2.14", "3.0.0"};
     }
 
     @Override
@@ -51,12 +51,12 @@ public class Upgrade2213to30 implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/db/schema-2213to30.sql");
+        String script = Script.findScript("", "db/db/schema-2214to30.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-2213to30.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-2214to30.sql");
         }
         
-        return new File[] { new File(script) };
+        return new File[] { new File(script)};
     }
 
     @Override

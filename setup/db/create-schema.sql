@@ -447,7 +447,8 @@ CREATE TABLE `cloud`.`snapshots` (
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
   `version` varchar(32) COMMENT 'snapshot version',
   PRIMARY KEY (`id`),
-  CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uuid`),
+  INDEX `i_snapshots__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`vlan` (

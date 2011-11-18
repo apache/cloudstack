@@ -1,5 +1,5 @@
 --;
--- Schema upgrade from 2.2.13 to 3.0;
+-- Schema upgrade from 2.2.14 to 3.0;
 --;
 
 ALTER TABLE `cloud`.`template_host_ref` DROP COLUMN `pool_id`;
@@ -233,3 +233,36 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.user.dispersion.weight', 1, 'Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)');
 DELETE FROM configuration WHERE name='use.user.concentrated.pod.allocation';
 UPDATE configuration SET description = '[''random'', ''firstfit'', ''userdispersing'', ''userconcentratedpod''] : Order in which hosts within a cluster will be considered for VM/volume allocation.' WHERE name = 'vm.allocation.algorithm';
+
+
+
+--;
+-- Usage db upgrade from 2.2.13 to 3.0;
+--;
+
+ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
+ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
+
+ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
+ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
+
+update `cloud_usage`.`usage_network` set agg_bytes_received = net_bytes_received + current_bytes_received, agg_bytes_sent = net_bytes_sent + current_bytes_sent;
+
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_received`;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `net_bytes_sent`;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_received`;
+ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
+
+CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
+  `zone_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `user_id` bigint unsigned NOT NULL,
+  `user_name` varchar(32),
+  `created` DATETIME NOT NULL,
+  `deleted` DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
+ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
