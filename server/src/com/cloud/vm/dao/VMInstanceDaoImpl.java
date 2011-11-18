@@ -19,8 +19,14 @@
 package com.cloud.vm.dao;
 
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -38,7 +44,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -64,9 +72,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> HostUpSearch;
     protected final GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
-    
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
 
     protected final Attribute _updateTimeAttr;
+    
+    private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1 = "SELECT host.cluster_id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE ";
+    private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " AND host.type = 'Routing' GROUP BY host.cluster_id ORDER BY 2 ASC ";
+    
+    private static final String ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT pod.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host_pod_ref` pod LEFT JOIN `cloud`.`vm_instance` vm ON pod.id = vm.pod_id WHERE pod.data_center_id = ? " +
+                                                                       " GROUP BY pod.id ORDER BY 2 ASC ";
+    
+    private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT = "SELECT host.id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE host.data_center_id = ? " +
+    		                                                            " AND host.pod_id = ? AND host.cluster_id = ? AND host.type = 'Routing' " +
+    		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
 
     protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
     protected VMInstanceDaoImpl() {
@@ -150,6 +168,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountRunningByHost.and("state", CountRunningByHost.entity().getState(), SearchCriteria.Op.EQ);
         CountRunningByHost.done();        
 
+        CountRunningByAccount = createSearchBuilder(Long.class);
+        CountRunningByAccount.select(null, Func.COUNT, null);
+        CountRunningByAccount.and("account", CountRunningByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountRunningByAccount.and("state", CountRunningByAccount.entity().getState(), SearchCriteria.Op.EQ);
+        CountRunningByAccount.done();        
+        
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
@@ -359,6 +383,124 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public Long countRunningByHostId(long hostId){
         SearchCriteria<Long> sc = CountRunningByHost.create();
         sc.setParameters("host", hostId);
+        sc.setParameters("state", State.Running);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Pair<List<Long>, Map<Long, Double>> listClusterIdsInZoneByVmCount(long zoneId, long accountId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+        Map<Long, Double> clusterVmCountMap = new HashMap<Long, Double>();
+
+        StringBuilder sql = new StringBuilder(ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1);
+        sql.append("host.data_center_id = ?");
+        sql.append(ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, accountId);
+            pstmt.setLong(2, zoneId);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long clusterId = rs.getLong(1);
+                result.add(clusterId);
+                clusterVmCountMap.put(clusterId, rs.getDouble(2));
+            }
+            return new Pair<List<Long>, Map<Long, Double>>(result, clusterVmCountMap);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
+
+    @Override
+    public Pair<List<Long>, Map<Long, Double>> listClusterIdsInPodByVmCount(long podId, long accountId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+        Map<Long, Double> clusterVmCountMap = new HashMap<Long, Double>();
+
+        StringBuilder sql = new StringBuilder(ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1);
+        sql.append("host.pod_id = ?");
+        sql.append(ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, accountId);
+            pstmt.setLong(2, podId);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long clusterId = rs.getLong(1);
+                result.add(clusterId);                
+                clusterVmCountMap.put(clusterId, rs.getDouble(2));
+            }
+            return new Pair<List<Long>, Map<Long, Double>>(result, clusterVmCountMap);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+
+    }
+
+    @Override
+    public Pair<List<Long>, Map<Long, Double>> listPodIdsInZoneByVmCount(long dataCenterId, long accountId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+        Map<Long, Double> podVmCountMap = new HashMap<Long, Double>();
+        try {
+            String sql = ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, accountId);
+            pstmt.setLong(2, dataCenterId);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long podId = rs.getLong(1);
+                result.add(podId);                
+                podVmCountMap.put(podId, rs.getDouble(2));
+            }
+            return new Pair<List<Long>, Map<Long, Double>>(result, podVmCountMap);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        }        
+    }
+
+    @Override
+    public List<Long> listHostIdsByVmCount(long dcId, Long podId, Long clusterId, long accountId) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+        try {
+            String sql = ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, accountId);
+            pstmt.setLong(2, dcId);
+            pstmt.setLong(3, podId);
+            pstmt.setLong(4, clusterId);
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        }   
+    }
+    
+    @Override
+    public Long countRunningByAccount(long accountId){
+        SearchCriteria<Long> sc = CountRunningByAccount.create();
+        sc.setParameters("account", accountId);
         sc.setParameters("state", State.Running);
         return customSearch(sc, null).get(0);
     }    

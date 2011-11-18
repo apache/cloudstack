@@ -24,10 +24,10 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Allocator for a disk.  This determines which StoragePool should
@@ -36,7 +36,7 @@ import com.cloud.vm.VirtualMachine;
 public interface StoragePoolAllocator extends Adapter {
 	
 	//keeping since storageMgr is using this API for some existing functionalities
-	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo);	
+	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo);	
 	
 	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
 
@@ -50,7 +50,7 @@ public interface StoragePoolAllocator extends Adapter {
 	* @param int returnUpTo (use -1 to return all possible pools)
 	* @return List<StoragePool> List of storage pools that are suitable for the VM 
 	**/ 
-	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);	
+	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);	
 	
 	public static int RETURN_UPTO_ALL = -1;
 }

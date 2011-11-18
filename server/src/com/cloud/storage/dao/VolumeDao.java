@@ -19,7 +19,6 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
@@ -53,4 +52,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     ImageFormat getImageFormat(Long volumeId);
     
     List<VolumeVO> findReadyRootVolumesByInstance(long instanceId);
+    List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId);
 }

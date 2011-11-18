@@ -31,9 +31,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -47,11 +45,11 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     }
     
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
     	
-    	VMTemplateVO template = (VMTemplateVO)VMtemplate;    	
+    	VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();    	
     	// Check that the allocator type is correct
         if (!allocatorIsCorrectType(dskCh)) {
         	return suitablePools;

@@ -19,9 +19,11 @@
 package com.cloud.capacity.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
@@ -31,6 +33,9 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 	boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId, Long hostId);
 	List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId);
 	List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId,Long podId, Long clusterId);
-    List<Long> orderClustersByAggregateCapacity(long id, short capacityType, boolean isZone, float cpuOverprovisioningFactor);
+	Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityType, boolean isZone, float cpuOverprovisioningFactor);
 	List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId);
+	
+    List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType, float cpuOverprovisioningFactor);
+    Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityType, float cpuOverprovisioningFactor);
 }

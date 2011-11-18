@@ -20,7 +20,9 @@ package com.cloud.vm.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.VMInstanceVO;
@@ -84,5 +86,15 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByClusterId(long clusterId);
     List<VMInstanceVO> listVmsMigratingFromHost(Long hostId);
     
-    public Long countRunningByHostId(long hostId);    
+    public Long countRunningByHostId(long hostId);
+
+    Pair<List<Long>, Map<Long, Double>> listClusterIdsInZoneByVmCount(long zoneId, long accountId);
+
+    Pair<List<Long>, Map<Long, Double>> listClusterIdsInPodByVmCount(long podId, long accountId);
+
+    Pair<List<Long>, Map<Long, Double>> listPodIdsInZoneByVmCount(long dataCenterId, long accountId);
+
+    List<Long> listHostIdsByVmCount(long dcId, Long podId, Long clusterId, long accountId);
+
+    Long countRunningByAccount(long accountId);    
 }

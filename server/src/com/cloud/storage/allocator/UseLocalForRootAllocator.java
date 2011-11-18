@@ -30,10 +30,8 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume.Type;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -42,12 +40,12 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     boolean _useLocalStorage;
 
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         if (!_useLocalStorage) {
             return null;
         }
         
-        return super.allocateToPool(dskCh, VMtemplate, plan, avoid, returnUpTo);
+        return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
     }
 
     @Override

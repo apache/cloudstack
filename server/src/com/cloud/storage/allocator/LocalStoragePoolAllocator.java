@@ -38,7 +38,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
@@ -52,6 +51,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -90,7 +90,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     }
 
     @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
@@ -106,7 +106,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         }
 
         List<StoragePool> availablePool;
-        while (!(availablePool = super.allocateToPool(dskCh, VMtemplate, plan, myAvoids, 1)).isEmpty()) {
+        while (!(availablePool = super.allocateToPool(dskCh, vmProfile, plan, myAvoids, 1)).isEmpty()) {
             StoragePool pool = availablePool.get(0);
             myAvoids.addPool(pool.getId());
             List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());

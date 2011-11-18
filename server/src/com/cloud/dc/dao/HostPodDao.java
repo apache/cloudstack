@@ -20,7 +20,6 @@ package com.cloud.dc.dao;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 
 import com.cloud.dc.HostPodVO;
 import com.cloud.utils.db.GenericDao;
@@ -31,5 +30,7 @@ public interface HostPodDao extends GenericDao<HostPodVO, Long> {
 	public HostPodVO findByName(String name, long dcId);
 	
 	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
+
+    public List<Long> listDisabledPods(long zoneId);
 
 }

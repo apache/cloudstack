@@ -73,6 +73,13 @@ public interface DeploymentPlanner extends Adapter {
      */
     boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid);
     
+    public enum AllocationAlgorithm {
+        random,
+        firstfit,
+        userdispersing,
+        userconcentratedpod;
+    }
+    
     public static class ExcludeList {
         private Set<Long> _dcIds;
         private Set<Long> _podIds;

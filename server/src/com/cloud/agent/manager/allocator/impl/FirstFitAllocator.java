@@ -19,6 +19,7 @@ package com.cloud.agent.manager.allocator.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -48,6 +50,7 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -99,6 +102,7 @@ public class FirstFitAllocator implements HostAllocator {
 		Long clusterId = plan.getClusterId();
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
+		Account account = vmProfile.getOwner();
 
         if (type == Host.Type.Storage) {
             // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of routing or not
@@ -158,13 +162,15 @@ public class FirstFitAllocator implements HostAllocator {
             
         }
 
-        return allocateTo(offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity);
+        return allocateTo(plan, offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity, account);
     }
 
-    protected List<Host> allocateTo(ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity) {
+    protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<HostVO> hosts, int returnUpTo, boolean considerReservedCapacity, Account account) {
         if (_allocationAlgorithm.equals("random")) {
         	// Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
+        }else if(_allocationAlgorithm.equals("userdispersing")){
+            hosts = reorderHostsByNumberOfVms(plan, hosts, account);
         }
     	
     	if (s_logger.isDebugEnabled()) {
@@ -228,6 +234,36 @@ public class FirstFitAllocator implements HostAllocator {
         }
         
         return suitableHosts;
+    }
+
+    private List<HostVO> reorderHostsByNumberOfVms(DeploymentPlan plan, List<HostVO> hosts, Account account) {
+        if(account == null){
+            return hosts;
+        }
+        long dcId = plan.getDataCenterId();
+        Long podId = plan.getPodId();
+        Long clusterId = plan.getClusterId();
+        
+        List<Long> hostIdsByVmCount = _vmInstanceDao.listHostIdsByVmCount(dcId, podId, clusterId, account.getAccountId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("List of hosts in ascending order of number of VMs: "+ hostIdsByVmCount);
+        }
+        
+        //now filter the given list of Hosts by this ordered list
+        Map<Long, HostVO> hostMap = new HashMap<Long, HostVO>();        
+        for (HostVO host : hosts) {
+            hostMap.put(host.getId(), host);
+        }
+        List<Long> matchingHostIds = new ArrayList<Long>(hostMap.keySet());
+        
+        hostIdsByVmCount.retainAll(matchingHostIds);
+        
+        List<HostVO> reorderedHosts = new ArrayList<HostVO>();
+        for(Long id: hostIdsByVmCount){
+            reorderedHosts.add(hostMap.get(id));
+        }
+        
+        return reorderedHosts;
     }
 
     @Override
@@ -361,7 +397,9 @@ public class FirstFitAllocator implements HostAllocator {
             _factor = NumbersUtil.parseFloat(opFactor, 1);
             
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null && (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("firstfit"))) {
+            if (allocationAlgorithm != null && (allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.random.toString()) 
+                    || allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString()) 
+                    || allocationAlgorithm.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString()))) {
             	_allocationAlgorithm = allocationAlgorithm;
             }
         }

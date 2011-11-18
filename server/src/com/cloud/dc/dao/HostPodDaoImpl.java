@@ -30,9 +30,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.HostPodVO;
+import com.cloud.org.Grouping;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value={HostPodDao.class})
@@ -112,4 +115,20 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         txn.commit();
         return result;
     }
+
+    @Override
+    public List<Long> listDisabledPods(long zoneId) {
+        GenericSearchBuilder<HostPodVO, Long> podIdSearch = createSearchBuilder(Long.class);
+        podIdSearch.selectField(podIdSearch.entity().getId());
+        podIdSearch.and("dataCenterId", podIdSearch.entity().getDataCenterId(), Op.EQ);
+        podIdSearch.and("allocationState", podIdSearch.entity().getAllocationState(), Op.EQ);
+        podIdSearch.done();
+
+        
+        SearchCriteria<Long> sc = podIdSearch.create();
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        sc.addAnd("allocationState", SearchCriteria.Op.EQ, Grouping.AllocationState.Disabled);
+        return customSearch(sc, null);
+    }
+    
 }

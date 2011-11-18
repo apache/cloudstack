@@ -35,7 +35,6 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
@@ -56,13 +55,13 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateManager;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 	private static final Logger s_logger = Logger.getLogger(AbstractStoragePoolAllocator.class);
@@ -287,7 +286,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	
 	
 	@Override
-	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineTemplate VMtemplate, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo) {
+	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo) {
 	    
 	    ExcludeList avoid = new ExcludeList();
 	    for(StoragePool pool : avoids){
@@ -295,7 +294,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	    }
 	    
 	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
-	    return allocateToPool(dskCh, VMtemplate, plan, avoid, returnUpTo);
+	    return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
 	}
 
 }

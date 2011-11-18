@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -46,7 +47,6 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -105,13 +105,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
     @Inject(adapter=HostAllocator.class)
     protected Adapters<HostAllocator> _hostAllocators;
+    protected String _allocationAlgorithm = "random";
 
 
     @Override
     public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
             DeploymentPlan plan, ExcludeList avoid)
     throws InsufficientServerCapacityException {
-        String _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
         DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
@@ -123,7 +123,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("In FirstFitPlanner:: plan");
+            s_logger.debug("DeploymentPlanner allocation algorithm: "+_allocationAlgorithm);
 
             s_logger.debug("Trying to allocate a host and storage pools from dc:" + plan.getDataCenterId() + ", pod:" + plan.getPodId() + ",cluster:" + plan.getClusterId() +
                     ", requested cpu: " + cpu_requested + ", requested ram: " + ram_requested);
@@ -228,7 +228,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             ClusterVO cluster = _clusterDao.findById(plan.getClusterId());
             if (cluster != null ){
                 clusterList.add(clusterIdSpecified);
-                return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
+                return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc);
             }else{
                 s_logger.debug("The specified cluster cannot be found, returning.");
                 avoid.addCluster(plan.getClusterId());
@@ -241,98 +241,164 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
             HostPodVO pod = _podDao.findById(podIdSpecified);
             if (pod != null) {
-                //list clusters under this pod by cpu and ram capacity
-                clusterList = listClustersByCapacity(podIdSpecified, cpu_requested, ram_requested, avoid, false, cpuOverprovisioningFactor);
-                if(!clusterList.isEmpty()){
-                    if(avoid.getClustersToAvoid() != null){
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Removing from the clusterId list these clusters from avoid set: "+ avoid.getClustersToAvoid());
-                        }
-                        clusterList.removeAll(avoid.getClustersToAvoid());
-                    }
-
-                    List<Long> disabledClusters = listDisabledClusters(plan.getDataCenterId(), podIdSpecified);
-                    if(!disabledClusters.isEmpty()){
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Removing from the clusterId list these clusters that are disabled: "+ disabledClusters);
-                        }
-                        clusterList.removeAll(disabledClusters);
-                    }
-
-                    DeployDestination dest = checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
-                    if(dest == null){
-                        avoid.addPod(plan.getPodId());
-                    }
-                    return dest;
-                }else{
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("No clusters found under this pod, having a host with enough capacity, returning.");
-                    }
+                DeployDestination dest = scanClustersForDestinationInZoneOrPod(podIdSpecified, false, vmProfile, plan, avoid);
+                if(dest == null){
                     avoid.addPod(plan.getPodId());
-                    return null;
                 }
+                return dest;
             } else {
                 s_logger.debug("The specified Pod cannot be found, returning.");
                 avoid.addPod(plan.getPodId());
                 return null;
             }
         }else{
-            //consider all clusters under this zone.
             s_logger.debug("Searching all possible resources under this Zone: "+ plan.getDataCenterId());
-            //list clusters under this zone by cpu and ram capacity
-            List<Long> prioritizedClusterIds = listClustersByCapacity(plan.getDataCenterId(), cpu_requested, ram_requested, avoid, true, cpuOverprovisioningFactor);
-            if(!prioritizedClusterIds.isEmpty()){
-                if(avoid.getClustersToAvoid() != null){
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the clusterId list these clusters from avoid set: "+ avoid.getClustersToAvoid());
-                    }
-                    prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
-                }
-                List<Long> disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
-                if(!disabledClusters.isEmpty()){
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: "+ disabledClusters);
-                    }
-                    prioritizedClusterIds.removeAll(disabledClusters);
-                }
+            
+            boolean applyAllocationAtPods = Boolean.parseBoolean(_configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
+            if(applyAllocationAtPods){
+                //start scan at all pods under this zone.
+                return scanPodsForDestination(vmProfile, plan, avoid);
             }else{
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No clusters found having a host with enough capacity, returning.");
-                }
-                return null;
-            }
-            if(!prioritizedClusterIds.isEmpty()){
-                boolean applyUserConcentrationPodHeuristic = Boolean.parseBoolean(_configDao.getValue(Config.UseUserConcentratedPodAllocation.key()));
-                if(applyUserConcentrationPodHeuristic && vmProfile.getOwner() != null){
-                    //user has VMs in certain pods. - prioritize those pods first
-                    //UserConcentratedPod strategy
-                    long accountId = vmProfile.getOwner().getAccountId();
-                    List<Long> podIds = listPodsByUserConcentration(plan.getDataCenterId(), accountId);
-                    if(!podIds.isEmpty()){
-                        if(avoid.getPodsToAvoid() != null){
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Removing from the pod list these pods from avoid set: "+ avoid.getPodsToAvoid());
-                            }
-                            podIds.removeAll(avoid.getPodsToAvoid());
-                        }
-                        clusterList = reorderClustersByPods(prioritizedClusterIds, podIds);
-                    }else{
-                        clusterList = prioritizedClusterIds;
-                    }
-                }else{
-                    clusterList = prioritizedClusterIds;
-                }
-                return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc, _allocationAlgorithm);
-            }else{
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No clusters found after removing disabled clusters and clusters in avoid list, returning.");
-                }
-                return null;
+                //start scan at clusters under this zone.
+                return scanClustersForDestinationInZoneOrPod(plan.getDataCenterId(), true, vmProfile, plan, avoid);
             }
         }
 
     }
+    
+    private DeployDestination scanPodsForDestination(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
+        
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        int requiredCpu = offering.getCpu() * offering.getSpeed();
+        long requiredRam = offering.getRamSize() * 1024L * 1024L;
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+        
+        //list pods under this zone by cpu and ram capacity
+        List<Long> prioritizedPodIds = new ArrayList<Long>();
+        Pair<List<Long>, Map<Long, Double>> podCapacityInfo = listPodsByCapacity(plan.getDataCenterId(), requiredCpu, requiredRam, cpuOverprovisioningFactor); 
+        List<Long> podsWithCapacity = podCapacityInfo.first();
 
+        if(!podsWithCapacity.isEmpty()){
+            if(avoid.getPodsToAvoid() != null){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Removing from the podId list these pods from avoid set: "+ avoid.getPodsToAvoid());
+                }
+                podsWithCapacity.removeAll(avoid.getPodsToAvoid());
+            }
+            List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
+            if(!disabledPods.isEmpty()){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Removing from the podId list these pods that are disabled: "+ disabledPods);
+                }
+                podsWithCapacity.removeAll(disabledPods);
+            }
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No pods found having a host with enough capacity, returning.");
+            }
+            return null;
+        }
+        
+        if(!podsWithCapacity.isEmpty()){
+            
+            prioritizedPodIds = reorderPods(podCapacityInfo, vmProfile, plan);
+
+            //loop over pods
+            for(Long podId : prioritizedPodIds){
+                s_logger.debug("Checking resources under Pod: "+podId);
+                DeployDestination dest = scanClustersForDestinationInZoneOrPod(podId, false, vmProfile, plan, avoid);
+                if(dest != null){
+                    return dest;
+                }
+                avoid.addPod(podId);
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No Pods found for destination, returning.");
+            }
+            return null;
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No Pods found after removing disabled pods and pods in avoid list, returning.");
+            }
+            return null;
+        }
+    }
+    
+    private DeployDestination scanClustersForDestinationInZoneOrPod(long id, boolean isZone, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
+        
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+        int requiredCpu = offering.getCpu() * offering.getSpeed();
+        long requiredRam = offering.getRamSize() * 1024L * 1024L;
+        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
+        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
+        
+        //list clusters under this zone by cpu and ram capacity
+        Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, requiredCpu, requiredRam, avoid, isZone, cpuOverprovisioningFactor);
+        List<Long> prioritizedClusterIds = clusterCapacityInfo.first();
+        if(!prioritizedClusterIds.isEmpty()){
+            if(avoid.getClustersToAvoid() != null){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Removing from the clusterId list these clusters from avoid set: "+ avoid.getClustersToAvoid());
+                }
+                prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
+            }
+            
+            List<Long> disabledClusters = new ArrayList<Long>();
+            if(isZone){
+                disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
+            }else{
+                disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
+            }
+            if(!disabledClusters.isEmpty()){
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: "+ disabledClusters);
+                }
+                prioritizedClusterIds.removeAll(disabledClusters);
+            }            
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No clusters found having a host with enough capacity, returning.");
+            }
+            return null;
+        }
+        if(!prioritizedClusterIds.isEmpty()){
+            List<Long> clusterList = reorderClusters(id, isZone, clusterCapacityInfo, vmProfile, plan);
+            return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc);
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No clusters found after removing disabled clusters and clusters in avoid list, returning.");
+            }
+            return null;
+        }
+    }
+    
+    /**
+     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic 
+     * for this planner
+     * For FirstFitPlanner there is no specific heuristic to be applied 
+     * other than the capacity based ordering which is done by default.
+     * @return List<Long> ordered list of Cluster Ids
+     */
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+        List<Long> reordersClusterIds = clusterCapacityInfo.first();
+        return reordersClusterIds;
+    }
+    
+    /**
+     * This method should reorder the given list of Pod Ids by applying any necessary heuristic 
+     * for this planner
+     * For FirstFitPlanner there is no specific heuristic to be applied 
+     * other than the capacity based ordering which is done by default.
+     * @return List<Long> ordered list of Pod Ids
+     */
+    protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
+        List<Long> podIdsByCapacity = podCapacityInfo.first();
+        return podIdsByCapacity;
+    }
+    
     private List<Long> listDisabledClusters(long zoneId, Long podId){
         List<Long> disabledClusters = _clusterDao.listDisabledClusters(zoneId, podId);
         if(podId == null){
@@ -342,6 +408,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
         return disabledClusters;
     }
+    
+    private List<Long> listDisabledPods(long zoneId){
+        List<Long> disabledPods = _podDao.listDisabledPods(zoneId);
+        return disabledPods;
+    }    
     
     private Map<Short,Float> getCapacityThresholdMap(){
     	// Lets build this real time so that the admin wont have to restart MS if he changes these values
@@ -409,7 +480,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     }
 
     private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, DataCenter dc, String _allocationAlgorithm){
+            DeploymentPlan plan, ExcludeList avoid, DataCenter dc){
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List to consider: " + clusterList);
@@ -475,56 +546,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         return null;
     }
 
-    private List<Long> reorderClustersByPods(List<Long> clusterIds, List<Long> podIds) {
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Reordering cluster list as per pods ordered by user concentration");
-        }
-
-        Map<Long, List<Long>> podClusterMap = _clusterDao.getPodClusterIdMap(clusterIds);
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Pod To cluster Map is: "+podClusterMap );
-        }
-
-        List<Long> reorderedClusters = new ArrayList<Long>();
-        for (Long pod : podIds){
-            if(podClusterMap.containsKey(pod)){
-                List<Long> clustersOfThisPod = podClusterMap.get(pod);
-                if(clustersOfThisPod != null){
-                    for(Long clusterId : clusterIds){
-                        if(clustersOfThisPod.contains(clusterId)){
-                            reorderedClusters.add(clusterId);
-                        }
-                    }
-                    clusterIds.removeAll(clustersOfThisPod);
-                }
-            }
-        }
-        reorderedClusters.addAll(clusterIds);
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Reordered cluster list: " + reorderedClusters);
-        }
-        return reorderedClusters;
-    }
-
-    protected List<Long> listPodsByUserConcentration(long zoneId, long accountId){
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Applying UserConcentratedPod heuristic for account: "+ accountId);
-        }
-
-        List<Long> prioritizedPods = _vmDao.listPodIdsHavingVmsforAccount(zoneId, accountId);
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pods to be considered, after applying UserConcentratedPod heuristic: "+ prioritizedPods);
-        }
-
-        return prioritizedPods;
-    }
-
-    protected List<Long> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone, float cpuOverprovisioningFactor){
+    protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone, float cpuOverprovisioningFactor){
         //look at the aggregate available cpu and ram per cluster
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 
@@ -545,7 +568,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
         }
-        List<Long> clusterIdsOrderedByAggregateCapacity = _capacityDao.orderClustersByAggregateCapacity(id, capacityType, isZone, cpuOverprovisioningFactor);
+        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderClustersByAggregateCapacity(id, capacityType, isZone, cpuOverprovisioningFactor);
+        List<Long> clusterIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
@@ -556,9 +580,47 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             s_logger.trace("ClusterId List having enough CPU and RAM capacity & in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
         }
         
-        return clusterIdsOrderedByAggregateCapacity;
+        return result;
 
     }
+    
+    protected Pair<List<Long>, Map<Long, Double>> listPodsByCapacity(long zoneId, int requiredCpu, long requiredRam, float cpuOverprovisioningFactor){
+        //look at the aggregate available cpu and ram per pod
+        //although an aggregate value may be false indicator that a pod can host a vm, it will at the least eliminate those pods which definitely cannot
+
+        //we need pods having enough cpu AND RAM to host this particular VM and order them by aggregate pod capacity
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Listing pods in order of aggregate capacity, that have (atleast one host with) enough CPU and RAM capacity under this Zone: "+zoneId);
+        }
+        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
+        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
+            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("CPUOverprovisioningFactor considered: " + cpuOverprovisioningFactor);
+        }
+        List<Long> podIdswithEnoughCapacity = _capacityDao.listPodsByHostCapacities(zoneId, requiredCpu, requiredRam, capacityType, cpuOverprovisioningFactor);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("PodId List having enough CPU and RAM capacity: " + podIdswithEnoughCapacity);
+        }
+        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderPodsByAggregateCapacity(zoneId, capacityType, cpuOverprovisioningFactor);
+        List<Long> podIdsOrderedByAggregateCapacity = result.first();
+        //only keep the clusters that have enough capacity to host this VM
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("PodId List in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
+        }
+        podIdsOrderedByAggregateCapacity.retainAll(podIdswithEnoughCapacity);
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("PodId List having enough CPU and RAM capacity & in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
+        }
+        
+        return result;
+
+    }
+
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools){
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
@@ -706,7 +768,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             Enumeration<StoragePoolAllocator> enPool = _storagePoolAllocators.enumeration();
             while (enPool.hasMoreElements()) {
                 final StoragePoolAllocator allocator = enPool.nextElement();
-                final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile.getTemplate(), plan, avoid, returnUpTo);
+                final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
                 if (suitablePools != null && !suitablePools.isEmpty()) {
                     suitableVolumeStoragePools.put(toBeCreated, suitablePools);
                     foundPotentialPools = true;
@@ -740,8 +802,21 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     @Override
     public boolean canHandle(VirtualMachineProfile<? extends VirtualMachine> vm, DeploymentPlan plan, ExcludeList avoid) {
-        return vm.getHypervisorType() != HypervisorType.BareMetal;
+        if(vm.getHypervisorType() != HypervisorType.BareMetal){
+            //check the allocation strategy
+            if (_allocationAlgorithm != null && (_allocationAlgorithm.equals(AllocationAlgorithm.random.toString()) || _allocationAlgorithm.equals(AllocationAlgorithm.firstfit.toString()))) {
+                return true;
+            }
+        }
+        return false;
     }
+    
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
+        return true;
+    }    
 
     private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId){
         // Check if the zone exists in the system

@@ -22,7 +22,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -33,6 +35,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -68,9 +71,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 			"AND (a.total_capacity * ? - a.used_capacity) >= ? and a.capacity_type = 1) " +
 			"JOIN op_host_capacity b ON a.host_id = b.host_id AND b.total_capacity - b.used_capacity >= ? AND b.capacity_type = 0";
 	
-    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART1 = "SELECT cluster_id FROM `cloud`.`op_host_capacity` WHERE " ;
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART1 = "SELECT cluster_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) FROM `cloud`.`op_host_capacity` WHERE " ;
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART2 = " AND capacity_type = ? GROUP BY cluster_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) ASC";
 	
+    private static final String LIST_PODSINZONE_BY_HOST_CAPACITIES = "SELECT DISTINCT capacity.pod_id  FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`host_pod_ref` pod " +
+    		                                                         " ON (pod.id = capacity.pod_id AND pod.removed is NULL) WHERE " +
+                                                                     " capacity.data_center_id = ? AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ? " +
+                                                                     " AND pod_id IN (SELECT distinct pod_id  FROM `cloud`.`op_host_capacity` WHERE " +
+                                                                     " capacity.data_center_id = ? AND capacity_type = ? AND ((total_capacity * ?) - used_capacity + reserved_capacity) >= ?) ";
+
+    private static final String ORDER_PODS_BY_AGGREGATE_CAPACITY = "SELECT pod_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) FROM `cloud`.`op_host_capacity` WHERE data_center_id = ? " +
+                                                                   " AND capacity_type = ? GROUP BY pod_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * ?) ASC";
     
     public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();
@@ -380,10 +391,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
     
     @Override
-    public List<Long> orderClustersByAggregateCapacity(long id, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor){
+    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor){
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
+        Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
 
         StringBuilder sql = new StringBuilder(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART1);
         
@@ -395,20 +407,88 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_PART2);
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
-            pstmt.setLong(1, id);
-            pstmt.setShort(2, capacityTypeForOrdering);
-            
             if(capacityTypeForOrdering == CapacityVO.CAPACITY_TYPE_CPU){
-                pstmt.setFloat(3, cpuOverprovisioningFactor);
+                pstmt.setFloat(1, cpuOverprovisioningFactor);
+                pstmt.setFloat(4, cpuOverprovisioningFactor);
             }else{
-                pstmt.setFloat(3, 1);
+                pstmt.setFloat(1, 1);
+                pstmt.setFloat(4, 1);
             }
-            
+            pstmt.setLong(2, id);
+            pstmt.setShort(3, capacityTypeForOrdering);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long clusterId = rs.getLong(1);
+                result.add(clusterId);
+                clusterCapacityMap.put(clusterId, rs.getDouble(2));
+            }
+            return new Pair<List<Long>, Map<Long, Double>>(result, clusterCapacityMap);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
+
+    @Override
+    public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType, float cpuOverprovisioningFactor) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+
+        StringBuilder sql = new StringBuilder(LIST_PODSINZONE_BY_HOST_CAPACITIES);
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, zoneId);
+            pstmt.setShort(2, CapacityVO.CAPACITY_TYPE_CPU);
+            pstmt.setFloat(3, cpuOverprovisioningFactor);
+            pstmt.setLong(4, requiredCpu);
+            pstmt.setLong(5, zoneId);
+            pstmt.setShort(6, CapacityVO.CAPACITY_TYPE_MEMORY);
+            pstmt.setFloat(7, 1);
+            pstmt.setLong(8, requiredRam);
+
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 result.add(rs.getLong(1));
             }
             return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
+
+    @Override
+    public Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityTypeForOrdering, float cpuOverprovisioningFactor) {
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+        Map<Long, Double> podCapacityMap = new HashMap<Long, Double>();
+        
+        StringBuilder sql = new StringBuilder(ORDER_PODS_BY_AGGREGATE_CAPACITY);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(2, zoneId);
+            pstmt.setShort(3, capacityTypeForOrdering);
+            
+            if(capacityTypeForOrdering == CapacityVO.CAPACITY_TYPE_CPU){
+                pstmt.setFloat(1, cpuOverprovisioningFactor);
+                pstmt.setFloat(4, cpuOverprovisioningFactor);
+            }else{
+                pstmt.setFloat(1, 1);
+                pstmt.setFloat(4, 1);
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Long podId = rs.getLong(1);
+                result.add(podId);
+                podCapacityMap.put(podId, rs.getDouble(2));
+            }
+            return new Pair<List<Long>, Map<Long, Double>>(result, podCapacityMap);
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
         } catch (Throwable e) {
