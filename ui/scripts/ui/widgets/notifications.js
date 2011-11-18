@@ -86,6 +86,13 @@
             if (args.message) {
               cloudStack.dialog.notice({ message: args.message });
             }
+            
+            clearInterval(pollTimer);
+            notifications.activeTasks.pop(pollTimer);
+            notifications.cornerAlert({ message: 'ERROR: ' + $item.html() });
+            $item.removeClass('pending').addClass('error');
+
+            if (additionalComplete) additionalComplete();
           }
         });
       }, args.interval);
