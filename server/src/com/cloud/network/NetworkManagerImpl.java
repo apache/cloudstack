@@ -5031,7 +5031,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean isProviderForNetwork(Provider provider, long networkId) {
-    	if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) == null) {
+    	if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) != null) {
     		return true;
     	} else {
     		return false;
