@@ -148,7 +148,9 @@
             gateway: data.zoneIPRange['guest-gateway'],
             netmask: data.zoneIPRange['guest-netmask'],
             startip: data.zoneIPRange['guest-ip-range-start'],
-            endip: data.zoneIPRange['guest-ip-range-end']
+            endip: data.zoneIPRange['guest-ip-range-end'],
+            forVirtualNetwork: false,
+            podid: args.data.pod.id
           },
           dataType: 'json',
           async: true,
