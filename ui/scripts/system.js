@@ -982,7 +982,7 @@
                               else {											    
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
-                                  //alert("ddNetworkServiceProvider&name=F5BigIp succeeded.");                                    
+                                  //alert("addNetworkServiceProvider&name=F5BigIp succeeded.");                                    
                                   var array1 = [];
                                   array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
                                   array1.push("&url=" + todb(args.data.url));
@@ -1008,13 +1008,13 @@
                                   });                                     
                                 } 
                                 else if (result.jobstatus == 2) {
-                                  alert("ddNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
+                                  alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
                                 }
                               }
                             },
                             error: function(XMLHttpResponse) {
                               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                              alert("ddNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg); 
+                              alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg); 
                             }
                           });
                         });
@@ -1116,8 +1116,8 @@
                     }                    
                   }
                 },
-                action: function(args) {                 
-                  var zoneObj = args.context.zones[0];                
+                                action: function(args) {                 
+                  var zoneObj = args.context.zones[0];
                   var physicalNetworkObj;
                   $.ajax({
                     url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
@@ -1128,30 +1128,91 @@
                       physicalNetworkObj = items[0];                      
                     }
                   });           
-                  
-                  var array1 = [];
-                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
-                  array1.push("&url=" + todb(args.data.url));
-                  array1.push("&username=" + todb(args.data.username));
-                  array1.push("&password=" + todb(args.data.password));
-                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                  $.ajax({
-                    url: createURL("addSrxFirewall" + array1.join("")),
-                    dataType: "json",
-                    success: function(json) {    
-                      var jid = json.addsrxfirewallresponse.jobid;                     
-                      args.response.success(
-                        {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {                           
-                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                            return {data: item};
+                                   
+                  if(naasStatusMap["srx"] == "disabled") {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + physicalNetworkObj.id),
+                      dataType: "json",
+                      async: true, 
+                      success: function(json) {                             
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;				        
+                        var timerKey = "addNetworkServiceProviderJob_"+jobId;																
+                        $("body").everyTime(2000, timerKey, function() {
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {										       						   
+                              var result = json.queryasyncjobresultresponse;																	
+                              if (result.jobstatus == 0) {
+                                return; //Job has not completed
+                              } 
+                              else {											    
+                                $("body").stopTime(timerKey);
+                                if (result.jobstatus == 1) {                                                              
+                                  //alert("addNetworkServiceProvider&name=JuniperSRX succeeded.");                                    
+                                  var array1 = [];
+                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                                  array1.push("&url=" + todb(args.data.url));
+                                  array1.push("&username=" + todb(args.data.username));
+                                  array1.push("&password=" + todb(args.data.password));
+                                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                                  $.ajax({
+                                    url: createURL("addSrxFirewall" + array1.join("")),
+                                    dataType: "json",
+                                    success: function(json) {    
+                                      var jid = json.addsrxfirewallresponse.jobid;                                                                          
+                                      args.response.success(
+                                        {_custom:
+                                         {jobId: jid,
+                                          getUpdatedItem: function(json) {                           
+                                            var item = json.queryasyncjobresultresponse.jobresult.firewall;
+                                            return {data: item};
+                                          }
+                                         }
+                                        }
+                                      );           
+                                    }
+                                  });                                     
+                                } 
+                                else if (result.jobstatus == 2) {
+                                  alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg); 
+                            }
+                          });
+                        });
+                      }
+                    });                    
+                  }
+                  else { //naasStatusMap["srx"] == "enabled"
+                    var array1 = [];
+                    array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
+                    array1.push("&url=" + todb(args.data.url));
+                    array1.push("&username=" + todb(args.data.username));
+                    array1.push("&password=" + todb(args.data.password));
+                    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                    $.ajax({
+                      url: createURL("addSrxFirewall" + array1.join("")),
+                      dataType: "json",
+                      success: function(json) {  
+                        var jid = json.addsrxfirewallresponse.jobid;                     
+                        args.response.success(
+                          {_custom:
+                           {jobId: jid,
+                            getUpdatedItem: function(json) {                           
+                              var item = json.queryasyncjobresultresponse.jobresult.firewall;
+                              return {data: item};
+                            }
+                           }
                           }
-                         }
-                        }
-                      );           
-                    }
-                  });                    
+                        );           
+                      }
+                    });    
+                  }                       
                 },
                 messages: {
                   notification: function(args) {
