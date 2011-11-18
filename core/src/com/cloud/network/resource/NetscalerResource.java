@@ -122,17 +122,17 @@ public class NetscalerResource implements ServerResource {
                 throw new ConfigurationException("Unable to find password");
             }
 
-            _publicInterface = (String) params.get("publicInterface");
+            _publicInterface = (String) params.get("publicinterface");
             if (_publicInterface == null) {
                 throw new ConfigurationException("Unable to find public interface");
             }
             
-            _privateInterface = (String) params.get("privateInterface");
+            _privateInterface = (String) params.get("privateinterface");
             if (_privateInterface == null) {
                 throw new ConfigurationException("Unable to find private interface");
             }
             
-            _numRetries = NumbersUtil.parseInt((String) params.get("numRetries"), 2);
+            _numRetries = NumbersUtil.parseInt((String) params.get("numretries"), 2);
 
             _guid = (String)params.get("guid");
             if (_guid == null) {

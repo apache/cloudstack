@@ -315,26 +315,26 @@ public class JuniperSrxResource implements ServerResource {
                 throw new ConfigurationException("Unable to find password");
             }			
 
-            _publicInterface = (String) params.get("publicInterface");
+            _publicInterface = (String) params.get("publicinterface");
             if (_publicInterface == null) {
                 throw new ConfigurationException("Unable to find public interface.");
             }
 
-            _usageInterface = (String) params.get("usageInterface");
+            _usageInterface = (String) params.get("usageinterface");
 
-            _privateInterface = (String) params.get("privateInterface");
+            _privateInterface = (String) params.get("privateinterface");
             if (_privateInterface == null) {
                 throw new ConfigurationException("Unable to find private interface.");
             }
 
-            _publicZone = (String) params.get("publicZone");
+            _publicZone = (String) params.get("publiczone");
             if (_publicZone == null) {
-                throw new ConfigurationException("Unable to find public security zone.");
+                _publicZone = "untrust";
             }
 
-            _privateZone = (String) params.get("privateZone");
+            _privateZone = (String) params.get("privatezone");
             if (_privateZone == null) {
-                throw new ConfigurationException("Unable to find private security zone.");
+                _privateZone = "trust";
             }
 
             _guid = (String)params.get("guid");
@@ -342,9 +342,9 @@ public class JuniperSrxResource implements ServerResource {
                 throw new ConfigurationException("Unable to find the guid");
             }
 
-            _numRetries = NumbersUtil.parseInt((String) params.get("numRetries"), 1);
+            _numRetries = NumbersUtil.parseInt((String) params.get("numretries"), 1);
 
-            _timeoutInSeconds = NumbersUtil.parseInt((String) params.get("timeoutInSeconds"), 300);
+            _timeoutInSeconds = NumbersUtil.parseInt((String) params.get("timeout"), 300);
 
             _objectNameWordSep = "-";
             
