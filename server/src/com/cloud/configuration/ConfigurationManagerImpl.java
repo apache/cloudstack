@@ -2941,12 +2941,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // populate providers
+        Map<Provider, Set<Service>> providerCombinationToVerify = new HashMap<Provider, Set<Service>>();
         Map<String, List<String>> svcPrv = cmd.getServiceProviders();
         if (svcPrv != null) {
             for (String serviceStr : svcPrv.keySet()) {
                 Network.Service service = Network.Service.getService(serviceStr);
                 if (serviceProviderMap.containsKey(service)) {
                     Set<Provider> providers = new HashSet<Provider>();
+                    //in Acton, don't allow to specify more than 1 provider per service
+                    if (svcPrv.get(serviceStr) != null && svcPrv.get(serviceStr).size() > 1) {
+                    	throw new InvalidParameterValueException("In the current release only one provider can be specified for the service");
+                    }
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
                         Network.Provider provider;
@@ -2955,6 +2960,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
                         providers.add(provider);
+                        
+                        Set<Service> serviceSet = null;
+                        if (providerCombinationToVerify.get(provider) == null) {
+                        	serviceSet = new HashSet<Service>();
+                        } else {
+                        	serviceSet = providerCombinationToVerify.get(provider);
+                        }
+                        serviceSet.add(service);
+                    	providerCombinationToVerify.put(provider, serviceSet);
+                        
                     }
                     serviceProviderMap.put(service, providers);
                 } else {
@@ -2963,7 +2978,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
-        //validate 
+        //validate providers combination here
+        _networkMgr.canProviderSupportServices(providerCombinationToVerify);
 
         // verify the LB service capabilities specified in the network offering
         Map<Capability, String> lbServiceCapabilityMap = cmd.getServiceCapabilities(Service.Lb);
@@ -3509,5 +3525,4 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         return null;
     }
-
 }

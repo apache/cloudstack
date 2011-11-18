@@ -21,6 +21,7 @@ package com.cloud.network;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.dc.Vlan;
@@ -244,7 +245,9 @@ public interface NetworkManager extends NetworkService {
 
     Long getPhysicalNetworkId(Network network);
 
-    boolean getAllowSubdomainAccessGlobal();
+	boolean getAllowSubdomainAccessGlobal();
+	
+	boolean isProviderForNetwork(Provider provider, long networkId);
 
-    boolean isProviderForNetwork(Provider provider, long networkId);
+	void canProviderSupportServices(Map<Provider, Set<Service>> providersMap);
 }

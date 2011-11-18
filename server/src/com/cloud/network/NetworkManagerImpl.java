@@ -4175,7 +4175,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (addGatewayService) {
                 services.add(Service.Gateway);
             }
-
         }else{
             //enable all the default services supported by this element.
             services = new ArrayList<Service>(element.getCapabilities().keySet()); 
@@ -5032,12 +5031,37 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isProviderForNetwork(Provider provider, long networkId) {
-        if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) != null) {
-            return true;
-        } else {
-            return false;
-        }
+    	if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) != null) {
+    		return true;
+    	} else {
+    		return false;
+    	}
     }
-
-
+    
+    @Override
+    public void canProviderSupportServices(Map<Provider, Set<Service>> providersMap) {    	
+    	for (Provider provider : providersMap.keySet()) {
+    		//check if services can be turned off
+            NetworkElement element = getElementImplementingProvider(provider.getName());
+            if(element == null){
+                throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getName() + "'");
+            }
+            
+            Set<Service> enabledServices = providersMap.get(provider);
+            
+            if(enabledServices != null && !enabledServices.isEmpty()){
+                if(!element.canEnableIndividualServices()){
+                    if(enabledServices.size() != element.getCapabilities().keySet().size()){
+                        throw new InvalidParameterValueException("Cannot enable subset of Services, Please specify the complete list of Services for this Service Provider '" + provider.getName() + "'");
+                    }
+                }
+                for(Service service : enabledServices){
+                    //check if the service is provided by this Provider
+                    if(!element.getCapabilities().containsKey(service)){
+                        throw new UnsupportedServiceException(provider.getName() + " Provider cannot provide service " + service.getName());
+                    }
+                }
+            }	
+    	}
+    }
 }
