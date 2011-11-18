@@ -487,7 +487,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 	            _capacityDao.update(cpuCap.getId(), cpuCap);
 	            _capacityDao.update(memCap.getId(), memCap);
 	        } catch (Exception e) {
-	
+	        	s_logger.error("Caught exception while updating cpu/memory capacity for the host " +host.getId(), e);
 	        }
         }else {
         	Transaction txn = Transaction.currentTxn();

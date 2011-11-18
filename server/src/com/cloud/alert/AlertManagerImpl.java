@@ -278,33 +278,43 @@ public class AlertManagerImpl implements AlertManager {
         //        than this model right now, so when a VM is started, we update the amount allocated, and when a VM
         //        is stopped we updated the amount allocated, and when VM sync reports a changed state, we update
         //        the amount allocated.  Hopefully it's limited to 3 entry points and will keep the amount allocated
-        //        per host accurate.
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("recalculating system capacity");
-        }
+        //        per host accurate.        
         
-        // Calculate CPU and RAM capacities
-        // 	get all hosts...even if they are not in 'UP' state
-        List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
-        for (HostVO host : hosts) {
-        	_capacityMgr.updateCapacityForHost(host);
-        }
-        
-        // Calculate storage pool capacity
-        List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
-        for (StoragePoolVO pool : storagePools) {
-            long disk = 0l;
-            Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
-            disk = sizes.second();
-            if (pool.isShared()){
-            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
-            }else {
-            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+        try {
+        	
+        	if (s_logger.isDebugEnabled()) {
+                s_logger.debug("recalculating system capacity");
+                s_logger.debug("Executing cpu/ram capacity update");
             }
-        }       
-
-        try {   
+        	
+	        // Calculate CPU and RAM capacities
+	        // 	get all hosts...even if they are not in 'UP' state
+	        List<HostVO> hosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+	        for (HostVO host : hosts) {
+	        	_capacityMgr.updateCapacityForHost(host);
+	        }
+	        
+	        if (s_logger.isDebugEnabled()) {
+	        	s_logger.debug("Done executing cpu/ram capacity update");
+	        	s_logger.debug("Executing storage capacity update");
+	        }
+	        // Calculate storage pool capacity
+	        List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
+	        for (StoragePoolVO pool : storagePools) {
+	            long disk = 0l;
+	            Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
+	            disk = sizes.second();
+	            if (pool.isShared()){
+	            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
+	            }else {
+	            	_storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+	            }
+	        }
+	        
+	        if (s_logger.isDebugEnabled()) {
+	        	s_logger.debug("Done executing storage capacity update");
+	        	s_logger.debug("Executing capacity updates public ip and Vlans");
+	        }
 
         	List<DataCenterVO> datacenters = _dcDao.listAll();
         	for (DataCenterVO datacenter : datacenters) {
@@ -317,27 +327,23 @@ public class AlertManagerImpl implements AlertManager {
 		        //implementing the same
         		
             	// Calculate new Public IP capacity for Virtual Network
-        		if (datacenter.getNetworkType() == NetworkType.Advanced){
-        			s_logger.trace("Executing public ip capacity update for Virtual Network");
+        		if (datacenter.getNetworkType() == NetworkType.Advanced){        			
         			createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
-        			s_logger.trace("Done with public ip capacity update for Virtual Network");
         		}
                 
             	// Calculate new Public IP capacity for Direct Attached Network
-            	s_logger.trace("Executing public ip capacity update for Direct Attached Network");
 		        createOrUpdateIpCapacity(dcId, null, CapacityVO.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
-                s_logger.trace("Done with public ip capacity update for Direct Attached Network");
                 
                 if (datacenter.getNetworkType() == NetworkType.Advanced){
                 	//Calculate VLAN's capacity
-                	s_logger.trace("Executing VLAN capacity update");
                 	createOrUpdateVlanCapacity(dcId);
-                	s_logger.trace("Executing VLAN capacity update");
                 }
-		    }
-
-        
-
+		    }        
+        	
+        	if (s_logger.isDebugEnabled()) {
+	        	s_logger.debug("Done capacity updates for public ip and Vlans");
+	        	s_logger.debug("Executing capacity updates for private ip");
+	        }
         	
 	        // Calculate new Private IP capacity
 	        List<HostPodVO> pods = _podDao.listAll();
@@ -345,14 +351,16 @@ public class AlertManagerImpl implements AlertManager {
 	            long podId = pod.getId();
 	            long dcId = pod.getDataCenterId();
 
-            	s_logger.trace("Executing private ip capacity update");
 	            createOrUpdateIpCapacity(dcId, podId, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
-                s_logger.trace("Done with private ip capacity update");
-
+	        }
+	        
+	        if (s_logger.isDebugEnabled()) {
+	        	s_logger.debug("Done executing capacity updates for private ip");
+	        	s_logger.debug("Done recalculating system capacity");
 	        }
 
-        } catch (Exception ex) {        	
-        	s_logger.error("Unable to start transaction for capacity update");
+        } catch (Throwable t) {        	
+        	s_logger.error("Caught exception in recalculating capacity", t);
         }
     }
     
@@ -423,9 +431,11 @@ public class AlertManagerImpl implements AlertManager {
         @Override
 		public void run() {
             try {
+            	s_logger.debug("Running Capacity Checker ... ");
             	checkForAlerts();
-            } catch (Exception ex) {
-                s_logger.error("Exception in CapacityChecker", ex);
+            	s_logger.debug("Done running Capacity Checker ... ");
+            } catch (Throwable t) {
+                s_logger.error("Exception in CapacityChecker", t);
             }
         }
     }
