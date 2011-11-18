@@ -121,7 +121,8 @@
                       $('div.notifications').notifications('add', {
                         desc: action.messages.notification({}),
                         interval: 1000,
-                        poll: action.notification.poll
+                        poll: action.notification.poll,
+                        _custom: args._custom
                       });
                     }
                   }
@@ -285,6 +286,7 @@
                                     desc: action.messages.notification({}),
                                     interval: 1000,
                                     poll: action.notification.poll,
+                                    _custom: args._custom,
                                     complete: function(args) {
                                       refreshChart();
                                       $newPanel.html('').listView({
