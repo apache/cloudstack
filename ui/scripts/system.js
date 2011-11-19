@@ -891,10 +891,10 @@
               add: {
                 label: 'Add new NetScaler',
                 createForm: {
-                  title: 'Add new NetScaler',                  
-                  fields: {
-                    url: {
-                      label: 'URL'
+                  title: 'Add new NetScaler',    
+fields: {
+                    ip: {
+                      label: 'IP address'
                     },
                     username: {
                       label: 'Username'
@@ -912,8 +912,36 @@
                         items.push({id: "NetscalerSDXLoadBalancer", description: "NetScaler SDX LoadBalancer"});                               
                         args.response.success({data: items});
                       }
+                    },             
+                    publicinterface: {
+                      label: 'Public interface'
+                    },
+                    privateinterface: {
+                      label: 'Private interface'
+                    },
+                    numretries: {
+                      label: 'Number of retries',
+                      defaultValue: '2'
+                    },
+                    inline: {
+                      label: 'Mode',
+                      select: function(args) {
+                        var items = [];
+                        items.push({id: "false", description: "side by side"});  
+                        items.push({id: "true", description: "inline"});  
+                        args.response.success({data: items});
+                      }                      
+                    },
+                    capacity: {
+                      label: 'Capacity',                      
+                      validation: { required: false, number: true }                      
+                    },
+                    dedicated: {
+                      label: 'Dedicated',
+                      isBoolean: true,
+                      isChecked: false
                     }                    
-                  }
+                  }                  
                 },
                 action: function(args) {                 
                   var zoneObj = args.context.zones[0];
@@ -948,30 +976,8 @@
                               else {											    
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
-                                  //alert("addNetworkServiceProvider&name=Netscaler succeeded.");                                    
-                                  var array1 = [];
-                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
-                                  array1.push("&url=" + todb(args.data.url));
-                                  array1.push("&username=" + todb(args.data.username));
-                                  array1.push("&password=" + todb(args.data.password));
-                                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                                  $.ajax({
-                                    url: createURL("addNetscalerLoadBalancer" + array1.join("")),
-                                    dataType: "json",
-                                    success: function(json) {                                                                        
-                                      var jid = json.addnetscalerloadbalancerresponse.jobid;                                                                          
-                                      args.response.success(
-                                        {_custom:
-                                         {jobId: jid,
-                                          getUpdatedItem: function(json) {    
-                                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                                            return {data: item};
-                                          }
-                                         }
-                                        }
-                                      );           
-                                    }
-                                  });                                     
+                                  //alert("addNetworkServiceProvider&name=Netscaler succeeded.");   
+                                  addExternalLoadBalancer(args, physicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse"); //???                                     
                                 } 
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -988,29 +994,7 @@
                     });                    
                   }
                   else { //naasStatusMap["netscaler"] == "enabled"
-                    var array1 = [];
-                    array1.push("&physicalnetworkid=" + physicalNetworkObj.id)
-                    array1.push("&url=" + todb(args.data.url));
-                    array1.push("&username=" + todb(args.data.username));
-                    array1.push("&password=" + todb(args.data.password));
-                    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                    $.ajax({
-                      url: createURL("addNetscalerLoadBalancer" + array1.join("")),
-                      dataType: "json",
-                      success: function(json) {  
-                        var jid = json.addnetscalerloadbalancerresponse.jobid;                     
-                        args.response.success(
-                          {_custom:
-                           {jobId: jid,
-                            getUpdatedItem: function(json) {                           
-                              var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                              return {data: item};
-                            }
-                           }
-                          }
-                        );           
-                      }
-                    });    
+                    addExternalLoadBalancer(args, physicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
                   }                       
                 },
                 messages: {
