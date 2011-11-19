@@ -1299,165 +1299,8 @@
                               else {											    
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
-                                  //alert("addNetworkServiceProvider&name=JuniperSRX succeeded.");                                    
-                                                                  
-                                  //addSrxFirewall starts here                                
-                                  var array1 = [];
-                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
-                                  array1.push("&username=" + todb(args.data.username));
-                                  array1.push("&password=" + todb(args.data.password));
-                                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                                                                                                     
-                                  //construct URL starts here
-                                  var url = [];
-                                  
-                                  var ip = args.data.ip;
-                                  url.push("https://" + ip);	 
-                                 
-                                  var isQuestionMarkAdded = false;
-                                  
-                                  var publicInterface = args.data.publicinterface;
-                                  if(publicInterface != null && publicInterface.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  				    
-                                      url.push("publicinterface=" + publicInterface); 
-                                  }
-                                      
-                                  var privateInterface = args.data.privateinterface;
-                                  if(privateInterface != null && privateInterface.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("privateinterface=" + privateInterface); 
-                                  }
-                                  
-                                  var usageInterface = args.data.usageinterface;
-                                  if(usageInterface != null && usageInterface.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("usageinterface=" + usageInterface); 
-                                  }
-                                  
-                                  var numretries = args.data.numretries;
-                                  if(numretries != null && numretries.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("numretries=" + numretries); 	
-                                  }		
-                                  
-                                  var timeout = args.data.timeout;
-                                  if(timeout != null && timeout.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("timeout=" + timeout); 	
-                                  }		
-                                  
-                                  var isInline = args.data.inline;				
-                                  if(isInline != null && isInline.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("inline=" + isInline); 
-                                  }
-                                                                   
-                                  var publicNetwork = args.data.publicnetwork;
-                                  if(publicNetwork != null && publicNetwork.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  				    
-                                      url.push("publicnetwork=" + publicNetwork); 
-                                  }
-                                      
-                                  var privateNetwork = args.data.privatenetwork;
-                                  if(privateNetwork != null && privateNetwork.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("privatenetwork=" + privateNetwork); 
-                                  }
-                                                                  
-                                  var capacity = args.data.capacity;				
-                                  if(capacity != null && capacity.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("capacity=" + capacity); 
-                                  }
-                                 
-                                  var dedicated = (args.data.dedicated == "on");				
-                                  if(dedicated != null && dedicated.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  
-                                      url.push("dedicated=" + dedicated.toString()); 
-                                  }
-                                       
-                                  array1.push("&url=" + todb(url.join("")));	                                                                   
-                                  //construct URL ends here		
-                                                                    
-                                  $.ajax({
-                                    url: createURL("addSrxFirewall" + array1.join("")),
-                                    dataType: "json",
-                                    success: function(json) {    
-                                      var jid = json.addsrxfirewallresponse.jobid;                                                                          
-                                      args.response.success(
-                                        {_custom:
-                                         {jobId: jid,
-                                          getUpdatedItem: function(json) {                           
-                                            var item = json.queryasyncjobresultresponse.jobresult.firewall;
-                                            return {data: item};
-                                          }
-                                         }
-                                        }
-                                      );           
-                                    }
-                                  });    
-                                  //addSrxFirewall ends here
-                                                                   
+                                  //alert("addNetworkServiceProvider&name=JuniperSRX succeeded.");   
+                                  addExternalFirewall(args, physicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse");                                                                                            
                                 } 
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -1473,163 +1316,8 @@
                       }
                     });                    
                   }
-                  else { //naasStatusMap["srx"] == "enabled"                 
-                    //addSrxFirewall starts here                                
-                    var array1 = [];
-                    array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
-                    array1.push("&username=" + todb(args.data.username));
-                    array1.push("&password=" + todb(args.data.password));
-                    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                                                                                       
-                    //construct URL starts here
-                    var url = [];
-                    
-                    var ip = args.data.ip;
-                    url.push("https://" + ip);	 
-                   
-                    var isQuestionMarkAdded = false;
-                    
-                    var publicInterface = args.data.publicinterface;
-                    if(publicInterface != null && publicInterface.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  				    
-                        url.push("publicinterface=" + publicInterface); 
-                    }
-                        
-                    var privateInterface = args.data.privateinterface;
-                    if(privateInterface != null && privateInterface.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("privateinterface=" + privateInterface); 
-                    }
-                    
-                    var usageInterface = args.data.usageinterface;
-                    if(usageInterface != null && usageInterface.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("usageinterface=" + usageInterface); 
-                    }
-                    
-                    var numretries = args.data.numretries;
-                    if(numretries != null && numretries.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("numretries=" + numretries); 	
-                    }		
-                    
-                    var timeout = args.data.timeout;
-                    if(timeout != null && timeout.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("timeout=" + timeout); 	
-                    }		
-                    
-                    var isInline = args.data.inline;				
-                    if(isInline != null && isInline.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("inline=" + isInline); 
-                    }
-                                                     
-                    var publicNetwork = args.data.publicnetwork;
-                    if(publicNetwork != null && publicNetwork.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  				    
-                        url.push("publicnetwork=" + publicNetwork); 
-                    }
-                        
-                    var privateNetwork = args.data.privatenetwork;
-                    if(privateNetwork != null && privateNetwork.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("privatenetwork=" + privateNetwork); 
-                    }
-                                                    
-                    var capacity = args.data.capacity;				
-                    if(capacity != null && capacity.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("capacity=" + capacity); 
-                    }
-                   
-                    var dedicated = (args.data.dedicated == "on");				
-                    if(dedicated != null && dedicated.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  
-                        url.push("dedicated=" + dedicated.toString()); 
-                    }
-                         
-                    array1.push("&url=" + todb(url.join("")));	                                                                   
-                    //construct URL ends here		
-                                                      
-                    $.ajax({
-                      url: createURL("addSrxFirewall" + array1.join("")),
-                      dataType: "json",
-                      success: function(json) {    
-                        var jid = json.addsrxfirewallresponse.jobid;                                                                          
-                        args.response.success(
-                          {_custom:
-                           {jobId: jid,
-                            getUpdatedItem: function(json) {                           
-                              var item = json.queryasyncjobresultresponse.jobresult.firewall;
-                              return {data: item};
-                            }
-                           }
-                          }
-                        );           
-                      }
-                    });    
-                    //addSrxFirewall ends here                    
+                  else { //naasStatusMap["srx"] == "enabled"   
+                    addExternalFirewall(args, physicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse"); 
                   }                       
                 },
                 messages: {
@@ -6594,6 +6282,163 @@
            {jobId: jid,
             getUpdatedItem: function(json) {                           
               var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+              return {data: item};
+            }
+           }
+          }
+        );           
+      }
+    });    
+  }
+  
+  function addExternalFirewall(args, physicalNetworkObj, apiCmd, apiCmdRes){   
+    var array1 = [];
+    array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
+    array1.push("&username=" + todb(args.data.username));
+    array1.push("&password=" + todb(args.data.password));
+    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                                                                       
+    //construct URL starts here
+    var url = [];
+    
+    var ip = args.data.ip;
+    url.push("https://" + ip);	 
+   
+    var isQuestionMarkAdded = false;
+    
+    var publicInterface = args.data.publicinterface;
+    if(publicInterface != null && publicInterface.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  				    
+        url.push("publicinterface=" + publicInterface); 
+    }
+        
+    var privateInterface = args.data.privateinterface;
+    if(privateInterface != null && privateInterface.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("privateinterface=" + privateInterface); 
+    }
+    
+    var usageInterface = args.data.usageinterface;
+    if(usageInterface != null && usageInterface.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("usageinterface=" + usageInterface); 
+    }
+    
+    var numretries = args.data.numretries;
+    if(numretries != null && numretries.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("numretries=" + numretries); 	
+    }		
+    
+    var timeout = args.data.timeout;
+    if(timeout != null && timeout.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("timeout=" + timeout); 	
+    }		
+    
+    var isInline = args.data.inline;				
+    if(isInline != null && isInline.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("inline=" + isInline); 
+    }
+                                     
+    var publicNetwork = args.data.publicnetwork;
+    if(publicNetwork != null && publicNetwork.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  				    
+        url.push("publicnetwork=" + publicNetwork); 
+    }
+        
+    var privateNetwork = args.data.privatenetwork;
+    if(privateNetwork != null && privateNetwork.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("privatenetwork=" + privateNetwork); 
+    }
+                                    
+    var capacity = args.data.capacity;				
+    if(capacity != null && capacity.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("capacity=" + capacity); 
+    }
+   
+    var dedicated = (args.data.dedicated == "on");				
+    if(dedicated != null && dedicated.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  
+        url.push("dedicated=" + dedicated.toString()); 
+    }
+         
+    array1.push("&url=" + todb(url.join("")));	                                                                   
+    //construct URL ends here		
+                                      
+    $.ajax({
+      url: createURL(apiCmd + array1.join("")),
+      dataType: "json",
+      success: function(json) {  
+        var jid = json[apiCmdRes].jobid;                                                                          
+        args.response.success(
+          {_custom:
+           {jobId: jid,
+            getUpdatedItem: function(json) {                           
+              var item = json.queryasyncjobresultresponse.jobresult.firewall;
               return {data: item};
             }
            }
