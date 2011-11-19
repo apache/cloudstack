@@ -1133,117 +1133,8 @@
                               else {											    
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
-                                  //alert("addNetworkServiceProvider&name=F5BigIp succeeded.");  
-
-                                  //addF5LoadBalancer starts here                                
-                                  var array1 = [];
-                                  array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
-                                  array1.push("&username=" + todb(args.data.username));
-                                  array1.push("&password=" + todb(args.data.password));
-                                  array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                                                                                                     
-                                  //construct URL starts here
-                                  var url = [];
-                                  
-                                  var ip = args.data.ip;
-                                  url.push("https://" + ip);	 
-                                  
-                                  var isQuestionMarkAdded = false;
-                                  
-                                  var publicInterface = args.data.publicinterface;
-                                  if(publicInterface != null && publicInterface.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  				    
-                                      url.push("publicinterface=" + publicInterface); 
-                                  }
-                                      
-                                  var privateInterface = args.data.privateinterface;
-                                  if(privateInterface != null && privateInterface.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("privateinterface=" + privateInterface); 
-                                  }
-                                  
-                                  var numretries = args.data.numretries;
-                                  if(numretries != null && numretries.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("numretries=" + numretries); 	
-                                  }		
-                                  
-                                  var isInline = args.data.inline;				
-                                  if(isInline != null && isInline.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("inline=" + isInline); 
-                                  }
-                                 
-                                  var capacity = args.data.capacity;				
-                                  if(capacity != null && capacity.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  		
-                                      url.push("capacity=" + capacity); 
-                                  }
-                                 
-                                  var dedicated = (args.data.dedicated == "on");				
-                                  if(dedicated != null && dedicated.length > 0) {
-                                      if(isQuestionMarkAdded == false) {
-                                          url.push("?");
-                                          isQuestionMarkAdded = true;
-                                      }
-                                      else {
-                                          url.push("&");
-                                      }  
-                                      url.push("dedicated=" + dedicated.toString()); 
-                                  }
-                                       
-                                  array1.push("&url=" + todb(url.join("")));	                                                                   
-                                  //construct URL ends here		
-                                                                    
-                                  $.ajax({
-                                    url: createURL("addF5LoadBalancer" + array1.join("")),
-                                    dataType: "json",
-                                    success: function(json) {    
-                                      var jid = json.addf5bigiploadbalancerresponse.jobid;                                                                          
-                                      args.response.success(
-                                        {_custom:
-                                         {jobId: jid,
-                                          getUpdatedItem: function(json) {                           
-                                            var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                                            return {data: item};
-                                          }
-                                         }
-                                        }
-                                      );           
-                                    }
-                                  });    
-                                  //addF5LoadBalancer ends here
-                                  
+                                  //alert("addNetworkServiceProvider&name=F5BigIp succeeded.");                                     
+                                  addExternalLoadBalancer(args, physicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse"); //???                                  
                                 } 
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -1259,116 +1150,8 @@
                       }
                     });                    
                   }
-                  else { //naasStatusMap["f5"] == "enabled"                    
-                    //addF5LoadBalancer starts here                                
-                    var array1 = [];
-                    array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
-                    array1.push("&username=" + todb(args.data.username));
-                    array1.push("&password=" + todb(args.data.password));
-                    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
-                                                                                       
-                    //construct URL starts here
-                    var url = [];
-                    
-                    var ip = args.data.ip;
-                    url.push("https://" + ip);	 
-                    
-                    var isQuestionMarkAdded = false;
-                    
-                    var publicInterface = args.data.publicinterface;
-                    if(publicInterface != null && publicInterface.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  				    
-                        url.push("publicinterface=" + publicInterface); 
-                    }
-                        
-                    var privateInterface = args.data.privateinterface;
-                    if(privateInterface != null && privateInterface.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("privateinterface=" + privateInterface); 
-                    }
-                    
-                    var numretries = args.data.numretries;
-                    if(numretries != null && numretries.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("numretries=" + numretries); 	
-                    }		
-                    
-                    var isInline = args.data.inline;				
-                    if(isInline != null && isInline.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("inline=" + isInline); 
-                    }
-                   
-                    var capacity = args.data.capacity;				
-                    if(capacity != null && capacity.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  		
-                        url.push("capacity=" + capacity); 
-                    }
-                   
-                    var dedicated = (args.data.dedicated == "on");				
-                    if(dedicated != null && dedicated.length > 0) {
-                        if(isQuestionMarkAdded == false) {
-                            url.push("?");
-                            isQuestionMarkAdded = true;
-                        }
-                        else {
-                            url.push("&");
-                        }  
-                        url.push("dedicated=" + dedicated.toString()); 
-                    }
-                         
-                    array1.push("&url=" + todb(url.join("")));	                                                                   
-                    //construct URL ends here		
-                                                      
-                    $.ajax({
-                      url: createURL("addF5LoadBalancer" + array1.join("")),
-                      dataType: "json",
-                      success: function(json) {    
-                        var jid = json.addf5bigiploadbalancerresponse.jobid;                                                                          
-                        args.response.success(
-                          {_custom:
-                           {jobId: jid,
-                            getUpdatedItem: function(json) {                           
-                              var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
-                              return {data: item};
-                            }
-                           }
-                          }
-                        );           
-                      }
-                    });    
-                    //addF5LoadBalancer ends here                    
-                    
+                  else { //naasStatusMap["f5"] == "enabled"  
+                    addExternalLoadBalancer(args, physicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");                
                   }                       
                 },
                 messages: {
@@ -6653,8 +6436,7 @@
             }
           }          
         }
-      }
-      //???
+      }     
     }
   };
 
@@ -6712,6 +6494,115 @@
     return url;
   }
 
+  function addExternalLoadBalancer(args, physicalNetworkObj, apiCmd, apiCmdRes) {    
+    var array1 = [];
+    array1.push("&physicalnetworkid=" + physicalNetworkObj.id);                                 
+    array1.push("&username=" + todb(args.data.username));
+    array1.push("&password=" + todb(args.data.password));
+    array1.push("&networkdevicetype=" + todb(args.data.networkdevicetype));
+                                                                       
+    //construct URL starts here
+    var url = [];
+    
+    var ip = args.data.ip;
+    url.push("https://" + ip);	 
+    
+    var isQuestionMarkAdded = false;
+    
+    var publicInterface = args.data.publicinterface;
+    if(publicInterface != null && publicInterface.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  				    
+        url.push("publicinterface=" + publicInterface); 
+    }
+        
+    var privateInterface = args.data.privateinterface;
+    if(privateInterface != null && privateInterface.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("privateinterface=" + privateInterface); 
+    }
+    
+    var numretries = args.data.numretries;
+    if(numretries != null && numretries.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("numretries=" + numretries); 	
+    }		
+    
+    var isInline = args.data.inline;				
+    if(isInline != null && isInline.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("inline=" + isInline); 
+    }
+   
+    var capacity = args.data.capacity;				
+    if(capacity != null && capacity.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  		
+        url.push("capacity=" + capacity); 
+    }
+   
+    var dedicated = (args.data.dedicated == "on");				
+    if(dedicated != null && dedicated.length > 0) {
+        if(isQuestionMarkAdded == false) {
+            url.push("?");
+            isQuestionMarkAdded = true;
+        }
+        else {
+            url.push("&");
+        }  
+        url.push("dedicated=" + dedicated.toString()); 
+    }
+         
+    array1.push("&url=" + todb(url.join("")));	                                                                   
+    //construct URL ends here		
+         
+    $.ajax({
+      url: createURL(apiCmd + array1.join("")),
+      dataType: "json",
+      success: function(json) {         
+        var jid = json[apiCmdRes].jobid;                                                                          
+        args.response.success(
+          {_custom:
+           {jobId: jid,
+            getUpdatedItem: function(json) {                           
+              var item = json.queryasyncjobresultresponse.jobresult.loadbalancer;
+              return {data: item};
+            }
+           }
+          }
+        );           
+      }
+    });    
+  }
+  
   //action filters (begin)
   var zoneActionfilter = function(args) {
     var jsonObj = args.context.item;
