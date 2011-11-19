@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,6 @@ import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
@@ -399,7 +397,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("dc", entity.getDataCenterId(), SearchCriteria.Op.EQ);
         hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
         hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
-        hostSearch.and("resourceState", entity.getState(), SearchCriteria.Op.EQ);
+        hostSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
         hostSearch.join("hostTagSearch", hostTagSearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
 
         SearchCriteria<HostVO> sc = hostSearch.create();
