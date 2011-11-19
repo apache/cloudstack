@@ -18,6 +18,7 @@
 package com.cloud.template;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -87,4 +88,6 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     Long getSourceTemplateId();
 
     String getTemplateTag();
+    
+    Map getDetails();
 }

@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
@@ -122,6 +123,9 @@ public class TemplateResponse extends BaseResponse {
 
     @SerializedName("templatetag") @Param(description="the tag of this template")
     private String templateTag;
+    
+    @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
+    private Map details;
 
     @Override
     public Long getObjectId() {
@@ -390,4 +394,12 @@ public class TemplateResponse extends BaseResponse {
     public void setTemplateTag(String templateTag) {
         this.templateTag = templateTag;
     }    
+    
+    public Map getDetails() {
+    	return this.details;
+    }
+    
+    public void setDetails(Map details) {
+    	this.details = details;
+    }
 }
