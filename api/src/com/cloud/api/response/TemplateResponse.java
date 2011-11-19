@@ -18,6 +18,7 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.IdentityProxy;
@@ -124,6 +125,10 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     
     @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the template")
     private String projectName;
+    
+    @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
+    private Map details;
+    
 
     @Override
     public Long getObjectId() {
@@ -264,5 +269,13 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public Map getDetails() {
+    	return this.details;
+    }
+    
+    public void setDetails(Map details) {
+    	this.details = details;
     }
 }

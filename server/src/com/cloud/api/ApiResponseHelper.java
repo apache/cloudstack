@@ -1426,6 +1426,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setFormat(result.getFormat());
         response.setOsTypeId(result.getGuestOSId());
         response.setOsTypeName(ApiDBUtils.findGuestOSById(result.getGuestOSId()).getDisplayName());
+        response.setDetails(result.getDetails());
 
         if (result.getFormat() == ImageFormat.ISO) { // Templates are always bootable
             response.setBootable(result.isBootable());
@@ -1478,6 +1479,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setPasswordEnabled(template.getEnablePassword());
         templateResponse.setCrossZones(template.isCrossZones());
         templateResponse.setFormat(template.getFormat());
+        templateResponse.setDetails(template.getDetails());
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
@@ -1559,6 +1561,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
         templateResponse.setHypervisor(template.getHypervisorType().toString());
+        templateResponse.setDetails(template.getDetails());
 
         GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
         if (os != null) {
@@ -1643,6 +1646,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setCreated(iso.getCreated());
             isoResponse.setChecksum(iso.getChecksum());
             isoResponse.setPasswordEnabled(false);
+            isoResponse.setDetails(iso.getDetails());
             
             // add account ID and name
             Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
@@ -1686,6 +1690,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setCrossZones(iso.isCrossZones());
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setChecksum(iso.getChecksum());
+        isoResponse.setDetails(iso.getDetails());
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
@@ -1743,6 +1748,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setCrossZones(iso.isCrossZones());
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setChecksum(iso.getChecksum());
+        isoResponse.setDetails(iso.getDetails());
 
         // TODO: implement
         GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());

@@ -103,6 +103,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -163,6 +164,7 @@ public class ApiDBUtils {
     private static SnapshotDao _snapshotDao;
     private static StoragePoolDao _storagePoolDao;
     private static VMTemplateDao _templateDao;
+    private static VMTemplateDetailsDao _templateDetailsDao;
     private static VMTemplateHostDao _templateHostDao;
     private static VMTemplateSwiftDao _templateSwiftDao;
     private static UploadDao _uploadDao;
@@ -213,6 +215,7 @@ public class ApiDBUtils {
         _snapshotDao = locator.getDao(SnapshotDao.class);
         _storagePoolDao = locator.getDao(StoragePoolDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
+        _templateDetailsDao = locator.getDao(VMTemplateDetailsDao.class);
         _templateHostDao = locator.getDao(VMTemplateHostDao.class);
         _templateSwiftDao = locator.getDao(VMTemplateSwiftDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
@@ -482,7 +485,13 @@ public class ApiDBUtils {
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
-        return _templateDao.findByIdIncludingRemoved(templateId);
+    	VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+    	if(template != null) {
+    		Map details = _templateDetailsDao.findDetails(templateId);
+    		if(details != null && !details.isEmpty())
+    			template.setDetails(details);
+    	}
+    	return template;
     }
     
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
