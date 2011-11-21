@@ -834,6 +834,12 @@
           return naasStatusMap;
         },
 
+        statusLabels: {
+          enabled: 'Enabled',
+          'not-configured': 'Not setup',
+          disabled: 'Disabled'
+        },
+
         // Actions performed on entire net. provider type
         actions: {
           enable: function(args) {
