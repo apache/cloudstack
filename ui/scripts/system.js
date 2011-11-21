@@ -6237,17 +6237,16 @@ fields: {
         url.push("lbdevicecapacity=" + capacity); 
     }
    
-    var dedicated = (args.data.dedicated == "on");				
-    if(dedicated != null && dedicated.length > 0) {
-        if(isQuestionMarkAdded == false) {
-            url.push("?");
-            isQuestionMarkAdded = true;
-        }
-        else {
-            url.push("&");
-        }  
-        url.push("Lbdevicededicated=" + dedicated.toString()); 
+    var dedicated = (args.data.dedicated == "on");	//boolean	(true/false)
+    if(isQuestionMarkAdded == false) {
+        url.push("?");
+        isQuestionMarkAdded = true;
     }
+    else {
+        url.push("&");
+    }  
+    url.push("Lbdevicededicated=" + dedicated.toString()); 
+    
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
     //construct URL ends here		
@@ -6391,22 +6390,18 @@ fields: {
         else {
             url.push("&");
         } 
-        url.push("capacity=" + capacity);         
-        //url.push("lbdevicecapacity=" + capacity); 
+        url.push("capacity=" + capacity);    
     }
    
-    var dedicated = (args.data.dedicated == "on");				
-    if(dedicated != null && dedicated.length > 0) {
-        if(isQuestionMarkAdded == false) {
-            url.push("?");
-            isQuestionMarkAdded = true;
-        }
-        else {
-            url.push("&");
-        }  
-        url.push("dedicated=" + dedicated.toString()); 
-        //url.push("Lbdevicededicated=" + dedicated.toString()); 
+    var dedicated = (args.data.dedicated == "on");	//boolean	(true/false)			    
+    if(isQuestionMarkAdded == false) {
+        url.push("?");
+        isQuestionMarkAdded = true;
     }
+    else {
+        url.push("&");
+    }  
+    url.push("dedicated=" + dedicated.toString());       
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
     //construct URL ends here		
