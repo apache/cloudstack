@@ -193,13 +193,34 @@
             }
           });
         } else {
-          $input = $('<input>').attr({
-            name: key,
-            type: this.password || this.isPassword ? 'password' : 'text'
-          }).appendTo($value);
+          // Text field
+          if (this.range) {
+            $input = $.merge(
+              // Range start
+              $('<input>').attr({
+                type: 'text',
+                name: this.range[0]
+              }),
 
-          if (this.defaultValue) {
-            $input.val(this.defaultValue);
+              // Range end
+              $('<input>').attr({
+                type: 'text',
+                name: this.range[1]
+              })
+            ).appendTo(
+              $('<div>').addClass('range-edit').appendTo($value)
+            );
+
+            $input.wrap($('<div>').addClass('range-item'));
+          } else {
+            $input = $('<input>').attr({
+              name: key,
+              type: this.password || this.isPassword ? 'password' : 'text'
+            }).appendTo($value);
+
+            if (this.defaultValue) {
+              $input.val(this.defaultValue);
+            }
           }
         }
 

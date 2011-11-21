@@ -138,7 +138,11 @@
         edit: {
           label: 'Edit instance name',
           action: function(args) {
-            args.response.success(args.data[0]);
+            if ((args.data.name) == '') {
+              args.response.error({ message: 'Instance name cannot be blank.' });
+            } else {
+              args.response.success();
+            }
           }
         },
 
@@ -369,7 +373,7 @@
             }
           },
           resetPassword: {
-            label: 'Reset password', 
+            label: 'Reset password',
             action: function(args) {
               args.response.success({});
             },
@@ -384,7 +388,7 @@
                 return 'VM password reset. New password is: ' + args.password;
               }
             },
-            notification: {              
+            notification: {
               poll: testData.notifications.customPoll({
                 password: '1284018jaj#'
               })

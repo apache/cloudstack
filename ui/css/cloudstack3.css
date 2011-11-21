@@ -2681,6 +2681,30 @@ Dialogs*/
   float: left;
 }
 
+.ui-dialog div.form-container div.value .range-edit {
+  width: 249px;
+  height: 33px;
+  margin: 2px 0 0;
+}
+
+.ui-dialog div.form-container div.value .range-edit .range-item {
+  width: 124px;
+  height: 32px;
+  position: relative;
+  float: left;
+}
+
+.ui-dialog div.form-container div.value .range-edit input {
+  width: 105px;
+  margin: 0 9px 0 0;
+}
+
+.ui-dialog div.form-container div.value .range-edit label.error {
+  position: absolute;
+  left: 3px;
+  top: 25px;
+}
+
 .ui-dialog div.form-container div.value select {
   width: 100%;
   float: right;

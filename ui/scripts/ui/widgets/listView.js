@@ -312,9 +312,11 @@
       };
 
       // Hide edit field, validate and save changes
-      var showLabel = function(val) {
+      var showLabel = function(val, options) {
+        if (!options) options = {};
+        
         var oldVal = $label.html();
-        if (val) $label.html(val);
+        $label.html(val);
 
         var data = {
           id: $instanceRow.data('list-view-item-id'),
@@ -336,6 +338,8 @@
               $edit.hide();
               $label.fadeIn();
               $instanceRow.closest('div.data-table').dataTable('refresh');
+
+              if (options.success) options.success(args);
             },
             error: function(args) {
               if (args.message) {
@@ -343,6 +347,8 @@
                 $edit.hide(),
                 $label.html(oldVal).fadeIn();
                 $instanceRow.closest('div.data-table').dataTable('refresh');
+
+                if (options.error) options.error(args);
               }
             }
           }
@@ -354,24 +360,28 @@
         return false;
       }
 
-      if ($label.is(':visible')) {
+      if (!$editInput.is(':visible')) {
         showEditField();
       } else if ($editInput.val() != $label.html()) {
         $edit.animate({ opacity: 0.5 });
 
         var originalName = $label.html();
         var newName = $editInput.val();
-
-        addNotification(
-          {
-            section: $instanceRow.closest('div.view').data('view-args').id,
-            desc: 'Renamed ' + originalName + ' to ' + newName
-          },
-          function(data) {
-            showLabel(newName);
-          },
-          [{ name: newName }]
-        );
+        showLabel(newName, {
+          success: function() {
+            addNotification(
+              {
+                section: $instanceRow.closest('div.view').data('view-args').id,
+                desc: newName ? 'Set value of ' + $instanceRow.find('td.name span').html() + ' to ' + newName :
+                  'Unset value for ' + $instanceRow.find('td.name span').html()
+              },
+              function(args) {
+                
+              },
+              [{ name: newName }]
+            );
+          }
+        });
       } else {
         showLabel();
       }
@@ -1017,10 +1027,8 @@
         };
 
         // Populate context object w/ instance data
-        detailViewArgs.context[
-          $listView.data('view-args').activeSection
-        ] = [jsonObj];
-
+        var listViewActiveSection = $listView.data('view-args').activeSection;
+       
         // Create custom-generated detail view
         if (listViewData.detailView.pageGenerator) {
           detailViewArgs.pageGenerator = listViewData.detailView.pageGenerator;
@@ -1031,6 +1039,11 @@
           detailViewArgs.section = listViewArgs.listView.section;
         else
           detailViewArgs.section = listViewArgs.activeSection ? listViewArgs.activeSection : listViewArgs.id;
+
+        detailViewArgs.context[
+          listViewActiveSection != '_zone' ? 
+            listViewActiveSection : detailViewArgs.section
+        ] = [jsonObj];
 
         createDetailView(detailViewArgs, function($detailView) {
           $detailView.data('list-view', $listView);

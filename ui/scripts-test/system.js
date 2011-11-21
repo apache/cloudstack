@@ -186,12 +186,9 @@
                             label: 'Netmask',
                             validation: { required: true }
                           },
-                          startip: {
-                            label: 'Start IP',
-                            validation: { required: true }
-                          },
-                          endip: {
-                            label: 'Start IP',
+                          ipRange: {
+                            label: 'IP Range',
+                            range: ['startip', 'endip'],
                             validation: { required: true }
                           }
                         }
