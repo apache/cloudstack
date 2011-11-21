@@ -6266,7 +6266,7 @@ fields: {
     else {
         url.push("&");
     }  
-    url.push("Lbdevicededicated=" + dedicated.toString()); 
+    url.push("lbdevicededicated=" + dedicated.toString()); 
     
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
