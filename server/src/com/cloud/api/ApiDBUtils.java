@@ -654,6 +654,12 @@ public class ApiDBUtils {
         return cpuOverprovisioningFactor;
     }
     
+
+    public static boolean isIsoBasedVolumesExtractionAllowed() {
+        String isIsoBasedVolumesExtractionAllowed = _configDao.getValue(Config.AllowIsoBasedVolumesExtraction.key()); 
+        return (isIsoBasedVolumesExtractionAllowed == null) ? true : Boolean.parseBoolean(isIsoBasedVolumesExtractionAllowed);        
+    }
+    
     public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {
         return _securityGroupMgr.getSecurityGroup(groupName, ownerId);
     }
