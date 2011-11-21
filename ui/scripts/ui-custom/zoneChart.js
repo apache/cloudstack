@@ -75,6 +75,8 @@
 
         $.each(naas.networkProviders.types, function(name, type) {
           var status = networkStatus[name];
+          var statusLabel = naas.networkProviders.statusLabels ? 
+                naas.networkProviders.statusLabels[status] : {};
 
           var $item = $('<li>').addClass('provider')
                 .attr('rel', name)
@@ -83,7 +85,9 @@
                 .appendTo($networkProviders)
                 .append($('<div>').addClass('name').html(type.label))
                 .append($('<div>').addClass('status')
-                        .append($('<span>').html(status)))
+                        .append($('<span>').html(
+                          statusLabel ? statusLabel : status
+                        )))
                 .append($('<div>').addClass('view-all configure').html('Configure'));
         });
 
@@ -348,7 +352,7 @@
                     title: itemName + ' details',
                     maximizeIfSelected: true,
                     complete: function($newPanel) {
-                      if (status == 'disabled') {
+                      if (status == 'not-configured') {
                         // Create form
                         var formData = cloudStack.dialog.createForm({
                           form: createForm,

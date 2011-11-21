@@ -241,11 +241,17 @@
         statusCheck: function(args) {
           return {
             virtualRouter: 'enabled',
-            netscaler: 'disabled',
-            f5: 'enabled',
+            netscaler: 'not-configured',
+            f5: 'disabled',
             srx: 'enabled',
             securityGroups: 'enabled'
           };
+        },
+
+        statusLabels: {
+          enabled: 'Enabled',
+          'not-configured': 'Not setup',
+          disabled: 'Disabled'
         },
 
         types: {

@@ -3701,7 +3701,7 @@ Dialogs*/
   background-position: -6px -459px;
 }
 
-.zone-chart .resources.naas .system-main .network-providers li.shutdown .status {
+.zone-chart .resources.naas .system-main .network-providers li.disabled .status {
   background-position: -7px -495px;
 }
 
