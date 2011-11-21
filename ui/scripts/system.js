@@ -6234,7 +6234,7 @@ fields: {
         else {
             url.push("&");
         }  		
-        url.push("capacity=" + capacity); 
+        url.push("lbdevicecapacity=" + capacity); 
     }
    
     var dedicated = (args.data.dedicated == "on");				
@@ -6246,7 +6246,7 @@ fields: {
         else {
             url.push("&");
         }  
-        url.push("dedicated=" + dedicated.toString()); 
+        url.push("Lbdevicededicated=" + dedicated.toString()); 
     }
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
@@ -6390,8 +6390,9 @@ fields: {
         }
         else {
             url.push("&");
-        }  		
-        url.push("lbdevicecapacity=" + capacity); 
+        } 
+        url.push("capacity=" + capacity);         
+        //url.push("lbdevicecapacity=" + capacity); 
     }
    
     var dedicated = (args.data.dedicated == "on");				
@@ -6403,7 +6404,8 @@ fields: {
         else {
             url.push("&");
         }  
-        url.push("Lbdevicededicated=" + dedicated.toString()); 
+        url.push("dedicated=" + dedicated.toString()); 
+        //url.push("Lbdevicededicated=" + dedicated.toString()); 
     }
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
