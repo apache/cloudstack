@@ -1776,7 +1776,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
             }
-        } else if (zone.getNetworkType() == NetworkType.Advanced) {
+        } else if (zone.getNetworkType() == NetworkType.Advanced){
             aclType = ACLType.Account;
         } else if (zone.getNetworkType() == NetworkType.Basic){
             aclType = ACLType.Domain;
@@ -1881,6 +1881,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 sharedDomainId = _domainMgr.getDomain(Domain.ROOT_DOMAIN).getId();
             }
+        }
+        
+        //default owner to system if network has aclType=Domain
+        if (aclType == ACLType.Domain) {
+        	owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 
         Network network = createGuestNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess);
@@ -2006,9 +2011,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 if (networkDomain == null) {
                     //1) Get networkDomain from the corresponding account/domain/zone
-                    if (aclType == null) {
-                        networkDomain = getZoneNetworkDomain(zoneId);
-                    } else if (aclType == ACLType.Domain) {
+                	if (aclType == ACLType.Domain) {
                         networkDomain = getDomainNetworkDomain(domainId, zoneId);
                     } else if (aclType == ACLType.Account){
                         networkDomain = getAccountNetworkDomain(owner.getId(), zoneId);
