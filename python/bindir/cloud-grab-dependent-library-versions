@@ -1,0 +1,63 @@
+#!/usr/bin/python
+'''
+Created on Nov 21, 2011
+
+@author: frank
+'''
+import subprocess
+
+depLibraries = ['python', 'bzip2', 'gzip', 'unzip', 'openssh-clients', 'nfs-utils', 'wget', 'tomcat6', 'ws-commons-util', 'commons-dbcp',
+                'commons-collections', 'commons-httpclient', 'jpackage-utils', 'MySQL-python', 'python-paramiko', 'ipmitool', 'commons-httpclient', 'commons-collections',
+                'commons-pool', 'commons-dbcp', 'jakarta-commons-logging', 'java-*-openjdk']
+
+def runCmd(cmds):
+    process = subprocess.Popen(' '.join(cmds), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        raise Exception(stderr)
+    return stdout
+
+
+def getDependentLibraryInfo():
+    def getVersion(res, pkgname):
+        start = False
+        for l in res.split('\n'):
+            if "Installed Packages" in l:
+                start = True
+                continue
+            if not start: continue
+            
+            (key, value) = l.split(':', 2)
+            key = key.strip()
+            value = value.strip()
+            if key == 'Name' and "*" not in pkgname and pkgname not in value:
+                print "Required package name %s doesn't equal to package %s installed"%(pkgname, value)
+                return 'UNKNOWN'
+            if 'Version' in key: return value
+            if 'Description' in key: return 'UNKNOWN' # we hit the end
+        return 'UNKNOWN'
+    
+    libraryMap = {}
+    for l in depLibraries:
+        cmd = ['yum', 'info', '"%s"'%l]
+        try:
+            result = runCmd(cmd)
+            version = getVersion(result, l)
+            libraryMap[l] = version
+        except Exception, e:
+            print "When finding %s, encounters %s"%(l, e)
+            continue
+    return libraryMap
+
+def arrangeOutPut(libraryMap):
+    msg = ['\n\n\nBelow is the checking list of library version that CloudStack depends on:']
+    for l in depLibraries:
+        if libraryMap.has_key(l):
+            entry = "%-40s:    %s"%(l, libraryMap[l])
+        else:
+            entry = "%-40s:    %s"%(l, 'UNKNOWN')
+        msg.append(entry)
+    print '\n'.join(msg)
+        
+if __name__ == '__main__':
+    arrangeOutPut(getDependentLibraryInfo())
