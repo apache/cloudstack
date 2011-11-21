@@ -1950,6 +1950,7 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
   `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance meant for dedicated use only',
+  `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if netscaler load balancer to be used in in-line configuration with firewall',
   `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned and its life cycle is managed by by cloudstack',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
   `parent_host_id` bigint unsigned COMMENT 'if the device/appliance is cloudstack managed, then host id on which this device/appliance is provisioned',

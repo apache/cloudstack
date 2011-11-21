@@ -58,8 +58,11 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY, type=CommandType.LONG, required=false, description="capacity of the device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED, type=CommandType.BOOLEAN, required=false, description="true if this netscaler device to dedicated for a account")
+    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED, type=CommandType.BOOLEAN, required=false, description="true if this netscaler device to dedicated for a account, false if the netscaler device will be shared by multiple accounts")
     private Boolean dedicatedUse;
+
+    @Parameter (name=ApiConstants.INLINE, type=CommandType.BOOLEAN, required=false, description="true if netscaler load balancer is intended to be used in in-line with firewall, false if netscaler load balancer will side-by-side with firewall")
+    private Boolean inline;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -75,6 +78,10 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public Boolean getLoadBalancerDedicated() {
         return dedicatedUse;
+    }
+
+    public Boolean getLoadBalancerInline() {
+        return inline;
     }
 
     /////////////////////////////////////////////////////

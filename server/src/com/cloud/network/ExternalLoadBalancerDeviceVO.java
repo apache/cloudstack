@@ -67,7 +67,10 @@ public class ExternalLoadBalancerDeviceVO {
 
     @Column(name="is_managed")
     private boolean isManagedDevice;
-    
+
+    @Column(name="is_inline")
+    private boolean isInlineMode;
+
     @Column(name="is_dedicated")
     private boolean isDedicatedDevice;
 
@@ -90,13 +93,17 @@ public class ExternalLoadBalancerDeviceVO {
         Provider   // This state is set only for device that can dynamically provision LB appliances
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name) {
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
+            long capacity, boolean dedicated, boolean inline) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
         this.deviceName = device_name;
         this.hostId = hostId;
         this.state = LBDeviceState.Disabled;
         this.allocationState = LBDeviceAllocationState.Free;
+        this.capacity = capacity;
+        this.isDedicatedDevice = dedicated;
+        this.isInlineMode = inline;
         this.isManagedDevice = false;
         this.uuid = UUID.randomUUID().toString();
 
@@ -105,8 +112,9 @@ public class ExternalLoadBalancerDeviceVO {
         }
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, boolean managed, long parentHostId) {
-        this(hostId, physicalNetworkId, provider_name, device_name);
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
+            long capacity, boolean dedicated, boolean inline, boolean managed, long parentHostId) {
+        this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated, inline);
         this.isManagedDevice = managed;
         this.parentHostId = parentHostId;
     }
@@ -173,6 +181,14 @@ public class ExternalLoadBalancerDeviceVO {
 
     public void setIsManagedDevice(boolean managed) {
         this.isManagedDevice = managed;
+    }
+
+    public boolean getIsInLineMode () {
+        return isInlineMode;
+    }
+
+    public void  setIsInlineMode(boolean inline) {
+        this.isInlineMode = inline;
     }
 
     public boolean getIsDedicatedDevice() {

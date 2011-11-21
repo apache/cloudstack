@@ -19,6 +19,7 @@
 
 package com.cloud.network.element;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +44,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
@@ -69,7 +73,10 @@ import com.cloud.network.resource.NetscalerResource;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -91,6 +98,7 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
     @Inject NetworkExternalLoadBalancerDao _networkLBDao;
     @Inject PhysicalNetworkDao _physicalNetworkDao;
     @Inject NetworkDao _networkDao;
+    @Inject HostDetailsDao _detailsDao;
 
     private boolean canHandle(Network config) {
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
@@ -189,7 +197,8 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
             throw new InvalidParameterValueException("Invalid Netscaler device type");
         }
 
-        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, (ServerResource) new NetscalerResource());
+        ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, (ServerResource) new NetscalerResource());
+        return lbDeviceVO;
     }
 
     @Override
@@ -208,14 +217,26 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
     public ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(ConfigureNetscalerLoadBalancerCmd cmd) {
         Long lbDeviceId = cmd.getLoadBalancerDeviceId();
         Boolean dedicatedUse = cmd.getLoadBalancerDedicated();
+        Boolean inline = cmd.getLoadBalancerInline();
         Long capacity = cmd.getLoadBalancerCapacity();
 
+        try {
+            return configureNetscalerLoadBalancer(lbDeviceId, capacity, inline, dedicatedUse);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("failed to configure netscaler device due to " + e.getMessage());
+        }
+    }
+
+    @DB
+    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean inline, Boolean dedicatedUse) {
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
+        Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
+
         if ((lbDeviceVo == null) || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
             throw new InvalidParameterValueException("No netscaler device found with ID: " + lbDeviceId);
         }
 
-        if (dedicatedUse != null || capacity != null) {
+        if (dedicatedUse != null || capacity != null || inline != null) {
 
             String deviceName = lbDeviceVo.getDeviceName();
             if (NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
@@ -230,25 +251,49 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
             List<NetworkExternalLoadBalancerVO> networks = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
             if ((networks != null) && !networks.isEmpty()) {
                 if (capacity < networks.size()) {
-                    throw new CloudRuntimeException("There are more number of networks already using this netscalr device than configured capacity");
+                    throw new CloudRuntimeException("There are more number of networks already using this netscaler device than configured capacity");
                 }
 
                 if (dedicatedUse !=null && dedicatedUse == true) {
-                    throw new CloudRuntimeException("There are networks already using this netscalr device to make device dedicated");
+                    throw new CloudRuntimeException("There are networks already using this netscaler device to make device dedicated");
                 }
-            }
 
-            if (capacity != null) {
-                lbDeviceVo.setCapacity(capacity);
-            }
-
-            if(dedicatedUse != null) {
-                lbDeviceVo.setIsDedicatedDevice(dedicatedUse);
+                if (inline != null) {
+                    boolean _setInline = Boolean.parseBoolean((String) lbDetails.get("inline"));
+                    if (inline != _setInline) {
+                        throw new CloudRuntimeException("There are networks already using this netscaler device to change the device inline or side-by-side configuration");
+                    }
+                }
             }
         }
 
+        if (capacity != null) {
+            lbDeviceVo.setCapacity(capacity);
+        }
+
+        if(dedicatedUse != null) {
+            lbDeviceVo.setIsDedicatedDevice(dedicatedUse);
+        }
+
+        if (inline != null && inline == true) {
+            lbDeviceVo.setIsInlineMode(true);
+            lbDetails.put("inline", "true");
+        } else {
+            lbDeviceVo.setIsInlineMode(false);
+            lbDetails.put("inline", "false");
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
         lbDeviceVo.setState(LBDeviceState.Enabled);
         _lbDeviceDao.update(lbDeviceId, lbDeviceVo);
+
+        _detailsDao.persist(lbDeviceVo.getHostId(), lbDetails);
+        HostVO host = _hostDao.findById(lbDeviceVo.getHostId());
+        txn.commit();
+
+        _agentMgr.reconnect(host.getId());
         return lbDeviceVo;
     }
 
@@ -313,10 +358,17 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
     @Override
     public NetscalerLoadBalancerResponse createNetscalerLoadBalancerResponse(ExternalLoadBalancerDeviceVO lbDeviceVO) {
         NetscalerLoadBalancerResponse response = new NetscalerLoadBalancerResponse();
+        Host lbHost = _hostDao.findById(lbDeviceVO.getHostId());
+        Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVO.getHostId());
+
         response.setId(lbDeviceVO.getId());
+        response.setIpAddress(lbHost.getPrivateIpAddress());
         response.setPhysicalNetworkId(lbDeviceVO.getPhysicalNetworkId());
+        response.setPublicInterface(lbDetails.get("publicInterface"));
+        response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
         response.setDeviceCapacity(lbDeviceVO.getCapacity());
+        response.setInlineMode(lbDeviceVO.getIsInLineMode());
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());

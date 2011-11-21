@@ -160,6 +160,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         String guid;
         PhysicalNetworkVO pNetwork=null;
         NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
+        Transaction txn = null;
         long zoneId;
 
         if ((ntwkDevice == null) || (url == null) || (username == null) || (resource == null) || (password == null) ) {
@@ -192,7 +193,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         String ipAddress = uri.getHost();
         Map hostDetails = new HashMap<String, String>();
-        guid = getExternalNetworkResourceGuid(pNetwork.getId(), deviceName, ipAddress);
+        guid = getExternalLoadBalancerResourceGuid(pNetwork.getId(), deviceName, ipAddress);
+        hostDetails.put("name", guid);
         hostDetails.put("guid", guid);
         hostDetails.put("zoneId", String.valueOf(pNetwork.getDataCenterId()));
         hostDetails.put("ip", ipAddress);
@@ -202,19 +204,27 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         hostDetails.put("deviceName", deviceName);
 
         // leave parameter validation to be part server resource configure
-        Map<String, String> params = new HashMap<String, String>();
-        UrlUtil.parseQueryParameters(uri.getQuery(), false, params);
-        hostDetails.putAll(params);
+        Map<String, String> configParams = new HashMap<String, String>();
+        UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
+        hostDetails.putAll(configParams);
 
         try {
             resource.configure(guid, hostDetails);
 
             Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalLoadBalancer, hostDetails);
             if (host != null) {
-                Transaction txn = Transaction.currentTxn();
+                txn = Transaction.currentTxn();
                 txn.start();
 
-                ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(), deviceName);
+                boolean dedicatedUse = (configParams.get("lbdevicededicated") != null) ? Boolean.parseBoolean(configParams.get("lbdevicededicated")) : false;
+                boolean inline = (configParams.get("lbdeviceinline") != null) ? Boolean.parseBoolean(configParams.get("lbdeviceinline")) : false;
+                long capacity =  NumbersUtil.parseLong((String)configParams.get("lbdevicecapacity"), 0);
+
+                ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
+                        deviceName, capacity, dedicatedUse, inline);
+                if (capacity != 0) {
+                    lbDeviceVO.setState(LBDeviceState.Enabled);
+                }
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
                 
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
@@ -298,7 +308,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         return response;
     }
 
-    public String getExternalNetworkResourceGuid(long physicalNetworkId, String deviceName, String ip) {
+    public String getExternalLoadBalancerResourceGuid(long physicalNetworkId, String deviceName, String ip) {
         return physicalNetworkId + "-" + deviceName + "-" + ip;
     }
 
