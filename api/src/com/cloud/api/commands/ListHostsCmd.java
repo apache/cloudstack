@@ -80,7 +80,7 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list hosts by allocation state")
     private String allocationState;   
     
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of ")
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [ min, all, capacity, events, stats]" )
     private List<String> viewDetails; 
     
     /////////////////////////////////////////////////////
