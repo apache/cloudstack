@@ -6391,7 +6391,7 @@ fields: {
         else {
             url.push("&");
         }  		
-        url.push("capacity=" + capacity); 
+        url.push("lbdevicecapacity=" + capacity); 
     }
    
     var dedicated = (args.data.dedicated == "on");				
@@ -6403,7 +6403,7 @@ fields: {
         else {
             url.push("&");
         }  
-        url.push("dedicated=" + dedicated.toString()); 
+        url.push("Lbdevicededicated=" + dedicated.toString()); 
     }
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
