@@ -820,9 +820,10 @@
                       $.ajax({
                         url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + physicalNetworkObj.id),
                         dataType: "json",
+                        async: false,
                         success: function(json) {
                           //debugger;
-                          var items = json.listnetscalerloadbalancerresponse.loadbalancer;
+                          var items = json.listnetscalerloadbalancerresponse.null; //temporary
                           if(items != null && items.length > 0) {
                             naasStatusMap["netscaler"] = "disabled";
                           }
