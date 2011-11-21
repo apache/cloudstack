@@ -1444,7 +1444,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.template);
         }
 
-        return template;
+        if (template != null){
+        	return template;
+        }else {
+        	throw new CloudRuntimeException("Failed to create a template");
+        }
+        
     }
 
     @Override
@@ -1644,8 +1649,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 txn.commit();
             }
         }
-
-        return privateTemplate;
+        
+        if (privateTemplate != null){
+        	return privateTemplate;
+        }else {
+        	throw new CloudRuntimeException("Failed to create a template");
+        }        
     }
 
     @Override

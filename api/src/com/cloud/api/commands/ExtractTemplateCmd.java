@@ -32,6 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Extracts a template", responseObject=ExtractResponse.class)
 public class ExtractTemplateCmd extends BaseAsyncCmd {
@@ -108,7 +109,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Extraction job";
+        return  "extracting template: " + getId() + " from zone: " + getZoneId();
     }
     
     public AsyncJob.Type getInstanceType() {
@@ -122,6 +123,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         try {
+        	UserContext.current().setEventDetails(getEventDescription());
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
                 ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);

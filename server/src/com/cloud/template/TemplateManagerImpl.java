@@ -215,8 +215,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating iso")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
     	TemplateAdapter adapter = getAdapter(HypervisorType.None);
-    	TemplateProfile profile = adapter.prepare(cmd);
-    	return adapter.create(profile);
+    	TemplateProfile profile = adapter.prepare(cmd);    	
+    	VMTemplateVO template = adapter.create(profile);
+    	
+    	if (template != null){
+        	return template;
+        }else {
+        	throw new CloudRuntimeException("Failed to create ISO");
+        }
     }
 
     @Override
@@ -230,10 +236,17 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }        
     	TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
     	TemplateProfile profile = adapter.prepare(cmd);
-    	return adapter.create(profile);
+    	VMTemplateVO template = adapter.create(profile);
+    	
+    	if (template != null){
+        	return template;
+        }else {
+        	throw new CloudRuntimeException("Failed to create a template");
+        }
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_EXTRACT, eventDescription = "extracting ISO", async = true)
     public Long extract(ExtractIsoCmd cmd) {
         Account account = UserContext.current().getCaller();
         Long templateId = cmd.getId();
@@ -243,10 +256,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         Long eventId = cmd.getStartEventId();
         
         // FIXME: async job needs fixing
-        return extract(account, templateId, url, zoneId, mode, eventId, true, null, _asyncMgr);
+        Long uploadId = extract(account, templateId, url, zoneId, mode, eventId, true, null, _asyncMgr);
+        if (uploadId != null){
+        	return uploadId;
+        }else {
+        	throw new CloudRuntimeException("Failed to extract the iso");
+        }
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_EXTRACT, eventDescription = "extracting template", async = true)
     public Long extract(ExtractTemplateCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long templateId = cmd.getId();
@@ -256,7 +275,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         Long eventId = cmd.getStartEventId();
 
         // FIXME: async job needs fixing
-        return extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
+        Long uploadId = extract(caller, templateId, url, zoneId, mode, eventId, false, null, _asyncMgr);
+        if (uploadId != null){
+        	return uploadId;
+        }else {
+        	throw new CloudRuntimeException("Failed to extract the teamplate");
+        }
     }
     
     @Override
@@ -747,11 +771,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         boolean success = copy(userId, template, srcSecHost, sourceZone, dstZone);
         
-        if (success) {
-            return template;
+    	if (success){
+        	return template;
+        }else {
+        	throw new CloudRuntimeException("Failed to copy template");
         }
-       
-        return null;
     }
 
     @Override
@@ -988,7 +1012,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
 
-        return attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
+        boolean result = attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
+        if (result){
+        	return result;
+        }else {
+        	throw new CloudRuntimeException("Failed to detach iso");
+        }        
 	}
 	
 	@Override
@@ -1023,7 +1052,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if("vmware-tools.iso".equals(iso.getName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
         	throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
-        return attachISOToVM(vmId, userId, isoId, true);
+        boolean result = attachISOToVM(vmId, userId, isoId, true);
+        if (result){
+        	return result;
+        }else {
+        	throw new CloudRuntimeException("Failed to attach iso");
+        }
 	}
 
     private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
@@ -1060,7 +1094,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
-    	return adapter.delete(profile);
+    	boolean result = adapter.delete(profile);
+    	
+    	if (result){
+    		return true;
+    	}else{
+    		throw new CloudRuntimeException("Failed to delete template");
+    	}
 	}
 	
 	@Override
@@ -1086,7 +1126,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	TemplateAdapter adapter = getAdapter(template.getHypervisorType());
     	TemplateProfile profile = adapter.prepareDelete(cmd);
-    	return adapter.delete(profile);
+    	boolean result = adapter.delete(profile);
+    	if (result){
+    		return true;
+    	}else{
+    		throw new CloudRuntimeException("Failed to delete ISO");
+    	}
 	}
 	
 	@Override
