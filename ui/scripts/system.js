@@ -3214,9 +3214,9 @@ fields: {
             allocationstate: { label: 'Allocation Status' }
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {           
             $.ajax({
-              url: createURL("listPods&zoneid=" + args.ref.zoneID + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listPods&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -3790,11 +3790,10 @@ fields: {
             allocationstate: { label: 'Allocation State' },
             managedstate: { label: 'Managed State' }
           },
-
-          //dataProvider: testData.dataProvider.listView('clusters'),
-          dataProvider: function(args) {
+         
+          dataProvider: function(args) {           
             $.ajax({
-              url: createURL("listClusters&zoneid=" + args.ref.zoneID + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listClusters&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -4369,11 +4368,10 @@ fields: {
             podname: { label: 'Pod' },
             clustername: { label: 'Cluster' }
           },
-
-          //dataProvider: testData.dataProvider.listView('hosts'),
-          dataProvider: function(args) {
+          
+          dataProvider: function(args) {        
             $.ajax({
-              url: createURL("listHosts&type=Routing&zoneid=" + args.ref.zoneID + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listHosts&type=Routing&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -5139,11 +5137,10 @@ fields: {
             zonename: { label: 'Zone' },
             podname: { label: 'Pod' }
           },
-
-          //dataProvider: testData.dataProvider.listView('primaryStorage'),
-          dataProvider: function(args) {
+          
+          dataProvider: function(args) {     
             $.ajax({
-              url: createURL("listStoragePools&zoneid=" + args.ref.zoneID + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listStoragePools&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
@@ -5838,9 +5835,9 @@ fields: {
             zonename: { label: 'Zone' }
           },
           
-          dataProvider: function(args) {
+          dataProvider: function(args) {           
             $.ajax({
-              url: createURL("listHosts&type=SecondaryStorage&zoneid=" + args.ref.zoneID + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listHosts&type=SecondaryStorage&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
