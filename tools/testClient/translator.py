@@ -59,7 +59,7 @@ class xml_to_python(object):
                     randValue = int(random.random() * 10000000)
                     self._write("%s%s.%s = '%s-randomName'" % (INDENT, self.cmd_name_var, itemName, str(randValue)))
                     if item.getAttribute("setparam") == "true" and itemParam is not None:
-                        self._write("%s%s = '%s-randomName'" % (INDENT, itemName, str(randValue)))
+                        self._write("%s%s = '%s-randomName'" % (INDENT, itemParam, str(randValue)))
                         self.glos.append(itemParam)
                 else:
                     try:
@@ -105,7 +105,10 @@ class xml_to_python(object):
             self.parse_parameters(cmd)
             # now we execute command
             self._write("%s%s = apiClient.%s(%s)" % (INDENT, self.cmd_name_resp, self.cmd_name, self.cmd_name_var))
-
+            self._write("%sif %s is None:"  % (INDENT, self.cmd_name_resp))
+            self._write("%sprint 'test [%s] failed'" % (INDENT2, testCaseName))
+            self._write("%selse:" % INDENT)
+            self._write("%sprint 'test [%s] succeeded'" % (INDENT2, testCaseName))
             self.parse_returnvalue(cmd)
 
     def generate_python_header(self, outfile):
@@ -128,8 +131,8 @@ class xml_to_python(object):
         outfile.write("# End of globals\n\n")
         outfile.write("if __name__ == \"__main__\":\n")
         outfile.write("%s# Possible initialization parameters:\n" % INDENT)
-        outfile.write(
-            "%s# cloudstackTestClient(mgtSvr=None, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, defaultWorkerThreads=10, logging=None)\n" % INDENT)
+        outfile.write("%s# cloudstackTestClient(mgtSvr=None, port=8096, apiKey = None, securityKey = None,\n" % INDENT) 
+        outfile.write("%s#                      asyncTimeout=3600, defaultWorkerThreads=10, logging=None)\n" % INDENT)
         outfile.write("%stestClient = cloudstackTestClient.cloudstackTestClient(\"localhost\")\n" % INDENT)
         outfile.write("%sapiClient = testClient.getApiClient()\n" % INDENT)
 
@@ -182,7 +185,7 @@ if __name__ == "__main__":
     else:
         outFile = sys.stderr
 
-    print("<<Processing: %s Output: %s>>" % (options.xmlfile, outFile.name))
+    print("[Processing: %s Output: %s]" % (options.xmlfile, outFile.name))
 
     processor = xml_to_python(options.debug)
 
