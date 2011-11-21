@@ -780,11 +780,11 @@
         // Returns state of each network provider type
         statusCheck: function(args) {          
           naasStatusMap = {
-            virtualRouter: 'disabled',
-            netscaler: 'disabled',
-            f5: 'disabled',
-            srx: 'disabled',
-            securityGroups: 'disabled'
+            virtualRouter: 'not-configured',
+            netscaler: 'not-configured',
+            f5: 'not-configured',
+            srx: 'not-configured',
+            securityGroups: 'not-configured'
           };
                  
           var zoneObj = args.context.physicalResources[0];
@@ -798,33 +798,48 @@
               physicalNetworkObj = items[0];                      
             }
           });              
-                      
+                    
           $.ajax({
-            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + physicalNetworkObj .id),
+            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + physicalNetworkObj.id),
             dataType: "json",
             async: false,
             success: function(json) {    
-              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;              
               for(var i = 0; i < items.length; i++) {                
-                switch(items[0].name) {
+                switch(items[i].name) {
                   case "VirtualRouter":
-                    if(items[0].state == "Enabled") 
+                    if(items[i].state == "Enabled") {
                       naasStatusMap["virtualRouter"] = "enabled";
+                    }                   
                     break;     
                   case "Netscaler":
-                    if(items[0].state == "Enabled") 
+                    if(items[i].state == "Enabled") {
                       naasStatusMap["netscaler"] = "enabled";
+                    }
+                    else { //items[i].state == "Disabled"                      
+                      $.ajax({
+                        url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + physicalNetworkObj.id),
+                        dataType: "json",
+                        success: function(json) {
+                          //debugger;
+                          var items = json.listnetscalerloadbalancerresponse.loadbalancer;
+                          if(items != null && items.length > 0) {
+                            naasStatusMap["netscaler"] = "disabled";
+                          }
+                        }
+                      });
+                    }
                     break;      
                   case "F5BigIp":
-                    if(items[0].state == "Enabled") 
+                    if(items[i].state == "Enabled") 
                       naasStatusMap["f5"] = "enabled";
                     break;   
                   case "JuniperSRX":
-                    if(items[0].state == "Enabled") 
+                    if(items[i].state == "Enabled") 
                       naasStatusMap["srx"] = "enabled";
                     break;   
                   case "SecurityGroupProvider":
-                    if(items[0].state == "Enabled") 
+                    if(items[i].state == "Enabled") 
                       naasStatusMap["securityGroups"] = "enabled";
                     break;                     
                 }              
@@ -835,9 +850,9 @@
         },
 
         statusLabels: {
-          enabled: 'Enabled',
-          'not-configured': 'Not setup',
-          disabled: 'Disabled'
+          enabled: 'Enabled',             //having device, network service provider is enabled
+          'not-configured': 'Not setup',  //no device
+          disabled: 'Disabled'            //having device, network service provider is disabled
         },
 
         // Actions performed on entire net. provider type
