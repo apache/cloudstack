@@ -3475,7 +3475,7 @@ fields: {
           detailView: {
             viewAll: { path: '_zone.clusters', label: 'Clusters' },
             tabFilter: function(args) {
-              var hiddenTabs = [];
+              var hiddenTabs = [];              
               var selectedZoneObj = args.context.zones[0];
               if(selectedZoneObj.networktype == "Basic") { //basic-mode network (pod-wide VLAN)
                 //$("#tab_ipallocation, #add_iprange_button, #tab_network_device, #add_network_device_button").show();
@@ -3704,8 +3704,7 @@ fields: {
                 multiple: true,
                 fields: [
                   {
-                    id: { label: 'ID' },
-                    description: { label: 'Description' },
+                    id: { label: 'ID' },                    
                     gateway: { label: 'Gateway' },
                     netmask: { label: 'Netmask' },
                     startip: { label: 'Start IP range' },
