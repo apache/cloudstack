@@ -4671,16 +4671,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private String getDefaultXenNetworkLabel(TrafficType trafficType){
         String xenLabel = null;
         switch(trafficType){
-        case Public: xenLabel = "cloud-public";
-        break;
-        case Guest: xenLabel = "cloud-guest"; 
-        break;
-        case Storage: xenLabel = "cloud-storage";
-        break;
-        case Management: xenLabel = "cloud-private";
-        break;
-        case Control: xenLabel = "cloud_link_local_network";
-        break;
+            case Public: xenLabel = _configDao.getValue(Config.XenPublicNetwork.key());
+            break;
+            case Guest: xenLabel = _configDao.getValue(Config.XenGuestNetwork.key());
+            break;
+            case Storage: xenLabel = _configDao.getValue(Config.XenStorageNetwork1.key());
+            break;
+            case Management: xenLabel = _configDao.getValue(Config.XenPrivateNetwork.key());
+            break;
+            case Control: xenLabel = "cloud_link_local_network";
+            break;
         }
         return xenLabel;
     }
@@ -4800,7 +4800,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         dcId = dc.getId();
         HypervisorType hypervisorType =  startup.getHypervisorType();
 
-
+        if(s_logger.isDebugEnabled()){
+            s_logger.debug("Host's hypervisorType is: "+hypervisorType);
+        }
+        
         List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
 
         //list all physicalnetworks in the zone & for each get the network names

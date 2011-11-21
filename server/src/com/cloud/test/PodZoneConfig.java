@@ -370,7 +370,13 @@ public class PodZoneConfig {
         }
         
         //add default traffic types
-        String defaultXenLabel = "cloud-private";
+        
+        //get default Xen network labels
+        String defaultXenPrivateNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Management);
+        String defaultXenPublicNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Public);
+        String defaultXenStorageNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Storage);
+        String defaultXenGuestNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Guest);
+        
         String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
 
         try {
@@ -381,7 +387,16 @@ public class PodZoneConfig {
                 }
                 stmt.setLong(1, id);
                 stmt.setString(2, traffic.toString());
-                stmt.setString(3, defaultXenLabel);
+                if(traffic.equals(TrafficType.Public)){
+                    stmt.setString(3, defaultXenPublicNetworkLabel);
+                }else if(traffic.equals(TrafficType.Management)){
+                    stmt.setString(3, defaultXenPrivateNetworkLabel);
+                }else if(traffic.equals(TrafficType.Storage)){
+                    stmt.setString(3, defaultXenStorageNetworkLabel);
+                }else if(traffic.equals(TrafficType.Guest)){
+                    stmt.setString(3, defaultXenGuestNetworkLabel);
+                }
+                
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -390,7 +405,33 @@ public class PodZoneConfig {
         }
         
         if (printOutput) System.out.println("Successfully saved physical network.");
-    }	
+    }
+	
+    private String getDefaultXenNetworkLabel(TrafficType trafficType){
+        String xenLabel = null;
+        String configName = null;
+        switch(trafficType){
+            case Public: configName = "xen.public.network.device";
+            break;
+            case Guest: configName = "xen.guest.network.device";
+            break;
+            case Storage: configName = "xen.storage.network.device1";
+            break;
+            case Management: configName = "xen.private.network.device";
+            break;
+        }
+        
+        if(configName != null){
+            xenLabel = getConfiguredValue(configName);
+        }
+        return xenLabel;
+    }
+    
+    public static String getConfiguredValue(String configName)
+    {
+        return DatabaseConfig.getDatabaseValueString("SELECT value FROM `cloud`.`configuration` where name = \"" + configName + "\"","value",
+                "Unable to start DB connection to read configuration. Please contact Cloud Support.");
+    }
 	
 	public void deleteZone(String name) {
 		String sql = "DELETE FROM `cloud`.`data_center` WHERE name=\"" + name + "\"";
