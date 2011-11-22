@@ -18,9 +18,11 @@
 package com.cloud.vm.dao;
 
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
 
+import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -70,5 +72,5 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId);	
     public Long countAllocatedVMsForAccount(long accountId);
 
-    Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmData, int details);
+    Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmData);
 }

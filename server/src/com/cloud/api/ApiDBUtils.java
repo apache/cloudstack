@@ -18,11 +18,13 @@
 
 package com.cloud.api;
 
+import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -672,8 +674,8 @@ public class ApiDBUtils {
         return _firewallCidrsDao.getSourceCidrs(id);  
     }
     
-    public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData, int details){
-        return _userVmDao.listVmDetails(vmData, details);
+    public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData){
+        return _userVmDao.listVmDetails(vmData);
     }
     
     public static Account getProjectOwner(long projectId) {

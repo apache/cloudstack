@@ -74,6 +74,33 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
     
+    private static String VM_DETAILS = "select vm_instance.id, " +
+            "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
+            "data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
+            "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
+            "vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
+            "service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
+            "security_group.description, nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
+            "networks.traffic_type, networks.guest_type, networks.is_default from vm_instance " +
+            "left join account on vm_instance.account_id=account.id  " +
+            "left join domain on vm_instance.domain_id=domain.id " +
+            "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id " +
+            "left join instance_group on instance_group_vm_map.group_id=instance_group.id " + 
+            "left join data_center on vm_instance.data_center_id=data_center.id " +
+            "left join host on vm_instance.host_id=host.id " + 
+            "left join vm_template on vm_instance.vm_template_id=vm_template.id " +
+            "left join user_vm on vm_instance.id=user_vm.id " +
+            "left join vm_template iso on iso.id=user_vm.iso_id " +  
+            "left join service_offering on vm_instance.service_offering_id=service_offering.id " +
+            "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " +
+            "left join volumes on vm_instance.id=volumes.instance_id " +
+            "left join storage_pool on volumes.pool_id=storage_pool.id " +
+            "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id " +
+            "left join security_group on security_group_vm_map.security_group_id=security_group.id " +
+            "left join nics on vm_instance.id=nics.instance_id " +
+            "left join networks on nics.network_id=networks.id " +
+            "where vm_instance.id in (";
+            
     private static final int VM_DETAILS_BATCH_SIZE=100;
    
     protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
@@ -318,11 +345,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash, int details){
+    public Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmDataHash){
         Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        DetailSql sql = new DetailSql(details); 
-       
+        PreparedStatement pstmt = null;      
         
         try {
             int curr_index=0;
@@ -330,7 +355,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             List<UserVmData> userVmDataList = new ArrayList(userVmDataHash.values()); 
             
             if (userVmDataList.size() > VM_DETAILS_BATCH_SIZE){
-                pstmt = txn.prepareStatement(sql.getSql() + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
+                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(VM_DETAILS_BATCH_SIZE));
                 while ( (curr_index + VM_DETAILS_BATCH_SIZE) <= userVmDataList.size()){
                     // set the vars value
                     for (int k=1,j=curr_index;j<curr_index+VM_DETAILS_BATCH_SIZE;j++,k++){
@@ -356,7 +381,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             
             if (curr_index < userVmDataList.size()){
                 int batch_size = (userVmDataList.size() - curr_index);
-                pstmt = txn.prepareStatement(sql.getSql() + getQueryBatchAppender(batch_size));
+                pstmt = txn.prepareStatement(VM_DETAILS + getQueryBatchAppender(batch_size));
                 // set the vars value
                 for (int k=1,j=curr_index;j<curr_index+batch_size;j++,k++){
                     pstmt.setLong(k, userVmDataList.get(j).getId());
@@ -379,9 +404,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             if (pstmt!=null)pstmt.close();
             return userVmDataHash;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + sql.getSql(), e);
+            throw new CloudRuntimeException("DB Exception on: " + VM_DETAILS, e);
         } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + sql.getSql(), e);
+            throw new CloudRuntimeException("Caught: " + VM_DETAILS, e);
         }
     }
     
@@ -511,53 +536,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("type", VirtualMachine.Type.User);
 		sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
         return customSearch(sc, null).get(0);
-    }
-    
-
-    public static class DetailSql {
-        private final DetailsMask _details;
-        
-        private static String VM_DETAILS = "select vm_instance.id, " +
-        "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name," +
-        "data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, " + 
-        "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
-        "vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
-        "service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
-        "security_group.description, nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
-        "networks.traffic_type, networks.guest_type, networks.is_default from vm_instance " +
-        "left join account on vm_instance.account_id=account.id  " +
-        "left join domain on vm_instance.domain_id=domain.id " +
-        "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id " +
-        "left join instance_group on instance_group_vm_map.group_id=instance_group.id " + 
-        "left join data_center on vm_instance.data_center_id=data_center.id " +
-        "left join host on vm_instance.host_id=host.id " + 
-        "left join vm_template on vm_instance.vm_template_id=vm_template.id " +
-        "left join user_vm on vm_instance.id=user_vm.id " +
-        "left join vm_template iso on iso.id=user_vm.iso_id " +  
-        "left join service_offering on vm_instance.service_offering_id=service_offering.id " +
-        "left join disk_offering  on vm_instance.service_offering_id=disk_offering.id " +
-        "left join volumes on vm_instance.id=volumes.instance_id " +
-        "left join storage_pool on volumes.pool_id=storage_pool.id " +
-        "left join security_group_vm_map on vm_instance.id=security_group_vm_map.instance_id " +
-        "left join security_group on security_group_vm_map.security_group_id=security_group.id " +
-        "left join nics on vm_instance.id=nics.instance_id " +
-        "left join networks on nics.network_id=networks.id " +
-        "where vm_instance.id in (";
-        
-        
-        
-        
-        
-        public DetailSql(int details){
-            _details = new DetailsMask(details);
-        }
-        
-        public String getSql(){
-            return VM_DETAILS;
-        }
-        
-        
-
     }
     
     

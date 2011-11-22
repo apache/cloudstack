@@ -17,6 +17,8 @@
  */
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -26,9 +28,12 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ApiConstants.VMDetails;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
@@ -94,9 +99,10 @@ public class ListVMsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="list vms by project")
     private Long projectId;
-    
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.INTEGER, description="bits for querying required vm details")
-    private Integer details_mask;
+
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]" )
+    private List<String> viewDetails; 
+   
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -166,9 +172,27 @@ public class ListVMsCmd extends BaseListCmd {
         return projectId;
     }
 
-    public int getDetailsMask() {
-        return details_mask == null ? 0 : details_mask;
+    
+    public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
+        EnumSet<VMDetails> dv;
+        if (viewDetails==null || viewDetails.size() <=0){
+            dv = EnumSet.of(VMDetails.all);
+        }
+        else {
+            try {
+                ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
+                for (String detail: viewDetails){
+                    dc.add(VMDetails.valueOf(detail));
+                }
+                dv = EnumSet.copyOf(dc);
+            }
+            catch (IllegalArgumentException e){
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+            }
+        }
+        return dv;
     }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -185,7 +209,14 @@ public class ListVMsCmd extends BaseListCmd {
     public void execute(){
         List<? extends UserVm> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetailsMask(), result.toArray(new UserVm[result.size()]));
+        EnumSet<VMDetails> details = getDetails();
+        List<UserVmResponse> vmResponses;
+        if (details.contains(VMDetails.all)){ // for all use optimized version
+        	 vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.toArray(new UserVm[result.size()]));
+        }
+        else {
+        	 vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetails(), result.toArray(new UserVm[result.size()]));
+        }
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

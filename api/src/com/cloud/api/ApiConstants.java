@@ -310,5 +310,8 @@ public class ApiConstants {
         all, capacity, events, stats, min;
     }
     
+    public enum VMDetails {
+        all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
+    }
 
 }

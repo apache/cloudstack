@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import com.cloud.api.ApiConstants.HostDetails;
+import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
@@ -146,7 +147,7 @@ public interface ResponseGenerator {
     
     List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
-    List<UserVmResponse> createUserVmResponse(String objectName, int details, UserVm... userVms);
+    List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 
