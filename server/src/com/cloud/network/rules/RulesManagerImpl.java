@@ -1033,7 +1033,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         //Revoke all firewall rules for the ip
         try {
-            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of public IP id=" + ipId + " release...");
+            s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of disabling static nat for public IP id=" + ipId);
             if (!_firewallMgr.revokeFirewallRulesForIp(ipId, ctx.getCallerUserId(), caller)) {
                 s_logger.warn("Unable to revoke all the firewall rules for ip id=" + ipId + " as a part of disable statis nat");
                 success = false;
