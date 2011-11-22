@@ -37,7 +37,7 @@ public class AdvanceZone223To224UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
+//        DbTestUtils.executeScript("PreviousDatabaseSchema/clean-db.sql", false, true);
     }
 
     @Override
@@ -46,8 +46,8 @@ public class AdvanceZone223To224UpgradeTest extends TestCase {
     }
 
     public void test217to22Upgrade() throws SQLException {
-        s_logger.debug("Finding sample data from 2.2.3");
-        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.3/dave-sample.sql", false, true);
+        s_logger.debug("Finding sample data from 2.2.8");
+//        DbTestUtils.executeScript("PreviousDatabaseSchema/2.2.8/dave-sample.sql", false, true);
 
         Connection conn;
         PreparedStatement pstmt;
@@ -56,9 +56,9 @@ public class AdvanceZone223To224UpgradeTest extends TestCase {
         DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
 
         String version = dao.getCurrentVersion();
-        assert version.equals("2.2.2") : "Version returned is not 2.2.2 but " + version;
+        assert version.equals("2.2.8") : "Version returned is not 2.2.8 but " + version;
 
-        checker.upgrade("2.2.2", "2.2.4");
+        checker.upgrade("2.2.8", "2.2.12");
     }
 
 }

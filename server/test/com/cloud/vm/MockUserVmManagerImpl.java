@@ -338,12 +338,6 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public UserVm migrateVirtualMachine(UserVm vm, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps,
             String defaultIp, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
@@ -368,5 +362,14 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost)
+			throws ResourceUnavailableException, ConcurrentOperationException,
+			ManagementServerException, VirtualMachineMigrationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }

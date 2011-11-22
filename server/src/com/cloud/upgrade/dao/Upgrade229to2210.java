@@ -112,7 +112,7 @@ public class Upgrade229to2210 implements DbUpgrade {
         long currentRuleId = 0;
         try {
             // Host and Primary storage capacity types
-            pstmt = conn.prepareStatement("select id, ip_address_id, start_port, end_port, protocol, account_id, domain_id, network_id from firewall_rules");
+            pstmt = conn.prepareStatement("select id, ip_address_id, start_port, end_port, protocol, account_id, domain_id, network_id from firewall_rules where state != 'Revoke'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -142,12 +142,13 @@ public class Upgrade229to2210 implements DbUpgrade {
                 pstmt.executeUpdate();
                 
                 //get new FirewallRule update
-                pstmt = conn.prepareStatement("SELECT id from firewall_rules where purpose='Firewall' and start_port=? and end_port=? and protocol=? and ip_address_id=? and network_id=?");
+                pstmt = conn.prepareStatement("SELECT id from firewall_rules where purpose='Firewall' and start_port=? and end_port=? and protocol=? and ip_address_id=? and network_id=? and related=?");
                 pstmt.setInt(1, startPort);
                 pstmt.setInt(2, endPort);
                 pstmt.setString(3, protocol);
                 pstmt.setLong(4, ipId);
                 pstmt.setLong(5, networkId);
+                pstmt.setLong(6, id);
                 
                 ResultSet rs1 = pstmt.executeQuery();
                 

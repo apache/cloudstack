@@ -266,13 +266,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
         // TODO Auto-generated method stub
         return 0;
     }
-
-    @Override
-    public List<ResourceLimitVO> searchForLimits(Criteria c) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
+    
     @Override
     public boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub

@@ -95,12 +95,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public int getActiveNicsInNetwork(long networkId) {
         // TODO Auto-generated method stub
         return 0;
@@ -501,5 +495,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup)
+			throws ConcurrentOperationException, ResourceUnavailableException,
+			InsufficientCapacityException {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }
