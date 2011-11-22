@@ -1939,11 +1939,10 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
         Object type = cmd.getType();
 
-        Object zone = null;
+        Object zoneId = cmd.getZoneId();
         Object pod = null;
         // Object host = null; TODO
         if (isAdmin) {
-            zone = cmd.getZoneId();
             pod = cmd.getPodId();
             // host = cmd.getHostId(); TODO
         } else {
@@ -2020,8 +2019,8 @@ public class ManagementServerImpl implements ManagementServer {
         if (vmInstanceId != null) {
             sc.setParameters("instanceId", vmInstanceId);
         }
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
         }
         if (pod != null) {
             sc.setParameters("podId", pod);
