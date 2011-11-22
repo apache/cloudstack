@@ -1095,20 +1095,7 @@
                     }                    
                   }                  
                 },
-                action: function(args) {     
-                  /*                
-                  var zoneObj = args.context.zones[0];                 
-                  $.ajax({
-                    url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {                      
-                      var items = json.listphysicalnetworksresponse.physicalnetwork;                      
-                      selectedPhysicalNetworkObj = items[0];                                               
-                    }
-                  });    
-                  */  
-                  
+                action: function(args) {  
                   if(nspMap["netscaler"] == null) { 
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
@@ -1196,7 +1183,7 @@
                 label: 'Enable',
                 action: function(args) {                  
                   $.ajax({
-                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Enabled"), //???
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Enabled"), 
                     dataType: "json",
                     success: function(json) {                      
                       var jid = json.updatenetworkserviceproviderresponse.jobid;
@@ -1216,7 +1203,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Enabled F5 provider'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -1244,7 +1231,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Disabled F5 provider'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }
@@ -1303,19 +1290,7 @@
                     }                    
                   }
                 },
-                action: function(args) {     
-                  /*                
-                  var zoneObj = args.context.zones[0];                  
-                  $.ajax({
-                    url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {                      
-                      var items = json.listphysicalnetworksresponse.physicalnetwork;
-                      selectedPhysicalNetworkObj = items[0];                      
-                    }
-                  });           
-                  */                              
+                action: function(args) {   
                   if(nspMap["f5"]== null) { 
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
@@ -1335,8 +1310,7 @@
                               } 
                               else {											    
                                 $("body").stopTime(timerKey);
-                                if (result.jobstatus == 1) {                                                              
-                                  //alert("addNetworkServiceProvider&name=F5BigIp succeeded.");                                     
+                                if (result.jobstatus == 1) {
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");                              
                                 } 
                                 else if (result.jobstatus == 2) {
@@ -1386,7 +1360,76 @@
             fields: {             
               ipaddress: { label: 'IP Address' },
               fwdevicestate: { label: 'Status' }
-            },    
+            },  
+            providerActionFilter: function(args) {                        
+              var allowedActions = [];
+              var jsonObj = nspMap["srx"];              
+              if(jsonObj.state == "Enabled") {
+                allowedActions.push("disable");                
+              }
+              else if(jsonObj.state == "Disabled") {
+                allowedActions.push("enable");                
+              }                       
+              return allowedActions;
+            },
+            providerActions: {              
+              enable: {
+                label: 'Enable',
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Enabled"), 
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["srx"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Enabled SRX provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["srx"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Disabled SRX provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            },   
             actions: {
               add: {
                 label: 'Add new SRX',
