@@ -467,7 +467,7 @@
                               if(args.scope == "zone-wide" || args.scope == "domain-specific")
                                 apiCmd = "listNetworkOfferings&guestiptype=Shared";
                               else  //args.scope == "account-specific"
-                                apiCmd = "listNetworkOfferings&guestiptype=Isolated&sourcenatEnabled=false";                              
+                                apiCmd = "listNetworkOfferings&guestiptype=Isolated&sourcenatsupported=false";                              
 															$.ajax({
 																url: createURL(apiCmd),
 																dataType: "json",
