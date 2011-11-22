@@ -1179,6 +1179,75 @@
             fields: {             
               ipaddress: { label: 'IP Address' },
               lbdevicestate: { label: 'Status' }
+            },   
+            providerActionFilter: function(args) {                        
+              var allowedActions = [];
+              var jsonObj = nspMap["f5"];              
+              if(jsonObj.state == "Enabled") {
+                allowedActions.push("disable");                
+              }
+              else if(jsonObj.state == "Disabled") {
+                allowedActions.push("enable");                
+              }                       
+              return allowedActions;
+            },
+            providerActions: {              
+              enable: {
+                label: 'Enable',
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Enabled"), //???
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["f5"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Enabled Netscaler provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["f5"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Disabled Netscaler provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
             },       
             actions: {
               add: {
