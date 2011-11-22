@@ -831,8 +831,22 @@
                     break;      
                   case "F5BigIp":
                     nspMap["f5"] = items[i];
-                    if(items[i].state == "Enabled") 
+                    if(items[i].state == "Enabled") {
                       naasStatusMap["f5"] = "enabled";
+                    }
+                    else { //items[i].state == "Disabled"                                           
+                      $.ajax({
+                        url: createURL("listF5LoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {    
+                          var items = json.listf5loadbalancerresponse.f5loadbalancer;                       
+                          if(items != null && items.length > 0) {
+                            naasStatusMap["f5"] = "disabled";
+                          }
+                        }
+                      });
+                    }
                     break;   
                   case "JuniperSRX":
                     nspMap["srx"] = items[i];
@@ -1046,11 +1060,10 @@
           // F5 list view
           f5: {
             label: 'F5',
-            fields: {
-              name: { label: 'Name' },
+            fields: {             
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
-            },
+              lbdevicestate: { label: 'Status' }
+            },       
             actions: {
               add: {
                 label: 'Add new F5',
@@ -1169,28 +1182,16 @@
                 }
               }
             },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              }, 500);
+            dataProvider: function(args) {              
+              $.ajax({
+                url: createURL("listF5LoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                dataType: "json",
+                async: false,
+                success: function(json) {    
+                  var items = json.listf5loadbalancerresponse.f5loadbalancer;  
+                  args.response.success({data: items});
+                }
+              });              
             }
           },
 
