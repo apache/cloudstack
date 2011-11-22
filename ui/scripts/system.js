@@ -936,6 +936,45 @@
             fields: {             
               ipaddress: { label: 'IP Address' },
               lbdevicestate: { label: 'Status' }
+            },     
+            providerActionFilter: function(args) {                        
+              var allowedActions = [];
+              allowedActions.push("enable");
+              allowedActions.push("disable");
+              allowedActions.push("shutdown");
+              return allowedActions;
+            },
+            providerActions: {              
+              enable: {
+                label: 'Enable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Enable Netscaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Disabled Netscaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              },
+              shutdown: {
+                label: 'Shutdown',
+                action: function(args) {
+                  setTimeout(args.response.success, 100);
+                },
+                messages: {
+                  notification: function() { return 'Shutdown Netscaler provider'; }
+                },
+                notification: { poll: testData.notifications.testPoll }
+              }
             },            
             actions: {
               add: {
