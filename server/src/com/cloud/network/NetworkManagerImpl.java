@@ -4143,6 +4143,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }
         }
+        
+        if(_pNSPDao.findByServiceProvider(physicalNetworkId, providerName) != null){
+            throw new CloudRuntimeException("The '"+ providerName +"' provider already exists on physical network : "+physicalNetworkId);
+        }
 
         //check if services can be turned off
         NetworkElement element = getElementImplementingProvider(providerName);

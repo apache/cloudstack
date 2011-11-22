@@ -1937,7 +1937,8 @@ CREATE TABLE `cloud`.`physical_network_service_providers` (
   `security_group_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is SG service provided',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_service_providers__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_service_providers__uuid` UNIQUE (`uuid`),
+  UNIQUE KEY(`physical_network_id`, `provider_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`external_load_balancer_devices` (
