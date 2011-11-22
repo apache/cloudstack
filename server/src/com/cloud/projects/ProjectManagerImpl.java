@@ -107,6 +107,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400;
+    protected boolean _allowUserToCreateProjet = true;
     
     
     @Override
@@ -116,6 +117,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Map<String, String> configs = _configDao.getConfiguration(params);
         _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
         _invitationTimeOut = Long.valueOf(configs.get(Config.ProjectInvitationExpirationTime.key()));
+        _allowUserToCreateProjet = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
         
         
         // set up the email system for project invitations
@@ -159,6 +161,11 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException{
         Account caller = UserContext.current().getCaller();
         Account owner = caller;
+        
+        //check if the user authorized to create the project
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && !_allowUserToCreateProjet) {
+        	throw new PermissionDeniedException("Regular user is not permitted to create a project");
+        }
         
         //Verify request parameters
         if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {

@@ -314,6 +314,8 @@ public enum Config {
 	
     ProjectInviteRequired("Project Defaults", ManagementServer.class, Boolean.class, "project.invite.required", "false", "If invitation confirmation is required when add account to project. Default value is false", null),
     ProjectInvitationExpirationTime("Project Defaults", ManagementServer.class, Long.class, "project.invite.timeout", "86400", "Invitation expiration time (in seconds). Default is 1 day - 86400 seconds", null),
+    AllowUserToCreateProject("Project Defaults", ManagementServer.class, Long.class, "allow.user.create.projects", "true", "If regular user can create a project; true by default", null),
+    
     
     ProjectEmailSender("Project Defaults", ManagementServer.class, String.class, "project.email.sender", null, "Sender of project invitation email (will be in the From header of the email)", null),
     ProjectSMTPHost("Project Defaults", ManagementServer.class, String.class, "project.smtp.host", null, "SMTP hostname used for sending out email project invitations", null),
