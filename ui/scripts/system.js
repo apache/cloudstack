@@ -4,7 +4,8 @@
   var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj;
   var publicNetworkObj;
   var naasStatusMap = {};
-
+  var nspMap = {};
+  
   cloudStack.sections.system = {
     title: 'System',
     id: 'system',
@@ -793,15 +794,18 @@
             dataType: "json",
             async: false,
             success: function(json) {    
-              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;              
+              var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;    
+              nspMap = {}; //empty the map   
               for(var i = 0; i < items.length; i++) {                
                 switch(items[i].name) {
                   case "VirtualRouter":
+                    nspMap["virtualRouter"] = items[i];
                     if(items[i].state == "Enabled") {
                       naasStatusMap["virtualRouter"] = "enabled";
                     }                   
                     break;     
                   case "Netscaler":
+                    nspMap["netscaler"] = items[i];
                     if(items[i].state == "Enabled") {
                       naasStatusMap["netscaler"] = "enabled";
                     }
@@ -810,8 +814,8 @@
                         url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                         dataType: "json",
                         async: false,
-                        success: function(json) {                          
-                          var items = json.listnetscalerloadbalancerresponse.null; //???
+                        success: function(json) {                                               
+                          var items = json.listnetscalerloadbalancerresponse.NetscalerLoadBalancer; //???
                           if(items != null && items.length > 0) {
                             naasStatusMap["netscaler"] = "disabled";
                           }
@@ -820,19 +824,22 @@
                     }
                     break;      
                   case "F5BigIp":
+                    nspMap["f5"] = items[i];
                     if(items[i].state == "Enabled") 
                       naasStatusMap["f5"] = "enabled";
                     break;   
                   case "JuniperSRX":
+                    nspMap["srx"] = items[i];
                     if(items[i].state == "Enabled") 
                       naasStatusMap["srx"] = "enabled";
                     break;   
                   case "SecurityGroupProvider":
+                    nspMap["securityGroups"] = items[i];
                     if(items[i].state == "Enabled") 
                       naasStatusMap["securityGroups"] = "enabled";
                     break;                     
                 }              
-              }
+              }              
             }
           });  
           return naasStatusMap;
@@ -964,8 +971,9 @@
                       selectedPhysicalNetworkObj = items[0];                                               
                     }
                   });    
-                  */         
-                  if(naasStatusMap["netscaler"] == "disabled") {
+                  */  
+                  
+                  if(nspMap["netscaler"] == null) { 
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
@@ -1002,7 +1010,7 @@
                       }
                     });                    
                   }
-                  else { //naasStatusMap["netscaler"] == "enabled"
+                  else { 
                     addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
                   }                       
                 },
@@ -1021,8 +1029,8 @@
                 url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                 dataType: "json",
                 async: false,
-                success: function(json) {                  
-                  var items = json.listnetscalerloadbalancerresponse.null; //??? 
+                success: function(json) {                                   
+                  var items = json.listnetscalerloadbalancerresponse.NetscalerLoadBalancer; //??? 
                   args.response.success({data: items});
                 }
               });              
@@ -1104,7 +1112,7 @@
                     }
                   });           
                   */                              
-                  if(naasStatusMap["f5"] == "disabled") {
+                  if(nspMap["f5"]== null) { 
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
@@ -1141,7 +1149,7 @@
                       }
                     });                    
                   }
-                  else { //naasStatusMap["f5"] == "enabled"  
+                  else { 
                     addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");                
                   }                       
                 },
@@ -1271,7 +1279,7 @@
                   });           
                   */
                                                  
-                  if(naasStatusMap["srx"] == "disabled") {
+                  if(nspMap["srx"]== null) { 
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
@@ -1308,7 +1316,7 @@
                       }
                     });                    
                   }
-                  else { //naasStatusMap["srx"] == "enabled"   
+                  else {  
                     addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse"); 
                   }                       
                 },
@@ -6405,7 +6413,7 @@
     else {
         url.push("&");
     }  
-    url.push("dedicated=" + dedicated.toString());       
+    url.push("fwdevicededicated=" + dedicated.toString());       
          
     array1.push("&url=" + todb(url.join("")));	                                                                   
     //construct URL ends here		
