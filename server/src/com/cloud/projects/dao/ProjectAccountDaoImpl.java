@@ -47,7 +47,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     @Override
     public ProjectAccountVO getProjectOwner(long projectId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
-        sc.setParameters("role", ProjectAccount.Role.Owner);
+        sc.setParameters("role", ProjectAccount.Role.Admin);
         sc.setParameters("projectId", projectId);
         
         return findOneBy(sc);
@@ -88,7 +88,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("projectAccountId", projectAccountId);
-        sc.setParameters("role", ProjectAccount.Role.Owner);
+        sc.setParameters("role", ProjectAccount.Role.Admin);
         
         if (findOneBy(sc) != null) {
             return true;

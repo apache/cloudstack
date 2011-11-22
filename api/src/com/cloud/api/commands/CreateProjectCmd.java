@@ -45,7 +45,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the project")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will be Admin for the project")
     private String accountName;
 
     @IdentityMapper(entityTableName="domain")

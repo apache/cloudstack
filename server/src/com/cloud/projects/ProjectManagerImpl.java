@@ -189,7 +189,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId()));
         
         //assign owner to the project
-        assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Owner);
+        assignAccountToProject(project, owner.getId(), ProjectAccount.Role.Admin);
         
         if (project != null) {
             UserContext.current().setEventDetails("Project id=" + project.getId());
@@ -504,7 +504,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                 _projectAccountDao.update(currentOwner.getId(), currentOwner);
                 
                 //set new owner
-                futureOwner.setAccountRole(Role.Owner);
+                futureOwner.setAccountRole(Role.Admin);
                 _projectAccountDao.update(futureOwner.getId(), futureOwner);
                 
             } else {
@@ -616,7 +616,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         
         //can't remove the owner of the project
-        if (projectAccount.getAccountRole() == Role.Owner) {
+        if (projectAccount.getAccountRole() == Role.Admin) {
             throw new InvalidParameterValueException("Unable to delete account " + accountName + " from the project id=" + projectId + " as the account is the owner of the project");
         }
         

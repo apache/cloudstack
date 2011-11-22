@@ -24,7 +24,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -48,7 +47,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new account who will own the project, should be specified with domainId")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new Admin account for the project, should be specified with domainId")
     private String accountName;
     
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="display text of the project")
