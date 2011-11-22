@@ -1,7 +1,7 @@
 (function($, cloudStack, testData) {
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
-  var selectedClusterObj, selectedZoneObj;
+  var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj;
   var publicNetworkObj;
   var naasStatusMap = {};
 
@@ -60,12 +60,11 @@
                 ],
                                 
                 dataProvider: function(args) {                    
-                  var showPublicNetwork = true;
-                  var zoneObj = args.context.zones[0];
-                  if(zoneObj.networktype == "Basic") {
+                  var showPublicNetwork = true;          
+                  if(selectedZoneObj.networktype == "Basic") {
                     //$("#add_network_button").hide();
                     $.ajax({
-                      url: createURL("listExternalFirewalls&zoneid=" + zoneObj.id),
+                      url: createURL("listExternalFirewalls&zoneid=" + selectedZoneObj.id),
                       dataType: "json",
                       async: false,
                       success: function(json) {
@@ -84,13 +83,12 @@
                   else { // Advanced zone
                     showPublicNetwork = true;
                     //$("#add_network_button,#add_iprange_button,#tab_ipallocation").show();
-                    //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
+                    //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+selectedZoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
                   }
-
-                  //var publicNetworkObj;
-                  if(showPublicNetwork == true && zoneObj.securitygroupsenabled == false) { //public network
+                              
+                  if(showPublicNetwork == true && selectedZoneObj.securitygroupsenabled == false) { //public network
                     $.ajax({
-                      url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
+                      url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+selectedZoneObj.id),
                       dataType: "json",
                       async: false,
                       success: function(json) {
@@ -99,9 +97,9 @@
                       }
                     });
                   }
-                  else if (showPublicNetwork == true && zoneObj.securitygroupsenabled == true){
+                  else if (showPublicNetwork == true && selectedZoneObj.securitygroupsenabled == true){
                     $.ajax({
-                      url: createURL("listNetworks&type=Direct&trafficType=Guest&isSystem=true&zoneId="+zoneObj.id),
+                      url: createURL("listNetworks&type=Direct&trafficType=Guest&isSystem=true&zoneId="+selectedZoneObj.id),
                       dataType: "json",
                       async: false,
                       success: function(json) {
@@ -262,12 +260,12 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {                                         
-                      selectedZoneObj = json.updatezoneresponse.zone;
+                      selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
                     }
                   });                                
-                  
+                                                    
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork&id=" + args._custom.physicalNetworkObj.id + "&vlan=" + todb(args.data.vlan)),                    
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + "&vlan=" + todb(args.data.vlan)),                    
                     dataType: "json",
                     success: function(json) {      
                       var jobId = json.updatephysicalnetworkresponse.jobid;				        
@@ -326,25 +324,23 @@
                     }                    
                   }
                 ],
-                dataProvider: function(args) { 
-                  var physicalNetworkObj = [];
+                dataProvider: function(args) {      
+                  /*                
                   $.ajax({
                     url: createURL("listPhysicalNetworks&zoneId=" + args.context.zones[0].id),
                     dataType: "json",
                     async: false,
                     success: function(json) {                      
-                      var items = json.listphysicalnetworksresponse.physicalnetwork;
-                      physicalNetworkObj = items[0];                      
+                      var items = json.listphysicalnetworksresponse.physicalnetwork;                      
+                      selectedPhysicalNetworkObj = items[0];                                             
                     }
                   });  
+                  */
                   
-                  physicalNetworkObj["guestcidraddress"] = args.context.zones[0].guestcidraddress;
-                  selectedZoneObj = args.context.zones[0];
+                  selectedPhysicalNetworkObj["guestcidraddress"] = selectedZoneObj.guestcidraddress;
+                  //selectedZoneObj = args.context.zones[0];
 									
-                  args.response.success({
-                    _custom: {"physicalNetworkObj": physicalNetworkObj},
-                    data: physicalNetworkObj
-                  });                  
+                  args.response.success({ data: selectedPhysicalNetworkObj });                  
                 }
               },
 			        
@@ -382,7 +378,7 @@
 
 											createForm: {
 												title: 'Create network',
-                        preFilter: function(args) {    
+                        preFilter: function(args) {                        
                           if(selectedZoneObj.networktype == "Basic") {                            
                             args.$form.find('.form-item[rel=isDefault]').hide();
                             args.$form.find('.form-item[rel=vlanTagged]').hide();
@@ -455,11 +451,9 @@
 													},
 													scope: {
 														label: 'Scope',
-														select: function(args) {													
-														  var zoneObj = selectedZoneObj;
-															//var zoneObj = args.context.zones[0];  //args.context should include zones. Waiting for Brian to fix it in widget code.
+														select: function(args) {	
 															var array1 = [];
-															if(zoneObj.securitygroupsenabled) {
+															if(selectedZoneObj.securitygroupsenabled) {
 																array1.push({id: 'account-specific', description: 'account-specific'});
 															}
 															else {
@@ -490,12 +484,10 @@
 														label: 'Domain',
 														validation: { required: true },
 														select: function(args) {
-															var items = [];
-															 var zoneObj = selectedZoneObj;
-															//var zoneObj = args.context.zones[0];  //args.context should include zones. Waiting for Brian to fix it in widget code.
-															if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+															var items = [];													
+															if(selectedZoneObj.domainid != null) { //list only domains under selectedZoneObj.domainid
 																$.ajax({
-																	url: createURL("listDomainChildren&id=" + zoneObj.domainid + "&isrecursive=true"),
+																	url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true"),
 																	dataType: "json",
 																	async: false,
 																	success: function(json) {
@@ -506,7 +498,7 @@
 																	}
 																});
 																$.ajax({
-																	url: createURL("listDomains&id=" + zoneObj.domainid),
+																	url: createURL("listDomains&id=" + selectedZoneObj.domainid),
 																	dataType: "json",
 																	async: false,
 																	success: function(json) {
@@ -543,10 +535,8 @@
 											},
 
 											action: function(args) {
-												var array1 = [];											
-												var zoneObj = selectedZoneObj;
-												//var zoneObj = args.context.zones[0];  //args.context should include zones. Waiting for Brian to fix it in widget code.
-												array1.push("&zoneId=" + zoneObj.id);
+												var array1 = [];		
+												array1.push("&zoneId=" + selectedZoneObj.id);
 												array1.push("&name=" + todb(args.data.name));
 												array1.push("&displayText=" + todb(args.data.description));
                         array1.push("&networkOfferingId=" + args.data.networkOfferingId);  
@@ -609,7 +599,7 @@
 											}
 										}										                 
                   },
-                  dataProvider: function(args) {									  
+                  dataProvider: function(args) {		
 										$.ajax({
 										  url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id),
 											dataType: "json",
@@ -786,21 +776,20 @@
             srx: 'not-configured',
             securityGroups: 'not-configured'
           };
-                 
-          var zoneObj = args.context.physicalResources[0];
-          var physicalNetworkObj;
+                              
+          selectedZoneObj = args.context.physicalResources[0];    
           $.ajax({
-            url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
+            url: createURL("listPhysicalNetworks&zoneId=" + selectedZoneObj.id),
             dataType: "json",
             async: false,
             success: function(json) {                      
-              var items = json.listphysicalnetworksresponse.physicalnetwork;
-              physicalNetworkObj = items[0];                      
+              var items = json.listphysicalnetworksresponse.physicalnetwork;                           
+              selectedPhysicalNetworkObj = items[0];                              
             }
-          });              
-                    
+          });     
+                
           $.ajax({
-            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + physicalNetworkObj.id),
+            url: createURL("listNetworkServiceProviders&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
             dataType: "json",
             async: false,
             success: function(json) {    
@@ -816,14 +805,13 @@
                     if(items[i].state == "Enabled") {
                       naasStatusMap["netscaler"] = "enabled";
                     }
-                    else { //items[i].state == "Disabled"                      
+                    else { //items[i].state == "Disabled"                                           
                       $.ajax({
-                        url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + physicalNetworkObj.id),
+                        url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                         dataType: "json",
                         async: false,
-                        success: function(json) {
-                          //debugger;
-                          var items = json.listnetscalerloadbalancerresponse.null; //temporary
+                        success: function(json) {                          
+                          var items = json.listnetscalerloadbalancerresponse.null; //???
                           if(items != null && items.length > 0) {
                             naasStatusMap["netscaler"] = "disabled";
                           }
@@ -914,7 +902,7 @@
                 label: 'Add new NetScaler',
                 createForm: {
                   title: 'Add new NetScaler',    
-fields: {
+                  fields: {
                     ip: {
                       label: 'IP address'
                     },
@@ -965,22 +953,22 @@ fields: {
                     }                    
                   }                  
                 },
-                action: function(args) {                 
-                  var zoneObj = args.context.zones[0];
-                  var physicalNetworkObj;
+                action: function(args) {     
+                  /*                
+                  var zoneObj = args.context.zones[0];                 
                   $.ajax({
                     url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {                      
-                      var items = json.listphysicalnetworksresponse.physicalnetwork;
-                      physicalNetworkObj = items[0];                      
+                      var items = json.listphysicalnetworksresponse.physicalnetwork;                      
+                      selectedPhysicalNetworkObj = items[0];                                               
                     }
-                  });           
-                                   
+                  });    
+                  */         
                   if(naasStatusMap["netscaler"] == "disabled") {
                     $.ajax({
-                      url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + physicalNetworkObj.id),
+                      url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
                       async: true, 
                       success: function(json) {                             
@@ -999,7 +987,7 @@ fields: {
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
                                   //alert("addNetworkServiceProvider&name=Netscaler succeeded.");   
-                                  addExternalLoadBalancer(args, physicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse"); //???                                     
+                                  addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");                                     
                                 } 
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -1016,7 +1004,7 @@ fields: {
                     });                    
                   }
                   else { //naasStatusMap["netscaler"] == "enabled"
-                    addExternalLoadBalancer(args, physicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
+                    addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
                   }                       
                 },
                 messages: {
@@ -1029,18 +1017,16 @@ fields: {
                 }
               }
             },           
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              }, 500);
+            dataProvider: function(args) {                      
+              $.ajax({
+                url: createURL("listNetscalerLoadBalancers&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                dataType: "json",
+                async: false,
+                success: function(json) {                  
+                  var items = json.listnetscalerloadbalancerresponse.null; //??? 
+                  args.response.success({data: items});
+                }
+              });              
             }
           },
 
@@ -1106,22 +1092,22 @@ fields: {
                     }                    
                   }
                 },
-                action: function(args) {                 
-                  var zoneObj = args.context.zones[0];
-                  var physicalNetworkObj;
+                action: function(args) {     
+                  /*                
+                  var zoneObj = args.context.zones[0];                  
                   $.ajax({
                     url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {                      
                       var items = json.listphysicalnetworksresponse.physicalnetwork;
-                      physicalNetworkObj = items[0];                      
+                      selectedPhysicalNetworkObj = items[0];                      
                     }
                   });           
-                                   
+                  */                              
                   if(naasStatusMap["f5"] == "disabled") {
                     $.ajax({
-                      url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + physicalNetworkObj.id),
+                      url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
                       async: true, 
                       success: function(json) {                             
@@ -1140,7 +1126,7 @@ fields: {
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
                                   //alert("addNetworkServiceProvider&name=F5BigIp succeeded.");                                     
-                                  addExternalLoadBalancer(args, physicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse"); //???                                  
+                                  addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");                              
                                 } 
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=F5BigIp failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -1157,7 +1143,7 @@ fields: {
                     });                    
                   }
                   else { //naasStatusMap["f5"] == "enabled"  
-                    addExternalLoadBalancer(args, physicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");                
+                    addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");                
                   }                       
                 },
                 messages: {
@@ -1272,22 +1258,23 @@ fields: {
                     }   
                   }                  
                 },
-                action: function(args) {                 
-                  var zoneObj = args.context.zones[0];
-                  var physicalNetworkObj;
+                action: function(args) {   
+                  /*                
+                  var zoneObj = args.context.zones[0];                 
                   $.ajax({
                     url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {                      
                       var items = json.listphysicalnetworksresponse.physicalnetwork;
-                      physicalNetworkObj = items[0];                      
+                      selectedPhysicalNetworkObj = items[0];                      
                     }
                   });           
-                                   
+                  */
+                                                 
                   if(naasStatusMap["srx"] == "disabled") {
                     $.ajax({
-                      url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + physicalNetworkObj.id),
+                      url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
                       async: true, 
                       success: function(json) {                             
@@ -1306,7 +1293,7 @@ fields: {
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {                                                              
                                   //alert("addNetworkServiceProvider&name=JuniperSRX succeeded.");   
-                                  addExternalFirewall(args, physicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse");                                                                                            
+                                  addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse");                                                                                            
                                 } 
                                 else if (result.jobstatus == 2) {
                                   alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
@@ -1323,7 +1310,7 @@ fields: {
                     });                    
                   }
                   else { //naasStatusMap["srx"] == "enabled"   
-                    addExternalFirewall(args, physicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse"); 
+                    addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse"); 
                   }                       
                 },
                 messages: {
@@ -2622,11 +2609,11 @@ fields: {
 
               dataProvider: function(args) {  //public network
                 var showPublicNetwork = true;
-                var zoneObj = args.context.zones[0];
-                if(zoneObj.networktype == "Basic") {
+                       
+                if(selectedZoneObj.networktype == "Basic") {
                   //$("#add_network_button").hide();
                   $.ajax({
-                    url: createURL("listExternalFirewalls&zoneid=" + zoneObj.id),
+                    url: createURL("listExternalFirewalls&zoneid=" + selectedZoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -2645,12 +2632,12 @@ fields: {
                 else { // Advanced zone
                   showPublicNetwork = true;
                   //$("#add_network_button,#add_iprange_button,#tab_ipallocation").show();
-                  //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
+                  //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+selectedZoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
                 }
-
-                if(showPublicNetwork == true && zoneObj.securitygroupsenabled == false) { //public network
+                
+                if(showPublicNetwork == true && selectedZoneObj.securitygroupsenabled == false) { //public network
                   $.ajax({
-                    url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
+                    url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+selectedZoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -2659,9 +2646,9 @@ fields: {
                     }
                   });
                 }
-                else if (showPublicNetwork == true && zoneObj.securitygroupsenabled == true){
+                else if (showPublicNetwork == true && selectedZoneObj.securitygroupsenabled == true){
                   $.ajax({
-                    url: createURL("listNetworks&type=Direct&trafficType=Guest&isSystem=true&zoneId="+zoneObj.id),
+                    url: createURL("listNetworks&type=Direct&trafficType=Guest&isSystem=true&zoneId="+selectedZoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -2719,10 +2706,9 @@ fields: {
 
                         scope: {
                           label: 'Scope',
-                          select: function(args) {
-                            var zoneObj = args.context.zones[0];
+                          select: function(args) {                       
                             var array1 = [];
-                            if(zoneObj.securitygroupsenabled) {
+                            if(selectedZoneObj.securitygroupsenabled) {
                               array1.push({id: 'account-specific', description: 'account-specific'});
                             }
                             else {
@@ -2753,11 +2739,10 @@ fields: {
                           label: 'Domain',
                           validation: { required: true },
                           select: function(args) {
-                            var items = [];
-                            var zoneObj = args.context.zones[0];
-                            if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+                            var items = [];                       
+                            if(selectedZoneObj.domainid != null) { //list only domains under selectedZoneObj.domainid
                               $.ajax({
-                                url: createURL("listDomainChildren&id=" + zoneObj.domainid + "&isrecursive=true"),
+                                url: createURL("listDomainChildren&id=" + selectedZoneObj.domainid + "&isrecursive=true"),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {
@@ -2768,7 +2753,7 @@ fields: {
                                 }
                               });
                               $.ajax({
-                                url: createURL("listDomains&id=" + zoneObj.domainid),
+                                url: createURL("listDomains&id=" + selectedZoneObj.domainid),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {
@@ -2953,15 +2938,14 @@ fields: {
               actions: {
                 //create direct network action has moved to Guest network
               },
-              dataProvider: function(args) { //direct netwoerk
-                var zoneObj = args.context.zones[0];
-                if(zoneObj.networktype == "Basic") {
+              dataProvider: function(args) { //direct netwoerk            
+                if(selectedZoneObj.networktype == "Basic") {
                   args.response.success({data: null});
                 }
                 else { // Advanced zone
                   //$("#add_network_button,#add_iprange_button,#tab_ipallocation").show();
                   $.ajax({
-                    url: createURL("listNetworks&type=Direct&zoneId="+zoneObj.id),
+                    url: createURL("listNetworks&type=Direct&zoneId="+selectedZoneObj.id),
                     dataType: "json",
                     async: false,
                     success: function(json) {
@@ -3497,8 +3481,7 @@ fields: {
           detailView: {
             viewAll: { path: '_zone.clusters', label: 'Clusters' },
             tabFilter: function(args) {
-              var hiddenTabs = [];              
-              var selectedZoneObj = args.context.zones[0];
+              var hiddenTabs = [];   
               if(selectedZoneObj.networktype == "Basic") { //basic-mode network (pod-wide VLAN)
                 //$("#tab_ipallocation, #add_iprange_button, #tab_network_device, #add_network_device_button").show();
               }
@@ -6031,7 +6014,7 @@ fields: {
             endip: { label: 'End IP' }          
           },
           
-          dataProvider: function(args) {            
+          dataProvider: function(args) {   
             $.ajax({
               url: createURL("listVlanIpRanges&zoneid=" + selectedZoneObj.id + "&networkid=" + args.context.networks[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -6470,6 +6453,7 @@ fields: {
       allowedActions.push("disable");
     allowedActions.push("delete");
 
+    /*
     var selectedZoneObj;
     $(zoneObjs).each(function(){
       if(this.id == podObj.zoneid) {
@@ -6477,7 +6461,8 @@ fields: {
         return false;  //break the $.each() loop
       }
     });
-
+    */
+  
     if(selectedZoneObj.networktype == "Basic") { //basic-mode network (pod-wide VLAN)
       //$("#tab_ipallocation, #add_iprange_button, #tab_network_device, #add_network_device_button").show();
       allowedActions.push("addIpRange");
