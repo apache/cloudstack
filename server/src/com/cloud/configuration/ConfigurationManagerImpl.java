@@ -3200,31 +3200,50 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
         
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);;
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);
+        Boolean sourceNatSupported = cmd.getSourceNatSupported();
         
-        if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty()) {
-            List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
-            Service[] suppportedServices = new Service[supportedServicesStr.size()];
-            int i = 0;
-            for (String supportedServiceStr : supportedServicesStr) {
-                Service service = Service.getService(supportedServiceStr);
-                if (service == null) {
-                    throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
-                } else {
-                    suppportedServices[i] = service;
+        //filter by supported services
+        boolean listBySupportedServices = (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty());
+        boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null);
+        
+        if (parseOfferings) {
+        	List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
+        	Service[] suppportedServices = null;
+        	
+        	if (listBySupportedServices) {
+        		suppportedServices = new Service[supportedServicesStr.size()];
+                int i = 0;
+                for (String supportedServiceStr : supportedServicesStr) {
+                    Service service = Service.getService(supportedServiceStr);
+                    if (service == null) {
+                        throw new InvalidParameterValueException("Invalid service specified " + supportedServiceStr);
+                    } else {
+                        suppportedServices[i] = service;
+                    }
+                    i++;
                 }
-                i++;
-            }
-           
-            for (NetworkOfferingVO offering : offerings) {
-                if (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices)) {
-                    supportedOfferings.add(offering);
+    		}
+        	
+        	for (NetworkOfferingVO offering : offerings) {
+        		boolean addOffering = true;
+        		
+        		if (listBySupportedServices) {
+        			addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices);
+        		}
+        		
+        		if (sourceNatSupported != null) {
+        			addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
+        		}
+        		
+                if (addOffering) {
+                	supportedOfferings.add(offering);
                 }
             }
-            
+
             return supportedOfferings;
         } else {
-            return offerings;
+        	return offerings;
         }
     }
 

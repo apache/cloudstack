@@ -305,6 +305,7 @@ public class ApiConstants {
     public static final String FIREWALL_DEVICE_DEDICATED = "fwdevicededicated";
     public static final String SERVICE = "service";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
+    public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

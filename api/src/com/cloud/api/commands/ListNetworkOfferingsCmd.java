@@ -76,9 +76,11 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="list network offerings by guest type: Shared or Isolated")
     private String guestIpType;
 
-    //Network information
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
     private List<String> supportedServices;
+    
+    @Parameter(name=ApiConstants.SOURCE_NAT_SUPPORTED, type=CommandType.BOOLEAN, description="true if need to list only netwok offerings where source nat is supported, false otherwise")
+    private Boolean sourceNatSupported; 
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -132,7 +134,11 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
         return supportedServices;
     }
 
-    /////////////////////////////////////////////////////
+    public Boolean getSourceNatSupported() {
+		return sourceNatSupported;
+	}
+
+	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override

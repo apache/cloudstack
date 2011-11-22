@@ -1449,22 +1449,49 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
+    	Account caller = UserContext.current().getCaller();
         Map<Long, ServiceOffering> serviceOfferings = new HashMap<Long, ServiceOffering>();
 
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
         routerResponse.setZoneId(router.getDataCenterIdToDeployIn());
         routerResponse.setName(router.getHostName());
-        routerResponse.setPodId(router.getPodIdToDeployIn());
         routerResponse.setTemplateId(router.getTemplateId());
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
         routerResponse.setIsRedundantRouter(router.getIsRedundantRouter());
         routerResponse.setRedundantState(router.getRedundantState().toString());
 
-        if (router.getHostId() != null) {
-            routerResponse.setHostId(router.getHostId());
-            routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+        if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        	if (router.getHostId() != null) {
+                routerResponse.setHostId(router.getHostId());
+                routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+            }
+            routerResponse.setPodId(router.getPodIdToDeployIn());
+            List<NicProfile> nicProfiles = ApiDBUtils.getNics(router);
+            for (NicProfile singleNicProfile : nicProfiles) {
+                Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
+                if (network != null) {
+                    if (network.getTrafficType() == TrafficType.Public) {
+                        routerResponse.setPublicIp(singleNicProfile.getIp4Address());
+                        routerResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
+                        routerResponse.setPublicNetmask(singleNicProfile.getNetmask());
+                        routerResponse.setGateway(singleNicProfile.getGateway());
+                        routerResponse.setPublicNetworkId(singleNicProfile.getNetworkId());
+                    } else if (network.getTrafficType() == TrafficType.Control) {
+                        routerResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
+                        routerResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
+                        routerResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
+                        routerResponse.setLinkLocalNetworkId(singleNicProfile.getNetworkId());
+                    } else if (network.getTrafficType() == TrafficType.Guest) {
+                        routerResponse.setGuestIpAddress(singleNicProfile.getIp4Address());
+                        routerResponse.setGuestMacAddress(singleNicProfile.getMacAddress());
+                        routerResponse.setGuestNetmask(singleNicProfile.getNetmask());
+                        routerResponse.setGuestNetworkId(singleNicProfile.getNetworkId());
+                        routerResponse.setNetworkDomain(network.getNetworkDomain());
+                    }
+                }
+            }
         }
 
         // Service Offering Info
@@ -1479,30 +1506,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         populateOwner(routerResponse, router);
 
-        List<NicProfile> nicProfiles = ApiDBUtils.getNics(router);
-        for (NicProfile singleNicProfile : nicProfiles) {
-            Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
-            if (network != null) {
-                if (network.getTrafficType() == TrafficType.Public) {
-                    routerResponse.setPublicIp(singleNicProfile.getIp4Address());
-                    routerResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
-                    routerResponse.setPublicNetmask(singleNicProfile.getNetmask());
-                    routerResponse.setGateway(singleNicProfile.getGateway());
-                    routerResponse.setPublicNetworkId(singleNicProfile.getNetworkId());
-                } else if (network.getTrafficType() == TrafficType.Control) {
-                    routerResponse.setLinkLocalIp(singleNicProfile.getIp4Address());
-                    routerResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
-                    routerResponse.setLinkLocalNetmask(singleNicProfile.getNetmask());
-                    routerResponse.setLinkLocalNetworkId(singleNicProfile.getNetworkId());
-                } else if (network.getTrafficType() == TrafficType.Guest) {
-                    routerResponse.setGuestIpAddress(singleNicProfile.getIp4Address());
-                    routerResponse.setGuestMacAddress(singleNicProfile.getMacAddress());
-                    routerResponse.setGuestNetmask(singleNicProfile.getNetmask());
-                    routerResponse.setGuestNetworkId(singleNicProfile.getNetworkId());
-                    routerResponse.setNetworkDomain(network.getNetworkDomain());
-                }
-            }
-        }
+        
         DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterIdToDeployIn());
         if (zone != null) {
             routerResponse.setZoneName(zone.getName());
