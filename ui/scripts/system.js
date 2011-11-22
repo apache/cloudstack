@@ -124,7 +124,7 @@
                     fields: {
                       'gateway': { edit: true, label: 'Gateway' },
                       'netmask': { edit: true, label: 'Netmask' },
-                      'vlanid': { edit: true, label: 'VLAN', isOptional: true },
+                      'vlan': { edit: true, label: 'VLAN', isOptional: true },
                       'startip': { edit: true, label: 'Start IP' },
                       'endip': { edit: true, label: 'End IP' },
                       'add-rule': { label: 'Add', addButton: true }
@@ -136,7 +136,7 @@
                         array1.push("&zoneId=" + args.context.zones[0].id);
 
                         if (args.data.vlanid != null && args.data.vlanid.length > 0)
-                          array1.push("&vlan=" + todb(args.data.vlanid));
+                          array1.push("&vlan=" + todb(args.data.vlan));
                         else
                           array1.push("&vlan=untagged");
 
