@@ -993,7 +993,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         // if (volume.getSourceType() != null) {
         // volResponse.setSourceType(volume.getSourceType().toString());
         // }
-        volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+        
+        //return hypervisor for ROOT and Resource domain only
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+        }
+        
         volResponse.setAttached(volume.getAttached());
         volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
         VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
@@ -1252,9 +1258,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 userVmResponse.setHostName(host.getName());
             }
 
-            if(userVm.getHypervisorType() != null){
-                userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
-            }
+            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            	if (userVm.getHypervisorType() != null){
+                    userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+                }
+            }   
             
             if (details.contains(VMDetails.all) || details.contains(VMDetails.tmpl)){
 	            // Template Info
@@ -1655,10 +1663,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setOsTypeId(result.getGuestOSId());
         response.setOsTypeName(ApiDBUtils.findGuestOSById(result.getGuestOSId()).getDisplayName());
         response.setDetails(result.getDetails());
+        Account caller = UserContext.current().getCaller();
 
         if (result.getFormat() == ImageFormat.ISO) { // Templates are always bootable
-            response.setBootable(result.isBootable());
-        } else {
+            response.setBootable(result.isBootable()); 
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             response.setHypervisor(result.getHypervisorType().toString());// hypervisors are associated with templates
         }
 
@@ -1711,7 +1720,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
-        templateResponse.setHypervisor(template.getHypervisorType().toString());
+        
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            templateResponse.setHypervisor(template.getHypervisorType().toString());
+        }
 
         GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
         if (os != null) {
@@ -1726,9 +1739,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateAccount(templateResponse, account.getId());
         populateDomain(templateResponse, account.getDomainId());
 
-        Account caller = UserContext.current().getCaller();
         boolean isAdmin = false;
-        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
+        if (BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
         }
 
@@ -1788,7 +1800,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
-        templateResponse.setHypervisor(template.getHypervisorType().toString());
+        
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            templateResponse.setHypervisor(template.getHypervisorType().toString());
+        }
+        
         templateResponse.setDetails(template.getDetails());
 
         GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
@@ -1810,7 +1827,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setZoneId(zoneId);
         templateResponse.setZoneName(datacenter.getName());
 
-        Account caller = UserContext.current().getCaller();
         boolean isAdmin = false;
         if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
@@ -2839,8 +2855,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         } 
         userVmData.setDomainId(userVm.getDomainId());
 
-        if (userVm.getHypervisorType() != null) {
-            userVmData.setHypervisor(userVm.getHypervisorType().toString());
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+        	if (userVm.getHypervisorType() != null) {
+                userVmData.setHypervisor(userVm.getHypervisorType().toString());
+            }
         }
 
         if (userVm.getPassword() != null) {
@@ -2851,6 +2870,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     public UserVmResponse newUserVmResponse(UserVmData userVmData, boolean caller_is_admin){
         UserVmResponse userVmResponse = new UserVmResponse();
+        
         userVmResponse.setHypervisor(userVmData.getHypervisor());
         userVmResponse.setId(userVmData.getId());
         userVmResponse.setName(userVmData.getName());
