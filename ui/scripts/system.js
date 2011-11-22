@@ -764,9 +764,9 @@
           setTimeout(function() {
             args.response.success({
               data: [
-                { id: 1, name: 'Network A' },
-                { id: 2, name: 'Network B' },
-                { id: 3, name: 'Network C' }
+                { id: 1, name: 'Network 1' }//,
+                //{ id: 2, name: 'Network 2' },
+                //{ id: 3, name: 'Network 3' }
               ]
             });
           }, 500);
@@ -775,7 +775,7 @@
 
       networkProviders: {
         // Returns state of each network provider type
-        statusCheck: function(args) {          
+        statusCheck: function(args) { 
           naasStatusMap = {
             virtualRouter: 'not-configured',
             netscaler: 'not-configured',
