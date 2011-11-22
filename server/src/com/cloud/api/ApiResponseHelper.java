@@ -2875,7 +2875,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setId(userVmData.getId());
         userVmResponse.setName(userVmData.getName());
         userVmResponse.setDisplayName(userVmData.getDisplayName());
-        userVmResponse.setIpAddress(userVmData.getIpAddress());
 
         populateAccount(userVmResponse, userVmData.getAccountId());
         populateDomain(userVmResponse, userVmData.getDomainId());

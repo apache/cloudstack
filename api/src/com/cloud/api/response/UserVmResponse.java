@@ -36,9 +36,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the ip address of the virtual machine")
-    private String ipAddress;
-
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
     private String accountName;
     
@@ -169,10 +166,6 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
     }
 
     public void setAccountName(String accountName) {
