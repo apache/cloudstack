@@ -892,10 +892,9 @@
           // NetScaler list view
           netscaler: {
             label: 'NetScaler',
-            fields: {
-              name: { label: 'Name' },
+            fields: {             
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+              lbdevicestate: { label: 'Status' }
             },            
             actions: {
               add: {
@@ -6395,7 +6394,7 @@
         else {
             url.push("&");
         } 
-        url.push("capacity=" + capacity);    
+        url.push("fwdevicecapacity=" + capacity);    
     }
    
     var dedicated = (args.data.dedicated == "on");	//boolean	(true/false)			    
