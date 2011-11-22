@@ -815,7 +815,7 @@
                         dataType: "json",
                         async: false,
                         success: function(json) {                                               
-                          var items = json.listnetscalerloadbalancerresponse.NetscalerLoadBalancer; //???
+                          var items = json.listnetscalerloadbalancerresponse.netscalerloadbalancer;                       
                           if(items != null && items.length > 0) {
                             naasStatusMap["netscaler"] = "disabled";
                           }
@@ -1030,7 +1030,7 @@
                 dataType: "json",
                 async: false,
                 success: function(json) {                                   
-                  var items = json.listnetscalerloadbalancerresponse.NetscalerLoadBalancer; //??? 
+                  var items = json.listnetscalerloadbalancerresponse.netscalerloadbalancer;            
                   args.response.success({data: items});
                 }
               });              
