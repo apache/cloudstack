@@ -850,8 +850,22 @@
                     break;   
                   case "JuniperSRX":
                     nspMap["srx"] = items[i];
-                    if(items[i].state == "Enabled") 
+                    if(items[i].state == "Enabled") {
                       naasStatusMap["srx"] = "enabled";
+                    }
+                    else { //items[i].state == "Disabled"                                           
+                      $.ajax({
+                        url: createURL("listSrxFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {  
+                          var items = json.listsrxfirewallresponse.srxfirewall;                       
+                          if(items != null && items.length > 0) {
+                            naasStatusMap["srx"] = "disabled";
+                          }
+                        }
+                      });
+                    }
                     break;   
                   case "SecurityGroupProvider":
                     nspMap["securityGroups"] = items[i];
@@ -1198,11 +1212,10 @@
           // SRX list view
           srx: {
             label: 'SRX',
-            fields: {
-              name: { label: 'Name' },
+            fields: {             
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
-            },
+              fwdevicestate: { label: 'Status' }
+            },    
             actions: {
               add: {
                 label: 'Add new SRX',
@@ -1338,26 +1351,14 @@
               }
             },
             dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
+              $.ajax({
+                url: createURL("listSrxFirewalls&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                dataType: "json",
+                async: false,
+                success: function(json) {  
+                  var items = json.listsrxfirewallresponse.srxfirewall;                       
+                  args.response.success({data: items});
+                }
               });
             }
           },
