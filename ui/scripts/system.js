@@ -939,42 +939,105 @@
             },     
             providerActionFilter: function(args) {                        
               var allowedActions = [];
-              allowedActions.push("enable");
-              allowedActions.push("disable");
-              allowedActions.push("shutdown");
+              var jsonObj = nspMap["netscaler"];              
+              if(jsonObj.state == "Enabled") {
+                allowedActions.push("disable");                
+              }
+              else if(jsonObj.state == "Disabled") {
+                allowedActions.push("enable");                
+              }                       
               return allowedActions;
             },
             providerActions: {              
               enable: {
                 label: 'Enable',
-                action: function(args) {
-                  setTimeout(args.response.success, 100);
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["netscaler"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
                 },
                 messages: {
-                  notification: function() { return 'Enable Netscaler provider'; }
+                  notification: function() { return 'Enabled Netscaler provider'; }
                 },
-                notification: { poll: testData.notifications.testPoll }
+                notification: { poll: pollAsyncJobResult }
               },
               disable: {
                 label: 'Disable',
                 action: function(args) {
-                  setTimeout(args.response.success, 100);
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["netscaler"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
                 },
                 messages: {
                   notification: function() { return 'Disabled Netscaler provider'; }
                 },
-                notification: { poll: testData.notifications.testPoll }
-              },
+                notification: { poll: pollAsyncJobResult }
+              }
+              
+              //"Updating the provider state to 'Shutdown' is not supported"
+              /*
+              ,
               shutdown: {
                 label: 'Shutdown',
                 action: function(args) {
-                  setTimeout(args.response.success, 100);
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Shutdown"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["netscaler"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
                 },
                 messages: {
                   notification: function() { return 'Shutdown Netscaler provider'; }
                 },
-                notification: { poll: testData.notifications.testPoll }
+                notification: { poll: pollAsyncJobResult }
               }
+              */
             },            
             actions: {
               add: {
