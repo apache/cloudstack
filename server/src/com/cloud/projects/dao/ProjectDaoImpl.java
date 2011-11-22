@@ -7,7 +7,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.projects.Project;
-import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;

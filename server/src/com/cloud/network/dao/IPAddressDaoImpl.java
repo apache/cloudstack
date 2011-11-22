@@ -27,8 +27,8 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress.State;
@@ -40,9 +40,9 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 
@@ -58,6 +58,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;    
     protected final GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
     protected final VlanDaoImpl _vlanDao = ComponentLocator.inject(VlanDaoImpl.class);
+    protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
     
     
     // make it public for JUnit test
@@ -113,6 +114,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCountForAccount.and("allocated", AllocatedIpCountForAccount.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCountForAccount.and("network", AllocatedIpCountForAccount.entity().getAssociatedWithNetworkId(), Op.NNULL);        
         AllocatedIpCountForAccount.done();
+        
+        CountFreePublicIps = createSearchBuilder(Long.class);
+        CountFreePublicIps.select(null, Func.COUNT, null);
+        CountFreePublicIps.and("state", CountFreePublicIps.entity().getState(), SearchCriteria.Op.EQ);
+        SearchBuilder<VlanVO> join = _vlanDao.createSearchBuilder();
+        join.and("vlanType", join.entity().getVlanType(), Op.EQ);
+        CountFreePublicIps.join("vlans", join, CountFreePublicIps.entity().getVlanId(), join.entity().getId(), JoinBuilder.JoinType.INNER);
+        CountFreePublicIps.done();
     }
 
     @Override
@@ -309,5 +318,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listBy(sc);
-    }    
+    }
+    
+    @Override
+    public long countFreeIPs() {
+    	SearchCriteria<Long> sc = CountFreePublicIps.create();
+    	sc.setParameters("state", State.Free);
+    	sc.setJoinParameters("vlans", "vlanType", VlanType.VirtualNetwork);
+        return customSearch(sc, null).get(0);       
+    }
 }

@@ -57,4 +57,5 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
 	List<IPAddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 
+	long countFreeIPs();
 }

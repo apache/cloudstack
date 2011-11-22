@@ -272,7 +272,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         Long ipLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.public_ip, account.getId());
         String ipLimitDisplay = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
         Long ipTotal = ApiDBUtils.getResourceCount(ResourceType.public_ip, account.getId());
-        String ipAvail = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
+        
+        Long ips = ipLimit - ipTotal;
+        //check how many free ips are left, and if it's less than max allowed number of ips from account - use this value
+        Long ipsLeft = ApiDBUtils.countFreePublicIps();
+        boolean unlimited = true;
+        if (ips.longValue() > ipsLeft.longValue()) {
+        	ips = ipsLeft;
+        	unlimited = false;
+        }
+        
+        String ipAvail = ((accountIsAdmin || ipLimit == -1) && unlimited) ? "Unlimited" : String.valueOf(ips);
+        
         accountResponse.setIpLimit(ipLimitDisplay);
         accountResponse.setIpTotal(ipTotal);
         accountResponse.setIpAvailable(ipAvail);

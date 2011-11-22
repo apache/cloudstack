@@ -18,13 +18,11 @@
 
 package com.cloud.api;
 
-import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -720,5 +718,9 @@ public class ApiDBUtils {
     	boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkMgr.getAllowSubdomainAccessGlobal();
     	
     	return new Pair<Long, Boolean>(map.getDomainId(), subdomainAccess);
+    }
+    
+    public static long countFreePublicIps() {
+    	return _ipAddressDao.countFreeIPs();
     }
 }
