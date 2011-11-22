@@ -426,30 +426,7 @@
 															args.response.success({data: {id: "tagged", description: "tagged"}});
 														}
 													},
-													vlanId: { label: "VLAN ID" },
-													networkOfferingId: {
-													  label: 'Network offering',
-														select: function(args) {			
-                              var array1 = [];														
-															$.ajax({
-																url: createURL("listNetworkOfferings&guestiptype=Shared"),
-																dataType: "json",
-																async: false,
-																success: function(json) {
-																	var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-																	if (networkOfferings != null && networkOfferings.length > 0) {
-                                    //for (var i = 0; i < networkOfferings.length; i++) {						
-																		for (var i = (networkOfferings.length-1); i >= 0; i--) {																		  
-																			if (networkOfferings[i].isdefault) {																				
-																				array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});
-																			}
-																		}
-																	}
-																}
-															});															
-															args.response.success({data: array1});															
-														}
-													},
+													vlanId: { label: "VLAN ID" },													
 													scope: {
 														label: 'Scope',
 														select: function(args) {	
@@ -479,6 +456,35 @@
 																	$form.find('.form-item[rel=account]').css('display', 'inline-block');
 																}
 															});
+														}
+													},
+                          networkOfferingId: {
+													  label: 'Network offering',
+                            dependsOn: 'scope', 
+														select: function(args) {			
+                              var array1 = [];		
+                              var apiCmd;
+                              if(args.scope == "zone-wide" || args.scope == "domain-specific")
+                                apiCmd = "listNetworkOfferings&guestiptype=Shared";
+                              else  //args.scope == "account-specific"
+                                apiCmd = "listNetworkOfferings&guestiptype=Isolated&sourcenatEnabled=false";                              
+															$.ajax({
+																url: createURL(apiCmd),
+																dataType: "json",
+																async: false,
+																success: function(json) {
+																	var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+																	if (networkOfferings != null && networkOfferings.length > 0) {
+                                    //for (var i = 0; i < networkOfferings.length; i++) {						
+																		for (var i = (networkOfferings.length-1); i >= 0; i--) {																		  
+																			if (networkOfferings[i].isdefault) {																				
+																				array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});
+																			}
+																		}
+																	}
+																}
+															});															
+															args.response.success({data: array1});															
 														}
 													},
 													domainId: {
@@ -4429,8 +4435,6 @@
                     validation: { required: true },
                     dependsOn: 'podId',
                     select: function(args) {
-
-
                       $.ajax({
                         url: createURL("listClusters&podid=" + args.podId),
                         dataType: "json",
