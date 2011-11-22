@@ -565,13 +565,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public Long getPodIdForVlan(long vlanDbId) {
         // TODO Auto-generated method stub
         return null;
@@ -617,12 +610,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName) {
         // TODO Auto-generated method stub
         return false;
-    }
-    
-    @Override
-    public List<String> getNetworkTags(HypervisorType hType, Network network) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -701,6 +688,27 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 	public boolean isProviderForNetwork(Provider provider, long networkId) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup)
+			throws ConcurrentOperationException, ResourceUnavailableException,
+			InsufficientCapacityException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public String getNetworkTag(HypervisorType hType, Network network) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void canProviderSupportServices(
+			Map<Provider, Set<Service>> providersMap) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
