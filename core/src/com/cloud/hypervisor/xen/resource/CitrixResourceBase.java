@@ -4273,19 +4273,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     break;
                 }
                 if(!isNetworkSetupByName(info.getPrivateNetworkName())){
-                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " + info.getPrivateNetworkName();
                     errorout = true;
-                    break;                }
+                    break;               
+                }
                 if(!isNetworkSetupByName(info.getPublicNetworkName())){
-                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getGuestNetworkName();
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getPublicNetworkName();
                     errorout = true;
                     break;
                 }
-                if(!isNetworkSetupByName(info.getStorageNetworkName())){
-                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Storage Network is not configured on the backend by name " + info.getGuestNetworkName();
+                /*if(!isNetworkSetupByName(info.getStorageNetworkName())){
+                    msg = "For Physical Network id:"+ info.getPhysicalNetworkId() + ", Storage Network is not configured on the backend by name " + info.getStorageNetworkName();
                     errorout = true;
                     break;
-                }
+                }*/
             }
             if(errorout){
                 s_logger.error(msg);
