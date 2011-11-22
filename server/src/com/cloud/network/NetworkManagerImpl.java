@@ -1633,7 +1633,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Network associatedNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
 
-        if (areServicesSupportedInNetwork(associatedNetwork.getId(), Service.SourceNat)) {
+        if (ipVO.isSourceNat() && areServicesSupportedInNetwork(associatedNetwork.getId(), Service.SourceNat)) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
