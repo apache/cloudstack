@@ -68,6 +68,45 @@
               }
             }
           },
+
+          reorder: {
+            moveTop: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveBottom: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveUp: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDown: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDrag: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            }
+          },
+
           dataProvider: function(args) {
             setTimeout(function() {
               args.response.success({
@@ -90,6 +129,45 @@
             memory: { label: 'Memory' },
             domain: { label: 'Domain'}
           },
+
+          reorder: {
+            moveTop: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveBottom: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveUp: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDown: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDrag: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            }
+          },
+
           actions: {
             add: {
               label: 'Add system service offering',
@@ -166,6 +244,44 @@
                 data: testData.data.diskOfferings
               });
             });
+          },
+
+          reorder: {
+            moveTop: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveBottom: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveUp: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDown: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDrag: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            }
           },
 
           actions: {
@@ -251,6 +367,44 @@
             traffictype: { label: 'Traffic Type'}
           },
 
+          reorder: {
+            moveTop: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveBottom: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveUp: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDown: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            },
+            moveDrag: {
+              action: function(args) {
+                setTimeout(function() {
+                  args.response.success();
+                }, 500);
+              }
+            }
+          },
+
           actions: {
             add: {
               label: 'Add network offering',
@@ -327,7 +481,7 @@
 
                   vlanId: { label: 'VLAN ID', isHidden: true, dependsOn: 'specifyVlan'},
 
-                  supportedServices: { 
+                  supportedServices: {
                     label: 'Supported Services',
 
                     dynamic: function(args) {
@@ -343,7 +497,7 @@
                           };
 
                           fields[id.isEnabled] = { label: this, isBoolean: true };
-                          fields[id.provider] = { 
+                          fields[id.provider] = {
                             label: this + ' Provider',
                             isHidden: true,
                             dependsOn: id.isEnabled,
@@ -368,7 +522,7 @@
                   tags: { label: 'Tags' }
                 }
               },
-              
+
               notification: {
                 poll: testData.notifications.testPoll
               },

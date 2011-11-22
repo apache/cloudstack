@@ -14,7 +14,7 @@
      */
     var withinResizeBounds = function($elem, posX) {
       var leftBound = $elem.offset().left + $elem.width() / 1.2;
-     
+
       return posX > leftBound;
     };
 
@@ -165,7 +165,7 @@
 
       computeEvenOddRows();
     };
-    
+
     var resizeHeaders = function() {
       var $thead = $table.closest('div.data-table').find('thead');
       var $tbody = $table.find('tbody');
@@ -209,6 +209,13 @@
       refresh: function() {
         resizeHeaders();
         computeEvenOddRows();
+      },
+
+      selectRow: function(rowIndex) {
+        var $row = $($table.find('tbody tr')[rowIndex]);
+
+        $row.siblings().removeClass('selected');
+        $row.addClass('selected');
       }
     };
 

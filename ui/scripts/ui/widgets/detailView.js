@@ -67,6 +67,116 @@
       var id = args.id;
       var context = $detailView.data('view-args').context;
       var _custom = $detailView.data('_custom');
+      var customAction = action.action.custom;
+      var noAdd = action.noAdd;
+
+      var updateTabContent = function(newData) {
+        var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
+        $detailView.tabs('destroy');
+        $detailView.data('view-args').jsonObj = newData;
+        
+        makeTabs(
+          $detailView,
+          $detailView.data('view-args').tabs,
+          {
+            context: context,
+            tabFilter: $detailView.data('view-args').tabFilter,
+            newData: newData
+          }
+        ).appendTo($detailView);
+
+        $detailView.tabs();
+      };
+
+      var performAction = function(data, options) {
+        if (!options) options = {};
+
+        var $form = options.$form;
+
+        if (customAction && !noAdd) {
+          customAction({
+            context: context,
+            complete: function(args) {
+              // Set loading appearance
+              var $loading = $('<div>').addClass('loading-overlay');
+              $detailView.prepend($loading);
+
+              args = args ? args : {};
+
+              var $item = args.$item;
+
+              notification.desc = messages.notification(args.messageArgs);
+              notification._custom = args._custom;
+
+              addNotification(
+                notification,
+
+                // Success
+                function(args) {
+                  $loading.remove();
+                  updateTabContent(args.data);
+                },
+
+                {},
+
+                // Error
+                function(args) {}
+              );
+            }
+          });
+        }  else {
+          // Set loading appearance
+          var $loading = $('<div>').addClass('loading-overlay');
+          $detailView.prepend($loading);
+
+          action.action({
+            data: data,
+            _custom: _custom,
+            ref: options.ref,
+            context: $detailView.data('view-args').context,
+            $form: $form,
+            response: {
+              success: function(args) {
+                args = args ? args : {};
+                notification._custom = args._custom;
+
+                if (additional && additional.success) additional.success(args);
+
+                // Setup notification
+                addNotification(
+                  notification,
+                  function(args) {
+                    if ($detailView.is(':visible')) {
+                      $loading.remove();
+                      updateTabContent(args.data);
+                    }
+
+                    if (messages.complete) {
+                      cloudStack.dialog.notice({
+                        message: messages.complete(args.data)
+                      });
+                    }
+                    if (additional && additional.complete) additional.complete($.extend(true, args, {
+                      $detailView: $detailView
+                    }));
+                  },
+
+                  {},
+
+                  // Error
+                  function(args) {
+
+                  }
+                );
+              },
+              error: function(args) {
+                if (args.message)
+                  cloudStack.dialog.notice({ message: args.message });
+              }
+            }
+          });
+        }
+      };
 
       var externalLinkAction = action.action.externalLink;
       if (externalLinkAction) {
@@ -87,102 +197,39 @@
             + 'width=' + externalLinkAction.width + ','
             + 'height=' + externalLinkAction.height
         );
-        
-        return;
-      }
+      } else {
+        notification.desc = messages.notification(messageArgs);
+        notification.section = 'instances';
 
-      notification.desc = messages.notification(messageArgs);
-      notification.section = 'instances';
-
-      var performAction = function(data, options) {
-        if (!options) options = {};
-
-        var $form = options.$form;
-
-        // Set loading appearance
-        var $loading = $('<div>').addClass('loading-overlay');
-        $detailView.prepend($loading);
-
-        action.action({
-          data: data,
-          _custom: _custom,
-          ref: options.ref,
-          context: $detailView.data('view-args').context,
-          $form: $form,
-          response: {
-            success: function(args) {
-              args = args ? args : {};
-              notification._custom = args._custom;
-
-              if (additional && additional.success) additional.success(args);
-
-              // Setup notification
-              addNotification(
-                notification,
-                function(args) {
-                  if ($detailView.is(':visible')) {
-                    $loading.remove();
-
-                    // Refresh actions
-                    loadTabContent(
-                      $detailView.find('.detail-group:visible'),
-                      $detailView.data('view-args'),
-                      {
-                        newData: args.data
-                      }
-                    );
-                  }
-
-                  if (messages.complete) {
-                    cloudStack.dialog.notice({
-                      message: messages.complete(args.data)
-                    });
-                  }
-                  if (additional && additional.complete) additional.complete($.extend(true, args, {
-                    $detailView: $detailView
-                  }));
-                },
-
-                {},
-
-                // Error
-                function(args) {
-
-                }
-              );
+        if (!action.createForm) {
+          if (messages && messages.confirm) {
+            cloudStack.dialog.confirm({
+              message: messages.confirm(messageArgs),
+              action: function() {
+                performAction({
+                  id: id
+                });
+              }
+            });
+          } else {
+            performAction({ id: id });
+          }
+         } else {
+          cloudStack.dialog.createForm({
+            form: action.createForm,
+            after: function(args) {
+              performAction(args.data, {
+                ref: args.ref,
+                context: $detailView.data('view-args').context,
+                $form: args.$form
+              });
             },
-            error: function(args) {
-              if (args.message)
-                cloudStack.dialog.notice({ message: args.message });
-            }
-          }
-        });
-      };
-
-      if (!action.createForm)
-        cloudStack.dialog.confirm({
-          message: messages.confirm(messageArgs),
-          action: function() {
-            performAction({
+            ref: {
               id: id
-            });
-          }
-        });
-      else {
-        cloudStack.dialog.createForm({
-          form: action.createForm,
-          after: function(args) {
-            performAction(args.data, { 
-              ref: args.ref, 
-              context: $detailView.data('view-args').context,
-              $form: args.$form
-            });
-          },
-          ref: {
-            id: id
-          },
-          context: $detailView.data('view-args').context
-        });
+            },
+            context: $detailView.data('view-args').context
+          });
+        }
       }
     },
 
@@ -207,7 +254,7 @@
      */
     edit: function($detailView, args) {
       if ($detailView.find('.button.done').size()) return false;
-      
+
       // Convert value TDs
       var $inputs = $detailView.find('input[type=text], select');
       var action = args.actions[args.actionName];
@@ -235,7 +282,7 @@
             );
             $value.data('detail-view-selected-option', $input.find('option:selected').val());
           }
-        });                
+        });
       };
 
       var applyEdits = function($inputs, $editButton) {
@@ -269,7 +316,7 @@
                   convertInputs($inputs);
                   addNotification(
                     notificationArgs, function(data) {}, []
-                  ); 
+                  );
                 } else {
                   $loading.appendTo($detailView);
                   addNotification(
@@ -505,8 +552,8 @@
     if (tabData.preFilter) {
       hiddenFields = tabData.preFilter({
         context: context,
-        fields: $.map(fields, function(fieldGroup) { 
-          return $.map(fieldGroup, function(value, key) { return key; }); 
+        fields: $.map(fields, function(fieldGroup) {
+          return $.map(fieldGroup, function(value, key) { return key; });
         })
       });
     }
@@ -634,6 +681,7 @@
     var isMultiple = tabs.multiple || tabs.isMultiple;
     var viewAll = args.viewAll;
     var $detailView = $tabContent.closest('.detail-view');
+    var jsonObj = $detailView.data('view-args').jsonObj;
 
     if (tabs.custom) {
       return tabs.custom({
@@ -659,14 +707,14 @@
     return dataProvider({
       tab: targetTabID,
       id: args.id,
-      jsonObj: options.newData ? $.extend(true, {}, args.jsonObj, options.newData) : args.jsonObj,
+      jsonObj: jsonObj,
       context: args.context,
       response: {
         success: function(args) {
           if (options.newData) {
             $.extend(args.data, options.newData);
           }
-          
+
           if (args._custom) {
             $detailView.data('_custom', args._custom);
           }
@@ -708,6 +756,78 @@
     });
   };
 
+  var makeTabs = function($detailView, tabs, options) {
+    if (!options) options = {};
+
+    var $tabs = $('<ul>');
+    var $tabContentGroup = $('<div>');
+    var removedTabs = [];
+    var tabFilter = options.tabFilter;
+    var context = options.context ? options.context : {};
+
+    if (options.newData) {
+      $.extend(
+        context[$detailView.data('view-args').section][0],
+        options.newData
+      );
+    }
+    
+    if (tabFilter) {
+      removedTabs = tabFilter({
+        context: context
+      });
+    }
+
+    $.each(tabs, function(key, value) {
+      // Don't render tab, if filtered out
+      if ($.inArray(key, removedTabs) > -1) return true;
+
+      var propGroup = key;
+      var prop = value;
+      var title = prop.title;
+      var $tab = $('<li>').attr('detail-view-tab', true).appendTo($tabs);
+
+      var $tabLink = $('<a></a>').attr({
+        href: '#details-tab-' + propGroup
+      }).html(title).appendTo($tab);
+
+      var $tabContent = $('<div>').attr({
+        id: 'details-tab-' + propGroup
+      }).addClass('detail-group').appendTo($tabContentGroup);
+
+      $tabContent.data('detail-view-tab-id', key);
+      $tabContent.data('detail-view-tab-data', value);
+
+      return true;
+    });
+
+    $tabs.find('li:first').addClass('first');
+    $tabs.find('li:last').addClass('last');
+
+    return $.merge(
+      $tabs, $tabContentGroup.children()
+    );
+  };
+
+  var replaceTabs = function($detailView, $newTabs, tabs, options) {
+    var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group');
+    $detailView.tabs('destroy');
+    $detailViewElems.remove();
+
+    makeTabs($detailView, tabs, options).appendTo($detailView);
+  };
+
+  var makeToolbar = function() {
+    return $('<div class="toolbar">')
+      .append(
+        $('<div>')
+          .addClass('button refresh')
+          .append(
+            $('<span>').html('Refresh')
+          )
+      );
+  };
+
   $.fn.detailView = function(args) {
     var $detailView = this;
 
@@ -715,49 +835,13 @@
     $detailView.data('view-args', args);
 
     // Create toolbar
-    var $toolbar = $('<div class="toolbar">')
-          .append(
-            $('<div>')
-              .addClass('button refresh')
-              .append(
-                $('<span>').html('Refresh')
-              )
-          )
-          .appendTo($detailView);
-    var $tabs = $('<ul></ul>').appendTo($detailView);
+    var $toolbar = makeToolbar().appendTo($detailView);
 
-    // Get tab filter, if present
-    var removedTabs = [];
-    if (args.tabFilter) {
-      removedTabs = args.tabFilter({
-        context: args.context
-      });
-    }
-
-    // Make tabs
-    $.each(args.tabs, function(key, value) {
-      // Don't render tab, if filtered out
-      if ($.inArray(key, removedTabs) > -1) return true;
-
-      var propGroup = key;
-      var prop = value;
-      var title = prop.title;
-      var $tab = $('<li></li>').attr('detail-view-tab', true).appendTo($tabs);
-
-      var $tabLink = $('<a></a>').attr({
-        href: '#details-tab-' + propGroup
-      }).html(title).appendTo($tab);
-
-      var $tabContent = $('<div></div>').attr({
-        id: 'details-tab-' + propGroup
-      }).addClass('detail-group').appendTo($detailView);
-
-      $tabContent.data('detail-view-tab-id', key);
-      $tabContent.data('detail-view-tab-data', value);
-    });
-
-    $tabs.find('li:first').addClass('first');
-    $tabs.find('li:last').addClass('last');
+    // Create tabs
+    var $tabs = makeTabs($detailView, args.tabs, {
+      context: args.context,
+      tabFilter: args.tabFilter
+    }).appendTo($detailView);
 
     $detailView.tabs();
 

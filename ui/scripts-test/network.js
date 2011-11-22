@@ -6,6 +6,49 @@
       label: 'Select view'
     },
     sections: {
+      networks: {
+        type: 'select',
+        title: 'Networks',
+        listView: {
+          filters: {
+            all: { label: 'All' },
+            mine: { label: 'My network' }
+          },
+          fields: {
+            displaytext: { label: 'Name' },
+            traffictype: { label: 'Traffic Type' },
+            gateway: { label: 'Gateway' },
+            vlan: { label: 'VLAN' }
+          },
+          dataProvider: testData.dataProvider.listView('networks'),
+          
+          detailView: {
+            name: 'Network details',
+            viewAll: { path: 'network.ipAddresses', label: 'IP Addresses' },
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    displaytext: { label: 'Name' }
+                  },
+                  {
+                    name: { label: 'Short name' },
+                    traffictype: { label: 'Traffic Type' },
+                    gateway: { label: 'Gateway' },
+                    vlan: { label: 'VLAN' }
+                  },
+                  {
+                    startip: { label: 'Start IP' },
+                    endip: { label: 'End IP' }
+                  }
+                ],
+                dataProvider: testData.dataProvider.detailView('networks')
+              }
+            }
+          }
+        }
+      },
       ipAddresses: {
         type: 'select',
         title: 'IP Addresses',
@@ -86,9 +129,6 @@
                 })
               },
               messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to enable static NAT?';
-                },
                 notification: function(args) {
                   return 'Enabled Static NAT';
                 }
@@ -113,48 +153,6 @@
               notification: {
                 poll: testData.notifications.customPoll({ isstaticnat: false })
               }
-            },
-            enableVPN: {
-              label: 'Enable VPN',
-              action: function(args) {
-                args.response.success();
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Please confirm that you want VPN enabled for this IP address.';
-                },
-                notification: function(args) {
-                  return 'Enabled VPN';
-                },
-                complete: function(args) {
-                  return 'VPN is now enabled for IP ' + args.publicip + '.'
-                    + '<br/>Your IPsec pre-shared key is:<br/>' + args.presharedkey;
-                }
-              },
-              notification: {
-                poll: testData.notifications.customPoll({
-                  publicip: '10.2.2.1',
-                  presharedkey: '23fudh881ssx88199488PP!#Dwdw',
-                  vpnenabled: true
-                })
-              }
-            },
-            disableVPN: {
-              label: 'Disable VPN',
-              action: function(args) {
-                args.response.success();
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to disable VPN?';
-                },
-                notification: function(args) {
-                  return 'Disabled VPN';
-                }
-              },
-              notification: {
-                poll: testData.notifications.customPoll({ vpnenabled: false })
-              }
             }
           },
           dataProvider: testData.dataProvider.listView('network'),
@@ -173,6 +171,87 @@
               }
 
               return disabledTabs;
+            },
+            actions: {
+              enableStaticNAT: {
+                label: 'Enable static NAT',
+                action: {
+                  noAdd: true,
+                  custom: cloudStack.uiCustom.enableStaticNAT({
+                    listView: cloudStack.sections.instances,
+                    action: function(args) {
+                      args.response.success();
+                    }
+                  })
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'Enabled Static NAT';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.customPoll({ isstaticnat: true })
+                }
+              },
+              disableStaticNAT: {
+                label: 'Disable static NAT',
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to disable static NAT?';
+                  },
+                  notification: function(args) {
+                    return 'Disabled Static NAT';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.customPoll({ isstaticnat: false })
+                }
+              },
+              enableVPN: {
+                label: 'Enable VPN',
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you want VPN enabled for this IP address.';
+                  },
+                  notification: function(args) {
+                    return 'Enabled VPN';
+                  },
+                  complete: function(args) {
+                    return 'VPN is now enabled for IP ' + args.publicip + '.'
+                      + '<br/>Your IPsec pre-shared key is:<br/>' + args.presharedkey;
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.customPoll({
+                    publicip: '10.2.2.1',
+                    presharedkey: '23fudh881ssx88199488PP!#Dwdw',
+                    vpnenabled: true
+                  })
+                }
+              },
+              disableVPN: {
+                label: 'Disable VPN',
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to disable VPN?';
+                  },
+                  notification: function(args) {
+                    return 'Disabled VPN';
+                  }
+                },
+                notification: {
+                  poll: testData.notifications.customPoll({ vpnenabled: false })
+                }
+              }
             },
             tabs: {
               details: {

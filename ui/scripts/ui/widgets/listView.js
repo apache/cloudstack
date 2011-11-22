@@ -314,7 +314,7 @@
       // Hide edit field, validate and save changes
       var showLabel = function(val, options) {
         if (!options) options = {};
-        
+
         var oldVal = $label.html();
         $label.html(val);
 
@@ -376,7 +376,7 @@
                   'Unset value for ' + $instanceRow.find('td.name span').html()
               },
               function(args) {
-                
+
               },
               [{ name: newName }]
             );
@@ -387,6 +387,62 @@
       }
 
       return $instanceRow;
+    }
+  };
+
+  var rowActions = {
+    _std: function($tr, action) {
+      action();
+
+      $tr.closest('.data-table').dataTable('refresh');
+
+      setTimeout(function() {
+        $tr.closest('.data-table').dataTable('selectRow', $tr.index());
+      }, 0);
+    },
+
+    moveTop: function($tr) {
+      rowActions._std($tr, function() {
+        $tr.closest('tbody').prepend($tr);
+        $tr.closest('.list-view').animate({ scrollTop: 0 });
+      });
+    },
+
+    moveBottom: function($tr) {
+      rowActions._std($tr, function() {
+        $tr.closest('tbody').append($tr);
+        $tr.closest('.list-view').animate({ scrollTop: 0 });
+      });
+    },
+
+    moveUp: function($tr) {
+      rowActions._std($tr, function() {
+        $tr.prev().before($tr);
+      });
+    },
+
+    moveDown: function($tr) {
+      rowActions._std($tr, function() {
+        $tr.next().after($tr);
+      });
+    },
+
+    moveTo: function($tr, index, after) {
+      rowActions._std($tr, function() {
+        var $target = $tr.closest('tbody').find('tr').filter(function() {
+          return $(this).index() == index;
+        });
+
+        if ($target.index() > $tr.index()) $target.after($tr);
+        else $target.before($tr);
+
+        $tr.closest('.list-view').scrollTop($tr.position().top - $tr.height() * 2);
+
+        if (after)
+          setTimeout(function() {
+            after();
+          });
+      });
     }
   };
 
@@ -422,8 +478,20 @@
     return $editArea.hide();
   };
 
-  var createHeader = function(fields, $table, actions) {
+  var renderActionCol = function(actions) {
+    return $.grep(
+      $.map(actions, function(value, key) {
+        return key;
+      }),
+      function(elem) { return elem != 'add'; }
+    ).length;
+  };
+
+  var createHeader = function(fields, $table, actions, options) {
+    if (!options) options = {};
+
     var $thead = $('<thead>').appendTo($table);
+    var reorder = options.reorder;
 
     $.each(fields, function(key) {
       var field = this;
@@ -434,11 +502,17 @@
       $th.html(field.label);
     });
 
-    if (actions) {
+    if (actions && renderActionCol(actions)) {
       $thead.append(
         $('<th></th>')
           .html('Actions')
           .addClass('actions reduced-hide')
+      );
+    }
+
+    if (reorder) {
+      $thead.append(
+        $('<th>').html('Order').addClass('reorder-actions reduced-hide')
       );
     }
 
@@ -452,7 +526,7 @@
     $filters.append('<label>Filter By: </label>');
 
     var $filterSelect = $('<select id="filterBy"></select>').appendTo($filters);
-    
+
     if (filters)
       $.each(filters, function(key) {
         var $option = $('<option>').attr({
@@ -560,6 +634,7 @@
       section: args.section,
       context: args.context
     });
+
     var $detailView, $detailsPanel;
     var panelArgs = {
       title: title,
@@ -585,6 +660,7 @@
   var addTableRows = function(fields, data, $tbody, actions, options) {
     if (!options) options = {};
     var rows = [];
+    var reorder = options.reorder;
 
     if (!data || ($.isArray(data) && !data.length)) {
       if (!$tbody.find('tr').size()) {
@@ -613,6 +689,7 @@
         $tr.appendTo($tbody);
       }
 
+      // Add field data
       $.each(fields, function(key) {
         var field = this;
         var $td = $('<td>')
@@ -645,11 +722,88 @@
         }
       });
 
+      // Add reorder actions
+      if (reorder) {
+        $('<td>').addClass('actions reorder').appendTo($tr).append(function() {
+          var $td = $(this);
+
+          $.each(reorder, function(actionName, action) {
+            var fnLabel = {
+              moveTop: 'Move to top',
+              moveUp: 'Move up one row',
+              moveDown: 'Move down one row',
+              moveDrag: 'Drag to new position'
+            };
+
+            $('<div>')
+              .addClass('action reorder')
+              .addClass(actionName)
+              .append(
+                $('<span>').addClass('icon').html('&nbsp;')
+              )
+              .attr({
+                title: fnLabel[actionName]
+              })
+              .appendTo($td)
+              .click(function() {
+                if (actionName == 'moveDrag') return false;
+
+                var rowIndex = $tr.index();
+                rowActions[actionName]($tr);
+
+                action.action({
+                  response: {
+                    success: function(args) {
+                      $tr.closest('.data-table').dataTable('selectRow', $tr.index());
+                    },
+                    error: function(args) {
+                      // Move back to previous position
+                      rowActions.moveTo($tr, rowIndex);
+                    }
+                  }
+                });
+
+                return false;
+              });
+          });
+        });
+
+        // Draggable action
+        var initDraggable = function($tr) {
+          var originalIndex;
+
+          return $tr.closest('tbody').sortable({
+            handle: '.action.moveDrag',
+            start: function(event, ui) {
+              originalIndex = ui.item.index();
+            },
+            stop: function(event, ui) {
+              rowActions._std($tr, function() {});
+
+              reorder.moveDrag.action({
+                response: {
+                  success: function(args) {},
+                  error: function(args) {
+                    $tr.closest('tbody').sortable('cancel');
+                    rowActions._std($tr, function() {});
+                  }
+                }
+              });
+            }
+          });
+        };
+
+        if (reorder && reorder.moveDrag) {
+          initDraggable($tr);
+        }
+      }
+
+      // Add action data
       $tr.data('list-view-item-id', id);
       $tr.data('jsonObj', dataItem);
       $tr.data('list-view-action-filter', options.actionFilter);
 
-      if (actions) {
+      if (actions && renderActionCol(actions)) {
         var allowedActions = $.map(actions, function(value, key) {
           return key;
         });
@@ -705,6 +859,7 @@
   var loadBody = function($table, dataProvider, fields, append, loadArgs, actions, options) {
     if (!options) options = {};
     var context = options.context;
+    var reorder = options.reorder;
 
     var $tbody = $table.find('tbody');
     if (!loadArgs) loadArgs = {
@@ -733,7 +888,8 @@
 
             addTableRows(fields, args.data, $tbody, actions, {
               actionFilter: args.actionFilter,
-              context: context
+              context: context,
+              reorder: reorder
             });
             $table.dataTable(null, { noSelect: uiCustom });
           },
@@ -849,6 +1005,7 @@
     var infScrollTimer;
     var page = 1;
     var actions = listViewData.actions;
+    var reorder = listViewData.reorder;
 
     // Add panel controls
     $('<div class="panel-controls">').append($('<div class="control expand">').attr({
@@ -869,7 +1026,7 @@
 
     $('<tbody>').appendTo($table);
 
-    createHeader(listViewData.fields, $table, actions);
+    createHeader(listViewData.fields, $table, actions, { reorder: reorder });
 
     var $switcher;
     if (args.sections) {
@@ -884,26 +1041,27 @@
 
     createFilters($toolbar, listViewData.filters);
     createSearchBar($toolbar);
-    
+
     loadBody(
       $table,
       listViewData.dataProvider,
       listViewData.fields,
       false,
       {
-        page: page,        
+        page: page,
         filterBy: {
           kind: $listView.find('select[id=filterBy]').val(),
           search: {
             value: $listView.find('input[type=text]').val(),
             by: 'name'
           }
-        },        
+        },
         ref: args.ref
       },
       actions,
       {
-        context: args.context
+        context: args.context,
+        reorder: reorder
       }
     );
 
@@ -949,7 +1107,7 @@
         {
           page: 1,
           filterBy: {
-        	kind: $listView.find('select[id=filterBy]').val(),
+          kind: $listView.find('select[id=filterBy]').val(),
             search: {
               value: $listView.find('input[type=text]').val(),
               by: 'name'
@@ -967,7 +1125,7 @@
 
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
-      if (args.listView.disableInfiniteScrolling) return false;
+      if (args.listView && args.listView.disableInfiniteScrolling) return false;
       if ($listView.find('tr.last, td.loading:visible').size()) return false;
 
       clearTimeout(infScrollTimer);
@@ -983,7 +1141,9 @@
               search: {},
               kind: 'all'
             }
-          }, actions);
+          }, actions, {
+            reorder: listViewData.reorder
+          });
         }
       }, 500);
 
@@ -1028,20 +1188,19 @@
 
         // Populate context object w/ instance data
         var listViewActiveSection = $listView.data('view-args').activeSection;
-       
+
         // Create custom-generated detail view
         if (listViewData.detailView.pageGenerator) {
           detailViewArgs.pageGenerator = listViewData.detailView.pageGenerator;
         }
 
         var listViewArgs = $listView.data('view-args');
-        if (listViewArgs.listView)
-          detailViewArgs.section = listViewArgs.listView.section;
-        else
-          detailViewArgs.section = listViewArgs.activeSection ? listViewArgs.activeSection : listViewArgs.id;
+
+        detailViewArgs.section = listViewArgs.activeSection ?
+          listViewArgs.activeSection : listViewArgs.id;
 
         detailViewArgs.context[
-          listViewActiveSection != '_zone' ? 
+          listViewActiveSection != '_zone' ?
             listViewActiveSection : detailViewArgs.section
         ] = [jsonObj];
 
@@ -1053,7 +1212,9 @@
       }
 
       // Action icons
-      if ($target.closest('td.actions').size() || $target.closest('.action.add').size()) {
+      if (!$target.closest('td.actions').hasClass('reorder') &&
+          ($target.closest('td.actions').size() ||
+           $target.closest('.action.add').size())) {
         var actionID = $target.closest('.action').data('list-view-action-id');
         var $tr;
 
@@ -1115,6 +1276,7 @@
     var targetArgs = listViewArgs.activeSection ? listViewArgs.sections[
       listViewArgs.activeSection
     ].listView : listViewArgs;
+    var reorder = targetArgs.reorder;
 
     var $tr = addTableRows(
       targetArgs.fields,
@@ -1123,7 +1285,8 @@
       targetArgs.actions,
       {
         prepend: true,
-        actionFilter: actionFilter
+        actionFilter: actionFilter,
+        reorder: reorder
       }
     )[0];
     listView.find('table').dataTable('refresh');
@@ -1142,6 +1305,7 @@
     var targetArgs = listViewArgs.activeSection ? listViewArgs.sections[
       listViewArgs.activeSection
     ].listView : listViewArgs;
+    var reorder = targetArgs.reorder;
     var $table = $row.closest('table');
 
     $newRow = addTableRows(
@@ -1150,7 +1314,8 @@
       $listView.find('table tbody'),
       targetArgs.actions,
       {
-        actionFilter: actionFilter
+        actionFilter: actionFilter,
+        reorder: reorder
       }
     )[0];
 

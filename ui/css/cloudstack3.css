@@ -6835,3 +6835,50 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background-position: -229px -586px;
 }
 
+.moveTop .icon {
+  background-position: -24px -161px;
+}
+
+.moveTop:hover .icon {
+  background-position: -24px -734px;
+}
+
+.moveBottom .icon {
+  background-position: -98px -161px;
+}
+
+.moveBottom:hover .icon {
+  background-position: -98px -734px;
+}
+
+.moveUp .icon {
+  background-position: -2px -161px;
+}
+
+.moveUp:hover .icon {
+  background-position: -2px -734px;
+}
+
+.moveDown .icon {
+  background-position: -55px -161px;
+}
+
+.moveDown:hover .icon {
+  background-position: -55px -734px;
+}
+
+.moveDrag .icon {
+  cursor: move;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px 10px 10px 10px;
+  background-position: -74px -162px;
+}
+
+.moveDrag:hover .icon {
+  background-color: #FFFFFF;
+  cursor: move !important;
+}
+
