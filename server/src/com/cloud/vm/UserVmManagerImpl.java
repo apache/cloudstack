@@ -149,6 +149,7 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -3308,11 +3309,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
+        
+        //check if migrating to same host
+        long srcHostId = vm.getHostId();
+        if(destinationHost.getId() == srcHostId){
+            throw new InvalidParameterValueException("Cannot migrate VM, VM is already presnt on this host, please specify valid destination host to migrate the VM");
+        }
+        
+        //check if host is UP
+        if(destinationHost.getStatus() != com.cloud.host.Status.Up || destinationHost.getResourceState() != ResourceState.Enabled){
+            throw new InvalidParameterValueException("Cannot migrate VM, destination host is not in correct state, has status: "+destinationHost.getStatus() + ", state: " +destinationHost.getResourceState());
+        }
 
         // call to core process
         DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
         HostPodVO pod = _podDao.findById(destinationHost.getPodId());
-        long srcHostId = vm.getHostId();
         Cluster cluster = _clusterDao.findById(destinationHost.getClusterId());
         DeployDestination dest = new DeployDestination(dcVO, pod, cluster, destinationHost);
 
