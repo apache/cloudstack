@@ -50,6 +50,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
@@ -97,6 +98,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     @Inject ExternalLoadBalancerDeviceDao _lbDeviceDao;
     @Inject NetworkExternalLoadBalancerDao _networkLBDao;
     @Inject NetworkDao _networkDao;
+    @Inject HostDetailsDao _detailsDao;
 
     private boolean canHandle(Network config) {
         if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
@@ -400,12 +402,21 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     @Override
     public F5LoadBalancerResponse createF5LoadBalancerResponse(ExternalLoadBalancerDeviceVO lbDeviceVO) {
         F5LoadBalancerResponse response = new F5LoadBalancerResponse();
+        Host lbHost = _hostDao.findById(lbDeviceVO.getHostId());
+        Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVO.getHostId());
+
         response.setId(lbDeviceVO.getId());
+        response.setIpAddress(lbHost.getPrivateIpAddress());
         response.setPhysicalNetworkId(lbDeviceVO.getPhysicalNetworkId());
+        response.setPublicInterface(lbDetails.get("publicInterface"));
+        response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
         response.setDeviceCapacity(lbDeviceVO.getCapacity());
+        response.setInlineMode(lbDeviceVO.getIsInLineMode());
+        response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
+        response.setObjectName("F5LoadBalancer");
         return response;
     }
 }

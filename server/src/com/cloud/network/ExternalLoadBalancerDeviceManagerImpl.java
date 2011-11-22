@@ -216,9 +216,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 txn = Transaction.currentTxn();
                 txn.start();
 
-                boolean dedicatedUse = (configParams.get("lbdevicededicated") != null) ? Boolean.parseBoolean(configParams.get("lbdevicededicated")) : false;
-                boolean inline = (configParams.get("lbdeviceinline") != null) ? Boolean.parseBoolean(configParams.get("lbdeviceinline")) : false;
-                long capacity =  NumbersUtil.parseLong((String)configParams.get("lbdevicecapacity"), 0);
+                boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
+                boolean inline = (configParams.get(ApiConstants.INLINE) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.INLINE)) : false;
+                long capacity =  NumbersUtil.parseLong((String)configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
 
                 ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
                         deviceName, capacity, dedicatedUse, inline);

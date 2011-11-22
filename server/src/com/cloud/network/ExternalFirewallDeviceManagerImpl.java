@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -61,6 +62,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
@@ -91,6 +93,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -137,6 +140,13 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalFirewallDeviceManagerImpl.class);
 
     @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+        return true;
+    }
+
+    @Override
     @DB
     public ExternalFirewallDeviceVO addExternalFirewall(long physicalNetworkId, String url, String username, String password, String deviceName, ServerResource resource) {
         String guid;
@@ -175,6 +185,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         String ipAddress = uri.getHost();
         Map hostDetails = new HashMap<String, String>();
         guid = getExternalNetworkResourceGuid(pNetwork.getId(), deviceName, ipAddress);
+        hostDetails.put("name", guid);
         hostDetails.put("guid", guid);
         hostDetails.put("zoneId", String.valueOf(pNetwork.getDataCenterId()));
         hostDetails.put("ip", ipAddress);
@@ -182,11 +193,11 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         hostDetails.put("username", username);
         hostDetails.put("password", password);
         hostDetails.put("deviceName", deviceName);
-        Map<String, String> params = new HashMap<String, String>();
-        UrlUtil.parseQueryParameters(uri.getQuery(), false, params);
-        hostDetails.putAll(params);
+        Map<String, String> configParams = new HashMap<String, String>();
+        UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
+        hostDetails.putAll(configParams);
 
-        // let the server resource to device parameters validation
+        // let the server resource to do parameters validation
         try {
             resource.configure(guid, hostDetails);
         } catch (ConfigurationException e) {
@@ -198,7 +209,14 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             Transaction txn = Transaction.currentTxn();
             txn.start();
 
-            ExternalFirewallDeviceVO fwDevice = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(), deviceName);
+            boolean dedicatedUse = (configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.FIREWALL_DEVICE_DEDICATED)) : false;
+            long capacity =  NumbersUtil.parseLong((String)configParams.get(ApiConstants.FIREWALL_DEVICE_CAPACITY), 0);
+
+            ExternalFirewallDeviceVO fwDevice = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(), 
+                    deviceName, capacity, dedicatedUse);
+            if (capacity != 0) {
+                fwDevice.setState(FirewallDeviceState.Enabled);
+            }
             _externalFirewallDeviceDao.persist(fwDevice);
 
             DetailVO hostDetail = new DetailVO(externalFirewall.getId(), ApiConstants.FIREWALL_DEVICE_ID, String.valueOf(fwDevice.getId()));
@@ -615,7 +633,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource,
             Map<String, String> details, List<String> hostTags) {
-        if (!(startup[0] instanceof StartupExternalLoadBalancerCommand)) {
+        if (!(startup[0] instanceof StartupExternalFirewallCommand)) {
             return null;
         }
         host.setType(Host.Type.ExternalFirewall);

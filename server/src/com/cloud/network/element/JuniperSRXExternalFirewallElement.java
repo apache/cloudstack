@@ -49,6 +49,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -103,6 +104,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Inject NetworkExternalFirewallDao _networkFirewallDao;
     @Inject NetworkDao _networkDao;
     @Inject NetworkServiceMapDao _ntwkSrvcDao;
+    @Inject HostDetailsDao _hostDetailDao;
 
     private boolean canHandle(Network config) {
         DataCenter zone = _configMgr.getZone(config.getDataCenterId());
@@ -448,7 +450,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             if (pNetwork == null) {
                 throw new InvalidParameterValueException("Could not find phyical network with ID: " + physcialNetworkId);
             }
-            fwDevices = _fwDevicesDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.F5BigIp.getName());
+            fwDevices = _fwDevicesDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.JuniperSRX.getName());
         }
 
         return fwDevices;
@@ -478,12 +480,24 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     @Override
     public SrxFirewallResponse createSrxFirewallResponse(ExternalFirewallDeviceVO fwDeviceVO) {
         SrxFirewallResponse response = new SrxFirewallResponse();
+        Map<String, String> fwDetails = _hostDetailDao.findDetails(fwDeviceVO.getHostId());
+        Host fwHost = _hostDao.findById(fwDeviceVO.getHostId());
+
         response.setId(fwDeviceVO.getId());
         response.setPhysicalNetworkId(fwDeviceVO.getPhysicalNetworkId());
         response.setDeviceName(fwDeviceVO.getDeviceName());
         response.setDeviceCapacity(fwDeviceVO.getCapacity());
         response.setProvider(fwDeviceVO.getProviderName());
         response.setDeviceState(fwDeviceVO.getState().name());
+        response.setIpAddress(fwHost.getPrivateIpAddress());
+        response.setPublicInterface(fwDetails.get("publicInterface"));
+        response.setUsageInterface(fwDetails.get("usageInterface"));
+        response.setPrivateInterface(fwDetails.get("privateInterface"));
+        response.setPublicZone(fwDetails.get("publicZone"));
+        response.setPrivateZone(fwDetails.get("privateZone"));
+        response.setNumRetries(fwDetails.get("numRetries"));
+        response.setTimeout(fwDetails.get("timeout"));
+        response.setObjectName("SRXFirewall");
         return response;
     }
 }

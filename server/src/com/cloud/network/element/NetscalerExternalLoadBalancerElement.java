@@ -19,7 +19,6 @@
 
 package com.cloud.network.element;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +75,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -372,6 +370,7 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
+        response.setObjectName("NetscalerLoadBalancer");
         return response;
     }
 

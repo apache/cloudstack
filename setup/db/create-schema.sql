@@ -1967,6 +1967,7 @@ CREATE TABLE `cloud`.`external_firewall_devices` (
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this firewall device',
   `device_name` varchar(255) NOT NULL COMMENT 'name of the firewall device',
   `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance meant for dedicated use only',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Allocated) of the device',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external firewall device',
   `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the external firewall device',

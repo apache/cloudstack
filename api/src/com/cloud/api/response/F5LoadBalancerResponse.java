@@ -42,6 +42,21 @@ public class F5LoadBalancerResponse extends BaseResponse {
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY) @Param(description="device capacity")
     private Long deviceCapacity;
 
+    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) @Param(description="true if device is dedicated for an account")
+    private Boolean dedicatedLoadBalancer;
+
+    @SerializedName(ApiConstants.INLINE) @Param(description="true if device is inline with firewall device")
+    private Boolean inlineLoadBalancer;
+
+    @SerializedName(ApiConstants.PUBLIC_INTERFACE) @Param(description="the public interface of the load balancer")
+    private String publicInterface;
+    
+    @SerializedName(ApiConstants.PRIVATE_INTERFACE) @Param(description="the private interface of the load balancer")
+    private String privateInterface;
+
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external load balancer")
+    private String ipAddress;
+
     public void setId(long lbDeviceId) {
         this.id.setValue(lbDeviceId);
     }
@@ -64,5 +79,25 @@ public class F5LoadBalancerResponse extends BaseResponse {
 
     public void setDeviceState(String deviceState) {
         this.deviceState = deviceState;
+    }
+
+    public void setDedicatedLoadBalancer(boolean isDedicated) {
+        this.dedicatedLoadBalancer = isDedicated;
+    }
+
+    public void setInlineMode(boolean inline) {
+        this.inlineLoadBalancer = inline;
+    }
+
+    public void setPublicInterface(String publicInterface) {
+        this.publicInterface = publicInterface;
+    }
+
+    public void setPrivateInterface(String privateInterface) {
+        this.privateInterface = privateInterface;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
