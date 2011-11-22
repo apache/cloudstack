@@ -416,7 +416,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
-        response.setObjectName("F5LoadBalancer");
+        response.setObjectName("f5loadbalancer");
         return response;
     }
 }

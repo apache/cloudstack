@@ -370,7 +370,7 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
-        response.setObjectName("NetscalerLoadBalancer");
+        response.setObjectName("netscalerloadbalancer");
         return response;
     }
 

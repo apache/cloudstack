@@ -497,7 +497,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         response.setPrivateZone(fwDetails.get("privateZone"));
         response.setNumRetries(fwDetails.get("numRetries"));
         response.setTimeout(fwDetails.get("timeout"));
-        response.setObjectName("SRXFirewall");
+        response.setObjectName("srxfirewall");
         return response;
     }
 }
