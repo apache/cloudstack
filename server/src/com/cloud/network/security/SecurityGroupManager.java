@@ -40,7 +40,7 @@ public interface SecurityGroupManager {
 	
 	public boolean addInstanceToGroups(Long userVmId, List<Long> groups);
 
-	public void removeInstanceFromGroups(Long userVmId);
+	public void removeInstanceFromGroups(long userVmId);
 
 	public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 	

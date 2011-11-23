@@ -33,4 +33,5 @@ public interface SecurityGroupVMMapDao extends GenericDao<SecurityGroupVMMapVO, 
     int deleteVM(long instanceid);
 	List<Long> listVmIdsBySecurityGroup(long securityGroupId);
 	SecurityGroupVMMapVO findByVmIdGroupId(long instanceId, long securityGroupId);
+	long countSGForVm(long instanceId);
 }

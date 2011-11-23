@@ -64,7 +64,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
@@ -958,10 +957,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     @DB
-    public void removeInstanceFromGroups(Long userVmId) {
-        if (!isVmSecurityGroupEnabled(userVmId)) {
-            return;
-        }
+    public void removeInstanceFromGroups(long userVmId) {
+    	if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
+    		s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
+    		return;
+    	}
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVm userVm = _userVMDao.acquireInLockTable(userVmId); // ensures that duplicate entries are not created in
@@ -973,6 +973,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         s_logger.info("Disassociated " + n + " network groups " + " from uservm " + userVmId);
         _userVMDao.releaseFromLockTable(userVmId);
         txn.commit();
+        s_logger.debug("Security group mappings are removed successfully for vm id=" + userVmId);
     }
 
     @DB

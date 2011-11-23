@@ -22,11 +22,17 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={SecurityGroupVMMapDao.class})
@@ -34,6 +40,7 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
     private SearchBuilder<SecurityGroupVMMapVO> ListByIpAndVmId;
     private SearchBuilder<SecurityGroupVMMapVO> ListByVmId;
     private SearchBuilder<SecurityGroupVMMapVO> ListByVmIdGroupId;
+    protected GenericSearchBuilder<SecurityGroupVMMapVO, Long> CountSGForVm;
 
     private GenericSearchBuilder<SecurityGroupVMMapVO, Long> ListVmIdBySecurityGroup;
 
@@ -73,6 +80,11 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
         ListByVmIdGroupId.and("instanceId", ListByVmIdGroupId.entity().getInstanceId(), SearchCriteria.Op.EQ);
         ListByVmIdGroupId.and("securityGroupId", ListByVmIdGroupId.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         ListByVmIdGroupId.done();
+        
+        CountSGForVm = createSearchBuilder(Long.class);
+        CountSGForVm.select(null, Func.COUNT, null);
+        CountSGForVm.and("vmId", CountSGForVm.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        CountSGForVm.done();
     }
 
     @Override
@@ -132,6 +144,13 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
         sc.setParameters("securityGroupId", securityGroupId);
         sc.setParameters("instanceId", instanceId);
 		return findOneIncludingRemovedBy(sc);
+	}
+	
+	@Override
+	public long countSGForVm(long instanceId) {
+		SearchCriteria<Long> sc = CountSGForVm.create();
+    	sc.setParameters("vmId", instanceId);
+        return customSearch(sc, null).get(0);       
 	}
 	
 }

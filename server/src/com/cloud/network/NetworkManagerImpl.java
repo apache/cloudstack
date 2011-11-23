@@ -4907,7 +4907,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         //get provider for the service and check if all of them are supported
         String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(networkId, service);
-
         if (!isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
             s_logger.debug("Provider " + provider + " is not enabled in physical network id=" + physicalNetworkId);
             return false;
