@@ -213,7 +213,7 @@ listAsyncJobs=com.cloud.api.commands.ListAsyncJobsCmd;15
 #### storage pools commands
 listStoragePools=com.cloud.api.commands.ListStoragePoolsCmd;3
 createStoragePool=com.cloud.api.commands.CreateStoragePoolCmd;1
-#### updateStoragePool=com.cloud.api.commands.UpdateStoragePoolCmd;1
+updateStoragePool=com.cloud.api.commands.UpdateStoragePoolCmd;1
 deleteStoragePool=com.cloud.api.commands.DeletePoolCmd;1
 listClusters=com.cloud.api.commands.ListClustersCmd;3
 enableStorageMaintenance=com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;1

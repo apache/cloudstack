@@ -1341,7 +1341,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
         Long id = cmd.getId();
-        String tags = cmd.getTags();
+        List<String> tags = cmd.getTags();
 
         StoragePoolVO pool = _storagePoolDao.findById(id);
         if (pool == null) {
@@ -1349,9 +1349,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         if (tags != null) {
-            Map<String, String> details = _storagePoolDao.getDetails(id);
-            String[] tagsList = tags.split(",");
-            for (String tag : tagsList) {
+            Map<String, String> details = new HashMap<String, String>();
+            for (String tag : tags) {
                 tag = tag.trim();
                 if (tag.length() > 0 && !details.containsKey(tag)) {
                     details.put(tag, "true");

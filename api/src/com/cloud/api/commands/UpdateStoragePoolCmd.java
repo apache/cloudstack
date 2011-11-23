@@ -18,6 +18,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -44,8 +46,9 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the Id of the storage pool")
     private Long id;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the storage pool")
-    private String tags;
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma-separated list of tags for the storage pool")
+    private List<String> tags;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,7 +58,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return id;
     }
 
-    public String getTags() {
+    public List<String> getTags() {
         return tags;
     }
 
