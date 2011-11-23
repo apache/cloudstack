@@ -1056,7 +1056,7 @@
                       isPassword: true
                     },
                     networkdevicetype: {
-                      label: 'Network device type',
+                      label: 'Type',
                       select: function(args) {
                         var items = [];                        
                         items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});       
@@ -1115,8 +1115,7 @@
                               } 
                               else {											    
                                 $("body").stopTime(timerKey);
-                                if (result.jobstatus == 1) {                                                              
-                                  //alert("addNetworkServiceProvider&name=Netscaler succeeded.");   
+                                if (result.jobstatus == 1) {  
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");                                     
                                 } 
                                 else if (result.jobstatus == 2) {
@@ -1157,7 +1156,41 @@
                   args.response.success({data: items});
                 }
               });              
-            }
+            },           
+            detailView: {
+              name: 'NetScaler details',
+              tabs: {
+                details: {
+                  title: 'Details',
+                  fields: [
+                    {
+                      lbdeviceid: { label: 'ID' },
+                      ipaddress: { label: 'IP Address' },
+                      lbdevicestate: { label: 'Status' },
+                      lbdevicename: { label: 'Type' },
+                      lbdevicecapacity: { label: 'Capacity' },
+                      lbdevicededicated: { 
+                        label: 'Dedicated',
+                        converter: cloudStack.converters.toBooleanText                        
+                      },
+                      inline: { 
+                        label: 'Mode',
+                        converter: function(args) {
+                          if(args == false)
+                            return "side by side";
+                          else //args == true
+                            return "inline";
+                        }
+                      }                      
+                    }
+                  ],
+                  dataProvider: function(args) {	
+                    //debugger;
+                    args.response.success({data: args.context.undefined[0]}); //Brian, please make args.context include real object name instead of "undefined".
+                  }
+                },
+              }
+            }            
           },
 
           // F5 list view
@@ -1253,7 +1286,7 @@
                       isPassword: true
                     },
                     networkdevicetype: {
-                      label: 'Network device type',
+                      label: 'Type',
                       select: function(args) {
                         var items = [];                        
                         items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});                        
@@ -1447,7 +1480,7 @@
                       isPassword: true
                     },
                     networkdevicetype: {
-                      label: 'Network device type',
+                      label: 'Type',
                       select: function(args) {
                         var items = [];                        
                         items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});                        
