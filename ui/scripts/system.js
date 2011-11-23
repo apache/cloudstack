@@ -940,12 +940,11 @@
             providerActionFilter: function(args) {                        
               var allowedActions = [];
               var jsonObj = nspMap["netscaler"];              
-              if(jsonObj.state == "Enabled") {
-                allowedActions.push("disable");                
-              }
-              else if(jsonObj.state == "Disabled") {
-                allowedActions.push("enable");                
-              }                       
+              if(jsonObj.state == "Enabled") 
+                allowedActions.push("disable");               
+              else if(jsonObj.state == "Disabled") 
+                allowedActions.push("enable"); 
+              allowedActions.push("shutdown");                
               return allowedActions;
             },
             providerActions: {              
@@ -1004,27 +1003,22 @@
                   notification: function() { return 'Disabled Netscaler provider'; }
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
-              
-              //"Updating the provider state to 'Shutdown' is not supported"
-              /*
-              ,
+              },
               shutdown: {
                 label: 'Shutdown',
                 action: function(args) {
                   $.ajax({
-                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Shutdown"),
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["netscaler"].id),
                     dataType: "json",
-                    success: function(json) {                      
-                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                    success: function(json) { 
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
                       args.response.success(
                         {_custom:
                           {
                             jobId: jid,
-                            getUpdatedItem: function(json) {                              
-                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                              nspMap["netscaler"] = item;
-                              return item; 
+                            getUpdatedItem: function(json) {  
+                              nspMap["netscaler"] = null;
+                              return {}; //nothing in this network service provider needs to be updated, in fact, this whole network service provider has being deleted
                             }
                           }
                         }
@@ -1036,8 +1030,7 @@
                   notification: function() { return 'Shutdown Netscaler provider'; }
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
-              */
+              }              
             },            
             actions: {
               add: {
