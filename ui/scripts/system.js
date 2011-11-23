@@ -1764,7 +1764,16 @@
             fields: {
               name: { label: 'Zone' },
               networktype: { label: 'Network Type' },
-              allocationstate: { label: 'Allocation State' }
+              allocationstate: { label: 'Allocation State' },
+              domainid: {
+                label: 'Public',
+                converter: function(args) {                 
+                  if(args == null)
+                    return "Yes";
+                  else
+                    return "No";
+                }
+              }
             },
             actions: {
               add: {
