@@ -37,7 +37,8 @@ var pollAsyncJobResult = function(args) {
       var result = json.queryasyncjobresultresponse;
       if (result.jobstatus == 0) {
         return; //Job has not completed
-      } else {
+      } 
+      else {
         if (result.jobstatus == 1) { // Succeeded         
           if(args._custom.getUpdatedItem != null && args._custom.getActionFilter != null) {
             args.complete({
@@ -54,8 +55,9 @@ var pollAsyncJobResult = function(args) {
             args.complete();
           }
         }
-        else if (result.jobstatus == 2) { // Failed
-          args.error({message:result.jobresult.errortext});
+        else if (result.jobstatus == 2) { // Failed          
+          var msg = (result.jobresult.errortext == null)? "": result.jobresult.errortext;
+          args.error({message: msg});
         }
       }
     },

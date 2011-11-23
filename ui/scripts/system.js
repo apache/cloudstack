@@ -1446,7 +1446,44 @@
               });              
             },            
             detailView: {
-              name: 'F5 details',
+              name: 'F5 details',              
+              actions: {                
+                'delete': {
+                  label: 'Delete F5',
+                  messages: {
+                    confirm: function(args) {
+                      return 'Are you sure you want to delete this F5?';
+                    },
+                    success: function(args) {
+                      return 'F5 is being deleted.';
+                    },
+                    notification: function(args) {
+                      return 'Deleting F5';
+                    },
+                    complete: function(args) {
+                      return 'F5 has been deleted.';
+                    }
+                  },
+                  action: function(args) {   
+                    $.ajax({
+                      url: createURL("deleteF5LoadBalancer&lbdeviceid=" + args.context.f5Providers[0].lbdeviceid),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {     
+                        var jid = json.deletef5loadbalancerresponse.jobid;
+                        args.response.success(
+                          {_custom:
+                           {jobId: jid}
+                          }
+                        );
+                      }
+                    });
+                  },
+                  notification: {
+                    poll: pollAsyncJobResult
+                  }
+                }               
+              },             
               tabs: {
                 details: {
                   title: 'Details',
