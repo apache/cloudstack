@@ -257,6 +257,7 @@
         types: {
           // Virtual router list view
           virtualRouter: {
+            id: 'virtualRouter-providers',
             label: 'Virtual Router',
             fields: {
               name: { label: 'Name' },
@@ -333,6 +334,7 @@
 
           // NetScaler list view
           netscaler: {
+            id: 'netscaler-providers',
             label: 'NetScaler',
             fields: {
               name: { label: 'Name' },
@@ -469,6 +471,7 @@
 
           // F5 list view
           f5: {
+            id: 'f5-providers',
             label: 'F5',
             fields: {
               name: { label: 'Name' },
@@ -545,6 +548,7 @@
 
           // SRX list view
           srx: {
+            id: 'srx-providers',
             label: 'SRX',
             fields: {
               name: { label: 'Name' },
@@ -621,6 +625,7 @@
 
           // Security groups list view
           securityGroups: {
+            id: 'securityGroup-providers',
             label: 'Security Groups',
             fields: {
               name: { label: 'Name' },
