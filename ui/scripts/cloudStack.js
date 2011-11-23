@@ -41,13 +41,81 @@
 
       // Use this for checking the session, to bypass login screen
       bypassLoginCheck: function(args) {
-        return false;
-        return {
-          user: {
-            login: 'wchan',
-            name: 'Will Chan'
+        g_mySession = $.cookie("JSESSIONID");
+        g_sessionKey = $.cookie("sessionKey");
+        g_role = $.cookie("role");
+        g_username = $.cookie("username");
+        g_account = $.cookie("account");
+        g_domainid = $.cookie("domainid");
+        g_timezone = $.cookie("timezone");
+        g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
+        g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
+        g_userfullname = $.cookie('userfullname');
+
+        if($.cookie("timezoneoffset") != null)
+          g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
+        else
+          g_timezoneoffset = null;
+
+        if (g_directAttachSecurityGroupsEnabled == null || g_directAttachSecurityGroupsEnabled.length == 0)
+          g_directAttachSecurityGroupsEnabled = "false";
+
+        if (g_userPublicTemplateEnabled == null || g_userPublicTemplateEnabled.length == 0)
+          g_userPublicTemplateEnabled = "true";
+
+        if(g_supportELB == null)
+          g_supportELB = $.cookie("supportELB");
+
+        if(g_firewallRuleUiEnabled == null)
+          g_firewallRuleUiEnabled = $.cookie("firewallRuleUiEnabled");
+
+        var userValid = false;
+
+        $.ajax({
+          url: createURL("listCapabilities"),
+          dataType: "json",
+          async: false,
+          success: function(json) {
+            /* g_supportELB: "guest"   — ips are allocated on guest network (so use 'forvirtualnetwork' = false)
+             * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
+             * g_supportELB: "false"   – no ELB support
+             */
+            g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
+            $.cookie('supportELB', g_supportELB, { expires: 1});
+
+            g_firewallRuleUiEnabled = json.listcapabilitiesresponse.capability.firewallRuleUiEnabled.toString(); //convert boolean to string if it's boolean
+            $.cookie('firewallRuleUiEnabled', g_firewallRuleUiEnabled, { expires: 1});
+
+            if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
+              g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
+              $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
+            }
+
+            if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
+              g_directAttachSecurityGroupsEnabled = json.listcapabilitiesresponse.capability.securitygroupsenabled.toString(); //convert boolean to string if it's boolean
+              $.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
+            }
+
+            userValid = true;
+          },
+          error: function(xmlHTTP) {
+            logout(false);
+          },
+          beforeSend: function(xmlHTTP) {
+            return true;
           }
-        };
+        });
+
+        return userValid ? {
+          user: {
+            login: g_username,
+            name: g_userfullname,
+            role: g_role,
+            domainid: g_domainid
+          }
+        } : false;
+
+        return testAddUser;
       },
 
       // Actual login process, via form
@@ -90,6 +158,7 @@
             g_domainid = loginresponse.domainid;
             g_timezone = loginresponse.timezone;
             g_timezoneoffset = loginresponse.timezoneoffset;
+            g_userfullname = loginresponse.firstname + ' ' + loginresponse.lastname;
 
             $.cookie('sessionKey', g_sessionKey, { expires: 1});
             $.cookie('username', g_username, { expires: 1});
@@ -98,6 +167,7 @@
             $.cookie('role', g_role, { expires: 1});
             $.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});
             $.cookie('timezone', g_timezone, { expires: 1});
+            $.cookie('userfullname', g_userfullname, { expires: 1 });
 
             $.ajax({
               url: createURL("listCapabilities"),
@@ -149,6 +219,20 @@
         });
       },
 
+      logoutAction: function(args) {
+        $.ajax({
+          url: createURL('logout'),
+          async: false,
+          success: function() {
+            document.location.reload();
+          },
+          error: function() {
+            document.location.reload();
+          }
+        });
+
+      },
+
       // Show cloudStack main UI widget
       complete: function(args) {
         var context = {
@@ -178,6 +262,13 @@
               }
             }
           }
+        });
+
+        // Logout action
+        $('#user-options a').live('click', function() {
+          loginArgs.logoutAction({
+            context: cloudStack.context
+          });
         });
       }
     };
