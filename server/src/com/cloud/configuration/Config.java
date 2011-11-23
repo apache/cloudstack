@@ -149,6 +149,7 @@ public enum Config {
 	ExpungeInterval("Advanced", UserVmManager.class, Integer.class, "expunge.interval", "86400", "The interval (in seconds) to wait before running the expunge thread.", null),
 	ExpungeWorkers("Advanced", UserVmManager.class, Integer.class, "expunge.workers",  "1", "Number of workers performing expunge ", null),
 	ExtractURLCleanUpInterval("Advanced", ManagementServer.class, Integer.class, "extract.url.cleanup.interval",  "7200", "The interval (in seconds) to wait before cleaning up the extract URL's ", null),
+	DisableExtraction("Advanced", ManagementServer.class, Boolean.class, "disable.extraction",  "false", "Flag for disabling extraction of template, isos and volumes", null),
 	ExtractURLExpirationInterval("Advanced", ManagementServer.class, Integer.class, "extract.url.expiration.interval",  "14400", "The life of an extract URL after which it is deleted ", null),
 	HostStatsInterval("Advanced", ManagementServer.class, Integer.class, "host.stats.interval", "60000", "The interval (in milliseconds) when host stats are retrieved from agents.", null),
 	HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),

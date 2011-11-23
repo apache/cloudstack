@@ -3410,6 +3410,10 @@ public class ManagementServerImpl implements ManagementServer {
         String mode = cmd.getMode();
         Account account = UserContext.current().getCaller();
 
+        if (!_accountMgr.isRootAdmin(account.getType()) && ApiDBUtils.isExtractionDisabled()) {
+            throw new PermissionDeniedException("Extraction has been disabled by admin");
+        }
+        
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Unable to find volume with id " + volumeId);
@@ -3429,14 +3433,16 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
             throw new PermissionDeniedException("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
         }
-
-        VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+        
         if (volume.getVolumeType() != Volume.Type.DATADISK){ //Datadisk dont have any template dependence.
-            boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are allowed
-                // to extract
-                throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
-            }
+        	
+        	VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+        	if (template != null){ //For ISO based volumes template = null and we allow extraction of all ISO based volumes
+	            boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+	            if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are always allowed to extract
+	                throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
+	            }
+        	}
         }
 
         Upload.Mode extractMode;

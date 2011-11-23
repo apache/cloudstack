@@ -654,6 +654,12 @@ public class ApiDBUtils {
         return cpuOverprovisioningFactor;
     }
     
+    public static boolean isExtractionDisabled(){
+    	String disableExtractionString = _configDao.getValue(Config.DisableExtraction.toString());
+        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
+        return disableExtraction;
+    }
+    
     public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {
         return _securityGroupMgr.getSecurityGroup(groupName, ownerId);
     }

@@ -264,6 +264,9 @@ CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
   `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DELETE FROM configuration WHERE name='host.capacity.checker.wait';
+DELETE FROM configuration WHERE name='host.capacity.checker.interval'; 
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'disable.extraction' , 'false', 'Flag for disabling extraction of template, isos and volumes');
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);

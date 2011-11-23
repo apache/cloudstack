@@ -47,16 +47,14 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //FIXME - add description
     @IdentityMapper(entityTableName="volumes")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the volume")
     private Long id;
 
-    //FIXME - add description
+
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="the url to which the volume would be extracted")
     private String url;
 
-    //FIXME - add description
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the zone where the volume is located")
     private Long zoneId;

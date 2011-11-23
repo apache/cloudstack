@@ -188,6 +188,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     int _storagePoolMaxWaitSeconds = 3600;
+    boolean _disableExtraction = false;
     ExecutorService _preloadExecutor;
     ScheduledExecutorService _swiftTemplateSyncExecutor;
     
@@ -302,6 +303,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             desc = Upload.Type.ISO.toString();
         }
         eventId = eventId == null ? 0:eventId;
+        
+        if (!_accountMgr.isRootAdmin(caller.getType()) && _disableExtraction) {
+            throw new PermissionDeniedException("Extraction has been disabled by admin");
+        }
         
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
@@ -932,6 +937,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+
+        String disableExtraction =  _configDao.getValue(Config.DisableExtraction.toString());
+        _disableExtraction  = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
 
         HostTemplateStatesSearch = _tmpltHostDao.createSearchBuilder();
         HostTemplateStatesSearch.and("id", HostTemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
