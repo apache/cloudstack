@@ -1154,6 +1154,43 @@
             },           
             detailView: {
               name: 'NetScaler details',
+              actions: {                
+                'delete': {
+                  label: 'Delete NetScaler',
+                  messages: {
+                    confirm: function(args) {
+                      return 'Are you sure you want to delete this NetScaler?';
+                    },
+                    success: function(args) {
+                      return 'NetScaler is being deleted.';
+                    },
+                    notification: function(args) {
+                      return 'Deleting NetScaler';
+                    },
+                    complete: function(args) {
+                      return 'NetScaler has been deleted.';
+                    }
+                  },
+                  action: function(args) {                                      
+                    $.ajax({
+                      url: createURL("deleteNetscalerLoadBalancer&lbdeviceid=" + args.context.netscalerProviders[0].lbdeviceid),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {                       
+                        var jid = json.deletenetscalerloadbalancerresponse.jobid;
+                        args.response.success(
+                          {_custom:
+                           {jobId: jid}
+                          }
+                        );
+                      }
+                    });
+                  },
+                  notification: {
+                    poll: pollAsyncJobResult
+                  }
+                }               
+              },
               tabs: {
                 details: {
                   title: 'Details',
