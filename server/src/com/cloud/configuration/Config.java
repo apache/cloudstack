@@ -150,7 +150,6 @@ public enum Config {
 	ExpungeWorkers("Advanced", UserVmManager.class, Integer.class, "expunge.workers",  "1", "Number of workers performing expunge ", null),
 	ExtractURLCleanUpInterval("Advanced", ManagementServer.class, Integer.class, "extract.url.cleanup.interval",  "7200", "The interval (in seconds) to wait before cleaning up the extract URL's ", null),
 	ExtractURLExpirationInterval("Advanced", ManagementServer.class, Integer.class, "extract.url.expiration.interval",  "14400", "The life of an extract URL after which it is deleted ", null),
-	AllowIsoBasedVolumesExtraction("Advanced", ManagementServer.class, Boolean.class, "allow.iso.based.volumes.extraction",  "true", "Flag for allowing/disallowing extraction of Iso based Volumes ", null),
 	HostStatsInterval("Advanced", ManagementServer.class, Integer.class, "host.stats.interval", "60000", "The interval (in milliseconds) when host stats are retrieved from agents.", null),
 	HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
 	IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", "8096", "Defaul API port", null),

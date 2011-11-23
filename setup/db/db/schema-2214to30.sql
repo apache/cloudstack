@@ -101,7 +101,6 @@ INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server'
 INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'cluster.localStorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
 INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.directnetwork.publicip.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.');
 INSERT IGNORE INTO configuration VALUES ('Alert', 'DEFAULT', 'management-server', 'zone.secstorage.capacity.notificationthreshold' , .75, 'Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.');
-INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'allow.iso.based.volumes.extraction' , 'true', 'Flag for allowing/disallowing extraction of Iso based Volumes ');
 
 update configuration set name = 'cluster.storage.allocated.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.allocated.capacity.threshold' ;
 update configuration set name = 'cluster.storage.capacity.notificationthreshold' , category = 'Alert' where name = 'storage.capacity.threshold' ;
@@ -268,6 +267,3 @@ CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
-DELETE FROM configuration WHERE name='host.capacity.checker.wait';
-DELETE FROM configuration WHERE name='host.capacity.checker.interval';
-

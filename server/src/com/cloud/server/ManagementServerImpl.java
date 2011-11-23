@@ -3424,25 +3424,17 @@ public class ManagementServerImpl implements ManagementServer {
         if (volume.getPoolId() == null) {
             throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
         }
-        
         // Extract activity only for detached volumes or for volumes whose instance is stopped
         if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
             s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
             throw new PermissionDeniedException("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
         }
-        
-        if (volume.getVolumeType() != Volume.Type.DATADISK){ // Datadisk don't have any template dependence.
-        	
-        	VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-        	boolean isExtractable = false;
-        	
-        	if (template == null){ // Volume is ISO based.
-        		isExtractable = ApiDBUtils.isIsoBasedVolumesExtractionAllowed();
-        	}else { // Volume is Template based.
-        		isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-        	}        	                        
-            
-            if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are always allowed to extract
+
+        VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+        if (volume.getVolumeType() != Volume.Type.DATADISK){ //Datadisk dont have any template dependence.
+            boolean isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global admins are allowed
+                // to extract
                 throw new PermissionDeniedException("The volume:" + volumeId + " is not allowed to be extracted");
             }
         }
