@@ -36,8 +36,18 @@
         value: { label: 'Value', editable: true }
       },
       dataProvider: function(args) {
+        var data = {
+          page: args.page,
+          pagesize: pageSize
+        };
+
+        if (args.filterBy.search.value) {
+          data.name = args.filterBy.search.value;
+        }
+
         $.ajax({
-          url: createURL("listConfigurations&page=" + args.page + "&pagesize=" + pageSize),
+          url: createURL('listConfigurations'),
+          data: data,
           dataType: "json",
           async: true,
           success: function(json) {
