@@ -1384,7 +1384,43 @@
                   args.response.success({data: items});
                 }
               });              
+            },
+            //???
+            detailView: {
+              name: 'F5 details',
+              tabs: {
+                details: {
+                  title: 'Details',
+                  fields: [
+                    {
+                      lbdeviceid: { label: 'ID' },
+                      ipaddress: { label: 'IP Address' },
+                      lbdevicestate: { label: 'Status' },
+                      lbdevicename: { label: 'Type' },
+                      lbdevicecapacity: { label: 'Capacity' },
+                      lbdevicededicated: { 
+                        label: 'Dedicated',
+                        converter: cloudStack.converters.toBooleanText                        
+                      },
+                      inline: { 
+                        label: 'Mode',
+                        converter: function(args) {
+                          if(args == false)
+                            return "side by side";
+                          else //args == true
+                            return "inline";
+                        }
+                      }                      
+                    }
+                  ],
+                  dataProvider: function(args) {	
+                    //debugger;
+                    args.response.success({data: args.context.undefined[0]}); //Brian, please make args.context include real object name instead of "undefined".
+                  }
+                },
+              }
             }
+            //???
           },
 
           // SRX list view
