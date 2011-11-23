@@ -350,7 +350,9 @@
               }
             },
             notification: {
-              poll: testData.notifications.testPoll
+              poll: testData.notifications.customPoll({
+                state: 'Destroyed'
+              })
             },
             action: function(args) {
               setTimeout(function() {

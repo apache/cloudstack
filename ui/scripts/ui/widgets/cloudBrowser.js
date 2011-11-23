@@ -245,6 +245,9 @@
 
       // Remove existing panels from parent
       if ($parent) {
+        // Cleanup transitioning panels -- prevent old complete actions from running
+        $parent.siblings().stop();
+        
         _breadcrumb.filter(
           $('div.panel.maximized')
             .removeClass('maximized')
@@ -295,7 +298,7 @@
               return $(this).width() == $panel.width();
             });
 
-            if (args.complete) args.complete($panel);
+            if ($panel.is(':visible') && args.complete) args.complete($panel);
           }
         });
       };

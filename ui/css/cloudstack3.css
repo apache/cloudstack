@@ -310,8 +310,6 @@ body.login {
   width: 1024px;
   height: 768px;
   margin: auto;
-  overflow: hidden;
-  border: 1px solid #E2E2E2;
   border-top: none;
   position: relative;
 }
@@ -349,7 +347,7 @@ body.login {
 }
 
 .install-wizard .step .subtitle {
-  color: #808080;
+  color: #4395C6;
   font-weight: bold;
 }
 
@@ -357,6 +355,14 @@ body.login {
   color: #4A4A4A;
   font-size: 15px;
   line-height: 23px;
+  background: url(../images/bg-transparent-white.png);
+}
+
+.install-wizard .step ul li {
+  margin: 14px 0 0 18px;
+  width: 465px;
+  font-size: 13px;
+  list-style: disc;
 }
 
 .install-wizard .step .field {
@@ -462,10 +468,10 @@ body.login {
 .install-wizard .diagram {
   width: 910px;
   height: 385px;
-  /*+placement:shift 65px 397px;*/
+  /*+placement:shift 65px 496px;*/
   position: relative;
   left: 65px;
-  top: 397px;
+  top: 496px;
   position: absolute;
   z-index: 10;
 }
@@ -565,14 +571,19 @@ body.login {
 /*** Setup form*/
 .install-wizard .step .setup-form {
   display: inline-block;
-  background: #F0F0F0;
+  background: url(../images/bg-transparent-white.png);
   width: 469px;
-  border: 1px solid #CFCFCF;
+  border: 1px solid #DFDFDF;
   /*+text-shadow:0px 1px 0px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 0px #FFFFFF;
   -webkit-text-shadow: 0px 1px 0px #FFFFFF;
   -o-text-shadow: 0px 1px 0px #FFFFFF;
   text-shadow: 0px 1px 0px #FFFFFF;
+  /*+box-shadow:inset 0px 1px 5px #FFFFFF;*/
+  -moz-box-shadow: inset 0px 1px 5px #FFFFFF;
+  -webkit-box-shadow: inset 0px 1px 5px #FFFFFF;
+  -o-box-shadow: inset 0px 1px 5px #FFFFFF;
+  box-shadow: inset 0px 1px 5px #FFFFFF;
 }
 
 .install-wizard .step .setup-form .title {
@@ -586,7 +597,6 @@ body.login {
   display: inline-block;
   margin: 6px 0 1px 31px;
   padding: 9px;
-  background: #E2E2E2;
   color: #57646D;
 }
 
@@ -1345,7 +1355,7 @@ div.list-view div.toolbar div.section-switcher div.section-select label {
   height: 100%;
   left: 0px;
   top: 0px;
-  background: #E2E9F0 url(../images/ajax-loader.gif) no-repeat center;
+  background: #F2F2F2 url(../images/ajax-loader.gif) no-repeat center;
   z-index: 500;
   /*+opacity:70%;*/
   filter: alpha(opacity=70);

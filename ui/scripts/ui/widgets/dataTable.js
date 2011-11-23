@@ -103,11 +103,8 @@
       var $rows = $table.find('tbody tr');
       var $row = $($rows[rowIndex]);
 
-      $rows.filter(
-        function() {
-          return this != $row[0];
-        }).removeClass('selected');
-      return $row.toggleClass('selected');
+      $row.siblings().removeClass('selected');
+      return $row.addClass('selected');
     };
 
     var computeEvenOddRows = function() {
@@ -235,9 +232,11 @@
         return false;
       });
 
-      $table.find('tbody tr').bind('click', function(event) {
-        if (noSelect == true) return true;
-        var rowIndex = $(this).index();
+      $table.bind('click', function(event) {
+        var $tr = $(event.target).closest('tr');
+
+        if (!$tr.size() || noSelect) return true;
+        var rowIndex = $tr.index();
 
         toggleSelectRow(rowIndex);
 

@@ -104,18 +104,31 @@
     /**
      * Show tooltip for focused form elements
      */
-    var showTooltip = function($formContainer) {
-      var $tooltip = elems.tooltip('Hints', 'Help content goes here.');
+    var showTooltip = function($formContainer, sectionID) {
+      var $tooltip = elems.tooltip('Hints', '');
+
       $formContainer.find('input').focus(function() {
+        var $input = $(this);
+
+        $tooltip.find('p').html('');
         $tooltip.appendTo($formContainer);
         $tooltip.css({
           top: $(this).position().top - 20
         });
+        
+        var content = getCopy(
+          'tooltip.' + sectionID + '.' + $input.attr('name'),
+          $tooltip.find('p')
+        );
       });
 
       $formContainer.find('input').blur(function() {
         $tooltip.remove();
       });
+
+      setTimeout(function() {
+        $formContainer.find('input:first').focus();        
+      }, 600);
     };
 
     /**
@@ -167,9 +180,9 @@
       intro: function(args) {
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-          .html('What is CloudStack?');
+          .html('What is CloudStack&#8482?');
         var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('Subtitle text goes here');
+          .html('Introduction to CloudStack&#8482');
         var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
         var $continue = elems.nextButton('Continue with basic installation');
         var $advanced = elems.nextButton('Setup advanced installation').addClass('advanced-installation');
@@ -249,7 +262,7 @@
         $addZoneForm.find('.field:last').remove();
 
         showDiagram('.part.zone');
-        showTooltip($addZoneForm);
+        showTooltip($addZoneForm, 'addZone');
 
         return $addZone.append(
           $addZoneForm
@@ -281,7 +294,7 @@
         });
 
         showDiagram('.part.zone');
-        showTooltip($addIPRangeForm);
+        showTooltip($addIPRangeForm, 'addIPRange');
 
         // Remove unneeded fields
         $addIPRangeForm.find('.main-desc, .conditional').remove();
@@ -347,7 +360,7 @@
         $addPodForm.find('.main-desc, .conditional').remove();
 
         showDiagram('.part.zone, .part.pod');
-        showTooltip($addPodForm);
+        showTooltip($addPodForm, 'addPod');
 
         return $addPod.append(
           $addPodForm
@@ -416,7 +429,7 @@
         });
 
         showDiagram('.part.zone, .part.cluster');
-        showTooltip($addClusterForm);
+        showTooltip($addClusterForm, 'addCluster');
 
         // Cleanup
         $addClusterForm.find('.message').remove();
@@ -510,7 +523,7 @@
         });
 
         showDiagram('.part.zone, .part.host');
-        showTooltip($addHostForm);
+        showTooltip($addHostForm, 'addHost');
 
         // Cleanup
         $addHostForm.find('.message').remove();
@@ -601,7 +614,7 @@
         });
 
         showDiagram('.part.zone, .part.primaryStorage');
-        showTooltip($addPrimaryStorageForm);
+        showTooltip($addPrimaryStorageForm, 'addPrimaryStorage');
 
         // Cleanup
         $addPrimaryStorageForm.find('.message').remove();
@@ -681,7 +694,7 @@
         });
 
         showDiagram('.part.zone, .part.secondaryStorage');
-        showTooltip($addSecondaryStorageForm);
+        showTooltip($addSecondaryStorageForm, 'addSecondaryStorage');
 
         // Cleanup
         $addSecondaryStorageForm.find('.message').remove();
@@ -702,7 +715,6 @@
           .html('Congratulations!.');
         var $subtitle = $('<div></div>').addClass('subtitle')
           .html('Click the launch button.');
-        var $copy = getCopy('whatIsACluster', $('<p></p>'));
         var $continue = elems.nextButton('Launch');
 
         $continue.click(function() {
@@ -715,7 +727,6 @@
 
         return $intro.append(
           $title, $subtitle,
-          $copy,
           $continue
         );
       },

@@ -623,7 +623,7 @@
   /**
    * Initialize detail view for specific ID from list view
    */
-  var createDetailView = function(args, complete) {
+  var createDetailView = function(args, complete, $row) {
     var $panel = args.$panel;
     var title = args.title;
     var id = args.id;
@@ -632,7 +632,8 @@
       id: id,
       jsonObj: args.jsonObj,
       section: args.section,
-      context: args.context
+      context: args.context,
+      $listViewRow: $row
     });
 
     var $detailView, $detailsPanel;
@@ -812,7 +813,7 @@
         var isUICustom = $listView.data('view-args') ?
               $tr.closest('.list-view').data('view-args').uiCustom : false;
 
-        if (options.actionFilter && !isUICustom) {
+        if ($.isFunction(options.actionFilter) && !isUICustom) {
           allowedActions = options.actionFilter({
             context: $.extend(true, {}, options.context, {
               actions: allowedActions,
@@ -1206,7 +1207,7 @@
 
         createDetailView(detailViewArgs, function($detailView) {
           $detailView.data('list-view', $listView);
-        });
+        }, $target.closest('tr'));
 
         return false;
       }
@@ -1297,7 +1298,7 @@
     return $tr;
   };
 
-  var replaceItem = function($row, data, actionFilter) {
+  var replaceItem = function($row, data, actionFilter, after) {
     var $newRow;
     var $listView = $row.closest('.list-view');
     var viewArgs = $listView.data('view-args');
@@ -1307,6 +1308,7 @@
     ].listView : listViewArgs;
     var reorder = targetArgs.reorder;
     var $table = $row.closest('table');
+    var defaultActionFilter = $row.data('list-view-action-filter');
 
     $newRow = addTableRows(
       targetArgs.fields,
@@ -1314,13 +1316,17 @@
       $listView.find('table tbody'),
       targetArgs.actions,
       {
-        actionFilter: actionFilter,
+        actionFilter: actionFilter ? actionFilter : defaultActionFilter,
         reorder: reorder
       }
     )[0];
 
+    $newRow.data('json-obj', data);
+
     $row.replaceWith($newRow);
     $table.dataTable('refresh');
+
+    if (after) after($newRow);
 
     return $newRow;
   };
@@ -1330,7 +1336,7 @@
     if (args == 'prependItem') {
       return prependItem(this, options.data, options.actionFilter);
     } else if (args =='replaceItem') {
-      replaceItem(this, options.data, options.actionFilter);
+      replaceItem(options.$row, options.data, options.actionFilter, options.after);
     } else if (args.sections) {
       var targetSection;
       $.each(args.sections, function(key) {

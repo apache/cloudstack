@@ -22,7 +22,7 @@
       $notifications.notifications('add', {
         section: notification.section,
         desc: notification.desc,
-        interval: 5000,
+        interval: 2000,
         _custom: notification._custom,
         poll: function(args) {
           var complete = args.complete;
@@ -49,6 +49,35 @@
     }
 
     return true;
+  };
+
+  var replaceListViewItem = function($detailView, newData) {
+    var $row = $detailView.data('list-view-row');
+
+    if (!$row) return;
+    
+    var $listView = $row.closest('.list-view');
+    var $newRow;
+    var jsonObj = $row.data('json-obj');
+
+    $listView.listView('replaceItem', {
+      $row: $row,
+      data: $.extend(jsonObj, newData),
+      after: function($newRow) {
+        $detailView.data('list-view-row', $newRow);
+        
+        setTimeout(function() {
+          $('.data-table').dataTable('selectRow', $newRow.index());
+        }, 100);
+      }
+    });
+
+    // Refresh detail view context
+    $.extend(
+      $detailView.data('view-args').context[
+        $detailView.data('view-args').section
+      ][0], newData
+    );
   };
 
   /**
@@ -115,6 +144,7 @@
                 function(args) {
                   $loading.remove();
                   updateTabContent(args.data);
+                  replaceListViewItem($detailView, args.data);
                 },
 
                 {},
@@ -124,7 +154,7 @@
               );
             }
           });
-        }  else {
+        } else {
           // Set loading appearance
           var $loading = $('<div>').addClass('loading-overlay');
           $detailView.prepend($loading);
@@ -159,6 +189,8 @@
                     if (additional && additional.complete) additional.complete($.extend(true, args, {
                       $detailView: $detailView
                     }));
+
+                    replaceListViewItem($detailView, args.data);
                   },
 
                   {},
@@ -305,8 +337,7 @@
             _custom: $detailView.data('_custom'),
             context: $detailView.data('view-args').context,
             response: {
-              data: data,
-              success: function(data) {
+              success: function() {
                 var notificationArgs = {
                   section: id,
                   desc: 'Changed item properties'
@@ -315,13 +346,16 @@
                 if (!action.notification) {
                   convertInputs($inputs);
                   addNotification(
-                    notificationArgs, function(data) {}, []
+                    notificationArgs, function() {}, []
                   );
+                  replaceListViewItem($detailView, data);
                 } else {
                   $loading.appendTo($detailView);
                   addNotification(
                     $.extend(true, {}, action.notification, notificationArgs),
                     function(args) {
+                      replaceListViewItem($detailView, data);
+                      
                       convertInputs($inputs);
                       $loading.remove();
                     }, []
@@ -534,7 +568,7 @@
     var detailViewArgs = $detailView.data('view-args');
     var fields = tabData.fields;
     var hiddenFields;
-    var context = detailViewArgs.context;
+    var context = detailViewArgs ? detailViewArgs.context : cloudStack.context;
     var isMultiple = tabData.multiple || tabData.isMultiple;
 
     if (isMultiple) {
@@ -833,6 +867,10 @@
 
     $detailView.addClass('detail-view');
     $detailView.data('view-args', args);
+
+    if (args.$listViewRow) {
+      $detailView.data('list-view-row', args.$listViewRow);
+    }
 
     // Create toolbar
     var $toolbar = makeToolbar().appendTo($detailView);
