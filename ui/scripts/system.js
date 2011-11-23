@@ -899,6 +899,7 @@
         types: {
           // Virtual router list view
           virtualRouter: {
+            id: 'virtualRouterProviders',
             label: 'Virtual Router',
             fields: {
               name: { label: 'Name' },
@@ -932,6 +933,7 @@
 
           // NetScaler list view
           netscaler: {
+            id: 'netscalerProviders',
             label: 'NetScaler',
             fields: {             
               ipaddress: { label: 'IP Address' },
@@ -1178,8 +1180,7 @@
                     }
                   ],
                   dataProvider: function(args) {	
-                    //debugger;
-                    args.response.success({data: args.context.undefined[0]}); //Brian, please make args.context include real object name instead of "undefined".
+                    args.response.success({data: args.context.netscalerProviders[0]}); 
                   }
                 },
               }
@@ -1188,6 +1189,7 @@
 
           // F5 list view
           f5: {
+            id: 'f5Providers',
             label: 'F5',
             fields: {             
               ipaddress: { label: 'IP Address' },
@@ -1433,9 +1435,8 @@
                       }                      
                     }
                   ],
-                  dataProvider: function(args) {	
-                    //debugger;
-                    args.response.success({data: args.context.undefined[0]}); //Brian, please make args.context include real object name instead of "undefined".
+                  dataProvider: function(args) {	                    
+                    args.response.success({data: args.context.f5Providers[0]}); 
                   }
                 },
               }
@@ -1444,6 +1445,7 @@
 
           // SRX list view
           srx: {
+            id: 'srxProviders',
             label: 'SRX',
             fields: {             
               ipaddress: { label: 'IP Address' },
@@ -1706,9 +1708,8 @@
                       timeout: { label: 'Timeout' }                              
                     }
                   ],
-                  dataProvider: function(args) {	
-                    //debugger;
-                    args.response.success({data: args.context.undefined[0]}); //Brian, please make args.context include real object name instead of "undefined".
+                  dataProvider: function(args) {	                    
+                    args.response.success({data: args.context.srxProviders[0]}); 
                   }
                 },
               }
@@ -1717,6 +1718,7 @@
 
           // Security groups list view
           securityGroups: {
+            id: 'securityGroup-providers',
             label: 'Security Groups',
             fields: {
               name: { label: 'Name' },
