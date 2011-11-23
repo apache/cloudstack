@@ -55,7 +55,7 @@ public class ExternalFirewallDeviceDaoImpl extends GenericDaoBase<ExternalFirewa
         deviceStatusSearch = createSearchBuilder();
         deviceStatusSearch.and("physicalNetworkId", deviceStatusSearch.entity().getPhysicalNetworkId(), Op.EQ);
         deviceStatusSearch.and("providerName", deviceStatusSearch.entity().getProviderName(), Op.EQ);
-        deviceStatusSearch.and("deviceState", deviceStatusSearch.entity().getState(), Op.EQ);
+        deviceStatusSearch.and("deviceState", deviceStatusSearch.entity().getDeviceState(), Op.EQ);
         deviceStatusSearch.done();
     }
 

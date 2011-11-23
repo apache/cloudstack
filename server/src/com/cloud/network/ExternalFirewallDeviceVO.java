@@ -56,9 +56,9 @@ public class ExternalFirewallDeviceVO {
     @Column(name = "device_name")
     private String deviceName;
 
-    @Column(name="state")
+    @Column(name="device_state")
     @Enumerated(value=EnumType.STRING)
-    FirewallDeviceState state;
+    FirewallDeviceState deviceState;
 
     @Column(name="is_dedicated")
     private boolean isDedicatedDevice;
@@ -86,10 +86,11 @@ public class ExternalFirewallDeviceVO {
         this.providerName = provider_name;
         this.deviceName = device_name;
         this.hostId = hostId;
-        this.state = FirewallDeviceState.Disabled;
+        this.deviceState = FirewallDeviceState.Disabled;
         this.allocationState = FirewallDeviceAllocationState.Free;
         this.capacity = capacity;
         this.isDedicatedDevice = dedicated;
+        this.deviceState = FirewallDeviceState.Enabled;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -125,12 +126,12 @@ public class ExternalFirewallDeviceVO {
         this.capacity = capacity;
     }
 
-    public FirewallDeviceState getState() {
-        return state;
+    public FirewallDeviceState getDeviceState() {
+        return deviceState;
     }
 
-    public void setState(FirewallDeviceState state) {
-        this.state = state;
+    public void setDeviceState(FirewallDeviceState state) {
+        this.deviceState = state;
     }
 
     public FirewallDeviceAllocationState getAllocationState() {

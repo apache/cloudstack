@@ -35,6 +35,9 @@ import com.cloud.utils.component.Manager;
 
 public interface ExternalLoadBalancerDeviceManager extends Manager{
 
+
+    public static final int DEFAULT_LOAD_BALANCER_CAPACITY = 50;
+
     /**
      * adds a load balancer device in to a physical network
      * @param physicalNetworkId physical network id of the network in to which device to be added

@@ -234,21 +234,19 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
             throw new InvalidParameterValueException("No netscaler device found with ID: " + lbDeviceId);
         }
 
+        String deviceName = lbDeviceVo.getDeviceName();
         if (dedicatedUse != null || capacity != null || inline != null) {
-
-            String deviceName = lbDeviceVo.getDeviceName();
-            if (NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
-                // FIXME: how to interpret SDX device capacity
-            } else if (NetworkDevice.NetscalerMPXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
+            if (NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName) ||
+                    NetworkDevice.NetscalerMPXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
                 if (dedicatedUse != null && dedicatedUse == true) {
-                    throw new InvalidParameterValueException("Netscaler MPX device should be shared and can not be dedicated to a single accoutnt.");
+                    throw new InvalidParameterValueException("Netscaler MPX and SDX device should be shared and can not be dedicated to a single account.");
                 }
             }
 
             // check if any networks are using this netscaler device
             List<NetworkExternalLoadBalancerVO> networks = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
             if ((networks != null) && !networks.isEmpty()) {
-                if (capacity < networks.size()) {
+                if (capacity != null && capacity < networks.size()) {
                     throw new CloudRuntimeException("There are more number of networks already using this netscaler device than configured capacity");
                 }
 
@@ -265,8 +263,12 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
             }
         }
 
-        if (capacity != null) {
-            lbDeviceVo.setCapacity(capacity);
+        if (!NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
+            if (capacity != null) {
+                lbDeviceVo.setCapacity(capacity);
+            }
+        } else {
+            // FIXME how to interpret configured capacity of the SDX device
         }
 
         if(dedicatedUse != null) {
@@ -284,9 +286,9 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        lbDeviceVo.setState(LBDeviceState.Enabled);
         _lbDeviceDao.update(lbDeviceId, lbDeviceVo);
 
+        // FIXME get the row lock to avoid race condition
         _detailsDao.persist(lbDeviceVo.getHostId(), lbDetails);
         HostVO host = _hostDao.findById(lbDeviceVo.getHostId());
         txn.commit();

@@ -288,7 +288,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         // true if at-least one SRX device is added in to physical network and is in configured (in enabled state) state
         if (fwDevices != null && !fwDevices.isEmpty()) {
             for (ExternalFirewallDeviceVO fwDevice : fwDevices) {
-                if (fwDevice.getState() == FirewallDeviceState.Enabled) {
+                if (fwDevice.getDeviceState() == FirewallDeviceState.Enabled) {
                     return true;
                 }
             }
@@ -421,7 +421,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             }
         }
 
-        fwDeviceVO.setState(FirewallDeviceState.Enabled);
+        fwDeviceVO.setDeviceState(FirewallDeviceState.Enabled);
         _fwDevicesDao.update(fwDeviceId, fwDeviceVO);
         return fwDeviceVO;
     }
@@ -488,7 +488,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         response.setDeviceName(fwDeviceVO.getDeviceName());
         response.setDeviceCapacity(fwDeviceVO.getCapacity());
         response.setProvider(fwDeviceVO.getProviderName());
-        response.setDeviceState(fwDeviceVO.getState().name());
+        response.setDeviceState(fwDeviceVO.getDeviceState().name());
         response.setIpAddress(fwHost.getPrivateIpAddress());
         response.setPublicInterface(fwDetails.get("publicInterface"));
         response.setUsageInterface(fwDetails.get("usageInterface"));

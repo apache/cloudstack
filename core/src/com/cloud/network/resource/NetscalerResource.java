@@ -89,7 +89,7 @@ public class NetscalerResource implements ServerResource {
     private String _objectNamePathSep = "-";
 
     nitro_service _netscalerService ;
-    Long timeout = new Long(100000);
+    Long _timeout = new Long(100000);
     base_response apiCallResult;
 
     public NetscalerResource () {
@@ -157,10 +157,12 @@ public class NetscalerResource implements ServerResource {
 
             _inline = Boolean.parseBoolean((String) params.get("inline"));
 
+            // validate device configration parameters
             login();
-            enableNetScalerLoadBalancing();
+            checkLoadBalancingFeatureEnabled();
             validateInterfaces(_publicInterface, _privateInterface);
             validateDeviceType(_deviceName);
+
             return true;
         } catch (Exception e) {
             throw new ConfigurationException(e.getMessage());
@@ -170,26 +172,34 @@ public class NetscalerResource implements ServerResource {
     private void login() throws ExecutionException {
         try {
             _netscalerService = new nitro_service(_ip, "https");
-            apiCallResult = _netscalerService.login(_username, _password, timeout);
+            _netscalerService.set_credential(_username, _password);
+            _netscalerService.set_timeout(_timeout);
+            apiCallResult = _netscalerService.login();
             if (apiCallResult.errorcode != 0) {
-            	throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
+                throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
             }
         } catch (nitro_exception e) {
-        	throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
+            throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
         } catch (Exception e) {
-        	throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
+            throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
         }
     }
 
-    private void enableNetScalerLoadBalancing() throws ExecutionException {
+    private void checkLoadBalancingFeatureEnabled() throws ExecutionException {
         try {
-            String[] feature = new String[1];
-            feature[0] = "LB";
-            _netscalerService.enable_features(feature);
+            String[] features = _netscalerService.get_enabled_features();
+            if (features != null) {
+                for (String feature : features) {
+                    if (feature.equalsIgnoreCase("LB")) {
+                        return;
+                    }
+                }
+            }
+            throw new ExecutionException("Load balancing feature is not enabled on the device. Please enable the load balancing feature and add the device.");
         } catch (nitro_exception e) {
-        	throw new ExecutionException("Enabling netscaler load balancing feature failed due to error " + apiCallResult.errorcode + " and message " + e.getMessage());
+            throw new ExecutionException("Failed to verify load balancing is enalbed due to error " + apiCallResult.errorcode + " and message " + e.getMessage());
         } catch (Exception e) {
-        	throw new ExecutionException("Enabling netscaler load balancing feature failed due to " + e.getMessage());
+            throw new ExecutionException("Failed to verify load balancing is enalbed due to " + e.getMessage());
         }
     }
 
@@ -291,32 +301,16 @@ public class NetscalerResource implements ServerResource {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
 
-            String lbProtocol;
-            String lbMethod;
             LoadBalancerTO[] loadBalancers = cmd.getLoadBalancers();
-            
+            if (loadBalancers == null) {
+                return new Answer(cmd);
+            }
+
             for (LoadBalancerTO loadBalancer : loadBalancers) {
-
-                if (loadBalancer.getProtocol() == null) {
-                    lbProtocol = "TCP";
-                } else if (loadBalancer.getProtocol().equals(NetUtils.TCP_PROTO)){
-                    lbProtocol = "TCP";
-                } else if (loadBalancer.getProtocol().equals(NetUtils.UDP_PROTO)) {
-                    lbProtocol = "UDP";                    
-                } else {
-                    throw new ExecutionException("Got invalid protocol: " + loadBalancer.getProtocol());
-                }
-
-                if (loadBalancer.getAlgorithm().equals("roundrobin")) {
-                    lbMethod = "ROUNDROBIN";
-                } else if (loadBalancer.getAlgorithm().equals("leastconn")) {
-                    lbMethod = "LEASTCONNECTION";
-                } else {
-                    throw new ExecutionException("Got invalid load balancing algorithm: " + loadBalancer.getAlgorithm());
-                }
-
                 String srcIp = loadBalancer.getSrcIp();
-                int srcPort = loadBalancer.getSrcPort();    
+                int srcPort = loadBalancer.getSrcPort();
+                String lbProtocol = loadBalancer.getProtocol();
+                String lbAlgorithm = loadBalancer.getAlgorithm();
                 String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort, lbProtocol);
 
                 boolean destinationsToAdd = false;
@@ -330,7 +324,7 @@ public class NetscalerResource implements ServerResource {
                 if (!loadBalancer.isRevoked() && destinationsToAdd) {
 
                     // create a load balancing virtual server
-                    addLBVirtualServer(nsVirtualServerName, srcIp, srcPort, lbMethod, lbProtocol);
+                    addLBVirtualServer(nsVirtualServerName, srcIp, srcPort, lbAlgorithm, lbProtocol);
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Created load balancing virtual server " + nsVirtualServerName + " on the Netscaler device");
                     }
@@ -391,13 +385,13 @@ public class NetscalerResource implements ServerResource {
                                         // delete the binding
                                         apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.delete(_netscalerService, binding);
                                         if (apiCallResult.errorcode != 0) {
-                                            throw new ExecutionException("Failed to delete the binding between the virtual server: " + nsVirtualServerName + " and service:" + nsServiceName);
+                                            throw new ExecutionException("Failed to delete the binding between the virtual server: " + nsVirtualServerName + " and service:" + nsServiceName + " due to" + apiCallResult.message);
                                         }
     
                                         // delete the service
                                         apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.service.delete(_netscalerService, nsServiceName);
                                         if (apiCallResult.errorcode != 0) {
-                                            throw new ExecutionException("Failed to delete service: " + nsServiceName);
+                                            throw new ExecutionException("Failed to delete service: " + nsServiceName + " due to " + apiCallResult.message);
                                         }
     
                                         // delete the server if there is no associated services
@@ -405,7 +399,7 @@ public class NetscalerResource implements ServerResource {
                                         if ((services == null) || (services.length == 0)) {
                                             apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.delete(_netscalerService, nsServerName);
                                             if (apiCallResult.errorcode != 0) {
-                                                throw new ExecutionException("Failed to remove server:" + nsServerName);
+                                                throw new ExecutionException("Failed to remove server:" + nsServerName + " due to " + apiCallResult.message);
                                             }
                                         }
                                     }
@@ -414,8 +408,8 @@ public class NetscalerResource implements ServerResource {
                          }
                     }
                 } else {
-                    // delete the deployed load balancing rule and its destinations 
-                    lbvserver lbserver = lbvserver.get(_netscalerService, nsVirtualServerName);
+                    // delete the implemented load balancing rule and its destinations 
+                    lbvserver lbserver = getVirtualServerIfExisits(nsVirtualServerName);
                     if (lbserver == null) {
                         throw new ExecutionException("Failed to find virtual server with name:" + nsVirtualServerName);
                     }
@@ -427,7 +421,7 @@ public class NetscalerResource implements ServerResource {
                             String serviceName = binding.get_servicename();
                             apiCallResult = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.delete(_netscalerService, binding);
                             if (apiCallResult.errorcode != 0) {
-                                throw new ExecutionException("Failed to unbind servic from the lb virtual server: " + nsVirtualServerName);
+                                throw new ExecutionException("Failed to unbind service from the lb virtual server: " + nsVirtualServerName + " due to " + apiCallResult.message);
                             }
     
                             com.citrix.netscaler.nitro.resource.config.basic.service svc = com.citrix.netscaler.nitro.resource.config.basic.service.get(_netscalerService, serviceName);
@@ -441,7 +435,7 @@ public class NetscalerResource implements ServerResource {
                             if ((services == null) || (services.length == 0)) {
                                 apiCallResult = com.citrix.netscaler.nitro.resource.config.basic.server.delete(_netscalerService, nsServerName);
                                 if (apiCallResult.errorcode != 0) {
-                                    throw new ExecutionException("Failed to remove server:" + nsServerName);
+                                    throw new ExecutionException("Failed to remove server:" + nsServerName + " due to " + apiCallResult.message);
                                 }
                             }
                         }
@@ -455,7 +449,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             saveConfiguration();
-            return new Answer(cmd);        
+            return new Answer(cmd);
         } catch (ExecutionException e) {
             s_logger.error("Failed to execute LoadBalancerConfigCommand due to " + e.getMessage());
             if (shouldRetry(numRetries)) {
@@ -494,10 +488,7 @@ public class NetscalerResource implements ServerResource {
     }
     
     private void addGuestVlanAndSubnet(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
-        org.apache.axis.types.UnsignedInt result;
-
         try {
-            String vlanName = generateVlanName(vlanTag);    
             if (!nsVlanExists(vlanTag)) {
                 // add new vlan
                 vlan vlanObj = new vlan();
@@ -542,13 +533,11 @@ public class NetscalerResource implements ServerResource {
         }  catch (nitro_exception e) {
             throw new ExecutionException("Failed to implement guest network on the Netscaler device");
         }  catch (Exception e) {
-            throw new ExecutionException("Failed to implement guest network on the Netscaler device");            
+            throw new ExecutionException("Failed to implement guest network on the Netscaler device");
         }
     }
 
     private void deleteGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
-        org.apache.axis.types.UnsignedInt result;
-
         try {
             if (nsVlanExists(vlanTag)) {
 
@@ -616,6 +605,20 @@ public class NetscalerResource implements ServerResource {
         } catch (nitro_exception e) {
             if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
                 return false;
+            } else {
+                throw new ExecutionException(e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new ExecutionException(e.getMessage());
+        }
+    }
+
+    private lbvserver getVirtualServerIfExisits(String lbVServerName ) throws ExecutionException {
+        try {
+            return lbvserver.get(_netscalerService, lbVServerName);
+        } catch (nitro_exception e) {
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                return null;
             } else {
                 throw new ExecutionException(e.getMessage());
             }
@@ -698,19 +701,53 @@ public class NetscalerResource implements ServerResource {
 
     private void addLBVirtualServer(String virtualServerName, String srcIp, int srcPort, String lbMethod, String lbProtocol) throws ExecutionException {
         try {
-            lbvserver vserver = new lbvserver();
+
+            if (lbProtocol == null) {
+                lbProtocol = "TCP";
+            } else if (lbProtocol.equals(NetUtils.TCP_PROTO)){
+                lbProtocol = "TCP";
+            } else if (lbProtocol.equals(NetUtils.UDP_PROTO)) {
+                lbProtocol = "UDP";
+            } else {
+                throw new ExecutionException("Got invalid protocol: " + lbProtocol);
+            }
+
+            if (lbMethod.equals("roundrobin")) {
+                lbMethod = "ROUNDROBIN";
+            } else if (lbMethod.equals("leastconn")) {
+                lbMethod = "LEASTCONNECTION";
+            } else {
+                throw new ExecutionException("Got invalid load balancing algorithm: " + lbMethod);
+            }
+
+            boolean vserverExisis = false;
+            lbvserver vserver = getVirtualServerIfExisits(virtualServerName);
+            if (vserver == null) {
+                vserver = new lbvserver();
+            } else {
+                vserverExisis = true;
+            }
             vserver.set_name(virtualServerName);
             vserver.set_ipv46(srcIp);
             vserver.set_port(srcPort);
             vserver.set_servicetype(lbProtocol);
             vserver.set_lbmethod(lbMethod);
-            apiCallResult = lbvserver.add(_netscalerService,vserver);
+
+            if (vserverExisis) {
+                apiCallResult = lbvserver.update(_netscalerService,vserver);
+            } else {
+                apiCallResult = lbvserver.add(_netscalerService,vserver);
+            }
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Failed to create new virtual server:" + virtualServerName);
+                throw new ExecutionException("Failed to create new virtual server:" + virtualServerName+ " due to " + apiCallResult.message);
             }            
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Created load balancing virtual server " + virtualServerName + " on the Netscaler device");
+            }
         } catch (nitro_exception e) {
             if (e.getErrorCode() != NitroError.NS_RESOURCE_EXISTS) {
-                throw new ExecutionException("Failed to create new virtual server:" + virtualServerName + " due to " + e.getMessage());    
+                throw new ExecutionException("Failed to create new virtual server:" + virtualServerName + " due to " + e.getMessage());
             }
         } catch (Exception e) {
             throw new ExecutionException("Failed to create new virtual server:" + virtualServerName + " due to " + e.getMessage());
@@ -725,10 +762,14 @@ public class NetscalerResource implements ServerResource {
             }
             apiCallResult = lbvserver.delete(_netscalerService, vserver);
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Failed to remove virtual server:" + virtualServerName);
+                throw new ExecutionException("Failed to remove virtual server:" + virtualServerName + " due to " + apiCallResult.message);
             }
         } catch (nitro_exception e) {
-            throw new ExecutionException("Failed to remove virtual server:" + virtualServerName +" due to " + e.getMessage());
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                return;
+            } else {
+                throw new ExecutionException("Failed remove virtual server:" + virtualServerName +" due to " + e.getMessage());
+            }
         } catch (Exception e) {
             throw new ExecutionException("Failed to remove virtual server:" + virtualServerName +" due to " + e.getMessage());
         }
@@ -738,7 +779,7 @@ public class NetscalerResource implements ServerResource {
         try {
             apiCallResult = nsconfig.save(_netscalerService);
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Error occured while saving configuration changes to Netscaler device due to error:" + apiCallResult.errorcode);
+                throw new ExecutionException("Error occured while saving configuration changes to Netscaler device due to " + apiCallResult.message);
             }
         } catch (nitro_exception e) {
             throw new ExecutionException("Failed to save configuration changes to Netscaler device due to " + e.getMessage());
@@ -751,25 +792,25 @@ public class NetscalerResource implements ServerResource {
         ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
         
         try {
-        	
-        	lbvserver_stats[] stats = lbvserver_stats.get(_netscalerService);
+            
+            lbvserver_stats[] stats = lbvserver_stats.get(_netscalerService);
 
-			for (lbvserver_stats stat_entry : stats) {
-				String lbvserverName = stat_entry.get_name();
-		        lbvserver vserver = lbvserver.get(_netscalerService, lbvserverName);
-		        String lbVirtualServerIp = vserver.get_ipv46();
+            for (lbvserver_stats stat_entry : stats) {
+                String lbvserverName = stat_entry.get_name();
+                lbvserver vserver = lbvserver.get(_netscalerService, lbvserverName);
+                String lbVirtualServerIp = vserver.get_ipv46();
 
-		        long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
-				if (bytesSentAndReceived == null) {
-				    bytesSentAndReceived = new long[]{0, 0};
-				}
-				bytesSentAndReceived[0] += stat_entry.get_totalrequestbytes();
-				bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();
+                long[] bytesSentAndReceived = answer.ipBytes.get(lbVirtualServerIp);
+                if (bytesSentAndReceived == null) {
+                    bytesSentAndReceived = new long[]{0, 0};
+                }
+                bytesSentAndReceived[0] += stat_entry.get_totalrequestbytes();
+                bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();
 
-				if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
-					answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);			
-				}
-			}
+                if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
+                    answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);            
+                }
+            }
         } catch (Exception e) {
             s_logger.error(e);
             throw new ExecutionException(e.getMessage());
@@ -785,19 +826,15 @@ public class NetscalerResource implements ServerResource {
     }
 
     private boolean shouldRetry(int numRetries) {
-    	try {
-    		if (numRetries > 0) {
-    			login();
-    			return true;
-    		}
+        try {
+            if (numRetries > 0) {
+                login();
+                return true;
+            }
         } catch (Exception e) {
-        	s_logger.error("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
+            s_logger.error("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
         }
         return false;
-    }
-    
-    private String generateVlanName(long vlanTag) {
-        return genObjectName("cloud-vlan",  String.valueOf(vlanTag));
     }
 
     private String generateNSVirtualServerName(String srcIp, long srcPort, String protocol) {

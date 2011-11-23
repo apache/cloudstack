@@ -57,7 +57,7 @@ public class ExternalLoadBalancerDeviceVO {
     @Column(name = "device_name")
     private String deviceName;
 
-    @Column(name="state")
+    @Column(name="device_state")
     @Enumerated(value=EnumType.STRING)
     private LBDeviceState state;
 
@@ -105,6 +105,7 @@ public class ExternalLoadBalancerDeviceVO {
         this.isDedicatedDevice = dedicated;
         this.isInlineMode = inline;
         this.isManagedDevice = false;
+        this.state = LBDeviceState.Enabled;
         this.uuid = UUID.randomUUID().toString();
 
         if (device_name.equalsIgnoreCase(ExternalNetworkDeviceManager.NetworkDevice.NetscalerSDXLoadBalancer.getName())) {

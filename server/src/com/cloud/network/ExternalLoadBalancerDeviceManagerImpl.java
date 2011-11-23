@@ -122,35 +122,62 @@ import com.cloud.vm.dao.NicDao;
 
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
-    @Inject NetworkExternalLoadBalancerDao _networkExternalLBDao;
-    @Inject ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
-    @Inject HostDao _hostDao;
-    @Inject DataCenterDao _dcDao;
-    @Inject HostDetailsDao _detailsDao;
-    @Inject NetworkManager _networkMgr;
-    @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
-    @Inject NicDao _nicDao;
-    @Inject AgentManager _agentMgr;
-    @Inject ResourceManager _resourceMgr;
-    @Inject IPAddressDao _ipAddressDao;
-    @Inject VlanDao _vlanDao;
-    @Inject NetworkOfferingDao _networkOfferingDao;
-    @Inject AccountDao _accountDao;
-    @Inject PhysicalNetworkDao _physicalNetworkDao;
-    @Inject PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject AccountManager _accountMgr;
-    @Inject UserStatisticsDao _userStatsDao;
-    @Inject NetworkDao _networkDao;
-    @Inject DomainRouterDao _routerDao;
-    @Inject LoadBalancerDao _loadBalancerDao;
-    @Inject PortForwardingRulesDao _portForwardingRulesDao;
-    @Inject ConfigurationDao _configDao;
-    @Inject HostDetailsDao _hostDetailDao;
-    @Inject NetworkExternalLoadBalancerDao _networkLBDao;
-    @Inject NetworkServiceMapDao _ntwkSrvcProviderDao;
+    @Inject
+    NetworkExternalLoadBalancerDao _networkExternalLBDao;
+    @Inject
+    ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    HostDetailsDao _detailsDao;
+    @Inject
+    NetworkManager _networkMgr;
+    @Inject
+    InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject 
+    IPAddressDao _ipAddressDao;
+    @Inject
+    VlanDao _vlanDao;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    AccountDao _accountDao;
+    @Inject 
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Inject 
+    PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    @Inject 
+    AccountManager _accountMgr;
+    @Inject 
+    UserStatisticsDao _userStatsDao;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject 
+    DomainRouterDao _routerDao;
+    @Inject 
+    LoadBalancerDao _loadBalancerDao;
+    @Inject 
+    PortForwardingRulesDao _portForwardingRulesDao;
+    @Inject 
+    ConfigurationDao _configDao;
+    @Inject
+    HostDetailsDao _hostDetailDao;
+    @Inject 
+    NetworkExternalLoadBalancerDao _networkLBDao;
+    @Inject 
+    NetworkServiceMapDao _ntwkSrvcProviderDao;
 
     ScheduledExecutorService _executor;
-    int _externalNetworkStatsInterval;
+    private int _externalNetworkStatsInterval;
+    private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @Override
@@ -222,9 +249,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 ExternalLoadBalancerDeviceVO lbDeviceVO = new ExternalLoadBalancerDeviceVO(host.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(),
                         deviceName, capacity, dedicatedUse, inline);
-                if (capacity != 0) {
-                    lbDeviceVO.setState(LBDeviceState.Enabled);
-                }
+
                 _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
                 
                 DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
@@ -322,17 +347,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         if (dedicatedLb) {
             lbDevices = _externalLoadBalancerDeviceDao.listByProviderAndDeviceAllocationState(physicalNetworkId, provider, LBDeviceAllocationState.Free);
             if (lbDevices != null && !lbDevices.isEmpty()) {
-
-              //return first device that is free, fully configured and meant for dedicated use
+                // return first device that is free, fully configured and meant for dedicated use
                 for (ExternalLoadBalancerDeviceVO lbdevice : lbDevices) {
                     if (lbdevice.getState() == LBDeviceState.Enabled && lbdevice.getIsDedicatedDevice()) {
-                        return lbdevice; 
-                    }
-                }
-
-                //if there are no dedicated lb device then return first device that is free, fully configured
-                for (ExternalLoadBalancerDeviceVO lbdevice : lbDevices) {
-                    if (lbdevice.getState() == LBDeviceState.Enabled) {
                         return lbdevice; 
                     }
                 }
@@ -354,33 +371,36 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         continue;
                     }
 
-                    // skip if the device is intended to be used in dedicated mode only
-                    if (lbdevice.getIsDedicatedDevice()) {
-                        continue;
-                    }
-
+                    // get the used capacity from the list of guest networks that are mapped to this load balancer
                     List<NetworkExternalLoadBalancerVO> mappedNetworks = _networkExternalLBDao.listByLoadBalancerDeviceId(lbdevice.getId());
-                    // get the list of guest networks that are mapped to this load balancer
                     long usedCapacity = ((mappedNetworks == null) || (mappedNetworks.isEmpty()))? 0 : mappedNetworks.size();
-                    // get max number of guest networks that can be mapped to this device
+
+                    // get the configured capacity for this device
                     long fullCapacity = lbdevice.getCapacity();
+                    if (fullCapacity == 0) {
+                        fullCapacity = _defaultLbCapacity; // if capacity not configured then use the default
+                    }
  
                     long freeCapacity = fullCapacity - usedCapacity;
                     if (freeCapacity > 0) {
                         if (maxFreeCapacityLbdevice == null) {
                             maxFreeCapacityLbdevice = lbdevice;
                             maxFreeCapacity = freeCapacity;
-                        }
-                        if (freeCapacity > maxFreeCapacity) {
+                        } else if (freeCapacity > maxFreeCapacity) {
                             maxFreeCapacityLbdevice = lbdevice;
                             maxFreeCapacity = freeCapacity;
                         }
                     }
                 }
+
+                // return the device with maximum free capacity and is meant for shared use
+                if (maxFreeCapacityLbdevice != null) {
+                    return maxFreeCapacityLbdevice;
+                }
             }
 
-            // if we are here then there are no existing LB devices in shared use or the devices in shared use has no free capacity
-            // so allocate a new one from the pool of free LB devices
+            // if we are here then there are no existing LB devices in shared use or the devices in shared use has no free capacity left
+            // so allocate a new load balancer configured for shared use from the pool of free LB devices
             lbDevices = _externalLoadBalancerDeviceDao.listByProviderAndDeviceAllocationState(physicalNetworkId, provider, LBDeviceAllocationState.Free);
             if (lbDevices != null && !lbDevices.isEmpty()) {
                 for (ExternalLoadBalancerDeviceVO lbdevice : lbDevices) {
@@ -391,6 +411,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
         }
 
+        // there are no devices which capcity
         throw new InsufficientNetworkCapacityException("Unable to find a load balancing provider with sufficient capcity " +
                 " to implement the network", Network.class, network.getId());
     }
@@ -614,9 +635,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             // FIXME: should the device allocation be done during network implement phase or do a lazy allocation 
                             // when first rule for the network is configured??
 
-                            // find a load balancer device as per the network offering
                             boolean dedicatedLB = offering.getDedicatedLB();
                             try {
+                                // find a load balancer device for this network as per the network offering
                                 ExternalLoadBalancerDeviceVO lbDevice = findSuitableLoadBalancerForNetwork(guestConfig, dedicatedLB);
                                 lbDeviceId = lbDevice.getId();
 
@@ -763,6 +784,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));
         }
 
+        _defaultLbCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalLoadBalancerCapacity.key()), 50);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }

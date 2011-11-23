@@ -214,9 +214,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
             ExternalFirewallDeviceVO fwDevice = new ExternalFirewallDeviceVO(externalFirewall.getId(), pNetwork.getId(), ntwkSvcProvider.getProviderName(), 
                     deviceName, capacity, dedicatedUse);
-            if (capacity != 0) {
-                fwDevice.setState(FirewallDeviceState.Enabled);
-            }
+
             _externalFirewallDeviceDao.persist(fwDevice);
 
             DetailVO hostDetail = new DetailVO(externalFirewall.getId(), ApiConstants.FIREWALL_DEVICE_ID, String.valueOf(fwDevice.getId()));

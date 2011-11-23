@@ -83,7 +83,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@SuppressWarnings("deprecation")
 @Local(value=NetworkElement.class)
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
 
