@@ -1384,8 +1384,7 @@
                   args.response.success({data: items});
                 }
               });              
-            },
-            //???
+            },            
             detailView: {
               name: 'F5 details',
               tabs: {
@@ -1419,8 +1418,7 @@
                   }
                 },
               }
-            }
-            //???
+            }            
           },
 
           // SRX list view
@@ -1643,7 +1641,29 @@
                   args.response.success({data: items});
                 }
               });
-            }
+            },           
+            detailView: {
+              name: 'SRX details',
+              tabs: {
+                details: {
+                  title: 'Details',
+                  fields: [
+                    {
+                      fwdeviceid: { label: 'ID' },
+                      ipaddress: { label: 'IP Address' },
+                      fwdevicestate: { label: 'Status' },
+                      fwdevicename: { label: 'Type' },
+                      fwdevicecapacity: { label: 'Capacity' },
+                      timeout: { label: 'Timeout' }                              
+                    }
+                  ],
+                  dataProvider: function(args) {	
+                    //debugger;
+                    args.response.success({data: args.context.undefined[0]}); //Brian, please make args.context include real object name instead of "undefined".
+                  }
+                },
+              }
+            }            
           },
 
           // Security groups list view
