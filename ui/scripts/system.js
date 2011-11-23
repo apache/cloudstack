@@ -1691,20 +1691,7 @@
                     }   
                   }                  
                 },
-                action: function(args) {   
-                  /*                
-                  var zoneObj = args.context.zones[0];                 
-                  $.ajax({
-                    url: createURL("listPhysicalNetworks&zoneId=" + zoneObj.id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {                      
-                      var items = json.listphysicalnetworksresponse.physicalnetwork;
-                      selectedPhysicalNetworkObj = items[0];                      
-                    }
-                  });           
-                  */
-                                                 
+                action: function(args) { 
                   if(nspMap["srx"]== null) { 
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
@@ -1768,7 +1755,44 @@
               });
             },           
             detailView: {
-              name: 'SRX details',
+              name: 'SRX details',             
+              actions: {                
+                'delete': {
+                  label: 'Delete SRX',
+                  messages: {
+                    confirm: function(args) {
+                      return 'Are you sure you want to delete this SRX?';
+                    },
+                    success: function(args) {
+                      return 'SRX is being deleted.';
+                    },
+                    notification: function(args) {
+                      return 'Deleting SRX';
+                    },
+                    complete: function(args) {
+                      return 'SRX has been deleted.';
+                    }
+                  },
+                  action: function(args) {                       
+                    $.ajax({
+                      url: createURL("deleteSrcFirewall&fwdeviceid=" + args.context.srxProviders[0].fwdeviceid),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) { 
+                        var jid = json.deletesrxfirewallresponse.jobid;
+                        args.response.success(
+                          {_custom:
+                           {jobId: jid}
+                          }
+                        );
+                      }
+                    });
+                  },
+                  notification: {
+                    poll: pollAsyncJobResult
+                  }
+                }               
+              },  
               tabs: {
                 details: {
                   title: 'Details',
