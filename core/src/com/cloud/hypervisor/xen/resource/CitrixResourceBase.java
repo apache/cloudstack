@@ -6451,6 +6451,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	}
   
 
+
   protected Answer execute(final ClusterSyncCommand cmd) {
       Connection conn = getConnection();
       //check if this is master
@@ -6461,31 +6462,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
           Host.Record hostr = poolr.master.getRecord(conn);
           if (!_host.uuid.equals(hostr.uuid)) {
-              s_logger.debug("Not the master node so just return ok: " + _host.ip); 
               return new ClusterSyncAnswer(cmd.getClusterId());
           }
       } catch (Exception e) {
           s_logger.warn("Check for master failed, failing the Cluster sync command");
           return new ClusterSyncAnswer(cmd.getClusterId());
       } 
-      HashMap<String, Pair<String, State>> newStates;
-      int sync_type=-1;
+      HashMap<String, Pair<String, State>> newStates = deltaClusterSync(conn);
       if (cmd.isRightStep()){
           // do full sync
-          newStates=fullClusterSync(conn);
-          sync_type = ClusterSyncAnswer.FULL_SYNC;
+      	 HashMap<String, Pair<String, State>> allStates=fullClusterSync(conn);
+           cmd.incrStep();
+           return new ClusterSyncAnswer(cmd.getClusterId(), newStates, allStates);
       }
       else {
-          // do delta sync
-          newStates = deltaClusterSync(conn);
-          if (newStates == null) {
-              s_logger.warn("Unable to get current status from sync");
-          }
-          sync_type = ClusterSyncAnswer.DELTA_SYNC;
+          cmd.incrStep();
+          return new ClusterSyncAnswer(cmd.getClusterId(), newStates);
       }
-      cmd.incrStep();
-      return new ClusterSyncAnswer(cmd.getClusterId(), newStates, sync_type);
   }
+
 
   protected HashMap<String, Pair<String, State>> fullClusterSync(Connection conn) {
       s_vms.clear(_cluster);

@@ -1641,34 +1641,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     public Commands fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
         Commands commands = new Commands(OnError.Continue);
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
-        long hId = 0;
         final List<VMInstanceVO> vms = _vmDao.listByClusterId(clusterId);
         for (VMInstanceVO vm : vms) {
-            AgentVmInfo info = infos.remove(vm.getId());
-            VMInstanceVO castedVm = null;
-            if (info == null) {
-                // the vm is not there on cluster, check the vm status in DB
-                if (vm.getState() == State.Starting && (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) < 10*60*1000){
-                    continue; // ignoring this VM as it is still settling
-                }
-                info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-                castedVm = info.guru.findById(vm.getId());
-                hId = vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId();
-            } else {
-                castedVm = info.vm;
-                String host_guid = info.getHostUuid();
-                Host host = _hostDao.findByGuid(host_guid);
-                if (host == null) {
-                    infos.put(vm.getId(), info);
-                    continue;
-                }
-                hId = host.getId();
-            }
-            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
-            Command command = compareState(hId, castedVm, info, false, hvGuru.trackVmHostChange());
-            if (command != null) {
-                commands.addCommand(command);
-            }
+            infos.remove(vm.getId());
         }
         for (final AgentVmInfo left : infos.values()) {
             s_logger.warn("Stopping a VM that we have no record of: " + left.name);
@@ -1985,7 +1960,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
                 if (hs.execute()){
                     if (hs.isFull()) {
-                        fullSync(hs.getClusterId(), hs.getNewStates());
+                        deltaSync(hs.getNewStates());
+                        fullSync(hs.getClusterId(), hs.getAllStates());
                     } else if (hs.isDelta()) {
                         deltaSync(hs.getNewStates());
                     }

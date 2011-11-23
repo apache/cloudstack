@@ -25,8 +25,9 @@ import com.cloud.vm.VirtualMachine.State;
 public class ClusterSyncAnswer extends Answer {
     private long _clusterId;
     private HashMap<String, Pair<String, State>> _newStates;
+    private HashMap<String, Pair<String, State>> _allStates;
     private int _type = -1; // 0 for full, 1 for delta
-    private boolean isExecuted=false;  // this is to avoidf double execution first time, due to framework ???
+    private boolean isExecuted=false;  // this is to avoid double execution first time, due to framework ???
     
     
     public static final int FULL_SYNC=0;
@@ -39,10 +40,19 @@ public class ClusterSyncAnswer extends Answer {
         _type = -1;
     }
     
-    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates, int type){
+
+    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates){
         _clusterId = clusterId;
         _newStates = newStates;
-        _type = type;
+        _type = DELTA_SYNC;
+        result = true;
+    }
+    
+    public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates, HashMap<String, Pair<String, State>> allStates){
+        _clusterId = clusterId;
+        _newStates = newStates;
+        _allStates = allStates;
+        _type = FULL_SYNC;
         result = true;
     }
 
@@ -52,6 +62,10 @@ public class ClusterSyncAnswer extends Answer {
     
     public HashMap<String, Pair<String, State>> getNewStates() {
         return _newStates;
+    }   
+
+    public HashMap<String, Pair<String, State>> getAllStates() {
+        return _allStates;
     }   
     
     public boolean isFull(){
