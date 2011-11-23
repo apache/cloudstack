@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 import os
@@ -14,370 +14,432 @@ import MySQLdb
 # squelch mysqldb spurious warnings
 import warnings
 warnings.simplefilter('ignore')
-
 # ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
 # ---- We do this so cloud_utils can be looked up in the following order:
 # ---- 1) Sources directory
 # ---- 2) waf configured PYTHONDIR
 # ---- 3) System Python path
 for pythonpath in (
-		"@PYTHONDIR@",
-		os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
-	):
-		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
+        "@PYTHONDIR@",
+        os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
+    ):
+        if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
 # ---- End snippet of code ----
 from cloud_utils import check_selinux, CheckFailed, resolves_to_ipv6
 
-try:
-	from subprocess import check_call as check_call
-	from subprocess import CalledProcessError
-except ImportError:
-	def check_call(*popenargs, **kwargs):
-		import subprocess
-		retcode = subprocess.call(*popenargs, **kwargs)
-		cmd = kwargs.get("args")
-		if cmd is None: cmd = popenargs[0]
-		if retcode: raise CalledProcessError(retcode, cmd)
-		return retcode
+def runCmd(cmds):
+    process = subprocess.Popen(' '.join(cmds), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        raise Exception(stderr)
+    return stdout
 
-	class CalledProcessError(Exception):
-		def __init__(self, returncode, cmd):
-			self.returncode = returncode ; self.cmd = cmd
-		def __str__(self): return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+class DBDeployer(object):
+    parser = None
+    options = None
+    args = None
+    serversetup = None
+    ip = None
+    user,password,host,port,rootuser,rootpassword = [None,None,None,None,None,None]
+    isDebug = False
+    dbConfPath = r"@MSCONF@"
+    dbFilesPath = r"@SETUPDATADIR@"
 
-#---------------------- option parsing and command line checks ------------------------
+    def info(self, msg, result=None):
+        output = ""
+        if msg is not None:
+            output = "%-80s"%msg
+            
+        if result is True:
+            output += "[ \033[92m%-2s\033[0m ]\n"%"OK"
+        elif result is False:
+            output += "[ \033[91m%-6s\033[0m ]\n"%"FAILED"
+        sys.stdout.write(output)
+        sys.stdout.flush()
+    
+    def debug(self, msg):
+        msg = "DEBUG:%s"%msg
+        sys.stdout.write(msg)
+        sys.stdout.flush()
 
+    def runMysql(self, text, table, isRoot=False):
+        kwargs = {}
+        if not isRoot:
+            kwargs['user'] = self.user
+            if self.password: kwargs['passwd'] = self.password
+        else:
+            kwargs['user'] = self.rootuser
+            if self.password: kwargs['passwd'] = self.rootpassword
+            
+        kwargs['port'] = self.port
+        kwargs['host'] = self.host
+        
+        try:
+            conn = MySQLdb.connect(**kwargs)
+        except:
+            self.errorAndExit("Connect to mysqld failed, please make sure mysqld is running.\nYou may start it by: service mysqld start")
+        
+        currentStmt = ''
+        try:
+            cur = conn.cursor()
+            import re
+            exp = re.compile("DELIMITER (.*)$",re.M)
+            pairs = [";"]+[x.strip() for x in exp.split(text)]
+            delims = []
+            chunks = []
+            while pairs:
+                delims.append( pairs[0] )
+                chunks.append( pairs[1] )
+                pairs = pairs[2:]
+            
+            for delim,chunk in zip(delims,chunks):
+                for stmt in chunk.split(delim):
+                    stmt = stmt.strip()
+                    if not stmt: continue
+                    if self.isDebug: self.debug(stmt)
+                    currentStmt = stmt
+                    cur.execute(stmt)
+                    
+            cur.close()
+            conn.commit()
+            conn.close()
+        except Exception, e:
+            lineNum = 'unknown'
+            try:
+                if os.path.isfile(table):
+                    lines = file(table).readlines()
+                    for l in lines:
+                        if currentStmt in l:
+                            lineNum = int(lines.index(l) + 1)
+                            break
+            except:
+                lineNum = 'unknown'
+            
+            err = '''Encountering an error when executing mysql script
+----------------------------------------------------------------------
+table:
+%s
 
-usage = """%prog user:password@mysqlhost:port [--deploy-as=rootuser:rootpassword] [--auto=/path/to/server-setup.xml]
+Error:
+%s
 
-This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
+Sql text(Line number: %s):
+%s
 
-If the the --deploy-as option is present, this command will also connect to the database using the administrative credentials specified as the value for the --deploy-as argument, construct the database environment needed to run the CloudStack Management Server, and alter the password specified for the user in the first argument.  In this case, the user name specified in --deploy-as= cannot be the same as the user name specified for the connection credentials that the CloudStack Management Server will be set up with.
+Sql parameters:
+%s
+----------------------------------------------------------------------
+            '''%(table, e.__str__(), lineNum, currentStmt, kwargs)
+            self.errorAndExit(err)
+        
+    def errorAndExit(self, msg):
+        if self.parser != None:
+            self.parser.error(msg)
+        else:
+            sys.stderr.write(msg)
+            sys.stderr.flush()
+            sys.exit(1)
+    
+    def setupDBSchema(self):
+        if not self.rootuser:
+            self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
+            return
+        
+        replacements = (
+                ("CREATE USER cloud identified by 'cloud';",
+                    "CREATE USER %s@`localhost` identified by '%s'; CREATE USER %s@`%%` identified by '%s';"%(
+                            (self.user,self.password,self.user,self.password)
+                        )),
+                ("cloud identified by 'cloud';",
+                    "%s identified by '%s';"%(self.user,self.password)),
+                ("cloud@`localhost` identified by 'cloud'",
+                    "%s@`localhost` identified by '%s'"%(self.user,self.password)),
+                ("cloud@`%` identified by 'cloud'",
+                    "%s@`%%` identified by '%s'"%(self.user,self.password)),
+                ("to cloud@`localhost`",
+                    "to %s@`localhost`"%self.user),
+                ("to cloud@`%`",
+                    "to %s@`%%`"%self.user),
+                ("TO cloud@`localhost`",
+                    "to %s@`localhost`"%self.user),
+                ("TO cloud@`%`",
+                    "to %s@`%%`"%self.user),
+                ("WHERE `User` = 'cloud' and host =",
+                    "WHERE `User` = '%s' and host ="%self.user),
+                ("DROP USER 'cloud'",
+                    "DROP USER '%s'"%self.user),
+                ("CALL `test`.`drop_user_if_exists`() ;",
+                    ""),
+            )
+        
+        for f in ["create-database","create-schema","create-database-premium","create-schema-premium"]:
+            p = os.path.join(self.dbFilesPath,"%s.sql"%f)
+            if not os.path.exists(p): continue
+            text = file(p).read()
+            for t, r in replacements: text = text.replace(t,r)
+            self.info("Applying %s"%p)
+            self.runMysql(text, p, True)
+            self.info(None, True)
+        
+        if self.serversetup:
+            conf = os.path.join(self.dbConfPath, 'db.properties')
+            pcp = os.path.pathsep.join( glob.glob( os.path.join ( r"@PREMIUMJAVADIR@" , "*" ) ) )
+            systemjars = r"@SYSTEMJARS@".split()
+            try:
+                output = runCmd(['build-classpath'] + systemjars)
+                systemcp = output.strip()
+            except Exception, e:
+                systemcp = r"@SYSTEMCLASSPATH@"
+            mscp = r"@MSCLASSPATH@"
+            depscp = r"@DEPSCLASSPATH@"
+            classpath = os.path.pathsep.join([pcp,systemcp,depscp,mscp,conf])
+            try:
+                runCmd(["java","-cp",classpath,"com.cloud.test.DatabaseConfig", self.serversetup])
+            except Exception, e:
+                self.errorAndExit("Apply %s failed"%self.serversetup)
+        else:
+            p = os.path.join(self.dbFilesPath, 'server-setup.sql')
+            text = file(p).read()
+            self.info("Applying %s"%p)
+            self.runMysql(text, p, True)
+            self.info(None, True)
+                
+        for f in ["templates","create-index-fk"]:
+            p = os.path.join(self.dbFilesPath,"%s.sql"%f)
+            text = file(p).read()
+            self.info("Applying %s"%p)
+            self.runMysql(text, p, True)
+            self.info(None, True)
+            
+        p = os.path.join(self.dbFilesPath,"schema-level.sql")
+        if os.path.isfile(p):
+            text = file(p).read()
+            self.info("Applying %s"%p)
+            self.runMysql(text, p, True)
+            self.info(None, True)
+               
+    def prepareDBFiles(self):
+        def prepareDBDotProperties():
+            dbpPath = os.path.join(self.dbConfPath, 'db.properties')
+            dbproperties = file(dbpPath).read().splitlines()
+            newdbp = []
+            for line in dbproperties:
+                if line.startswith("cluster.node.IP="): line="cluster.node.IP=%s"%self.ip
+                if line.startswith("db.cloud.username="): line="db.cloud.username=%s"%self.user
+                if line.startswith("db.cloud.password="): line="db.cloud.password=%s"%self.password
+                if line.startswith("db.cloud.host="): line="db.cloud.host=%s"%self.host
+                if line.startswith("db.cloud.port="): line="db.cloud.port=%s"%self.port
+                if line.startswith("db.usage.username="): line="db.usage.username=%s"%self.user
+                if line.startswith("db.usage.password="): line="db.usage.password=%s"%self.password
+                if line.startswith("db.usage.host="): line="db.usage.host=%s"%self.host
+                if line.startswith("db.usage.port="): line="db.usage.port=%s"%self.port
+                newdbp.append(line)
+            file(dbpPath,"w").write("\n".join(newdbp))
+            self.info("Preparing %s"%dbpPath, True)
+        
+        prepareDBDotProperties()
+        
+    def grabSystemInfo(self):
+        def getIpAddr():
+            try:
+                stuff = runCmd(['ifconfig', '|', 'grep "inet addr"'])
+                for l in stuff.split("\n"):
+                    l = l.strip()
+                    secondSpace = l.find(' ', len('inet addr'))
+                    ipStr = l[:secondSpace]
+                    (x, ip) = ipStr.split(':')
+                    if ip != '127.0.0.1': return ip
+                return '127.0.0.1'
+            except Exception, e:
+                return "127.0.0.1"
+        
+        self.ip = getIpAddr()
+        self.info("Detected local IP address as %s, will use as cluster management server node IP"%self.ip, True)
+            
+    def checkSystemSetup(self):
+        def checkCloudDbFiles():
+            self.info("Checking Cloud database files ...", None)
+            dbfpaths = [ os.path.join(self.dbConfPath,"db.properties") ]
+            for dbf in dbfpaths:
+                if not os.path.exists(dbf):
+                    self.errorAndExit("Cannot find %s"%dbf)
+            
+            coreSchemas = ['create-database.sql', 'create-schema.sql', 'templates.sql', 'create-index-fk.sql']
+            if not self.serversetup:
+                coreSchemas.append('server-setup.sql')
+            
+            coreSchemas = [os.path.join(self.dbFilesPath, x) for x in coreSchemas]
+            for f in coreSchemas:
+                if not os.path.isfile(f):
+                    self.errorAndExit("Cloud DB schema %s was not found"%f)
+            self.info(None, True)
+        
+        def checkDbserverHostname():
+            self.info("Checking mysql server hostname ...", None)
+            if resolves_to_ipv6(self, self.port):
+                err = "%s resolves to an IPv6 address.  The Cloud.com CloudStack does not support IPv6 yet.\nPlease fix this issue in either /etc/hosts or your DNS configuration.\n"%self.host
+                self.errorAndExit(err)
+            self.info(None, True)
+        
+        def checkHostName():
+            self.info("Checking local machine hostname ...", None)
+            try:
+                output= runCmd(['hostname', '--fqdn'])
+            except Exception, e:
+                err = "The host name of this computer does not resolve to an IP address.\nPlease use your operating system's network setup tools to fix this (%s).\n"%e.__str__()
+                self.errorAndExit(err)
+            self.info(None, True)
+        
+        def checkSELinux():
+            self.info("Checking SELinux setup ...", None)
+            try:
+                check_selinux()
+            except CheckFailed, e:
+                self.errorAndExit(e.__str__())
+            except OSError, e:
+                if e.errno == 2: pass
+                else: self.errorAndExit(e.__str__())
+            self.info(None, True)
+                
+        def checkMysqlConnection():
+            self.info("Testing mysql connection ...", None)
+            sql = "SELECT * from mysql.user limit 0"
+            self.runMysql(sql, 'test script', self.rootuser != None)
+            self.info(None, True)
+        
+        checkCloudDbFiles()
+        checkHostName()
+        checkSELinux()
+        checkMysqlConnection()
+                    
+    def parseOptions(self):
+        def parseOtherOptions():
+            if self.options.rootcreds:
+                self.rootuser,self.rootpassword = parseUserAndPassword(self.options.rootcreds)
+                if self.rootuser == self.user:
+                    self.errorAndExit("--deploy-as= user name cannot be the user name supplied for the connection credentials")
+                
+                self.info("Mysql root user name:%s"%self.rootuser, True)
+                self.info("Mysql root user password:%s"%self.rootpassword, True)
+                
+            if self.options.serversetup:
+                if not self.options.rootcreds:
+                    self.errorAndExit("--auto= requires valid --deploy-as= credentials")
+                if os.path.isfile(self.options.serversetup):
+                    self.errorAndExit("%s is not a valid file"%self.options.serversetup)
+                self.serversetup = self.options.serversetup
+                self.info("User specified server-setup.sql file at %s"%self.serversetup, True)
+            
+            self.isDebug = self.options.debug 
+            
+        def parseUserAndPassword(cred):
+            stuff = cred.split(':')
+            if len(stuff) != 1 and len(stuff) != 2:
+                self.errorAndExit("Invalid user name and password format, must be in format of user:password (%s)"%cred)
+            user = stuff[0]
+            if len(user) < 1:
+                self.errorAndExit("Invalid user name and password format, must be in format of user:password, user name can not be empty")
+            if len(stuff) == 1:
+                password = None
+            else:
+                password = stuff[1]
+                
+            forbidden = "' \\`"
+            for f in forbidden:
+                if f in user: self.errorAndExit("User name cannot have the %r characters"%f)
+                if password and f in password: self.errorAndExit("Password cannot have the %r characters"%f)
+            return user, password
+            
+        def parseCasualCredit():
+            def parseHostInfo(info):
+                stuff = info.split(":")
+                if len(stuff) == 1:
+                    host = stuff[0]
+                    port = 3306
+                elif len(stuff) == 2:
+                    host = stuff[0]
+                    try: port = int(stuff[1])
+                    except ValueError: self.errorAndExit("The database port must be an integer (%s)"%stuff[1])
+                    if port < 1: self.errorAndExit("The database port must be a positive integer (%s)"%stuff[1])
+                else:
+                    self.errorAndExit("Invalid host and port format, it must be in format of host:port (%s)"%info)
+                return host, port
+    
+            if len(self.args) == 0:
+                self.errorAndExit("Please specify user:password@hostname")
+            if len(self.args) > 1:
+                self.errorAndExit("There are more than one parameters for user:password@hostname (%s)"%self.args)
+            
+            arg = self.args[0]
+            stuff = arg.split("@", 2)
+            if len(stuff) == 1: stuff.append("localhost")
+            self.user,self.password = parseUserAndPassword(stuff[0])
+            self.host,self.port = parseHostInfo(stuff[1])
+            
+            self.info("Mysql user name:%s"%self.user, True)
+            if self.password:
+                self.info("Mysql user password:%s"%self.password, True)
+            else:
+                self.info("Mysql user password:", True)
+            self.info("Mysql server ip:%s"%self.host, True)
+            self.info("Mysql server port:%s"%self.port, True)
+            
+    #---------------------- option parsing and command line checks ------------------------
+        usage = """%prog user:[password]@mysqlhost:[port] [--deploy-as=rootuser:[rootpassword]] [--auto=/path/to/server-setup.xml]
+    
+    This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
+    
+    If the the --deploy-as option is present, this command will also connect to the database using the administrative credentials specified as the value for the --deploy-as argument, construct the database environment needed to run the CloudStack Management Server, and alter the password specified for the user in the first argument.  In this case, the user name specified in --deploy-as= cannot be the same as the user name specified for the connection credentials that the CloudStack Management Server will be set up with.
+    
+    If a server-setup.xml cloud setup information file is specified with the --auto option, this command will also construct a customized database environment according to the cloud setup information in the file.
+    
+    The port and the password are optional and can be left out..  If host is omitted altogether, it will default to localhost.
+    
+    Examples:
+    
+    %prog cloud:secret 
+        sets user cloud and password 'secret' up in
+        @MSCONF@/db.properties, using localhost as the
+        database server
+        
+    %prog sheng:rules@192.168.1.1 
+        sets these credentials up in @MSCONF@/db.properties
+        
+    %prog alex:founder@1.2.3.4 --deploy-as=root:nonsense
+        sets alex up as the MySQL user, then connects as the root user
+        with password 'nonsense', and recreates the databases, creating
+        the user alex with password 'founder' as necessary
+    
+    %prog alena:tests@5.6.7.8 --deploy-as=root:nonsense --auto=/root/server-setup.xml
+        sets alena up as the MySQL user, then connects as the root user
+        with password 'nonsense' to server 5.6.7.8, then recreates the
+        databases and sets up the alena user, then performs an automated
+        database setup using the information in server-setup.xml
+    """
+        self.parser = OptionParser(usage=usage)
+        self.parser.add_option("-v", "--debug", action="store_true", dest="debug", default=False,
+                          help="If enabled, print the commands it will run as they run")
+        self.parser.add_option("-d", "--deploy-as", action="store", type="string", dest="rootcreds", default="",
+                          help="Colon-separated user name and password of a MySQL user with administrative privileges")
+        self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
+                          help="Path to an XML file describing an automated unattended cloud setup")
+        
+        (self.options, self.args) = self.parser.parse_args()
+        parseCasualCredit()
+        parseOtherOptions()
+    
+    def run(self):
+        self.parseOptions()
+        self.checkSystemSetup()
+        self.grabSystemInfo()
+        self.prepareDBFiles()
+        self.setupDBSchema()
+        
+        print ''
+        print "CloudStack has successfully initialized database, you can check your database configuration in %s"%os.path.join(self.dbConfPath, 'db.properties')
+        print ''
 
-If a server-setup.xml cloud setup information file is specified with the --auto option, this command will also construct a customized database environment according to the cloud setup information in the file.
-
-The port and the password are optional and can be left out..  If host is omitted altogether, it will default to localhost.
-
-Examples:
-
-%prog cloud:secret 
-	sets user cloud and password 'secret' up in
-	@MSCONF@/db.properties, using localhost as the
-	database server
-	
-%prog sheng:rules@192.168.1.1 
-	sets these credentials up in @MSCONF@/db.properties
-	
-%prog alex:founder@1.2.3.4 --deploy-as=root:nonsense
-	sets alex up as the MySQL user, then connects as the root user
-	with password 'nonsense', and recreates the databases, creating
-	the user alex with password 'founder' as necessary
-
-%prog alena:tests@5.6.7.8 --deploy-as=root:nonsense --auto=/root/server-setup.xml
-	sets alena up as the MySQL user, then connects as the root user
-	with password 'nonsense' to server 5.6.7.8, then recreates the
-	databases and sets up the alena user, then performs an automated
-	database setup using the information in server-setup.xml
-"""
-
-parser = OptionParser(usage=usage)
-parser.add_option("-v", "--debug", action="store_true", dest="debug", default=False,
-                  help="If enabled, print the commands it will run as they run")
-parser.add_option("-d", "--deploy-as", action="store", type="string", dest="rootcreds", default="",
-                  help="Colon-separated user name and password of a MySQL user with administrative privileges")
-parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
-                  help="Path to an XML file describing an automated unattended cloud setup")
-
-#------------------ functions --------------------
-
-def e(msg): parser.error(msg)
-
-def parse_userpw(crds):
-	stuff = crds.split(":")
-	if len(stuff) == 1:
-		user = stuff[0]
-		password = ''
-	else:
-		user,password = stuff[0],":".join(stuff[1:])
-	if len(user) < 1: e("User cannot be empty")
-	forbidden = "' \\`"
-	for f in forbidden:
-		if f in password: e("Password cannot have the %r character"%f)
-		if f in user: e("User cannot have the %r character"%f)
-	return user,password
-
-def parse_hostport(crds):
-	stuff = crds.split(":")
-	if len(stuff) == 1:
-		host = stuff[0]
-		port = 3306
-	elif len(stuff) == 2:
-		host = stuff[0]
-		try: port = int(stuff[1])
-		except ValueError: e("Database port must be an integer")
-		if port < 1: e("Database port must be a positive integer")
-	else:
-		e("Invalid host and port specification")
-	if len(host) < 1: e("Host cannot be empty")
-	return host,port
-
-def get_creds(parser,options,args):
-	arg = args[0]
-	stuff = arg.split("@")
-	if len(stuff) == 1: stuff.append("localhost")
-	creds,hostinfo = "@".join(stuff[:-1]),stuff[-1]
-	user,password = parse_userpw(creds)
-	host,port = parse_hostport(hostinfo)
-	return (user,password,host,port)
-
-def run_mysql(text,user,password,host,port,debug=False):
-  kwargs = {}
-  kwargs['host'] = host
-  kwargs['user'] = user
-  if password: kwargs['passwd']   = password
-  if port: kwargs['port']   = port
-
-  try:
-      conn = MySQLdb.connect(**kwargs)
-  except:
-      print "Connect to mysqld failed, please make sure mysqld is running. \
-You may start it by: service mysqld start"
-      sys.exit (-1)
-
-  cur = conn.cursor()
-  import re
-  exp = re.compile("DELIMITER (.*)$",re.M)
-  pairs = [";"]+[x.strip() for x in exp.split(text)]
-  delims = []
-  chunks = []
-  while pairs:
-      delims.append( pairs[0] )
-      chunks.append( pairs[1] )
-      pairs = pairs[2:]
-
-  for delim,chunk in zip(delims,chunks):
-      for stmt in chunk.split(delim):
-	stmt = stmt.strip()
-	if not stmt: continue
-	if debug: print stmt
-	cur.execute(stmt)
-  cur.close()
-  conn.commit()
-  conn.close()
-
-def ifaces():
-    status,lines = commands.getstatusoutput('LANG=C /sbin/ip address show')
-    assert status == 0
-    lines = [ l.split()[1][:-1] for l in lines.splitlines() if not l.startswith(' ') ]
-    if 'lo' in lines: lines.remove('lo')
-    return lines
-
-def ip(iface):
-    status,lines = commands.getstatusoutput('LANG=C /sbin/ip address show %s'%iface)
-    if status != 0: return False
-    #used to say: assert status == 0 but it caused a bug in ifaces without IP
-    lines = [ l for l in lines.splitlines() if l.startswith('    inet ') ]
-    if not lines: return None
-    toks = lines[0].split()
-    ip = toks[1]
-    if '/' in ip: ip = ip.split("/")[0]
-    return ip
-
-def firstip(ifs):
-    ips = [ ip(iface) for iface in ifs if ip(iface) ]
-    if not ips: return None
-    return ips[0]
-
-def checkutc():
-  import time
-  if time.tzname != ('UTC','UTC') and time.tzname != ('GMT','GMT'):
-     sys.stderr.write("The current time zone (standard,DST) of your machine is set to: %s\n"%(time.tzname,))
-     sys.stderr.write("You need to set your time zone to UTC and reboot your machine.\n")
-     sys.stderr.write("Use your operating system's time setup tools (timeconfig or\n")
-     sys.stderr.write("system-config-time) to set one.\n")
-     sys.exit(3)
-
-def checkhostname():
-  output = subprocess.Popen(["hostname","--fqdn"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-  output.communicate()
-  output.wait()
-  if output.returncode != 0:
-     sys.stderr.write("The host name of this computer does not resolve to an IP address.\n")
-     sys.stderr.write("Please use your operating system's network setup tools to fix this.\n")
-     sys.exit(3)
-  
-def checkdbserverhostname(host):
-	if resolves_to_ipv6(host,3306):
-		sys.stderr.write("%s resolves to an IPv6 address.  The Cloud.com CloudStack does not support IPv6 yet.\n"%host)
-		sys.stderr.write("Please fix this issue in either /etc/hosts or your DNS configuration.\n")
-		sys.exit(3)
-  
-def checkselinux():
-	try:
-		check_selinux()
-	except CheckFailed,e:
-		sys.stderr.write(e.__str__())
-		sys.exit(3)
-
-def checknetwork():
-	ipaddr = firstip(ifaces())
-	if not ipaddr:
-		sys.stderr.write("We could not find any network configuration in this system.\n")
-		sys.stderr.write("Please set up networking properly, after which you can run this program again.\n")
-		sys.exit(3)
-
-def setupconfigfile(fn,myipaddr,username,password,host,port):
-	#setup config file
-	dbproperties = file(fn).read().splitlines()
-	newdbp = []
-	for line in dbproperties:
-		if line.startswith("cluster.node.IP="): line="cluster.node.IP=%s"%myipaddr
-		for x in "username password host port".split():
-			if line.startswith("db.cloud.%s="%x): line="db.cloud.%s=%s"%(x,locals()[x])
-			if line.startswith("db.usage.%s="%x): line="db.usage.%s=%s"%(x,locals()[x])
-		newdbp.append(line)
-	file(fn,"w").write("\n".join(newdbp))
-
-
-#------------- actual code --------------------
-
-(options, args) = parser.parse_args()
-
-user,password,host,port= get_creds(parser,options,args)
-rootuser,rootpassword = [None,None]
-if options.rootcreds:
-	rootuser,rootpassword = parse_userpw(options.rootcreds)
-	if rootuser == user:
-		e("--deploy-as= user name cannot be the user name supplied for the connection credentials")
-if options.serversetup and not options.rootcreds:
-	e("--auto= requires valid --deploy-as= credentials")
-if options.serversetup and not os.path.isfile(options.serversetup):
-	e("%s is not a valid file"%options.serversetup)
-
-
-dbfilepath = r"@SETUPDATADIR@"
-dbppaths = [ os.path.join(r"@MSCONF@","db.properties") ] # , os.path.join("@USAGESYSCONFDIR@","db.properties") ]
-dbppaths = [ x for x in dbppaths if os.path.exists(x) ]
-if not dbppaths:
-	print "No services to set up installed on this system.  Refusing to continue."
-	sys.exit(21)
-
-#run sanity checks
-# checkutc()
-checkdbserverhostname(host)
-if sys.platform != "win32": checkhostname()
-try: checkselinux()
-except OSError,e:
-	if e.errno == 2: pass
-	else: raise
-
-#initialize variables
-if sys.platform != 'win32': ipaddr = firstip(ifaces())
-else: ipaddr = None
-if not ipaddr: ipaddr='127.0.0.1'
-
-
-if rootuser:
-	print "Testing specified deployment credentials on server %s:%s"%(host,port)
-        try: run_mysql("SELECT * from mysql.user limit 0",rootuser,rootpassword,host,port,debug=options.debug)
-	except CalledProcessError:
-		print "The deployment credentials you specified are not valid.  Refusing to continue."
-		sys.exit(19)
-else:
-	print "Testing specified connection credentials on server %s:%s"%(host,port)
-        try: run_mysql("SELECT * from cloud.user limit 0",user,password,host,port,debug=options.debug)
-	except CalledProcessError:
-		print "The connection credentials you specified are not valid.  Refusing to continue."
-		sys.exit(19)
-
-
-print "Setting up user credentials in:"
-for x in dbppaths:
-	print "	-> %s ..."%x,
-	setupconfigfile(x,ipaddr,user,password,host,port)
-	print "done."
-
-if rootuser:
-	#create database schema!
-
-	replacements = (
-		("CREATE USER cloud identified by 'cloud';",
-			"CREATE USER %s@`localhost` identified by '%s'; CREATE USER %s@`%%` identified by '%s';"%(
-					(user,password,user,password)
-				)),
-		("cloud identified by 'cloud';",
-			"%s identified by '%s';"%(user,password)),
-		("cloud@`localhost` identified by 'cloud'",
-			"%s@`localhost` identified by '%s'"%(user,password)),
-		("cloud@`%` identified by 'cloud'",
-			"%s@`%%` identified by '%s'"%(user,password)),
-		("to cloud@`localhost`",
-			"to %s@`localhost`"%user),
-		("to cloud@`%`",
-			"to %s@`%%`"%user),
-		("TO cloud@`localhost`",
-			"to %s@`localhost`"%user),
-		("TO cloud@`%`",
-			"to %s@`%%`"%user),
-		("WHERE `User` = 'cloud' and host =",
-			"WHERE `User` = '%s' and host ="%user),
-		("DROP USER 'cloud'",
-			"DROP USER '%s'"%user),
-		("CALL `test`.`drop_user_if_exists`() ;",
-			""),
-	)
-
-	for f in ["create-database","create-schema","create-database-premium","create-schema-premium"]:
-		p = os.path.join(dbfilepath,"%s.sql"%f)
-		if not os.path.exists(p): continue
-		text = file(p).read()
-		for t,r in replacements: text = text.replace(t,r)
-                print "Applying file %s to the database on server %s:%s"%(p,host,port)
-		try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
-		except CalledProcessError: sys.exit(20)
-		
-	if options.serversetup:
-		conf = os.path.dirname(dbppaths[0])
-		pcp = os.path.pathsep.join( glob.glob( os.path.join ( r"@PREMIUMJAVADIR@" , "*" ) ) )
-		if sys.platform == 'win32':
-			mscp = r"@MSCLASSPATH@"
-			depscp = r"@DEPSCLASSPATH@"
-			classpath = os.path.pathsep.join([pcp,depscp,mscp,conf])
-		else:
-			systemjars = r"@SYSTEMJARS@".split()
-			pipe = subprocess.Popen(["build-classpath"]+systemjars,stdout=subprocess.PIPE)
-			systemcp,throwaway = pipe.communicate()
-			systemcp = systemcp.strip()
-			if pipe.wait(): # this means that build-classpath failed miserably
-				systemcp = r"@SYSTEMCLASSPATH@"
-			mscp = r"@MSCLASSPATH@"
-			depscp = r"@DEPSCLASSPATH@"
-			classpath = os.path.pathsep.join([pcp,systemcp,depscp,mscp,conf])
-		print "Performing unattended automated setup using file %s"%options.serversetup
-		cmd = ["java","-cp",classpath,"com.cloud.test.DatabaseConfig",options.serversetup]
-		if options.debug: print "Running command: %s"%" ".join(cmd)
-		try: check_call(cmd)
-		except CalledProcessError:
-			print "Automated setup could not be completed."
-			sys.exit(21)
-	else:
-		for f in ["server-setup"]:
-			p = os.path.join(dbfilepath,"%s.sql"%f)
-			text = file(p).read()
-			print "Applying file %s to the database on server %s:%s"%(p,host,port)
-                        try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
-			except CalledProcessError: sys.exit(22)
-
-	for f in ["templates","create-index-fk"]:
-		p = os.path.join(dbfilepath,"%s.sql"%f)
-		text = file(p).read()
-		print "Applying file %s to the database on server %s:%s"%(p,host,port)
-                try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
-		except CalledProcessError: sys.exit(22)
-
-	p = os.path.join(dbfilepath,"schema-level.sql")
-	if os.path.isfile(p):
-		text = file(p).read()
-		print "Applying file %s to the database on server %s:%s"%(p,host,port)
-                try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
-		except CalledProcessError: sys.exit(22)
+if __name__ == "__main__":
+   o = DBDeployer()
+   o.run()
+        
