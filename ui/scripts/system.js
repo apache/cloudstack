@@ -1201,7 +1201,8 @@
               }
               else if(jsonObj.state == "Disabled") {
                 allowedActions.push("enable");                
-              }                       
+              }   
+              allowedActions.push("shutdown");                   
               return allowedActions;
             },
             providerActions: {              
@@ -1260,7 +1261,34 @@
                   notification: function() { return 'Disabled F5 provider'; }
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
+              },             
+              shutdown: {
+                label: 'Shutdown',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["f5"].id),
+                    dataType: "json",
+                    success: function(json) { 
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {  
+                              nspMap["f5"] = null;
+                              return {}; //nothing in this network service provider needs to be updated, in fact, this whole network service provider has being deleted
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Shutdown F5 provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }    
             },       
             actions: {
               add: {
@@ -1429,7 +1457,8 @@
               }
               else if(jsonObj.state == "Disabled") {
                 allowedActions.push("enable");                
-              }                       
+              }       
+              allowedActions.push("shutdown");               
               return allowedActions;
             },
             providerActions: {              
@@ -1488,7 +1517,34 @@
                   notification: function() { return 'Disabled SRX provider'; }
                 },
                 notification: { poll: pollAsyncJobResult }
-              }
+              },              
+              shutdown: {
+                label: 'Shutdown',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["srx"].id),
+                    dataType: "json",
+                    success: function(json) { 
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {  
+                              nspMap["srx"] = null;
+                              return {}; //nothing in this network service provider needs to be updated, in fact, this whole network service provider has being deleted
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Shutdown SRX provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }   
             },   
             actions: {
               add: {
