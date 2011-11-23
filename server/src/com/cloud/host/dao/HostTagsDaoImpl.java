@@ -63,7 +63,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         expunge(sc);
         
         for (String tag : hostTags) {
-            tag.trim();
+            tag = tag.trim();
             if(tag.length() > 0) {
                 HostTagVO vo = new HostTagVO(hostId, tag);
                 persist(vo);
