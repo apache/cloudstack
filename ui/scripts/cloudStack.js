@@ -36,7 +36,7 @@
   $(function() {
     var $container = $('#cloudStack3-container');
 
-    cloudStack.uiCustom.login({
+    var loginArgs = {
       $container: $container,
 
       // Use this for checking the session, to bypass login screen
@@ -180,6 +180,8 @@
           }
         });
       }
-    });
+    };
+
+    cloudStack.uiCustom.login(loginArgs);
   });
 })(cloudStack, jQuery, testData);

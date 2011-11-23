@@ -29,8 +29,7 @@
   $(function() {
     var $container = $('#cloudStack3-container');
 
-    // Login
-    cloudStack.uiCustom.login({
+    var loginArgs = {
       $container: $container,
 
       // Use this for checking the session, to bypass login screen
@@ -66,6 +65,10 @@
         return args.response.error();
       },
 
+      logoutAction: function(args) {
+        document.location.reload();
+      },
+
       complete: function(args) {
         var context = {
           users: [args.user]
@@ -94,7 +97,17 @@
             }
           }
         });
+
+        // Logout action
+        $('#user-options a').live('click', function() {
+          loginArgs.logoutAction({
+            context: cloudStack.context
+          });
+        });
       }
-    });
+    };
+
+    // Login
+    cloudStack.uiCustom.login(loginArgs);
   });
 })(cloudStack, jQuery, testData);
