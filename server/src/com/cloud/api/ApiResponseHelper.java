@@ -2015,11 +2015,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             isoResponse.setOsTypeName("");
         }
         
-        populateOwner(isoResponse, iso);
+        Account account = ApiDBUtils.findAccountByIdIncludingRemoved(iso.getAccountId());
+        populateAccount(isoResponse, account.getId());
+        populateDomain(isoResponse, account.getDomainId());
 
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         boolean isAdmin = false;
-        if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+        if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
         }
         // Add the zone ID
@@ -2028,7 +2030,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         isoResponse.setZoneName(datacenter.getName());
 
         // If the user is an admin, add the template download status
-        if (isAdmin || account.getId() == iso.getAccountId()) {
+        if (isAdmin || caller.getId() == iso.getAccountId()) {
             // add download status
             if (isoHost.getDownloadState() != Status.DOWNLOADED) {
                 String isoStatus = "Processing";
