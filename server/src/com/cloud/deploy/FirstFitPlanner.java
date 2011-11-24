@@ -113,8 +113,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             DeploymentPlan plan, ExcludeList avoid)
     throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        ServiceOffering offering = vmProfile.getServiceOffering();
         DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+
+        //check if datacenter is in avoid set
+        if(avoid.shouldAvoid(dc)){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DataCenter id = '"+ dc.getId() +"' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+            }
+            return null;
+        }
+        
+        ServiceOffering offering = vmProfile.getServiceOffering();
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
 

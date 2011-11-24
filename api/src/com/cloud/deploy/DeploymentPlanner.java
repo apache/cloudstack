@@ -246,7 +246,14 @@ public interface DeploymentPlanner extends Adapter {
             
             return false;
         }
-        
+
+        public boolean shouldAvoid(DataCenter dc) {
+            if (_dcIds != null && _dcIds.contains(dc.getId())) {
+                return true;
+            }
+            return false;
+        }        
+
         public Set<Long> getDataCentersToAvoid(){
         	return _dcIds;
         }
@@ -265,6 +272,6 @@ public interface DeploymentPlanner extends Adapter {
         
         public Set<Long> getPoolsToAvoid(){
         	return _poolIds;
-        }        
+        }
     }
 }
