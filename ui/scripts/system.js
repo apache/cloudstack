@@ -135,7 +135,7 @@
                         var array1 = [];
                         array1.push("&zoneId=" + args.context.zones[0].id);
 
-                        if (args.data.vlanid != null && args.data.vlanid.length > 0)
+                        if (args.data.vlan != null && args.data.vlan.length > 0)
                           array1.push("&vlan=" + todb(args.data.vlan));
                         else
                           array1.push("&vlan=untagged");
