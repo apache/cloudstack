@@ -10,6 +10,7 @@ import string
 from optparse import OptionParser
 import commands
 import MySQLdb
+import shutil
 
 # squelch mysqldb spurious warnings
 import warnings
@@ -42,9 +43,39 @@ class DBDeployer(object):
     ip = None
     user,password,host,port,rootuser,rootpassword = [None,None,None,None,None,None]
     isDebug = False
+    mgmtsecretkey = None
+    dbsecretkey = None
+    encryptiontype = None
     dbConfPath = r"@MSCONF@"
     dbFilesPath = r"@SETUPDATADIR@"
+    dbDotProperties = {}
+    dbDotPropertiesIndex = 0
+    encryptionKeyFile = '@MSCONF@/key'
+    encryptionJarPath = '@JAVADIR@/cloud-jasypt-1.8.jar'
+    success = False
+    magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
 
+    def preRun(self):
+        def backUpDbDotProperties():
+            dbpPath = os.path.join(self.dbConfPath, 'db.properties')
+            copyPath = os.path.join(self.dbConfPath, 'db.properties.origin')
+            
+            if os.path.isfile(dbpPath):
+                shutil.copy2(dbpPath, copyPath)
+        
+        backUpDbDotProperties()
+    
+    def postRun(self):
+        def cleanOrRecoverDbDotProperties():
+            dbpPath = os.path.join(self.dbConfPath, 'db.properties')
+            copyPath = os.path.join(self.dbConfPath, 'db.properties.origin')
+            if not self.success:
+                shutil.copy2(copyPath, dbpPath)
+            os.remove(copyPath)
+        
+        cleanOrRecoverDbDotProperties()
+                
+        
     def info(self, msg, result=None):
         output = ""
         if msg is not None:
@@ -62,14 +93,28 @@ class DBDeployer(object):
         sys.stdout.write(msg)
         sys.stdout.flush()
 
+    def putDbProperty(self, key, value):
+        if self.dbDotProperties.has_key(key):
+            (oldValue, index) = self.dbDotProperties[key]
+            self.dbDotProperties[key] = (value, index)
+        else:
+            self.dbDotProperties[key] = (value, self.dbDotPropertiesIndex)
+            self.dbDotPropertiesIndex += 1
+    
+    def getDbProperty(self, key):
+        if not self.dbDotProperties.has_key(key):
+            return None
+        (value, index) = self.dbDotProperties[key]
+        return value
+        
     def runMysql(self, text, table, isRoot=False):
         kwargs = {}
         if not isRoot:
             kwargs['user'] = self.user
-            if self.password: kwargs['passwd'] = self.password
+            if self.password != '': kwargs['passwd'] = self.password
         else:
             kwargs['user'] = self.rootuser
-            if self.password: kwargs['passwd'] = self.rootpassword
+            if self.rootpassword != '': kwargs['passwd'] = self.rootpassword
             
         kwargs['port'] = self.port
         kwargs['host'] = self.host
@@ -133,6 +178,7 @@ Sql parameters:
             self.errorAndExit(err)
         
     def errorAndExit(self, msg):
+        self.postRun()
         if self.parser != None:
             self.parser.error(msg)
         else:
@@ -223,22 +269,56 @@ Sql parameters:
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
             dbproperties = file(dbpPath).read().splitlines()
             newdbp = []
+            emptyLine = 0
             for line in dbproperties:
-                if line.startswith("cluster.node.IP="): line="cluster.node.IP=%s"%self.ip
-                if line.startswith("db.cloud.username="): line="db.cloud.username=%s"%self.user
-                if line.startswith("db.cloud.password="): line="db.cloud.password=%s"%self.password
-                if line.startswith("db.cloud.host="): line="db.cloud.host=%s"%self.host
-                if line.startswith("db.cloud.port="): line="db.cloud.port=%s"%self.port
-                if line.startswith("db.usage.username="): line="db.usage.username=%s"%self.user
-                if line.startswith("db.usage.password="): line="db.usage.password=%s"%self.password
-                if line.startswith("db.usage.host="): line="db.usage.host=%s"%self.host
-                if line.startswith("db.usage.port="): line="db.usage.port=%s"%self.port
-                newdbp.append(line)
-            file(dbpPath,"w").write("\n".join(newdbp))
+                passed = False
+                line = line.strip()
+                if line.startswith("#"): key = line; value = ''; passed = True
+                if line == '' or line == '\n': key = self.magicString + str(emptyLine); value = ''; emptyLine += 1; passed = True
+                
+                try:
+                    if not passed:
+                        (key, value) = line.split('=', 1)
+                        if key == "cluster.node.IP": value = self.ip
+                        if key == "db.cloud.username": value = self.user
+                        if key == "db.cloud.password": value = self.password
+                        if key == "db.cloud.host": value = self.host
+                        if key == "db.cloud.port": value = self.port
+                        if key == "db.usage.username": value = self.user
+                        if key == "db.usage.password": value = self.password
+                        if key == "db.usage.host": value = self.host
+                        if key == "db.usage.port": value = self.port
+                except Exception, e:
+                    err = '''Wrong format in %s (%s):
+Besides comments beginning "#" and empty line, all key-value pairs must be in formula of
+                    key=value
+for example:
+                    db.cloud.username = cloud
+                    ''' % (dbpPath, line)
+                    self.errorAndExit(err)
+                self.putDbProperty(key, value)
             self.info("Preparing %s"%dbpPath, True)
         
         prepareDBDotProperties()
+    
+    def finalize(self):
+        def finalizeDbProperties():
+            entries = []
+            for key in self.dbDotProperties.keys():
+                (value, index) = self.dbDotProperties[key]
+                if key.startswith("#"):
+                    entries.insert(index, key)
+                elif key.startswith(self.magicString):
+                    entries.insert(index, '')
+                else:
+                    entries.insert(index, "%s=%s"%(key, value))
+            file(os.path.join(self.dbConfPath, 'db.properties'), 'w').write('\n'.join(entries))
         
+        self.info("Finalizing setup ...", None)
+        finalizeDbProperties()
+        self.info(None, True)
+        self.success = True # At here, we have done successfully and nothing more after this flag is set
+            
     def grabSystemInfo(self):
         def getIpAddr():
             try:
@@ -268,10 +348,11 @@ Sql parameters:
             if not self.serversetup:
                 coreSchemas.append('server-setup.sql')
             
-            coreSchemas = [os.path.join(self.dbFilesPath, x) for x in coreSchemas]
-            for f in coreSchemas:
+            checkingList = [os.path.join(self.dbFilesPath, x) for x in coreSchemas]
+            checkingList.append(self.encryptionJarPath)
+            for f in checkingList:
                 if not os.path.isfile(f):
-                    self.errorAndExit("Cloud DB schema %s was not found"%f)
+                    self.errorAndExit("Cloud DB required file %s was not found"%f)
             self.info(None, True)
         
         def checkDbserverHostname():
@@ -311,7 +392,34 @@ Sql parameters:
         checkHostName()
         checkSELinux()
         checkMysqlConnection()
-                    
+    
+    def processEncryptionStuff(self):
+        def encrypt(input):
+            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+            return runCmd(cmd).strip('\n')
+        
+        def formatEncryptResult(value):
+            return 'ENC(%s)'%value
+        
+        def encryptDBSecretKey():
+            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
+        
+        def encryptDBPassword():
+            dbPassword = self.getDbProperty('db.cloud.password')
+            if dbPassword == None: self.errorAndExit('Cannot find db.cloud.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
+            self.putDbProperty('db.cloud.password', formatEncryptResult(encrypt(dbPassword)))
+            
+            usagePassword = self.getDbProperty('db.usage.password')
+            if usagePassword == None: self.errorAndExit('Cannot find db.usage.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
+            self.putDbProperty('db.usage.password', formatEncryptResult(encrypt(usagePassword)))
+        
+        self.info("Processing encryption ...", None)
+        file(self.encryptionKeyFile, 'w').write(self.encryptiontype)
+        self.putDbProperty("db.cloud.encryption.type", self.encryptiontype)
+        encryptDBSecretKey()
+        encryptDBPassword()
+        self.info(None, True)
+        
     def parseOptions(self):
         def parseOtherOptions():
             if self.options.rootcreds:
@@ -330,7 +438,10 @@ Sql parameters:
                 self.serversetup = self.options.serversetup
                 self.info("User specified server-setup.sql file at %s"%self.serversetup, True)
             
-            self.isDebug = self.options.debug 
+            self.encryptiontype = self.options.encryptiontype
+            self.mgmtsecretkey = self.options.mgmtsecretkey
+            self.dbsecretkey = self.options.dbsecretkey
+            self.isDebug = self.options.debug
             
         def parseUserAndPassword(cred):
             stuff = cred.split(':')
@@ -340,14 +451,14 @@ Sql parameters:
             if len(user) < 1:
                 self.errorAndExit("Invalid user name and password format, must be in format of user:password, user name can not be empty")
             if len(stuff) == 1:
-                password = None
+                password = ''
             else:
                 password = stuff[1]
                 
             forbidden = "' \\`"
             for f in forbidden:
                 if f in user: self.errorAndExit("User name cannot have the %r characters"%f)
-                if password and f in password: self.errorAndExit("Password cannot have the %r characters"%f)
+                if f in password: self.errorAndExit("Password cannot have the %r characters"%f)
             return user, password
             
         def parseCasualCredit():
@@ -371,7 +482,7 @@ Sql parameters:
                 self.errorAndExit("There are more than one parameters for user:password@hostname (%s)"%self.args)
             
             arg = self.args[0]
-            stuff = arg.split("@", 2)
+            stuff = arg.split("@", 1)
             if len(stuff) == 1: stuff.append("localhost")
             self.user,self.password = parseUserAndPassword(stuff[0])
             self.host,self.port = parseHostInfo(stuff[1])
@@ -423,17 +534,32 @@ Sql parameters:
                           help="Colon-separated user name and password of a MySQL user with administrative privileges")
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
                           help="Path to an XML file describing an automated unattended cloud setup")
+        self.parser.add_option("-e", "--encrypt-type", action="store", type="string", dest="encryptiontype", default="file",
+                          help="Encryption method used for db password encryption, could be file. Default is file")
+        self.parser.add_option("-m", "--managementserver-secretkey", action="store", type="string", dest="mgmtsecretkey", default="password",
+                          help="Secret key used for encrypt. A string, default is password")
+        self.parser.add_option("-k", "--database-secretkey", action="store", type="string", dest="dbsecretkey", default="password",
+                          help="Secret key used for encrypt. A string, default is password")
+        self.parser.add_option("-t", "--test-encryption", action="store_true", dest="testencryption", default=False,
+                          help="If enabled, will process encryption")
         
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
     
     def run(self):
-        self.parseOptions()
-        self.checkSystemSetup()
-        self.grabSystemInfo()
-        self.prepareDBFiles()
-        self.setupDBSchema()
+        try:
+            self.preRun()
+            self.parseOptions()
+            self.checkSystemSetup()
+            self.grabSystemInfo()
+            self.prepareDBFiles()
+            self.setupDBSchema()
+            if self.options.testencryption:
+                self.processEncryptionStuff()
+            self.finalize()
+        finally:
+            self.postRun()
         
         print ''
         print "CloudStack has successfully initialized database, you can check your database configuration in %s"%os.path.join(self.dbConfPath, 'db.properties')
