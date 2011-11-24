@@ -10,6 +10,7 @@ import string
 from optparse import OptionParser
 import commands
 import MySQLdb
+import shutil
 
 # squelch mysqldb spurious warnings
 import warnings
@@ -45,6 +46,27 @@ class DBDeployer(object):
     dbConfPath = r"@MSCONF@"
     dbFilesPath = r"@SETUPDATADIR@"
 
+    def preRun(self):
+        def backUpDbDotProperties():
+            dbpPath = os.path.join(self.dbConfPath, 'db.properties')
+            copyPath = os.path.join(self.dbConfPath, 'db.properties.origin')
+            
+            if os.path.isfile(dbpPath):
+                shutil.copy2(dbpPath, copyPath)
+        
+        backUpDbDotProperties()
+    
+    def postRun(self):
+        def cleanOrRecoverDbDotProperties():
+            dbpPath = os.path.join(self.dbConfPath, 'db.properties')
+            copyPath = os.path.join(self.dbConfPath, 'db.properties.origin')
+            if os.path.isfile(copyPath):
+                if not self.success:
+                    shutil.copy2(copyPath, dbpPath)
+                os.remove(copyPath)
+        
+        cleanOrRecoverDbDotProperties()
+        
     def info(self, msg, result=None):
         output = ""
         if msg is not None:
@@ -66,10 +88,10 @@ class DBDeployer(object):
         kwargs = {}
         if not isRoot:
             kwargs['user'] = self.user
-            if self.password: kwargs['passwd'] = self.password
+            if self.password != '': kwargs['passwd'] = self.password
         else:
             kwargs['user'] = self.rootuser
-            if self.password: kwargs['passwd'] = self.rootpassword
+            if self.rootpassword != '': kwargs['passwd'] = self.rootpassword
             
         kwargs['port'] = self.port
         kwargs['host'] = self.host
@@ -133,6 +155,7 @@ Sql parameters:
             self.errorAndExit(err)
         
     def errorAndExit(self, msg):
+        self.postRun()
         if self.parser != None:
             self.parser.error(msg)
         else:
@@ -340,14 +363,14 @@ Sql parameters:
             if len(user) < 1:
                 self.errorAndExit("Invalid user name and password format, must be in format of user:password, user name can not be empty")
             if len(stuff) == 1:
-                password = None
+                password = ''
             else:
                 password = stuff[1]
                 
             forbidden = "' \\`"
             for f in forbidden:
                 if f in user: self.errorAndExit("User name cannot have the %r characters"%f)
-                if password and f in password: self.errorAndExit("Password cannot have the %r characters"%f)
+                if f in password: self.errorAndExit("Password cannot have the %r characters"%f)
             return user, password
             
         def parseCasualCredit():
@@ -377,10 +400,7 @@ Sql parameters:
             self.host,self.port = parseHostInfo(stuff[1])
             
             self.info("Mysql user name:%s"%self.user, True)
-            if self.password:
-                self.info("Mysql user password:%s"%self.password, True)
-            else:
-                self.info("Mysql user password:", True)
+            self.info("Mysql user password:%s"%self.password, True)
             self.info("Mysql server ip:%s"%self.host, True)
             self.info("Mysql server port:%s"%self.port, True)
             
@@ -429,11 +449,15 @@ Sql parameters:
         parseOtherOptions()
     
     def run(self):
-        self.parseOptions()
-        self.checkSystemSetup()
-        self.grabSystemInfo()
-        self.prepareDBFiles()
-        self.setupDBSchema()
+        try:
+            self.preRun()
+            self.parseOptions()
+            self.checkSystemSetup()
+            self.grabSystemInfo()
+            self.prepareDBFiles()
+            self.setupDBSchema()
+        finally:
+            self.postRun()
         
         print ''
         print "CloudStack has successfully initialized database, you can check your database configuration in %s"%os.path.join(self.dbConfPath, 'db.properties')
