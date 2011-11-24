@@ -674,7 +674,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         checkAccess(UserContext.current().getCaller(), domain);
         
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        Account account = _accountDao.findNonDisabledAccount(accountName, domainId);
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
         } 

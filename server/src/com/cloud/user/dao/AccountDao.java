@@ -43,4 +43,5 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
     void markForCleanup(long accountId);
     List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter);
     List<AccountVO> findCleanupsForDisabledAccounts();
+    Account findNonDisabledAccount(String accountName, Long domainId);
 }
