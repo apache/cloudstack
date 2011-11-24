@@ -737,7 +737,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 	        try {
 	            resource.configure(host.getName(), params);
 	        } catch (ConfigurationException e) {
-	            s_logger.warn("Unable to configure resource due to ", e);
+	            s_logger.warn("Unable to configure resource due to " + e.getMessage());
 	            return false;
 	        }
 	
