@@ -2804,8 +2804,16 @@
           listView: {
             label: 'System VMs',
             fields: {
-              name: { label: 'Name' },
-              systemvmtype: { label: 'Type' },
+              name: { label: 'Name' },    
+              systemvmtype: { 
+                label: 'Type',
+                converter: function(args) {
+                  if(args == "consoleproxy")
+                    return "Console Proxy VM";
+                  else if(args == "secondarystoragevm")
+                    return "Secondary Storage VM";
+                }
+              },  
               zonename: { label: 'Zone' },
               state: {
                 label: 'Status',
@@ -3062,7 +3070,44 @@
                   poll: pollAsyncJobResult
                 }
               }
-            }
+            },           
+            detailView: {
+              name: 'System VM details',
+              tabs: {
+                details: {
+                  title: 'Details',
+                  fields: [
+                    {
+                      name: { label: 'Name' }
+                    },
+                    {
+                      id: { label: 'ID' },                      
+                      state: { label: 'State' },
+                      systemvmtype: { 
+                        label: 'Type',
+                        converter: function(args) {
+                          if(args == "consoleproxy")
+                            return "Console Proxy VM";
+                          else if(args == "secondarystoragevm")
+                            return "Secondary Storage VM";
+                        }
+                      },
+                      zonename: { label: 'Zone' },
+                      publicip: { label: 'Public IP address' },
+                      privateip: { label: 'Private IP address' },
+                      linklocalip: { label: 'Link local IP address' },
+                      hostname: { label: 'Host' },
+                      gateway: { label: 'Gateway' },
+                      created: { label: 'Created' },
+                      activeviewersessions: { label: 'Active sessions' }
+                    }
+                  ],
+                  dataProvider: function(args) {	
+                    args.response.success({data: args.context.systemvms[0]});
+                  }
+                },
+              }
+            }            
           }
         }
       }
