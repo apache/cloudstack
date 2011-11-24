@@ -80,7 +80,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement {
+public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider {
     private static final Logger s_logger = Logger.getLogger(CloudZonesNetworkElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -121,46 +121,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(dest, network.getTrafficType())) {
-            
-            if (vmProfile.getType() != VirtualMachine.Type.User) {
-                return false;
-            }
-            @SuppressWarnings("unchecked")
-            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vmProfile;
-            _userVmDao.loadDetails((UserVmVO) uservm.getVirtualMachine());
-            String password = (String)uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
-            String userData = uservm.getVirtualMachine().getUserData();
-            String sshPublicKey = uservm.getVirtualMachine().getDetail("SSH.PublicKey");
-
-            Commands cmds = new Commands(OnError.Continue);
-            if (password != null && network.isDefault()) {
-                final String encodedPassword = PasswordGenerator.rot13(password);
-                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getVirtualMachine().getHostName());
-                cmds.addCommand("password", cmd);
-            }
-            String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();
-            String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
-
-            cmds.addCommand(
-                    "vmdata",
-                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), uservm.getVirtualMachine().getInstanceName(), uservm.getId(), sshPublicKey));
-            try {
-                _agentManager.send(dest.getHost().getId(), cmds);
-            } catch (OperationTimedoutException e) {
-                s_logger.debug("Unable to send vm data command to host " + dest.getHost());
-                return false;
-            }
-            Answer dataAnswer = cmds.getAnswer("vmdata");
-            if (dataAnswer != null && dataAnswer.getResult()) {
-                s_logger.info("Sent vm data successfully to vm " + uservm.getVirtualMachine().getInstanceName());
-                return true;
-            }
-            s_logger.info("Failed to send vm data to vm " + uservm.getVirtualMachine().getInstanceName());
-            return false;
-        } else {
-            return false;
-        }
+        return true;
     }
 
     @Override
@@ -228,6 +189,56 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean canEnableIndividualServices() {
+        return false;
+    }
+
+    @Override
+    public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (canHandle(dest, network.getTrafficType())) {
+            
+            if (vm.getType() != VirtualMachine.Type.User) {
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+            _userVmDao.loadDetails((UserVmVO) uservm.getVirtualMachine());
+            String password = (String)uservm.getParameter(VirtualMachineProfile.Param.VmPassword);
+            String userData = uservm.getVirtualMachine().getUserData();
+            String sshPublicKey = uservm.getVirtualMachine().getDetail("SSH.PublicKey");
+
+            Commands cmds = new Commands(OnError.Continue);
+            if (password != null && network.isDefault()) {
+                final String encodedPassword = PasswordGenerator.rot13(password);
+                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getVirtualMachine().getHostName());
+                cmds.addCommand("password", cmd);
+            }
+            String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();
+            String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
+
+            cmds.addCommand(
+                    "vmdata",
+                    generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), uservm.getVirtualMachine().getInstanceName(), uservm.getId(), sshPublicKey));
+            try {
+                _agentManager.send(dest.getHost().getId(), cmds);
+            } catch (OperationTimedoutException e) {
+                s_logger.debug("Unable to send vm data command to host " + dest.getHost());
+                return false;
+            }
+            Answer dataAnswer = cmds.getAnswer("vmdata");
+            if (dataAnswer != null && dataAnswer.getResult()) {
+                s_logger.info("Sent vm data successfully to vm " + uservm.getVirtualMachine().getInstanceName());
+                return true;
+            }
+            s_logger.info("Failed to send vm data to vm " + uservm.getVirtualMachine().getInstanceName());
+            return false;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
         return false;
     }
 }
