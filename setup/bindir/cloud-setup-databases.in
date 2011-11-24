@@ -156,12 +156,19 @@ Sql parameters:
         
     def errorAndExit(self, msg):
         self.postRun()
-        if self.parser != None:
-            self.parser.error(msg)
-        else:
-            sys.stderr.write(msg)
-            sys.stderr.flush()
-            sys.exit(1)
+        err = '''\n\nWe apologize for below error:
+***************************************************************      
+%s
+*************************************************************** 
+Please run:
+
+    cloud-setup-database -h
+
+for full help
+''' % msg
+        sys.stderr.write(err)
+        sys.stderr.flush()
+        sys.exit(1)
     
     def setupDBSchema(self):
         if not self.rootuser:
