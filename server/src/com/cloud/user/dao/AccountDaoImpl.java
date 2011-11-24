@@ -147,6 +147,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     public Account findActiveAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addAnd("state", SearchCriteria.Op.EQ, State.enabled);
         return findOneBy(sc);
     }
 
