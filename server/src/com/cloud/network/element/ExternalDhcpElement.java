@@ -52,7 +52,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=NetworkElement.class)
-public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
+public class ExternalDhcpElement extends AdapterBase implements NetworkElement, DhcpServiceProvider {
 	private static final Logger s_logger = Logger.getLogger(ExternalDhcpElement.class);
 	@Inject ExternalDhcpManager _dhcpMgr;
 	private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -98,13 +98,7 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
 	@Override
 	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
 			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-		Host host = dest.getHost();
-		if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
-			//BareMetalElement or DhcpElement handle this
-			return false;
-		}
-		
-		return _dhcpMgr.addVirtualMachineIntoNetwork(network, nic, vm, dest, context);
+	    return true;
 	}
 
 	@Override
@@ -139,5 +133,16 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean canEnableIndividualServices() {
         return false;
+    }
+
+    @Override
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        Host host = dest.getHost();
+        if (host.getHypervisorType() == HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
+            //BareMetalElement or DhcpElement handle this
+            return false;
+        }
+        return _dhcpMgr.addVirtualMachineIntoNetwork(network, nic, vm, dest, context);
     }
 }
