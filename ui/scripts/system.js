@@ -2795,7 +2795,46 @@
                   });
                 }
               });
-            }
+            },            
+            detailView: {
+              name: 'Virtual applicance details',
+              tabs: {
+                details: {
+                  title: 'Details',
+                  fields: [
+                    {
+                      name: { label: 'Name' }
+                    },
+                    {
+                      id: { label: 'ID' },
+                      state: { label: 'State' },                      
+                      publicip: { label: 'Public IP' },
+                      guestipaddress: { label: 'Guest IP' },
+                      linklocalip: { label: 'Link local IP' },
+                      hostname: { label: 'Host' },
+                      serviceofferingname: { label: 'Service offering' },
+                      networkdomain: { label: 'Network domain' },
+                      domain: { label: 'Domain' },
+                      account: { label: 'Account' },
+                      created: { label: 'Created' },
+                      isredundantrouter: { 
+                        label: 'Redundant router',
+                        converter: cloudStack.converters.toBooleanText                        
+                      },
+                      redundantRouterState: { label: 'Redundant state' } 
+                    }
+                  ],
+                  dataProvider: function(args) {	
+                    var item = args.context.routers[0];                    
+                    if(item.isredundantrouter == true)
+                      item["redundantRouterState"] = item.redundantstate;
+                    else
+                      item["redundantRouterState"] = "";                    
+                    args.response.success({data: item});
+                  }
+                },
+              }
+            }            
           }
         },
         systemvms: {
@@ -3093,9 +3132,9 @@
                         }
                       },
                       zonename: { label: 'Zone' },
-                      publicip: { label: 'Public IP address' },
-                      privateip: { label: 'Private IP address' },
-                      linklocalip: { label: 'Link local IP address' },
+                      publicip: { label: 'Public IP' },
+                      privateip: { label: 'Private IP' },
+                      linklocalip: { label: 'Link local IP' },
                       hostname: { label: 'Host' },
                       gateway: { label: 'Gateway' },
                       created: { label: 'Created' },
