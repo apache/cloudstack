@@ -96,6 +96,7 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -178,6 +179,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private SecondaryStorageVmManager _ssvmMgr;
     @Inject
     private ResourceManager _resourceMgr;
+    @Inject
+    private DomainManager _domainMgr;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -1191,7 +1194,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         // Verify that max doesn't exceed domain and account snapshot limits
         long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot);
-        long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(null, ResourceType.snapshot);
+        long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
         int max = cmd.getMaxSnaps().intValue();
         if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit) || (domainLimit != -1 && max > domainLimit))) {
             throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the domain/account level snapshot limit");
