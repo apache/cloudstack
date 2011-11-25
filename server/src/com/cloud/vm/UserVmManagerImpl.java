@@ -3350,23 +3350,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // VERIFICATIONS and VALIDATIONS
 
         //VV 1: verify the two users
-        Account oldAccount = UserContext.current().getCaller();
-        Account newAccount = _accountService.getAccount(cmd.getAccountId());
-        if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountId() + " in domain " + oldAccount.getDomainId());
+        Account adminAccount = UserContext.current().getCaller();
+        if (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN  && adminAccount.getType() != Account.ACCOUNT_TYPE_DOMAIN_ADMIN){ // only root admin can assign VMs
+        	throw new InvalidParameterValueException("Only domain admins are allowed to assign VMs and not " + adminAccount.getType());
         }
 
-        //don't allow to move the vm from the project
-        if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Vm id=" + cmd.getVmId() + " belongs to the project and can't be moved");
-        }
-
-        //VV 2: check if account/domain is with in resource limits to create a new vm
-        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
-
-        //get the VM
+        //get and check the valid VM
         UserVmVO vm = _vmDao.findById(cmd.getVmId());
-
         if (vm == null){
             throw new InvalidParameterValueException("There is no vm by that id " + cmd.getVmId());
         } else if (vm.getState() == State.Running) {  // VV 3: check if vm is running
@@ -3376,6 +3366,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("VM is Running, unable to move the vm " + vm);
         }
 
+        Account oldAccount = _accountService.getActiveAccountById(vm.getAccountId());
+        if (oldAccount == null) {
+            throw new InvalidParameterValueException("Invalid account for VM " + vm.getAccountId() + " in domain " + oldAccount.getDomainId());
+        }
+        //don't allow to move the vm from the project
+        if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Vm id=" + cmd.getVmId() + " belongs to the project and can't be moved");
+        }
+        Account newAccount = _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
+        if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Invalid accountid=" + newAccount.getAccountId() + " in domain " + newAccount.getDomainId());
+        }
+
+        //VV 2: check if account/domain is with in resource limits to create a new vm
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
+
         // VV 4: Check if new owner can use the vm template
         VirtualMachineTemplate template = _templateDao.findById(vm.getTemplateId());
         if (!template.isPublicTemplate()) {
@@ -3383,8 +3389,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _accountMgr.checkAccess(newAccount, null, templateOwner);
         }
 
-        // VV 5: check that vm owner can create vm in the domain
-        DomainVO domain = _domainDao.findById(oldAccount.getDomainId());
+        // VV 5: check that admin can create vm in the domain
+        DomainVO domain = _domainDao.findById(adminAccount.getDomainId());
         _accountMgr.checkAccess(newAccount, domain);
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
@@ -3403,7 +3409,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), 
                 vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString()));
         // update resource counts
-        _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+        _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.user_vm);
 
         // OWNERSHIP STEP 1: update the vm owner
         vm.setAccountId(newAccount.getAccountId());
@@ -3411,13 +3417,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // OS 2: update volume
         List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
-            volume.setAccountId(cmd.getAccountId());
-            _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume, new Long(volumes.size()));
+            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume, new Long(volumes.size()));
+            volume.setAccountId(newAccount.getAccountId());
             _volsDao.persist(volume);
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, new Long(volumes.size()));
+            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, new Long(volumes.size()));
         }
 
-        _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+        _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
         //generate usage evenst to account for this change
         _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), 
                 vm.getHostName(), vm.getServiceOfferingId(),  vm.getTemplateId(), vm.getHypervisorType().toString()));

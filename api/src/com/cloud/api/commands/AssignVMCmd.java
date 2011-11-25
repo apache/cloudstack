@@ -23,9 +23,11 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
@@ -45,9 +47,12 @@ public class AssignVMCmd extends BaseCmd  {
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the vm ID of the user VM to be moved")
     private Long virtualMachineId;
-
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG,required=true, description="the accopunt id of the new owner account")
-    private Long accountId;
+    
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
+    private String accountName;
+    
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+    private Long domainId;
 
 
     /////////////////////////////////////////////////////
@@ -58,9 +63,14 @@ public class AssignVMCmd extends BaseCmd  {
         return virtualMachineId;
     }
 
-    public Long getAccountId() {
-        return accountId;
+    public String getAccountName() {
+        return accountName;
     }
+
+	public Long getDomainId() {
+		return domainId;
+	}
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
