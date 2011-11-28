@@ -101,7 +101,7 @@ public class ListUsersCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends UserAccount> result = _mgr.searchForUsers(this);
+        List<? extends UserAccount> result = _accountService.searchForUsers(this);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = new ArrayList<UserResponse>();
         for (UserAccount user : result) {

@@ -63,7 +63,6 @@ import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetVMPasswordCmd;
-import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;
@@ -71,8 +70,6 @@ import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
@@ -87,7 +84,6 @@ import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
-import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
@@ -209,11 +205,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
-import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
-import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
@@ -289,7 +283,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final LaunchPermissionDao _launchPermissionDao;
     private final DomainDao _domainDao;
     private final AccountDao _accountDao;
-    private final UserAccountDao _userAccountDao;
     private final AlertDao _alertDao;
     private final CapacityDao _capacityDao;
     private final GuestOSDao _guestOSDao;
@@ -367,7 +360,6 @@ public class ManagementServerImpl implements ManagementServer {
         _launchPermissionDao = locator.getDao(LaunchPermissionDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _accountDao = locator.getDao(AccountDao.class);
-        _userAccountDao = locator.getDao(UserAccountDao.class);
         _alertDao = locator.getDao(AlertDao.class);
         _capacityDao = locator.getDao(CapacityDao.class);
         _guestOSDao = locator.getDao(GuestOSDao.class);
@@ -595,102 +587,6 @@ public class ManagementServerImpl implements ManagementServer {
         cal.set(Calendar.MINUTE, minute);
         cal.set(Calendar.SECOND, second);
         return cal.getTime();
-    }
-
-    @Override
-    public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
-        Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
-            }
-            
-            _accountMgr.checkAccess(caller, domain);
-        } else {
-            // default domainId to the admin's domain
-            domainId = caller.getDomainId();
-        }
-
-        Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Long id = cmd.getId();
-        Object username = cmd.getUsername();
-        Object type = cmd.getAccountType();
-        Object accountName = cmd.getAccountName();
-        Object state = cmd.getState();
-        Object keyword = cmd.getKeyword();
-
-        SearchBuilder<UserAccountVO> sb = _userAccountDao.createSearchBuilder();
-        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
-        if (id != null && id == 1) {
-            // system user should NOT be searchable
-            List<UserAccountVO> emptyList = new ArrayList<UserAccountVO>();
-            return emptyList;
-        } else if (id != null) {
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        } else {
-            // this condition is used to exclude system user from the search results
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
-        }
-
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-
-        if ((accountName == null) && (domainId != null)) {
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<UserAccountVO> sc = sb.create();
-        if (keyword != null) {
-            SearchCriteria<UserAccountVO> ssc = _userAccountDao.createSearchCriteria();
-            ssc.addOr("username", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("firstname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("lastname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("email", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountState", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("username", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (username != null) {
-            sc.setParameters("username", username);
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        } else {
-            // Don't return system user, search builder with NEQ
-            sc.setParameters("id", 1);
-        }
-
-        if (type != null) {
-            sc.setParameters("type", type);
-        }
-
-        if (accountName != null) {
-            sc.setParameters("accountName", accountName);
-            if (domainId != null) {
-                sc.setParameters("domainId", domainId);
-            }
-        } else if (domainId != null) {
-            DomainVO domainVO = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domainVO.getPath() + "%");
-        }
-
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-
-        return _userAccountDao.search(sc, searchFilter);
     }
 
     // This method is used for permissions check for both disk and service offerings
@@ -1433,136 +1329,6 @@ public class ManagementServerImpl implements ManagementServer {
         return templateZonePairSet;
     }
 
-    @Override
-    public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        Long accountId = cmd.getId();
-        String accountName = cmd.getSearchName();
-        Boolean isRecursive = cmd.isRecursive();
-
-        if (isRecursive == null) {
-            isRecursive = false;
-        }
-
-        if (accountId != null && accountId.longValue() == 1L) {
-            // system account should NOT be searchable
-            List<AccountVO> emptyList = new ArrayList<AccountVO>();
-            return emptyList;
-        }
-        
-        if (accountId != null) {
-            Account account = _accountDao.findById(accountId);
-            if (account == null) {
-                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
-            }
-
-            _accountMgr.checkAccess(caller, null, account);
-        }
-        
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-            _accountMgr.checkAccess(caller, domain);
-
-            if (accountName != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null) {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
-                }
-
-                _accountMgr.checkAccess(caller, null, account);
-            }
-        }
-
-        if (isAdmin(caller.getType())) {
-            if (domainId == null) {
-                domainId = caller.getDomainId();
-                isRecursive = true;
-            } 
-        } else {
-            // regular user is constraint to only his account
-            accountId = caller.getId();
-        }
-
-        Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Object type = cmd.getAccountType();
-        Object state = cmd.getState();
-        Object isCleanupRequired = cmd.isCleanupRequired();
-        Object keyword = cmd.getKeyword();
-
-        SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
-        sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
-
-        if ((domainId != null) && isRecursive) {
-            // do a domain LIKE match for the admin case if isRecursive is true
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        } else if ((domainId != null) && !isRecursive) {
-            // do a domain EXACT match for the admin case if isRecursive is true
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<AccountVO> sc = sb.create();
-        if (keyword != null) {
-            SearchCriteria<AccountVO> ssc = _accountDao.createSearchCriteria();
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (accountName != null) {
-            sc.setParameters("accountName", accountName);
-        }
-
-        if (accountId != null) {
-            sc.setParameters("id", accountId);
-        }
-
-        if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-
-            // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
-            if (isRecursive) {
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            } else {
-                sc.setJoinParameters("domainSearch", "path", domain.getPath());
-            }
-
-            sc.setParameters("nid", 1L);
-        } else {
-            sc.setParameters("nid", 1L);
-        }
-
-        if (type != null) {
-            sc.setParameters("type", type);
-        }
-
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-
-        if (isCleanupRequired != null) {
-            sc.setParameters("needsCleanup", isCleanupRequired);
-        }
-        
-        //don't return account of type project to the end user
-        sc.setParameters("typeNEQ", 5);
-
-        return _accountDao.search(sc, searchFilter);
-    }
 
     @Override
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
@@ -2296,118 +2062,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return new Pair<String, Integer>(null, -1);
-    }
-
-    @Override
-    public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
-        Long domainId = cmd.getId();
-        Account account = UserContext.current().getCaller();
-        String path = null;
-
-        if (account != null && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
-            DomainVO domain = _domainDao.findById(account.getDomainId());
-            if (domain != null) {
-                path = domain.getPath();
-            }
-        }
-
-        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        String domainName = cmd.getDomainName();
-        Integer level = cmd.getLevel();
-        Object keyword = cmd.getKeyword();
-
-        SearchBuilder<DomainVO> sb = _domainDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
-        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
-
-        SearchCriteria<DomainVO> sc = sb.create();
-
-        if (keyword != null) {
-            SearchCriteria<DomainVO> ssc = _domainDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (domainName != null) {
-            sc.setParameters("name", "%" + domainName + "%");
-        }
-
-        if (level != null) {
-            sc.setParameters("level", level);
-        }
-
-        if (domainId != null) {
-            sc.setParameters("id", domainId);
-        }
-
-        if (path != null) {
-            sc.setParameters("path", "%" + path + "%");
-        }
-
-        return _domainDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
-        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Long domainId = cmd.getId();
-        String domainName = cmd.getDomainName();
-        Boolean isRecursive = cmd.isRecursive();
-        Object keyword = cmd.getKeyword();
-        String path = null;
-
-        if (isRecursive == null) {
-            isRecursive = false;
-        }
-
-        Account account = UserContext.current().getCaller();
-        if (account != null) {
-            if (domainId != null) {
-                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list domains children for domain id " + domainId + ", permission denied.");
-                }
-            } else {
-                domainId = account.getDomainId();
-            }
-        }
-
-        DomainVO domain = _domainDao.findById(domainId);
-        if (domain != null && isRecursive) {
-            path = domain.getPath();
-            domainId = null;
-        }
-
-        List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path);
-
-        return domainList;
-    }
-
-    private List<DomainVO> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path) {
-        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
-
-        if (keyword != null) {
-            SearchCriteria<DomainVO> ssc = _domainDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (domainId != null) {
-            sc.addAnd("parent", SearchCriteria.Op.EQ, domainId);
-        }
-
-        if (domainName != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + domainName + "%");
-        }
-
-        if (path != null) {
-            sc.addAnd("path", SearchCriteria.Op.NEQ, path);
-            sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
-        }
-         
-        return _domainDao.search(sc, searchFilter);
     }
 
     @Override

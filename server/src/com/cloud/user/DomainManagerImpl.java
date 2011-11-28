@@ -28,6 +28,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.ListDomainChildrenCmd;
+import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
@@ -47,6 +49,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -313,5 +317,115 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         }
 
         return success && deleteDomainSuccess;
+    }
+    
+    @Override
+    public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
+        Long domainId = cmd.getId();
+        Account caller = UserContext.current().getCaller();
+        String path = null;
+
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            DomainVO domain = _domainDao.findById(caller.getDomainId());
+            if (domain != null) {
+                path = domain.getPath();
+            }
+        }
+
+        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        String domainName = cmd.getDomainName();
+        Integer level = cmd.getLevel();
+        Object keyword = cmd.getKeyword();
+
+        SearchBuilder<DomainVO> sb = _domainDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
+        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
+
+        SearchCriteria<DomainVO> sc = sb.create();
+
+        if (keyword != null) {
+            SearchCriteria<DomainVO> ssc = _domainDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (domainName != null) {
+            sc.setParameters("name", "%" + domainName + "%");
+        }
+
+        if (level != null) {
+            sc.setParameters("level", level);
+        }
+
+        if (domainId != null) {
+            sc.setParameters("id", domainId);
+        }
+
+        if (path != null) {
+            sc.setParameters("path", "%" + path + "%");
+        }
+
+        return _domainDao.search(sc, searchFilter);
+    }
+    
+    @Override
+    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
+        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long domainId = cmd.getId();
+        String domainName = cmd.getDomainName();
+        Boolean isRecursive = cmd.isRecursive();
+        Object keyword = cmd.getKeyword();
+        String path = null;
+
+        if (isRecursive == null) {
+            isRecursive = false;
+        }
+
+        Account caller = UserContext.current().getCaller();
+        if (domainId != null) {
+            if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("Unable to list domains children for domain id " + domainId + ", permission denied.");
+            }
+        } else {
+            domainId = caller.getDomainId();
+        }
+
+        DomainVO domain = _domainDao.findById(domainId);
+        if (domain != null && isRecursive) {
+            path = domain.getPath();
+            domainId = null;
+        }
+
+        List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path);
+
+        return domainList;
+    }
+    
+    private List<DomainVO> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path) {
+        SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+
+        if (keyword != null) {
+            SearchCriteria<DomainVO> ssc = _domainDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (domainId != null) {
+            sc.addAnd("parent", SearchCriteria.Op.EQ, domainId);
+        }
+
+        if (domainName != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + domainName + "%");
+        }
+
+        if (path != null) {
+            sc.addAnd("path", SearchCriteria.Op.NEQ, path);
+            sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
+        }
+         
+        return _domainDao.search(sc, searchFilter);
     }
 }

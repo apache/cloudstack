@@ -21,10 +21,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.commands.DeleteUserCmd;
+import com.cloud.api.commands.ListAccountsCmd;
+import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 
@@ -158,5 +161,10 @@ public interface AccountService {
 	void markUserRegistered(long userId);
 	
 	public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+
+	List<? extends Account> searchForAccounts(ListAccountsCmd cmd);
+
+	List<? extends UserAccount> searchForUsers(ListUsersCmd cmd)
+			throws PermissionDeniedException;
 
 }

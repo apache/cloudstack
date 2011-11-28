@@ -19,7 +19,6 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -28,7 +27,6 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.user.Account;
@@ -108,7 +106,7 @@ public class ListAccountsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Account> accounts = _mgr.searchForAccounts(this);
+        List<? extends Account> accounts = _accountService.searchForAccounts(this);
         ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (Account account : accounts) {

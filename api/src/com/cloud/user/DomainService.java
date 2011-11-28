@@ -17,7 +17,12 @@
  */
 package com.cloud.user;
 
+import java.util.List;
+
+import com.cloud.api.commands.ListDomainChildrenCmd;
+import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.domain.Domain;
+import com.cloud.exception.PermissionDeniedException;
 
 public interface DomainService {
 
@@ -35,4 +40,10 @@ public interface DomainService {
     boolean isChildDomain(Long parentId, Long childId);
 
     boolean deleteDomain(long domainId, Boolean cleanup);
+
+	List<? extends Domain> searchForDomains(ListDomainsCmd cmd)
+			throws PermissionDeniedException;
+
+	List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd)
+			throws PermissionDeniedException;
 }

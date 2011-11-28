@@ -19,7 +19,6 @@ listUsers=com.cloud.api.commands.ListUsersCmd;7
 disableUser=com.cloud.api.commands.DisableUserCmd;7
 enableUser=com.cloud.api.commands.EnableUserCmd;7
 
-
 #### Domain commands
 createDomain=com.cloud.api.commands.CreateDomainCmd;1
 updateDomain=com.cloud.api.commands.UpdateDomainCmd;1

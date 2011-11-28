@@ -46,6 +46,8 @@ import com.cloud.acl.SecurityChecker;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.DeleteUserCmd;
+import com.cloud.api.commands.ListAccountsCmd;
+import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
@@ -58,6 +60,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -104,7 +107,11 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -185,6 +192,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectDao _projectDao;
     @Inject
     private AccountDetailsDao _accountDetailsDao;
+    @Inject
+    private DomainDao _domainDao;
     
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -1714,5 +1723,231 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return null;
     }
     
+    @Override
+    public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        Long accountId = cmd.getId();
+        String accountName = cmd.getSearchName();
+        Boolean isRecursive = cmd.isRecursive();
+
+        if (isRecursive == null) {
+            isRecursive = false;
+        }
+
+        if (accountId != null && accountId.longValue() == 1L) {
+            // system account should NOT be searchable
+            List<AccountVO> emptyList = new ArrayList<AccountVO>();
+            return emptyList;
+        }
+        
+        if (accountId != null) {
+            Account account = _accountDao.findById(accountId);
+            if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
+            }
+
+            checkAccess(caller, null, account);
+        }
+        
+        if (domainId != null) {
+            Domain domain = _domainMgr.getDomain(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+            checkAccess(caller, domain);
+
+            if (accountName != null) {
+                Account account = _accountDao.findActiveAccount(accountName, domainId);
+                if (account == null) {
+                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
+                }
+
+                checkAccess(caller, null, account);
+            }
+        }
+
+        if (isAdmin(caller.getType())) {
+            if (domainId == null) {
+                domainId = caller.getDomainId();
+                isRecursive = true;
+            } 
+        } else {
+            // regular user is constraint to only his account
+            accountId = caller.getId();
+        }
+
+        Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object type = cmd.getAccountType();
+        Object state = cmd.getState();
+        Object isCleanupRequired = cmd.isCleanupRequired();
+        Object keyword = cmd.getKeyword();
+
+        SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
+        sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
+
+        if ((domainId != null) && isRecursive) {
+            // do a domain LIKE match for the admin case if isRecursive is true
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        } else if ((domainId != null) && !isRecursive) {
+            // do a domain EXACT match for the admin case if isRecursive is true
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<AccountVO> sc = sb.create();
+        if (keyword != null) {
+            SearchCriteria<AccountVO> ssc = _accountDao.createSearchCriteria();
+            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (accountName != null) {
+            sc.setParameters("accountName", accountName);
+        }
+
+        if (accountId != null) {
+            sc.setParameters("id", accountId);
+        }
+
+        if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+
+            // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
+            if (isRecursive) {
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            } else {
+                sc.setJoinParameters("domainSearch", "path", domain.getPath());
+            }
+
+            sc.setParameters("nid", 1L);
+        } else {
+            sc.setParameters("nid", 1L);
+        }
+
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+
+        if (isCleanupRequired != null) {
+            sc.setParameters("needsCleanup", isCleanupRequired);
+        }
+        
+        //don't return account of type project to the end user
+        sc.setParameters("typeNEQ", 5);
+
+        return _accountDao.search(sc, searchFilter);
+    }
+    
+    @Override
+    public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+        Account caller = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        if (domainId != null) {
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
+            }
+            
+            checkAccess(caller, domain);
+        } else {
+            // default domainId to the caller's domain
+            domainId = caller.getDomainId();
+        }
+
+        Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Long id = cmd.getId();
+        Object username = cmd.getUsername();
+        Object type = cmd.getAccountType();
+        Object accountName = cmd.getAccountName();
+        Object state = cmd.getState();
+        Object keyword = cmd.getKeyword();
+
+        SearchBuilder<UserAccountVO> sb = _userAccountDao.createSearchBuilder();
+        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
+        if (id != null && id == 1) {
+            // system user should NOT be searchable
+            List<UserAccountVO> emptyList = new ArrayList<UserAccountVO>();
+            return emptyList;
+        } else if (id != null) {
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        } else {
+            // this condition is used to exclude system user from the search results
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.NEQ);
+        }
+
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+
+        if ((accountName == null) && (domainId != null)) {
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<UserAccountVO> sc = sb.create();
+        if (keyword != null) {
+            SearchCriteria<UserAccountVO> ssc = _userAccountDao.createSearchCriteria();
+            ssc.addOr("username", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("firstname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("lastname", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("email", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountState", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("username", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (username != null) {
+            sc.setParameters("username", username);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        } else {
+            // Don't return system user, search builder with NEQ
+            sc.setParameters("id", 1);
+        }
+
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+
+        if (accountName != null) {
+            sc.setParameters("accountName", accountName);
+            if (domainId != null) {
+                sc.setParameters("domainId", domainId);
+            }
+        } else if (domainId != null) {
+            DomainVO domainVO = _domainDao.findById(domainId);
+            sc.setJoinParameters("domainSearch", "path", domainVO.getPath() + "%");
+        }
+
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+
+        return _userAccountDao.search(sc, searchFilter);
+    }
   
 }

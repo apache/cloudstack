@@ -78,7 +78,7 @@ public class ListDomainsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Domain> result = _mgr.searchForDomains(this);
+        List<? extends Domain> result = _domainService.searchForDomains(this);
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
         for (Domain domain : result) {

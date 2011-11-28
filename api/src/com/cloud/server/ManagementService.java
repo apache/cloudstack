@@ -30,7 +30,6 @@ import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetVMPasswordCmd;
-import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapabilitiesCmd;
@@ -38,8 +37,6 @@ import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
@@ -54,7 +51,6 @@ import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
-import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
@@ -95,9 +91,7 @@ import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
-import com.cloud.user.UserAccount;
 import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
@@ -125,15 +119,6 @@ public interface ManagementService {
      * @return map of configuration name/values
      */
     List<? extends Configuration> searchForConfigurations(ListCfgsByCmd c);
-
-    /**
-     * revisit Searches for users by the specified search criteria Can search by: "id", "username", "account", "domainId",
-     * "type"
-     * 
-     * @param cmd
-     * @return List of UserAccounts
-     */
-    List<? extends UserAccount> searchForUsers(ListUsersCmd cmd);
 
     /**
      * Searches for Service Offerings by the specified search criteria Can search by: "name"
@@ -236,15 +221,6 @@ public interface ManagementService {
     VirtualMachine destroySystemVM(DestroySystemVmCmd cmd);
 
     /**
-     * Search for domains owned by the given domainId/domainName (those parameters are wrapped in a command object.
-     * 
-     * @return list of domains owned by the given user
-     */
-    List<? extends Domain> searchForDomains(ListDomainsCmd c);
-
-    List<? extends Domain> searchForDomainChildren(ListDomainChildrenCmd cmd);
-
-    /**
      * update an existing domain
      * 
      * @param cmd
@@ -252,14 +228,6 @@ public interface ManagementService {
      * @return Domain object if the command succeeded
      */
     Domain updateDomain(UpdateDomainCmd cmd);
-
-    /**
-     * Searches for accounts by the specified search criteria Can search by: "id", "name", "domainid", "type"
-     * 
-     * @param cmd
-     * @return List of Accounts
-     */
-    List<? extends Account> searchForAccounts(ListAccountsCmd cmd);
 
     /**
      * Searches for alerts
