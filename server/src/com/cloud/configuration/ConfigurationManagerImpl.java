@@ -520,7 +520,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         return "Please enter valid hypervisor type";
                     }
                 }
-            } else {
+            } else if (range.equalsIgnoreCase("instanceName")) {
+            	if (!NetUtils.verifyInstanceName(value)) {
+            		return "Instance name can not contain hyphen, spaces and \"+\" char";
+            	}
+            }else {
                 String[] options = range.split(",");
                 for (String option : options) {
                     if (option.trim().equalsIgnoreCase(value)) {

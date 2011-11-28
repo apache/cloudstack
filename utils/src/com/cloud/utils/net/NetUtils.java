@@ -1060,5 +1060,15 @@ public class NetUtils {
             return false;
         }
     }
+    
+    public static boolean verifyInstanceName(String instanceName) {
+        //instance name for cloudstack vms shouldn't contain - and spaces
+       if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
+            s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
+            return false;
+        } 
+
+        return true;
+    }
 
 }
