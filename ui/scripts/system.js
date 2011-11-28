@@ -306,6 +306,16 @@
             tabs: {
               details: {
                 title: 'Details',
+                                
+                preFilter: function(args) {                 
+                  var hiddenFields = [];
+                  if(selectedZoneObj.networktype == "Basic") {
+                    hiddenFields.push("vlan");
+                    hiddenFields.push("guestcidraddress");
+                  }
+                  return hiddenFields;
+                },            
+                
                 fields: [
                   {
                     name: { label: 'Name' }
