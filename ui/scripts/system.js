@@ -3264,7 +3264,7 @@
                     return 'Are you sure you want to destroy this system VM?';
                   },
                   notification: function(args) {
-                    return 'Destroyping system VM';
+                    return 'Destroyed system VM';
                   }
                 },
                 action: function(args) {
