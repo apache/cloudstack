@@ -3090,7 +3090,10 @@
                       item["redundantRouterState"] = item.redundantstate;
                     else
                       item["redundantRouterState"] = "";                    
-                    args.response.success({data: item});
+                    args.response.success({
+                      actionFilter: routerActionfilter,
+                      data: item
+                    });
                   }
                 },
               }
@@ -3634,7 +3637,10 @@
                     }
                   ],
                   dataProvider: function(args) {	
-                    args.response.success({data: args.context.systemvms[0]});
+                    args.response.success({
+                      actionFilter: systemvmActionfilter,
+                      data: args.context.systemvms[0]
+                    });
                   }
                 },
               }
