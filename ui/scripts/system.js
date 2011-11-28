@@ -388,12 +388,10 @@
                             args.$form.find('.form-item[rel=vlanId]').hide();
                             args.$form.find('.form-item[rel=scope]').hide();
                             args.$form.find('.form-item[rel=domainId]').hide();
-                            args.$form.find('.form-item[rel=account]').hide();
-                            args.$form.find('.form-item[rel=gateway]').hide();
-                            args.$form.find('.form-item[rel=netmask]').hide();
-                            args.$form.find('.form-item[rel=startip]').hide();
-                            args.$form.find('.form-item[rel=endip]').hide();
-                            args.$form.find('.form-item[rel=networkdomain]').hide();                           
+                            args.$form.find('.form-item[rel=account]').hide();                           
+                            args.$form.find('.form-item[rel=networkdomain]').hide();    
+
+                            args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
                           }
                           else {  //"Advanced"                            
                             args.$form.find('.form-item[rel=isDefault]').css('display', 'inline-block');
@@ -401,12 +399,10 @@
                             args.$form.find('.form-item[rel=vlanId]').css('display', 'inline-block');
                             args.$form.find('.form-item[rel=scope]').css('display', 'inline-block');
                             //args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //depends on scope field
-                            //args.$form.find('.form-item[rel=account]').css('display', 'inline-block');  //depends on scope field
-                            args.$form.find('.form-item[rel=gateway]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=netmask]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=startip]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=endip]').css('display', 'inline-block');
-                            args.$form.find('.form-item[rel=networkdomain]').css('display', 'inline-block');                            
+                            //args.$form.find('.form-item[rel=account]').css('display', 'inline-block');  //depends on scope field                            
+                            args.$form.find('.form-item[rel=networkdomain]').css('display', 'inline-block');     
+
+                            args.$form.find('.form-item[rel=podId]').hide();                            
                           }
                         },
 												fields: {
@@ -563,10 +559,10 @@
 														}
 													},
 													account: { label: 'Account' },
-													gateway: { label: 'Gateway' },
-													netmask: { label: 'Netmask' },
-													startip: { label: 'Start IP' },
-													endip: { label: 'End IP' },
+													guestGateway: { label: 'Guest gateway' },
+													guestNetmask: { label: 'Guest netmask' },
+													startGuestIp: { label: 'Start guest IP' },
+													endGuestIp: { label: 'End guest IP' },
 													networkdomain: { label: 'Network domain' }
 												}
 											},
@@ -581,8 +577,7 @@
                         if(selectedZoneObj.networktype == "Basic") {  
                           array1.push("&vlan=untagged");                          
                         }
-                        else {  //"Advanced"  
-                        
+                        else {  //"Advanced"                          
                           if (args.data.vlanTagged == "tagged")
                             array1.push("&vlan=" + todb(args.data.vlanId));
                           else
@@ -606,10 +601,10 @@
                           }
 
                           array1.push("&isDefault=" + (args.data.isDefault=="on"));
-                          array1.push("&gateway=" + args.data.gateway);
-                          array1.push("&netmask=" + args.data.netmask);
-                          array1.push("&startip=" + args.data.startip);
-                          array1.push("&endip=" + args.data.endip);
+                          array1.push("&gateway=" + args.data.guestGateway);
+                          array1.push("&netmask=" + args.data.guestNetmask);
+                          array1.push("&startip=" + args.data.startGuestIp);
+                          array1.push("&endip=" + args.data.endGuestIp);
 
                           if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
                             array1.push("&networkdomain=" + todb(args.data.networkdomain));
@@ -621,6 +616,33 @@
 													success: function(json) {
 														var item = json.createnetworkresponse.network;
 														args.response.success({data:item});
+                                                        
+                            if(selectedZoneObj.networktype == "Basic") {                                
+                              var array1 = [];
+                              array1.push("&vlan=untagged");
+                              array1.push("&zoneid=" + selectedZoneObj.id);
+                              array1.push("&podId=" + args.data.podId);
+                              array1.push("&forVirtualNetwork=false"); //direct VLAN
+                              array1.push("&gateway=" + todb(args.data.guestGateway));
+                              array1.push("&netmask=" + todb(args.data.guestNetmask));
+                              array1.push("&startip=" + todb(args.data.startGuestIp));                      
+                              var endip = args.data.endGuestIp;
+                              if(endip != null && endip.length > 0)
+                                array1.push("&endip=" + todb(endip));
+
+                              $.ajax({
+                                url: createURL("createVlanIpRange" + array1.join("")),
+                                dataType: "json",
+                                async: false,
+                                success: function(json) {
+                                  //var item = json.createvlaniprangeresponse.vlan;
+                                },
+                                error: function(XMLHttpResponse) {
+                                  //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                  //args.response.error(errorMsg);
+                                }
+                              });                              
+                            }                          
 													},
 													error: function(XMLHttpResponse) {
 														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4414,7 +4436,7 @@
                     var podId = item.id;
 
                     //Create IP Range
-                    //if($thisDialog.find("#guestip_container").css("display") != "none") {
+                    /*
                     if(args.context.zones[0].networktype == "Basic") {
                       var array1 = [];
                       array1.push("&vlan=untagged");
@@ -4423,9 +4445,7 @@
                       array1.push("&forVirtualNetwork=false"); //direct VLAN
                       array1.push("&gateway=" + todb(args.data.guestGateway));
                       array1.push("&netmask=" + todb(args.data.guestNetmask));
-                      array1.push("&startip=" + todb(args.data.startGuestIp));
-
-                      /*
+                      array1.push("&startip=" + todb(args.data.startGuestIp));                      
                       var endip = args.data.endGuestIp;
                       if(endip != null && endip.length > 0)
                         array1.push("&endip=" + todb(endip));
@@ -4442,9 +4462,8 @@
                           //args.response.error(errorMsg);
                         }
                       });
-                      */
-                      
                     }
+                    */
 
                   },
                   error: function(XMLHttpResponse) {
@@ -5460,7 +5479,6 @@
         title: 'Hosts',
         id: 'hosts',
         listView: {
-          id: 'hosts',
           section: 'hosts',
           fields: {
             name: { label: 'Name' },
