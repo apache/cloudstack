@@ -4,14 +4,12 @@
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
-%define _rel 1
-
 Name:      cloud
 Summary:   Cloud.com Stack
 Version:   %{_ver}
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
-Release:   0.%{_build_number}%{_prerelease}%{dist}
+Release:   0.%{_build_number}%{dist}
 %else
 Release:   %{_rel}%{dist}
 %endif

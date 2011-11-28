@@ -443,6 +443,10 @@ def set_options(opt):
 		help = 'package version',
 		default = '',
 		dest = 'VERNUM')
+	rpmopts.add_option('--release-version',
+		help = 'release version',
+		default = '',
+		dest = 'RELEASENUM')
 	rpmopts.add_option('--prerelease',
 		help = 'Branch name to append to the release number (if specified, alter release number to be a prerelease); this option requires --build-number=X [Default: nothing]',
 		default = '',
@@ -587,6 +591,12 @@ def rpm(context):
 		prerelease = ["--define","_prerelease %s"%Options.options.PRERELEASE]
 	else: prerelease = []
 
+	if Options.options.RELEASENUM:
+		release = Options.options.RELEASENUM
+	else: release = "1"
+	
+	releasever = ["--define", "_rel %s" % release]
+
 	if Options.options.VERNUM:
 		ver = Options.options.VERNUM
 	else: ver = "2.2"
@@ -606,8 +616,8 @@ def rpm(context):
 	shutil.move(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
-	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever)
-	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever)
+	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever+releasever)
+	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever+releasever)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
