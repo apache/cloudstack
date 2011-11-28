@@ -2318,6 +2318,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, String> requestedIps, String defaultNetworkIp, String keyboard) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, owner);
+        
+        if (owner.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of vm to deploy is disabled: " + owner);
+        }
+        
         long accountId = owner.getId();
 
         assert !(requestedIps != null && defaultNetworkIp != null) : "requestedIp list and defaultNetworkIp should never be specified together";
@@ -2645,16 +2650,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Map<String, String> details = _vmDetailsDao.findDetails(vm.getId());
         vm.setDetails(details);
 
-        Account owner = _accountDao.findById(vm.getAccountId());
-
-        if (owner == null) {
-            throw new PermissionDeniedException("The owner of " + vm + " does not exist: " + vm.getAccountId());
-        }
-
-        if (owner.getState() == Account.State.disabled) {
-            throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
-        }
-
         if (vm.getIsoId() != null) {
             String isoPath = null;
 
@@ -2851,15 +2846,26 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // if account is removed, return error
         if (caller != null && caller.getRemoved() != null) {
-            throw new PermissionDeniedException("The account " + caller.getId() + " is removed");
+            throw new InvalidParameterValueException("The account " + caller.getId() + " is removed");
         }
-
+        
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
         _accountMgr.checkAccess(caller, null, vm);
+        
+        Account owner = _accountDao.findById(vm.getAccountId());
+
+        if (owner == null) {
+            throw new InvalidParameterValueException("The owner of " + vm + " does not exist: " + vm.getAccountId());
+        }
+
+        if (owner.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
+        }
+        
         UserVO user = _userDao.findById(userId);
 
         //check if vm is security group enabled
@@ -3507,6 +3513,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("Cann not find VM with ID " + vmId);
+        }
+        
+        Account owner = _accountDao.findById(vm.getAccountId());
+        if (owner == null) {
+            throw new InvalidParameterValueException("The owner of " + vm + " does not exist: " + vm.getAccountId());
+        }
+
+        if (owner.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
 
         if (vm.getState() != VirtualMachine.State.Running && vm.getState() != VirtualMachine.State.Stopped) {

@@ -110,8 +110,8 @@ public class AccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
     
-    @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details fro the account")
-    private Map details;
+    @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
+    private Map<String, String> details;
 
     public Long getId() {
         return id.getValue();
