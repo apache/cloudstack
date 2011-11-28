@@ -305,8 +305,7 @@
           
             tabs: {
               details: {
-                title: 'Details',
-                                
+                title: 'Details',                                
                 preFilter: function(args) {                 
                   var hiddenFields = [];
                   if(selectedZoneObj.networktype == "Basic") {
@@ -314,8 +313,7 @@
                     hiddenFields.push("guestcidraddress");
                   }
                   return hiddenFields;
-                },            
-                
+                },             
                 fields: [
                   {
                     name: { label: 'Name' }
@@ -335,23 +333,17 @@
                     }                    
                   }
                 ],
-                dataProvider: function(args) {      
-                  /*                
-                  $.ajax({
-                    url: createURL("listPhysicalNetworks&zoneId=" + args.context.zones[0].id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {                      
-                      var items = json.listphysicalnetworksresponse.physicalnetwork;                      
-                      selectedPhysicalNetworkObj = items[0];                                             
-                    }
-                  });  
-                  */
-                  
-                  selectedPhysicalNetworkObj["guestcidraddress"] = selectedZoneObj.guestcidraddress;
-                  //selectedZoneObj = args.context.zones[0];
-									
-                  args.response.success({ data: selectedPhysicalNetworkObj });                  
+                dataProvider: function(args) {  
+                  selectedPhysicalNetworkObj["guestcidraddress"] = selectedZoneObj.guestcidraddress;                  									
+                  args.response.success({ 
+                    actionFilter: function() {                      
+                      var allowedActions = [];
+                      if(selectedZoneObj.networktype == "Advanced")
+                        allowedActions.push("edit");
+                      return allowedActions;
+                    },
+                    data: selectedPhysicalNetworkObj 
+                  });                  
                 }
               },
 			        
