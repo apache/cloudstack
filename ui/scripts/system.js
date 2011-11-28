@@ -4307,7 +4307,8 @@
               createForm: {
                 title: 'Add new pod',
                 desc: 'Please fill in the following information to add a new pod',
-
+                
+                /*
                 preFilter: function(args) {
                   var $guestFields = args.$form.find('.form-item[rel=guestGateway], .form-item[rel=guestNetmask], .form-item[rel=startGuestIp], .form-item[rel=endGuestIp]');
                   if (args.context.zones[0].networktype == "Basic") {
@@ -4317,7 +4318,8 @@
                     $guestFields.hide();
                   }
                 },
-
+                */
+                
                 fields: {
                   name: {
                     label: 'Name',
@@ -4341,6 +4343,7 @@
                   },
 
                   //only basic zones show guest fields (begin)
+                  /*
                   guestGateway: {
                     label: 'Guest Gateway',
                     validation: { required: true },
@@ -4361,6 +4364,7 @@
                     validation: { required: false },
                     isHidden: true
                   }
+                  */
                   //only basic zones show guest fields (end)
                 }
               },
@@ -4398,6 +4402,7 @@
                       array1.push("&netmask=" + todb(args.data.guestNetmask));
                       array1.push("&startip=" + todb(args.data.startGuestIp));
 
+                      /*
                       var endip = args.data.endGuestIp;
                       if(endip != null && endip.length > 0)
                         array1.push("&endip=" + todb(endip));
@@ -4414,6 +4419,8 @@
                           //args.response.error(errorMsg);
                         }
                       });
+                      */
+                      
                     }
 
                   },
