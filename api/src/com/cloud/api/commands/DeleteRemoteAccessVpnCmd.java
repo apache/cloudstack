@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 
@@ -63,7 +64,11 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 	@Override
 	public long getEntityOwnerId() {
 	    if (ownerId == null) {
-	        ownerId = _entityMgr.findById(RemoteAccessVpn.class, publicIpId).getAccountId();
+	    	RemoteAccessVpn vpnEntity = _entityMgr.findById(RemoteAccessVpn.class, publicIpId);
+	    	if(vpnEntity != null)
+	    		return vpnEntity.getAccountId();
+	    	
+	    	throw new InvalidParameterValueException("The specified public ip is not allocated to any account");
 	    }
 	    return ownerId;
     }
