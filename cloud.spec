@@ -9,7 +9,7 @@ Summary:   Cloud.com Stack
 Version:   %{_ver}
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
-Release:   0.%{_build_number}%{dist}
+Release:   0.%{_build_number}%{dist}.%{_prerelease}
 %else
 Release:   %{_rel}%{dist}
 %endif
