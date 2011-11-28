@@ -79,7 +79,7 @@ public class CreateAccountCmd extends BaseCmd {
     private String networkDomain;
 
 	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
-    private Map details;
+    private Map<String, String> details;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -124,13 +124,13 @@ public class CreateAccountCmd extends BaseCmd {
         return networkDomain;
     } 
     
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
     	if (details == null || details.isEmpty()) {
     		return null;
     	}
     	
-    	Collection paramsCollection = details.values();
-    	Map params = (Map) (paramsCollection.toArray())[0];
+    	Collection<String> paramsCollection = details.values();
+    	Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
     	return params;
     }
 

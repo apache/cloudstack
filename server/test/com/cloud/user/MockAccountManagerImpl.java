@@ -265,7 +265,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 	public UserAccount createUserAccount(String userName, String password,
 			String firstName, String lastName, String email, String timezone,
 			String accountName, short accountType, Long domainId,
-			String networkDomain, Map details) {
+			String networkDomain, Map<String, String> details) {
 		// TODO Auto-generated method stub
 		return null;
 	}

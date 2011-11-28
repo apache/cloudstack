@@ -45,7 +45,7 @@ public interface AccountService {
      * 
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain, Map details);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details);
 
     /**
      * Deletes a user by userId

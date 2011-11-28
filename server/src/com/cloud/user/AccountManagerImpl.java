@@ -605,7 +605,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain, Map details) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details) {
         
         if (accountName == null) {
             accountName = userName;

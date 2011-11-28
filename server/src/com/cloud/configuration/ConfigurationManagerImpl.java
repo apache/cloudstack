@@ -322,74 +322,71 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException(validationMsg);
         }
 
+        //Execute all updates in a single transaction
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
         if (!_configDao.update(name, value)) {
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
-        if (Config.XenGuestNetwork.key().equals(name)) {
+        
+       
+        PreparedStatement pstmt = null;
+        if (Config.XenGuestNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
-            Transaction txn = Transaction.currentTxn();
-            PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "guest.network.device");
 
                 pstmt.executeUpdate();
-            } catch (SQLException e) {
             } catch (Throwable e) {
+            	throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenPrivateNetwork.key().equals(name)) {
+        } else if (Config.XenPrivateNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
-            Transaction txn = Transaction.currentTxn();
-            PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "private.network.device");
 
                 pstmt.executeUpdate();
-            } catch (SQLException e) {
             } catch (Throwable e) {
+            	throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenPublicNetwork.key().equals(name)) {
+        } else if (Config.XenPublicNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
-            Transaction txn = Transaction.currentTxn();
-            PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "public.network.device");
 
                 pstmt.executeUpdate();
-            } catch (SQLException e) {
             } catch (Throwable e) {
+            	throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenStorageNetwork1.key().equals(name)) {
+        } else if (Config.XenStorageNetwork1.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
-            Transaction txn = Transaction.currentTxn();
-            PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "storage.network.device1");
 
                 pstmt.executeUpdate();
-            } catch (SQLException e) {
             } catch (Throwable e) {
+            	throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
             }
         } else if (Config.XenStorageNetwork2.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
-            Transaction txn = Transaction.currentTxn();
-            PreparedStatement pstmt = null;
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
                 pstmt.setString(1, DBEncryptionUtil.encrypt(value));
                 pstmt.setString(2, "storage.network.device2");
 
                 pstmt.executeUpdate();
-            } catch (SQLException e) {
             } catch (Throwable e) {
+            	throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
             }
         } else if (Config.SystemVMUseLocalStorage.key().equalsIgnoreCase(name)) {
             if (s_logger.isDebugEnabled()) {
@@ -400,7 +397,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
                 if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
-                    s_logger.error("Failed to update ConsoleProxy offering's use_local_storage option to value:" + useLocalStorage);
+                    throw new CloudRuntimeException("Failed to update ConsoleProxy offering's use_local_storage option to value:" + useLocalStorage);
                 }
             }
 
@@ -408,7 +405,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
                 if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
-                    s_logger.error("Failed to update SoftwareRouter offering's use_local_storage option to value:" + useLocalStorage);
+                    throw new CloudRuntimeException("Failed to update SoftwareRouter offering's use_local_storage option to value:" + useLocalStorage);
                 }
             }
 
@@ -416,11 +413,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (serviceOffering != null) {
                 serviceOffering.setUseLocalStorage(useLocalStorage);
                 if (!_serviceOfferingDao.update(serviceOffering.getId(), serviceOffering)) {
-                    s_logger.error("Failed to update SecondaryStorage offering's use_local_storage option to value:" + useLocalStorage);
+                   throw new CloudRuntimeException("Failed to update SecondaryStorage offering's use_local_storage option to value:" + useLocalStorage);
                 }
             }
         }
-
+        
+        txn.commit();
     }
 
     @Override
