@@ -927,7 +927,6 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `guest_os_id` bigint unsigned NOT NULL,
   `private_mac_address` varchar(17),
   `private_ip_address` char(40),
-  `private_netmask` varchar(15),
   `pod_id` bigint unsigned,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'Data Center the instance belongs to',
   `host_id` bigint unsigned,
