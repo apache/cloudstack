@@ -5437,6 +5437,7 @@
         title: 'Hosts',
         id: 'hosts',
         listView: {
+          id: 'hosts',
           section: 'hosts',
           fields: {
             name: { label: 'Name' },
