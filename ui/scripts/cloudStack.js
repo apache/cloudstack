@@ -108,7 +108,8 @@
 
         return userValid ? {
           user: {
-            login: g_username,
+            username: g_username,
+            account: g_account,
             name: g_userfullname,
             role: g_role,
             domainid: g_domainid
