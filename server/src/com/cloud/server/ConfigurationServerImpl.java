@@ -304,7 +304,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) VALUES (1, 'system', '', 1, 'system', 'cloud', now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) VALUES (1, 'system', "+DBEncryptionUtil.encrypt("")+", 1, 'system', 'cloud', now())";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -347,7 +347,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // now insert the user
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
-                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+                "VALUES (" + id + ",'" + username + "','" + DBEncryptionUtil.encrypt(sb.toString()) + "', 2, '" + firstname + "','" + lastname + "',now())";
         
 
         txn = Transaction.currentTxn();
@@ -425,23 +425,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         return new String(Base64.encodeBase64(encodeBytes));
     }
 
-    @DB
-    private void createSSLKeystoreDBEntry(String encodedKeystore) throws IOException {
-        String insertSQL = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-            "VALUES ('Hidden','DEFAULT', 'management-server','ssl.keystore', '" + encodedKeystore +"','SSL Keystore for the management servers')";
-        Transaction txn = Transaction.currentTxn();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSQL);
-            stmt.executeUpdate();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("SSL Keystore inserted into database");
-            }
-        } catch (SQLException ex) {
-            s_logger.error("SQL of the SSL Keystore failed", ex);
-            throw new IOException("SQL of the SSL Keystore failed");
-        }
-    }
-
     private void generateDefaultKeystore(String keystorePath) throws IOException {
         String cn = "Cloudstack User";
         String ou;
@@ -502,7 +485,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.info("Generated SSL keystore.");
                 }
                 String base64Keystore = getBase64Keystore(keystorePath);
-                createSSLKeystoreDBEntry(base64Keystore);
+                ConfigurationVO configVO = new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", base64Keystore, "SSL Keystore for the management servers");
+            	_configDao.persist(configVO);
                 s_logger.info("Stored SSL keystore to database.");
             } else if (keystoreFile.exists()) { // and dbExisted
                 // Check if they are the same one, otherwise override with local keystore
