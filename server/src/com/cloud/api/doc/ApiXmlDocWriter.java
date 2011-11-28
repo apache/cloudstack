@@ -279,7 +279,7 @@ public class ApiXmlDocWriter {
         ArrayList<Argument> request = new ArrayList<Argument>();
         ArrayList<Argument> response = new ArrayList<Argument>();
 
-        // Create a new command, set name and description
+        // Create a new command, set name/description/usage
         Command apiCommand = new Command();
         apiCommand.setName(command);
 
@@ -290,11 +290,18 @@ public class ApiXmlDocWriter {
 
         if (impl.includeInApiDoc()) {
             String commandDescription = impl.description();
-            if (commandDescription != null)
-                apiCommand.setDescription(commandDescription);
-            else
-                System.out.println("Command " + apiCommand.getName() + " misses description");
+            if (commandDescription != null && !commandDescription.isEmpty()) {
+            	apiCommand.setDescription(commandDescription);
+            } else {
+            	System.out.println("Command " + apiCommand.getName() + " misses description");
+            }
 
+            
+            String commandUsage = impl.usage();
+            if (commandUsage != null && !commandUsage.isEmpty()) {
+            	apiCommand.setUsage(commandUsage);
+            }
+            
             //Set version when the API is added
             if(!impl.since().isEmpty()){
             	apiCommand.setSinceVersion(impl.since());

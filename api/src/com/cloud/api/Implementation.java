@@ -29,6 +29,7 @@ import java.lang.annotation.Target;
 public @interface Implementation {
     Class<?> responseObject();
     String description() default "";
+    String usage() default "";
     boolean includeInApiDoc() default true;
     String since() default "";
 }

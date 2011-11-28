@@ -54,18 +54,23 @@ public class Argument implements Comparable{
 	public String getName() {
 		return name;
 	}
+	
 	public void setName(String name) {
 		this.name = name;
 	}
+	
 	public String getDescription() {
 		return description;
 	}
+	
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	
 	public Boolean isRequired() {
 		return required;
 	}
+	
 	public void setRequired(Boolean required) {
 		this.required = required;
 	}
@@ -96,5 +101,4 @@ public class Argument implements Comparable{
     public boolean hasArguments() {
         return (arguments!= null && !arguments.isEmpty());
     }
-
 }

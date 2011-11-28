@@ -24,6 +24,7 @@ public class Command {
 	
 	private String name;
 	private String description;
+    private String usage;
 	private boolean isAsync;
 	private String sinceVersion = null;
 	private ArrayList<Argument> request;
@@ -102,4 +103,11 @@ public class Command {
 		return null;
 	}
 	
+	public String getUsage() {
+		return usage;
+	}
+
+	public void setUsage(String usage) {
+		this.usage = usage;
+	}
 }
