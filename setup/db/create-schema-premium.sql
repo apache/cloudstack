@@ -110,6 +110,7 @@ ALTER TABLE `cloud_usage`.`usage_job` ADD INDEX `i_usage_job__end_millis`(`end_m
 CREATE TABLE  `cloud_usage`.`account` (
   `id` bigint unsigned NOT NULL,
   `account_name` varchar(100) COMMENT 'an account name set by the creator of the account, defaults to username for single accounts',
+  `uuid` varchar(40),
   `type` int(1) unsigned NOT NULL,
   `domain_id` bigint unsigned,
   `state` varchar(10) NOT NULL default 'enabled',
