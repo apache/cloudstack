@@ -23,7 +23,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.properties.EncryptableProperties;
 
 import com.cloud.utils.PropertiesUtil;
@@ -31,27 +33,42 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
 	
+	public static final Logger s_logger = Logger.getLogger(DBEncryptionUtil.class);
 	private static StandardPBEStringEncryptor s_encryptor = null;
 	
     public static String encrypt(String plain){
-    	if(!EncryptionSecretKeyChecker.useEncryption()){
+    	if(!EncryptionSecretKeyChecker.useEncryption() || (plain == null) || plain.isEmpty()){
     		return plain;
     	}
-    	//synchornize ??
     	if(s_encryptor == null){
     		initialize();
     	}
-    	return s_encryptor.encrypt(plain);
+    	String encryptedString = null;
+		try {
+			encryptedString = s_encryptor.encrypt(plain);
+		} catch (EncryptionOperationNotPossibleException e) {
+			s_logger.debug("Error while encrypting: "+plain);
+			throw e;
+		}
+    	return encryptedString;
     }
     
     public static String decrypt(String encrypted){
-    	if(!EncryptionSecretKeyChecker.useEncryption()){
+    	if(!EncryptionSecretKeyChecker.useEncryption() || (encrypted == null) || encrypted.isEmpty()){
     		return encrypted;
     	}
     	if(s_encryptor == null){
     		initialize();
     	}
-    	return s_encryptor.decrypt(encrypted);
+    	
+    	String plain = null;
+    	try {
+			plain = s_encryptor.decrypt(encrypted);
+		} catch (EncryptionOperationNotPossibleException e) {
+			s_logger.debug("Error while decrypting: "+encrypted);
+			throw e;
+		}
+    	return plain;
     }
     
     private static void initialize(){
