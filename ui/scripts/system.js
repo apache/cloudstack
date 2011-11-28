@@ -494,6 +494,29 @@
 															args.response.success({data: array1});															
 														}
 													},
+                          
+                          podId: {
+                            label: 'Pod',
+                            validation: { required: true },
+                            select: function(args) {
+                              var items = [];                             
+                              if(selectedZoneObj.networktype == "Basic") {
+                                $.ajax({
+                                  url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {                                                             
+                                    var podObjs = json.listpodsresponse.pod;
+                                    $(podObjs).each(function(){                                      
+                                      items.push({id: this.id, description: this.name});
+                                    });                                   
+                                  }
+                                });
+                              }                              
+                              args.response.success({data: items});
+                            }
+                          },
+                          
 													domainId: {
 														label: 'Domain',
 														validation: { required: true },
