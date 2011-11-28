@@ -508,10 +508,53 @@
                                     });                                   
                                   }
                                 });
-                              }                              
-                              args.response.success({data: items});
+                              }    
+                              items.push({id: 0, description: "(create new pod)"});                              
+                              args.response.success({data: items});                                  
+                              
+                              args.$select.change(function() {
+                                var $form = $(this).closest('form');
+                                debugger;
+                                if($(this).val() == "0") {
+                                  $form.find('.form-item[rel=podname]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=reservedSystemGateway]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=reservedSystemNetmask]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=reservedSystemStartIp]').css('display', 'inline-block');
+                                  $form.find('.form-item[rel=reservedSystemEndIp]').css('display', 'inline-block');
+                                }
+                                else {
+                                  $form.find('.form-item[rel=podname]').hide();
+                                  $form.find('.form-item[rel=reservedSystemGateway]').hide();
+                                  $form.find('.form-item[rel=reservedSystemNetmask]').hide();
+                                  $form.find('.form-item[rel=reservedSystemStartIp]').hide();
+                                  $form.find('.form-item[rel=reservedSystemEndIp]').hide();
+                                }
+                              }); 
                             }
                           },
+                          
+                          //create new pod fields start here
+                          podname: {
+                            label: 'Pod name',
+                            validation: { required: true }
+                          },
+                          reservedSystemGateway: {
+                            label: 'Reserved system gateway',
+                            validation: { required: true }
+                          },
+                          reservedSystemNetmask: {
+                            label: 'Reserved system netmask',
+                            validation: { required: true }
+                          },
+                          reservedSystemStartIp: {
+                            label: 'Start Reserved system IP',
+                            validation: { required: true }
+                          },
+                          reservedSystemEndIp: {
+                            label: 'End Reserved system IP',
+                            validation: { required: false }
+                          },
+                          //create new pod fields ends here
                           
 													domainId: {
 														label: 'Domain',
@@ -617,21 +660,55 @@
 														var item = json.createnetworkresponse.network;
 														args.response.success({data:item});
                                                         
-                            if(selectedZoneObj.networktype == "Basic") {                                
-                              var array1 = [];
-                              array1.push("&vlan=untagged");
-                              array1.push("&zoneid=" + selectedZoneObj.id);
-                              array1.push("&podId=" + args.data.podId);
-                              array1.push("&forVirtualNetwork=false"); //direct VLAN
-                              array1.push("&gateway=" + todb(args.data.guestGateway));
-                              array1.push("&netmask=" + todb(args.data.guestNetmask));
-                              array1.push("&startip=" + todb(args.data.startGuestIp));                      
+                            if(selectedZoneObj.networktype == "Basic") {   
+                              var array2 = [];       
+                                                            
+                              var podId;
+                              if(args.data.podId != "0") {
+                                podId = args.data.podId;                                
+                              }
+                              else { //args.data.podId==0, create pod first                               
+                                var array1 = [];
+                                array1.push("&zoneId=" + selectedZoneObj.id);
+                                array1.push("&name=" + todb(args.data.podname));
+                                array1.push("&gateway=" + todb(args.data.reservedSystemGateway));
+                                array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
+                                array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
+
+                                var endip = args.data.reservedSystemEndIp;      //optional
+                                if (endip != null && endip.length > 0)
+                                  array1.push("&endIp=" + todb(endip));                
+
+                                $.ajax({
+                                  url: createURL("createPod" + array1.join("")),
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {
+                                    var item = json.createpodresponse.pod;                                    
+                                    podId = item.id;
+                                  },
+                                  error: function(XMLHttpResponse) {
+                                    //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                    //args.response.error(errorMsg);
+                                  }
+                                });                                 
+                              }                             
+                              if(podId == null)  {  
+                                alert("podId is null, so unable to create IP range on pod level");                              
+                                return;           
+                              }    
+                              array2.push("&podId=" + podId);                              
+                              array2.push("&vlan=untagged");
+                              array2.push("&zoneid=" + selectedZoneObj.id);                              
+                              array2.push("&forVirtualNetwork=false"); //direct VLAN
+                              array2.push("&gateway=" + todb(args.data.guestGateway));
+                              array2.push("&netmask=" + todb(args.data.guestNetmask));
+                              array2.push("&startip=" + todb(args.data.startGuestIp));                      
                               var endip = args.data.endGuestIp;
                               if(endip != null && endip.length > 0)
-                                array1.push("&endip=" + todb(endip));
-
+                                array2.push("&endip=" + todb(endip));
                               $.ajax({
-                                url: createURL("createVlanIpRange" + array1.join("")),
+                                url: createURL("createVlanIpRange" + array2.join("")),
                                 dataType: "json",
                                 async: false,
                                 success: function(json) {
@@ -641,8 +718,9 @@
                                   //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                   //args.response.error(errorMsg);
                                 }
-                              });                              
-                            }                          
+                              });  
+                              
+                            }                         
 													},
 													error: function(XMLHttpResponse) {
 														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -4350,82 +4428,42 @@
               label: 'Add pod',
 
               createForm: {
-                title: 'Add new pod',
-                desc: 'Please fill in the following information to add a new pod',
-                
-                /*
-                preFilter: function(args) {
-                  var $guestFields = args.$form.find('.form-item[rel=guestGateway], .form-item[rel=guestNetmask], .form-item[rel=startGuestIp], .form-item[rel=endGuestIp]');
-                  if (args.context.zones[0].networktype == "Basic") {
-                    $guestFields.css('display', 'inline-block');
-                  }
-                  else if(args.context.zones[0].networktype == "Advanced") { //advanced-mode network (zone-wide VLAN)
-                    $guestFields.hide();
-                  }
-                },
-                */
-                
+                title: 'Add new pod',  
                 fields: {
-                  name: {
+                  podname: {
                     label: 'Pod name',
                     validation: { required: true }
                   },
-                  gateway: {
+                  reservedSystemGateway: {
                     label: 'Reserved system gateway',
                     validation: { required: true }
                   },
-                  netmask: {
+                  reservedSystemNetmask: {
                     label: 'Reserved system netmask',
                     validation: { required: true }
                   },
-                  startip: {
+                  reservedSystemStartIp: {
                     label: 'Start Reserved system IP',
                     validation: { required: true }
                   },
-                  endip: {
+                  reservedSystemEndIp: {
                     label: 'End Reserved system IP',
                     validation: { required: false }
-                  },
-
-                  //only basic zones show guest fields (begin)
-                  /*
-                  guestGateway: {
-                    label: 'Guest Gateway',
-                    validation: { required: true },
-                    isHidden: true
-                  },
-                  guestNetmask: {
-                    label: 'Guest Netmask',
-                    validation: { required: true },
-                    isHidden: true
-                  },
-                  startGuestIp: {
-                    label: 'Start Guest IP',
-                    validation: { required: true },
-                    isHidden: true
-                  },
-                  endGuestIp: {
-                    label: 'End Guest IP',
-                    validation: { required: false },
-                    isHidden: true
                   }
-                  */
-                  //only basic zones show guest fields (end)
                 }
               },
 
               action: function(args) {
                 var array1 = [];
                 array1.push("&zoneId=" + args.context.zones[0].id);
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&netmask=" + todb(args.data.netmask));
-                array1.push("&startIp=" + todb(args.data.startip));
+                array1.push("&name=" + todb(args.data.podname));
+                array1.push("&gateway=" + todb(args.data.reservedSystemGateway));
+                array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
+                array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
 
-                var endip = args.data.endip;      //optional
+                var endip = args.data.reservedSystemEndIp;      //optional
                 if (endip != null && endip.length > 0)
-                  array1.push("&endIp=" + todb(endip));
-
-                array1.push("&gateway=" + todb(args.data.gateway));
+                  array1.push("&endIp=" + todb(endip));                
 
                 $.ajax({
                   url: createURL("createPod" + array1.join("")),
@@ -4433,38 +4471,6 @@
                   success: function(json) {
                     var item = json.createpodresponse.pod;
                     args.response.success({data:item});
-                    var podId = item.id;
-
-                    //Create IP Range
-                    /*
-                    if(args.context.zones[0].networktype == "Basic") {
-                      var array1 = [];
-                      array1.push("&vlan=untagged");
-                      array1.push("&zoneid=" + args.context.zones[0].id);
-                      array1.push("&podId=" + podId);
-                      array1.push("&forVirtualNetwork=false"); //direct VLAN
-                      array1.push("&gateway=" + todb(args.data.guestGateway));
-                      array1.push("&netmask=" + todb(args.data.guestNetmask));
-                      array1.push("&startip=" + todb(args.data.startGuestIp));                      
-                      var endip = args.data.endGuestIp;
-                      if(endip != null && endip.length > 0)
-                        array1.push("&endip=" + todb(endip));
-
-                      $.ajax({
-                        url: createURL("createVlanIpRange" + array1.join("")),
-                        dataType: "json",
-                        async: false,
-                        success: function(json) {
-                          //var item = json.createvlaniprangeresponse.vlan;
-                        },
-                        error: function(XMLHttpResponse) {
-                          //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                          //args.response.error(errorMsg);
-                        }
-                      });
-                    }
-                    */
-
                   },
                   error: function(XMLHttpResponse) {
                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
