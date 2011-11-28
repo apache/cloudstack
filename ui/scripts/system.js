@@ -4322,23 +4322,23 @@
                 
                 fields: {
                   name: {
-                    label: 'Name',
+                    label: 'Pod name',
                     validation: { required: true }
                   },
                   gateway: {
-                    label: 'Gateway',
+                    label: 'Reserved system gateway',
                     validation: { required: true }
                   },
                   netmask: {
-                    label: 'Netmask',
+                    label: 'Reserved system netmask',
                     validation: { required: true }
                   },
                   startip: {
-                    label: 'Start IP',
+                    label: 'Start Reserved system IP',
                     validation: { required: true }
                   },
                   endip: {
-                    label: 'End IP',
+                    label: 'End Reserved system IP',
                     validation: { required: false }
                   },
 
