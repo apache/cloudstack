@@ -116,6 +116,10 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	public VMTemplateVO create(TemplateProfile profile) {
 		VMTemplateVO template = persistTemplate(profile);
 		
+		if (template == null) {
+			throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
+		}
+		
 		_downloadMonitor.downloadTemplateToStorage(template, profile.getZoneId());
 		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 		

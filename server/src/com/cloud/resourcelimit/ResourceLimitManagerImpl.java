@@ -377,7 +377,6 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
            return limits;
        } 
        
-       
        //If account is not specified, default it to caller account
        if (accountId == null) {
            if (domainId == null) {

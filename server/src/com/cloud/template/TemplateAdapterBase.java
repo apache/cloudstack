@@ -41,6 +41,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 
 public abstract class TemplateAdapterBase implements TemplateAdapter {
@@ -236,7 +237,11 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 				profile.getDetails());
         
 		if (zoneId == null || zoneId == -1) {
-            List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
+            List<DataCenterVO> dcs = _dcDao.listAll();
+            
+            if (dcs.isEmpty()) {
+            	throw new CloudRuntimeException("No zones are present in the system, can't add template");
+            }
 
         	for (DataCenterVO dc: dcs) {
     			_tmpltDao.addTemplateToZone(template, dc.getId());
@@ -245,7 +250,7 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         } else {
 			_tmpltDao.addTemplateToZone(template, zoneId);
         }
-		return template;
+		return _tmpltDao.findById(template.getId());
 	}
 	
 

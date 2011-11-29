@@ -61,6 +61,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
@@ -683,7 +684,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		txn.start();
 		VMTemplateVO tmplt2 = findById(tmplt.getId());
 		if (tmplt2 == null){
-			persist(tmplt);
+			if (persist(tmplt) == null) {
+				throw new CloudRuntimeException("Failed to persist the template " + tmplt);
+			}
 			if(tmplt.getDetails() != null) {
 				_templateDetailsDao.persist(tmplt.getId(), tmplt.getDetails());
 			}
