@@ -4,14 +4,18 @@
    */
   var notifications = {
     activeTasks: [],
-    cornerAlert: function(args) {
+    cornerAlert: function(args, options) {
+      if (!options) options = {};
+
       var $container = $('#container'); // Put in main container box
       var $cornerAlert = $('<div>').addClass('notification corner-alert')
             .hide()
             .appendTo($container)
             .append(
               $('<div>').addClass('title').append(
-                $('<span>').html('Task completed')
+                $('<span>').html(
+                  options.error ? options.error : 'Task completed'
+                )
               )
             )
             .append(
@@ -21,7 +25,7 @@
                 )
             );
 
-      $cornerAlert
+      return $cornerAlert
         .css({
           position: 'absolute',
           top: $($container).height(),
@@ -72,6 +76,7 @@
       var pollTimer = setInterval(function() {
         args.poll({
           _custom: _custom,
+          pollTimer: pollTimer,
           complete: function(args) {
             clearInterval(pollTimer);
 
@@ -86,10 +91,10 @@
             if (args.message) {
               cloudStack.dialog.notice({ message: args.message });
             }
-            
+
             clearInterval(pollTimer);
             notifications.activeTasks.pop(pollTimer);
-            notifications.cornerAlert({ message: 'ERROR: ' + $item.html() });
+            notifications.cornerAlert({ message: $item.html() }, { error: 'Task: ERROR' });
             $item.removeClass('pending').addClass('error');
 
             if (additionalComplete) additionalComplete();

@@ -25,6 +25,9 @@
                 users: []
               }
             });
+          },
+          error: function() {
+            args.response.error('Could not create project.');
           }
         });
       }, 100);
@@ -57,6 +60,9 @@
                   poll: pollAsyncJobResult
                 }
               });
+            },
+            error: function(data) {
+              args.response.error('Could not create user');
             }
           });          
         }
@@ -167,6 +173,9 @@
                     poll: pollAsyncJobResult
                   }
                 });
+              },
+              error: function(data) {
+                args.response.error('Could not remove user');
               }
             });
           }

@@ -1,6 +1,20 @@
 (function($, cloudStack) {
   cloudStack.dialog = {
     /**
+     * Error message form
+     *
+     * Returns callback, that can be plugged into a standard data provider response
+     */
+    error: function(callback) {
+      return function(args) {
+        var message = args.message ? args.message : args;
+        if (message) cloudStack.dialog.notice({ message: message });
+
+        if (callback) callback();
+      };
+    },
+
+    /**
      * Dialog with form
      */
     createForm: function(args) {

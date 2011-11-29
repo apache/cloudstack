@@ -283,7 +283,10 @@
 
                 return $confirm;
               });
-            }
+            },
+            error: cloudStack.dialog.error(function() {
+              $loading.remove();
+            })
           }
         });
 

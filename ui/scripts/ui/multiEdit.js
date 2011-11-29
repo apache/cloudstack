@@ -124,11 +124,13 @@
 
                 if ($expandable.is(':visible')) {
                   $expandable.slideToggle(function() {
-                    $dataItem.replaceWith($loading);
+                    $dataItem.hide();
+                    $dataItem.after($loading);
                   });
                 } else {
                   // Loading appearance
-                  $dataItem.replaceWith($loading);
+                  $dataItem.hide();
+                  $dataItem.after($loading);
                 }
               }
 
@@ -148,21 +150,31 @@
                         _custom: _custom,
                         poll: function(args) {
                           var complete = args.complete;
+                          var error = args.error;
 
                           notification.poll({
                             _custom: args._custom,
                             complete: function(args) {
                               if (isDestroy) {
                                 $loading.remove();
+                                $dataItem.remove();
                               }
 
                               complete();
+                            },
+                            error: function(args) {
+                              error(args);
+                              $loading.remove();
+                              $dataItem.show();
+                              
+                              return cloudStack.dialog.error;
                             }
                           });
                         }
                       });
                     }
-                  }
+                  },
+                  error: cloudStack.dialog.error
                 }
               });
             })
@@ -368,7 +380,9 @@
               });
 
               _medit.refreshItemWidths($multi);
-            }
+            },
+
+            error: function(args) { }
           }
         });
       } else if (field.edit) {
@@ -489,6 +503,7 @@
                   _custom: successArgs._custom,
                   poll: function(pollArgs) {
                     var complete = pollArgs.complete;
+                    var error = pollArgs.error;
 
                     notification.poll({
                       _custom: pollArgs._custom,
@@ -510,6 +525,13 @@
                             preFilter: actionPreFilter
                           }
                         ).appendTo($dataBody);
+                      },
+
+                      error: function(args) {
+                        error(args);
+                        $loading.remove();
+
+                        return cloudStack.dialog.error(args);
                       }
                     });
                   }
@@ -517,7 +539,11 @@
               }
 
               _medit.refreshItemWidths($multi);
-            }
+            },
+
+            error: cloudStack.dialog.error(function() {
+              $loading.remove();
+            })
           }
         });
       };
@@ -598,7 +624,8 @@
           });
 
           _medit.refreshItemWidths($multi);
-        }
+        },
+        error: cloudStack.dialog.error
       }
     });
 
