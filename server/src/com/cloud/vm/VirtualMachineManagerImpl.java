@@ -1958,15 +1958,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         for (final Answer answer : answers) {
             if (answer instanceof ClusterSyncAnswer) {
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
-                if (hs.execute()){
-                    if (hs.isFull()) {
-                        deltaSync(hs.getNewStates());
-                        fullSync(hs.getClusterId(), hs.getAllStates());
-                    } else if (hs.isDelta()) {
-                        deltaSync(hs.getNewStates());
-                    }
+                if (hs.isFull()) {
+                    deltaSync(hs.getNewStates());
+                    fullSync(hs.getClusterId(), hs.getAllStates());
+                } else if (hs.isDelta()) {
+                    deltaSync(hs.getNewStates());
                 }
-                hs.setExecuted();
             } else if (!answer.getResult()) {
                 s_logger.warn("Cleanup failed due to " + answer.getDetails() + " for " + answer.getClass().getName());
             } else {
