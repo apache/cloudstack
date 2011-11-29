@@ -1473,7 +1473,7 @@ div.detail-group.actions td {
 }
 
 #header div.logo {
-  width: 263px;
+  width: 250px;
   height: 47px;
   position: relative;
   float: left;
@@ -1548,7 +1548,7 @@ div.detail-group.actions td {
 }
 
 #user {
-  width: 135px;
+  width: 139px;
   height: 30px;
   margin: 5px 6px 0 0;
   position: relative;
@@ -1575,9 +1575,9 @@ div.detail-group.actions td {
   border-radius: 3px 0 0 3px;
   border-right: none;
   /*[empty]border-top:;*/
-  min-width: 71px;
+  min-width: 75px;
   text-align: center;
-  max-width: 71px;
+  max-width: 75px;
   height: 12px;
   overflow: hidden;
   font-weight: bold;
@@ -3972,11 +3972,12 @@ label.error {
 .multi-wizard .progress ul li span.arrow {
   width: 17px;
   height: 15px;
-  /*+placement:displace 75px -3px;*/
+  /*+placement:displace 74px -3px;*/
   position: absolute;
-  margin-left: 75px;
+  margin-left: 74px;
   margin-top: -3px;
   background: url(../images/icons.png) no-repeat 0px -422px;
+  z-index: 1000;
 }
 
 .multi-wizard .progress ul li.active span.arrow {
@@ -4267,9 +4268,12 @@ label.error {
 .multi-wizard .select-container .select {
   font-size: 13px;
   margin: 0;
-  padding: 0;
-  height: 61px;
+  padding: 0 0 14px;
+  min-height: 35px;
+  width: 100%;
+  display: inline-block;
   text-align: left;
+  float: left;
   border-bottom: 1px solid #EBEFF4;
   background: #FFFFFF;
 }
@@ -4285,11 +4289,12 @@ label.error {
 
 .multi-wizard .select-container .select .select-desc {
   max-width: 335px;
-  height: 34px;
+  min-height: 34px;
   overflow: hidden;
   float: left;
   clear: none;
   margin: 15px 0 0;
+  display: inline-block;
 }
 
 .multi-wizard .select-container .select .select-desc .name {
@@ -4300,7 +4305,8 @@ label.error {
 .multi-wizard .select-container .select .select-desc .desc {
   font-size: 11px;
   color: #808080;
-  /*[empty]display:;*/
+  display: inline-block;
+  /*[empty]height:;*/
 }
 
 /*** Buttons*/
@@ -4542,8 +4548,8 @@ label.error {
 
 .multi-wizard.instance-wizard .select-network .select-container .select {
   width: 100%;
-  height: 38px;
   float: left;
+  padding: 0 0 4px;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select input {
@@ -4573,6 +4579,7 @@ label.error {
 
 .multi-wizard .review .select-container .select {
   height: 35px;
+  padding: 0;
 }
 
 .multi-wizard .review .select-container .select .name {
@@ -4724,7 +4731,7 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .progress ul li span.arrow {
-  margin: 0 0 0 193px;
+  margin: -4px 0 0 266px;
 }
 
 .multi-wizard.zone-wizard .select-network .content .section {
