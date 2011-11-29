@@ -267,7 +267,8 @@
         name: { label: 'Project Name' },
         displaytext: { label: 'Display Text' },
         domain: { label: 'Domain' },
-        account: { label: 'Owner' }
+        account: { label: 'Owner' },
+        state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off' } }
       },
 
       dataProvider: function(args) {
@@ -319,6 +320,14 @@
               success: function(data) {
                 args.response.success({
                   _custom: {
+                    getUpdatedItem: function(data) {
+                      return $.extend(data, { state: 'Destroyed' });
+                    },
+                    getActionFilter: function(args) {
+                      return function() {
+                        return [];
+                      };
+                    },
                     jobId: data.deleteprojectresponse.jobid
                   }
                 });
