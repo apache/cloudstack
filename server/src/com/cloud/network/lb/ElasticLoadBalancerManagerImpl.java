@@ -644,7 +644,7 @@ public class ElasticLoadBalancerManagerImpl implements
                             throw new InvalidParameterValueException("Supplied LB name " + lb.getName() + " is not associated with IP " + lb.getSourceIpAddressId() );
                         } 
                     } else {
-                        s_logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontent IP for ELB");
+                        s_logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontend IP for ELB");
                         PublicIp ip = allocIp(lb, account);
                         ipId = ip.getId();
                         newIp = true;
