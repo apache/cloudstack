@@ -107,7 +107,6 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -1385,7 +1384,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             long physicalNetworkId = createDefaultPhysicalNetwork(zone, domainId);
             
             //add VirtualRouter as the defualt network service provider 
-            PhysicalNetworkServiceProvider nsp = _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
+            _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
+            
+            //add security group provider to the physical network
+            _networkMgr.addDefaultSecurityGroupProviderToPhysicalNetwork(physicalNetworkId);            
             
             // Create deafult networks
             createDefaultNetworks(zone.getId(), isSecurityGroupEnabled, physicalNetworkId);

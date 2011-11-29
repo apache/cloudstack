@@ -4991,6 +4991,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return nsp;
     }
 
+    @Override
+    public PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(long physicalNetworkId) {
+
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.SecurityGroupProvider.getName(), null, null);
+     
+        return nsp;
+    }
 
     @Override
     public boolean isNetworkSystem(Network network) {

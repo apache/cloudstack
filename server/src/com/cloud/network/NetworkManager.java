@@ -250,4 +250,7 @@ public interface NetworkManager extends NetworkService {
 	boolean isProviderForNetwork(Provider provider, long networkId);
 
 	void canProviderSupportServices(Map<Provider, Set<Service>> providersMap);
+
+	PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(
+			long physicalNetworkId);
 }
