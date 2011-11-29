@@ -462,13 +462,13 @@
 														select: function(args) {			
                               var array1 = [];	                             
                               var apiCmd;                             
-                              if(selectedZoneObj.networktype == "Advanced") {
+                              if(selectedZoneObj.networktype == "Advanced") {  //Advanced zone
                                 if(args.scope == "zone-wide" || args.scope == "domain-specific")
                                   apiCmd = "listNetworkOfferings&guestiptype=Shared";
                                 else  //args.scope == "account-specific"
                                   apiCmd = "listNetworkOfferings&guestiptype=Isolated&sourcenatsupported=false";    
                               }
-                              else { //selectedZoneObj.networktype == "Basic"
+                              else {  //Basic zone
                                 apiCmd = "listNetworkOfferings&guestiptype=Shared";
                               }                              
 															$.ajax({
@@ -476,13 +476,23 @@
 																dataType: "json",
 																async: false,
 																success: function(json) {
-																	var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+																	var networkOfferings = json.listnetworkofferingsresponse.networkoffering;                                 
 																	if (networkOfferings != null && networkOfferings.length > 0) {
                                     //for (var i = 0; i < networkOfferings.length; i++) {						
-																		for (var i = (networkOfferings.length-1); i >= 0; i--) {																		  
-																			if (networkOfferings[i].isdefault) {																				
-																				array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});
-																			}
+																		for (var i = (networkOfferings.length-1); i >= 0; i--) {		
+                                      if(nspMap["securityGroups"].state == "Disabled"){ //if security groups provider is disabled, exclude network offerings that has "SecurityGroupProvider" in service
+                                        var includingSGP = false;
+                                        var serviceObjArray = networkOfferings[i].service;
+                                        for(var k = 0; k < serviceObjArray.length; k++) {
+                                          if(serviceObjArray[k].name == "SecurityGroup") {
+                                            includingSGP = true;
+                                            break;
+                                          }
+                                        }
+                                        if(includingSGP == true)
+                                          continue; //skip to next network offering
+                                      }
+																			array1.push({id: networkOfferings[i].id, description: networkOfferings[i].displaytext});																			
 																		}
 																	}
 																}
@@ -1950,7 +1960,7 @@
             }            
           },
 
-          // Security groups list view ???
+          // Security groups provider
           securityGroups: {
             id: 'securityGroup-providers',
             label: 'Security Groups',   
