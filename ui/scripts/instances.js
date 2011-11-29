@@ -210,7 +210,7 @@
                   else if (selectedZoneObj.securitygroupsenabled == true) {  // if security group is enabled
                     var hasDedicatedDirectTaggedDefaultNetwork = false;
                     $.ajax({
-                      url: createURL("listNetworks&type=Direct&domainid="+g_domainid+"&account="+g_account+"&zoneId="+args.currentData.zoneid),
+                      url: createURL("listNetworks&type=Shared&domainid="+g_domainid+"&account="+g_account+"&zoneId="+args.currentData.zoneid),
                       dataType: "json",
                       async: false,
                       success: function(json) {
