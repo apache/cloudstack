@@ -27,7 +27,7 @@ div.toolbar,
 /*+}*/
 body {
   font-family: sans-serif;
-  max-height: 768px;
+  height: 769px !important;
   overflow: auto;
 }
 
@@ -54,6 +54,7 @@ table {
   text-indent: 10px;
   border-bottom: 1px solid #C4C5C5;
   border-collapse: collapse;
+  position: relative;
 }
 
 table thead {
@@ -316,15 +317,15 @@ body.login {
 
 .install-wizard .header {
   text-align: center;
-  background: url(../images/bg-install-wizard-header.png);
-  color: #FFFFFF;
+  background: url(../images/bg-login.png);
+  color: #626E82;
   height: 365px;
   padding: 32px 0 89px;
-  /*+text-shadow:0px 2px 2px #4B4B4B;*/
-  -moz-text-shadow: 0px 2px 2px #4B4B4B;
-  -webkit-text-shadow: 0px 2px 2px #4B4B4B;
-  -o-text-shadow: 0px 2px 2px #4B4B4B;
-  text-shadow: 0px 2px 2px #4B4B4B;
+  /*+text-shadow:0px 1px 2px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 2px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 2px #FFFFFF;
+  -o-text-shadow: 0px 1px 2px #FFFFFF;
+  text-shadow: 0px 1px 2px #FFFFFF;
   z-index: 9;
 }
 
@@ -343,12 +344,13 @@ body.login {
   margin: auto auto 30px;
   font-size: 22px;
   clear: both;
-  color: #1D4E7D;
+  color: #626E82;
 }
 
 .install-wizard .step .subtitle {
-  color: #4395C6;
+  color: #4B5E69;
   font-weight: bold;
+  font-size: 12px;
 }
 
 .install-wizard .step p {
@@ -388,6 +390,11 @@ body.login {
   margin: -352px auto auto;
   z-index: 10;
   background: #FFFFFF -114px -141px;
+  /*+box-shadow:0px -4px 10px #C6C6C6;*/
+  -moz-box-shadow: 0px -4px 10px #C6C6C6;
+  -webkit-box-shadow: 0px -4px 10px #C6C6C6;
+  -o-box-shadow: 0px -4px 10px #C6C6C6;
+  box-shadow: 0px -4px 10px #C6C6C6;
 }
 
 .install-wizard h2 {
@@ -462,6 +469,12 @@ body.login {
   left: 547px;
   top: 50px;
   position: absolute;
+}
+
+/*** Intro*/
+.install-wizard .step.intro.what-is-cloudstack p {
+  background: url(../images/bg-what-is-cloudstack.png) no-repeat 50% 237px;
+  height: 540px;
 }
 
 /*** Diagram*/
@@ -814,8 +827,7 @@ div.notification-box .button.close:hover {
 /*** Corner alert*/
 div.notification.corner-alert {
   background: #EBE8E8;
-  display: inline-block;
-  min-width: 260px;
+  width: 300px;
   height: 70px;
   position: absolute;
   text-indent: 10px;
@@ -831,10 +843,8 @@ div.notification.corner-alert {
   cursor: pointer;
 }
 
-div.notification.corner-alert {
-}
-
 div.notification.corner-alert div.title {
+  width: 100%;
   height: 33px;
   background: url(../images/bg-dialog-header.png);
   color: #FFFFFF;
@@ -940,9 +950,9 @@ div.panel div.list-view div.data-table table {
 
 div.panel div.list-view div.fixed-header {
   position: absolute;
-  top: 28px;
+  top: 29px;
   left: 12px;
-  width: 740px;
+  width: 760px;
   height: 47px;
   display: table;
   background-color: #F7F7F7;
@@ -989,7 +999,6 @@ div.panel div.list-view div.fixed-header table {
 
 div.list-view td.state {
   width: 129px;
-  background: url(../images/sprites.png) no-repeat 10px -527px;
 }
 
 div.list-view td.state span {
@@ -1004,11 +1013,15 @@ div.list-view td.state span {
 }
 
 div.list-view td.state.on {
+  background-image: url(../images/sprites.png);
+  background-repeat: no-repeat;
   color: #008000;
   background-position: 10px -452px;
 }
 
 div.list-view td.state.off {
+  background-image: url(../images/sprites.png);
+  background-repeat: no-repeat;
   color: #B90606;
   background-position: 10px -488px;
 }
@@ -1061,6 +1074,7 @@ div.list-view td.state.off {
 
 .ui-tabs li {
   display: block;
+  float: left;
 }
 
 .ui-tabs li a {
@@ -1109,7 +1123,6 @@ div.list-view td.state.off {
 
 .ui-tabs ul li.ui-state-active {
   display: block;
-  width: 496px;
 }
 
 .ui-tabs ul li.ui-state-active a {
@@ -1535,6 +1548,7 @@ div.detail-group.actions td {
 }
 
 #user {
+  width: 135px;
   height: 30px;
   margin: 5px 6px 0 0;
   position: relative;
@@ -1561,9 +1575,11 @@ div.detail-group.actions td {
   border-radius: 3px 0 0 3px;
   border-right: none;
   /*[empty]border-top:;*/
-  min-width: 54px;
+  min-width: 71px;
   text-align: center;
-  max-width: 80px;
+  max-width: 71px;
+  height: 12px;
+  overflow: hidden;
   font-weight: bold;
   /*+text-shadow:0px -1px 1px #464646;*/
   -moz-text-shadow: 0px -1px 1px #464646;
@@ -1856,6 +1872,7 @@ div.detail-group.actions td {
   top: -1px;
   z-index: 6;
   position: absolute;
+  top: 0px;
 }
 
 .detail-view .ui-tabs-panel div.toolbar {
@@ -1922,9 +1939,9 @@ div.toolbar div.text-search div.search-bar {
 div.toolbar div.text-search div.search-bar input {
   float: left;
   border: none;
-  margin: 3px;
+  margin: 1px 0 0;
   width: 90%;
-  height: 70%;
+  height: 68%;
 }
 
 div.toolbar div.text-search div.search-bar div.filter {
@@ -2412,7 +2429,7 @@ div.view table td.editable div.edit {
 
 div.view table td.editable div.edit input {
   float: left;
-  width: 70%;
+  width: 66%;
   height: 17px;
   border: none;
   position: relative;
@@ -2462,11 +2479,6 @@ table td.actions .action span.icon {
 }
 
 table td.actions .action.disabled {
-  /*+opacity:30%;*/
-  filter: alpha(opacity=30);
-  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=30);
-  -moz-opacity: 0.3;
-  opacity: 0.3;
 }
 
 table td.actions .action.disabled:hover .icon {
@@ -2474,6 +2486,11 @@ table td.actions .action.disabled:hover .icon {
 
 table td.actions .action.disabled .icon {
   cursor: not-allowed;
+  /*+opacity:20%;*/
+  filter: alpha(opacity=20);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=20);
+  -moz-opacity: 0.2;
+  opacity: 0.2;
 }
 
 /*** Action icons
@@ -3399,7 +3416,7 @@ Dialogs*/
 
 .system-chart-view {
   width: 100%;
-  height: 589px;
+  height: auto;
   overflow: auto;
   font-weight: normal;
   margin-top: 0;
@@ -3612,7 +3629,7 @@ Dialogs*/
 
 .zone-chart .resources.naas ul.system-main {
   height: 705px;
-  background: transparent url(../images/bg-naas.png) no-repeat center top;
+  background: transparent url(../images/bg-naas.png) no-repeat 30px 0px;
   z-index: 12;
   position: relative;
 }
@@ -3634,24 +3651,27 @@ Dialogs*/
 }
 
 .zone-chart .resources.naas ul.system-main li.main.public {
-  /*+placement:displace 170px 14px;*/
+  /*+placement:shift 153px 2px;*/
+  position: relative;
+  left: 153px;
+  top: 2px;
   position: absolute;
-  margin-left: 170px;
-  margin-top: 14px;
 }
 
 .zone-chart .resources.naas ul.system-main li.main.management {
-  /*+placement:displace 21px 164px;*/
+  /*+placement:shift 0px 153px;*/
+  position: relative;
+  left: 0px;
+  top: 153px;
   position: absolute;
-  margin-left: 21px;
-  margin-top: 164px;
 }
 
 .zone-chart .resources.naas ul.system-main li.main.guest {
-  /*+placement:displace 331px 164px;*/
+  /*+placement:shift 309px 153px;*/
+  position: relative;
+  left: 309px;
+  top: 153px;
   position: absolute;
-  margin-left: 331px;
-  margin-top: 164px;
 }
 
 .zone-chart .resources.naas ul.system-main li.network-providers {
@@ -3952,12 +3972,10 @@ label.error {
 .multi-wizard .progress ul li span.arrow {
   width: 17px;
   height: 15px;
-  /*+placement:shift 120px 13px;*/
-  position: relative;
-  left: 120px;
-  top: 13px;
-  z-index: 10;
+  /*+placement:displace 75px -3px;*/
   position: absolute;
+  margin-left: 75px;
+  margin-top: -3px;
   background: url(../images/icons.png) no-repeat 0px -422px;
 }
 
@@ -4247,8 +4265,9 @@ label.error {
 }
 
 .multi-wizard .select-container .select {
-  width: 100%;
   font-size: 13px;
+  margin: 0;
+  padding: 0;
   height: 61px;
   text-align: left;
   border-bottom: 1px solid #EBEFF4;
@@ -4281,6 +4300,7 @@ label.error {
 .multi-wizard .select-container .select .select-desc .desc {
   font-size: 11px;
   color: #808080;
+  /*[empty]display:;*/
 }
 
 /*** Buttons*/
@@ -4602,7 +4622,7 @@ label.error {
 
 /*** Diagram*/
 .multi-wizard.instance-wizard .diagram {
-  width: 325px;
+  width: 1px;
   height: 502px;
   position: absolute;
   top: 109px;
@@ -4886,14 +4906,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view > ul {
+.tree-view>ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view > ul > li {
+.tree-view>ul>li {
   left: 5px;
 }
 
@@ -4928,7 +4948,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded > .expand {
+.tree-view ul li.expanded>.expand {
   background-position: -631px -228px;
 }
 
@@ -5345,7 +5365,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms > div {
+.recurring-snapshots .schedule .forms>div {
 }
 
 .recurring-snapshots .schedule .forms form {
@@ -5404,11 +5424,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .recurring-snapshots .ui-button {
-  float: right;
-  /*+placement:shift 294px -30px;*/
-  position: relative;
-  left: 294px;
-  top: -30px;
+  /*+placement:anchor-bottom-right 9px 9px;*/
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
 }
 
 .recurring-snapshots .scheduled-snapshots {
@@ -5521,10 +5540,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .recurring-snapshots .ui-tabs ul {
+  position: relative;
   margin: 0;
   width: 100%;
   padding: 0;
   margin: 0;
+  display: block;
 }
 
 .recurring-snapshots .ui-tabs ul li a {
@@ -5588,7 +5609,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   width: 576px;
   border: none;
   border-bottom: 1px solid #C3C3C3;
-  background: inherit;
+  background: #E9E9E9;
   margin: 0;
   padding: 0;
   /*+placement:shift -89px 0px;*/
@@ -6216,6 +6237,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   padding: 2px 2px 3px 7px;
   border-bottom: 1px solid #FFFFFF;
   position: absolute;
+  left: 0;
 }
 
 /*** Dashboard*/
@@ -6675,7 +6697,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .enable .icon,
 .enableStaticNAT .icon {
-  background-position: -104px -94px;
+  background-position: -104px -92px;
 }
 
 .enable:hover .icon,
@@ -6685,7 +6707,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .disable .icon,
 .disableStaticNAT .icon {
-  background-position: -138px -96px;
+  background-position: -138px -94px;
 }
 
 .disable:hover .icon,
@@ -6790,7 +6812,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .enableVPN .icon {
-  background-position: -202px 0px;
+  background-position: -200px -2px;
 }
 
 .enableVPN:hover .icon {
@@ -6798,7 +6820,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .disableVPN .icon {
-  background-position: -202px -30px;
+  background-position: -200px -32px;
 }
 
 .disableVPN:hover .icon {
