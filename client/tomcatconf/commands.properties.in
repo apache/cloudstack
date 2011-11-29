@@ -165,10 +165,6 @@ updateZone=com.cloud.api.commands.UpdateZoneCmd;1
 deleteZone=com.cloud.api.commands.DeleteZoneCmd;1
 listZones=com.cloud.api.commands.ListZonesByCmd;15
 
-#### virtual router element
-createVirtualRouterElement=com.cloud.api.commands.CreateVirtualRouterElementCmd;1
-configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;1
-listVirtualRouterElements=com.cloud.api.commands.ListVirtualRouterElementsCmd;1
 #### events commands
 listEvents=com.cloud.api.commands.ListEventsCmd;15
 listEventTypes=com.cloud.api.commands.ListEventTypesCmd;15
