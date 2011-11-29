@@ -2123,10 +2123,10 @@
 																			if (result.jobstatus == 1) {																						    							   
 																				//alert("updatePhysicalNetwork succeeded.");  
 																				
-                                        // get network service provider ID
+                                        // get network service provider ID of Virtual Router
                                         var networkServiceProviderId;																				
 																				$.ajax({
-																					url: createURL("listNetworkServiceProviders&physicalNetworkId=" + physicalNetworkId),
+																					url: createURL("listNetworkServiceProviders&name=VirtualRouter&physicalNetworkId=" + physicalNetworkId),
 																					dataType: "json",
 																					async: false,
 																					success: function(json) {
