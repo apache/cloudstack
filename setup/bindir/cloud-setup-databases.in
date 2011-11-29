@@ -418,10 +418,12 @@ for example:
         
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')
+            if dbPassword == '': return # Don't encrypt empty password
             if dbPassword == None: self.errorAndExit('Cannot find db.cloud.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
             self.putDbProperty('db.cloud.password', formatEncryptResult(encrypt(dbPassword)))
             
             usagePassword = self.getDbProperty('db.usage.password')
+            if usagePassword == '': return # Don't encrypt empty password
             if usagePassword == None: self.errorAndExit('Cannot find db.usage.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
             self.putDbProperty('db.usage.password', formatEncryptResult(encrypt(usagePassword)))
         
