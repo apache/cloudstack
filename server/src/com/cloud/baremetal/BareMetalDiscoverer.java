@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.api.ApiConstants;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -212,8 +213,17 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 	@Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
             List<String> hostTags) {
-	    // TODO Auto-generated method stub
-	    return null;
+		StartupCommand firstCmd = startup[0];
+		if (!(firstCmd instanceof StartupRoutingCommand)) {
+			return null;
+		}
+
+		StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+		if (ssCmd.getHypervisorType() != HypervisorType.BareMetal) {
+			return null;
+		}
+		
+		return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.BareMetal, details, hostTags);
     }
 
 	@Override
