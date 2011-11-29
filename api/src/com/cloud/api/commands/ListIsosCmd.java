@@ -144,6 +144,13 @@ public class ListIsosCmd extends BaseListCmd {
         TemplateFilter templateFilter = TemplateFilter.valueOf(getIsoFilter());
         boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
         || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
+        
+        if (!onlyReady) {
+        	if (isReady() != null && isReady().booleanValue() != onlyReady) {
+        		onlyReady = isReady().booleanValue();
+        	}
+        }
+        
         return onlyReady;
     }
 
