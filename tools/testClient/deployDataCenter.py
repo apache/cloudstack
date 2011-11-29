@@ -6,6 +6,7 @@ import sys
 import logging
 from cloudstackAPI import * 
 from optparse import OptionParser
+
 class deployDataCenters():
     def __init__(self, cfgFile):
         self.configFile = cfgFile
@@ -49,6 +50,7 @@ class deployDataCenters():
             
             self.addHosts(cluster.hosts, zoneId, podId, clusterId, cluster.hypervisor)
             self.createPrimaryStorages(cluster.primaryStorages, zoneId, podId, clusterId)
+
     def createPrimaryStorages(self, primaryStorages, zoneId, podId, clusterId):
         if primaryStorages is None:
             return
@@ -78,12 +80,12 @@ class deployDataCenters():
             podId = createpodResponse.id
             
             if pod.guestIpRanges is not None:
-                self.createipRanges("Basic", pod.guestIpRanges, zoneId, podId)
+                self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId, podId)
                 
             self.createClusters(pod.clusters, zoneId, podId)
             
             
-    def createipRanges(self, mode, ipranges, zoneId, podId=None, networkId=None):
+    def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None, networkId=None):
         if ipranges is None:
             return
         for iprange in ipranges:
@@ -96,8 +98,8 @@ class deployDataCenters():
             vlanipcmd.networkid = networkId
             vlanipcmd.podid = podId
             vlanipcmd.startip = iprange.startip
-            vlanipcmd.vlan = iprange.vlan
             vlanipcmd.zoneid = zoneId
+            vlanipcmd.vlan = iprange.vlan
             if mode == "Basic":
                 vlanipcmd.forvirtualnetwork = "false"
             else:
@@ -137,7 +139,45 @@ class deployDataCenters():
             networkcmdresponse = self.apiClient.createNetwork(networkcmd)
             networkId = networkcmdresponse.id
             
-            self.createipRanges("Advanced", ipranges, zoneId, networkId=networkId)
+            self.createVlanIpRanges("Advanced", ipranges, zoneId, networkId=networkId)
+
+    def configureProviders(self, providers, zoneid):
+        for prov in providers:
+		    pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
+		    pnets.zoneid = zoneid
+		    pnets.state = 'Disabled'
+		    pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
+		    pnetid = pnetsresponse[0].id
+		
+		    upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+		    upnet.state = 'Enabled'
+		    upnet.id = pnetid
+		    upnet.vlan = prov.vlan
+		    upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
+		
+		    pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+		    pnetprov.physicalnetworkid = pnetid
+		    pnetprov.state = 'Disabled'
+		    pnetprovresponse = self.apiClient.listNetworkServiceProviders(pnetprov)
+		    pnetprovid = pnetprovresponse[0].id
+		
+            #TODO: Only enables default - should also update service list - VPN/LB/DNS/DHCP/FW
+		    upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+		    upnetprov.id = pnetprovid
+		    upnetprov.state = 'Enabled'
+		    upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
+		
+		    vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
+		    vrprov.nspid = pnetprovid
+		    vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
+		    vrprovid = vrprovresponse[0].id
+		
+		    vrconfig = configureVirtualRouterElement.configureVirtualRouterElementCmd()
+		    vrconfig.enabled = 'true'
+		    vrconfig.id = vrprovid
+		    vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
+
+
     def createZones(self, zones):
         for zone in zones:
             '''create a zone'''
@@ -150,17 +190,19 @@ class deployDataCenters():
             createzone.name = zone.name
             createzone.securitygroupenabled = zone.securitygroupenabled
             createzone.networktype = zone.networktype
-            createzone.vlan = zone.vlan
             
             zoneresponse = self.apiClient.createZone(createzone)
             zoneId = zoneresponse.id
+
+            '''enable physical networks and providers'''
+            self.configureProviders(zone.providers, zoneId)
             
             '''create pods'''
             self.createpods(zone.pods, zone, zoneId)
             
             if zone.networktype == "Advanced":
                 '''create pubic network'''
-                self.createipRanges(zone.networktype, zone.ipranges, zoneId)
+                self.createVlanIpRanges(zone.networktype, zone.ipranges, zoneId)
             
             self.createnetworks(zone.networks, zoneId)
             '''create secondary storage'''
