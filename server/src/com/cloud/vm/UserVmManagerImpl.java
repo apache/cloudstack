@@ -3385,6 +3385,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Invalid accountid=" + newAccount.getAccountId() + " in domain " + newAccount.getDomainId());
         }
+        
+        if (newAccount.getState() == Account.State.disabled) {
+            throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
+        }
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
@@ -3396,16 +3400,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _accountMgr.checkAccess(newAccount, null, templateOwner);
         }
 
-        // VV 5: check that admin can create vm in the domain
-        DomainVO domain = _domainDao.findById(adminAccount.getDomainId());
+        // VV 5: check the new account can create vm in the domain
+        DomainVO domain = _domainDao.findById(cmd.getDomainId());
         _accountMgr.checkAccess(newAccount, domain);
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
 
         //check is zone networking is advanced
-        if (zone.getNetworkType() != NetworkType.Advanced) { 
-            throw new InvalidParameterValueException("Assing virtual machine to another account is only available for advanced networking " + vm);
-        }
+        //if (zone.getNetworkType() != NetworkType.Advanced) { 
+        //    throw new InvalidParameterValueException("Assing virtual machine to another account is only available for advanced networking " + vm);
+        //}
 
         VMInstanceVO vmoi = _itMgr.findByIdAndType(vm.getType(), vm.getId());
         VirtualMachineProfileImpl<VMInstanceVO> vmOldProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmoi);
@@ -3424,10 +3428,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // OS 2: update volume
         List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
-            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume, new Long(volumes.size()));
+            _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume, Long.valueOf(volumes.size()));
             volume.setAccountId(newAccount.getAccountId());
             _volsDao.persist(volume);
-            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, new Long(volumes.size()));
+            _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, Long.valueOf(volumes.size()));
         }
 
         _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
@@ -3435,7 +3439,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), 
                 vm.getHostName(), vm.getServiceOfferingId(),  vm.getTemplateId(), vm.getHypervisorType().toString()));
 
-
+        txn.commit();
 
         // OS 3: update the network
         if (zone.getNetworkType() == NetworkType.Advanced) { 
@@ -3491,8 +3495,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 _networkMgr.allocate(vmProfile, networks);
             }
         }
-
-        txn.commit();
 
         return vm;
     }
