@@ -2044,15 +2044,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         for (final Answer answer : answers) {
             if (answer instanceof ClusterSyncAnswer) {
                 ClusterSyncAnswer hs = (ClusterSyncAnswer) answer;
-                if (hs.execute()){
-                    if (hs.isFull()) {
-                        deltaSync(hs.getNewStates());
-                        fullSync(hs.getClusterId(), hs.getAllStates());
-                    } else if (hs.isDelta()){
-                        deltaSync(hs.getNewStates());
-                    }
+                if (hs.isFull()) {
+                    deltaSync(hs.getNewStates());
+                    fullSync(hs.getClusterId(), hs.getAllStates());
+                } else if (hs.isDelta()){
+                    deltaSync(hs.getNewStates());
                 }
-                hs.setExecuted();
             } else if (!answer.getResult()) {
                 s_logger.warn("Cleanup failed due to " + answer.getDetails());
             } else {
@@ -2126,7 +2123,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         long agentId = agent.getId();
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
             ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()),
-                    Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
+                    	Integer.parseInt(Config.ClusterFullSyncSkipSteps.getDefaultValue()), clusterId);
             try {
                 long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
                 s_logger.debug("Cluster VM sync started with jobid " + seq_no);

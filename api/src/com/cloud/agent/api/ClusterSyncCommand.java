@@ -46,11 +46,11 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     
     public void incrStep(){
         _steps++;
-        if (_steps>=_skipSteps)_steps=0;
+        if (_steps>_skipSteps)_steps=0;
     }
     
-    public boolean isRightStep(){
-        return (_steps==0);
+    public boolean isRightStep(){ 
+        return (_steps==_skipSteps);
     }
     
     public long getClusterId() {
