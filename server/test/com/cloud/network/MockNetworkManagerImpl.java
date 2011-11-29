@@ -487,7 +487,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId) {
+    public List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize) {
         // TODO Auto-generated method stub
         return null;
     }

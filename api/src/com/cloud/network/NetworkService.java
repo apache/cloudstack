@@ -100,7 +100,7 @@ public interface NetworkService {
 
     PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId, List<String> enabledServices);
 
-    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId);
+    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize);
 
     PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices);
 

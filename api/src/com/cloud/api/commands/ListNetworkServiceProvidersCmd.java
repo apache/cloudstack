@@ -44,8 +44,14 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     
     @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
     private Long physicalNetworkId;
+    
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list providers by name")
+    private String name;
+    
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list providers by state")
+    private String state;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,7 +65,15 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
         return physicalNetworkId;
     }
 
-    /////////////////////////////////////////////////////
+    public String getName() {
+		return name;
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
@@ -74,7 +88,7 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends PhysicalNetworkServiceProvider> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId());
+        List<? extends PhysicalNetworkServiceProvider> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(), getName(), getState(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProviderResponse> response = new ListResponse<ProviderResponse>();
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (PhysicalNetworkServiceProvider serviceProvider : serviceProviders) {
