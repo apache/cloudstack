@@ -7204,7 +7204,8 @@
         listView: {
           section: 'guest-IP-range',
           fields: {
-            id: { label: 'ID' },
+            //id: { label: 'ID' },
+            podname: { label: 'Pod' },
             vlan: { label: 'VLAN' },
             startip: { label: 'Start IP' },
             endip: { label: 'End IP' }          
@@ -7226,7 +7227,7 @@
             add: {
               label: 'Add IP range',
 
-              createForm: { //???
+              createForm: { 
                 title: 'Add IP range',  
                
                 preFilter: function(args) {                        
@@ -7440,7 +7441,31 @@
                 poll: function(args) { args.complete(); }
               }
             }
-          }          
+          },
+
+          /*
+          detailView: {
+            name: 'Event details',
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    id: { label: 'ID' },
+                    podname: { label: 'Pod' },
+                    vlan: { label: 'VLAN' },
+                    startip: { label: 'Start IP' },
+                    endip: { label: 'End IP' }      
+                  }
+                ],
+                dataProvider: function(args) {	                              
+								  args.response.success({data: args.context.guestIpRanges[0]});  //guestIpRanges should be included in args.context. Wait for Brian to fix it.
+								}
+              }
+            }
+          }
+          */
+          
         }
       }     
     }

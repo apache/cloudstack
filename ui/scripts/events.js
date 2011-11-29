@@ -50,7 +50,7 @@
                 dataProvider: function(args) {								  
 								  args.response.success({data: args.context.events[0]});
 								}
-              },
+              }
             }
           }
         }
