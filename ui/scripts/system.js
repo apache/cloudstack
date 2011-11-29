@@ -508,13 +508,12 @@
                                     });                                   
                                   }
                                 });
-                              }    
-                              items.push({id: 0, description: "(create new pod)"});                              
+                                items.push({id: 0, description: "(create new pod)"});    
+                              }                        
                               args.response.success({data: items});                                  
                               
                               args.$select.change(function() {
-                                var $form = $(this).closest('form');
-                                debugger;
+                                var $form = $(this).closest('form');                    
                                 if($(this).val() == "0") {
                                   $form.find('.form-item[rel=podname]').css('display', 'inline-block');
                                   $form.find('.form-item[rel=reservedSystemGateway]').css('display', 'inline-block');
@@ -604,8 +603,8 @@
 													account: { label: 'Account' },
 													guestGateway: { label: 'Guest gateway' },
 													guestNetmask: { label: 'Guest netmask' },
-													startGuestIp: { label: 'Start guest IP' },
-													endGuestIp: { label: 'End guest IP' },
+													guestStartIp: { label: 'Start guest IP' },
+													guestEndIp: { label: 'End guest IP' },
 													networkdomain: { label: 'Network domain' }
 												}
 											},
@@ -646,8 +645,8 @@
                           array1.push("&isDefault=" + (args.data.isDefault=="on"));
                           array1.push("&gateway=" + args.data.guestGateway);
                           array1.push("&netmask=" + args.data.guestNetmask);
-                          array1.push("&startip=" + args.data.startGuestIp);
-                          array1.push("&endip=" + args.data.endGuestIp);
+                          array1.push("&startip=" + args.data.guestStartIp);
+                          array1.push("&endip=" + args.data.guestEndIp);
 
                           if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
                             array1.push("&networkdomain=" + todb(args.data.networkdomain));
@@ -703,8 +702,8 @@
                               array2.push("&forVirtualNetwork=false"); //direct VLAN
                               array2.push("&gateway=" + todb(args.data.guestGateway));
                               array2.push("&netmask=" + todb(args.data.guestNetmask));
-                              array2.push("&startip=" + todb(args.data.startGuestIp));                      
-                              var endip = args.data.endGuestIp;
+                              array2.push("&startip=" + todb(args.data.guestStartIp));                      
+                              var endip = args.data.guestEndIp;
                               if(endip != null && endip.length > 0)
                                 array2.push("&endip=" + todb(endip));
                               $.ajax({
@@ -4744,6 +4743,8 @@
                 }
               },
 
+              //Add IP range has been moved from pod page to guest network in zone chart
+              /*
               addIpRange: {
                 label: 'Add IP range' ,
                 messages: {
@@ -4797,6 +4798,7 @@
                   poll: function(args) { args.complete(); }
                 }
               }
+              */
 
             },
             tabs: {
@@ -7148,38 +7150,175 @@
             add: {
               label: 'Add IP range',
 
-              createForm: {
-                title: 'Add IP range',               
-                fields: {
-                  startip: {
-                    label: 'Start IP',
+              createForm: { //???
+                title: 'Add IP range',  
+               
+                preFilter: function(args) {                        
+                  if(selectedZoneObj.networktype == "Basic") {   
+                    args.$form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                    args.$form.find('.form-item[rel=guestGateway]').css('display', 'inline-block');
+                    args.$form.find('.form-item[rel=guestNetmask]').css('display', 'inline-block');
+                  }
+                  else {  //"Advanced"  
+                    args.$form.find('.form-item[rel=podId]').hide();  
+                    args.$form.find('.form-item[rel=guestGateway]').hide();    
+                    args.$form.find('.form-item[rel=guestNetmask]').hide();                         
+                  }
+                },
+                
+                fields: {                  
+                  podId: {
+                    label: 'Pod',
+                    validation: { required: true },
+                    select: function(args) {
+                      var items = [];                             
+                      if(selectedZoneObj.networktype == "Basic") {
+                        $.ajax({
+                          url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+                          dataType: "json",
+                          async: false,
+                          success: function(json) {                                                             
+                            var podObjs = json.listpodsresponse.pod;
+                            $(podObjs).each(function(){                                      
+                              items.push({id: this.id, description: this.name});
+                            });                                   
+                          }
+                        });
+                        items.push({id: 0, description: "(create new pod)"});    
+                      }                        
+                      args.response.success({data: items});                                  
+                      
+                      args.$select.change(function() {
+                        var $form = $(this).closest('form');                    
+                        if($(this).val() == "0") {
+                          $form.find('.form-item[rel=podname]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=reservedSystemGateway]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=reservedSystemNetmask]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=reservedSystemStartIp]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=reservedSystemEndIp]').css('display', 'inline-block');
+                        }
+                        else {
+                          $form.find('.form-item[rel=podname]').hide();
+                          $form.find('.form-item[rel=reservedSystemGateway]').hide();
+                          $form.find('.form-item[rel=reservedSystemNetmask]').hide();
+                          $form.find('.form-item[rel=reservedSystemStartIp]').hide();
+                          $form.find('.form-item[rel=reservedSystemEndIp]').hide();
+                        }
+                      }); 
+                    }
+                  },
+                  
+                  //create new pod fields start here
+                  podname: {
+                    label: 'Pod name',
                     validation: { required: true }
                   },
-                  endip: {
-                    label: 'End IP',
+                  reservedSystemGateway: {
+                    label: 'Reserved system gateway',
+                    validation: { required: true }
+                  },
+                  reservedSystemNetmask: {
+                    label: 'Reserved system netmask',
+                    validation: { required: true }
+                  },
+                  reservedSystemStartIp: {
+                    label: 'Start Reserved system IP',
+                    validation: { required: true }
+                  },
+                  reservedSystemEndIp: {
+                    label: 'End Reserved system IP',
                     validation: { required: false }
-                  }
+                  },
+                  //create new pod fields ends here
+                            
+                  guestGateway: { label: 'Guest gateway' },
+									guestNetmask: { label: 'Guest netmask' },
+									guestStartIp: { label: 'Start guest IP' },
+									guestEndIp: { label: 'End guest IP' } 
                 }
               },
 
-              action: function(args) {                                               
-                var array1 = [];
-                array1.push("&startip=" + args.data.startip);
-                if(args.data.endip != null && args.data.endip.length > 0)
-				          array1.push("&endip=" + args.data.endip);		
-
-                $.ajax({
-                  url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array1.join("")),
-                  dataType: "json",
-                  success: function(json) {
-                    var item = json.createvlaniprangeresponse.vlan;	
-                    args.response.success({data:item});
-                  },
-                  error: function(XMLHttpResponse) {
-                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                    args.response.error(errorMsg);
+              action: function(args) {                  
+                if(selectedZoneObj.networktype == "Basic") {   
+                  var array2 = [];       
+                                                
+                  var podId;
+                  if(args.data.podId != "0") {
+                    podId = args.data.podId;                                
                   }
-                });
+                  else { //args.data.podId==0, create pod first                               
+                    var array1 = [];
+                    array1.push("&zoneId=" + selectedZoneObj.id);
+                    array1.push("&name=" + todb(args.data.podname));
+                    array1.push("&gateway=" + todb(args.data.reservedSystemGateway));
+                    array1.push("&netmask=" + todb(args.data.reservedSystemNetmask));
+                    array1.push("&startIp=" + todb(args.data.reservedSystemStartIp));
+
+                    var endip = args.data.reservedSystemEndIp;      //optional
+                    if (endip != null && endip.length > 0)
+                      array1.push("&endIp=" + todb(endip));                
+
+                    $.ajax({
+                      url: createURL("createPod" + array1.join("")),
+                      dataType: "json",
+                      async: false,
+                      success: function(json) {
+                        var item = json.createpodresponse.pod;  
+                        podId = item.id;
+                      },
+                      error: function(XMLHttpResponse) {
+                        //var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                        //args.response.error(errorMsg);
+                      }
+                    });                                 
+                  }            
+                  if(podId == null)  {  
+                    alert("podId is null, so unable to create IP range on pod level");                              
+                    return;           
+                  }    
+                  array2.push("&podId=" + podId);                              
+                  array2.push("&vlan=untagged");
+                  array2.push("&zoneid=" + selectedZoneObj.id);                              
+                  array2.push("&forVirtualNetwork=false"); //direct VLAN
+                  array2.push("&gateway=" + todb(args.data.guestGateway));
+                  array2.push("&netmask=" + todb(args.data.guestNetmask));
+                  array2.push("&startip=" + todb(args.data.guestStartIp));                      
+                  var endip = args.data.guestEndIp;
+                  if(endip != null && endip.length > 0)
+                    array2.push("&endip=" + todb(endip));
+                  $.ajax({
+                    url: createURL("createVlanIpRange" + array2.join("")),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      var item = json.createvlaniprangeresponse.vlan;	
+                      args.response.success({data:item});
+                    },
+                    error: function(XMLHttpResponse) {
+                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                      args.response.error(errorMsg);
+                    }
+                  });                    
+                }      
+                else {   //selectedZoneObj.networktype == "Advanced"             
+                  var array2 = [];
+                  array2.push("&startip=" + args.data.guestStartIp);
+                  var endip = args.data.guestEndIp;
+                  if(endip != null && endip.length > 0)
+                    array2.push("&endip=" + endip);		
+                  $.ajax({
+                    url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
+                    dataType: "json",
+                    success: function(json) {
+                      var item = json.createvlaniprangeresponse.vlan;	
+                      args.response.success({data:item});
+                    },
+                    error: function(XMLHttpResponse) {
+                      var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                      args.response.error(errorMsg);
+                    }
+                  });
+                }                
               },
 
               notification: {
