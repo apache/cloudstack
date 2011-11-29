@@ -1950,10 +1950,78 @@
             }            
           },
 
-          // Security groups list view
+          // Security groups list view ???
           securityGroups: {
             id: 'securityGroup-providers',
-            label: 'Security Groups',
+            label: 'Security Groups',   
+            providerActionFilter: function(args) { 
+              var allowedActions = [];
+              var jsonObj = nspMap["securityGroups"];              
+              if(jsonObj.state == "Enabled") 
+                allowedActions.push("disable");               
+              else if(jsonObj.state == "Disabled") 
+                allowedActions.push("enable");                            
+              return allowedActions;
+            },
+            providerActions: {              
+              enable: {
+                label: 'Enable',
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["securityGroups"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Enabled Netscaler provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["securityGroups"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Disabled Netscaler provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }              
+            },   
+            
             fields: {
               id: { label: 'ID' },
               name: { label: 'Name' },              
