@@ -937,7 +937,10 @@
                     nspMap["virtualRouter"] = items[i];
                     if(items[i].state == "Enabled") {
                       naasStatusMap["virtualRouter"] = "enabled";
-                    }                   
+                    } 
+                    else {
+                      naasStatusMap["virtualRouter"] = "disabled";  //VirtualRouter provider is disabled 
+                    }                    
                     break;     
                   case "Netscaler":
                     nspMap["netscaler"] = items[i];
@@ -952,7 +955,7 @@
                         success: function(json) {                                               
                           var items = json.listnetscalerloadbalancerresponse.netscalerloadbalancer;                       
                           if(items != null && items.length > 0) {
-                            naasStatusMap["netscaler"] = "disabled";
+                            naasStatusMap["netscaler"] = "disabled";  //NetScaler provider is disabled with device(s)
                           }
                         }
                       });
@@ -971,7 +974,7 @@
                         success: function(json) {    
                           var items = json.listf5loadbalancerresponse.f5loadbalancer;                       
                           if(items != null && items.length > 0) {
-                            naasStatusMap["f5"] = "disabled";
+                            naasStatusMap["f5"] = "disabled";  //F5 provider is disabled with device(s)
                           }
                         }
                       });
@@ -990,7 +993,7 @@
                         success: function(json) {  
                           var items = json.listsrxfirewallresponse.srxfirewall;                       
                           if(items != null && items.length > 0) {
-                            naasStatusMap["srx"] = "disabled";
+                            naasStatusMap["srx"] = "disabled";  //SRX provider is disabled with device(s)
                           }
                         }
                       });
@@ -998,8 +1001,12 @@
                     break;   
                   case "SecurityGroupProvider":
                     nspMap["securityGroups"] = items[i];
-                    if(items[i].state == "Enabled") 
+                    if(items[i].state == "Enabled") {
                       naasStatusMap["securityGroups"] = "enabled";
+                    }
+                    else {
+                      naasStatusMap["securityGroups"] = "disabled";  //SecurityGroup provider is disabled 
+                    }
                     break;                     
                 }              
               }              
