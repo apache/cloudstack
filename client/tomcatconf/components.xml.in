@@ -25,7 +25,7 @@
 <components.xml>
     <system-integrity-checker class="com.cloud.upgrade.DatabaseUpgradeChecker">
         <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
-        <checker name="EncryptionSecretKeyChecker" class="com.cloud.configuration.EncryptionSecretKeyChecker"/>
+        <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
         <checker name="DatabaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker"/>
         <checker name="DatabaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker"/>
     </system-integrity-checker>

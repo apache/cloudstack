@@ -23,6 +23,9 @@
 -->
 <components.xml>
     <usage-server>
+        <system-integrity-checker class="com.cloud.utils.crypt.EncryptionSecretKeyChecker">
+            <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
+        </system-integrity-checker>    
         <dao name="VM Instance" class="com.cloud.vm.dao.VMInstanceDaoImpl"/>
         <dao name="User VM" class="com.cloud.vm.dao.UserVmDaoImpl"/>
         <dao name="ServiceOffering" class="com.cloud.service.dao.ServiceOfferingDaoImpl">
