@@ -53,12 +53,72 @@
           return args.context.sections;
         }
         else {
-          return ['ipAddresses'];
+          return ['networks', 'ipAddresses'];
         }
       },
       label: 'Select view'
     },
     sections: {
+      networks: {
+        type: 'select',
+        title: 'Networks',
+        listView: {
+          filters: {
+            all: { label: 'All' },
+            mine: { label: 'My network' }
+          },
+          fields: {
+            name: { label: 'Name' },
+            traffictype: { label: 'Traffic Type' },
+            gateway: { label: 'Gateway' },
+            vlan: { label: 'VLAN' }
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL('listNetworks'),
+              data: {
+                trafficType: 'Guest'
+              },
+              dataType: 'json',
+              async: true,
+              success: function(data) {
+                args.response.success({
+                  data: data.listnetworksresponse.network
+                });
+              }
+            });
+          },
+
+          detailView: {
+            name: 'Network details',
+            viewAll: { path: 'network.ipAddresses', label: 'IP Addresses' },
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    name: { label: 'Short name' },
+                    displaytext: { label: 'Description' },
+                    traffictype: { label: 'Traffic Type' },
+                    gateway: { label: 'Gateway' },
+                    vlan: { label: 'VLAN' }
+                  },
+                  {
+                    startip: { label: 'Start IP' },
+                    endip: { label: 'End IP' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({ data: args.context.networks[0] });
+                }
+              }
+            }
+          }
+        }
+      },
       ipAddresses: {
         type: 'select',
         title: 'IP Addresses',
@@ -354,6 +414,10 @@
                 forvirtualnetwork: true,
                 forloadbalancing: true
               });
+
+            if (args.context.networks) {
+              $.extend(data, { associatedNetworkId: args.context.networks[0].id });
+            }
 
             $.ajax({
               url: createURL('listPublicIpAddresses'),
