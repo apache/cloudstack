@@ -2,6 +2,8 @@ import cloudstackException
 import json
 import inspect
 from cloudstackAPI import * 
+import pdb
+
 class jsonLoader:
     '''The recursive class for building and representing objects with.'''
     def __init__(self, obj):
@@ -120,6 +122,9 @@ def getResultObj(returnObj, responsecls=None):
         return finalizeResultObj(result, responseName, responsecls)
     
 if __name__ == "__main__":
+
+    result = '{ "listnetworkserviceprovidersresponse" : { "count":1 ,"networkserviceprovider" : [ {"name":"VirtualRouter","physicalnetworkid":"ad2948fc-1054-46c7-b1c7-61d990b86710","destinationphysicalnetworkid":"0","state":"Disabled","id":"d827cae4-4998-4037-95a2-55b92b6318b1","servicelist":["Vpn","Dhcp","Dns","Gateway","Firewall","Lb","SourceNat","StaticNat","PortForwarding","UserData"]} ] } }'
+    nsp = getResultObj(result)
     
     result = '{ "listzonesresponse" : { "count":1 ,"zone" : [  {"id":1,"name":"test0","dns1":"8.8.8.8","dns2":"4.4.4.4","internaldns1":"192.168.110.254","internaldns2":"192.168.110.253","networktype":"Basic","securitygroupsenabled":true,"allocationstate":"Enabled","zonetoken":"5e818a11-6b00-3429-9a07-e27511d3169a","dhcpprovider":"DhcpServer"} ] } }'
     zones = getResultObj(result)

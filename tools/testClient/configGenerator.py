@@ -2,6 +2,7 @@ import json
 import os
 from optparse import OptionParser
 import jsonHelper
+
 class managementServer():
     def __init__(self):
         self.mgtSvrIp = None
@@ -21,6 +22,7 @@ class configuration():
     def __init__(self):
         self.name = None
         self.value = None
+
 class logger():
     def __init__(self):
         '''TestCase/TestClient'''
@@ -46,15 +48,37 @@ class zone():
         self.guestcidraddress = None
         self.internaldns2 = None
         self.securitygroupenabled = None
-        '''guest vlan: e.g. 100-200, used in advanced mode'''
-        self.vlan = None
         '''default public network, in advanced mode'''
         self.ipranges = []
         '''tagged network, in advanced mode'''
         self.networks = []
+        self.providers = []
         self.pods = []
         self.secondaryStorages = []
         
+class provider():
+    def __init__(self):
+        self.name = None
+        self.state = None
+        self.broadcastdomainrange = 'ZONE'
+        ''' Guest Vlan range'''
+        self.vlan = None
+        self.zoneid = None
+        self.servicelist = []
+
+        #self.vpn_service_provided = None
+        #self.dhcp_service_provided = None
+        #self.dns_service_provided = None
+        #self.gateway_service_provided = None
+        #self.firewall_service_provided = None
+        #self.source_nat_service_provided = None
+        #self.load_balance_service_provided = None
+        #self.static_nat_service_provided = None
+        #self.port_forwarding_service_provided = None
+        #self.user_data_service_provided = None
+        #self.security_group_service_provided = None
+
+
 class pod():
     def __init__(self):
         self.gateway = None
@@ -112,11 +136,11 @@ class network():
 class iprange():
     def __init__(self):
         '''tagged/untagged'''
-        self.vlan = None
         self.gateway = None
         self.netmask = None
         self.startip = None
         self.endip = None
+        self.vlan = None
         '''for account specific '''
         self.account = None
         self.domain = None
