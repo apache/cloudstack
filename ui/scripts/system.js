@@ -1955,32 +1955,12 @@
             id: 'securityGroup-providers',
             label: 'Security Groups',
             fields: {
-              name: { label: 'Name' },
-              ipaddress: { label: 'IP Address' },
+              id: { label: 'ID' },
+              name: { label: 'Name' },              
               state: { label: 'Status' }
             },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              });
+            dataProvider: function(args) {                            
+              args.response.success({data: nspMap["securityGroups"]});            
             }
           }
         }
