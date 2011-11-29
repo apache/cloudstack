@@ -2034,8 +2034,8 @@
             
             fields: {
               id: { label: 'ID' },
-              name: { label: 'Name' },              
-              state: { label: 'Status' }
+              name: { label: 'Name' }//,              
+              //state: { label: 'Status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
             },
             dataProvider: function(args) {                            
               args.response.success({data: nspMap["securityGroups"]});            
