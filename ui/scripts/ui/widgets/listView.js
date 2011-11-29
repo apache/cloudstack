@@ -172,12 +172,15 @@
                   function(args) {
                     if (!args) args = {};
 
+                    var actionFilter = args.actionFilter ?
+                      args.actionFilter : $instanceRow.data('list-view-action-filter');
+
                     if ($instanceRow.is(':visible')) {
                       if (args.data) {
                         $newRow = replaceItem(
                           $instanceRow,
                           $.extend($instanceRow.data('json-obj'), args.data),
-                          $instanceRow.data('list-view-action-filter')
+                          actionFilter
                         );
                       }
                       else {
@@ -185,7 +188,7 @@
                         $newRow = replaceItem(
                           $instanceRow,
                           $instanceRow.data('json-obj'),
-                          $instanceRow.data('list-view-action-filter')
+                          actionFilter
                         );
                       }
 
