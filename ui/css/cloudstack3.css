@@ -2217,7 +2217,7 @@ div.toolbar label {
 }
 
 div.toolbar div.filters select {
-  width: 136px;
+  width: 104px;
   height: 21px;
   font-size: 12px;
   border: 1px solid #808080;
@@ -6707,12 +6707,12 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .disable .icon,
 .disableStaticNAT .icon {
-  background-position: -138px -94px;
+  background-position: -138px -93px;
 }
 
 .disable:hover .icon,
 .disableStaticNAT:hover .icon {
-  background-position: -138px -678px;
+  background-position: -138px -677px;
 }
 
 .add .icon,
@@ -6812,11 +6812,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .enableVPN .icon {
-  background-position: -200px -2px;
+  background-position: -200px -3px;
 }
 
 .enableVPN:hover .icon {
-  background-position: -199px -585px;
+  background-position: -199px -586px;
 }
 
 .disableVPN .icon {
