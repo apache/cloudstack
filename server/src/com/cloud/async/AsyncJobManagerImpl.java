@@ -630,7 +630,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 				    if(blockItems != null && blockItems.size() > 0) {
 				        for(SyncQueueItemVO item : blockItems) {
 				            if(item.getContentType().equalsIgnoreCase("AsyncJob")) {
-                                completeAsyncJob(item.getContentId(), 2, 0, getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
+                                completeAsyncJob(item.getContentId(), AsyncJobResult.STATUS_FAILED, 0, getResetResultResponse("Job is cancelled as it has been blocking others for too long"));
                             }
 				        
 				            // purge the item and resume queue processing

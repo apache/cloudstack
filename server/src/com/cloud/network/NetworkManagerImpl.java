@@ -4211,10 +4211,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize) {
-        PhysicalNetworkVO network = _physicalNetworkDao.findById(physicalNetworkId);
-        if (network == null) {
-            throw new InvalidParameterValueException("Physical Network id=" + physicalNetworkId + "doesn't exist in the system");
-        }
         
         Filter searchFilter = new Filter(PhysicalNetworkServiceProviderVO.class, "id", false, startIndex, pageSize);
         SearchBuilder<PhysicalNetworkServiceProviderVO> sb = _pNSPDao.createSearchBuilder();

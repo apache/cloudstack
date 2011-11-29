@@ -1383,7 +1383,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             // Create default Physical Network
             long physicalNetworkId = createDefaultPhysicalNetwork(zone, domainId);
             
-            //add VirtualRouter as the defualt network service provider 
+            //add VirtualRouter as the default network service provider 
             _networkMgr.addDefaultVirtualRouterToPhysicalNetwork(physicalNetworkId);
             
             //add security group provider to the physical network
