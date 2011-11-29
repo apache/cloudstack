@@ -831,7 +831,7 @@
                                 {_custom:
                                  {jobId: jid,
                                   getUpdatedItem: function(json) {
-                                    return {}; //nothing in this template needs to be updated, in fact, this whole template has being deleted
+                                    return {}; //nothing in this network needs to be updated, in fact, this whole template has being deleted
                                   }
                                  }
                                 }
@@ -846,7 +846,18 @@
                     },
 										tabs: {
 											details: {
-												title: 'Details',
+												title: 'Details',                                                
+                        preFilter: function(args) { 
+                          var hiddenFields = [];                          
+                          if(selectedZoneObj.networktype == "Basic") {
+                            hiddenFields.push("account");
+                            hiddenFields.push("gateway");
+                            hiddenFields.push("netmask");
+                            hiddenFields.push("startip");
+                            hiddenFields.push("endip");                           
+                          }                          
+                          return hiddenFields;
+                        },                        
 												fields: [
 													{
 														name: { 
