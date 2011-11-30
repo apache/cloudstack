@@ -78,7 +78,7 @@ public interface NetworkService {
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId);
+    Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId);
 
     Integer getNetworkRate(long networkId, Long vmId);
 
