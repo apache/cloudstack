@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -201,7 +202,19 @@ public class ApiServer implements HttpRequestHandler {
             if (apiConfig != null) {
                 for (String configFile : apiConfig) {
                     File commandsFile = PropertiesUtil.findConfigFile(configFile);
-                    preProcessedCommands.load(new FileInputStream(commandsFile));
+                    if(commandsFile != null){
+                        try{
+                            preProcessedCommands.load(new FileInputStream(commandsFile));
+                        }catch (FileNotFoundException fnfex) {
+                            //in case of a file within a jar in classpath, try to open stream using url
+                            InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
+                            if(stream != null){
+                                preProcessedCommands.load(stream);
+                            }else{
+                                s_logger.error("Unable to find properites file", fnfex);
+                            }
+                        }
+                    }
                 }
                 for (Object key : preProcessedCommands.keySet()) {
                     String preProcessedCommand = preProcessedCommands.getProperty((String) key);

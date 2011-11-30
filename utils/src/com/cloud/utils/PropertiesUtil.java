@@ -18,6 +18,8 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,5 +95,23 @@ public class PropertiesUtil {
         }
         
         return map;
+    }
+    
+    /*
+     * Returns an InputStream for the given resource 
+     * This is needed to read the files within a jar in classpath.
+     */
+    public static InputStream openStreamFromURL(String path){
+        ClassLoader cl = PropertiesUtil.class.getClassLoader();
+        URL url = cl.getResource(path);
+        if (url != null) {
+             try{
+                 InputStream stream = url.openStream();
+                 return stream;
+            } catch (IOException ioex) {
+                return null;
+            }
+        }
+        return null;
     }
 }
