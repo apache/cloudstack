@@ -232,19 +232,48 @@
             }
           }
         },
-        'management': {
+        'management': { //???
           detailView: {
             viewAll: { path: '_zone.pods', label: 'Pods' },
             tabs: {
               details: {
-                title: 'Details',
+                title: 'Details',                
                 fields: [
                   {
-                    name: { label: 'Name' }
+                    name: { label: 'Zone', isEditable: true }
+                  },
+                  {
+                    id: { label: 'ID' },
+                    allocationstate: { label: 'Allocation State' },
+                    dns1: { label: 'DNS 1', isEditable: true },
+                    dns2: { label: 'DNS 2', isEditable: true },
+                    internaldns1: { label: 'Internal DNS 1', isEditable: true },
+                    internaldns2: { label: 'Internal DNS 2', isEditable: true },
+                    networktype: { label: 'Network Type' },
+                    securitygroupsenabled: {
+                      label: 'Security Groups Enabled',
+                      converter:cloudStack.converters.toBooleanText
+                    },
+                    domain: { label: 'Domain' },
+
+                    //only advanced zones have VLAN and CIDR Address
+                    guestcidraddress: { label: 'Guest CIDR Address', isEditable: true },
+                    vlan: { label: 'Vlan' },
+                    startVlan: { label: 'Start Vlan', isEditable: true },
+                    endVlan: { label: 'End Vlan', isEditable: true }
                   }
-                ],
-                dataProvider: function(args) {
-                  args.response.success({ data: testData.data.networks[0] });
+                ],                 
+                dataProvider: function(args) {       
+                  /*                
+                  $.ajax({
+                    url: createURL("listTrafficTypes&physicalNetworkId=" + selectedPhysicalNetworkObj.id),
+                    dataType: "json",                    
+                    success: function(json) {
+                      args.response.success({ data: testData.data.networks[0] }); 
+                    }
+                  });  
+                  */                  
+                  args.response.success({ data: selectedZoneObj }); 
                 }
               }
             }
