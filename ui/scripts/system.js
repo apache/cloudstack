@@ -743,14 +743,16 @@
                         action: function(args) {
                           var array1 = [];                          
                           array1.push("&name=" + todb(args.data.name));
-                          array1.push("&displaytext=" + todb(args.data.displaytext));
-                                                    
-                          if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                            array1.push("&networkdomain=" + todb(args.data.networkdomain));  
-                                                   
+                          array1.push("&displaytext=" + todb(args.data.displaytext));                                            
+                                             
                           //args.data.networkofferingid is null when networkofferingid field is hidden
                           if(args.data.networkofferingid != null && args.data.networkofferingid != selectedGuestNetworkObj.networkofferingid)
                             array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //??? 
+                           
+                          //debugger;                           
+                          //args.data.networkdomain is null when networkdomain field is hidden
+                          if(args.data.networkdomain != null && args.data.networkdomain != selectedGuestNetworkObj.networkdomain)
+                            array1.push("&networkdomain=" + todb(args.data.networkdomain));      
                             
                           $.ajax({
                             url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
@@ -828,9 +830,11 @@
                           }  
                           if(selectedGuestNetworkObj.type == "Isolated") {
                             hiddenFields.push("networkofferingdisplaytext");
+                            hiddenFields.push("networkdomaintext");
                           }
                           else {
                             hiddenFields.push("networkofferingid");
+                            hiddenFields.push("networkdomain");
                           }
                           
                           return hiddenFields;
@@ -854,14 +858,14 @@
 														},
                             vlan: { label: 'VLAN ID' },
                             
-                            networkofferingdisplaytext: { label: 'Network offering name' },
+                            networkofferingdisplaytext: { label: 'Network offering' },
                             networkofferingid: { 
                               label: 'Network offering',
                               isEditable: true,
                               select: function(args){                                    
                                 var items = [];    
                                 $.ajax({
-                                  url: createURL("listNetworkOfferings&networkid=" + selectedGuestNetworkObj.id),  //???                                                                    
+                                  url: createURL("listNetworkOfferings&networkid=" + selectedGuestNetworkObj.id),                                                                      
                                   dataType: "json",
                                   async: false,
                                   success: function(json) {                                                                       
@@ -892,6 +896,9 @@
                             netmask: { label: 'Netmask' },
                             startip: { label: 'Start IP' },
                             endip: { label: 'End IP' },
+                            networkdomaintext: { 
+                              label: 'Network domain'
+                            },   
                             networkdomain: { 
                               label: 'Network domain',
                               isEditable: true
@@ -899,7 +906,8 @@
 													}
 												],
 												dataProvider: function(args) {	
-                          selectedGuestNetworkObj = args.context.networks[0];                        
+                          selectedGuestNetworkObj = args.context.networks[0];  
+                          selectedGuestNetworkObj["networkdomaintext"] = selectedGuestNetworkObj.networkdomain;                       
 												  args.response.success({data: selectedGuestNetworkObj});
 												}
 											},
