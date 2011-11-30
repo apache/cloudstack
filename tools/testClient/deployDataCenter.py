@@ -141,43 +141,51 @@ class deployDataCenters():
             
             self.createVlanIpRanges("Advanced", ipranges, zoneId, networkId=networkId)
 
-    def configureProviders(self, providers, zoneid):
+    def configureProviders(self, providers, zoneid, networktype):
         for prov in providers:
-		    pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
-		    pnets.zoneid = zoneid
-		    pnets.state = 'Disabled'
-		    pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
-		    pnetid = pnetsresponse[0].id
-		
-		    upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
-		    upnet.state = 'Enabled'
-		    upnet.id = pnetid
-		    upnet.vlan = prov.vlan
-		    upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
-		
-		    pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-		    pnetprov.physicalnetworkid = pnetid
-		    pnetprov.state = 'Disabled'
-		    pnetprovresponse = self.apiClient.listNetworkServiceProviders(pnetprov)
-		    pnetprovid = pnetprovresponse[0].id
-		
-            #TODO: Only enables default - should also update service list - VPN/LB/DNS/DHCP/FW
-		    upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-		    upnetprov.id = pnetprovid
-		    upnetprov.state = 'Enabled'
-		    upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
-		
-		    vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
-		    vrprov.nspid = pnetprovid
-		    vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
-		    vrprovid = vrprovresponse[0].id
-		
-		    vrconfig = configureVirtualRouterElement.configureVirtualRouterElementCmd()
-		    vrconfig.enabled = 'true'
-		    vrconfig.id = vrprovid
-		    vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
+            pnets = listPhysicalNetworks.listPhysicalNetworksCmd()
+            pnets.zoneid = zoneid
+            pnets.state = 'Disabled'
+            pnetsresponse = self.apiClient.listPhysicalNetworks(pnets)
+            pnetid = pnetsresponse[0].id
 
+            upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+            upnet.state = 'Enabled'
+            upnet.id = pnetid
+            upnet.vlan = prov.vlan
+            upnetresponse = self.apiClient.updatePhysicalNetwork(upnet)
 
+            '''only for advanced zone - virtualrouter'''
+            if networktype == 'Advanced':
+                pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+                pnetprov.physicalnetworkid = pnetid
+                pnetprov.state = 'Enabled'
+                pnetprov.name = 'VirtualRouter'
+                vrprov = self.apiClient.listNetworkServiceProviders(pnetprov)
+
+                vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
+                vrprov.nspid = vrprov.id
+                vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
+                vrprovid = vrprovresponse[0].id
+
+                vrconfig = configureVirtualRouterElement.configureVirtualRouterElementCmd()
+                vrconfig.enabled = 'true'
+                vrconfig.id = vrprovid
+                vrconfigresponse = self.apiClient.configureVirtualRouterElement(vrconfig)
+
+            pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+            pnetprov.physicalnetworkid = pnetid
+            pnetprov.state = 'Disabled'
+            pnetprovs = self.apiClient.listNetworkServiceProviders(pnetprov)
+
+            '''enable all the providers'''
+            for pnetprov in pnetprovs:
+                 upnetprov = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+                 upnetprov.id = pnetprov.id
+                 upnetprov.state = 'Enabled'
+                 upnetprovresponse = self.apiClient.updateNetworkServiceProvider(upnetprov)
+
+            
     def createZones(self, zones):
         for zone in zones:
             '''create a zone'''
@@ -195,7 +203,7 @@ class deployDataCenters():
             zoneId = zoneresponse.id
 
             '''enable physical networks and providers'''
-            self.configureProviders(zone.providers, zoneId)
+            self.configureProviders(zone.providers, zoneId, zone.networktype)
             
             '''create pods'''
             self.createpods(zone.pods, zone, zoneId)
