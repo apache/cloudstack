@@ -887,6 +887,12 @@
                   return key;
                 }).join(',');
 
+                if (inputData['specifyVlan'] == 'on') {
+                  inputData['specifyVlan'] = true;
+                } else {
+                  inputData['specifyVlan'] = false;
+                }
+
                 // Make service provider map
                 var serviceProviderIndex = 0;
                 $.each(services, function(key, value) {
