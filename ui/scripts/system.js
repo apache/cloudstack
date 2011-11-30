@@ -744,7 +744,9 @@
                           var array1 = [];                          
                           array1.push("&name=" + todb(args.data.name));
                           array1.push("&displaytext=" + todb(args.data.displaytext));
-                          array1.push("&networkdomain=" + args.data.networkdomain);  
+                                                    
+                          if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+                            array1.push("&networkdomain=" + todb(args.data.networkdomain));  
                           
                           //if(selectedGuestNetworkObj.type != "Isolated")
                           if(args.data.networkofferingid != null)
