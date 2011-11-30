@@ -309,6 +309,7 @@ public class ApiConstants {
     public static final String SERVICE = "service";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
+    public static final String RESOURCE_STATE = "resourcestate";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

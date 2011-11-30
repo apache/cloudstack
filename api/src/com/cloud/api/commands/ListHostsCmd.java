@@ -77,8 +77,8 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
     
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="list hosts by allocation state")
-    private String allocationState;   
+    @Parameter(name=ApiConstants.RESOURCE_STATE, type=CommandType.STRING, description="list hosts by resource state. Resource state represents current state determined by admin of host, valule can be one of [Enabled, Disabled, Unmanaged, PrepareForMaintenance, ErrorInMaintenance, Maintenance, Error]")
+    private String resourceState;   
     
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [ min, all, capacity, events, stats]" )
     private List<String> viewDetails; 
@@ -139,8 +139,8 @@ public class ListHostsCmd extends BaseListCmd {
         return dv;
     }
     
-    public String getAllocationState() {
-    	return allocationState;
+    public String getResourceState() {
+    	return resourceState;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

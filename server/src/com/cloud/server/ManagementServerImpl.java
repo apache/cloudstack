@@ -854,9 +854,9 @@ public class ManagementServerImpl implements ManagementServer {
         Object cluster = cmd.getClusterId();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
-        Object allocationState = cmd.getAllocationState();
+        Object resourceState = cmd.getResourceState();
 
-        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, allocationState);
+        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState);
     }
 
     @Override
@@ -950,7 +950,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,
-            Object allocationState) {
+            Object resourceState) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
 
@@ -986,8 +986,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("clusterId", SearchCriteria.Op.EQ, cluster);
         }
 
-        if (allocationState != null) {
-            sc.addAnd("hostAllocationState", SearchCriteria.Op.EQ, allocationState);
+        if (resourceState != null) {
+            sc.addAnd("resourceState", SearchCriteria.Op.EQ, resourceState);
         }
 
         return _hostDao.search(sc, searchFilter);
