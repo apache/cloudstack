@@ -60,58 +60,17 @@
                   }
                 ],
                                 
-                dataProvider: function(args) {                    
-                  var showPublicNetwork = true;          
-                  if(selectedZoneObj.networktype == "Basic") {
-                    //$("#add_network_button").hide();
-                    $.ajax({
-                      url: createURL("listExternalFirewalls&zoneid=" + selectedZoneObj.id),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var items = json.listexternalfirewallsresponse.externalfirewall;
-                        if(items != null && items.length > 0) {
-                          showPublicNetwork = true;
-                          //$("#add_iprange_button,#tab_ipallocation").show();
-                        }
-                        else {
-                          showPublicNetwork = false;
-                          //$("#add_iprange_button,#tab_ipallocation").hide();
-                        }
-                      }
-                    });
-                  }
-                  else { // Advanced zone
-                    showPublicNetwork = true;
-                    //$("#add_network_button,#add_iprange_button,#tab_ipallocation").show();
-                    //listMidMenuItems2(("listNetworks&type=Direct&zoneId="+selectedZoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
-                  }
-                              
-                  if(showPublicNetwork == true && selectedZoneObj.securitygroupsenabled == false) { //public network
-                    $.ajax({
-                      url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+selectedZoneObj.id),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var items = json.listnetworksresponse.network;
-                        publicNetworkObj = items[0];                        
-                      }
-                    });
-                  }
-                  else if (showPublicNetwork == true && selectedZoneObj.securitygroupsenabled == true){
-                    $.ajax({
-                      url: createURL("listNetworks&type=Direct&trafficType=Guest&isSystem=true&zoneId="+selectedZoneObj.id),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var items = json.listnetworksresponse.network;
-                        publicNetworkObj = items[0]; 
-                      }
-                    });
-                  }
-                                    
-                  args.response.success({data: publicNetworkObj});
-                  
+                dataProvider: function(args) {    
+                  $.ajax({
+                    url: createURL("listNetworks&trafficType=Public&isSystem=true&zoneId="+selectedZoneObj.id),
+                    dataType: "json",    
+                    async: false,                    
+                    success: function(json) {                      
+                      var items = json.listnetworksresponse.network;
+                      publicNetworkObj = items[0];    
+                      args.response.success({data: publicNetworkObj});                      
+                    }
+                  });                       
                 }               
               },
                            
