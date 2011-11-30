@@ -70,6 +70,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list network offerings by state")
     private String state;
     
+    @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
     private Long networkId;
     
