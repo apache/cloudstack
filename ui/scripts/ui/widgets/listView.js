@@ -29,6 +29,7 @@
         _custom: notification._custom,
         poll: function(args) {
           var complete = args.complete;
+          var notificationError = args.error;
 
           notification.poll({
             _custom: args._custom,
@@ -37,12 +38,8 @@
               complete(args);
             },
             error: function(args) {
-              if (args.message) {
-                cloudStack.dialog.notice({ message: args.message });
-              }
-
               error($.extend(errorArgs, args));
-              complete(args);
+              notificationError(args);
             }
           });
         }
