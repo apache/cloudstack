@@ -73,7 +73,9 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
+import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.host.Host;
+import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
@@ -373,7 +375,7 @@ public class F5BigIpResource implements ServerResource {
 					deleteInactivePoolMembers(virtualServerName, activePoolMembers);
 					
 					// Add the virtual server 
-					addVirtualServer(virtualServerName, lbProtocol, srcIp, srcPort);										
+					addVirtualServer(virtualServerName, lbProtocol, srcIp, srcPort, loadBalancer.getStickinessPolicies());
 				} else {
 					// Delete the virtual server with this protocol, source IP, and source port, along with its default pool and all pool members
 					deleteVirtualServerAndDefaultPool(virtualServerName);			
@@ -612,16 +614,26 @@ public class F5BigIpResource implements ServerResource {
 
 	// Virtual server methods
 	
-	private void addVirtualServer(String virtualServerName, LbProtocol protocol, String srcIp, int srcPort) throws ExecutionException {
+	private void addVirtualServer(String virtualServerName, LbProtocol protocol, String srcIp, int srcPort, StickinessPolicyTO[] stickyPolicies) throws ExecutionException {
 		try {
 			if (!virtualServerExists(virtualServerName)) {
 				s_logger.debug("Adding virtual server " + virtualServerName);
 				_virtualServerApi.create(genVirtualServerDefinition(virtualServerName, protocol, srcIp, srcPort), new String[]{"255.255.255.255"}, genVirtualServerResource(virtualServerName), genVirtualServerProfile(protocol));
 				_virtualServerApi.set_snat_automap(genStringArray(virtualServerName));
-
 				if (!virtualServerExists(virtualServerName)) {
 					throw new ExecutionException("Failed to add virtual server " + virtualServerName);
 				}
+			}
+
+			if ((stickyPolicies != null) && (stickyPolicies[0] != null)){
+				StickinessPolicyTO stickinessPolicy = stickyPolicies[0];
+				if (stickinessPolicy.getMethodName().equalsIgnoreCase(StickinessMethodType.LBCookieBased.getName())) {
+					_virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("cookie"));
+				} else  if (stickinessPolicy.getMethodName().equalsIgnoreCase(StickinessMethodType.SourceBased.getName())) {
+					_virtualServerApi.add_persistence_profile(genStringArray(virtualServerName), genPersistenceProfile("source_addr"));
+				}
+			} else {
+				_virtualServerApi.remove_all_persistence_profiles(genStringArray(virtualServerName));
 			}
 		} catch (RemoteException e) {
 			throw new ExecutionException(e.getMessage());

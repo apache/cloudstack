@@ -136,6 +136,7 @@ import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
@@ -4553,13 +4554,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.trace("Marking lb rule " + lb + " with Revoke state");
             lb.setState(FirewallRule.State.Revoke);
             List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+            List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
             //mark all destination with revoke state
             for (LbDestination dst : dstList) {
                 s_logger.trace("Marking lb destination " + dst + " with Revoke state");
                 dst.setRevoked(true);
             }
 
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
             lbRules.add(loadBalancing);
         }
 

@@ -52,7 +52,7 @@ public interface Network extends ControlledEntity {
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
-        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat");
         public static final Service StaticNat = new Service("StaticNat");
@@ -159,6 +159,7 @@ public interface Network extends ControlledEntity {
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
         public static final Capability SupportedLBIsolation = new Capability("SupportedLBIsolation");
+        public static final Capability SupportedStickinessMethods = new Capability("SupportedStickinessMethods");
         public static final Capability MultipleIps = new Capability("MultipleIps");
         public static final Capability SupportedSourceNatTypes = new Capability("SupportedSourceNatTypes");
         public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");

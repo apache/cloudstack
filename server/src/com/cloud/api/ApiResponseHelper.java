@@ -195,6 +195,9 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmData;
 import com.cloud.vm.dao.UserVmData.NicData;
 import com.cloud.vm.dao.UserVmData.SecurityGroupData;
+import com.cloud.api.response.LBStickinessPolicyResponse;
+import com.cloud.api.response.LBStickinessResponse;
+import com.cloud.network.rules.StickinessPolicy;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -3193,5 +3196,56 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("virtualrouterelement");
         return response;
     }
+    @Override
+    public LBStickinessResponse createLBStickinessPolicyResponse(
+            StickinessPolicy stickinessPolicy, LoadBalancer lb) {
+        LBStickinessResponse spResponse = new LBStickinessResponse();
+
+        spResponse.setlbRuleId(lb.getId());
+        Account accountTemp = ApiDBUtils.findAccountById(lb.getAccountId());
+        if (accountTemp != null) {
+            spResponse.setAccountName(accountTemp.getAccountName());
+            spResponse.setDomainId(accountTemp.getDomainId());
+            spResponse.setDomainName(ApiDBUtils.findDomainById(
+                    accountTemp.getDomainId()).getName());
+        }
+
+        List<LBStickinessPolicyResponse> responses = new ArrayList<LBStickinessPolicyResponse>();
+        LBStickinessPolicyResponse ruleResponse = new LBStickinessPolicyResponse(
+                stickinessPolicy);
+        responses.add(ruleResponse);
+
+        spResponse.setRules(responses);
+
+        spResponse.setObjectName("stickinesspolicies");
+        return spResponse;
+    }
+    
+    @Override
+    public LBStickinessResponse createLBStickinessPolicyResponse(
+            List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb) {
+        LBStickinessResponse spResponse = new LBStickinessResponse();
+
+        if (lb == null) return spResponse ;
+        spResponse.setlbRuleId(lb.getId());
+        Account account = ApiDBUtils.findAccountById(lb.getAccountId());
+        if (account != null) {
+            spResponse.setAccountName(account.getAccountName());
+            spResponse.setDomainId(account.getDomainId());
+            spResponse.setDomainName(ApiDBUtils.findDomainById(
+                    account.getDomainId()).getName());
+        }
+
+        List<LBStickinessPolicyResponse> responses = new ArrayList<LBStickinessPolicyResponse>();
+        for (StickinessPolicy stickinessPolicy : stickinessPolicies) {
+            LBStickinessPolicyResponse ruleResponse = new LBStickinessPolicyResponse(stickinessPolicy);
+            responses.add(ruleResponse);
+        }
+        spResponse.setRules(responses);
+
+        spResponse.setObjectName("stickinesspolicies");
+        return spResponse;
+    }
+
 
 }

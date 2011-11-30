@@ -61,6 +61,7 @@ DROP TABLE IF EXISTS `cloud`.`sync_queue`;
 DROP TABLE IF EXISTS `cloud`.`sync_queue_item`;
 DROP TABLE IF EXISTS `cloud`.`security_group_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancer_vm_map`;
+DROP TABLE IF EXISTS `cloud`.`load_balancer_stickiness_policies`;
 DROP TABLE IF EXISTS `cloud`.`load_balancer_inline_ip_map`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_host_ref`;
@@ -654,6 +655,19 @@ CREATE TABLE `cloud`.`load_balancer_vm_map` (
   UNIQUE KEY (`load_balancer_id`, `instance_id`),
   CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_load_balancer_vm_map__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`load_balancer_stickiness_policies` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096) NULL COMMENT 'description',
+  `method_name` varchar(255) NOT NULL,
+  `params` varchar(4096) NOT NULL,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_load_balancer_stickiness_policies__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`inline_load_balancer_nic_map` (

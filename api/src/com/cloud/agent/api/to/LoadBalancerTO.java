@@ -17,9 +17,11 @@
  */
 package com.cloud.agent.api.to;
 
-import java.util.List;
 
+import java.util.List;
+import com.cloud.utils.Pair;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 
 
 public class LoadBalancerTO {
@@ -30,8 +32,9 @@ public class LoadBalancerTO {
     boolean revoked;
     boolean alreadyAdded;
     DestinationTO[] destinations;
-    
-    
+    private StickinessPolicyTO[] stickinessPolicies;
+    final static int MAX_STICKINESS_POLICIES = 1; 
+   
     public LoadBalancerTO (String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
         this.srcIp = srcIp;
         this.srcPort = srcPort;
@@ -40,11 +43,30 @@ public class LoadBalancerTO {
         this.revoked = revoked;
         this.alreadyAdded = alreadyAdded;
         this.destinations = new DestinationTO[destinations.size()];
+        this.stickinessPolicies = null;
         int i = 0;
         for (LbDestination destination : destinations) {
             this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.isRevoked(), false);
         }
     }
+    
+    public LoadBalancerTO (String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies) {
+        this(srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, arg_destinations);
+        this.stickinessPolicies = null;
+        if (stickinessPolicies != null && stickinessPolicies.size()>0) {
+            this.stickinessPolicies = new StickinessPolicyTO[MAX_STICKINESS_POLICIES];
+            int index = 0;
+            for (LbStickinessPolicy stickinesspolicy : stickinessPolicies) {
+                if (!stickinesspolicy.isRevoked()) {
+                    this.stickinessPolicies[index] = new StickinessPolicyTO(stickinesspolicy.getMethodName(), stickinesspolicy.getParams());
+                    index++;
+                    if (index == MAX_STICKINESS_POLICIES) break;
+                }
+            }
+            if (index == 0) this.stickinessPolicies = null;
+        }
+    }
+    
     
     protected LoadBalancerTO() {
     }
@@ -73,10 +95,31 @@ public class LoadBalancerTO {
         return alreadyAdded;
     }
     
+    public StickinessPolicyTO[] getStickinessPolicies() {
+        return stickinessPolicies;
+    }
+    
     public DestinationTO[] getDestinations() {
         return destinations;
     }
+    
+    public static class StickinessPolicyTO {
+        private String _methodName;
+        private List<Pair<String, String>> _paramsList;
 
+        public String getMethodName() {
+            return _methodName;
+        }
+
+        public List<Pair<String, String>> getParams() {
+            return _paramsList;
+        }
+
+        public StickinessPolicyTO(String methodName, List<Pair<String, String>> paramsList) {
+            this._methodName = methodName;
+            this._paramsList = paramsList;
+        }
+    }
     
     public static class DestinationTO {
         String destIp;

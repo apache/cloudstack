@@ -76,6 +76,19 @@ CREATE TABLE  `cloud`.`project_invitations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE `cloud`.`load_balancer_stickiness_policies` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096) NULL COMMENT 'description',
+  `method_name` varchar(255) NOT NULL,
+  `params` varchar(4096) NOT NULL,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_load_balancer_stickiness_policies__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.user.vms', '20', 'The default maximum number of user VMs that can be deployed for a project');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.public.ips', '20', 'The default maximum number of public IPs that can be consumed by a project');
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'max.project.templates', '20', 'The default maximum number of templates that can be deployed for a project');

@@ -106,11 +106,13 @@ public class ApiConstants {
     public static final String LIMIT_CPU_USE = "limitcpuuse";    
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
+    public static final String LBID = "lbruleid";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String NAME = "name";
+    public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
@@ -251,6 +253,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY = "snapshotpolicy";
     public static final String SNAPSHOT_RESERVATION = "snapshotreservation";
     public static final String IP_NETWORK_LIST = "iptonetworklist";
+    public static final String PARAM_LIST = "param";
     public static final String REDUNDANT_ROUTER = "redundantrouter";
     public static final String FOR_LOAD_BALANCING = "forloadbalancing";
     public static final String KEYBOARD="keyboard";

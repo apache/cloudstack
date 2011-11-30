@@ -31,6 +31,7 @@ import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.cloud.network.rules.LbStickinessMethod;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -151,6 +152,7 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -1787,7 +1789,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     // Re-apply load balancing rules
                     for (LoadBalancerVO lb : lbs) {
                         List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                        List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
                         lbRules.add(loadBalancing);
                     }
                 }
@@ -2453,7 +2456,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
-            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
+            List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
+            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations, stickinessPolicies);
             lbs[i++] = lb;
         }
         String RouterPublicIp = null;
@@ -2720,7 +2724,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (rules != null && !rules.isEmpty()) {
                     try {
                         if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                            result = result && applyLBRules(router, (List<LoadBalancingRule>)rules);
+                            // for load balancer we have to resend all lb rules for the network
+                            List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
+                            List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                            for (LoadBalancerVO lb : lbs) {
+                                List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                                List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList,policyList);
+                                lbRules.add(loadBalancing);
+                            }
+                            result = result && applyLBRules(router, lbRules);
                         } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
                             result = result && applyPortForwardingRules(router, (List<PortForwardingRule>) rules);
                         } else if (rules.get(0).getPurpose() == Purpose.StaticNat) {

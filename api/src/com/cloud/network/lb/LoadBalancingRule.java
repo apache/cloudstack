@@ -22,14 +22,17 @@ import java.util.List;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.utils.Pair;
 
 public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     private LoadBalancer lb;
     private List<LbDestination> destinations;
+    private List<LbStickinessPolicy> stickinessPolicies;
     
-    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations) { 
+    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies) { 
         this.lb = lb;
         this.destinations = destinations;
+        this.stickinessPolicies = stickinessPolicies;
     }
     
     @Override
@@ -119,11 +122,41 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         return destinations;
     }
     
+    public List<LbStickinessPolicy> getStickinessPolicies() {
+        return stickinessPolicies;
+    }
+    
+    
     public interface Destination {
         String getIpAddress();
         int getDestinationPortStart();
         int getDestinationPortEnd();
         boolean isRevoked();
+    }
+
+    public static class LbStickinessPolicy {
+        private String _methodName;
+        private List<Pair<String, String>> _params;
+        private boolean _revoke;
+
+        public LbStickinessPolicy(String methodName, List<Pair<String, String>> params,
+                boolean revoke) {
+            this._methodName = methodName;
+            this._params = params;
+            this._revoke = revoke;
+        }
+
+        public String getMethodName() {
+            return _methodName;
+        }
+
+        public List<Pair<String, String>> getParams() {
+            return _params;
+        }
+
+        public boolean isRevoked() {
+            return _revoke;
+        }
     }
     
     public static class LbDestination implements Destination {

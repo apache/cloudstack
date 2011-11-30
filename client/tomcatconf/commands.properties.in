@@ -127,7 +127,10 @@ createLoadBalancerRule=com.cloud.api.commands.CreateLoadBalancerRuleCmd;15
 deleteLoadBalancerRule=com.cloud.api.commands.DeleteLoadBalancerRuleCmd;15
 removeFromLoadBalancerRule=com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;15
 assignToLoadBalancerRule=com.cloud.api.commands.AssignToLoadBalancerRuleCmd;15
+createLBStickinessPolicy=com.cloud.api.commands.CreateLBStickinessPolicyCmd;15
+deleteLBStickinessPolicy=com.cloud.api.commands.DeleteLBStickinessPolicyCmd;15
 listLoadBalancerRules=com.cloud.api.commands.ListLoadBalancerRulesCmd;15
+listLBStickinessPolicies=com.cloud.api.commands.ListLBStickinessPoliciesCmd;15
 listLoadBalancerRuleInstances=com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;15
 updateLoadBalancerRule=com.cloud.api.commands.UpdateLoadBalancerRuleCmd;15
 
