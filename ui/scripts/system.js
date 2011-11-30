@@ -748,8 +748,7 @@
                           //args.data.networkofferingid is null when networkofferingid field is hidden
                           if(args.data.networkofferingid != null && args.data.networkofferingid != selectedGuestNetworkObj.networkofferingid)
                             array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //??? 
-                           
-                          //debugger;                           
+                                                                               
                           //args.data.networkdomain is null when networkdomain field is hidden
                           if(args.data.networkdomain != null && args.data.networkdomain != selectedGuestNetworkObj.networkdomain)
                             array1.push("&networkdomain=" + todb(args.data.networkdomain));      
@@ -5629,6 +5628,7 @@
         id: 'hosts',
         listView: {
           section: 'hosts',
+          id: 'hosts',
           fields: {
             name: { label: 'Name' },
             zonename: { label: 'Zone' },
