@@ -42,7 +42,7 @@ public class LBStickinessResponse extends BaseResponse {
     private String accountName;
     
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the load balancer rule")
+    @Param(description = "the domain ID of the Stickiness policy")
     private IdentityProxy domainId = new IdentityProxy("domain");
 
     @SerializedName("domain")
@@ -54,7 +54,7 @@ public class LBStickinessResponse extends BaseResponse {
     private String state;
     
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the id of the zone the rule belongs to")
+    @Param(description = "the id of the zone the Stickiness policy belongs to")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
     @SerializedName("stickinesspolicy")
