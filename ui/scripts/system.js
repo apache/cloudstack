@@ -1054,38 +1054,85 @@
         },
 
         types: {
-          // Virtual router list view
+          // Virtual router provider
           virtualRouter: {
             id: 'virtualRouterProviders',
-            label: 'Virtual Router',
-            fields: {
-              name: { label: 'Name' },
-              ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+            label: 'Virtual Router',                       
+            providerActionFilter: function(args) { 
+              var allowedActions = [];
+              var jsonObj = nspMap["virtualRouter"];              
+              if(jsonObj.state == "Enabled") 
+                allowedActions.push("disable");               
+              else if(jsonObj.state == "Disabled") 
+                allowedActions.push("enable");                            
+              return allowedActions;
             },
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
+            providerActions: {              
+              enable: {
+                label: 'Enable',
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["virtualRouter"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
                     }
-                  ]
-                });
-              }, 500);
-            }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Enabled Netscaler provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'Disable',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {                      
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {                              
+                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                              nspMap["virtualRouter"] = item;
+                              return item; 
+                            }
+                          }
+                        }
+                      );  
+                    }
+                  }); 
+                },
+                messages: {
+                  notification: function() { return 'Disabled Netscaler provider'; }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }              
+            },  
+            fields: {
+              id: { label: 'ID' },
+              name: { label: 'Name' }//,              
+              //state: { label: 'Status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
+            },
+            dataProvider: function(args) {                            
+              args.response.success({data: nspMap["virtualRouter"]});            
+            }            
           },
 
           // NetScaler list view
