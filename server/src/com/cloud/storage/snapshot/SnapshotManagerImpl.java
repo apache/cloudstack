@@ -1406,7 +1406,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), null, snapshotName,
                 (short) snapshotType.ordinal(), snapshotType.name(), volume.getSize(), hypervisorType);
         SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
-
+        if (snapshot == null) {
+            throw new CloudRuntimeException("Failed to create snapshot for volume: "+volumeId);
+        }
         return snapshot;
     }
 
