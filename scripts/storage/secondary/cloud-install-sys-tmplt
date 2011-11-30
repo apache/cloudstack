@@ -54,6 +54,12 @@ then
   failed 2
 fi
 
+if [ ! -d $mntpoint ] 
+then
+  echo "mount point $mntpoint doesn't exist\n"
+  failed 4
+fi
+
 if [[ "$fflag" == "1" && ! -f $tmpltimg ]] 
 then
   echo "template image file $tmpltimg doesn't exist"
@@ -80,16 +86,8 @@ else
    usage
    failed 2
 fi
-   
-
 
 localfile=$(uuidgen).$ext
-
-if [ ! -d $mntpoint ] 
-then
-  echo "mount point $mntpoint doesn't exist\n"
-  failed 4
-fi
 
 mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 
