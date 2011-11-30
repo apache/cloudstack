@@ -258,36 +258,11 @@
                     dataType: "json",
                     success: function(json) {      
                       var jobId = json.updatephysicalnetworkresponse.jobid;				        
-                      var timerKey = "updatePhysicalNetworkJob_"+jobId;																
-                      $("body").everyTime(2000, timerKey, function() {
-                        $.ajax({
-                          url: createURL("queryAsyncJobResult&jobId="+jobId),
-                          dataType: "json",
-                          success: function(json) {										       						   
-                            var result = json.queryasyncjobresultresponse;																	
-                            if (result.jobstatus == 0) {
-                              return; //Job has not completed
-                            } 
-                            else {											    
-                              $("body").stopTime(timerKey);
-                              if (result.jobstatus == 1) {                                                              
-                                var item = json.queryasyncjobresultresponse.jobresult.physicalnetwork;  
-                                args.response.success({data:item});                                
-                              } 
-                              else if (result.jobstatus == 2) {
-                                alert("updatePhysicalNetwork failed. Error: " + fromdb(result.jobresult.errortext));					        							        								   				    
-                              }
-                            }
-                          },
-                          error: function(XMLHttpResponse) {
-                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            alert("updatePhysicalNetwork failed. Error: " + errorMsg); 
-                          }
-                        });
-                      });                      
+                      args.response.success({ _custom: { jobId: jobId }});
                     }
-                  });        
-                }
+                  });
+                },
+                notification: { poll: pollAsyncJobResult }
               }
             },
           

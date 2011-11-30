@@ -26,6 +26,7 @@
         _custom: notification._custom,
         poll: function(args) {
           var complete = args.complete;
+          var notificationError = args.error;
 
           notification.poll({
             _custom: args._custom,
@@ -34,14 +35,10 @@
               complete(args);
             },
             error: function(args) {
-              if (args.message) {
-                if (args.message) {
-                  cloudStack.dialog.notice({ message: args.message });
-                }
+              error($.extend(errorArgs, args));
+              notificationError(args);
 
-                error($.extend(errorArgs, args));
-                complete(args);
-              }
+              return cloudStack.dialog.error;
             }
           });
         }
@@ -337,10 +334,11 @@
             _custom: $detailView.data('_custom'),
             context: $detailView.data('view-args').context,
             response: {
-              success: function() {
+              success: function(args) {
                 var notificationArgs = {
                   section: id,
-                  desc: 'Changed item properties'
+                  desc: 'Changed item properties',
+                  _custom: args._custom
                 };
 
                 if (!action.notification) {
@@ -358,6 +356,10 @@
                       
                       convertInputs($inputs);
                       $loading.remove();
+                    }, [],
+                    function() {
+                      $loading.remove();
+                      $inputs.closest('.detail-view').find('.toolbar .refresh').click();
                     }, []
                   );
                 }
