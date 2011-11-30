@@ -18,6 +18,7 @@
 
 package com.cloud.network.element;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -134,5 +135,10 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean canEnableIndividualServices() {
         return false;
+    }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
     }
 }

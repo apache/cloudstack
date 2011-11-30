@@ -417,4 +417,9 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
             return true;
         }
     }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
+    }
 }

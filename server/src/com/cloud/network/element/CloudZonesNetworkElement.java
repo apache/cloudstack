@@ -33,6 +33,7 @@
 package com.cloud.network.element;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -240,5 +241,10 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
+    }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
     }
 }

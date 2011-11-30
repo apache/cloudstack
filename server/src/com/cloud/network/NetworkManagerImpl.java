@@ -5009,6 +5009,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     protected Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
         Map<String, String> svcProviders = new HashMap<String, String>();
+        Map<String, List<String>> providerSvcs = new HashMap<String, List<String>>();
         List<NetworkOfferingServiceMapVO> servicesMap = _ntwkOfferingSrvcDao.listByNetworkOfferingId(offering.getId());
 
         boolean checkPhysicalNetwork = (physicalNetworkId != null) ? true : false;
@@ -5030,8 +5031,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             svcProviders.put(service, provider);  
+            List<String> l = providerSvcs.get(provider);
+            if (l == null) {
+                providerSvcs.put(provider, l = new ArrayList<String>());
+            }
+            l.add(service);
         }
-
+        
+        for (String provider : providerSvcs.keySet()) {
+            NetworkElement element = getElementImplementingProvider(provider);
+            List<String> services = providerSvcs.get(provider);
+            if (!element.verifyServicesCombination(services)) {
+                throw new UnsupportedServiceException("Provider " + provider + " doesn't support services combination: " + services);
+            }
+        }
+        
         return svcProviders;
     }
 

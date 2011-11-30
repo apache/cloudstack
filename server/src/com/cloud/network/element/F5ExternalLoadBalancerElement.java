@@ -418,4 +418,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         response.setObjectName("f5loadbalancer");
         return response;
     }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
+    }
 }

@@ -21,6 +21,7 @@
  */
 package com.cloud.network.element;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.deploy.DeployDestination;
@@ -129,4 +130,11 @@ public interface NetworkElement extends Adapter {
      * @return true/false
      */
     boolean canEnableIndividualServices();
+    
+    /**
+     * Would return true if the service combination is supported by the provider
+     * @param services
+     * @return true/false
+     */
+    boolean verifyServicesCombination(List<String> services);
 }

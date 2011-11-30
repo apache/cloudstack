@@ -632,4 +632,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
         return sc.list();
     }
+
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
+    }
 }

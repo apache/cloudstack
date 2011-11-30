@@ -20,6 +20,7 @@
 package com.cloud.network.element;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -144,5 +145,10 @@ public class ExternalDhcpElement extends AdapterBase implements NetworkElement, 
             return false;
         }
         return _dhcpMgr.addVirtualMachineIntoNetwork(network, nic, vm, dest, context);
+    }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
     }
 }

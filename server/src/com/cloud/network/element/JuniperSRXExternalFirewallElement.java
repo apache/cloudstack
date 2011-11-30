@@ -500,4 +500,9 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         response.setObjectName("srxfirewall");
         return response;
     }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
+    }
 }

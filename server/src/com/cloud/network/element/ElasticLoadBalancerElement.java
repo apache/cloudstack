@@ -174,4 +174,9 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public boolean canEnableIndividualServices() {
         return false;
     }
+    
+    @Override
+    public boolean verifyServicesCombination(List<String> services) {
+        return true;
+    }
 }
