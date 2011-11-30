@@ -29,7 +29,7 @@ public class OvmHost extends OvmObject {
 	
 	public static void registerAsMaster(Connection c) throws XmlRpcException {
 		Object[] params = {c.getIp(), c.getUserName(), c.getPassword(), c.getPort(), c.getIsSsl()};
-		c.call("OvmHost.registerAsMaster", params);
+		c.call("OvmHost.registerAsMaster", params, false);
 	}
 	
 	public static void registerAsVmServer(Connection c) throws XmlRpcException {

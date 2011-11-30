@@ -62,7 +62,12 @@ public class Connection {
 		return callTimeoutInSec(method, params, 600);
 	}
 	
-	public Object callTimeoutInSec(String method, Object[] params, int timeout) throws XmlRpcException {
+	public Object call(String method, Object[] params, boolean debug) throws XmlRpcException {
+		/* default timeout is 10 mins */
+		return callTimeoutInSec(method, params, 600, debug);
+	}
+	
+	public Object callTimeoutInSec(String method, Object[] params, int timeout, boolean debug) throws XmlRpcException {
 		TimingOutCallback callback = new TimingOutCallback(timeout * 1000);
 		Object[] mParams = new Object[params.length + 1];
 		mParams[0] = method;
@@ -70,7 +75,13 @@ public class Connection {
 			mParams[i+1] = params[i];
 		}
 
-		s_logger.debug("Call Ovm agent: " + Coder.toJson(mParams));
+		if (debug) {
+			/*
+			 * some parameters including user password should not be printed in log
+			 */
+			s_logger.debug("Call Ovm agent: " + Coder.toJson(mParams));
+		}
+		
 		long startTime = System.currentTimeMillis();
 		_client.executeAsync("OvmDispatch", mParams, callback);
 		try {
@@ -84,6 +95,10 @@ public class Connection {
 			float during = (endTime - startTime) / 1000; // in secs
 			s_logger.debug("Ovm call " + method + " finished in " + during + " secs");
 		}
+	}
+	
+	public Object callTimeoutInSec(String method, Object[] params, int timeout) throws XmlRpcException {
+		return callTimeoutInSec(method, params, timeout, true);
 	}
 	
 	public String getIp() {
