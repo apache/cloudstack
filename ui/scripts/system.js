@@ -743,10 +743,12 @@
                           var array1 = [];                          
                           array1.push("&name=" + todb(args.data.name));
                           array1.push("&displaytext=" + todb(args.data.displaytext));
-                          array1.push("&networkdomain=" + args.data.networkdomain);                           
+                          array1.push("&networkdomain=" + args.data.networkdomain);  
+                          
                           //if(selectedGuestNetworkObj.type != "Isolated")
                           if(args.data.networkofferingid != null)
-                            array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //???                     
+                            array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //??? 
+                            
                           $.ajax({
                             url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
                             dataType: "json",
@@ -812,7 +814,7 @@
 										tabs: {
 											details: {
 												title: 'Details',                                                
-                        preFilter: function(args) { //???
+                        preFilter: function(args) { 
                           var hiddenFields = [];                          
                           if(selectedZoneObj.networktype == "Basic") {
                             hiddenFields.push("account");
@@ -853,34 +855,20 @@
                             networkofferingid: { 
                               label: 'Network offering',
                               isEditable: true,
-                              select: function(args){     
-                                var items = [];                              
+                              select: function(args){    
                                 $.ajax({
                                   url: createURL("listNetworkOfferings&networkid=" + selectedGuestNetworkObj.id),  //???                                                                    
                                   dataType: "json",
                                   async: false,
                                   success: function(json) {     
-                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;                                                                          
+                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;  
+                                    var items = [];                                       
                                     $(networkOfferingObjs).each(function() {
                                       items.push({id: this.id, description: this.displaytext});
-                                    });                             
+                                    });  
+                                    args.response.success({data: items});                                        
                                   }
-                                });                                                                
-                                if(items.length == 0) {                                
-                                  $.ajax({                                    
-                                    url: createURL("listNetworkOfferings"),                                    
-                                    dataType: "json",
-                                    async: false,
-                                    success: function(json) {                                                                   
-                                      var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;                                                                          
-                                      $(networkOfferingObjs).each(function() {                                        
-                                        if(this.id == selectedGuestNetworkObj.networkofferingid)
-                                          items.push({id: this.id, description: this.displaytext});
-                                      });                                                                       
-                                    }
-                                  });                                
-                                }                               
-                                args.response.success({data: items});                                  
+                                });                        
                               }
                             },
                             
