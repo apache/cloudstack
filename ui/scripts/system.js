@@ -747,9 +747,9 @@
                                                     
                           if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
                             array1.push("&networkdomain=" + todb(args.data.networkdomain));  
-                          
-                          //if(selectedGuestNetworkObj.type != "Isolated")
-                          if(args.data.networkofferingid != null)
+                                                   
+                          //args.data.networkofferingid is null when networkofferingid field is hidden
+                          if(args.data.networkofferingid != null && args.data.networkofferingid != selectedGuestNetworkObj.networkofferingid)
                             array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //??? 
                             
                           $.ajax({
@@ -858,20 +858,31 @@
                             networkofferingid: { 
                               label: 'Network offering',
                               isEditable: true,
-                              select: function(args){    
+                              select: function(args){                                    
+                                var items = [];    
                                 $.ajax({
                                   url: createURL("listNetworkOfferings&networkid=" + selectedGuestNetworkObj.id),  //???                                                                    
                                   dataType: "json",
                                   async: false,
-                                  success: function(json) {     
-                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;  
-                                    var items = [];                                       
+                                  success: function(json) {                                                                       
+                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;                                                                         
                                     $(networkOfferingObjs).each(function() {
                                       items.push({id: this.id, description: this.displaytext});
-                                    });  
-                                    args.response.success({data: items});                                        
+                                    });                                                                          
                                   }
-                                });                        
+                                });   
+                                $.ajax({
+                                  url: createURL("listNetworkOfferings&id=" + selectedGuestNetworkObj.networkofferingid),  //include currently selected network offeirng to dropdown                                                          
+                                  dataType: "json",
+                                  async: false,
+                                  success: function(json) {                                                                       
+                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;  
+                                    $(networkOfferingObjs).each(function() {
+                                      items.push({id: this.id, description: this.displaytext});
+                                    });                                                                          
+                                  }
+                                });  
+                                args.response.success({data: items});                                    
                               }
                             },
                             
