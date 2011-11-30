@@ -743,8 +743,10 @@
                           var array1 = [];                          
                           array1.push("&name=" + todb(args.data.name));
                           array1.push("&displaytext=" + todb(args.data.displaytext));
-                          array1.push("&networkdomain=" + args.data.networkdomain); 
-                          array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //???                     
+                          array1.push("&networkdomain=" + args.data.networkdomain);                           
+                          //if(selectedGuestNetworkObj.type != "Isolated")
+                          if(args.data.networkofferingid != null)
+                            array1.push("&networkofferingid=" + todb(args.data.networkofferingid));    //???                     
                           $.ajax({
                             url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
                             dataType: "json",
@@ -810,7 +812,7 @@
 										tabs: {
 											details: {
 												title: 'Details',                                                
-                        preFilter: function(args) { 
+                        preFilter: function(args) { //???
                           var hiddenFields = [];                          
                           if(selectedZoneObj.networktype == "Basic") {
                             hiddenFields.push("account");
@@ -818,7 +820,14 @@
                             hiddenFields.push("netmask");
                             hiddenFields.push("startip");
                             hiddenFields.push("endip");                           
-                          }                          
+                          }  
+                          if(selectedGuestNetworkObj.type == "Isolated") {
+                            hiddenFields.push("networkofferingdisplaytext");
+                          }
+                          else {
+                            hiddenFields.push("networkofferingid");
+                          }
+                          
                           return hiddenFields;
                         },                        
 												fields: [
@@ -840,7 +849,7 @@
 														},
                             vlan: { label: 'VLAN ID' },
                             
-                            //networkofferingdisplaytext: { label: 'Network offering' },
+                            networkofferingdisplaytext: { label: 'Network offering name' },
                             networkofferingid: { 
                               label: 'Network offering',
                               isEditable: true,
