@@ -342,6 +342,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         SearchCriteria<DomainVO> sc = sb.create();
 
@@ -366,6 +367,9 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
         if (path != null) {
             sc.setParameters("path", "%" + path + "%");
         }
+        
+        //return only Active domains to the API
+        sc.setParameters("state", Domain.State.Active);
 
         return _domainDao.search(sc, searchFilter);
     }
@@ -398,12 +402,12 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             domainId = null;
         }
 
-        List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path);
+        List<DomainVO> domainList = searchForDomainChildren(searchFilter, domainId, domainName, keyword, path, true);
 
         return domainList;
     }
     
-    private List<DomainVO> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path) {
+    private List<DomainVO> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path, boolean listActiveOnly) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -426,6 +430,10 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager{
             sc.addAnd("path", SearchCriteria.Op.LIKE, path + "%");
         }
          
+        if (listActiveOnly) {
+        	sc.addAnd("state", SearchCriteria.Op.EQ, Domain.State.Active);
+        }
+        
         return _domainDao.search(sc, searchFilter);
     }
 }

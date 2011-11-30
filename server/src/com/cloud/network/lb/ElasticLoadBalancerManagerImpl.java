@@ -677,7 +677,6 @@ public class ElasticLoadBalancerManagerImpl implements
             NetworkVO network = getNetworkToDeployLb(ipId);
             IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
             long networkId = network.getId();
-
             
             LoadBalancer result = null;
             try {

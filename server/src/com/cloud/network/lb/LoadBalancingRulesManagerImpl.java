@@ -586,7 +586,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, caller.getCaller());
         if (result == null){
-            result =  createLoadBalancer(lb, openFirewall);
+            result = createLoadBalancer(lb, openFirewall);
         } 
     	if(result == null){
     		throw new CloudRuntimeException("Failed to create load balancer rule: "+lb.getName());
