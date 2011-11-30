@@ -3335,6 +3335,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (displayText != null) {
             network.setDisplayText(displayText);
         }
+        
+        //network offering and domain suffix can be updated for Isolated networks only in 3.0
+        if ((networkOfferingId != null || domainSuffix != null) && network.getGuestType() != GuestType.Isolated) {
+        	throw new InvalidParameterValueException("NetworkOffering and domain suffix upgrade can be perfomed for Isolated networks only");
+        }
 
         long oldNetworkOfferingId = network.getNetworkOfferingId();
         if (networkOfferingId != null) {
@@ -3342,11 +3347,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
             if (networkOffering == null || networkOffering.isSystemOnly()) {
                 throw new InvalidParameterValueException("Unable to find network offering by id " + networkOfferingId);
-            }
-
-            // Network offering upgrade is allowed for isolated networks only
-            if (network.getGuestType() != GuestType.Isolated) {
-                throw new InvalidParameterValueException("Network offering upgrade is allowed only for networks with guest type " + GuestType.Isolated);
             }
 
             //network offering should be in Enabled state
