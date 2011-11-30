@@ -29,8 +29,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VirtualRouterProviderResponse;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.VirtualRouterProvider;

@@ -374,14 +374,17 @@
   <target name="build-apidocs" description="Generate api documentation" depends="build-all-with-simulator">
       <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
       <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
-      <property name="commands.simulator.file" location="${dist.dir}/client/conf/commands-simulator.properties" />
+  	  <property name="commands.f5.file" location="${dist.dir}/client/conf/f5bigip_commands.properties" />
+      <property name="commands.juniper.file" location="${dist.dir}/client/conf/junipersrx_commands.properties" />
+  	  <property name="commands.netscaler.file" location="${dist.dir}/client/conf/netscalerloadbalancer_commands.properties" />
+  	  <property name="commands.vr.file" location="${dist.dir}/client/conf/virtualrouter_commands.properties" />
   
 	<echo message="build-apidocs" />
     <exec dir="${apidoc.scripts.dir}" executable="bash">
       <arg value="build-apidoc.sh" />
       <arg value="${target.dir}/jar" />
       <arg value="${deps.dir}" />
-      <arg value="-f ${commands.file},${commands.ext.file},${commands.simulator.file}" />
+      <arg value="-f ${commands.file},${commands.ext.file},${commands.f5.file},${commands.juniper.file},${commands.netscaler.file},${commands.vr.file}" />
       <arg value="-d ${dist.dir}" />
     </exec>
     <echo message="Result locates at ${dist.dir}/commands.xml" />

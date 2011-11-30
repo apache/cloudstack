@@ -4,7 +4,7 @@
 #### juniper srx firewall commands
 addExternalFirewall = com.cloud.api.commands.AddExternalFirewallCmd;7
 deleteExternalFirewall = com.cloud.api.commands.DeleteExternalFirewallCmd;7
-listExternalFirewall = com.cloud.api.commands.ListExternalFirewallCmd;7
+listExternalFirewalls = com.cloud.api.commands.ListExternalFirewallsCmd;7
 
 addSrxFirewall = com.cloud.api.commands.AddSrxFirewallCmd;7
 deleteSrcFirewall = com.cloud.api.commands.DeleteSrxFirewallCmd;7

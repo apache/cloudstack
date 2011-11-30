@@ -6,7 +6,7 @@
 #Deprecated commands
 addExternalLoadBalancer = com.cloud.api.commands.AddExternalLoadBalancerCmd;7
 deleteExternalLoadBalancer = com.cloud.api.commands.DeleteExternalLoadBalancerCmd;7
-listExternalLoadBalancer = com.cloud.api.commands.ListExternalLoadBalancerCmd;7
+listExternalLoadBalancers = com.cloud.api.commands.ListExternalLoadBalancersCmd;7
 
 addF5LoadBalancer = com.cloud.api.commands.AddF5LoadBalancerCmd;7
 configureF5LoadBalancer = com.cloud.api.commands.ConfigureF5LoadBalancerCmd;7
