@@ -318,6 +318,7 @@
                   fields: {
 									  name: { label: 'Name' },
 									  vlan: { label: 'VLAN' },
+                    networkofferingdisplaytext: { label: 'Network offering' },
 										isdefault: {  
 										  label: 'Default',
 											converter: cloudStack.converters.toBooleanText
