@@ -77,9 +77,9 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
@@ -97,7 +97,6 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -591,6 +590,10 @@ public class ElasticLoadBalancerManagerImpl implements
     
     @DB
     public PublicIp allocIp(CreateLoadBalancerRuleCmd lb, Account account) throws InsufficientAddressCapacityException {
+    	if (lb.getZoneId() == null) {
+    		throw new InvalidParameterValueException("zoneId is required parameter when LB service provider is " + Network.Provider.ElasticLoadBalancerVm.getName());
+    	}
+    	
         //TODO: this only works in the guest network in Basic zone. Handle the public network case also.
     	List<NetworkVO> networks = _networkDao.listByZoneAndTrafficType(lb.getZoneId(), TrafficType.Guest);
     	if (networks.isEmpty()) { 

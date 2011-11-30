@@ -70,7 +70,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     private Long publicIpId;
     
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="public ip address id from where the network traffic will be load balanced from")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=false, description="zone where the load balancer is going to be created. This parameter is required when LB service provider is ElasticLoadBalancerVm")
     private Long zoneId;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
@@ -113,7 +113,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     	return "firewall_rules";
     }
     
-    public Long getPublicIpId() {
+    public Long getSourceIpAddressId() {
         IpAddress ipAddr = _networkService.getIp(publicIpId);
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
@@ -189,7 +189,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         }
     }
     
-    
     @Override
     public void create() {
         //cidr list parameter is deprecated
@@ -208,12 +207,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         }
     }
 
-  
-
-    public Long getSourceIpAddressId() {
-        return publicIpId;
-    }
-
     public Integer getSourcePortStart() {
         return publicPort.intValue();
     }
@@ -228,7 +221,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     
     public long getAccountId() {  
         if (publicIpId != null)
-            return _networkService.getIp(getPublicIpId()).getAccountId();
+            return _networkService.getIp(getSourceIpAddressId()).getAccountId();
         Account account = UserContext.current().getCaller();
         if ((account == null) ) {
             if ((domainId != null) && (accountName != null)) {
@@ -248,7 +241,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
 
     public long getDomainId() {
         if (publicIpId != null)
-            return _networkService.getIp(getPublicIpId()).getDomainId();
+            return _networkService.getIp(getSourceIpAddressId()).getDomainId();
         if (domainId != null) {
             return domainId;
         }
@@ -266,15 +259,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @Override
     public long getEntityOwnerId() {
        return getAccountId();
-    }
-    
-
-    public Integer getIcmpCode() {
-        return null;
-    }
-    
-    public Integer getIcmpType() {
-        return null;
     }
     
     public String getAccountName() {

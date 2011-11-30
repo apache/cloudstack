@@ -32,12 +32,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.CreateLBStickinessPolicyCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.ListLBStickinessPoliciesCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
-import com.cloud.api.commands.ListLBStickinessPoliciesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.dc.dao.VlanDao;
@@ -55,8 +54,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LBStickinessPolicyVO;
+import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
@@ -65,21 +64,22 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LBStickinessPolicyDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LBStickinessPolicyDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.rules.LbStickinessMethod;
-import com.cloud.network.rules.LbStickinessMethod.LbStickinessMethodParam;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LbStickinessMethod;
+import com.cloud.network.rules.LbStickinessMethod.LbStickinessMethodParam;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainService;
@@ -104,7 +104,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.cloud.network.rules.StickinessPolicy;
 
 @Local(value = { LoadBalancingRulesManager.class, LoadBalancingRulesService.class })
 public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesManager, LoadBalancingRulesService, Manager {
