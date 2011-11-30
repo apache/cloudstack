@@ -1,7 +1,7 @@
 (function($, cloudStack, testData) {
 
   var zoneObjs, podObjs, clusterObjs, domainObjs;
-  var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj;
+  var selectedClusterObj, selectedZoneObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj;
   var publicNetworkObj;
   var naasStatusMap = {};
   var nspMap = {};
@@ -191,7 +191,7 @@
             }
           }
         },
-        'management': { //???
+        'management': { 
           detailView: {
             viewAll: { path: '_zone.pods', label: 'Pods' },
             tabs: {
@@ -768,8 +768,8 @@
                           var array1 = [];                          
                           array1.push("&name=" + todb(args.data.name));
                           array1.push("&displaytext=" + todb(args.data.displaytext));
-                          array1.push("&networkdomain=" + args.data.networkdomain);
-                          //array1.push("&networkofferingid=" + todb(args.data.networkofferingid));                          
+                          array1.push("&networkdomain=" + args.data.networkdomain);                          
+                          array1.push("&networkofferingid=" + todb(args.data.networkofferingid));                         
                           $.ajax({
                             url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
                             dataType: "json",
@@ -864,7 +864,27 @@
 															converter: cloudStack.converters.toBooleanText
 														},
                             vlan: { label: 'VLAN ID' },
-                            networkofferingdisplaytext: { label: 'Network offering' },
+                            
+                            //networkofferingdisplaytext: { label: 'Network offering' },
+                            networkofferingid: { 
+                              label: 'Network offering',
+                              isEditable: true,
+                              select: function(args){                                
+                                $.ajax({
+                                  url: createURL("listNetworkOfferings&networkid=" + selectedGuestNetworkObj.id),                                   
+                                  dataType: "json",
+                                  success: function(json) {                                    
+                                    var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                    var items = [];
+                                    $(networkOfferingObjs).each(function() {
+                                      items.push({id: this.id, description: this.displaytext});
+                                    });                                   
+                                    args.response.success({data: items});                                    
+                                  }
+                                });
+                              }
+                            },
+                            
                             domain: { label: 'Domain' },
                             account: { label: 'Account' },                            
                             gateway: { label: 'Gateway' },
@@ -877,8 +897,9 @@
                             }                                                 
 													}
 												],
-												dataProvider: function(args) {												
-												  args.response.success({data: args.context.networks[0]});
+												dataProvider: function(args) {	
+                          selectedGuestNetworkObj = args.context.networks[0];                        
+												  args.response.success({data: selectedGuestNetworkObj});
 												}
 											},
 										}
