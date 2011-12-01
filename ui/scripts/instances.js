@@ -203,51 +203,14 @@
                     }
                   }
 
-                  if (selectedZoneObj.securitygroupsenabled == false) {  //show network container
-                    //vmWizardShowNetworkContainer($thisPopup);
+                  if (selectedZoneObj.securitygroupsenabled == false) {  //show network container                    
                     step5ContainerType = 'select-network';
                   }
-                  else if (selectedZoneObj.securitygroupsenabled == true) {  // if security group is enabled
-                    var hasDedicatedDirectTaggedDefaultNetwork = false;
-                    $.ajax({
-                      url: createURL("listNetworks&type=Shared&domainid="+g_domainid+"&account="+g_account+"&zoneId="+args.currentData.zoneid),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var items = json.listnetworksresponse.network;
-                        if (items != null && items.length > 0) {
-                          for (var i = 0; i < items.length; i++) {
-                            if(items[i].isshared ==	false && items[i].isdefault == true) { //dedicated, is default one.
-                              var broadcasturi = items[i].broadcasturi;	//e.g. "vlan://53"
-                              if(broadcasturi != null && broadcasturi.length > 0) {
-                                var vlanIdString = broadcasturi.substring(7); //e.g. "53"
-                                if(isNaN(vlanIdString) == false)
-                                  hasDedicatedDirectTaggedDefaultNetwork = true;
-                              }
-                            }
-                          }
-                        }
-                      }
-                    });
-
-                    //hasDedicatedDirectTaggedDefaultNetwork = true; //for testing only, comment it out before checking in!!!!!!!!!!!!
-                    if(hasDedicatedDirectTaggedDefaultNetwork == true) {
-                      if(confirm("Do you wish to launch your instance on your own private dedicated network?")) {
-                        step5ContainerType = 'select-network';
-                      }
-                      else {
-                        if(selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true")
-                          step5ContainerType = 'nothing-to-select';
-                        else
-                          step5ContainerType = 'select-security-group';
-                      }
-                    }
-                    else {
-                      if(selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true")
-                        step5ContainerType = 'nothing-to-select';
-                      else
-                        step5ContainerType = 'select-security-group';
-                    }
+                  else if (selectedZoneObj.securitygroupsenabled == true) {  // if security group is enabled                    
+                    if(selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true")
+                      step5ContainerType = 'nothing-to-select';
+                    else
+                      step5ContainerType = 'select-security-group';                    
                   }
 
                   //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in!!!!!!!!!!!!
