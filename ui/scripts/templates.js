@@ -242,7 +242,7 @@
               },
               createForm: {
                 title: 'Copy template',
-                desc: '',
+                desc: 'Please select a zone for your new template to be stored',
                 fields: {
                   destinationZoneId: {
                     label: 'Destination zone',
@@ -252,13 +252,14 @@
                         dataType: "json",
                         async: true,
                         success: function(json) {
-                          var zoneObjs = json.listzonesresponse.zone;
-                          var items = [];
-                          $(zoneObjs).each(function() {
-                            if(this.id != args.context.templates[0].zoneid)
-                              items.push({id: this.id, description: this.name});
+                          args.response.success({
+                            data: $.map(json.listzonesresponse.zone, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
                           });
-                          args.response.success({data: items});
                         }
                       });
                     }
