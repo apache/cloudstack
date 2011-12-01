@@ -5,7 +5,7 @@
       args.response.success({
         doInstall: false
       });
-      
+
       // $.ajax({
       //   url: createURL('listZones'),
       //   dataType: 'json',
@@ -408,7 +408,7 @@
                                                       else if (result.jobstatus == 2) {
                                                         alert("updateNetworkServiceProvider failed. Error: " + fromdb(result.jobresult.errortext));
                                                       }
-                                                      
+
                                                       args.complete({ data: { zone: zoneObj } });
                                                     }
                                                   },
@@ -642,25 +642,112 @@
       };
 
       var createCluster = function(args) {
-        createHost();
+        $.ajax({
+          url: createURL('addCluster'),
+          data: {
+            clustername: data.cluster.name,
+            podid: args.data.pod.id,
+            zoneid: args.data.zone.id,
+            hypervisor: data.cluster.hypervisor,
+            clustertype: 'CloudManaged'
+          },
+          dataType: 'json',
+          async: true,
+          success: function(data) {
+            createHost({
+              data: $.extend(args.data, {
+                cluster: data.addclusterresponse.cluster[0]
+              })
+            });
+          }
+        });
       };
 
       var createHost = function(args) {
-        createPrimaryStorage();
+        $.ajax({
+          url: createURL('addHost'),
+          data: {
+            clustername: args.data.cluster.name,
+            zoneid: args.data.zone.id,
+            podid: args.data.pod.id,
+            hypervisor: 'XenServer',
+            clustertype: 'CloudManaged',
+            url: 'http://' + data.host.hostname,
+            username: data.host.username,
+            password: data.host.password
+          },
+          dataType: 'json',
+          async: true,
+          success: function(data) {
+            createPrimaryStorage({
+              data: $.extend(args.data, {
+                host: data.addhostresponse.host[0]
+              })
+            });
+          }
+        });
       };
 
       var createPrimaryStorage = function(args) {
-        createSecondaryStorage();
+        $.ajax({
+          url: createURL('createStoragePool'),
+          data: {
+            name: data.primaryStorage.name,
+            clusterid: args.data.cluster.id,
+            zoneid: args.data.zone.id,
+            podid: args.data.pod.id,
+            hypervisor: 'XenServer',
+            clustertype: 'CloudManaged',
+            url: 'nfs://' + data.primaryStorage.server + data.primaryStorage.path
+          },
+          dataType: 'json',
+          async: true,
+          success: function(data) {
+            createSecondaryStorage({
+              data: $.extend(args.data, {
+                host: data.createstoragepoolresponse.storagepool
+              })
+            });
+          }
+        });
       };
 
       var createSecondaryStorage = function(args) {
-        pollSystemVMs();
+        $.ajax({
+          url: createURL('addSecondaryStorage'),
+          data: {
+            clusterid: args.data.cluster.id,
+            zoneid: args.data.zone.id,
+            url: 'nfs://' + data.secondaryStorage.nfsServer + data.secondaryStorage.path
+          },
+          dataType: 'json',
+          async: true,
+          success: function(data) {
+            pollSystemVMs();
+          }
+        });
       };
 
       var pollSystemVMs = function() {
-        setTimeout(function() {
-          complete();
-        }, 5000);
+        var poll = setInterval(function() {
+          $.ajax({
+            url: createURL('listSystemVms'),
+            dataType: 'json',
+            async: true,
+            success: function(data) {
+              var systemVMs = data.listsystemvmsresponse.systemvm;
+
+              if (systemVMs && systemVMs.length > 1) {
+                if (systemVMs.length == $.grep(systemVMs, function(vm) {
+                  return vm.state == 'Running';
+                }).length) {
+                  clearInterval(poll);
+                  complete();
+                }                
+              }
+            }
+          });
+        }, 1000);
       };
 
       createZone();

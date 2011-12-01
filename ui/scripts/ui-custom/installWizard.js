@@ -386,7 +386,7 @@
         stateID: 'guestNetwork',
         tooltipID: 'launchInfo',
         diagram: '.part.zone',
-        nextStepID: 'launchInfo',
+        nextStepID: 'addClusterIntro',
         form: {
           name: { label: 'Name', validation: { required: true } },
           description: { label: 'Description', validation: { required: true } },
@@ -440,7 +440,7 @@
             label: 'Hypervisor',
             select: function(args) {
               args.response.success({ data: [
-                { id: 'xen', description: 'XenServer' }
+                { id: 'XenServer', description: 'XenServer' }
               ]});
             }
           },
