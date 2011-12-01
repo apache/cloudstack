@@ -317,12 +317,9 @@
                   id: 'networks',
                   fields: {
 									  name: { label: 'Name' },
-									  vlan: { label: 'VLAN' },
+									  type: { label: 'Type' },
                     networkofferingdisplaytext: { label: 'Network offering' },
-										isdefault: {  
-										  label: 'Default',
-											converter: cloudStack.converters.toBooleanText
-									  }									
+										account: { label: 'Account' }                    
                   },
                   actions: {									 
 										add: {
@@ -827,6 +824,7 @@
                             hiddenFields.push("startip");
                             hiddenFields.push("endip");                           
                           }  
+                          
                           if(selectedGuestNetworkObj.type == "Isolated") {
                             hiddenFields.push("networkofferingdisplaytext");
                             hiddenFields.push("networkdomaintext");
@@ -834,8 +832,7 @@
                           else {
                             hiddenFields.push("networkofferingid");
                             hiddenFields.push("networkdomain");
-                          }
-                          
+                          }                          
                           return hiddenFields;
                         },                        
 												fields: [
@@ -906,7 +903,12 @@
 												],
 												dataProvider: function(args) {	
                           selectedGuestNetworkObj = args.context.networks[0];  
-                          selectedGuestNetworkObj["networkdomaintext"] = selectedGuestNetworkObj.networkdomain;                       
+                          
+                          selectedGuestNetworkObj["networkdomaintext"] = selectedGuestNetworkObj.networkdomain;   
+                          
+                          if(selectedGuestNetworkObj.vlan == null && selectedGuestNetworkObj.broadcasturi != null)
+                            selectedGuestNetworkObj["vlan"] = selectedGuestNetworkObj.broadcasturi.replace("vlan://", "");
+                          
 												  args.response.success({data: selectedGuestNetworkObj});
 												}
 											},
