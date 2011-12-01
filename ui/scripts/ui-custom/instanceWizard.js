@@ -230,9 +230,13 @@
 
           'service-offering': function($step, formData) {
             var originalValues = function(formData) {
-              $step.find('input[type=radio]').filter(function() {
-                return $(this).val() == formData.serviceofferingid;
-              }).click();
+              if (formData.serviceofferingid) {
+                $step.find('input[type=radio]').filter(function() {
+                  return $(this).val() == formData.serviceofferingid;
+                }).click(); 
+              } else {
+                $step.find('input[type=radio]:first').click();
+              }
             };
 
             return {
