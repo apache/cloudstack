@@ -985,9 +985,9 @@
             label: 'Edit',
             action: function(args) {
               var array1 = [];
-              array1.push("&displayName=" + args.response.data.displayname);
-              array1.push("&group=" + args.response.data.group);
-              array1.push("&ostypeid=" + args.response.data.guestosid);
+              array1.push("&displayName=" + args.data.displayname);
+              array1.push("&group=" + args.data.group);
+              array1.push("&ostypeid=" + args.data.guestosid);
               //array1.push("&haenable=" + haenable);
 
               $.ajax({
