@@ -375,7 +375,7 @@ for example:
             try:
                 output= runCmd(['hostname', '--fqdn'])
             except Exception, e:
-                err = "The host name of this computer does not resolve to an IP address.\nPlease use your operating system's network setup tools to fix this (%s).\n"%e.__str__()
+                err = "The host name of this computer does not resolve to an IP address.\nPlease use your operating system's network setup tools to fix this ('hostname --fqdn' %s).\n"%e.__str__()
                 self.errorAndExit(err)
             self.info(None, True)
         
