@@ -14,6 +14,7 @@ import com.cloud.network.security.LocalSecurityGroupWorkQueue.LocalSecurityGroup
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
 public class SecurityManagerMBeanImpl extends StandardMBean implements SecurityGroupManagerMBean, RuleUpdateLog {
     SecurityGroupManagerImpl2 _sgMgr;

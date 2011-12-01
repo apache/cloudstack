@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2011 Citrix Systems, Inc. All rights reserved
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -17,7 +17,7 @@
  */
 package com.cloud.agent.api;
 
-public class SecurityIngressRuleAnswer extends Answer {
+public class SecurityGroupRuleAnswer extends Answer {
     public static enum FailureReason {
         NONE,
         UNKNOWN,
@@ -29,36 +29,36 @@ public class SecurityIngressRuleAnswer extends Answer {
     FailureReason reason = FailureReason.NONE;
    
     
-    protected SecurityIngressRuleAnswer() {
+    protected SecurityGroupRuleAnswer() {
     }
     
-    public SecurityIngressRuleAnswer(SecurityIngressRulesCmd cmd) {
+    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd) {
     	super(cmd);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
     }
     
-    public SecurityIngressRuleAnswer(SecurityIngressRulesCmd cmd, boolean result, String detail) {
+    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, boolean result, String detail) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
         reason = FailureReason.PROGRAMMING_FAILED;
     }
     
-    public SecurityIngressRuleAnswer(SecurityIngressRulesCmd cmd, boolean result, String detail, FailureReason r) {
+    public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, boolean result, String detail, FailureReason r) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
         reason = r;
     }
 
-	public Long getLogSequenceNumber() {
-		return logSequenceNumber;
-	}
+    public Long getLogSequenceNumber() {
+        return logSequenceNumber;
+    }
 
-	public Long getVmId() {
-		return vmId;
-	}
+    public Long getVmId() {
+        return vmId;
+    }
 
     public FailureReason getReason() {
         return reason;

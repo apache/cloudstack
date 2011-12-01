@@ -201,12 +201,6 @@ ALTER TABLE `cloud`.`firewall_rules` ADD CONSTRAINT `uc_firewall_rules__uuid` UN
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `uc_cluster__uuid` UNIQUE (`uuid`);
 
-ALTER TABLE `cloud`.`security_ingress_rule` ADD COLUMN `uuid` varchar(40); 
-ALTER TABLE `cloud`.`security_ingress_rule` ADD CONSTRAINT `uc_security_ingress_rule__uuid` UNIQUE (`uuid`);
-
-ALTER TABLE `cloud`.`security_egress_rule` ADD COLUMN `uuid` varchar(40); 
-ALTER TABLE `cloud`.`security_egress_rule` ADD CONSTRAINT `uc_security_egress_rule__uuid` UNIQUE (`uuid`);
-
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`network_offerings` ADD CONSTRAINT `uc_network_offerings__uuid` UNIQUE (`uuid`);
 
@@ -285,3 +279,20 @@ ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
 
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `private_netmask`; 
+
+ALTER TABLE `cloud`.`security_ingress_rule` drop foreign key `fk_security_ingress_rule___security_group_id`;
+ALTER TABLE `cloud`.`security_ingress_rule` drop foreign key `fk_security_ingress_rule___allowed_network_id`;
+ALTER TABLE `cloud`.`security_ingress_rule` drop index `i_security_ingress_rule_network_id`;
+ALTER TABLE `cloud`.`security_ingress_rule` drop index `i_security_ingress_rule_allowed_network`;
+
+ALTER TABLE `cloud`.`security_ingress_rule` RENAME TO `security_group_rule`;
+
+ALTER TABLE `cloud`.`security_group_rule` ADD COLUMN `type` varchar(10) default 'ingress' AFTER security_group_id;
+ALTER TABLE `cloud`.`security_group_rule` ADD COLUMN `uuid` varchar(40) AFTER id;
+ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `uc_security_group_rule__uuid` UNIQUE (`uuid`);
+
+ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `fk_security_group_rule___security_group_id` FOREIGN KEY `fk_security_group_rule__security_group_id` (`security_group_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `fk_security_group_rule___allowed_network_id` FOREIGN KEY `fk_security_group_rule__allowed_network_id` (`allowed_network_id`) REFERENCES `security_group` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_network_id`(`security_group_id`);
+ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_allowed_network`(`allowed_network_id`);
+

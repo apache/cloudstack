@@ -103,8 +103,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.security.EgressRule;
-import com.cloud.network.security.IngressRule;
+import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
@@ -209,9 +208,7 @@ public interface ResponseGenerator {
 
     ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
 
-    SecurityGroupResponse createSecurityGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
-
-    SecurityGroupResponse createSecurityGroupResponseFromEgressRule(List<? extends EgressRule> egressRules);
+    SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
