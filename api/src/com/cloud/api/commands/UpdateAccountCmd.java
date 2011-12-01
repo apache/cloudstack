@@ -18,7 +18,6 @@
 package com.cloud.api.commands;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -29,7 +28,6 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.user.Account;
 
@@ -42,11 +40,15 @@ public class UpdateAccountCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="the current account name")
+    @IdentityMapper(entityTableName="account")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id")
+    private Long id;
+    
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the current account name")
     private String accountName;
 
     @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="the ID of the domain where the account exists")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain where the account exists")
     private Long domainId;
 
     @Parameter(name=ApiConstants.NEW_NAME, type=CommandType.STRING, required=true, description="new name for the account")
@@ -62,6 +64,10 @@ public class UpdateAccountCmd extends BaseCmd{
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Long getId() {
+        return id;
+    }
+    
     public String getAccountName() {
         return accountName;
     }
@@ -99,7 +105,11 @@ public class UpdateAccountCmd extends BaseCmd{
     
     @Override
     public long getEntityOwnerId() {
-        Account account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
+        Account account = _entityMgr.findById(Account.class, getId());
+        if (account != null) {
+            return account.getAccountId();
+        }
+        account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
         if (account != null) {
             return account.getAccountId();
         }

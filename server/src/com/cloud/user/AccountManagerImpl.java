@@ -966,12 +966,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public AccountVO enableAccount(String accountName, long domainId) {
+    public AccountVO enableAccount(String accountName, Long domainId, Long accountId) {
         
         // Check if account exists
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        Account account = null;
+        if(accountId != null){
+            account = _accountDao.findById(accountId);
+        }else{
+            account = _accountDao.findActiveAccount(accountName, domainId);
+        }
+        
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException("Unable to find account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
 
         // Don't allow to modify system account
@@ -987,18 +993,24 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (success) {
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to enable account " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException("Unable to enable account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "locking account", async = true)
-    public AccountVO lockAccount(String accountName, Long domainId) {
+    public AccountVO lockAccount(String accountName, Long domainId, Long accountId) {
         Account caller = UserContext.current().getCaller();
         
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        Account account = null;
+        if(accountId != null){
+            account = _accountDao.findById(accountId);
+        }else{
+            account = _accountDao.findActiveAccount(accountName, domainId);
+        }
+        
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find active account with name " + accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException("Unable to find active account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
         
         checkAccess(caller, null, account);
@@ -1011,18 +1023,24 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (lockAccount(account.getId())) {
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to lock account " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException("Unable to lock account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async = true)
-    public AccountVO disableAccount(String accountName, Long domainId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public AccountVO disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
         
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        Account account = null;
+        if(accountId != null){
+            account = _accountDao.findById(accountId);
+        }else{
+            account = _accountDao.findActiveAccount(accountName, domainId);
+        }
+        
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException("Unable to find account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
         
         checkAccess(caller, null, account);
@@ -1030,12 +1048,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (disableAccount(account.getId())) {
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException("Unable to update account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
     }
 
     @Override
     public AccountVO updateAccount(UpdateAccountCmd cmd) {
+        Long accountId = cmd.getId();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String newAccountName = cmd.getNewName();
@@ -1043,12 +1062,17 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Map<String, String>details = cmd.getDetails();
 
         boolean success = false;
-        Account account = _accountDao.findAccount(accountName, domainId);
+        Account account = null;
+        if(accountId != null){
+            account = _accountDao.findById(accountId);
+        }else{
+            account = _accountDao.findAccount(accountName, domainId);
+        }
 
         // Check if account exists
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            s_logger.error("Unable to find account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException("Unable to find account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
 
         // Don't allow to modify system account
@@ -1095,7 +1119,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (success) {
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException("Unable to update account by accountId: "+accountId+" OR by name: "+ accountName + " in domain " + domainId);
         }
     }
 

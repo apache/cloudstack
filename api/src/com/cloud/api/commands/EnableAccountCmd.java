@@ -36,18 +36,25 @@ public class EnableAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName="account")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Account id")
+    private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Enables specified account.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Enables specified account.")
     private String accountName;
 
     @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Enables specified account in this domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Enables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Long getId() {
+        return id;
+    }
+    
     public String getAccountName() {
         return accountName;
     }
@@ -67,7 +74,12 @@ public class EnableAccountCmd extends BaseCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Account account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
+        Account account = _entityMgr.findById(Account.class, getId());
+        if (account != null) {
+            return account.getAccountId();
+        }
+        
+        account = _accountService.getActiveAccountByName(getAccountName(), getDomainId());
         if (account != null) {
             return account.getAccountId();
         }
@@ -77,7 +89,7 @@ public class EnableAccountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        Account result = _accountService.enableAccount(getAccountName(), getDomainId());
+        Account result = _accountService.enableAccount(getAccountName(), getDomainId(), getId());
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

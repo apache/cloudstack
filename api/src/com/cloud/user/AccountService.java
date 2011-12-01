@@ -94,11 +94,12 @@ public interface AccountService {
      * Disables an account by accountName and domainId
      * @param accountName TODO
      * @param domainId TODO
+     * @param accountId
      * @param disabled
      *            account if success
      * @return true if disable was successful, false otherwise
      */
-    Account disableAccount(String accountName, Long domainId) throws ConcurrentOperationException, ResourceUnavailableException;
+    Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * Enables an account by accountId
@@ -106,9 +107,10 @@ public interface AccountService {
      * @param accountName
      *            - the enableAccount command defining the accountId to be deleted.
      * @param domainId TODO
+     * @param accountId
      * @return account object
      */
-    Account enableAccount(String accountName, long domainId);
+    Account enableAccount(String accountName, Long domainId, Long accountId);
 
     /**
      * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP addresses
@@ -117,9 +119,10 @@ public interface AccountService {
      * @param accountName
      *            - the LockAccount command defining the accountId to be locked.
      * @param domainId TODO
+     * @param accountId
      * @return account object
      */
-    Account lockAccount(String accountName, Long domainId);
+    Account lockAccount(String accountName, Long domainId, Long accountId);
 
     /**
      * Updates an account name
