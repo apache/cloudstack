@@ -11,6 +11,11 @@ class cloudManagementConfig(serviceCfgBase):
         self.serviceName = "CloudStack Management Server"
     
     def config(self):
+        def checkHostName():
+           ret = bash("hostname --fqdn")
+           if not ret.isSuccess():
+               raise CloudInternalException("Cannot get hostname, 'hostname --fqdn failed'")
+
         if self.syscfg.env.svrMode == "mycloud":
             cfo = configFileOps("/usr/share/cloud/management/conf/environment.properties", self)
             cfo.addEntry("cloud-stack-components-specification", "components-cloudzones.xml")
@@ -83,6 +88,7 @@ class cloudManagementConfig(serviceCfgBase):
             bash("ln -s /etc/cloud/management/tomcat6-nonssl.conf /etc/cloud/management/tomcat6.conf")
         
         #distro like sl 6.1 needs this folder, or tomcat6 failed to start
+        checkHostName()
         bash("mkdir /var/log/cloud-management/")
 
         try:
