@@ -7122,7 +7122,13 @@
             zonename: { label: 'Zone' }
           },
           
-          dataProvider: function(args) {           
+          dataProvider: function(args) {   
+            var array1 = [];
+            array1.push("&zoneid=" + args.context.zones[0].id);            
+            if("pods" in args.context)
+              array1.push("&podid=" + args.context.pods[0].id);
+            if("clusters" in args.context)
+              array1.push("&clusterid=" + args.context.clusters[0].id);                    
             $.ajax({
               url: createURL("listHosts&type=SecondaryStorage&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
