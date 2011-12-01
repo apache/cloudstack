@@ -384,7 +384,7 @@
         title: 'Add guest network',
         id: 'add-guest-network',
         stateID: 'guestNetwork',
-        tooltipID: 'launchInfo',
+        tooltipID: 'addGuestNetwork',
         diagram: '.part.zone',
         nextStepID: 'addClusterIntro',
         form: {
