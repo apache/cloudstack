@@ -1195,6 +1195,7 @@
 
           actions: {
             createTemplate: {
+              addRow: 'false',
               label: 'Create template',
               messages: {
                 confirm: function(args) {
@@ -1283,6 +1284,7 @@
 
             createVolume: {
               label: 'Create volume',
+              addRow: 'false',
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to create volume?';
@@ -1299,7 +1301,7 @@
               },
               createForm: {
                 title: 'Create volume',
-                desc: '',
+                desc: 'Please name your volume.',
                 fields: {
                   name: { label: 'Name', validation: { required: true }}
                 }
