@@ -216,8 +216,18 @@
                   //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in!!!!!!!!!!!!
                   if(step5ContainerType == 'select-network') {
                     var defaultNetworkArray = [], optionalNetworkArray = [];
+                    var networkData = {
+                      zoneId: args.currentData.zoneid
+                    };
+
+                    if (!(cloudStack.context.projects && cloudStack.context.projects[0])) {
+                      networkData.domainid = g_domainid;
+                      networkData.account = g_account;
+                    }
+                    
                     $.ajax({
-                      url: createURL("listNetworks&domainid="+g_domainid+"&account="+g_account+"&zoneId="+args.currentData.zoneid),
+                      url: createURL('listNetworks'),
+                      data: networkData,
                       dataType: "json",
                       async: false,
                       success: function(json) {
