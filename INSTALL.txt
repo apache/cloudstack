@@ -1,4 +1,4 @@
-This document describes how to set up and configure a single server CloudStack installation so that you can quickly start play around the CloudStack platform. The easiest way is to deploy CloudStack from RPM package, building CloudStack from source is for advanced user. This guide is all about building CloudStack from the source and installing directly from there . This guide is suitable for you if you want to develop the CloudStack.
+This document describes how to set up and configure a single server CloudStack development environment. If you aren't looking for a development environment The easiest way is to deploy CloudStack from RPM package, building CloudStack from source is for developers. This guide is all about building CloudStack from the source and installing directly from there . This guide is suitable for you if you want to develop the CloudStack.
 
 I have tested this procedure on Fedora Core 14 
 
@@ -55,6 +55,6 @@ You can see CloudStack Management Console page via a web browser.  It will show 
 The default credentials are “admin” for user and “password” for password. The domain field should be left blank. A blank
 domain field is defaulted to the ROOT domain.
 
-NOTE : This document is very basic CloudStack installation. If you are very new to CloudStack and want to feel the power of CloudStack very quickly in RPM based distro, this document will guide very clear step to get it done. Since I am new to CloudStack, I doing this documentation by learning from community. I will keet update new information in this guide to make it more valuable resource.
+NOTE : This document is very basic CloudStack development installation. If you are very new to CloudStack and want to feel the power of CloudStack very quickly in RPM based distro, this document will guide very clear step to get it done. Since I am new to CloudStack, I doing this documentation by learning from community. I will keet update new information in this guide to make it more valuable resource.
 
  
