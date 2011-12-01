@@ -276,9 +276,9 @@
                               }
                             }
                           }
-                          if (virtualNetwork == null) { //if there is no isolatedNetwork
+                          if (virtualNetwork == null) { //if there is no isolated network with sourceNat
                             $.ajax({
-                              url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //check networkOffering for isolatedNetwork
+                              url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
                               dataType: "json",
                               async: false,
                               success: function(json) {

@@ -75,7 +75,7 @@
               },
                            
               ipAddresses: {
-                title: 'IP Addresses',
+                title: 'IP Ranges',
                 custom: function(args) {                  
                   return $('<div></div>').multiEdit({
                     context: args.context,
