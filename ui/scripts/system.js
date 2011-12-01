@@ -828,6 +828,10 @@
                           if(selectedGuestNetworkObj.type == "Isolated") {
                             hiddenFields.push("networkofferingdisplaytext");
                             hiddenFields.push("networkdomaintext");
+                            hiddenFields.push("gateway");
+                            hiddenFields.push("netmask");
+                            hiddenFields.push("startip");
+                            hiddenFields.push("endip");
                           }
                           else {
                             hiddenFields.push("networkofferingid");
