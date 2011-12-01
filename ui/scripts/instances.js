@@ -206,14 +206,37 @@
                   if (selectedZoneObj.securitygroupsenabled == false) {  //show network container                    
                     step5ContainerType = 'select-network';
                   }
-                  else if (selectedZoneObj.securitygroupsenabled == true) {  // if security group is enabled                    
-                    if(selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true")
+                  else if (selectedZoneObj.securitygroupsenabled == true) {  // if security group is enabled  
+                    var includingSecurityGroupService = false;
+                    $.ajax({
+                      url: createURL("listNetworks&trafficType=Guest&zoneId=" + selectedZoneObj.id),
+                      dataType: "json",
+                      async: false,
+                      success: function(json) {                        
+                        //basic zone should have only one guest network returned in this API call                        
+                        var items = json.listnetworksresponse.network;
+                        if(items != null && items.length > 0) {
+                          var networkObj = items[0];                          
+                          var serviceObjArray = networkObj.service;
+                          for(var k = 0; k < serviceObjArray.length; k++) {                            
+                            if(serviceObjArray[k].name == "SecurityGroup") {
+                              includingSecurityGroupService = true;
+                              break;
+                            }
+                          }                          
+                        }                        
+                      }
+                    });
+                                       
+                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true") { //???
                       step5ContainerType = 'nothing-to-select';
-                    else
-                      step5ContainerType = 'select-security-group';                    
+                    }
+                    else {
+                      step5ContainerType = 'select-security-group';    
+                    }                      
                   }
 
-                  //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in!!!!!!!!!!!!
+                  //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in
                   if(step5ContainerType == 'select-network') {
                     var defaultNetworkArray = [], optionalNetworkArray = [];
                     var networkData = {
