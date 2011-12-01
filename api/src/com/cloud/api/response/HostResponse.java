@@ -142,13 +142,13 @@ public class HostResponse extends BaseResponse {
     @SerializedName("hosttags") @Param(description="comma-separated list of tags for the host")
     private String hostTags;
 
-    @SerializedName("hasEnoughCapacity") @Param(description="true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
+    @SerializedName("hasenoughcapacity") @Param(description="true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
     private Boolean hasEnoughCapacity;
 
-    @SerializedName("suitableForMigration") @Param(description="true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
+    @SerializedName("suitableformigration") @Param(description="true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
     private Boolean suitableForMigration;
 
-    @SerializedName("resourceState") @Param(description="the resource state of the host")
+    @SerializedName("resourcestate") @Param(description="the resource state of the host")
     private String resourceState;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
