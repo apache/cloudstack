@@ -639,7 +639,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        hostResponse.setAllocationState(host.getResourceState().toString());
+        hostResponse.setResourceState(host.getResourceState().toString());
 
         hostResponse.setObjectName("host");
 

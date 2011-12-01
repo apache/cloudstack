@@ -148,8 +148,8 @@ public class HostResponse extends BaseResponse {
     @SerializedName("suitableForMigration") @Param(description="true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
     private Boolean suitableForMigration;
 
-    @SerializedName("allocationstate") @Param(description="the allocation state of the host")
-    private String allocationState;
+    @SerializedName("resourceState") @Param(description="the resource state of the host")
+    private String resourceState;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION) @Param(description="the hypervisor version")
     private String hypervisorVersion;
@@ -472,12 +472,12 @@ public class HostResponse extends BaseResponse {
         this.suitableForMigration = suitableForMigration;
     }    
 
-    public String getAllocationState() {
-        return allocationState;
+    public String getResourceState() {
+        return resourceState;
     }
 
-    public void setAllocationState(String allocationState) {
-        this.allocationState = allocationState;
+    public void setResourceState(String resourceState) {
+        this.resourceState = resourceState;
     }
 
     public String getCpuWithOverprovisioning() {
