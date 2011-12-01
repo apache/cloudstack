@@ -52,55 +52,67 @@
         });
       },
 
-      'tooltip.addIPRange.guest-gateway': function(args) {
+      'tooltip.addGuestNetwork.name': function(args) {
+        args.response.success({
+          text: 'A name for your network'
+        });
+      },
+
+      'tooltip.addGuestNetwork.description': function(args) {
+        args.response.success({
+          text: 'A description for your network'
+        });
+      },
+
+      'tooltip.addGuestNetwork.guestGateway': function(args) {
         args.response.success({
           text: 'The gateway that the guests should use'
         });
       },
 
-      'tooltip.addIPRange.guest-netmask': function(args) {
+      'tooltip.addGuestNetwork.guestNetmask': function(args) {
         args.response.success({
           text: 'The netmask in use on the subnet that the guests should use'
         });
       },
 
-      'tooltip.addIPRange.guest-ip-range-start': function(args) {
+      'tooltip.addGuestNetwork.guestStartIp': function(args) {
         args.response.success({
           text: 'The range of IP addresses that will be available for allocation to guests in this zone.  If one NIC is used, these IPs should be in the same CIDR as the pod CIDR.'
         });
       },
 
-      'tooltip.addIPRange.guest-ip-range-end': function(args) {
+      'tooltip.addGuestNetwork.guestEndIp': function(args) {
         args.response.success({
           text: 'The range of IP addresses that will be available for allocation to guests in this zone.  If one NIC is used, these IPs should be in the same CIDR as the pod CIDR.'
         });
       },
 
-      'tooltip.addPod.pod-name': function(args) {
+      'tooltip.addPod.name': function(args) {
         args.response.success({
           text: 'A name for the pod'
         });
       },
 
-      'tooltip.addPod.pod-gateway': function(args) {
+      'tooltip.addPod.gateway': function(args) {
         args.response.success({
           text: 'The gateway for the hosts in that pod.'
         });
       },
 
-      'tooltip.addPod.pod-netmask': function(args) {
+      'tooltip.addPod.netmask': function(args) {
         args.response.success({
           text: 'The netmask in use on the subnet the guests will use.'
         });
       },
 
-      'tooltip.addPod.pod-ip-range-start': function(args) {
+      'tooltip.addPod.startip': function(args) {
         args.response.success({
           text: 'This is the IP range in the private network that the CloudStack uses to manage Secondary Storage VMs and Console Proxy VMs. These IP addresses are taken from the same subnet as computing servers.'
         });
       },
 
-      'tooltip.addPod.pod-ip-range-end': function(args) {
+      'tooltip.addPod.endip': function(args) {
         args.response.success({
           text: 'This is the IP range in the private network that the CloudStack uses to manage Secondary Storage VMs and Console Proxy VMs. These IP addresses are taken from the same subnet as computing servers.'
         });

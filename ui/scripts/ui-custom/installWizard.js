@@ -54,6 +54,68 @@
      * Generic page elements
      */
     var elems = {
+      /**
+       * A standard wizard step template
+       * -- relies on createForm for form generation
+       */
+      step: function(args) {
+        var title = args.title;
+        var formData = args.form;
+        var diagram = args.diagram;
+        var id = args.id;
+        var stateID = args.stateID;
+        var tooltipID = args.tooltipID;
+        var nextStepID = args.nextStepID;
+        var form;
+
+        var $container = $('<div></div>').addClass(id);
+        var $form = $('<div>').addClass('setup-form');
+        var $save = elems.nextButton('Continue', { type: 'submit' });
+        var $title = $('<div></div>').addClass('title').html(title);
+
+        // Generate form
+        form = cloudStack.dialog.createForm({
+          noDialog: true,
+          form: {
+            title: title,
+            desc: '',
+            fields: formData
+          },
+          after: function(args) {
+            goTo(nextStepID, stateID, $form);
+          }
+        });
+
+        $form.append(form.$formContainer);
+        $form.find('.form-item').addClass('field');
+        $save.appendTo($form.find('form'));
+
+        // Submit handler
+        $form.find('form').submit(function() {
+          form.completeAction($form);
+
+          return false;
+        });
+
+        // Setup diagram, tooltips
+        showDiagram(diagram);
+
+        // Cleanup
+        $form.find('.message').remove();
+        $form.find('label.error').hide();
+
+        $container.append($form.prepend($title));
+        
+        return function(args) {
+          showTooltip($form, tooltipID);
+
+          return $container;
+        };
+      },
+
+      /**
+       * A form item tooltip
+       */
       tooltip: function(title, content) {
         return $('<div>').addClass('tooltip-info').append(
           $('<div>').addClass('arrow'),
@@ -61,6 +123,10 @@
           $('<div>').addClass('content').append($('<p>').html(content))
         );
       },
+
+      /**
+       * The main header
+       */
       header: function() {
         return $('<div></div>').addClass('header')
           .append(
@@ -70,9 +136,17 @@
             )
         );
       },
+
+      /**
+       * The wizard body (contains form)
+       */
       body: function() {
         return $('<div></div>').addClass('body');
       },
+
+      /**
+       * A standard next button
+       */
       nextButton: function(label, options) {
         var $button = options && !options.type ?
           $('<div>').addClass('button goTo').html(label) :
@@ -115,7 +189,7 @@
         $tooltip.css({
           top: $(this).position().top - 20
         });
-        
+
         var content = getCopy(
           'tooltip.' + sectionID + '.' + $input.attr('name'),
           $tooltip.find('p')
@@ -127,7 +201,7 @@
       });
 
       setTimeout(function() {
-        $formContainer.find('input:first').focus();        
+        $formContainer.find('input:first').focus();
       }, 600);
     };
 
@@ -135,6 +209,38 @@
      * Layout/behavior for each step in wizard
      */
     var steps = {
+      intro: function(args) {
+        var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
+        var $title = $('<div></div>').addClass('title')
+              .html('What is CloudStack&#8482?');
+        var $subtitle = $('<div></div>').addClass('subtitle')
+              .html('Introduction to CloudStack&#8482');
+        var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
+        var $continue = elems.nextButton('Continue with basic installation');
+        var $advanced = elems.nextButton(
+          'I have used Cloudstack before, skip this guide'
+        ).addClass('advanced-installation');
+
+        $continue.click(function() {
+          goTo('changeUser');
+
+          return false;
+        });
+
+        $advanced.click(function() {
+          complete();
+
+          return false;
+        });
+
+        return $intro.append(
+          $title, $subtitle,
+          $copy,
+          $advanced,
+          $continue
+        );
+      },
+
       changeUser: function(args) {
         var $changeUser = $('<div></div>').addClass('step change-user');
         var $form = $('<form></form>').appendTo($changeUser);
@@ -166,7 +272,7 @@
             data: cloudStack.serializeForm($form),
             response: {
               success: function(args) {
-                goTo('intro', 'newUser', $form);
+                goTo('addZoneIntro', 'newUser', $form);
               }
             }
           });
@@ -175,36 +281,6 @@
         });
 
         return $changeUser;
-      },
-
-      intro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-          .html('What is CloudStack&#8482?');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('Introduction to CloudStack&#8482');
-        var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
-        var $continue = elems.nextButton('Continue with basic installation');
-        var $advanced = elems.nextButton('Setup advanced installation').addClass('advanced-installation');
-
-        $continue.click(function() {
-          goTo('addZoneIntro');
-
-          return false;
-        });
-
-        $advanced.click(function() {
-          complete();
-          
-          return false;
-        });
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $advanced,
-          $continue
-        );
       },
 
       /**
@@ -237,74 +313,22 @@
 
       /**
        * Add zone form
-       * @param args
        */
-      addZone: function(args) {
-        var $addZone = $('<div></div>').addClass('add-zone');
-        var $addZoneForm = $('<div>').addClass('setup-form').append(
-          $('#template').find('.multi-wizard.zone-wizard .steps .setup-zone').clone()
-        );
-        var $save = elems.nextButton('Continue', { type: 'submit' });
-        var $title = $('<div></div>').addClass('title').html('Setup Zone');
-
-        $addZoneForm.find('form').validate();
-
-        $save.click(function() {
-          if (!$addZoneForm.find('form').valid()) return false;
-
-          goTo('addIPRange', 'zone', $addZoneForm);
-
-          return false;
-        });
-
-        // Remove unneeded fields
-        $addZoneForm.find('.main-desc, .conditional').remove();
-        $addZoneForm.find('.field:last').remove();
-
-        showDiagram('.part.zone');
-        showTooltip($addZoneForm, 'addZone');
-
-        return $addZone.append(
-          $addZoneForm
-            .prepend($title)
-            .append($save)
-        );
-      },
-
-      /**
-       * Add IP range form
-       * @param args
-       */
-      addIPRange: function(args) {
-        var $addIPRange = $('<div></div>').addClass('add-zone');
-        var $addIPRangeForm = $('<div>').addClass('setup-form').append(
-          $('#template').find('.multi-wizard.zone-wizard .steps .add-ip-range').clone()
-        );
-        var $save = elems.nextButton('Continue', { type: 'submit' });
-        var $title = $('<div></div>').addClass('title').html('Setup IP Range');
-
-        $addIPRangeForm.find('form').validate();
-
-        $save.click(function() {
-          if (!$addIPRangeForm.find('form').valid()) return false;
-
-          goTo('addPodIntro', 'zoneIPRange', $addIPRangeForm);
-
-          return false;
-        });
-
-        showDiagram('.part.zone');
-        showTooltip($addIPRangeForm, 'addIPRange');
-
-        // Remove unneeded fields
-        $addIPRangeForm.find('.main-desc, .conditional').remove();
-
-        return $addIPRange.append(
-          $addIPRangeForm
-            .prepend($title)
-            .append($save)
-        );
-      },
+      addZone: elems.step({
+        title: 'Add zone',
+        id: 'add-zone',
+        stateID: 'zone',
+        tooltipID: 'addZone',
+        diagram: '.part.zone',
+        nextStepID: 'addPodIntro',
+        form: {
+          name: { label: 'Name', validation: { required: true } },
+          dns1: { label: 'DNS 1', validation: { required: true } },
+          dns2: { label: 'DNS 2' },
+          internaldns1: { label: 'Internal DNS 1', validation: { required: true } },
+          internaldns2: { label: 'Internal DNS 2' }
+        }
+      }),
 
       /**
        * Add pod intro text
@@ -338,36 +362,39 @@
        * Add pod form
        * @param args
        */
-      addPod: function(args) {
-        var $addPod = $('<div></div>').addClass('add-pod');
-        var $addPodForm = $('<div>').addClass('setup-form').append(
-          $('#template').find('.multi-wizard.zone-wizard .steps .setup-pod').clone()
-        );
-        var $save = elems.nextButton('Continue', { type: 'submit' });
-        var $title = $('<div></div>').addClass('title').html('Add a Pod');
+      addPod: elems.step({
+        title: 'Add pod',
+        id: 'add-pod',
+        stateID: 'pod',
+        tooltipID: 'addPod',
+        diagram: '.part.zone, .part.pod',
+        nextStepID: 'addGuestNetwork',
+        form: {
+          name: { label: 'Name', validation: { required: true }},
+          gateway: { label: 'Gateway', validation: { required: true }},
+          netmask: { label: 'Netmask', validation: { required: true }},
+          ipRange: { label: 'IP Range', range: ['startip', 'endip'], validation: { required: true }}
+        }
+      }),
 
-        $addPodForm.find('form').validate();
-
-        $save.click(function() {
-          if (!$addPodForm.find('form').valid()) return false;
-
-          goTo('addClusterIntro', 'pod', $addPodForm);
-
-          return false;
-        });
-
-        // Remove unneeded fields
-        $addPodForm.find('.main-desc, .conditional').remove();
-
-        showDiagram('.part.zone, .part.pod');
-        showTooltip($addPodForm, 'addPod');
-
-        return $addPod.append(
-          $addPodForm
-            .prepend($title)
-            .append($save)
-        );
-      },
+      /**
+       * Add guest network form
+       */
+      addGuestNetwork: elems.step({
+        title: 'Add guest network',
+        id: 'add-guest-network',
+        stateID: 'guestNetwork',
+        tooltipID: 'launchInfo',
+        diagram: '.part.zone',
+        nextStepID: 'launchInfo',
+        form: {
+          name: { label: 'Name', validation: { required: true } },
+          description: { label: 'Description', validation: { required: true } },
+          guestGateway: { label: 'Gateway', validation: { required: true } },
+          guestNetmask: { label: 'Netmask', validation: { required: true } },
+          guestIPRange: { label: 'IP Range', range: ['guestStartIp', 'guestEndIp'], validation: { required: true } }
+        }
+      }),
 
       /**
        * Add cluster intro text
@@ -401,46 +428,25 @@
        * Add cluster form
        * @param args
        */
-      addCluster: function(args) {
-        var $addCluster = $('<div></div>').addClass('add-cluster');
-        var addClusterForm = cloudStack.dialog.createForm({
-          context: {
-            zones: [{}]
+      addCluster: elems.step({
+        title: 'Add cluster',
+        id: 'add-cluster',
+        stateID: 'cluster',
+        tooltipID: 'addCluster',
+        nextStepID: 'addHostIntro',
+        diagram: '.part.zone, .part.cluster',
+        form: {
+          hypervisor: {
+            label: 'Hypervisor',
+            select: function(args) {
+              args.response.success({ data: [
+                { id: 'xen', description: 'XenServer' }
+              ]});
+            }
           },
-          noDialog: true,
-          form: cloudStack.sections.system
-            .subsections.clusters.listView
-            .actions.add.createForm,
-          after: function(args) {
-            goTo('addHostIntro', 'cluster', $addClusterForm);
-          }
-        });
-        var $addClusterForm = $('<div>').addClass('setup-form').append(
-          addClusterForm.$formContainer
-        );
-
-        var $save = elems.nextButton('Continue', { type: 'submit' }).appendTo($addClusterForm.find('form'));
-        var $title = $('<div></div>').addClass('title').html('Add a Cluster');
-
-        $addClusterForm.find('form').submit(function() {
-          addClusterForm.completeAction($addClusterForm);
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.cluster');
-        showTooltip($addClusterForm, 'addCluster');
-
-        // Cleanup
-        $addClusterForm.find('.message').remove();
-        $addClusterForm.find('.form-item').addClass('field').find('label.error').hide();
-        $addClusterForm.find('.form-item[rel=podId]').remove();
-
-        return $addCluster.append(
-          $addClusterForm
-            .prepend($title)
-        );
-      },
+          name: { label: 'Name', validation: { required: true }}
+        }
+      }),
 
       /**
        * Add host intro text
@@ -474,67 +480,31 @@
        * Add host form
        * @param args
        */
-      addHost: function(args) {
-        var $addHost = $('<div></div>').addClass('add-host');
-        var addHostForm = cloudStack.dialog.createForm({
-          context: { zones: [{}] },
-          noDialog: true,
-          form: {
-            title: 'Add new host',
-            desc: 'Please fill in the following information to add a new host fro the specified zone configuration.',
-            fields: {
-              hostname: {
-                label: 'Host name',
-                validation: { required: true }
-              },
-
-              username: {
-                label: 'User name',
-                validation: { required: true }
-              },
-
-              password: {
-                label: 'Password',
-                validation: { required: true },
-                isPassword: true
-              },
-              //always appear (begin)
-              hosttags: {
-                label: 'Host tags',
-                validation: { required: false }
-              }
-              //always appear (end)
-            }
+      addHost: elems.step({
+        title: 'Add host',
+        id: 'add-host',
+        stateID: 'host',
+        tooltipID: 'addHost',
+        nextStepID: 'addPrimaryStorageIntro',
+        diagram: '.part.zone, .part.host',
+        form: {
+          hostname: {
+            label: 'Host name',
+            validation: { required: true }
           },
-          after: function(args) {
-            goTo('addPrimaryStorageIntro', 'host', $addHostForm);
+
+          username: {
+            label: 'User name',
+            validation: { required: true }
+          },
+
+          password: {
+            label: 'Password',
+            validation: { required: true },
+            isPassword: true
           }
-        });
-        var $addHostForm = $('<div>').addClass('setup-form').append(
-          addHostForm.$formContainer
-        );
-        var $save = elems.nextButton('Continue', { type: 'submit' }).appendTo($addHostForm.find('form'));
-        var $title = $('<div></div>').addClass('title').html('Add a Host');
-
-        $addHostForm.find('form').submit(function() {
-          addHostForm.completeAction($addHostForm);
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.host');
-        showTooltip($addHostForm, 'addHost');
-
-        // Cleanup
-        $addHostForm.find('.message').remove();
-        $addHostForm.find('.form-item').addClass('field').find('label.error').hide();
-        $addHostForm.find('.form-item[rel=cluster], .form-item[rel=pod]').remove();
-
-        return $addHost.append(
-          $addHostForm
-            .prepend($title)
-        );
-      },
+        }
+      }),
 
       /**
        * Add primary storage intro text
@@ -568,64 +538,35 @@
        * Add primary storage
        * @param args
        */
-      addPrimaryStorage: function(args) {
-        var $addPrimaryStorage = $('<div></div>').addClass('add-primary-storage');
-        var addPrimaryStorageForm = cloudStack.dialog.createForm({
-          noDialog: true,
-          form: {
-            title: 'Add new primary storage',
-            desc: 'Please fill in the following information to add a new primary storage',
-            fields: {
-              name: {
-                label: 'Name',
-                validation: { required: true }
-              },
-
-              server: {
-                label: 'Server',
-                validation: { required: true }
-              },
-
-              path: {
-                label: 'Path',
-                validation: { required: true }
-              },
-
-              storageTags: {
-                label: 'Storage Tags',
-                validation: { required: false }
-              }
-            }
+      addPrimaryStorage: elems.step({
+        title: 'Add primary storage',
+        id: 'add-primary-storage',
+        stateID: 'primaryStorage',
+        tooltipID: 'addPrimaryStorage',
+        nextStepID: 'addSecondaryStorageIntro',
+        diagram: '.part.zone, .part.primaryStorage',
+        form: {
+          name: {
+            label: 'Name',
+            validation: { required: true }
           },
-          after: function(args) {
-            goTo('addSecondaryStorageIntro', 'primaryStorage', $addPrimaryStorageForm);
+
+          server: {
+            label: 'Server',
+            validation: { required: true }
+          },
+
+          path: {
+            label: 'Path',
+            validation: { required: true }
+          },
+
+          storageTags: {
+            label: 'Storage Tags',
+            validation: { required: false }
           }
-        });
-        var $addPrimaryStorageForm = $('<div>').addClass('setup-form').append(
-          addPrimaryStorageForm.$formContainer
-        );
-        var $save = elems.nextButton('Continue', { type: 'submit' }).appendTo($addPrimaryStorageForm.find('form'));
-        var $title = $('<div></div>').addClass('title').html('Add Primary Storage');
-
-        $addPrimaryStorageForm.find('form').submit(function() {
-          addPrimaryStorageForm.completeAction($addPrimaryStorageForm);
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.primaryStorage');
-        showTooltip($addPrimaryStorageForm, 'addPrimaryStorage');
-
-        // Cleanup
-        $addPrimaryStorageForm.find('.message').remove();
-        $addPrimaryStorageForm.find('.form-item').addClass('field').find('label.error').hide();
-        $addPrimaryStorageForm.find('.form-item[rel=clusterId], .form-item[rel=podId]').remove();
-
-        return $addPrimaryStorage.append(
-          $addPrimaryStorageForm
-            .prepend($title)
-        );
-      },
+        }
+      }),
 
       /**
        * Add secondary storage intro text
@@ -659,52 +600,24 @@
        * Add secondary storage
        * @param args
        */
-      addSecondaryStorage: function(args) {
-        var $addSecondaryStorage = $('<div></div>').addClass('add-secondary-storage');
-        var addSecondaryStorageForm = cloudStack.dialog.createForm({
-          noDialog: true,
-          form: {
-            title: 'Add new secondary storage',
-            desc: 'Please fill in the following information to add a new secondary storage',
-            fields: {
-              nfsServer: {
-                label: 'NFS Server',
-                validation: { required: true }
-              },
-              path: {
-                label: 'Path',
-                validation: { required: true }
-              }
-            }
+      addSecondaryStorage: elems.step({
+        title: 'Add secondary storage',
+        id: 'add-secondary-storage',
+        stateID: 'secondaryStorage',
+        tooltipID: 'addSecondaryStorage',
+        nextStepID: 'launchInfo',
+        diagram: '.part.zone, .part.secondaryStorage',
+        form: {
+          nfsServer: {
+            label: 'NFS Server',
+            validation: { required: true }
           },
-          after: function(args) {
-            goTo('launchInfo', 'secondaryStorage', $addSecondaryStorageForm);
+          path: {
+            label: 'Path',
+            validation: { required: true }
           }
-        });
-        var $addSecondaryStorageForm = $('<div>').addClass('setup-form').append(
-          addSecondaryStorageForm.$formContainer
-        );
-        var $save = elems.nextButton('Continue', { type: 'submit' }).appendTo($addSecondaryStorageForm.find('form'));
-        var $title = $('<div></div>').addClass('title').html('Add Secondary Storage');
-
-        $addSecondaryStorageForm.find('form').submit(function() {
-          addSecondaryStorageForm.completeAction($addSecondaryStorageForm);
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.secondaryStorage');
-        showTooltip($addSecondaryStorageForm, 'addSecondaryStorage');
-
-        // Cleanup
-        $addSecondaryStorageForm.find('.message').remove();
-        $addSecondaryStorageForm.find('.form-item').addClass('field').find('label.error').hide();
-
-        return $addSecondaryStorage.append(
-          $addSecondaryStorageForm
-            .prepend($title)
-        );
-      },
+        }
+      }),
 
       /**
        * Pre-launch text
@@ -758,7 +671,8 @@
       }
     };
 
-    var initialStep = steps.changeUser().addClass('step');
+    var initialStep = steps.intro().addClass('step');
+    showDiagram('');
 
     $installWizard.append(
       elems.header(),

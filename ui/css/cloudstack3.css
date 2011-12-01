@@ -633,6 +633,15 @@ body.login {
   margin: 6px 4px 0 0;
 }
 
+.install-wizard .step .setup-form .range-item {
+  width: 142px;
+  float: left;
+}
+
+.install-wizard .step .setup-form .range-item input {
+  width: 131px;
+}
+
 .install-wizard .step .setup-form .multi-range input[type=text] {
   width: 128px;
 }
@@ -4913,14 +4922,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view>ul {
+.tree-view > ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view>ul>li {
+.tree-view > ul > li {
   left: 5px;
 }
 
@@ -4955,7 +4964,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded>.expand {
+.tree-view ul li.expanded > .expand {
   background-position: -631px -228px;
 }
 
@@ -5372,7 +5381,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms>div {
+.recurring-snapshots .schedule .forms > div {
 }
 
 .recurring-snapshots .schedule .forms form {
