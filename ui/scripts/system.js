@@ -3331,7 +3331,23 @@
                   notification: {
                     poll: pollAsyncJobResult
                   }
-                }
+                },
+                                
+                viewConsole: {
+                  label: 'View console',
+                  action: {
+                    externalLink: {
+                      url: function(args) { 
+                        return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;                  
+                      },
+                      title: function(args) {                         
+                        return args.context.routers[0].name + ' console';                  
+                      },
+                      width: 820,
+                      height: 640
+                    }
+                  }
+                }                  
               },              
               tabs: {
                 details: {
