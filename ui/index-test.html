@@ -707,6 +707,7 @@
         <ul>
           <li class="static-nat-enabled">
             <div class="name"><span>Static NAT Enabled</span></div>
+            <div class="vmname"></div>
           </li>
           <li class="firewall">
             <div class="name"><span>Firewall</span></div>

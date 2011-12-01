@@ -5691,6 +5691,35 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 44px;
 }
 
+.network-chart li.static-nat-enabled .vmname {
+  /*+placement:shift 16px 41px;*/
+  position: relative;
+  left: 16px;
+  top: 41px;
+  cursor: pointer;
+  padding: 7px;
+  font-size: 14px;
+  position: absolute;
+  color: #485563;
+  font-weight: bold;
+  /*+text-shadow:0px 1px 1px #000000;*/
+  -moz-text-shadow: 0px 1px 1px #000000;
+  -webkit-text-shadow: 0px 1px 1px #000000;
+  -o-text-shadow: 0px 1px 1px #000000;
+  text-shadow: 0px 1px 1px #000000;
+  background: url(../images/bg-gradients.png) repeat-x 2px -221px;
+  color: #FFFFFF;
+  /*+border-radius:9px;*/
+  -moz-border-radius: 9px;
+  -webkit-border-radius: 9px;
+  -khtml-border-radius: 9px;
+  border-radius: 9px 9px 9px 9px;
+}
+
+.network-chart li.static-nat-enabled .vmname:hover {
+  background-position: 0px -946px;
+}
+
 .network-chart li.static-nat-enabled .name {
   background: url(../images/sprites.png) no-repeat -6px -460px;
 }

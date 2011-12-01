@@ -162,10 +162,13 @@
                       _custom: {
                         jobId: data.associateipaddressresponse.jobid,
                         getUpdatedItem: function(data) {
-                          return data.queryasyncjobresultresponse.jobresult.ipaddress;
+                          var newIP = data.queryasyncjobresultresponse.jobresult.ipaddress;
+                          return $.extend(newIP, {
+                            state: 'Allocated'
+                          });
                         },
-                        getActionFilter: function(args) {
-                          return ['enableStaticNAT', 'destroy'];
+                        getActionFilter: function() {
+                          return actionFilters.ipAddress;
                         }
                       }
                     });
@@ -213,75 +216,6 @@
                 poll: pollAsyncJobResult
               }
             },
-            enableVPN: {
-              label: 'Enable VPN',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('createRemoteAccessVpn'),
-                  data: {
-                    publicipid: args.context.ipAddresses[0].id,
-                    domainid: args.context.ipAddresses[0].domainid
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      _custom: { jobId: data.createremoteaccessvpnresponse.jobid }
-                    });
-                  }
-                });
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Please confirm that you want VPN enabled for this IP address.';
-                },
-                notification: function(args) {
-                  return 'Enabled VPN';
-                },
-                complete: function(args) {
-                  return 'VPN is now enabled for IP ' + args.publicip + '.'
-                    + '<br/>Your IPsec pre-shared key is:<br/>' + args.presharedkey;
-                }
-              },
-              notification: {
-                poll: pollAsyncJobResult
-              }
-            },
-            disableVPN: {
-              label: 'Disable VPN',
-              action: function(args) {
-                $.ajax({
-                  url: createURL('deleteRemoteAccessVpn'),
-                  data: {
-                    publicipid: args.context.ipAddresses[0].id,
-                    domainid: args.context.ipAddresses[0].domainid
-                  },
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    args.response.success({
-                      _custom: {
-                        getUpdatedItem: function(data) {
-
-                        },
-                        jobId: data.deleteremoteaccessvpnresponse.jobid
-                      }
-                    });
-                  }
-                });
-              },
-              messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to disable VPN?';
-                },
-                notification: function(args) {
-                  return 'Disabled VPN';
-                }
-              },
-              notification: {
-                poll: pollAsyncJobResult
-              }
-            },
             enableStaticNAT: {
               label: 'Enable static NAT',
               action: {
@@ -314,7 +248,11 @@
               },
               notification: {
                 poll: function(args) {
-                  args.complete();
+                  args.complete({
+                    data: {
+                      isstaticnat: true
+                    }
+                  });
                 }
               }
             },
@@ -332,10 +270,13 @@
                     args.response.success({
                       _custom: {
                         jobId: data.disablestaticnatresponse.jobid,
+                        getUpdatedItem: function(json) {
+                          return $.extend(args.context.ipAddresses[0], {
+                            isstaticnat: false
+                          });
+                        },
                         getActionFilter: function() {
-                          return function(args) {
-                            return ['enableStaticNAT'];
-                          };
+                          return actionFilters.ipAddresses;
                         }
                       }
                     });
@@ -397,7 +338,6 @@
             }
           },
 
-          //dataProvider: testData.dataProvider.listView('network'),
           dataProvider: function(args) {
             var data = {
               page: args.page,
@@ -435,46 +375,9 @@
                   return;
                 }
 
-                // Get network data
-                $(items).each(function() {
-                  var item = this;
-                  $.ajax({
-                    url: createURL('listNetworks'),
-                    data: {
-                      networkid: this.networkid
-                    },
-                    dataType: 'json',
-                    async: true,
-                    success: function(data) {
-                      // Get VPN data
-                      $.ajax({
-                        url: createURL('listRemoteAccessVpns'),
-                        data: {
-                          publicipid: item.id
-                        },
-                        dataType: 'json',
-                        async: true,
-                        success: function(vpnResponse) {
-                          var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-                          if (isVPNEnabled) {
-                            item.vpnenabled = true;
-                            item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-                          };
-
-                          // Check if data retrieval complete
-                          item.network = data.listnetworksresponse.network[0];
-                          processedItems++;
-
-                          if (processedItems == items.length) {
-                            args.response.success({
-                              actionFilter: actionFilters.ipAddress,
-                              data: items
-                            });
-                          }
-                        }
-                      });
-                    }
-                  });
+                args.response.success({
+                  actionFilter: actionFilters.ipAddress,
+                  data: items
                 });
               }
             });
@@ -484,6 +387,25 @@
           detailView: {
             name: 'IP address detail',
             tabFilter: function(args) {
+              var item = args.context.ipAddresses[0];
+              
+              // Get VPN data
+              $.ajax({
+                url: createURL('listRemoteAccessVpns'),
+                data: {
+                  publicipid: item.id
+                },
+                dataType: 'json',
+                async: false,
+                success: function(vpnResponse) {
+                  var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+                  if (isVPNEnabled) {
+                    item.vpnenabled = true;
+                    item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+                  };
+                }
+              });
+              
               var disabledTabs = [];
               var ipAddress = args.context.ipAddresses[0];
 
@@ -508,7 +430,18 @@
                     async: true,
                     success: function(data) {
                       args.response.success({
-                        _custom: { jobId: data.createremoteaccessvpnresponse.jobid }
+                        _custom: {
+                          getUpdatedItem: function(json) {
+                            return {
+                              vpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
+                              vpnenabled: true
+                            };
+                          },
+                          getActionFilter: function() {
+                            return actionFilters.ipAddress;
+                          },
+                          jobId: data.createremoteaccessvpnresponse.jobid
+                        }
                       });
                     }
                   });
@@ -521,8 +454,8 @@
                     return 'Enabled VPN';
                   },
                   complete: function(args) {
-                    return 'VPN is now enabled for IP ' + args.publicip + '.'
-                      + '<br/>Your IPsec pre-shared key is:<br/>' + args.presharedkey;
+                    return 'VPN is now enabled for IP ' + args.vpn.publicip + '.'
+                      + '<br/>Your IPsec pre-shared key is:<br/>' + args.vpn.presharedkey;
                   }
                 },
                 notification: {
@@ -544,8 +477,11 @@
                       args.response.success({
                         _custom: {
                           getUpdatedItem: function(data) {
-
+                            return {
+                              vpnenabled: false
+                            };
                           },
+                          getActionFilter: function() { return actionFilters.ipAddress; },
                           jobId: data.deleteremoteaccessvpnresponse.jobid
                         }
                       });
@@ -587,16 +523,17 @@
                   })
                 },
                 messages: {
-                  confirm: function(args) {
-                    return 'Are you sure you want to enable static NAT?';
-                  },
                   notification: function(args) {
                     return 'Enabled Static NAT';
                   }
                 },
                 notification: {
                   poll: function(args) {
-                    args.complete();
+                    args.complete({
+                      data: {
+                        isstaticnat: true
+                      }
+                    });
                   }
                 }
               },
@@ -614,6 +551,11 @@
                       args.response.success({
                         _custom: {
                           jobId: data.disablestaticnatresponse.jobid,
+                          getUpdatedItem: function() {
+                            return {
+                              isstaticnat: false
+                            };
+                          },
                           getActionFilter: function() {
                             return function(args) {
                               return ['enableStaticNAT'];
@@ -695,18 +637,49 @@
 
                 //dataProvider: testData.dataProvider.detailView('network')
                 dataProvider: function(args) {
+                  var items = args.context.ipAddresses;
+
+                  // Get network data
                   $.ajax({
                     url: createURL("listPublicIpAddresses&id="+args.id),
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var items = json.listpublicipaddressesresponse.publicipaddress;
-                      if(items != null && items.length > 0) {
-                        args.response.success({
-                          actionFilter: actionFilters.ipAddress,
-                          data: items[0]
-                        });
-                      }
+                      var item = items[0];
+                      $.ajax({
+                        url: createURL('listNetworks'),
+                        data: {
+                          networkid: this.networkid
+                        },
+                        dataType: 'json',
+                        async: true,
+                        success: function(data) {
+                          // Get VPN data
+                          $.ajax({
+                            url: createURL('listRemoteAccessVpns'),
+                            data: {
+                              publicipid: item.id
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(vpnResponse) {
+                              var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+                              if (isVPNEnabled) {
+                                item.vpnenabled = true;
+                                item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+                              };
+
+                              // Check if data retrieval complete
+                              item.network = data.listnetworksresponse.network[0];
+
+                              args.response.success({
+                                actionFilter: actionFilters.ipAddress,
+                                data: item
+                              });
+                            }
+                          });
+                        }
+                      });
                     }
                   });
                 }
@@ -840,6 +813,24 @@
                       });
                     }
                   },
+
+                  vmDataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listVirtualMachines'),
+                      data: {
+                        id: args.context.ipAddresses[0].virtualmachineid
+                      },
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        args.response.success({
+                          data: data.listvirtualmachinesresponse.virtualmachine[0]
+                        });
+                      }
+                    });
+                  },
+
+                  vmDetails: cloudStack.sections.instances.listView.detailView,
 
                   staticNAT: {
                     noSelect: true,
