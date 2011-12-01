@@ -5063,9 +5063,13 @@
             managedstate: { label: 'Managed State' }
           },
          
-          dataProvider: function(args) {           
+          dataProvider: function(args) {  
+            var array1 = [];
+            array1.push("&zoneid=" + args.context.zones[0].id);
+            if("pods" in args.context)
+              array1.push("&podid=" + args.context.pods[0].id);            
             $.ajax({
-              url: createURL("listClusters&zoneid=" + args.context.zones[0].id + "&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listClusters" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
