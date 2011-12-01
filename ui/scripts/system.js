@@ -3880,7 +3880,23 @@
                   notification: {
                     poll: pollAsyncJobResult
                   }
-                }
+                },
+                
+                viewConsole: {
+                  label: 'View console',
+                  action: {
+                    externalLink: {
+                      url: function(args) {    
+                        return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemvms[0].id;                  
+                      },
+                      title: function(args) { 
+                        return args.context.systemvms[0].systemvmtype + ' console';                  
+                      },
+                      width: 820,
+                      height: 640
+                    }
+                  }
+                }  
               },                             
               tabs: {
                 details: {
@@ -8052,6 +8068,7 @@
       allowedActions.push("stop");
       allowedActions.push("restart");
       allowedActions.push("changeService");
+      allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }
@@ -8070,6 +8087,7 @@
       allowedActions.push("stop");
       allowedActions.push("restart");
       allowedActions.push("delete");  //destroy
+      allowedActions.push("viewConsole");
       if (isAdmin())
         allowedActions.push("migrate");
     }

@@ -1328,23 +1328,7 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          },
-                    
-          viewConsole: {
-            label: 'View VM console',
-            action: {
-              externalLink: {
-                url: function(args) {                
-                  return clientConsoleUrl + '?cmd=access&vm=' + args.context.instances[0].id;                  
-                },
-                title: function(args) {                                 
-                  return getVmName(args.context.instances[0].name, args.context.instances[0].displayname) + ' console';                  
-                },
-                width: 820,
-                height: 640
-              }
-            }
-          },         
+          },          
 
           migrate: {
             label: 'Migrate instance',
@@ -1428,7 +1412,23 @@
             notification: {
               poll: pollAsyncJobResult
             }
-          }
+          },          
+          
+          viewConsole: {
+            label: 'View console',
+            action: {
+              externalLink: {
+                url: function(args) {                
+                  return clientConsoleUrl + '?cmd=access&vm=' + args.context.instances[0].id;                  
+                },
+                title: function(args) {                                 
+                  return getVmName(args.context.instances[0].name, args.context.instances[0].displayname) + ' console';                  
+                },
+                width: 820,
+                height: 640
+              }
+            }
+          } 
         },
         tabs: {
           // Details tab
