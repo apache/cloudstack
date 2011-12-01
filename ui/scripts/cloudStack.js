@@ -51,6 +51,7 @@
         g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
         g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
         g_userfullname = $.cookie('userfullname');
+        g_userid = $.cookie('userid');
 
         if($.cookie("timezoneoffset") != null)
           g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
@@ -108,6 +109,7 @@
 
         return userValid ? {
           user: {
+            userid: g_userid,
             username: g_username,
             account: g_account,
             name: g_userfullname,
@@ -155,6 +157,7 @@
             g_sessionKey = encodeURIComponent(loginresponse.sessionkey);
             g_role = loginresponse.type;
             g_username = loginresponse.username;
+            g_userid = loginresponse.userid;
             g_account = loginresponse.account;
             g_domainid = loginresponse.domainid;
             g_timezone = loginresponse.timezone;
@@ -169,6 +172,7 @@
             $.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});
             $.cookie('timezone', g_timezone, { expires: 1});
             $.cookie('userfullname', g_userfullname, { expires: 1 });
+            $.cookie('userid', g_userid, { expires: 1 });
 
             $.ajax({
               url: createURL("listCapabilities"),
