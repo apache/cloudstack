@@ -5096,7 +5096,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if(enabledServices != null && !enabledServices.isEmpty()){
                 if(!element.canEnableIndividualServices()){
                     if(enabledServices.size() != element.getCapabilities().keySet().size()){
-                        throw new InvalidParameterValueException("Cannot enable subset of Services, Please specify the complete list of Services for this Service Provider '" + provider.getName() + "'");
+                    	StringBuilder servicesSet = new StringBuilder();
+                    	for (Service requiredService: element.getCapabilities().keySet()) {
+                    		servicesSet.append(requiredService.getName() + ", ");
+                    	}
+                    	servicesSet.delete(servicesSet.toString().length() -2, servicesSet.toString().length());
+                    	
+                        throw new InvalidParameterValueException("Cannot enable subset of Services, Please specify the complete list of Services: " + servicesSet.toString() + "  for Service Provider " + provider.getName());
                     }
                 }
                 for(Service service : enabledServices){
