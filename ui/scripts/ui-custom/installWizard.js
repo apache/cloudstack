@@ -559,11 +559,6 @@
           path: {
             label: 'Path',
             validation: { required: true }
-          },
-
-          storageTags: {
-            label: 'Storage Tags',
-            validation: { required: false }
           }
         }
       }),

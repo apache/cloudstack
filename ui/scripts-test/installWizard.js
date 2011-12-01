@@ -142,12 +142,6 @@
         });
       },
 
-      'tooltip.addHost.hosttags': function(args) {
-        args.response.success({
-          text: '(Optional) Any labels that you use to categorize hosts for ease of maintenance.'
-        });
-      },
-
       'tooltip.addPrimaryStorage.name': function(args) {
         args.response.success({
           text: 'The name for the storage device.'
@@ -163,12 +157,6 @@
       'tooltip.addPrimaryStorage.path': function(args) {
         args.response.success({
           text: '(for NFS) In NFS this is the exported path from the server. Path (for SharedMountPoint).  With KVM this is the path on each host that is where this primary storage is mounted.  For example, "/mnt/primary".'
-        });
-      },
-
-      'tooltip.addPrimaryStorage.storageTags': function(args) {
-        args.response.success({
-          text: 'A comma-separated list of any desired tags that you use to categorize storage devices.'
         });
       },
 
