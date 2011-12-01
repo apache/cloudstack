@@ -1930,7 +1930,7 @@ div.toolbar div.text-search {
 
 div.toolbar div.text-search div.search-bar {
   float: left;
-  width: 145px;
+  width: 141px;
   height: 20px;
   margin: 5px 0 0 12px;
   background: #FFFFFF;
@@ -2671,6 +2671,7 @@ Dialogs*/
 
 /*** Create form*/
 .ui-dialog div.form-container {
+  width: 100% !important;
   height: 106px;
   text-align: left;
   display: inline-block;
