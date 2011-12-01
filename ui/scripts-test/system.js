@@ -262,7 +262,7 @@
             fields: {
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
             },
             providerActionFilter: testProviderActionFilter,
             providerActions: {
@@ -339,7 +339,7 @@
             fields: {
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
             },
             providerActionFilter: testProviderActionFilter,
             providerActions: {
@@ -476,7 +476,7 @@
             fields: {
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
             },
             providerActionFilter: testProviderActionFilter,
             providerActions: {
@@ -553,7 +553,7 @@
             fields: {
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
             },
             providerActionFilter: testProviderActionFilter,
             providerActions: {
@@ -630,7 +630,7 @@
             fields: {
               name: { label: 'Name' },
               ipaddress: { label: 'IP Address' },
-              state: { label: 'Status' }
+              state: { label: 'Status', indicator: { 'Enabled': 'on' } }
             },
             providerActionFilter: testProviderActionFilter,
             providerActions: {
