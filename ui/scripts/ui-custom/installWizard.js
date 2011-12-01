@@ -181,7 +181,7 @@
     var showTooltip = function($formContainer, sectionID) {
       var $tooltip = elems.tooltip('Hints', '');
 
-      $formContainer.find('input').focus(function() {
+      $formContainer.find('input[type=text]').focus(function() {
         var $input = $(this);
 
         $tooltip.find('p').html('');
@@ -201,7 +201,7 @@
       });
 
       setTimeout(function() {
-        $formContainer.find('input:first').focus();
+        $formContainer.find('input[type=text]:first').focus();
       }, 600);
     };
 
