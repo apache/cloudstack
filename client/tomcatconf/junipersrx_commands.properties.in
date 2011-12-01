@@ -7,7 +7,7 @@ deleteExternalFirewall = com.cloud.api.commands.DeleteExternalFirewallCmd;7
 listExternalFirewalls = com.cloud.api.commands.ListExternalFirewallsCmd;7
 
 addSrxFirewall = com.cloud.api.commands.AddSrxFirewallCmd;7
-deleteSrcFirewall = com.cloud.api.commands.DeleteSrxFirewallCmd;7
+deleteSrxFirewall = com.cloud.api.commands.DeleteSrxFirewallCmd;7
 configureSrxFirewall = com.cloud.api.commands.ConfigureSrxFirewallCmd;7
 listSrxFirewalls = com.cloud.api.commands.ListSrxFirewallsCmd;7
 listSrxFirewallNetworks = com.cloud.api.commands.ListSrxFirewallNetworksCmd;7
