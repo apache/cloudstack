@@ -26,9 +26,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Transient;
-
-import com.cloud.configuration.Resource.ResourceOwnerType;
 
 @Entity
 @Table(name="resource_count")
