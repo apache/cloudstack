@@ -1280,7 +1280,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             
             return getAccount(project.getProjectAccountId());
         }
-        
 
         if (isAdmin(caller.getType()) && accountName != null && domainId != null) {
             Domain domain =  _domainMgr.getDomain(domainId);

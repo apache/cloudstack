@@ -1811,7 +1811,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
         }
         Account owner = null;
-        if (cmd.getAccountName() != null && domainId != null) {
+        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
         } else {
             owner = caller;
