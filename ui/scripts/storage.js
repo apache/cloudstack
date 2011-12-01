@@ -615,6 +615,7 @@
 
             createTemplate: {
               label: 'Create template',
+              addRow: 'false',
               messages: {
                 confirm: function(args) {
                   /*
