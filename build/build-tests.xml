@@ -243,7 +243,29 @@
       </manifest>
     </jar>
   </target>
-
+	
+	<!-- ====================== XMLTEST Python Based testing ================== -->
+	<target name="xmltest-translate" description="Translate an XML test file into Python">
+		<echo message="Translating: ${xmltest}"/>
+		<exec dir="tools/testClient" executable="python">
+			<arg line="translator.py -i ${xmltest}"/>
+		</exec>
+	</target>
+	
+	<target name="xmltest-execute" description="Specify XML test file with -Dxmltest=filename" depends="xmltest-translate">
+		<echo message="Executing: ${xmltest}.py"/>
+		<exec dir="tools/testClient" executable="python">
+			<arg line="${xmltest}.py"/>
+		</exec>
+	</target>
+	
+	<target name="xmltest-hudson" description="Used to run the daily tests using tools/testClient/example.xml as the source of tests">
+		<property name="xmltest" value="example.xml"/>
+		<echo message="Running daily test run with ${xmltest}.py"/>
+		<antcall target="xmltest-execute"/>
+	</target>
+	<!-- ====================== XMLTEST Python Based testing ================== -->
+		
 </project>
 
 
