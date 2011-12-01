@@ -94,13 +94,13 @@
       var $form = $('<form>');
       var $formDesc = $('<div>').addClass('form-desc');
       var $projectName = $('<div>').addClass('field name')
-            .append($('<label>').attr({ for: 'project-name' }).html('Project name'))
+            .append($('<label>').attr('for', 'project-name').html('Project name'))
             .append($('<input>').addClass('required').attr({
               type: 'text',
               name: 'project-name'
             }));
       var $projectDesc = $('<div>').addClass('field desc')
-            .append($('<label>').attr({ for: 'project-desc' }).html('Display text'))
+            .append($('<label>').attr('for', 'project-desc').html('Display text'))
             .append($('<input>').attr({
               type: 'text',
               name: 'project-display-text'
