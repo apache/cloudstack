@@ -2525,6 +2525,24 @@ Dialogs*/
   display: inline-block;
 }
 
+.ui-dialog .ui-widget-content .nothing-to-select {
+  width: 468px;
+  line-height: 21px;
+  text-align: left;
+  font-size: 16px;
+  color: #3D3D3D;
+  padding: 162px 0 0;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+}
+
+.ui-dialog .ui-widget-content .nothing-to-select p {
+  margin: 18px 0 0;
+}
+
 .ui-dialog-buttonset {
   width: 285px;
   margin: 0;
@@ -4922,14 +4940,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view > ul {
+.tree-view>ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view > ul > li {
+.tree-view>ul>li {
   left: 5px;
 }
 
@@ -4964,7 +4982,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded > .expand {
+.tree-view ul li.expanded>.expand {
   background-position: -631px -228px;
 }
 
@@ -5381,7 +5399,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms > div {
+.recurring-snapshots .schedule .forms>div {
 }
 
 .recurring-snapshots .schedule .forms form {
