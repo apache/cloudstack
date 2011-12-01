@@ -328,10 +328,6 @@
                               continue;
                             }
 
-                            if (networks[i].type != 'Direct') {
-                              continue;
-                            }
-
                             if (networks[i].isdefault) {
                               if (virtualNetwork.networkofferingavailability == 'Required') {
                                 continue; //don't display 2nd~Nth radio buttons in required network section when networkofferingavailability == 'Required'
