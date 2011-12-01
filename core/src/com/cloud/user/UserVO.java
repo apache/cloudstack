@@ -52,7 +52,7 @@ public class UserVO implements User, Identity {
     @Column(name = "username")
     private String username = null;
 
-    @Column(name = "password", encryptable=true)
+    @Column(name = "password")
     private String password = null;
 
     @Column(name = "firstname")
@@ -71,7 +71,7 @@ public class UserVO implements User, Identity {
     @Enumerated(value=EnumType.STRING)
     private State state;
 
-    @Column(name = "api_key", encryptable=true)
+    @Column(name = "api_key")
     private String apiKey = null;
 
     @Column(name = "secret_key", encryptable=true)

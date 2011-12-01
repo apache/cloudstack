@@ -134,7 +134,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable encrypt host_details values");
         } catch (UnsupportedEncodingException e) {
-        	throw new CloudRuntimeException("Unable encrypt configuration values");
+        	throw new CloudRuntimeException("Unable encrypt host_details values");
 		} finally {
             try {
                 if (rs != null) {
@@ -170,7 +170,7 @@ public class Upgrade2214to30 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable encrypt vm_instance vnc_password");
         } catch (UnsupportedEncodingException e) {
-        	throw new CloudRuntimeException("Unable encrypt configuration values");
+        	throw new CloudRuntimeException("Unable encrypt vm_instance vnc_password");
 		} finally {
             try {
                 if (rs != null) {
@@ -189,39 +189,25 @@ public class Upgrade2214to30 implements DbUpgrade {
     	PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = conn.prepareStatement("select id, password, api_key, secret_key from user");
+            pstmt = conn.prepareStatement("select id, secret_key from user");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
-                String password = rs.getString(2);
-                String encryptedPassword = DBEncryptionUtil.encrypt(password);
-                String apiKey = rs.getString(3);
-                String encryptedApiKey = DBEncryptionUtil.encrypt(apiKey);
-                String secretKey = rs.getString(4);
+                String secretKey = rs.getString(2);
                 String encryptedSecretKey = DBEncryptionUtil.encrypt(secretKey);
-                pstmt = conn.prepareStatement("update user set password=?, api_key=?, secret_key=? where id=?");
-                if(encryptedPassword == null){
+                pstmt = conn.prepareStatement("update user set secret_key=? where id=?");
+                if(encryptedSecretKey == null){
                 	pstmt.setNull(1, Types.VARCHAR);
                 } else {
-                	pstmt.setBytes(1, encryptedPassword.getBytes("UTF-8"));
+                	pstmt.setBytes(1, encryptedSecretKey.getBytes("UTF-8"));
                 }
-                if(encryptedApiKey == null){
-                	pstmt.setNull(2, Types.VARCHAR);
-                } else {
-                	pstmt.setBytes(2, encryptedApiKey.getBytes("UTF-8"));
-                }
-                if(encryptedSecretKey == null){
-                	pstmt.setNull(3, Types.VARCHAR);
-                } else {
-                	pstmt.setBytes(3, encryptedSecretKey.getBytes("UTF-8"));
-                }
-                pstmt.setLong(4, id);
+                pstmt.setLong(2, id);
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable encrypt user credentials");
+            throw new CloudRuntimeException("Unable encrypt user secret key");
         } catch (UnsupportedEncodingException e) {
-        	throw new CloudRuntimeException("Unable encrypt configuration values");
+        	throw new CloudRuntimeException("Unable encrypt user secret key");
 		} finally {
             try {
                 if (rs != null) {

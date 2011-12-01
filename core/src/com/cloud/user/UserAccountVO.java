@@ -44,7 +44,7 @@ public class UserAccountVO implements UserAccount {
     @Column(name="username")
     private String username = null;
 
-    @Column(name="password", encryptable=true)
+    @Column(name="password")
     private String password = null;
 
     @Column(name="firstname")
@@ -65,7 +65,7 @@ public class UserAccountVO implements UserAccount {
     @Column(name="api_key")
     private String apiKey = null;
 
-    @Column(name="secret_key")
+    @Column(name="secret_key", encryptable=true)
     private String secretKey = null;
 
     @Column(name=GenericDao.CREATED_COLUMN)

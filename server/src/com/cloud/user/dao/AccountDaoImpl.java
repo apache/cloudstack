@@ -112,7 +112,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         try {
             String sql = FIND_USER_ACCOUNT_BY_API_KEY;
             pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setString(1, DBEncryptionUtil.encrypt(apiKey));
+            pstmt.setString(1, apiKey);
             ResultSet rs = pstmt.executeQuery();
             // TODO:  make sure we don't have more than 1 result?  ApiKey had better be unique
             if (rs.next()) {
