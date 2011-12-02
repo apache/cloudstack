@@ -170,23 +170,11 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
         return allocatedOnly;
     }
 
-    public void setAllocatedOnly(Boolean allocatedOnly) {
-        this.allocatedOnly = allocatedOnly;
-    }
-
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
 
-    public void setForVirtualNetwork(Boolean forVirtualNetwork) {
-        this.forVirtualNetwork = forVirtualNetwork;
-    }
-
     public Boolean getForLoadBalancing() {
         return forLoadBalancing;
-    }
-
-    public void setForLoadBalancing(Boolean forLoadBalancing) {
-        this.forLoadBalancing = forLoadBalancing;
     }
 }

@@ -1908,8 +1908,22 @@ public class ManagementServerImpl implements ManagementServer {
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
+        boolean allocatedOnly = false;
         if ((isAllocated != null) && (isAllocated == true)) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
+            allocatedOnly = true;
+        }
+        
+        VlanType vlanType = null;
+        if (forVirtualNetwork != null) {
+            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+        } else {
+            vlanType = VlanType.VirtualNetwork;
+        }
+        
+        //don't show SSVM/CPVM ips
+        if (vlanType == VlanType.VirtualNetwork && (allocatedOnly)) {
+        	sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
@@ -1918,13 +1932,6 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
-
-        VlanType vlanType = null;
-        if (forVirtualNetwork != null) {
-            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        } else {
-            vlanType = VlanType.VirtualNetwork;
         }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
