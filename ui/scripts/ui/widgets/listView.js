@@ -1090,16 +1090,7 @@
       return true;
     });
 
-    // Setup filter events
-    $listView.find('.button.search, select, input[type=text]').bind('click change', function(event) {
-      if ($(event.target).closest('.section-select').size()) return true;
-      if ((event.type == 'click' ||
-           event.type == 'mouseup') &&
-          ($(event.target).is('select') ||
-           $(event.target).is('option') ||
-           $(event.target).is('input')))
-        return true;
-
+    var search = function() {
       loadBody(
         $table,
         listViewData.dataProvider,
@@ -1108,7 +1099,7 @@
         {
           page: 1,
           filterBy: {
-          kind: $listView.find('select[id=filterBy]').val(),
+            kind: $listView.find('select[id=filterBy]').val(),
             search: {
               value: $listView.find('input[type=text]').val(),
               by: 'name'
@@ -1120,6 +1111,23 @@
           context: $listView.data('view-args').context
         }
       );
+    };
+
+    $listView.find('.search-bar input[type=text]').change(function(event) {
+      search();
+    });
+
+    // Setup filter events
+    $listView.find('.button.search, select').bind('change', function(event) {
+      if ($(event.target).closest('.section-select').size()) return true;
+      if ((event.type == 'click' ||
+           event.type == 'mouseup') &&
+          ($(event.target).is('select') ||
+           $(event.target).is('option') ||
+           $(event.target).is('input')))
+        return true;
+
+      search();
 
       return true;
     });
