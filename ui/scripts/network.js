@@ -948,7 +948,7 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
-                              physicalnetworkid: args.context.ipAddresses[0].physicalnetworkid
+                              networkid: args.context.ipAddresses[0].associatednetworkid
                             },
                             dataType: 'json',
                             async: true,
@@ -1111,7 +1111,7 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: {
-                              physicalnetworkid: args.context.ipAddresses[0].physicalnetworkid
+                              networkid: args.context.ipAddresses[0].associatednetworkid
                             },
                             dataType: 'json',
                             async: true,
