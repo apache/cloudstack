@@ -136,7 +136,7 @@
                             args.response.success({
                               data: item,
                               notification: {
-                                label: 'Added IP address',
+                                label: 'IP range is added',
                                 poll: function(args) {
                                   args.complete();
                                 }
