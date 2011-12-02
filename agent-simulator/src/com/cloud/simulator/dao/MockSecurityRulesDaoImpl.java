@@ -1,16 +1,13 @@
 package com.cloud.simulator.dao;
 
 import java.util.List;
-
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.simulator.MockSecurityRulesVO;
-
 import com.cloud.utils.db.GenericDaoBase;
-
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 @Local(value={MockSecurityRulesDao.class})

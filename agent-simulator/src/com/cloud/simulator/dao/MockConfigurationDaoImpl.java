@@ -2,14 +2,11 @@ package com.cloud.simulator.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.Formatter;
-import java.util.List;
 
 import javax.ejb.Local;
 
 import com.cloud.simulator.MockConfigurationVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

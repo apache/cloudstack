@@ -2,9 +2,7 @@ package com.cloud.simulator.dao;
 
 import javax.ejb.Local;
 
-import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockSecStorageVO;
-import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
