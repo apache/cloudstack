@@ -634,50 +634,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        String accountName = cmd.getAccountName();
-        long domainId = cmd.getDomainId();
-        Long zoneId = cmd.getZoneId();
+    public IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         long userId = UserContext.current().getCallerUserId();
 
-        Account ipOwner = _accountMgr.getActiveAccountByName(accountName, domainId);
-        if (ipOwner == null) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
-        }
-
         _accountMgr.checkAccess(caller, null, ipOwner);
-
-        DataCenterVO zone = null;
-        if (zoneId != null) {
-            zone = _dcDao.findById(zoneId);
-            if (zone == null) {
-                throw new InvalidParameterValueException("Can't find zone by id " + zoneId);
-            }
-
-            if (zone.getNetworkType() == NetworkType.Basic) {
-                throw new InvalidParameterValueException("Can't associate ip in basic zone");
-            }
-
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
-                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
-            }
-        }
+        
         long ownerId = ipOwner.getId();
-        Long networkId = cmd.getNetworkId();
-        Network network = null;
-        if (networkId != null) {
-            network = _networksDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Network id is invalid: " + networkId);
-            }
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Network id is invalid: " + networkId);
         }
+        
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
 
         // Check that network belongs to IP owner - skip this check for Basic zone as there is just one guest network, and it
         // belongs to the system
         if (zone.getNetworkType() != NetworkType.Basic && network.getAccountId() != ipOwner.getId()) {
             throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
+        
         VlanType vlanType = VlanType.VirtualNetwork;
         boolean assign = false;
         //For basic zone, if there isn't a public network outside of the guest network, specify the vlan type to be direct attached
@@ -686,9 +662,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 vlanType = VlanType.DirectAttached;
                 assign = true;
             }
-
         }
 
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
+        }
+        
         PublicIp ip = null;
 
         Transaction txn = Transaction.currentTxn();
@@ -726,17 +705,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (!sharedSourceNat) {
                 // First IP address should be source nat when it's being associated with Guest Virtual network
-                List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, true, networkId);
+                List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zone.getId(), true, networkId);
 
                 if (addrs.isEmpty() && network.getGuestType() == Network.GuestType.Isolated) {
                     isSourceNat = true;
                 }
             }
 
-            ip = fetchNewPublicIp(zoneId, null, null, ipOwner, vlanType, network.getId(), isSourceNat, assign, null);
+            ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, network.getId(), isSourceNat, assign, null);
 
             if (ip == null) {
-                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
+                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone.getId());
             }
             UserContext.current().setEventDetails("Ip Id: " + ip.getId());
             Ip ipAddress = ip.getAddress();
