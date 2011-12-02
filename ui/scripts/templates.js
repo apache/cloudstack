@@ -70,7 +70,8 @@
                         success: function(json) {
                           var zoneObjs = json.listzonesresponse.zone;
                           var items = [];
-                          if (isAdmin())
+                          if (isAdmin() && !(cloudStack.context.projects &&
+                                             cloudStack.context.projects[0]))
                             items.push({id: -1, description: "All Zones"});
                           $(zoneObjs).each(function() {
                             items.push({id: this.id, description: this.name});
@@ -775,7 +776,8 @@
                         success: function(json) {
                           var zoneObjs = json.listzonesresponse.zone;
                           var items = [];
-                          if (isAdmin())
+                          if (isAdmin() && !(cloudStack.context.projects &&
+                                              cloudStack.context.projects[0]))
                             items.push({id: -1, description: "All Zones"});
                           $(zoneObjs).each(function() {
                             items.push({id: this.id, description: this.name});
