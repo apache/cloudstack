@@ -46,46 +46,54 @@
         var $chart = $('#template').find('.network-chart.static-nat').clone();
         var $vmName = $chart.find('li.static-nat-enabled .vmname');
         var $browser = $('#browser .container');
-        var vmID = context.ipAddresses[0].virtualmachineid;
-        var vmName = context.ipAddresses[0].virtualmachinename;
-        var vmDetails = args.vmDetails;
         var vmDataProvider = args.vmDataProvider;
+        var vmDetails = args.vmDetails;
+
+        args.staticNATDataProvider({
+          context: context,
+          response: {
+            success: function(args) {
+              var vmID = args.data.virtualmachineid;
+              var vmName = args.data.virtualmachinename;
+
+              $vmName.append(
+                $('<span>').html('VM: ' + vmName)
+              );
+
+              $vmName.click(function() {
+                $browser.cloudBrowser('addPanel', {
+                  title: 'Static NAT VM Details',
+                  complete: function($newPanel) {
+                    vmDataProvider({
+                      context: context,
+                      response: {
+                        success: function(args) {
+                          var instance = args.data;
+                          var detailViewArgs = $.extend(true, {}, vmDetails, {
+                            $browser: $browser,
+                            context: $.extend(true, {}, context, {
+                              instances: [instance]
+                            }),
+                            jsonObj: instance,
+                            id: instance.id
+                          });
+
+                          // No actions available
+                          detailViewArgs.actions = {};
+
+                          $newPanel.detailView(detailViewArgs);
+                        }
+                      }
+                    });
+                  }
+                });
+              });
+            }
+          }
+        });
 
         $chart.find('li.firewall .view-details').click(function() {
           makeMultiEditPanel($(this), { title: 'NAT Port Range'});
-        });
-
-        $vmName.append(
-          $('<span>').html('VM: ' + vmName)
-        );
-
-        $vmName.click(function() {
-          $browser.cloudBrowser('addPanel', {
-            title: 'Static NAT VM Details',
-            complete: function($newPanel) {
-              vmDataProvider({
-                context: context,
-                response: {
-                  success: function(args) {
-                    var instance = args.data;
-                    var detailViewArgs = $.extend(true, {}, vmDetails, {
-                      $browser: $browser,
-                      context: $.extend(true, {}, context, {
-                        instances: [instance]
-                      }),
-                      jsonObj: instance,
-                      id: instance.id
-                    });
-
-                    // No actions available
-                    detailViewArgs.actions = {};
-
-                    $newPanel.detailView(detailViewArgs);
-                  }
-                }
-              });
-            }
-          });
         });
 
         return $chart;

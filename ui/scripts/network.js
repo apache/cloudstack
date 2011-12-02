@@ -814,6 +814,24 @@
                     }
                   },
 
+                  staticNATDataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listPublicIpAddresses'),
+                      data: {
+                        id: args.context.ipAddresses[0].id
+                      },
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        var ipAddress = data.listpublicipaddressesresponse.publicipaddress[0];
+
+                        args.response.success({
+                          data: ipAddress
+                        });
+                      }
+                    });
+                  },
+
                   vmDataProvider: function(args) {
                     $.ajax({
                       url: createURL('listVirtualMachines'),
