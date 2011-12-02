@@ -256,9 +256,9 @@
                       success: function(json) {
                         var networks = json.listnetworksresponse.network;
 
-                        //***** Setup Virtual Network (begin) *****
-                        //virtualNetwork is first radio button in required network section. Show virtualNetwork when its networkofferingavailability is 'Required' or'Optional'
-                        var virtualNetwork = null;
+                        //***** check if there is an isolated network with sourceNAT (begin) *****
+                        //isolatedSourcenatNetwork is first radio button in default network section. Show isolatedSourcenatNetwork when its networkofferingavailability is 'Required' or'Optional'
+                        var isolatedSourcenatNetwork = null;
                         if(selectedZoneObj.securitygroupsenabled == false) {
                           if (networks != null && networks.length > 0) {
                             for (var i = 0; i < networks.length; i++) {
@@ -266,13 +266,13 @@
                                 //loop through
                                 var sourceNatObj = ipFindNetworkServiceByName("SourceNat", networks[i]);
                                 if(sourceNatObj != null) {
-                                  virtualNetwork = networks[i];
+                                  isolatedSourcenatNetwork = networks[i];
                                   break;
                                 }  
                               }
                             }
                           }
-                          if (virtualNetwork == null) { //if there is no isolated network with sourceNat
+                          if (isolatedSourcenatNetwork == null) { //if there is no isolated network with sourceNat, create one.
                             $.ajax({
                               url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
                               dataType: "json",
@@ -292,8 +292,8 @@
                                            dataType: "json",
                                            async: false,
                                            success: function(json) {
-                                             virtualNetwork = json.createnetworkresponse.network;
-                                             defaultNetworkArray.push(virtualNetwork);
+                                             isolatedSourcenatNetwork = json.createnetworkresponse.network;
+                                             defaultNetworkArray.push(isolatedSourcenatNetwork);
                                            }
                                          });
                                        }
@@ -301,32 +301,24 @@
                                 }
                               }
                             });
-                          }
-                          else { //virtualNetwork != null (there is already a virtualNetwork)
-                            if (virtualNetwork.networkofferingavailability == 'Required' || virtualNetwork.networkofferingavailability == 'Optional') {
-                              defaultNetworkArray.push(virtualNetwork);
-                            }
-                            else { //virtualNetwork.networkofferingavailability == 'Unavailable'
-                              //do not show virtualNetwork
-                            }
-                          }
+                          }                          
                         }
-                        //***** Setup Virtual Network (end) *****
+                        //***** check if there is an isolated network with sourceNAT (end) *****
 
 
-                        //***** Setup Direct Networks (begin) *****
-                        //direct networks whose isdefault==true is 2nd~Nth radio buttons in required network section
-                        //direct networks whose isdefault==false is a bunch of checkboxes in optional network section
+                        //***** populate all networks (begin) **********************************
+                        //default networks are in default network section 
+                        //non-default networks are in additional network section 
                         if (networks != null && networks.length > 0) {
                           for (var i = 0; i < networks.length; i++) {
                             //if selectedZoneObj.securitygroupsenabled is true and users still choose to select network instead of security group (from dialog), then UI won't show networks whose securitygroupenabled is true.
-                            if(selectedZoneObj.securitygroupsenabled == true && networks[i].securitygroupenabled == true) {
-                              continue;
-                            }
+                            //if(selectedZoneObj.securitygroupsenabled == true && networks[i].securitygroupenabled == true) {
+                            //  continue;
+                            //}
 
                             if (networks[i].isdefault) {
-                              if (virtualNetwork.networkofferingavailability == 'Required') {
-                                continue; //don't display 2nd~Nth radio buttons in required network section when networkofferingavailability == 'Required'
+                              if (isolatedSourcenatNetwork.networkofferingavailability == 'Required') {
+                                continue; //don't display 2nd~Nth radio buttons in default network section when isolatedSourcenatNetwork.networkofferingavailability == 'Required'
                               }
                               defaultNetworkArray.push(networks[i]);
                             }
@@ -335,7 +327,7 @@
                             }
                           }
                         }
-                        //***** Setup Direct Networks (end) *****
+                        //***** populate all networks (end) ************************************
                       }
                     });
                     args.response.success({
