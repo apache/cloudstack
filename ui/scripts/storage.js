@@ -445,6 +445,7 @@
             },
 
             attachDisk: {
+              
               label: 'Attach Disk',
               messages: {
                 confirm: function(args) {
@@ -816,6 +817,7 @@
               },
 
               attachDisk: {
+                addRow: 'false',
                 label: 'Attach Disk',
                 messages: {
                   confirm: function(args) {
