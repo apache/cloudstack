@@ -145,6 +145,9 @@ public class NetworkVO implements Network, Identity {
     @Enumerated(value=EnumType.STRING)
     ControlledEntity.ACLType aclType;
 
+    @Column(name="specified_cidr")
+    boolean specifiedCidr;
+    
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -221,6 +224,7 @@ public class NetworkVO implements Network, Identity {
         this.networkDomain = networkDomain;
     	this.uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
+        this.specifiedCidr = false;
     }
 
     @Override
@@ -469,5 +473,13 @@ public class NetworkVO implements Network, Identity {
 	public ControlledEntity.ACLType getAclType() {
 		return aclType;
 	}
+
+    public boolean isSpecifiedCidr() {
+        return specifiedCidr;
+    }
+
+    public void setSpecifiedCidr(boolean specifiedCidr) {
+        this.specifiedCidr = specifiedCidr;
+    }
 
 }
