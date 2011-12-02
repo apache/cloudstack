@@ -1115,7 +1115,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled virtual router'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -1143,7 +1143,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled virtual router'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
@@ -1201,7 +1201,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -1229,7 +1229,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -1256,7 +1256,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Shutdown Netscaler provider'; }
+                  notification: function() { return 'Provider is shutdown'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
@@ -1496,7 +1496,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled F5 provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -1524,7 +1524,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled F5 provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },             
@@ -1551,7 +1551,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Shutdown F5 provider'; }
+                  notification: function() { return 'Provider is shutdown'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }    
@@ -1789,7 +1789,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled SRX provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -1817,7 +1817,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled SRX provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },              
@@ -1844,7 +1844,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Shutdown SRX provider'; }
+                  notification: function() { return 'Provider is shutdown'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }   
@@ -2079,7 +2079,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Security Groups'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
@@ -2107,7 +2107,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Security Groups'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
