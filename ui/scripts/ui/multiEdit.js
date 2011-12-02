@@ -158,6 +158,8 @@
                               if (isDestroy) {
                                 $loading.remove();
                                 $dataItem.remove();
+                              } else {
+                                $(window).trigger('cloudStack.fullRefresh');
                               }
 
                               complete();
@@ -173,8 +175,6 @@
                         }
                       });
                     }
-
-                    $(window).trigger('cloudStack.fullRefresh');
                   },
                   error: cloudStack.dialog.error
                 }
@@ -524,8 +524,6 @@
                   }
                 });
               }
-
-              $(window).trigger('cloudStack.fullRefresh');
             },
 
             error: cloudStack.dialog.error(function() {
@@ -587,11 +585,11 @@
     });
 
     var getData = function() {
-      $multi.find('.data-item').remove();
       dataProvider({
         context: context,
         response: {
           success: function(args) {
+            $multi.find('.data-item').remove();
             $(args.data).each(function() {
               var data = this;
               var itemData = this._itemData;
