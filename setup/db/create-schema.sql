@@ -908,7 +908,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `checksum` varchar(255) COMMENT 'checksum for the template root disk',
   `display_text` varchar(4096) NULL COMMENT 'Description text set by the admin for display purpose only',
   `enable_password` int(1) unsigned NOT NULL default 1 COMMENT 'true if this template supports password reset',
-  `enable_sshkey` int(1) unsigned NOT NULL default 1 COMMENT 'true if this template supports sshkey reset',
+  `enable_sshkey` int(1) unsigned NOT NULL default 0 COMMENT 'true if this template supports sshkey reset',
   `guest_os_id` bigint unsigned NOT NULL COMMENT 'the OS of the template',
   `bootable` int(1) unsigned NOT NULL default 1 COMMENT 'true if this template represents a bootable ISO',
   `prepopulate` int(1) unsigned NOT NULL default 0 COMMENT 'prepopulate this template to primary storage',
