@@ -171,7 +171,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c) {
+    public List<UserVmVO> searchForUserVMs(Criteria c, boolean skipProjectVms) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -316,7 +316,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd) {
+    public List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd, boolean skipProjectVms) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -70,6 +70,9 @@ public class EventVO implements Event, Identity {
 
 	@Column(name="account_name", table="account", insertable=false, updatable=false)
 	private String accountName;
+	
+	@Column(name="type", table="account", insertable=false, updatable=false)
+	private String accountType;
 
 	@Column(name="removed", table="account", insertable=false, updatable=false)
 	private Date removed;
@@ -148,16 +151,12 @@ public class EventVO implements Event, Identity {
     public long getDomainId() {
         return domainId;
     }
-    public void setDomainId(long domainId) {
-    	this.domainId = domainId;
-    }
+
 	@Override
     public String getAccountName() {
 		return accountName;
 	}
-	public void setAccountName(String accountName) {
-		this.accountName = accountName;
-	}
+	
 	@Override
     public int getTotalSize() {
 		return totalSize;
@@ -197,4 +196,10 @@ public class EventVO implements Event, Identity {
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
+
+	@Override
+	public String getAccountType() {
+		return accountType;
+	}
+
 }
