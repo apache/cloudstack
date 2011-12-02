@@ -135,7 +135,6 @@ table tbody tr {
   border-left: 1px solid #C4C5C5;
   border-right: 1px solid #C4C5C5;
   border-top: 1px solid transparent;
-  cursor: pointer;
 }
 
 table tbody tr.even {
@@ -1008,6 +1007,14 @@ div.panel div.list-view div.fixed-header table {
 
 div.list-view td.state {
   width: 129px;
+}
+
+div.list-view td.first {
+  cursor: pointer;
+}
+
+div.list-view td.first:hover {
+  color: #3A82CD;
 }
 
 div.list-view td.state span {

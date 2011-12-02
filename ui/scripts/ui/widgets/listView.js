@@ -723,6 +723,8 @@
         }
       });
 
+      $tr.find('td:first').addClass('first');
+
       // Add reorder actions
       if (reorder) {
         $('<td>').addClass('actions reorder').appendTo($tr).append(function() {
