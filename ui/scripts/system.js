@@ -1092,7 +1092,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
@@ -1115,12 +1115,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Enabled virtual router'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Disabled"),
@@ -1143,7 +1143,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Disabled virtual router'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
@@ -1178,7 +1178,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Enabled"),
@@ -1206,7 +1206,7 @@
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Disabled"),
@@ -1234,7 +1234,7 @@
                 notification: { poll: pollAsyncJobResult }
               },
               shutdown: {
-                label: 'Shutdown',
+                label: 'Shutdown provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["netscaler"].id),
@@ -1473,7 +1473,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Enabled"), 
@@ -1501,7 +1501,7 @@
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Disabled"),
@@ -1529,7 +1529,7 @@
                 notification: { poll: pollAsyncJobResult }
               },             
               shutdown: {
-                label: 'Shutdown',
+                label: 'Shutdown provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["f5"].id),
@@ -1766,7 +1766,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Enabled"), 
@@ -1794,7 +1794,7 @@
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Disabled"),
@@ -1822,7 +1822,7 @@
                 notification: { poll: pollAsyncJobResult }
               },              
               shutdown: {
-                label: 'Shutdown',
+                label: 'Shutdown provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["srx"].id),
@@ -2056,7 +2056,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Enabled"),
@@ -2079,12 +2079,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Enabled Security Groups'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Disabled"),
@@ -2107,7 +2107,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Disabled Security Groups'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
