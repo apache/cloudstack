@@ -52,7 +52,7 @@
     var $row = $detailView.data('list-view-row');
 
     if (!$row) return;
-    
+
     var $listView = $row.closest('.list-view');
     var $newRow;
     var jsonObj = $row.data('json-obj');
@@ -62,7 +62,7 @@
       data: $.extend(jsonObj, newData),
       after: function($newRow) {
         $detailView.data('list-view-row', $newRow);
-        
+
         setTimeout(function() {
           $('.data-table').dataTable('selectRow', $newRow.index());
         }, 100);
@@ -100,7 +100,7 @@
         var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
         $detailView.tabs('destroy');
         $detailView.data('view-args').jsonObj = newData;
-        
+
         makeTabs(
           $detailView,
           $detailView.data('view-args').tabs,
@@ -288,12 +288,10 @@
       var $inputs = $detailView.find('input[type=text], select');
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
-      var $editButton = $('<div>').addClass('button done').html('Apply')
-            .hide()
+      var $editButton = $('<div>').addClass('button done').html('Apply').hide()
             .appendTo(
-              $detailView.find('.ui-tabs-panel:visible')
-            )
-            .fadeIn('fast');
+              $detailView.find('.ui-tabs-panel .detail-group.actions')              
+            ).fadeIn();
 
       var convertInputs = function($inputs) {
         // Save and turn back into labels
@@ -353,7 +351,7 @@
                     $.extend(true, {}, action.notification, notificationArgs),
                     function(args) {
                       replaceListViewItem($detailView, data);
-                      
+
                       convertInputs($inputs);
                       $loading.remove();
                     }, [],
@@ -807,7 +805,7 @@
         options.newData
       );
     }
-    
+
     if (tabFilter) {
       removedTabs = tabFilter({
         context: context
