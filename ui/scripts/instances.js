@@ -257,7 +257,6 @@
                         var networks = json.listnetworksresponse.network;
 
                         //***** check if there is an isolated network with sourceNAT (begin) *****
-                        //isolatedSourcenatNetwork is first radio button in default network section. Show isolatedSourcenatNetwork when its networkofferingavailability is 'Required' or'Optional'
                         var isolatedSourcenatNetwork = null;
                         if(selectedZoneObj.securitygroupsenabled == false) {
                           if (networks != null && networks.length > 0) {
@@ -304,11 +303,16 @@
                           }                          
                         }
                         //***** check if there is an isolated network with sourceNAT (end) *****
-
+                   
 
                         //***** populate all networks (begin) **********************************
+                        //isolatedSourcenatNetwork is first radio button in default network section. Show isolatedSourcenatNetwork when its networkofferingavailability is 'Required' or'Optional'
+                        if (isolatedSourcenatNetwork.networkofferingavailability == 'Required' || isolatedSourcenatNetwork.networkofferingavailability == 'Optional') {
+                          defaultNetworkArray.push(isolatedSourcenatNetwork);
+                        }
+                        
                         //default networks are in default network section 
-                        //non-default networks are in additional network section 
+                        //non-default networks are in additional network section                         
                         if (networks != null && networks.length > 0) {
                           for (var i = 0; i < networks.length; i++) {
                             //if selectedZoneObj.securitygroupsenabled is true and users still choose to select network instead of security group (from dialog), then UI won't show networks whose securitygroupenabled is true.
@@ -320,7 +324,9 @@
                               if (isolatedSourcenatNetwork.networkofferingavailability == 'Required') {
                                 continue; //don't display 2nd~Nth radio buttons in default network section when isolatedSourcenatNetwork.networkofferingavailability == 'Required'
                               }
-                              defaultNetworkArray.push(networks[i]);
+                              if(networks[i].id != isolatedSourcenatNetwork.id) {
+                                defaultNetworkArray.push(networks[i]);
+                              }
                             }
                             else {
                               optionalNetworkArray.push(networks[i]);
