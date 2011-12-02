@@ -27,9 +27,12 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String dns;
     String gateway;
     String nextServer;
+    String defaultRouter;
+    String staticRoutes;
+
     
     protected DhcpEntryCommand() {
-    	
+        
     }
     
     @Override
@@ -44,37 +47,54 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     }
     
     public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String dns, String gateway) {
-    	this(vmMac, vmIpAddress, vmName);
-    	this.dns = dns;
-    	this.gateway = gateway;
+        this(vmMac, vmIpAddress, vmName);
+        this.dns = dns;
+        this.gateway = gateway;
     }
     
     public String getDns() {
-    	return dns;
+        return dns;
     }
     
     public String getGateway() {
-    	return gateway;
+        return gateway;
     }
     
-	public String getVmMac() {
-		return vmMac;
-	}
-	
-	public String getVmIpAddress() {
-		return vmIpAddress;
-	}
-	
-	public String getVmName() {
-		return vmName;
-	}
-	
-	public void setNextServer(String ip) {
-		nextServer = ip;
-	}
-	
-	public String getNextServer() {
-		return nextServer;
-	}
-	
+    public String getVmMac() {
+        return vmMac;
+    }
+    
+    public String getVmIpAddress() {
+        return vmIpAddress;
+    }
+    
+    public String getVmName() {
+        return vmName;
+    }
+    
+    public void setNextServer(String ip) {
+        nextServer = ip;
+    }
+    
+    public String getNextServer() {
+        return nextServer;
+    }
+    
+    public String getDefaultRouter() {
+        return defaultRouter;
+    }
+
+    public void setDefaultRouter(String defaultRouter) {
+        this.defaultRouter = defaultRouter;
+    }
+
+    public String getStaticRoutes() {
+        return staticRoutes;
+    }
+
+    public void setStaticRoutes(String staticRoutes) {
+        this.staticRoutes = staticRoutes;
+    }
+
+    
 }

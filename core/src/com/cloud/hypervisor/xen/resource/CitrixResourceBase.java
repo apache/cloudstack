@@ -1436,6 +1436,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         args += " -v " + cmd.getVmIpAddress();
         args += " -m " + cmd.getVmMac();
         args += " -n " + cmd.getVmName();
+        if (cmd.getDefaultRouter() != null) {
+            args += " -d " + cmd.getDefaultRouter();
+        }
+        if (cmd.getStaticRoutes() != null) {
+            args += " -s " + cmd.getStaticRoutes();
+        }
         String result = callHostPlugin(conn, "vmops", "saveDhcpEntry", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DhcpEntry failed");
