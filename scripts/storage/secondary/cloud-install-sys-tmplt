@@ -1,9 +1,9 @@
 #!/bin/bash
 # $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> -s <mgmt server secret key>]\n" $(basename $0) >&2
   printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver>]\n" $(basename $0) >&2
+  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver> -s <mgmt server secret key>]\n" $(basename $0) >&2
 }
 
 failed() {
@@ -16,8 +16,9 @@ fflag=
 ext="vhd"
 templateId=1
 hyper=
+msKey=password
 DISKSPACE=5120000  #free disk space required in kilobytes
-while getopts 'm:h:f:u:Ft:e:' OPTION
+while getopts 'm:h:f:u:Ft:e:s:' OPTION
 do
   case $OPTION in
   m)	mflag=1
@@ -36,6 +37,9 @@ do
   		;;
   h)    hyper="$OPTARG"
   		;;
+  s)    sflag=1
+		msKey="$OPTARG"
+                ;;
   ?)	usage
 		failed 2
 		;;
@@ -68,7 +72,15 @@ fi
 
 dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if [ "$sflag" == "1" ]
+then
+	encryptionJarPath="@JAVADIR@/cloud-jasypt-1.8.jar"
+	echo $encryptionJarPath;
+	encPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
+	dbPassword=(`java -classpath "$encryptionJarPath" org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+else
+	dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
+fi
 
 if [ "$hyper" == "kvm" ]
 then
@@ -85,6 +97,12 @@ then
 else
    usage
    failed 2
+fi
+
+if [ ! $templateId ]
+then
+	echo "Unable to get template Id from database"
+	failed 8
 fi
 
 localfile=$(uuidgen).$ext
