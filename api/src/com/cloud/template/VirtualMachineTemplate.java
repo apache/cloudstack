@@ -64,6 +64,8 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     String getDisplayText();
 
     boolean getEnablePassword();
+    
+    boolean getEnableSshKey();
 
     boolean isCrossZones();
 
