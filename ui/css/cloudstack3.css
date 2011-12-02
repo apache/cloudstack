@@ -931,7 +931,7 @@ div.notification.corner-alert:hover div.message span {
 /*List view*/
 div.panel div.list-view {
   overflow: auto;
-  height: 668px;
+  height: 652px;
   margin-top: 30px;
   border-bottom: 1px solid #E7E7E7;
 }
