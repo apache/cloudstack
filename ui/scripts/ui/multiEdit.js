@@ -430,6 +430,7 @@
       // from main instances list view
       var $listView;
       var instances = $.extend(true, {}, args.listView, {
+        context: context,
         uiCustom: true
       });
 
@@ -512,6 +513,7 @@
                       complete: function(completeArgs) {
                         complete(args);
                         $loading.remove();
+                        $(window).trigger('cloudStack.fullRefresh');
                       },
 
                       error: function(args) {

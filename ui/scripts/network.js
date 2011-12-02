@@ -942,7 +942,32 @@
 
                   // Load balancing rules
                   loadBalancing: {
-                    listView: cloudStack.sections.instances,
+                    listView: $.extend(true, {}, cloudStack.sections.instances, {
+                      listView: {
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: {
+                              physicalnetworkid: args.context.ipAddresses[0].physicalnetworkid
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              args.response.success({
+                                data: $.grep(
+                                  data.listvirtualmachinesresponse.virtualmachine,
+                                  function(instance) {
+                                    return $.inArray(instance.state, [
+                                      'Destroyed'
+                                    ]) == -1;
+                                  }
+                                )
+                              });
+                            }
+                          });
+                        } 
+                      }
+                    }),
                     multipleAdd: true,
                     fields: {
                       'name': { edit: true, label: 'Name' },
@@ -1080,7 +1105,32 @@
 
                   // Port forwarding rules
                   portForwarding: {
-                    listView: cloudStack.sections.instances,
+                    listView: $.extend(true, {}, cloudStack.sections.instances, {
+                      listView: {
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: {
+                              physicalnetworkid: args.context.ipAddresses[0].physicalnetworkid
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              args.response.success({
+                                data: $.grep(
+                                  data.listvirtualmachinesresponse.virtualmachine,
+                                  function(instance) {
+                                    return $.inArray(instance.state, [
+                                      'Destroyed'
+                                    ]) == -1;
+                                  }
+                                )
+                              });
+                            }
+                          });
+                        } 
+                      }
+                    }),
                     fields: {
                       'private-ports': {
                         edit: true,
