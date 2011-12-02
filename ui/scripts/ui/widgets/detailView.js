@@ -199,8 +199,8 @@
                 );
               },
               error: function(args) {
-                if (args.message)
-                  cloudStack.dialog.notice({ message: args.message });
+                // if (args.message)
+                //   cloudStack.dialog.notice({ message: args.message });
               }
             }
           });
@@ -372,7 +372,7 @@
                   $value.html(originalValue);
                 });
 
-                if (args.message) cloudStack.dialog.notice({ message: args.message });
+                // if (args.message) cloudStack.dialog.notice({ message: args.message });
               }
             }
           });

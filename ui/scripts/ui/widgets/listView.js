@@ -221,8 +221,8 @@
                 );
               },
               error: function(data){
-                if (data.message)
-                  cloudStack.dialog.notice({ message: data.message });
+                // if (data.message)
+                //   cloudStack.dialog.notice({ message: data.message });
               }
             }
           };
@@ -343,7 +343,7 @@
             },
             error: function(args) {
               if (args.message) {
-                cloudStack.dialog.notice({ message: args.message });
+                //cloudStack.dialog.notice({ message: args.message });
                 $edit.hide(),
                 $label.html(oldVal).fadeIn();
                 $instanceRow.closest('div.data-table').dataTable('refresh');
@@ -898,7 +898,7 @@
           },
           error: function(args) {
             if (args.message) {
-              cloudStack.dialog.notice({ message: args.message });
+              //cloudStack.dialog.notice({ message: args.message });
             }
           }
         }

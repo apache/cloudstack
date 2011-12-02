@@ -372,6 +372,7 @@
             'class': 'close',
             click: function() {
               $(this).dialog('destroy');
+              if (args.clickAction) args.clickAction();
             }
           }
         ]

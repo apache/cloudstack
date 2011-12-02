@@ -54,7 +54,7 @@
                 $('div.overlay').remove();
 
                 if (args.message) {
-                  cloudStack.dialog.notice({ message: args.message });
+                  //cloudStack.dialog.notice({ message: args.message });
                 }
               }
             }

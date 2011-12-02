@@ -34,6 +34,15 @@
   });
 
   $(function() {
+    /**
+     * Generic error handling
+     */
+    $.ajaxSetup({
+      error: function(data) {
+        cloudStack.dialog.notice({ message: parseXMLHttpResponse(data) });
+      }
+    });
+
     var $container = $('#cloudStack3-container');
 
     var loginArgs = {
