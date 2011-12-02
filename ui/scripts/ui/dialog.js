@@ -21,6 +21,7 @@
       var $formContainer = $('<div>').addClass('form-container');
       var $message = $('<span>').addClass('message').appendTo($formContainer).html(args.form.desc);
       var $form = $('<form>').appendTo($formContainer);
+      var createLabel = args.form.createLabel;
 
       // Render fields and events
       $.each(args.form.fields, function(key, field) {
@@ -297,7 +298,7 @@
         },
         buttons: [
           {
-            text: 'Create',
+            text: createLabel ? createLabel : 'Create',
             'class': 'ok',
             click: function() {
               if (!complete($formContainer)) { return false; }
