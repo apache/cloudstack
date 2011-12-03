@@ -166,9 +166,12 @@
             }
           },
 
-          dataProvider: function(args) {
+          dataProvider: function(args) {            
+            var array1 = [];              
+            if("domains" in args.context)
+              array1.push("&domainid=" + args.context.domains[0].id);          
             $.ajax({
-              url: createURL("listAccounts&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listAccounts" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
