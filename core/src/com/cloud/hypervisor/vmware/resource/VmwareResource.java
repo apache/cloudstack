@@ -38,6 +38,7 @@ import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -395,7 +396,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             } else if (cmd instanceof GetDomRVersionCmd) {
                 answer = execute((GetDomRVersionCmd)cmd);
             } else if (cmd instanceof CheckNetworkCommand) {
-                //answer = execute((CheckNetworkCommand) cmd);
+                answer = execute((CheckNetworkCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -433,6 +434,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     		s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
         
         return answer;
+    }
+    
+    protected Answer execute(CheckNetworkCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource CheckNetworkCommand " + _gson.toJson(cmd));
+        }
+
+        // TODO setup portgroup for private network needs to be done here now
+        return new CheckNetworkAnswer(cmd, true , "Network Setup check by names is done");
     }
     
     protected Answer execute(NetworkUsageCommand cmd) {
