@@ -789,8 +789,13 @@
             </div>
           </div>
           <div class="head">
-            <span>Zone Configuration</span>
-            <div class="add">Add Network</div>
+            <span>Zone Configuration</span>            
+            
+            <!--
+            <div class="add">Add Physical Network</div>
+            -->
+            <div class="add">&nbsp;</div>
+            
           </div>
           <ul class="system-main">
             <li class="main public" rel="public">
@@ -811,7 +816,7 @@
         <!-- Zone resources -->
         <div class="resources zone">
           <div class="head">
-            <div class="add">Add Resource</div>
+            <div class="add" id="add_resource_button">Add Resource</div>
           </div>
           <ul>
             <li class="pod">

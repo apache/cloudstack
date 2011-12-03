@@ -142,8 +142,8 @@
           return false;
         });
 
-        // Add button action
-        $chartView.find('.add').click(function() {
+        // Add Resource button action
+        $chartView.find('#add_resource_button').click(function() {
           var completeAction = function() { return false; };
           var $addResource = $('<div>').addClass('add-zone-resource');
           var $header = $('<div>').addClass('head').appendTo($addResource)

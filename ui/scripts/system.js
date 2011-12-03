@@ -927,7 +927,7 @@
       networks: {
         actions: {
           add: {
-            label: 'Add Network',
+            label: 'Add physical network',
             action: function(args) {
               args.response.success();
             }
