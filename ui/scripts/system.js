@@ -153,12 +153,9 @@
                     actions: {
                       destroy: {
                         label: 'Delete',
-                        action: function(args) {                         
+                        action: function(args) {  
                           $.ajax({
-                            url: createURL('deleteVlanIpRange'),
-                            data: {
-                              id: args.context.multiRule[0].id
-                            },
+                            url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),                          
                             dataType: 'json',
                             async: true,
                             success: function(json) {                                                  
