@@ -5226,7 +5226,14 @@
                 var array1 = [];
                 array1.push("&zoneId=" + args.context.zones[0].id);
                 array1.push("&hypervisor=" + args.data.hypervisor);
-                array1.push("&clustertype=CloudManaged");
+                                
+                var clusterType;
+                if(args.data.hypervisor == "VMware")                   
+                  clusterType="ExternalManaged";
+                else
+                  clusterType="CloudManaged";               
+                array1.push("&clustertype=" + clusterType);
+                
                 array1.push("&podId=" + args.data.podId);
 
                 var clusterName = args.data.name;
