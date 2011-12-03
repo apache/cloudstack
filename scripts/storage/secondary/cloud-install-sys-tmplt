@@ -74,10 +74,8 @@ dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'
 dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 if [ "$sflag" == "1" ]
 then
-	encryptionJarPath="@JAVADIR@/cloud-jasypt-1.8.jar"
-	echo $encryptionJarPath;
 	encPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
-	dbPassword=(`java -classpath "$encryptionJarPath" org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+	dbPassword=(`java -classpath /usr/share/java/cloud-jasypt-1.8.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
 else
 	dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
 fi
