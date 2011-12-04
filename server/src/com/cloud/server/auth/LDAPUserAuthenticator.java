@@ -63,6 +63,10 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         }
 
         String url = _configDao.getValue(LDAPParams.hostname.toString());
+        if (url==null){
+            s_logger.debug("LDAP authenticator is not configured.");
+            return false;
+        }
         String port = _configDao.getValue(LDAPParams.port.toString());
         String queryFilter = _configDao.getValue(LDAPParams.queryfilter.toString());
         String searchBase = _configDao.getValue(LDAPParams.searchbase.toString());
