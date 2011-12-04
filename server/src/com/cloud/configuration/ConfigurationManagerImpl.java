@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +33,16 @@ import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiConstants.LDAPParams;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
@@ -49,6 +55,7 @@ import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
+import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
@@ -67,6 +74,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DcDetailVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -78,6 +86,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
+import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -122,6 +131,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -226,7 +236,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOffServiceMapDao;
-    @Inject PhysicalNetworkDao _physicalNetworkDao;
+    @Inject 
+    PhysicalNetworkDao _physicalNetworkDao;
     
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -341,7 +352,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
                 pstmt.executeUpdate();
             } catch (Throwable e) {
-            	throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
+                throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
             }
         } else if (Config.XenPrivateNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
@@ -352,7 +363,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
                 pstmt.executeUpdate();
             } catch (Throwable e) {
-            	throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
+                throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
             }
         } else if (Config.XenPublicNetwork.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
@@ -363,7 +374,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
                 pstmt.executeUpdate();
             } catch (Throwable e) {
-            	throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
+                throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
             }
         } else if (Config.XenStorageNetwork1.key().equalsIgnoreCase(name)) {
             String sql = "update host_details set value=? where name=?";
@@ -374,7 +385,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
                 pstmt.executeUpdate();
             } catch (Throwable e) {
-            	throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
+                throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
             }
         } else if (Config.XenStorageNetwork2.key().equals(name)) {
             String sql = "update host_details set value=? where name=?";
@@ -385,7 +396,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
                 pstmt.executeUpdate();
             } catch (Throwable e) {
-            	throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
+                throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
             }
         } else if (Config.SystemVMUseLocalStorage.key().equalsIgnoreCase(name)) {
             if (s_logger.isDebugEnabled()) {
@@ -520,9 +531,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                 }
             } else if (range.equalsIgnoreCase("instanceName")) {
-            	if (!NetUtils.verifyInstanceName(value)) {
-            		return "Instance name can not contain hyphen, spaces and \"+\" char";
-            	}
+                if (!NetUtils.verifyInstanceName(value)) {
+                    return "Instance name can not contain hyphen, spaces and \"+\" char";
+                }
             }else {
                 String[] options = range.split(",");
                 for (String option : options) {
@@ -1183,6 +1194,82 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return success;
 
     }
+    
+
+    @Override
+    @DB
+    public boolean updateLDAP(LDAPConfigCmd cmd) {
+        try {
+            // set the ldap details in the zone details table with a zone id of -12
+            String hostname = cmd.getHostname();
+            Integer port = cmd.getPort();
+            String queryFilter = cmd.getQueryFilter();
+            String searchBase = cmd.getSearchBase();
+            Boolean useSSL = cmd.getUseSSL();
+            String bindDN = cmd.getBindDN();
+            String bindPasswd = cmd.getBindPassword();
+            
+            // check if the info is correct
+            Hashtable<String, String> env = new Hashtable<String, String>(11);
+            env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(Context.PROVIDER_URL, "ldap://" + hostname + ":" + port + "/");
+            if (useSSL) env.put(Context.SECURITY_PRINCIPAL, "ssl");
+            env.put(Context.SECURITY_PRINCIPAL, bindDN);
+            env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
+            // Create the initial context
+            DirContext ctx = new InitialDirContext(env);
+            ctx.close();
+            
+
+            // store the result in DB COnfiguration
+            ConfigurationVO cvo = _configDao.findByName(LDAPParams.hostname.toString()); 
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.hostname.toString(), null, "Hostname or ip address of the ldap server eg: my.ldap.com");
+            }
+            cvo.setValue(hostname); _configDao.persist(cvo);
+            
+            cvo = _configDao.findByName(LDAPParams.port.toString()); 
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced", "DEFAULT", "management-server", LDAPParams.port.toString(), null, "Specify the LDAP port if required, default is 389");
+            } 
+            cvo.setValue(port.toString()); _configDao.persist(cvo);
+            
+            cvo = _configDao.findByName(LDAPParams.queryfilter.toString()); 
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.queryfilter.toString(), null, "You specify a query filter here, which narrows down the users, who can be part of this domain");
+            } 
+            cvo.setValue(queryFilter); _configDao.persist(cvo);
+            
+            cvo = _configDao.findByName(LDAPParams.searchbase.toString()); 
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.searchbase.toString(), null, "The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.");
+            }  
+            cvo.setValue(searchBase); _configDao.persist(cvo);
+            
+            cvo = _configDao.findByName(LDAPParams.usessl.toString());
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.usessl.toString(), null, "Check “Use SSL” if the external LDAP server is configured for LDAP over SSL.");
+            }  
+            cvo.setValue(useSSL.toString()); _configDao.persist(cvo);
+            
+            cvo = _configDao.findByName(LDAPParams.dn.toString());
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.dn.toString(), null, "Specify the distinguished name of a user with the search permission on the directory");
+            }  
+            cvo.setValue(bindDN); _configDao.persist(cvo);
+            
+            cvo = _configDao.findByName(LDAPParams.passwd.toString());
+            if (cvo==null){
+                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.passwd.toString(), null, "Enter the password");
+            }  
+            cvo.setValue(bindPasswd); _configDao.persist(cvo);
+        }
+        catch (NamingException ne){
+            ne.printStackTrace();
+            throw new InvalidParameterValueException("Naming Exception, check you ldap data ! " + ne.getMessage() + (ne.getCause() != null ? ( "Caused by:" +  ne.getCause().getMessage()) : ""));
+        }
+        return true;
+    }
 
     @Override
     @DB
@@ -1648,7 +1735,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (sortKey != null) {
-        	offering.setSortKey(sortKey);
+            offering.setSortKey(sortKey);
         }
 
         // Note: tag editing commented out for now; keeping the code intact,
@@ -1767,7 +1854,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (sortKey != null) {
-        	diskOffering.setSortKey(sortKey);
+            diskOffering.setSortKey(sortKey);
         }
 
         // Note: tag editing commented out for now;keeping the code intact,
@@ -2911,14 +2998,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         //populate the services first
         for (String serviceName : cmd.getSupportedServices()) {
-        	//validate if the service is supported
-        	Service service = Network.Service.getService(serviceName);
-        	if (service == null || service == Service.Gateway) {
-        		throw new InvalidParameterValueException("Invalid service " + serviceName);
-        	}
-        	
-        	if (service == Service.SecurityGroup) {
-        		 //allow security group service for Shared networks only
+            //validate if the service is supported
+            Service service = Network.Service.getService(serviceName);
+            if (service == null || service == Service.Gateway) {
+                throw new InvalidParameterValueException("Invalid service " + serviceName);
+            }
+            
+            if (service == Service.SecurityGroup) {
+                 //allow security group service for Shared networks only
                 if (guestType != GuestType.Shared) {
                     throw new InvalidParameterValueException("Secrity group service is supported for network offerings with guest ip type " + GuestType.Shared);
                 }
@@ -2926,14 +3013,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 sgProviders.add(Provider.SecurityGroupProvider);
                 serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
                 continue;
-        	}
-        	serviceProviderMap.put(service, defaultProviders);
+            }
+            serviceProviderMap.put(service, defaultProviders);
         }
         
         //add gateway provider (if sourceNat provider is enabled)
         Set<Provider> sourceNatServiceProviders = serviceProviderMap.get(Service.SourceNat);
         if (sourceNatServiceProviders != null && !sourceNatServiceProviders.isEmpty()) {
-        	serviceProviderMap.put(Service.Gateway, sourceNatServiceProviders);
+            serviceProviderMap.put(Service.Gateway, sourceNatServiceProviders);
         }
 
         // populate providers
@@ -2946,7 +3033,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     Set<Provider> providers = new HashSet<Provider>();
                     //in Acton, don't allow to specify more than 1 provider per service
                     if (svcPrv.get(serviceStr) != null && svcPrv.get(serviceStr).size() > 1) {
-                    	throw new InvalidParameterValueException("In the current release only one provider can be specified for the service");
+                        throw new InvalidParameterValueException("In the current release only one provider can be specified for the service");
                     }
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
@@ -2959,12 +3046,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         
                         Set<Service> serviceSet = null;
                         if (providerCombinationToVerify.get(provider) == null) {
-                        	serviceSet = new HashSet<Service>();
+                            serviceSet = new HashSet<Service>();
                         } else {
-                        	serviceSet = providerCombinationToVerify.get(provider);
+                            serviceSet = providerCombinationToVerify.get(provider);
                         }
                         serviceSet.add(service);
-                    	providerCombinationToVerify.put(provider, serviceSet);
+                        providerCombinationToVerify.put(provider, serviceSet);
                         
                     }
                     serviceProviderMap.put(service, providers);
@@ -3016,26 +3103,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     void validateSourceNatServiceCapablities(Map<Capability, String> sourceNatServiceCapabilityMap) {
         if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
             if (sourceNatServiceCapabilityMap.keySet().size() > 2) {
-        		throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter + " capabilities can be sepcified for firewall service");
+                throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter + " capabilities can be sepcified for firewall service");
             }
             
             for (Capability capability : sourceNatServiceCapabilityMap.keySet()) {
-            	String value = sourceNatServiceCapabilityMap.get(capability);
-            	if (capability == Capability.SupportedSourceNatTypes) {
-            		 boolean perAccount = value.contains("peraccount");
+                String value = sourceNatServiceCapabilityMap.get(capability);
+                if (capability == Capability.SupportedSourceNatTypes) {
+                     boolean perAccount = value.contains("peraccount");
                      boolean perZone = value.contains("perzone");
                      if ((perAccount && perZone) || (!perAccount && !perZone)) {
                          throw new InvalidParameterValueException("Either perAccount or perZone source NAT type can be specified for " + Capability.SupportedSourceNatTypes.getName());
                      }
-            	} else if (capability == Capability.RedundantRouter) {
-            		boolean enabled = value.contains("true");
+                } else if (capability == Capability.RedundantRouter) {
+                    boolean enabled = value.contains("true");
                     boolean disabled = value.contains("false");
                     if (!enabled && !disabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
                     }
-            	} else {
-            		throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter + " capabilities can be sepcified for firewall service");
-            	}
+                } else {
+                    throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter + " capabilities can be sepcified for firewall service");
+                }
             }
         }
     }
@@ -3099,8 +3186,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
-    	Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-    	isAscending = (isAscending == null ? true : isAscending);
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
         Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
         Account caller = UserContext.current().getCaller();
         SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
@@ -3212,11 +3299,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null);
         
         if (parseOfferings) {
-        	List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
-        	Service[] suppportedServices = null;
-        	
-        	if (listBySupportedServices) {
-        		suppportedServices = new Service[supportedServicesStr.size()];
+            List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
+            Service[] suppportedServices = null;
+            
+            if (listBySupportedServices) {
+                suppportedServices = new Service[supportedServicesStr.size()];
                 int i = 0;
                 for (String supportedServiceStr : supportedServicesStr) {
                     Service service = Service.getService(supportedServiceStr);
@@ -3227,27 +3314,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     i++;
                 }
-    		}
-        	
-        	for (NetworkOfferingVO offering : offerings) {
-        		boolean addOffering = true;
-        		
-        		if (listBySupportedServices) {
-        			addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices);
-        		}
-        		
-        		if (sourceNatSupported != null) {
-        			addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
-        		}
-        		
+            }
+            
+            for (NetworkOfferingVO offering : offerings) {
+                boolean addOffering = true;
+                
+                if (listBySupportedServices) {
+                    addOffering = addOffering && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), suppportedServices);
+                }
+                
+                if (sourceNatSupported != null) {
+                    addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
+                }
+                
                 if (addOffering) {
-                	supportedOfferings.add(offering);
+                    supportedOfferings.add(offering);
                 }
             }
 
             return supportedOfferings;
         } else {
-        	return offerings;
+            return offerings;
         }
     }
 
@@ -3311,7 +3398,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (sortKey != null) {
-        	offering.setSortKey(sortKey);
+            offering.setSortKey(sortKey);
         }
 
         if (state != null) {

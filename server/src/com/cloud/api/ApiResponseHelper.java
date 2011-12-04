@@ -56,6 +56,7 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.HypervisorCapabilitiesResponse;
 import com.cloud.api.response.IPAddressResponse;
+import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.SecurityGroupRuleResultObject;
 import com.cloud.api.response.InstanceGroupResponse;
@@ -3194,6 +3195,20 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         spResponse.setObjectName("stickinesspolicies");
         return spResponse;
+    }
+
+    @Override
+    public LDAPConfigResponse createLDAPConfigResponse(String hostname,
+            Integer port, Boolean useSSL, String queryFilter,
+            String searchBase, String bindDN) {
+        LDAPConfigResponse lr = new LDAPConfigResponse();
+        lr.setHostname(hostname);
+        lr.setPort(port.toString());
+        lr.setUseSSL(useSSL.toString());
+        lr.setQueryFilter(queryFilter);
+        lr.setBindDN(bindDN);
+        lr.setSearchBase(searchBase);
+        return lr;
     }
 
 

@@ -29,6 +29,8 @@ public class ApiConstants {
     public static final String AVAILABLE = "available";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
+    public static final String BIND_DN = "binddn";
+    public static final String BIND_PASSWORD = "bindpass";
     public static final String CATEGORY = "category";
     public static final String CERTIFICATE = "certificate";    
     public static final String PRIVATE_KEY = "privatekey";    
@@ -75,6 +77,7 @@ public class ApiConstants {
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
+    public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
@@ -130,6 +133,7 @@ public class ApiConstants {
     public static final String PATH = "path";
     public static final String POD_ID = "podid";
     public static final String POLICY_ID = "policyid";
+    public static final String PORT = "port";
     public static final String PORTAL = "portal";
     public static final String PORT_FORWARDING_SERVICE_ID = "portforwardingserviceid";
     public static final String PRIVATE_INTERFACE = "privateinterface";
@@ -149,10 +153,12 @@ public class ApiConstants {
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
+    public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
     public static final String SECRET_KEY = "usersecretkey";
     public static final String KEY = "key";
+    public static final String SEARCH_BASE = "searchbase";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
@@ -184,6 +190,7 @@ public class ApiConstants {
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USER_DATA = "userdata";
     public static final String USER_ID = "userid";
+    public static final String USE_SSL = "ssl";
     public static final String USERNAME = "username";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
@@ -291,7 +298,7 @@ public class ApiConstants {
     public static final String NETWORK_SERVICE_PROVIDER_ID = "nspid";
     public static final String SERVICE_LIST = "servicelist";
     public static final String CAN_ENABLE_INDIVIDUAL_SERVICE = "canenableindividualservice";
-	public static final String SUPPORTED_SERVICES = "supportedservices";
+    public static final String SUPPORTED_SERVICES = "supportedservices";
     public static final String NSP_ID= "nspid";
     public static final String ACL_TYPE= "acltype";
     public static final String IS_SOURCE_NAT_SHARED = "isshared";
@@ -318,5 +325,15 @@ public class ApiConstants {
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
     }
+    
+    public enum LDAPParams {
+        hostname, port, usessl, queryfilter, searchbase, dn, passwd;
+        
+        @Override
+        public String toString(){
+            return "ldap." + name();
+        }
+    }
+
 
 }

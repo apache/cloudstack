@@ -20,6 +20,8 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import javax.naming.NamingException;
+
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
@@ -32,6 +34,7 @@ import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteZoneCmd;
+import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
@@ -240,4 +243,6 @@ public interface ConfigurationService {
     Integer getServiceOfferingNetworkRate(long serviceOfferingId);
 
     DiskOffering getDiskOffering(long diskOfferingId);
+
+    boolean updateLDAP(LDAPConfigCmd cmd) throws NamingException;
 }

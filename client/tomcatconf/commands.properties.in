@@ -47,7 +47,7 @@ recoverVirtualMachine=com.cloud.api.commands.RecoverVMCmd;7
 listVirtualMachines=com.cloud.api.commands.ListVMsCmd;15
 getVMPassword=com.cloud.api.commands.GetVMPasswordCmd;15
 migrateVirtualMachine=com.cloud.api.commands.MigrateVMCmd;1
-assignVirtualMachine=com.cloud.api.commands.AssignVMCmd;15
+assignVirtualMachine=com.cloud.api.commands.AssignVMCmd;1
 restoreVirtualMachine=com.cloud.api.commands.RestoreVMCmd;15
 
 #### snapshot commands
@@ -154,6 +154,7 @@ migrateSystemVm=com.cloud.api.commands.MigrateSystemVMCmd;1
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
 createConfiguration=com.cloud.api.commands.CreateCfgCmd;1
+ldapConfig=com.cloud.api.commands.LDAPConfigCmd;1
 listCapabilities=com.cloud.api.commands.ListCapabilitiesCmd;15
 
 #### pod commands

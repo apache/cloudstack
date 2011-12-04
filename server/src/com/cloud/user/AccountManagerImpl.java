@@ -296,12 +296,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
 
         for (ControlledEntity entity : entities) {
-        	long domainId = entity.getDomainId();
-        	if (entity.getAccountId() != -1 && domainId == -1){ // If account exists domainId should too so calculate it. This condition might be hit for templates or entities which miss domainId in their tables           
-        		Account account = ApiDBUtils.findAccountById(entity.getAccountId());
-        		domainId = account != null ? account.getDomainId() : -1 ;
-        	}
-        	if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)) {
+            long domainId = entity.getDomainId();
+            if (entity.getAccountId() != -1 && domainId == -1){ // If account exists domainId should too so calculate it. This condition might be hit for templates or entities which miss domainId in their tables           
+                Account account = ApiDBUtils.findAccountById(entity.getAccountId());
+                domainId = account != null ? account.getDomainId() : -1 ;
+            }
+            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 //for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -1113,7 +1113,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         success = _accountDao.update(account.getId(), acctForUpdate);
         
         if (details != null) {
-        	_accountDetailsDao.update(account.getId(), details);
+            _accountDetailsDao.update(account.getId(), details);
         }
         
         if (success) {
@@ -1401,17 +1401,17 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return new Pair<List<Long>, Long>(permittedAccounts, domainId);
     }
 
-	@Override
-	public User getActiveUserByRegistrationToken(String registrationToken) {
-		return _userDao.findUserByRegistrationToken(registrationToken);
-	}
+    @Override
+    public User getActiveUserByRegistrationToken(String registrationToken) {
+        return _userDao.findUserByRegistrationToken(registrationToken);
+    }
 
-	@Override
-	public void markUserRegistered(long userId) {
+    @Override
+    public void markUserRegistered(long userId) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setRegistered(true);
-        _userDao.update(Long.valueOf(userId), userForUpdate);		
-	}
+        _userDao.update(Long.valueOf(userId), userForUpdate);        
+    }
     
     @Override @DB
     public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
@@ -1466,9 +1466,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         Long accountId = account.getId();
         
-		if (details != null) {
-			_accountDetailsDao.persist(accountId, details);
-		}
+        if (details != null) {
+            _accountDetailsDao.persist(accountId, details);
+        }
         
         //Create resource count records for the account
         _resourceCountDao.createResourceCounts(accountId, ResourceLimit.ResourceOwnerType.Account);
@@ -1635,11 +1635,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
-
+        
+        boolean authenticated = false;
         // We only use the first adapter even if multiple have been configured
-        Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration();
-        UserAuthenticator authenticator = en.nextElement();
-        boolean authenticated = authenticator.authenticate(username, password, domainId);
+        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();){
+            UserAuthenticator authenticator = en.nextElement();
+            if (authenticator.authenticate(username, password, domainId)){
+                authenticated = true;
+                break;
+            }
+        }
 
         if (authenticated) {
             UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);

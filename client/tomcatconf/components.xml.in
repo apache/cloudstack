@@ -68,6 +68,7 @@
         </adapters>
         <adapters key="com.cloud.server.auth.UserAuthenticator">
             <adapter name="MD5" class="com.cloud.server.auth.MD5UserAuthenticator"/>
+            <adapter name="LDAP" class="com.cloud.server.auth.LDAPUserAuthenticator"/>
         </adapters>
         <adapters key="com.cloud.ha.Investigator">
             <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
