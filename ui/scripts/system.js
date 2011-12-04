@@ -136,7 +136,7 @@
                             args.response.success({
                               data: item,
                               notification: {
-                                label: 'Added IP address',
+                                label: 'IP range is added',
                                 poll: function(args) {
                                   args.complete();
                                 }
@@ -153,12 +153,9 @@
                     actions: {
                       destroy: {
                         label: 'Delete',
-                        action: function(args) {                         
+                        action: function(args) {  
                           $.ajax({
-                            url: createURL('deleteVlanIpRange'),
-                            data: {
-                              id: args.context.multiRule[0].id
-                            },
+                            url: createURL('deleteVlanIpRange&id=' + args.context.multiRule[0].id),                          
                             dataType: 'json',
                             async: true,
                             success: function(json) {                                                  
@@ -927,7 +924,7 @@
       networks: {
         actions: {
           add: {
-            label: 'Add Network',
+            label: 'Add physical network',
             action: function(args) {
               args.response.success();
             }
@@ -1092,7 +1089,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Enabled"),
@@ -1115,12 +1112,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["virtualRouter"].id + "&state=Disabled"),
@@ -1143,7 +1140,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
@@ -1178,7 +1175,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Enabled"),
@@ -1201,12 +1198,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["netscaler"].id + "&state=Disabled"),
@@ -1229,12 +1226,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               shutdown: {
-                label: 'Shutdown',
+                label: 'Shutdown provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["netscaler"].id),
@@ -1256,7 +1253,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Shutdown Netscaler provider'; }
+                  notification: function() { return 'Provider is shutdown'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
@@ -1473,7 +1470,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Enabled"), 
@@ -1496,12 +1493,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled F5 provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["f5"].id + "&state=Disabled"),
@@ -1524,12 +1521,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled F5 provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },             
               shutdown: {
-                label: 'Shutdown',
+                label: 'Shutdown provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["f5"].id),
@@ -1551,7 +1548,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Shutdown F5 provider'; }
+                  notification: function() { return 'Provider is shutdown'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }    
@@ -1766,7 +1763,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Enabled"), 
@@ -1789,12 +1786,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled SRX provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["srx"].id + "&state=Disabled"),
@@ -1817,12 +1814,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled SRX provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },              
               shutdown: {
-                label: 'Shutdown',
+                label: 'Shutdown provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("deleteNetworkServiceProvider&id=" + nspMap["srx"].id),
@@ -1844,7 +1841,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Shutdown SRX provider'; }
+                  notification: function() { return 'Provider is shutdown'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }   
@@ -2056,7 +2053,7 @@
             },
             providerActions: {              
               enable: {
-                label: 'Enable',
+                label: 'Enable provider',
                 action: function(args) {                  
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Enabled"),
@@ -2079,12 +2076,12 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Enabled Netscaler provider'; }
+                  notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               },
               disable: {
-                label: 'Disable',
+                label: 'Disable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Disabled"),
@@ -2107,7 +2104,7 @@
                   }); 
                 },
                 messages: {
-                  notification: function() { return 'Disabled Netscaler provider'; }
+                  notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
               }              
@@ -5226,7 +5223,14 @@
                 var array1 = [];
                 array1.push("&zoneId=" + args.context.zones[0].id);
                 array1.push("&hypervisor=" + args.data.hypervisor);
-                array1.push("&clustertype=CloudManaged");
+                                
+                var clusterType;
+                if(args.data.hypervisor == "VMware")                   
+                  clusterType="ExternalManaged";
+                else
+                  clusterType="CloudManaged";               
+                array1.push("&clustertype=" + clusterType);
+                
                 array1.push("&podId=" + args.data.podId);
 
                 var clusterName = args.data.name;
@@ -7986,36 +7990,27 @@
   var hostActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
-
-    if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
+    
+    if (jsonObj.resourcestate == "Enabled") {
       allowedActions.push("edit");
       allowedActions.push("enableMaintenanceMode");
       allowedActions.push("forceReconnect");
     }
-    else if(jsonObj.state == 'Down') {
-      allowedActions.push("edit");
-      allowedActions.push("enableMaintenanceMode");
-      allowedActions.push("delete");
-    }
-    else if(jsonObj.state == "Alert") {
-      allowedActions.push("edit");
-      allowedActions.push("delete");
-    }
-    else if (jsonObj.state == "ErrorInMaintenance") {
+    else if (jsonObj.resourcestate == "ErrorInMaintenance") {
       allowedActions.push("edit");
       allowedActions.push("enableMaintenanceMode");
       allowedActions.push("cancelMaintenanceMode");
     }
-    else if (jsonObj.state == "PrepareForMaintenance") {
+    else if (jsonObj.resourcestate == "PrepareForMaintenance") {
       allowedActions.push("edit");
       allowedActions.push("cancelMaintenanceMode");
     }
-    else if (jsonObj.state == "Maintenance") {
+    else if (jsonObj.resourcestate == "Maintenance") {
       allowedActions.push("edit");
       allowedActions.push("cancelMaintenanceMode");
       allowedActions.push("delete");
     }
-    else if (jsonObj.state == "Disconnected"){
+    else if (jsonObj.resourcestate == "Disabled"){
       allowedActions.push("edit");
       allowedActions.push("delete");
     }

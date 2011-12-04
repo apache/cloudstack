@@ -84,9 +84,10 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
      * Obtains a list of virtual machines by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
      * @param c
+     * @param skipProjectVms TODO
      * @return List of UserVMs.
      */
-    List<UserVmVO> searchForUserVMs(Criteria c);
+    List<UserVmVO> searchForUserVMs(Criteria c, boolean skipProjectVms);
 
     String getChecksum(Long hostId, String templatePath);
 }

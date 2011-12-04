@@ -814,6 +814,24 @@
                     }
                   },
 
+                  staticNATDataProvider: function(args) {
+                    $.ajax({
+                      url: createURL('listPublicIpAddresses'),
+                      data: {
+                        id: args.context.ipAddresses[0].id
+                      },
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        var ipAddress = data.listpublicipaddressesresponse.publicipaddress[0];
+
+                        args.response.success({
+                          data: ipAddress
+                        });
+                      }
+                    });
+                  },
+
                   vmDataProvider: function(args) {
                     $.ajax({
                       url: createURL('listVirtualMachines'),
@@ -924,7 +942,32 @@
 
                   // Load balancing rules
                   loadBalancing: {
-                    listView: cloudStack.sections.instances,
+                    listView: $.extend(true, {}, cloudStack.sections.instances, {
+                      listView: {
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: {
+                              networkid: args.context.ipAddresses[0].associatednetworkid
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              args.response.success({
+                                data: $.grep(
+                                  data.listvirtualmachinesresponse.virtualmachine,
+                                  function(instance) {
+                                    return $.inArray(instance.state, [
+                                      'Destroyed'
+                                    ]) == -1;
+                                  }
+                                )
+                              });
+                            }
+                          });
+                        } 
+                      }
+                    }),
                     multipleAdd: true,
                     fields: {
                       'name': { edit: true, label: 'Name' },
@@ -951,9 +994,8 @@
                       label: 'Add VMs',
                       action: function(args) {
                         $.ajax({
-                          url: createURL(),
+                          url: createURL('createLoadBalancerRule'),
                           data: $.extend(args.data, {
-                            command: 'createLoadBalancerRule',
                             publicipid: args.context.ipAddresses[0].id
                           }),
                           dataType: 'json',
@@ -962,9 +1004,8 @@
                             var itemData = args.itemData;
 
                             $.ajax({
-                              url: createURL(),
+                              url: createURL('assignToLoadBalancerRule'),
                               data: {
-                                command: 'assignToLoadBalancerRule',
                                 id: data.createloadbalancerruleresponse.id,
                                 virtualmachineids: $.map(itemData, function(elem) {
                                   return elem.id;
@@ -995,9 +1036,8 @@
                         label: 'Remove load balancer rule',
                         action: function(args) {
                           $.ajax({
-                            url: createURL(),
+                            url: createURL('deleteLoadBalancerRule'),
                             data: {
-                              command: 'deleteLoadBalancerRule',
                               id: args.context.multiRule[0].id
                             },
                             dataType: 'json',
@@ -1021,16 +1061,15 @@
                     },
                     dataProvider: function(args) {
                       $.ajax({
-                        url: createURL(),
+                        url: createURL('listLoadBalancerRules'),
                         data: {
-                          command: 'listLoadBalancerRules',
                           publicipid: args.context.ipAddresses[0].id
                         },
                         dataType: 'json',
                         async: true,
                         success: function(data) {
                           var loadBalancerData = data.listloadbalancerrulesresponse.loadbalancerrule;
-                          var loadVMTotal = loadBalancerData.length;
+                          var loadVMTotal = loadBalancerData ? loadBalancerData.length : 0;
                           var loadVMCurrent = 0;
 
                           $(loadBalancerData).each(function() {
@@ -1038,11 +1077,10 @@
 
                             // Get instances
                             $.ajax({
-                              url: createURL(),
+                              url: createURL('listLoadBalancerRuleInstances'),
                               dataType: 'json',
                               async: true,
                               data: {
-                                command: 'listLoadBalancerRuleInstances',
                                 id: item.id
                               },
                               success: function(data) {
@@ -1067,7 +1105,32 @@
 
                   // Port forwarding rules
                   portForwarding: {
-                    listView: cloudStack.sections.instances,
+                    listView: $.extend(true, {}, cloudStack.sections.instances, {
+                      listView: {
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL('listVirtualMachines'),
+                            data: {
+                              networkid: args.context.ipAddresses[0].associatednetworkid
+                            },
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                              args.response.success({
+                                data: $.grep(
+                                  data.listvirtualmachinesresponse.virtualmachine,
+                                  function(instance) {
+                                    return $.inArray(instance.state, [
+                                      'Destroyed'
+                                    ]) == -1;
+                                  }
+                                )
+                              });
+                            }
+                          });
+                        } 
+                      }
+                    }),
                     fields: {
                       'private-ports': {
                         edit: true,
@@ -1099,9 +1162,8 @@
                       label: 'Add VM',
                       action: function(args) {
                         $.ajax({
-                          url: createURL(),
+                          url: createURL('createPortForwardingRule'),
                           data: $.extend(args.data, {
-                            command: 'createPortForwardingRule',
                             ipaddressid: args.context.ipAddresses[0].id,
                             virtualmachineid: args.itemData[0].id
                           }),
@@ -1126,9 +1188,8 @@
                         label: 'Remove port forwarding rule',
                         action: function(args) {
                           $.ajax({
-                            url: createURL(),
+                            url: createURL('deletePortForwardingRule'),
                             data: {
-                              command: 'deletePortForwardingRule',
                               id: args.context.multiRule[0].id
                             },
                             dataType: 'json',
@@ -1152,9 +1213,8 @@
                     },
                     dataProvider: function(args) {
                       $.ajax({
-                        url: createURL(),
+                        url: createURL('listPortForwardingRules'),
                         data: {
-                          command: 'listPortForwardingRules',
                           ipaddressid: args.context.ipAddresses[0].id
                         },
                         dataType: 'json',
@@ -1163,18 +1223,17 @@
                           // Get instance
                           var portForwardingData = data
                                 .listportforwardingrulesresponse.portforwardingrule;
-                          var loadTotal = portForwardingData.length;
+                          var loadTotal = portForwardingData ? portForwardingData.length : 0;
                           var loadCurrent = 0;
 
                           $(portForwardingData).each(function() {
                             var item = this;
 
                             $.ajax({
-                              url: createURL(),
+                              url: createURL('listVirtualMachines'),
                               dataType: 'json',
                               async: true,
                               data: {
-                                command: 'listVirtualMachines',
                                 id: item.virtualmachineid
                               },
                               success: function(data) {

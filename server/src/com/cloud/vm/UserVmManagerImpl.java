@@ -2994,19 +2994,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         //set project information
+        boolean skipProjectVms = true;
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else {
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        } 
+        	if (projectId == -1) {
+                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(project.getProjectAccountId());
+        	}
+        	skipProjectVms = false;
+        }
 
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
@@ -3044,11 +3048,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         c.addCriteria(Criteria.ISADMIN, isAdmin);
 
-        return searchForUserVMs(c);
+        return searchForUserVMs(c, skipProjectVms);
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c) {
+    public List<UserVmVO> searchForUserVMs(Criteria c, boolean skipProjectVms) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
 
         SearchBuilder<UserVmVO> sb = _vmDao.createSearchBuilder();
@@ -3091,6 +3095,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
+        
+        if (skipProjectVms) {
+        	 SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+        	 accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+             sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         if (groupId != null && (Long) groupId == -1) {
             SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
@@ -3121,6 +3131,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmVO> sc = sb.create();
+        if (skipProjectVms) {
+        	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
+        }
+        
+        
         if (groupId != null && (Long) groupId == -1) {
             sc.setJoinParameters("vmSearch", "instanceId", (Object) null);
         } else if (groupId != null) {

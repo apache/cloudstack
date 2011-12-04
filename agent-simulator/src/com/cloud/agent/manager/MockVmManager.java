@@ -4,11 +4,8 @@
 
 package com.cloud.agent.manager;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -19,14 +16,12 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecurityIngressRuleAnswer;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -35,14 +30,9 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.simulator.MockVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.State;
@@ -80,7 +70,7 @@ public interface MockVmManager extends Manager {
     
     Answer SavePassword(SavePasswordCommand cmd);
     HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info);
-    SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, SimulatorInfo info);
+    SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info);
 	MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
 	GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
     

@@ -135,7 +135,6 @@ table tbody tr {
   border-left: 1px solid #C4C5C5;
   border-right: 1px solid #C4C5C5;
   border-top: 1px solid transparent;
-  cursor: pointer;
 }
 
 table tbody tr.even {
@@ -931,7 +930,7 @@ div.notification.corner-alert:hover div.message span {
 /*List view*/
 div.panel div.list-view {
   overflow: auto;
-  height: 668px;
+  height: 652px;
   margin-top: 30px;
   border-bottom: 1px solid #E7E7E7;
 }
@@ -1008,6 +1007,14 @@ div.panel div.list-view div.fixed-header table {
 
 div.list-view td.state {
   width: 129px;
+}
+
+div.list-view td.first {
+  cursor: pointer;
+}
+
+div.list-view td.first:hover {
+  color: #3A82CD;
 }
 
 div.list-view td.state span {
@@ -5014,7 +5021,7 @@ div.detail-group td.view-all div.view-all div.end {
 }
 
 div.panel.ui-dialog div.list-view div.fixed-header {
-  top: 33px;
+  top: 42px;
   left: 20px;
   width: 759px;
   height: 49px;

@@ -7,14 +7,12 @@ package com.cloud.resource;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
@@ -27,17 +25,13 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.manager.MockAgentManager;
 import com.cloud.agent.manager.MockStorageManager;
-import com.cloud.agent.manager.MockStorageManagerImpl;
 import com.cloud.agent.manager.MockVmManager;
 import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.agent.manager.SimulatorManager.AgentType;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.resource.ServerResource;
 import com.cloud.simulator.MockHost;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.net.MacAddress;
-import com.cloud.utils.net.NetUtils;
 
 public class AgentResourceBase implements ServerResource {
 	private static final Logger s_logger = Logger

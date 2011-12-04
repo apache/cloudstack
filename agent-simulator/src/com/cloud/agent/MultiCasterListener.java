@@ -18,7 +18,7 @@
  */
 
 package com.cloud.agent;
-import java.net.*;
+import java.net.InetAddress;
 
 public interface MultiCasterListener {
 	public void onMultiCasting(byte[] data, int off, int len, InetAddress addrFrom);

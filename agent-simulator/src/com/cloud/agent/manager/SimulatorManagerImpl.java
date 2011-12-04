@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -40,7 +39,7 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
@@ -62,10 +61,8 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.resource.AgentResourceBase;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
-import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.utils.Pair;
@@ -211,8 +208,8 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockVmMgr.CheckConsoleProxyLoad((CheckConsoleProxyLoadCommand)cmd);
             } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
                 return _mockVmMgr.WatchConsoleProxyLoad((WatchConsoleProxyLoadCommand)cmd);
-            } else if (cmd instanceof SecurityIngressRulesCmd) {
-                return _mockVmMgr.AddSecurityIngressRules((SecurityIngressRulesCmd)cmd, info);
+            } else if (cmd instanceof SecurityGroupRulesCmd) {
+                return _mockVmMgr.AddSecurityGroupRules((SecurityGroupRulesCmd)cmd, info);
             } else if (cmd instanceof SavePasswordCommand) {
                 return _mockVmMgr.SavePassword((SavePasswordCommand)cmd);
             } else if (cmd instanceof PrimaryStorageDownloadCommand) {

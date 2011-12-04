@@ -34,13 +34,13 @@
 
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to add ' + args.name + '?';
+                  return 'Are you sure you want to add a volume?';
                 },
                 success: function(args) {
-                  return 'Your new volume is being created.';
+                  return 'Creating volume';
                 },
                 notification: function(args) {
-                  return 'Creating new volume';
+                  return 'create volume';
                 },
                 complete: function(args) {
                   return 'Volume has been created successfully!';
@@ -161,16 +161,16 @@
               label: 'Take snapshot',
               messages: {
                 confirm: function(args) {
-                  return 'Please confirm that you want to take a snapshot of ' + args.name;
+                  return 'Please confirm that you want to take a snapshot'
                 },
                 success: function(args) {
-                  return 'Your new snapshot ' + args.name + ' is being created.';
+                  return 'Taking snapshot';
                 },
                 notification: function(args) {
-                  return 'Made snapshot of volume: ' + args.name;
+                  return 'Take snapshot';
                 },
                 complete: function(args) {
-                  return 'Snapshot ' + args.name + ' is ready.';
+                  return 'Snapshot has been taken successfully';
                 }
               },
               action: function(args) {
@@ -445,16 +445,17 @@
             },
 
             attachDisk: {
+              
               label: 'Attach Disk',
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to attach disk?';
                 },
                 success: function(args) {
-                  return 'Disk is being attached to instance';
+                  return 'Attaching disk';
                 },
                 notification: function(args) {
-                  return 'Attaching disk to instance';
+                  return 'Attach disk';
                 },
                 complete: function(args) {
                   return 'Disk has been attached to instance';
@@ -530,10 +531,10 @@
                   return 'Are you sure you want to detach disk ?';
                 },
                 success: function(args) {
-                  return 'Disk is being detached.';
+                  return 'Detaching disk';
                 },
                 notification: function(args) {
-                  return 'Detaching disk';
+                  return 'Detach disk';
                 },
                 complete: function(args) {
                   return 'Disk has been detached.';
@@ -570,13 +571,13 @@
               label: 'Download volume',
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to download volume ?';
+                  return 'Are you sure you want to download volume?';
                 },
                 success: function(args) {
-                  return 'Volume is being downloaded.';
+                  return 'Downloading volume';
                 },
                 notification: function(args) {
-                  return 'Downloading volume';
+                  return 'Download volume';
                 },
                 complete: function(args) {
                   var url = decodeURIComponent(args.url);
@@ -617,22 +618,17 @@
               label: 'Create template',
               addRow: 'false',
               messages: {
-                confirm: function(args) {
-                  /*
-                   if (getUserPublicTemplateEnabled() == "true" || isAdmin()) {
-                   $dialogCreateTemplate.find("#create_template_public_container").show();
-                   }
-                   */
+                confirm: function(args) {                 
                   return 'Are you sure you want to create template?';
                 },
                 success: function(args) {
-                  return 'Template is being created.';
-                },
-                notification: function(args) {
                   return 'Creating template';
                 },
+                notification: function(args) {
+                  return 'Create template';
+                },
                 complete: function(args) {
-                  return 'Template has been created.';
+                  return 'Template has been created successfully.';
                 }
               },
               createForm: {
@@ -711,16 +707,16 @@
               label: 'Delete volume',
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to delete volume ?';
+                  return 'Are you sure you want to delete volume?';
                 },
                 success: function(args) {
-                  return 'Volume is being deleted.';
-                },
-                notification: function(args) {
                   return 'Deleting volume';
                 },
+                notification: function(args) {
+                  return 'Delete volume';
+                },
                 complete: function(args) {
-                  return 'Volume has been deleted.';
+                  return 'Volume has been deleted';
                 }
               },
               action: function(args) {
@@ -776,16 +772,16 @@
                 label: 'Take snapshot',
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to take a snapshot of ' + args.name;
+                    return 'Please confirm that you want to take a snapshot' ;
                   },
                   success: function(args) {
-                    return 'Your new snapshot ' + args.name + ' is being created.';
+                    return 'Taking snapshot';
                   },
                   notification: function(args) {
-                    return 'Made snapshot of volume: ' + args.name;
+                    return 'Take snapshot';
                   },
                   complete: function(args) {
-                    return 'Snapshot ' + args.name + ' is ready.';
+                    return 'Snapshot has been taken successfully';
                   }
                 },
                 action: function(args) {
@@ -816,16 +812,17 @@
               },
 
               attachDisk: {
+                addRow: 'false',
                 label: 'Attach Disk',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to attach disk?';
                   },
                   success: function(args) {
-                    return 'Disk is being attached to instance';
+                    return 'Attaching disk';
                   },
                   notification: function(args) {
-                    return 'Attaching disk to instance';
+                    return 'Attach disk';
                   },
                   complete: function(args) {
                     return 'Disk has been attached to instance';
@@ -898,13 +895,13 @@
                 label: 'Detach disk',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to detach disk ?';
+                    return 'Are you sure you want to detach disk?';
                   },
                   success: function(args) {
-                    return 'Disk is being detached.';
+                    return 'Detaching disk';
                   },
                   notification: function(args) {
-                    return 'Detaching disk';
+                    return 'Detach disk';
                   },
                   complete: function(args) {
                     return 'Disk has been detached.';
@@ -941,10 +938,10 @@
                 label: 'Download volume',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to download volume ?';
+                    return 'Are you sure you want to download volume?';
                   },
                   success: function(args) {
-                    return 'Volume is being downloaded.';
+                    return 'Downloading volume';
                   },
                   notification: function(args) {
                     return 'Downloading volume';
@@ -991,10 +988,10 @@
                     return 'Are you sure you want to create template?';
                   },
                   success: function(args) {
-                    return 'Template is being created.';
+                    return 'Creating template';
                   },
                   notification: function(args) {
-                    return 'Creating template';
+                    return 'Create template';
                   },
                   complete: function(args) {
                     return 'Template has been created.';
@@ -1075,13 +1072,13 @@
                 label: 'Delete volume',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete volume ?';
+                    return 'Are you sure you want to delete volume?';
                   },
                   success: function(args) {
-                    return 'Volume is being deleted.';
+                    return 'Deleting volume';
                   },
                   notification: function(args) {
-                    return 'Deleting volume';
+                    return 'Delete volume';
                   },
                   complete: function(args) {
                     return 'Volume has been deleted.';
@@ -1202,10 +1199,10 @@
                   return 'Are you sure you want to create template?';
                 },
                 success: function(args) {
-                  return 'Template is being created.';
+                  return 'Creating template';
                 },
                 notification: function(args) {
-                  return 'Creating template';
+                  return 'Create template';
                 },
                 complete: function(args) {
                   return 'Template has been created.';
@@ -1290,10 +1287,10 @@
                   return 'Are you sure you want to create volume?';
                 },
                 success: function(args) {
-                  return 'Volume is being created.';
+                  return 'Creating volume';
                 },
                 notification: function(args) {
-                  return 'Creating volume';
+                  return 'Create volume';
                 },
                 complete: function(args) {
                   return 'Volume has been created.';
@@ -1347,13 +1344,13 @@
               label: 'Delete snapshot',
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to delete snapshot ?';
+                  return 'Are you sure you want to delete snapshot?';
                 },
                 success: function(args) {
-                  return 'Snapshot is being deleted.';
+                  return 'Deleting snapshot';
                 },
                 notification: function(args) {
-                  return 'Deleting snapshot';
+                  return 'Delete snapshot';
                 },
                 complete: function(args) {
                   return 'Snapshot has been deleted.';
@@ -1413,10 +1410,10 @@
                     return 'Are you sure you want to create template?';
                   },
                   success: function(args) {
-                    return 'Template is being created.';
+                    return 'Creating template';
                   },
                   notification: function(args) {
-                    return 'Creating template';
+                    return 'Create template';
                   },
                   complete: function(args) {
                     return 'Template has been created.';
@@ -1500,10 +1497,10 @@
                     return 'Are you sure you want to create volume?';
                   },
                   success: function(args) {
-                    return 'Volume is being created.';
+                    return 'Creating volume';
                   },
                   notification: function(args) {
-                    return 'Creating volume';
+                    return 'Create volume';
                   },
                   complete: function(args) {
                     return 'Volume has been created.';
@@ -1557,13 +1554,13 @@
                 label: 'Delete snapshot',
                 messages: {
                   confirm: function(args) {
-                    return 'Are you sure you want to delete snapshot ?';
+                    return 'Are you sure you want to delete snapshot?';
                   },
                   success: function(args) {
-                    return 'Snapshot is being deleted.';
+                    return 'Deleting snapshot';
                   },
                   notification: function(args) {
-                    return 'Deleting snapshot';
+                    return 'Delete snapshot';
                   },
                   complete: function(args) {
                     return 'Snapshot has been deleted.';

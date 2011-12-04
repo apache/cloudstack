@@ -106,6 +106,7 @@
       noSelect: true,
       fields: {
         'username': { edit: true, label: 'Account' },
+        'role': { edit: 'ignore', label: 'Role' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
@@ -222,6 +223,7 @@
               data: $.map(data.listprojectaccountsresponse.projectaccount, function(elem) {
                 return {
                   id: elem.accountid,
+                  role: elem.role,
                   username: elem.role == 'Owner' ?
                     elem.account + ' (owner)' : elem.account
                 };

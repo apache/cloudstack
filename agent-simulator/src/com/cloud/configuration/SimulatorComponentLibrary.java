@@ -4,8 +4,6 @@ import com.cloud.agent.manager.MockAgentManagerImpl;
 import com.cloud.agent.manager.MockStorageManagerImpl;
 import com.cloud.agent.manager.MockVmManagerImpl;
 import com.cloud.agent.manager.SimulatorManagerImpl;
-import com.cloud.network.NetworkUsageManagerImpl;
-
 import com.cloud.simulator.dao.MockConfigurationDaoImpl;
 import com.cloud.simulator.dao.MockHostDaoImpl;
 import com.cloud.simulator.dao.MockSecStorageDaoImpl;

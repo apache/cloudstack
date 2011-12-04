@@ -1427,51 +1427,56 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long projectId = cmd.getProjectId();
-
-        if ((caller == null) || isAdmin(caller.getType())) {
+        
+        if (_accountMgr.isAdmin(caller.getType())) {
             isAdmin = true;
             // validate domainId before proceeding
             if (domainId != null) {
-                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list events.");
-                }
-
+            	Domain domain = _domainDao.findById(domainId);
+            	if (domain == null) {
+            		throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+            	}
+            	_accountMgr.checkAccess(caller, _domainDao.findById(domainId));
+               
                 if (accountName != null) {
-                    Account userAccount = _accountDao.findAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        permittedAccounts.add(userAccount.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    Account userAccount = _accountDao.findNonProjectAccountIncludingRemoved(accountName, domainId);
+                    if (userAccount == null) {
+                    	throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
+                    
+                    permittedAccounts.add(userAccount.getId());
                 }
-            } else {
-                domainId = ((caller == null) ? DomainVO.ROOT_DOMAIN : caller.getDomainId());
-                if (accountName != null) {
-                    Account userAccount = _accountDao.findAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        permittedAccounts.add(userAccount.getId());
-                    } else {
-                        throw new InvalidParameterValueException("DomainId is not specified. Unable to find account " + accountName + " in default root domain " + domainId);
-                    }
-                }
+	    	} else {
+	            domainId = caller.getDomainId();
+	            if (accountName != null) {
+	                Account userAccount = _accountDao.findNonProjectAccountIncludingRemoved(accountName, domainId);
+	                if (userAccount == null) {
+	                	throw new InvalidParameterValueException("Can't find account " + accountName + " in domain id=" + domainId);
+	                }
+	                permittedAccounts.add(userAccount.getId());
+	            }
             }
         } else {
             permittedAccounts.add(caller.getId());
         }
         
         //set project information
+        boolean skipProjectEvents = true;
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        	if (projectId == -1) {
+                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(project.getProjectAccountId());
+        	}
+        	skipProjectEvents = false;
         }
 
         Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1503,41 +1508,40 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("createDateB", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
         sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
+        sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
 
-        if ((permittedAccounts.isEmpty()) && (accountName == null) && (domainId != null) && isAdmin) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        if (isAdmin && permittedAccounts.isEmpty() && domainId != null) {
+             // if accountId isn't specified, we can do a domain match for the admin case
+             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-
+        
         SearchCriteria<EventVO> sc = sb.create();
+        if (!permittedAccounts.isEmpty()) {
+            sc.setParameters("accountId", permittedAccounts.toArray());
+        } else if (domainId != null) {
+            sc.setJoinParameters("domainSearch", "path", _domainDao.findById(domainId).getPath() + "%");
+        }
+        
+        if (skipProjectEvents) {
+        	sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
+        }
+        
         if (id != null) {
             sc.setParameters("id", id);
         }
+        
         if (keyword != null) {
             SearchCriteria<EventVO> ssc = _eventDao.createSearchCriteria();
             ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("level", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
             sc.addAnd("level", SearchCriteria.Op.SC, ssc);
         }
 
         if (level != null) {
             sc.setParameters("levelEQ", level);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountId", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            if (accountName != null) {
-                sc.setParameters("domainIdEQ", domainId);
-                sc.setParameters("accountName", "%" + accountName + "%");
-            } else if (isAdmin) {
-                DomainVO domain = _domainDao.findById(domainId);
-                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            }
         }
 
         if (type != null) {
@@ -1904,8 +1908,22 @@ public class ManagementServerImpl implements ManagementServer {
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
+        boolean allocatedOnly = false;
         if ((isAllocated != null) && (isAllocated == true)) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
+            allocatedOnly = true;
+        }
+        
+        VlanType vlanType = null;
+        if (forVirtualNetwork != null) {
+            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+        } else {
+            vlanType = VlanType.VirtualNetwork;
+        }
+        
+        //don't show SSVM/CPVM ips
+        if (vlanType == VlanType.VirtualNetwork && (allocatedOnly)) {
+        	sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
@@ -1914,13 +1932,6 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
-
-        VlanType vlanType = null;
-        if (forVirtualNetwork != null) {
-            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        } else {
-            vlanType = VlanType.VirtualNetwork;
         }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);

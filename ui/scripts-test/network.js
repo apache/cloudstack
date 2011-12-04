@@ -400,6 +400,20 @@
                     }
                   },
 
+                  staticNATDataProvider: function(args) {
+                    args.response.success({
+                      data: testData.data.ipAddresses[0]
+                    });
+                  },
+
+                  vmDataProvider: function(args) {
+                    args.response.success({
+                      data: testData.data.instances[1]
+                    });
+                  },
+
+                  vmDetails: cloudStack.sections.instances.listView.detailView,
+
                   staticNAT: {
                     noSelect: true,
                     fields: {

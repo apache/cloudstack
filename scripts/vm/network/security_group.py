@@ -239,11 +239,12 @@ def default_network_rules_systemvm(vm_name, brname):
         try:
             execute("iptables -A " + brfw + "-OUT" +  " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
             execute("iptables -A " + brfw + "-IN" + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
+            execute("iptables -A " + vmchain + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j RETURN")
         except:
             logging.debug("Failed to program default rules")
             return 'false'
 
-    execute("iptables -A " + vmchain + " -j RETURN")
+    execute("iptables -A " + vmchain + " -j ACCEPT")
     
     if write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1') == False:
         logging.debug("Failed to log default network rules for systemvm, ignoring")
@@ -617,13 +618,14 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
         ips = cidrs.split(",")
         ips.pop()
         allow_any = False
-        action = "RETURN"
         if ruletype == 'E':
             vmchain = egress_chain_name(vm_name)
             direction = "-d"
+            action = "RETURN"
             egressrule = egressrule + 1
         else:
             vmchain = vm_name
+            action = "ACCEPT"
             direction = "-s"
         if  '0.0.0.0/0' in ips:
             i = ips.index('0.0.0.0/0')
@@ -730,8 +732,8 @@ def addFWFramework(brname):
             execute("iptables -I FORWARD -o " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
             phydev = execute("brctl show |grep " + brname + " | awk '{print $4}'").strip()
             execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
-            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + phydev + " -j ACCEPT")
            
     

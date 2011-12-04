@@ -6,8 +6,6 @@ package com.cloud.agent.manager;
 
 
 import java.util.HashMap;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,8 +30,8 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecurityIngressRuleAnswer;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
@@ -47,19 +45,13 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-
 import com.cloud.network.Networks.TrafficType;
-
 import com.cloud.simulator.MockHost;
-import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockSecurityRulesVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.MockVm;
@@ -69,7 +61,6 @@ import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
-
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { MockVmManager.class })
@@ -360,9 +351,9 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public SecurityIngressRuleAnswer AddSecurityIngressRules(SecurityIngressRulesCmd cmd, SimulatorInfo info) {
+    public SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info) {
         if (!info.isEnabled()) {
-        	return new SecurityIngressRuleAnswer(cmd, false, "Disabled", SecurityIngressRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
+        	return new SecurityGroupRuleAnswer(cmd, false, "Disabled", SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
         
         Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(info.getHostUuid());
@@ -377,10 +368,10 @@ public class MockVmManagerImpl implements MockVmManager {
             rules.put(cmd.getVmName(), new Ternary<String, Long,Long>(cmd.getSignature(), cmd.getVmId(), cmd.getSeqNum()));
         }
         
-        return new SecurityIngressRuleAnswer(cmd);
+        return new SecurityGroupRuleAnswer(cmd);
     }
     
-    private boolean logSecurityGroupAction(SecurityIngressRulesCmd cmd, Ternary<String,Long, Long> rule) {
+    private boolean logSecurityGroupAction(SecurityGroupRulesCmd cmd, Ternary<String,Long, Long> rule) {
         String action = ", do nothing";
         String reason = ", reason=";
         Long currSeqnum = rule == null? null: rule.third();
@@ -424,8 +415,9 @@ public class MockVmManagerImpl implements MockVmManager {
         }
         s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() 
                 + " signature=" + cmd.getSignature() 
-                + " guestIp=" + cmd.getGuestIp() + ", numrules="
-                + cmd.getRuleSet().length + " total cidrs=" + cmd.getTotalNumCidrs() + action + reason);
+                + " guestIp=" + cmd.getGuestIp() + ", numIngressRules="
+                + cmd.getIngressRuleSet().length + ", numEgressRules="
+                + cmd.getEgressRuleSet().length + " total cidrs=" + cmd.getTotalNumCidrs() + action + reason);
         return updateSeqnoAndSig;
     }
 

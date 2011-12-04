@@ -683,7 +683,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         checkAccess(UserContext.current().getCaller(), domain);
         
-        Account account = _accountDao.findNonDisabledAccount(accountName, domainId);
+        Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
         } 
@@ -1066,7 +1066,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if(accountId != null){
             account = _accountDao.findById(accountId);
         }else{
-            account = _accountDao.findAccount(accountName, domainId);
+            account = _accountDao.findEnabledAccount(accountName, domainId);
         }
 
         // Check if account exists
@@ -1084,8 +1084,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         checkAccess(UserContext.current().getCaller(), _domainMgr.getDomain(account.getDomainId()));
 
         // check if the given account name is unique in this domain for updating
-        Account duplicateAcccount = _accountDao.findAccount(newAccountName, domainId);
-        if (duplicateAcccount != null && duplicateAcccount.getRemoved() == null && duplicateAcccount.getId() != account.getId()) {// allow
+        Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
+        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {// allow
                                                                                                                                   // same
                                                                                                                                   // account
                                                                                                                                   // to
@@ -1385,18 +1385,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         
         //set project information
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        } 
+        	if (projectId == -1) {
+        		permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(project.getProjectAccountId());
+        	}
+        }
 
         return new Pair<List<Long>, Long>(permittedAccounts, domainId);
     }

@@ -158,6 +158,8 @@
                               if (isDestroy) {
                                 $loading.remove();
                                 $dataItem.remove();
+                              } else {
+                                $(window).trigger('cloudStack.fullRefresh');
                               }
 
                               complete();
@@ -385,7 +387,7 @@
             error: function(args) { }
           }
         });
-      } else if (field.edit) {
+      } else if (field.edit && field.edit != 'ignore') {
         if (field.range) {
           var $range = $('<div>').addClass('range').appendTo($td);
 
@@ -428,6 +430,7 @@
       // from main instances list view
       var $listView;
       var instances = $.extend(true, {}, args.listView, {
+        context: context,
         uiCustom: true
       });
 
@@ -482,7 +485,7 @@
 
         // Loading appearance
         var $loading = _medit.loadingItem($multi, 'Adding...');
-        $dataBody.append($loading);
+        $dataBody.prepend($loading);
 
         // Clear out fields
         $multi.find('input').val('');
@@ -510,21 +513,7 @@
                       complete: function(completeArgs) {
                         complete(args);
                         $loading.remove();
-
-                        _medit.addItem(
-                          data,
-                          args.fields,
-                          $multi,
-                          itemData,
-                          args.actions,
-                          {
-                            multipleAdd: multipleAdd,
-                            noSelect: noSelect,
-                            context: context,
-                            ignoreEmptyFields: ignoreEmptyFields,
-                            preFilter: actionPreFilter
-                          }
-                        ).appendTo($dataBody);
+                        $(window).trigger('cloudStack.fullRefresh');
                       },
 
                       error: function(args) {
@@ -537,8 +526,6 @@
                   }
                 });
               }
-
-              _medit.refreshItemWidths($multi);
             },
 
             error: cloudStack.dialog.error(function() {
@@ -599,34 +586,43 @@
       return true;
     });
 
-    // Get existing data
-    dataProvider({
-      context: context,
-      response: {
-        success: function(args) {
-          $(args.data).each(function() {
-            var data = this;
-            var itemData = this._itemData;
-            _medit.addItem(
-              data,
-              fields,
-              $multi,
-              itemData,
-              actions,
-              {
-                multipleAdd: multipleAdd,
-                noSelect: noSelect,
-                context: $.extend(true, {}, context, this._context),
-                ignoreEmptyFields: ignoreEmptyFields,
-                preFilter: actionPreFilter
-              }
-            ).appendTo($dataBody);
-          });
+    var getData = function() {
+      dataProvider({
+        context: context,
+        response: {
+          success: function(args) {
+            $multi.find('.data-item').remove();
+            $(args.data).each(function() {
+              var data = this;
+              var itemData = this._itemData;
+              _medit.addItem(
+                data,
+                fields,
+                $multi,
+                itemData,
+                actions,
+                {
+                  multipleAdd: multipleAdd,
+                  noSelect: noSelect,
+                  context: $.extend(true, {}, context, this._context),
+                  ignoreEmptyFields: ignoreEmptyFields,
+                  preFilter: actionPreFilter
+                }
+              ).appendTo($dataBody);
+            });
 
-          _medit.refreshItemWidths($multi);
-        },
-        error: cloudStack.dialog.error
-      }
+            _medit.refreshItemWidths($multi);
+          },
+          error: cloudStack.dialog.error
+        }
+      });
+    };
+
+    // Get existing data
+    getData();
+
+    $(window).bind('cloudStack.fullRefresh', function(event) {
+      getData();
     });
 
     $multi.bind('change select', function() {

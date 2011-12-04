@@ -130,6 +130,7 @@ public class ApiConstants {
     public static final String PASSWORD = "password";
     public static final String NEW_PASSWORD = "new_password";
     public static final String PASSWORD_ENABLED = "passwordenabled";
+    public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String POD_ID = "podid";
     public static final String POLICY_ID = "policyid";

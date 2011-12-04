@@ -12,6 +12,7 @@ public class TemplateProfile {
 	String displayText;
 	Integer bits;
 	Boolean passwordEnabled;
+	Boolean sshKeyEnbaled;
 	Boolean requiresHvm;
 	String url;
 	Boolean isPublic;
@@ -33,7 +34,7 @@ public class TemplateProfile {
 	
 	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
 			String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
-			HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details) {
+			HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
 		this.templateId = templateId;
 		this.userId = userId;
 		this.name = name;
@@ -55,6 +56,7 @@ public class TemplateProfile {
 		this.chksum = chksum;
 		this.bootable = bootable;
 		this.details = details;
+		this.sshKeyEnbaled = sshKeyEnabled;
 	}
 	
 	public TemplateProfile(Long userId, VMTemplateVO template, Long zoneId) {
@@ -65,9 +67,9 @@ public class TemplateProfile {
 	
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
             String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
-            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details) {
+            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details, Boolean sshKeyEnabled) {
         this(templateId, userId, name, displayText, bits, passwordEnabled, requiresHvm, url, isPublic, featured, isExtractable, format, guestOsId, zoneId,
-                hypervisorType, accountName, domainId, accountId, chksum, bootable, details);
+                hypervisorType, accountName, domainId, accountId, chksum, bootable, details, sshKeyEnabled);
         this.templateTag = templateTag;
     }	
 	
@@ -225,5 +227,13 @@ public class TemplateProfile {
     
     public void setDetails(Map details) {
     	this.details = details;
+    }
+    
+    public void setSshKeyEnabled(Boolean enabled) {
+    	this.sshKeyEnbaled = enabled;
+    }
+    
+    public Boolean getSshKeyEnabled() {
+    	return this.sshKeyEnbaled;
     }
 }

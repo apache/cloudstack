@@ -1,6 +1,5 @@
 package com.cloud.server;
 
-import com.cloud.server.ManagementServerExtImpl;
 
 public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
     @Override

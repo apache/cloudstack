@@ -124,7 +124,10 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     private String uuid;
     
     @Column(name="sort_key")
-    int sortKey;
+    private int sortKey;
+    
+    @Column(name="enable_sshkey")
+    private boolean enableSshKey;
     
     @Transient
     Map details;
@@ -150,10 +153,11 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details) {
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details, Boolean sshKeyEnabled) {
         this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
     	this.uuid = UUID.randomUUID().toString();
+    	this.enableSshKey = sshKeyEnabled;
     }    
 
     public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
@@ -456,5 +460,14 @@ public class VMTemplateVO implements VirtualMachineTemplate, Identity {
     public int getSortKey() {
     	return sortKey;
     }
+
+	@Override
+	public boolean getEnableSshKey() {
+		return enableSshKey;
+	}
+	
+	public void setEnableSshKey(boolean enable) {
+		enableSshKey = enable;
+	}
 
 }

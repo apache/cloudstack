@@ -42,7 +42,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
@@ -160,7 +159,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-            IpAddress ip = _networkService.allocateIP(this);
+            IpAddress ip = _networkService.allocateIP(getNetworkId(), _accountService.getAccount(getEntityOwnerId()));
             if (ip != null) {
                 this.setEntityId(ip.getId());
             } else {
@@ -178,7 +177,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        UserContext.current().setEventDetails("Ip Id: "+getEntityId());
+        UserContext.current().setEventDetails("Ip Id: " + getEntityId());
         IpAddress result = _networkService.associateIP(this);
         if (result != null) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);

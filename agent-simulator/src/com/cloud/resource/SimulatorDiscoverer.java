@@ -41,25 +41,19 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.MockAgentManager;
 import com.cloud.agent.manager.MockStorageManager;
-import com.cloud.agent.manager.SimulatorManager;
-import com.cloud.agent.manager.SimulatorManagerImpl;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
-import com.cloud.resource.Discoverer;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.component.Inject;
 
 /**

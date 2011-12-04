@@ -38,7 +38,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value={AccountDao.class})
@@ -49,16 +48,20 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     		                                      "FROM `cloud`.`user` u, `cloud`.`account` a " +
     		                                      "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
     
-    protected final SearchBuilder<AccountVO> AccountNameSearch;
+    protected final SearchBuilder<AccountVO> AllFieldsSearch;
     protected final SearchBuilder<AccountVO> AccountTypeSearch;
     protected final SearchBuilder<AccountVO> DomainAccountsSearch;
     protected final SearchBuilder<AccountVO> CleanupForRemovedAccountsSearch;
     protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
+    protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
     
     protected AccountDaoImpl() {
-        AccountNameSearch = createSearchBuilder();
-        AccountNameSearch.and("accountName", AccountNameSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
-        AccountNameSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("accountName", AllFieldsSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
         
         AccountTypeSearch = createSearchBuilder();
         AccountTypeSearch.and("domainId", AccountTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -81,6 +84,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         CleanupForDisabledAccountsSearch.and("removed", CleanupForDisabledAccountsSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         CleanupForDisabledAccountsSearch.and("state", CleanupForDisabledAccountsSearch.entity().getState(), SearchCriteria.Op.EQ);
         CleanupForDisabledAccountsSearch.done();
+        
+        NonProjectAccountSearch = createSearchBuilder();
+        NonProjectAccountSearch.and("accountName", NonProjectAccountSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
+        NonProjectAccountSearch.and("domainId", NonProjectAccountSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        NonProjectAccountSearch.and("state", NonProjectAccountSearch.entity().getState(), SearchCriteria.Op.EQ);
+        NonProjectAccountSearch.and("type", NonProjectAccountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+        NonProjectAccountSearch.done();
     }
     
     @Override
@@ -144,38 +154,57 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
 
     @Override
-    public Account findNonDisabledAccount(String accountName, Long domainId) {
-        SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        sc.addAnd("state", SearchCriteria.Op.EQ, State.enabled);
+    public Account findEnabledAccount(String accountName, Long domainId) {
+        SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
+        sc.setParameters("domainId",domainId);
+        sc.setParameters("state", State.enabled);
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public Account findEnabledNonProjectAccount(String accountName, Long domainId) {
+        SearchCriteria<AccountVO> sc = NonProjectAccountSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("state", State.enabled);
+        sc.setParameters("type", Account.ACCOUNT_TYPE_PROJECT);
         return findOneBy(sc);
     }
 
 	@Override
 	public Account findActiveAccount(String accountName, Long domainId) {
-        SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        return findOneBy(sc);
+    }
+	
+	@Override
+	public Account findActiveNonProjectAccount(String accountName, Long domainId) {
+        SearchCriteria<AccountVO> sc = NonProjectAccountSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("type", Account.ACCOUNT_TYPE_PROJECT);
         return findOneBy(sc);
     }
 
     @Override
-    public Account findAccount(String accountName, Long domainId) {
-        SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+    public Account findAccountIncludingRemoved(String accountName, Long domainId) {
+        SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        return findOneIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public Account findNonProjectAccountIncludingRemoved(String accountName, Long domainId) {
+        SearchCriteria<AccountVO> sc = NonProjectAccountSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("type", Account.ACCOUNT_TYPE_PROJECT);
         return findOneIncludingRemovedBy(sc);
     }
     
     @Override
     public List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter) {
-        SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
         return listIncludingRemovedBy(sc, filter);
-    }
-    
-    @Override
-    public Account findActiveAccountByName(String accountName) {
-    	SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        return findOneBy(sc);
     }
 
     @Override
@@ -218,17 +247,9 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
 
 	@Override
-	public List<AccountVO> findAdminAccountsForDomain(Long domain) {
-        SearchCriteria<AccountVO> sc = AccountTypeSearch.create();
-        sc.addAnd("domainId", Op.EQ,  domain);
-        sc.addAnd("type", Op.IN, Account.ACCOUNT_TYPE_ADMIN, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, Account.ACCOUNT_TYPE_READ_ONLY_ADMIN, Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
-		return null;
-	}
-
-	@Override
 	public List<AccountVO> findActiveAccountsForDomain(Long domain) {
         SearchCriteria<AccountVO> sc = DomainAccountsSearch.create();
-        sc.addAnd("domainId", Op.EQ,  domain);
+        sc.setParameters("domainId", domain);
 		return listBy(sc);
 	}
 	
