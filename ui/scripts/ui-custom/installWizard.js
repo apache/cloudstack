@@ -647,7 +647,7 @@
         var $title = $('<div></div>').addClass('title')
               .html('Now building your cloud...');
         var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('You may want to get a cup of coffee right now.');
+              .html('');
 
         cloudStack.installWizard.action({
           data: state,
