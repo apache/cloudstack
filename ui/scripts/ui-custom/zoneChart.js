@@ -431,6 +431,10 @@
           refreshChart();
           return false;
         });
+
+        $(window).bind('cloudStack.fullRefresh', function(event) {
+          refreshChart();
+        });
       };
 
       loadNetworkData();
