@@ -16,7 +16,7 @@
  * 
  */
 // Default password is MD5 hashed.  Set the following variable to false to disable this.
-var md5Hashed = true;
+var md5Hashed = false;
  
 $(document).ready(function() { 
 	function initUI() {

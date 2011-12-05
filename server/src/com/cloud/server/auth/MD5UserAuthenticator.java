@@ -18,6 +18,9 @@
 
 package com.cloud.server.auth;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -29,6 +32,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Simple UserAuthenticator that performs a MD5 hash of the password before 
@@ -53,7 +57,6 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
             return false;
         }
         
-        /*
         MessageDigest md5;
         try {
             md5 = MessageDigest.getInstance("MD5");
@@ -71,13 +74,12 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
             sb.append('0');
         }
         sb.append(pwStr);
-         */
         
         // Will: The MD5Authenticator is now a straight pass-through comparison of the
         // the passwords because we will not assume that the password passed in has
         // already been MD5 hashed.  I am keeping the above code in case this requirement changes
         // or people need examples of how to MD5 hash passwords in java.
-        if (!user.getPassword().equals(password)) {
+        if (!user.getPassword().equals(sb.toString())) {
             s_logger.debug("Password does not match");
             return false;
         }
