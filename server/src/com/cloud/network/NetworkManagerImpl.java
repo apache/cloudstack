@@ -4476,7 +4476,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
-        // Mark all static  rules as revoked and apply them on the backend (not in the DB)
+        // Mark all static rules as revoked and apply them on the backend (not in the DB)
         List<FirewallRuleVO> firewallStaticNatRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
         List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
         if (s_logger.isDebugEnabled()) {
@@ -4556,15 +4556,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
-        // Get all ip addresses, mark as releasing and release them on the backend (except for source nat) - DONE
+        // Get all ip addresses, mark as releasing and release them on the backend
         Network network = getNetwork(networkId);
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                if (!userIp.isSourceNat()) {
-                    userIp.setState(State.Releasing);
-                }
+                userIp.setState(State.Releasing); 
                 PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 publicIpsToRelease.add(publicIp);
             }

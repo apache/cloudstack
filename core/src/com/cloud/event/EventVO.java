@@ -72,7 +72,7 @@ public class EventVO implements Event, Identity {
 	private String accountName;
 	
 	@Column(name="type", table="account", insertable=false, updatable=false)
-	private String accountType;
+	private short accountType;
 
 	@Column(name="removed", table="account", insertable=false, updatable=false)
 	private Date removed;
@@ -198,7 +198,7 @@ public class EventVO implements Event, Identity {
 	}
 
 	@Override
-	public String getAccountType() {
+	public Short getAccountType() {
 		return accountType;
 	}
 

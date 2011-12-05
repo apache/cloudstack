@@ -2360,6 +2360,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (ipList == null) {
                 ipList = new ArrayList<PublicIpAddress>();
             }
+            //domR doesn't support release for sourceNat IP address
+            if (ipAddress.isSourceNat() && ipAddress.getState() == IpAddress.State.Releasing) {
+            	continue;
+            }
             ipList.add(ipAddress);
             vlanIpMap.put(vlanTag, ipList);
         }

@@ -45,5 +45,5 @@ public interface Event extends ControlledEntity{
     String getLevel();
     long getStartId();
     String getParameters();
-	String getAccountType();
+	Short getAccountType();
 }
