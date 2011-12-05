@@ -38,8 +38,9 @@ add_dhcp_entry() {
   local ip=$3
   local vm=$4
   local dfltrt=$5
-  local staticrt=$6
-  ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domr "/root/edithosts.sh $mac $ip $vm $dfltrt $staticrt" >/dev/null
+  local ns=$6
+  local staticrt=$7
+  ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domr "/root/edithosts.sh $mac $ip $vm $dfltrt $ns $staticrt" >/dev/null
   return $?
 }
 
@@ -49,8 +50,9 @@ vmIp=
 vmName=
 staticrt=
 dfltrt=
+dns=
 
-while getopts 'r:m:v:n:d:s:' OPTION
+while getopts 'r:m:v:n:d:s:N:' OPTION
 do
   case $OPTION in
   r)	domrIp="$OPTARG"
@@ -65,12 +67,14 @@ do
 		;;
   d)	dfltrt="$OPTARG"
 		;;
+  N)	dns="$OPTARG"
+		;;
   ?)    usage
 		exit 1
 		;;
   esac
 done
 
-add_dhcp_entry $domrIp $vmMac $vmIp $vmName $dfltrt $staticrt
+add_dhcp_entry $domrIp $vmMac $vmIp $vmName $dfltrt $dns $staticrt
 
 exit $?
