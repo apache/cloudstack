@@ -3945,11 +3945,11 @@
                 label: 'View console',
                 action: {
                   externalLink: {
-                    url: function(args) {
-                      return clientConsoleUrl + '?cmd=access&vm=' + args.data.id;
+                    url: function(args) {                      
+                      return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
                     },
                     title: function(args) {
-                      return args.data.systemvmtype + ' console';
+                      return args.context.systemVMs[0].systemvmtype + ' console';
                     },
                     width: 820,
                     height: 640
