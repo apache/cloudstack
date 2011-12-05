@@ -1248,7 +1248,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             
             cvo = _configDao.findByName(LDAPParams.usessl.toString());
             if (cvo==null){
-                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.usessl.toString(), null, "Check “Use SSL” if the external LDAP server is configured for LDAP over SSL.");
+                cvo = new ConfigurationVO("Advanced","DEFAULT", "management-server", LDAPParams.usessl.toString(), null, "Check Use SSL if the external LDAP server is configured for LDAP over SSL.");
             }  
             cvo.setValue(useSSL.toString()); _configDao.persist(cvo);
             
