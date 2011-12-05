@@ -22,7 +22,8 @@ var ERROR_INTERNET_CANNOT_CONNECT = 12029;
 var ERROR_VMOPS_ACCOUNT_ERROR = 531;
 
 // Default password is MD5 hashed.  Set the following variable to false to disable this.
-var md5Hashed = false;
+var md5Hashed = true;
+var md5HashedLogin = false;
 
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 50;

@@ -16,7 +16,8 @@
  * 
  */
 // Default password is MD5 hashed.  Set the following variable to false to disable this.
-var md5Hashed = false;
+var md5Hashed = true;
+var md5HashedLogin = false;
  
 $(document).ready(function() { 
 	function initUI() {
@@ -659,7 +660,7 @@ $(document).ready(function() {
 		array1.push("&username="+encodeURIComponent(username));
 		
 		var password = $("#account_password").val();
-		if (md5Hashed) {
+		if (md5HashedLogin) {
 			password = $.md5(password);
 		} 
 		array1.push("&password="+password);

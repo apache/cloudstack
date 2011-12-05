@@ -136,7 +136,7 @@
         array1.push("&username=" + encodeURIComponent(args.data.username));
 
         var password;
-        if (md5Hashed)
+        if (md5HashedLogin)
           password = $.md5(args.data.password);
         else
           password = args.data.password;
