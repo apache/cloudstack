@@ -80,8 +80,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, " +
             "vm_template.enable_password, service_offering.id, disk_offering.name, storage_pool.id, storage_pool.pool_type, " +
             "service_offering.cpu, service_offering.speed, service_offering.ram_size, volumes.id, volumes.device_id, volumes.volume_type, security_group.id, security_group.name, " +
-            "security_group.description, nics.id, nics.ip4_address, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
-            "networks.traffic_type, networks.guest_type, networks.is_default from vm_instance " +
+            "security_group.description, nics.id, nics.ip4_address, nics.default_nic, nics.gateway, nics.network_id, nics.netmask, nics.mac_address, nics.broadcast_uri, nics.isolation_uri, " +
+            "networks.traffic_type, networks.guest_type from vm_instance " +
             "left join account on vm_instance.account_id=account.id  " +
             "left join domain on vm_instance.domain_id=domain.id " +
             "left join instance_group_vm_map on vm_instance.id=instance_group_vm_map.instance_id " +
@@ -512,7 +512,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
             nicResponse.setTrafficType(rs.getString("networks.traffic_type"));
             nicResponse.setType(rs.getString("networks.guest_type"));
-            nicResponse.setIsDefault(rs.getBoolean("networks.is_default"));
+            nicResponse.setIsDefault(rs.getBoolean("nics.default_nic"));
             nicResponse.setObjectName("nic");
             userVmData.addNic(nicResponse);
         }

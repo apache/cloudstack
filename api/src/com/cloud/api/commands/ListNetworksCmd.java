@@ -65,9 +65,6 @@ public class ListNetworksCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="list networks by ACL (access control list) type. Supported values are Account and Domain")
     private String aclType;
     
-    @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
-    private Boolean isDefault;
-    
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="type of the traffic")
     private String trafficType;
     
@@ -113,10 +110,6 @@ public class ListNetworksCmd extends BaseListCmd {
     public String getAclType() {
 		return aclType;
 	}
-
-	public Boolean isDefault() {
-        return isDefault;
-    }
 
     public String getTrafficType() {
         return trafficType;

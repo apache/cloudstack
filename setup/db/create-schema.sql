@@ -190,7 +190,6 @@ CREATE TABLE `cloud`.`networks` (
   `acl_type` varchar(15) COMMENT 'ACL access type. Null for system networks, can be Account/Domain for Guest networks',
   `network_domain` varchar(255) COMMENT 'domain',
   `reservation_id` char(40) COMMENT 'reservation id',
-  `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `guest_type` char(32) COMMENT 'type of guest network that can be shared or isolated',
   `specified_cidr` int(1) unsigned NOT NULL COMMENT '1 if the CIDR/gateway/vlan are specified in this network',
   `created` datetime NOT NULL COMMENT 'date created',

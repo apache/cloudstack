@@ -62,9 +62,6 @@ public class CreateNetworkCmd extends BaseCmd {
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
-    
-    @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
-    private Boolean isDefault;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the network")
     private String gateway;
@@ -144,10 +141,6 @@ public class CreateNetworkCmd extends BaseCmd {
     
     public String getDisplayText() {
         return displayText;
-    }
-    
-    public Boolean isDefault() {
-        return isDefault;
     }
 
     public String getNetworkDomain() {

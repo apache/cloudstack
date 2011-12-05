@@ -16,16 +16,9 @@
  */
 package com.cloud.baremetal;
 
-import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -33,30 +26,21 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalDhcpCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.manager.Commands;
-import com.cloud.baremetal.ExternalDhcpEntryListener.DhcpEntryState;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
@@ -65,7 +49,6 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -74,6 +57,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = {ExternalDhcpManager.class})
@@ -86,6 +70,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 	@Inject HostPodDao _podDao;
 	@Inject UserVmDao _userVmDao;
 	@Inject ResourceManager _resourceMgr;
+	@Inject NicDao _nicDao;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -224,6 +209,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			dns = nic.getDns2();
 		}
 		DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName(), dns, nic.getGateway());
+		dhcpCommand.setDefaultRouter(_nicDao.findDefaultNicForVM(profile.getVirtualMachine().getId()).getGateway());
 		String errMsg = String.format("Set dhcp entry on external DHCP %1$s failed(ip=%2$s, mac=%3$s, vmname=%4$s)",
 				h.getPrivateIpAddress(), nic.getIp4Address(), nic.getMacAddress(), profile.getVirtualMachine().getHostName());
 		//prepareBareMetalDhcpEntry(nic, dhcpCommand);

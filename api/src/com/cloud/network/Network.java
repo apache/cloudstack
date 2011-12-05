@@ -278,8 +278,6 @@ public interface Network extends ControlledEntity {
 
     String getReservationId();
 
-    boolean isDefault();
-
     String getNetworkDomain();
 
     GuestType getGuestType();

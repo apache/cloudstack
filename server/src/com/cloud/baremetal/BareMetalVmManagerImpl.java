@@ -317,7 +317,6 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 		networkList.add(defaultNetwork.getId());
 		
 		List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
-        short defaultNetworkNumber = 0;
         for (Long networkId : networkList) {
             NetworkVO network = _networkDao.findById(networkId);
             if (network == null) {
@@ -330,19 +329,8 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
                         throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
                     }
                 } 
-                
-                if (network.isDefault()) {
-                    defaultNetworkNumber++;
-                }
                 networks.add(new Pair<NetworkVO, NicProfile>(network, null));
             }
-        }
-
-        //at least one network default network has to be set
-        if (defaultNetworkNumber == 0) {
-            throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
-        } else if (defaultNetworkNumber >1) {
-            throw new InvalidParameterValueException("Only 1 default network per vm is supported");
         }
         
         long id = _vmDao.getNextInSequence(Long.class, "id");

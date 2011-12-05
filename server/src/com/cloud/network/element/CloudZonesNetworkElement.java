@@ -209,7 +209,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             String sshPublicKey = uservm.getVirtualMachine().getDetail("SSH.PublicKey");
 
             Commands cmds = new Commands(OnError.Continue);
-            if (password != null && network.isDefault()) {
+            if (password != null && nic.isDefaultNic()) {
                 final String encodedPassword = PasswordGenerator.rot13(password);
                 SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getVirtualMachine().getHostName());
                 cmds.addCommand("password", cmd);

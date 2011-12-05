@@ -116,8 +116,8 @@ public interface NetworkManager extends NetworkService {
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException;
 
-    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException;
+    List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
+            ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException;
 
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
 
@@ -157,8 +157,8 @@ public interface NetworkManager extends NetworkService {
 
     boolean destroyNetwork(long networkId, ReservationContext context);
 
-    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
-            Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException;
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId,
+            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * @throws InsufficientCapacityException
@@ -198,7 +198,7 @@ public interface NetworkManager extends NetworkService {
 
     String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId);
 
-    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type, Boolean isDefault);
+    List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type);
 
     IPAddressVO markIpAsUnavailable(long addrId);
 

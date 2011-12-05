@@ -2220,42 +2220,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // network
             // * if network is found, use it. If more than 1 virtual network is found, throw an error
             // * if network is not found, create a new one and use it
-            // 2) If Availability=Optional, search for default networks for the account. If it's more than 1, throw an error.
-            // If it's 0, and there are no default direct networks, create default Guest Virtual network
 
             List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeGuestTypeAndState(NetworkOffering.State.Enabled, TrafficType.Guest, Network.GuestType.Isolated);
             PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
             if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
-                // get Virtual netowrks
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated, true);
-
+                // get Virtual networks
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
 
                 if (virtualNetworks.isEmpty()) {
                     s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
+                            null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
-                    throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + owner + "; please specify networkIds");
+                    throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
                 } else {
                     defaultNetwork = virtualNetworks.get(0);
-                }
-            } else {
-                List<NetworkVO> defaultNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), null, true);
-                if (defaultNetworks.isEmpty()) {
-                    if (defaultVirtualOffering.get(0).getAvailability() == Availability.Optional) {
-                        s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                        Network newNetwork = _networkMgr.createGuestNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                                null, null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
-                        defaultNetwork = _networkDao.findById(newNetwork.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find default networks for account " + owner);
-                    }
-
-                } else if (defaultNetworks.size() > 1) {
-                    throw new InvalidParameterValueException("More than 1 default network is found for account " + owner);
-                } else {
-                    defaultNetwork = defaultNetworks.get(0);
                 }
             }
 
@@ -2439,24 +2419,24 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         short defaultNetworkNumber = 0;
         boolean securityGroupEnabled = false;
         for (NetworkVO network : networkList) {
-
             if (network.getDataCenterId() != zone.getId()) {
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
             }
+            
+            String requestedIp = null;
+            if (requestedIps != null && !requestedIps.isEmpty()) {
+            	requestedIp = requestedIps.get(network.getId());
+            }
 
-            NicProfile profile = null;
-
-            //Add requested ips
-            if (requestedIps != null && requestedIps.get(network.getId()) != null) {
-                profile = new NicProfile(requestedIps.get(network.getId()));
-            } 
-
-            if (network.isDefault()) {
-                defaultNetworkNumber++;
-                // if user requested specific ip for default network, add it
-                if (defaultNetworkIp != null) {
-                    profile = new NicProfile(defaultNetworkIp);
-                }
+            NicProfile profile = new NicProfile(requestedIp);
+            
+            if (defaultNetworkNumber == 0) {
+            	 defaultNetworkNumber++;
+            	 profile.setDefaultNic(true);
+                 // if user requested specific ip for default network, add it
+                 if (defaultNetworkIp != null) {
+                     profile = new NicProfile(defaultNetworkIp);
+                 }
             }
 
             networks.add(new Pair<NetworkVO, NicProfile>(network, profile));
@@ -3372,9 +3352,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // VERIFICATIONS and VALIDATIONS
 
         //VV 1: verify the two users
-        Account adminAccount = UserContext.current().getCaller();
-        if (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN  && adminAccount.getType() != Account.ACCOUNT_TYPE_DOMAIN_ADMIN){ // only root admin can assign VMs
-        	throw new InvalidParameterValueException("Only domain admins are allowed to assign VMs and not " + adminAccount.getType());
+        Account caller = UserContext.current().getCaller();
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN  && caller.getType() != Account.ACCOUNT_TYPE_DOMAIN_ADMIN){ // only root admin can assign VMs
+        	throw new InvalidParameterValueException("Only domain admins are allowed to assign VMs and not " + caller.getType());
         }
 
         //get and check the valid VM
@@ -3404,6 +3384,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (newAccount.getState() == Account.State.disabled) {
             throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
         }
+        
+        //don't allow to move the vm if it's assigned to Isolated 
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
@@ -3457,7 +3439,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         txn.commit();
 
         // OS 3: update the network
-        if (zone.getNetworkType() == NetworkType.Advanced) { 
+        if (zone.getNetworkType() == NetworkType.Advanced) {
             //cleanup the network for the oldOwner
             _networkMgr.cleanupNics(vmOldProfile);
             _networkMgr.expungeNics(vmOldProfile);
@@ -3473,19 +3455,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 NetworkOfferingVO no = _networkOfferingDao.findById(network.getNetworkOfferingId());
                 if (!no.isSystemOnly()) {
                     if (network.getGuestType() == Network.GuestType.Shared || !_networkDao.listBy(oldAccount.getId(), network.getId()).isEmpty()) {
-                        if (network.isDefault()) {
-                            oldNetworks.add(network);
-                        }
+                        oldNetworks.add(network);
                     }
                 }
             }
+            
             for (NetworkVO oldNet: oldNetworks){
                 long networkOffering =  oldNet.getNetworkOfferingId();
                 PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated, true);
+                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
                 if (virtualNetworks.isEmpty()) {
                     Network newNetwork = _networkMgr.createGuestNetwork(networkOffering, newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                            null, null, null, newAccount, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
+                            null, null, newAccount, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Virtaul networks are found for account " + newAccount + "; please specify networkIds");
@@ -3494,14 +3475,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
 
                 networkList.add(defaultNetwork);
+                
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
-                short defaultNetworkNumber = 0;
                 for (NetworkVO network : networkList) {
-
-                    if (network.isDefault()) {
-                        defaultNetworkNumber++;
-                    }
-
                     networks.add(new Pair<NetworkVO, NicProfile>(network, null));
                 }
 
@@ -3521,11 +3497,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long userId = UserContext.current().getCallerUserId();
         UserVO user = _userDao.findById(userId);
         boolean needRestart = false;
-
-        // if account is removed, return error
-        if (caller != null && caller.getRemoved() != null) {
-            throw new PermissionDeniedException("The account " + caller.getId() + " is removed");
-        }
 
         long vmId = cmd.getVmId();
         UserVmVO vm = _vmDao.findById(vmId);

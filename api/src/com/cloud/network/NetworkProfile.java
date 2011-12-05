@@ -44,7 +44,6 @@ public class NetworkProfile implements Network {
     private long related;
     private String displayText;
     private String reservationId;
-    private boolean isDefault;
     private String networkDomain;
     private Network.GuestType guestType;
     private Long physicalNetworkId;
@@ -66,7 +65,6 @@ public class NetworkProfile implements Network {
         this.related = network.getRelated();
         this.displayText = network.getDisplayText();
         this.reservationId = network.getReservationId();
-        this.isDefault = network.isDefault();
         this.networkDomain = network.getNetworkDomain();
         this.domainId = network.getDomainId();
         this.guestType = network.getGuestType();
@@ -167,11 +165,6 @@ public class NetworkProfile implements Network {
     @Override
     public String getReservationId() {
         return reservationId;
-    }
-
-    @Override
-    public boolean isDefault() {
-        return isDefault;
     }
 
     @Override

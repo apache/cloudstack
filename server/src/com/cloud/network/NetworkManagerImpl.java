@@ -1038,13 +1038,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, isDefault, false, null, null, null);
+        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null);
     }
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isDefault, boolean errorIfAlreadySetup,
-            Long domainId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
+            ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException {
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
@@ -1103,8 +1103,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     related = id;
                 }
 
-                NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isDefault,
-                        predefined.getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType);
+                NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, predefined.getNetworkDomain(),
+                        offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType);
                 networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null && aclType == ACLType.Domain) {
@@ -1159,7 +1159,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             NicProfile profile = guru.allocate(config, requested, vm);
 
-            if (vm != null && vm.getVirtualMachine().getType() == Type.User && config.isDefault()) {
+            if (vm != null && vm.getVirtualMachine().getType() == Type.User && (requested != null && requested.isDefaultNic())) {
                 profile.setDefaultNic(true);
             }
 
@@ -1459,8 +1459,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             @Override
             public int compare(NicVO nic1, NicVO nic2) {
-                boolean isDefault1 = getNetwork(nic1.getNetworkId()).isDefault();
-                boolean isDefault2 = getNetwork(nic2.getNetworkId()).isDefault();
+                boolean isDefault1 = nic1.isDefaultNic();
+                boolean isDefault2 = nic2.isDefaultNic();
 
                 return (isDefault1 ^ isDefault2) ? ((isDefault1 ^ true) ? 1 : -1) : 0;
             }
@@ -1712,7 +1712,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String vlanId = cmd.getVlan();
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
-        Boolean isDefault = cmd.isDefault();
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
@@ -1868,7 +1867,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 
-        Network network = createGuestNetwork(networkOfferingId, name, displayText, isDefault, gateway, cidr, vlanId, networkDomain, owner, false, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess);
+        Network network = createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, false, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess);
         //Vlan is created in 2 cases - works in Advance zone only:
         //1) GuestType is Shared
         //2) GuestType is Isolated, but SourceNat service is disabled
@@ -1886,8 +1885,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Boolean isDefault, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
-            boolean isSecurityGroupEnabled, Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException {
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled,
+            Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException {
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         //this method supports only guest network creation
@@ -1950,20 +1949,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (!allowCreation) {
                     throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat service disabled are allowed in security group enabled zone");
                 }
-            }
-        }
-
-        // allow isDefault to be set only for Shared network and Isolated networks with source nat disabled service
-        boolean allowSettingDefault = (zone.getNetworkType() == NetworkType.Advanced && (networkOffering.getGuestType() == GuestType.Shared || (networkOffering.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.SourceNat))));
-        if (allowSettingDefault) {
-            if (isDefault == null) {
-                isDefault = false;
-            }
-        } else {
-            if (zone.getNetworkType() == NetworkType.Basic || isDefault == null) {
-                isDefault = true;
-            } else {
-                throw new InvalidParameterValueException("isDefault parameter can be passed in only for network creation of guestType Shared or Isolated with source nat service disabled; and only in Advance zone");
             }
         }
 
@@ -2057,7 +2042,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isDefault, true, domainId, aclType, subdomainAccess);
+        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, true, domainId, aclType, subdomainAccess);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
@@ -2093,7 +2078,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String trafficType = cmd.getTrafficType();
         Boolean isSystem = cmd.getIsSystem();
         String aclType = cmd.getAclType();
-        Boolean isDefault = cmd.isDefault();
         Long projectId = cmd.getProjectId();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String path = null;
@@ -2178,17 +2162,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (isSystem == null || !isSystem) {
             //Get domain level networks
             if (domainId != null) {
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, aclType), searchFilter, domainId));
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType), searchFilter, domainId));
             } else if (permittedAccounts.isEmpty()){
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, aclType), searchFilter, path));
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType), searchFilter, path));
             }
 
             //get account specific networks
             if (!permittedAccounts.isEmpty()){
-                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, aclType), searchFilter, permittedAccounts));
+                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType), searchFilter, permittedAccounts));
             }
         } else {
-            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, isDefault, trafficType, physicalNetworkId, null), searchFilter);
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
@@ -2217,7 +2201,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, Boolean isDefault, String trafficType, Long physicalNetworkId, String aclType) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId, String aclType) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -2240,10 +2224,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (guestIpType != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
-        }
-
-        if (isDefault != null) {
-            sc.addAnd("isDefault", SearchCriteria.Op.EQ, isDefault);
         }
 
         if (trafficType != null) {
@@ -2981,7 +2961,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
             PhysicalNetwork physicalNetwork = translateZoneIdToPhysicalNetwork(zoneId);
-            network = createGuestNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, null, owner, false, null, physicalNetwork, zoneId, ACLType.Account, null);
+            network = createGuestNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null, null, null, owner, false, null, physicalNetwork, zoneId, ACLType.Account, null);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
@@ -3185,14 +3165,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type, Boolean isDefault) {
+    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type) {
         List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
         List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
 
         for (NetworkVO network : zoneNetworks) {
             if (!isNetworkSystem(network)) {
                 if (network.getGuestType() == Network.GuestType.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
-                    if ((type == null || type == network.getGuestType()) && (isDefault == null || isDefault.booleanValue() == network.isDefault)) {
+                    if (type == null || type == network.getGuestType()) {
                         accountNetworks.add(network);
                     }
                 }
@@ -3419,7 +3399,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean isUserVmsDefaultNetwork = false;
         boolean isDomRGuestOrPublicNetwork = false;
         if (vm != null) {
-            if (vm.getType() == Type.User && network.isDefault()) {
+        	Nic nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+            if (vm.getType() == Type.User && nic.isDefaultNic()) {
                 isUserVmsDefaultNetwork = true; 
             } else if (vm.getType() == Type.DomainRouter && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
                 isDomRGuestOrPublicNetwork = true;
@@ -3903,7 +3884,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 //check if vnet is being extended
                 if (!(newStartVnet.intValue() > existingStartVnet && newEndVnet.intValue() < existingEndVnet)) {
-                    throw new InvalidParameterValueException("Can's shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
+                    throw new InvalidParameterValueException("Can't shrink existing vnet range as it the range has vnets allocated. Only extending existing vnet is supported");
                 }
 
                 if (newStartVnet < existingStartVnet) {

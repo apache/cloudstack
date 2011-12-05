@@ -66,10 +66,6 @@ public class NicResponse extends BaseResponse {
         this.id.setValue(id);
     }
 
-    public Long getNetworkid() {
-        return networkId.getValue();
-    }
-
     public void setNetworkid(Long networkid) {
         this.networkId.setValue(networkid);
     }

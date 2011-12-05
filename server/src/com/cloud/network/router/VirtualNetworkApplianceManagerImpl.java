@@ -31,7 +31,6 @@ import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import com.cloud.network.rules.LbStickinessMethod;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -1562,18 +1561,18 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" dnssearchorder=").append(domain_suffix);
         }
 
-        if (!network.isDefault() && network.getGuestType() == Network.GuestType.Shared) {
-            buf.append(" defaultroute=false");
-
-            String virtualNetworkElementNicIP = _networkMgr.getIpOfNetworkElementInVirtualNetwork(network.getAccountId(), network.getDataCenterId());
-            if (network.getGuestType() != Network.GuestType.Shared && virtualNetworkElementNicIP != null) {
-                defaultDns1 = virtualNetworkElementNicIP;
-            } else {
-                s_logger.debug("No Virtual network found for account id=" + network.getAccountId() + " so setting dns to the dns of the network id=" + network.getId());
-            }
-        } else {
-            buf.append(" defaultroute=true");
-        }
+//        if (!network.isDefault() && network.getGuestType() == Network.GuestType.Shared) {
+//            buf.append(" defaultroute=false");
+//
+//            String virtualNetworkElementNicIP = _networkMgr.getIpOfNetworkElementInVirtualNetwork(network.getAccountId(), network.getDataCenterId());
+//            if (network.getGuestType() != Network.GuestType.Shared && virtualNetworkElementNicIP != null) {
+//                defaultDns1 = virtualNetworkElementNicIP;
+//            } else {
+//                s_logger.debug("No Virtual network found for account id=" + network.getAccountId() + " so setting dns to the dns of the network id=" + network.getId());
+//            }
+//        } else {
+//            buf.append(" defaultroute=true");
+//        }
 
         boolean dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VirtualRouter);
         boolean dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, Provider.VirtualRouter);
@@ -2024,6 +2023,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             if (sendDnsDhcpData) {
                 DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName());
+
+            	dhcpCommand.setDefaultRouter(_nicDao.findDefaultNicForVM(profile.getVirtualMachine().getId()).getGateway());             
+                
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -2132,7 +2134,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 String sshPublicKey = profile.getVirtualMachine().getDetail("SSH.PublicKey");
 
                 // password should be set only on default network element
-                if (password != null && network.isDefault()) {
+                if (password != null && nic.isDefaultNic()) {
                     final String encodedPassword = PasswordGenerator.rot13(password);
                     SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName());
                     cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
@@ -2142,8 +2144,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
                     cmds.addCommand("password", cmd);
                 }
-
-
 
                 cmds.addCommand(
                         "vmdata",
@@ -2552,6 +2552,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
                     DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
+                    dhcpCommand.setDefaultRouter(_nicDao.findDefaultNicForVM(vm.getId()).getGateway());
+                    
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
