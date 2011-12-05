@@ -2024,8 +2024,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (sendDnsDhcpData) {
                 DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName());
                 
-                String defaultDhcpIp = findDefaultDhcpIp(profile.getVirtualMachine().getId());
-            	dhcpCommand.setDefaultRouter(defaultDhcpIp);             
+            	dhcpCommand.setDefaultRouter(findGatewayIp(profile.getVirtualMachine().getId()));
+            	dhcpCommand.setDefaultDns(findDefaultDnsIp(profile.getVirtualMachine().getId()));
                 
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
@@ -2084,17 +2084,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return rets;
     }
 
-	private String findDefaultDhcpIp(long userVmId) {
+	private String findDefaultDnsIp(long userVmId) {
 		NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
 		
-		//check if the DhcpProvider is the domR
-		if (!_networkMgr.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter)) {
+		//check if DNS provider is the domR
+		if (!_networkMgr.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
 			return null;
 		}
 		
 		//find domR's nic in the network
 		NicVO domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
 		return domrDefaultNic.getIp4Address();
+	}
+	
+	private String findGatewayIp(long userVmId) {
+		NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
+		return defaultNic.getGateway();
 	}
 
     @Override
@@ -2570,7 +2575,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
                     DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
-                    dhcpCommand.setDefaultRouter(findDefaultDhcpIp(vm.getId()));
+                    dhcpCommand.setDefaultRouter(findGatewayIp(vm.getId()));
+                    dhcpCommand.setDefaultRouter(findDefaultDnsIp(vm.getId()));
                     
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

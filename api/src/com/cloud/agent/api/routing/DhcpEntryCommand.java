@@ -29,6 +29,7 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String nextServer;
     String defaultRouter;
     String staticRoutes;
+    String defaultDns;
 
     
     protected DhcpEntryCommand() {
@@ -96,5 +97,11 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         this.staticRoutes = staticRoutes;
     }
 
-    
+	public String getDefaultDns() {
+		return defaultDns;
+	}
+
+	public void setDefaultDns(String defaultDns) {
+		this.defaultDns = defaultDns;
+	}
 }
