@@ -470,6 +470,7 @@ fi
 %{_javadir}/%{name}-commons-pool-1.5.6.jar
 %{_javadir}/%{name}-google-gson-1.7.1.jar
 %{_javadir}/%{name}-netscaler.jar
+%{_javadir}/%{name}-netscaler-sdx.jar
 %{_javadir}/%{name}-log4j-extras.jar
 %{_javadir}/%{name}-backport-util-concurrent-3.0.jar
 %{_javadir}/%{name}-ehcache.jar
