@@ -1989,6 +1989,7 @@
                               else {
                                 $("body").stopTime(timerKey);
                                 if (result.jobstatus == 1) {
+                                  nspMap["netscaler"] = result.jobresult.networkserviceprovider;             
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse");
                                 }
                                 else if (result.jobstatus == 2) {
@@ -2262,7 +2263,7 @@
                   }
                 },
                 action: function(args) {
-                  if(nspMap["f5"]== null) {
+                  if(nspMap["f5"] == null) {
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=F5BigIp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
@@ -2281,7 +2282,8 @@
                               }
                               else {
                                 $("body").stopTime(timerKey);
-                                if (result.jobstatus == 1) {
+                                if (result.jobstatus == 1) {                                  
+                                  nspMap["f5"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");
                                 }
                                 else if (result.jobstatus == 2) {
@@ -2570,7 +2572,7 @@
                   }
                 },
                 action: function(args) {
-                  if(nspMap["srx"]== null) {
+                  if(nspMap["srx"] == null) {
                     $.ajax({
                       url: createURL("addNetworkServiceProvider&name=JuniperSRX&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
                       dataType: "json",
@@ -2589,8 +2591,8 @@
                               }
                               else {
                                 $("body").stopTime(timerKey);
-                                if (result.jobstatus == 1) {
-                                  //alert("addNetworkServiceProvider&name=JuniperSRX succeeded.");
+                                if (result.jobstatus == 1) {                                   
+                                  nspMap["srx"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                   addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse");
                                 }
                                 else if (result.jobstatus == 2) {
