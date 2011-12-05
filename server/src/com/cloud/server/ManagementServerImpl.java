@@ -2008,7 +2008,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ConsoleProxyInfo getConsoleProxyForUserVm(long dataCenterId, long userVmId) {
+    public ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId) {
         return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
@@ -2046,9 +2046,9 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public String getConsoleAccessUrlRoot(long vmId) {
-        VMInstanceVO vm = _vmMgr.findById(vmId);
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm != null) {
-            ConsoleProxyInfo proxy = getConsoleProxyForUserVm(vm.getDataCenterIdToDeployIn(), vmId);
+            ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterIdToDeployIn(), vmId);
             if (proxy != null) {
                 return proxy.getProxyImageUrl();
             }

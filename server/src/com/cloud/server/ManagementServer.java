@@ -81,7 +81,7 @@ public interface ManagementServer extends ManagementService {
     List<EventVO> listPendingEvents(int entryTime, int duration);
 
     //FIXME - move all console proxy related commands to corresponding managers
-    ConsoleProxyInfo getConsoleProxyForUserVm(long dataCenterId, long userVmId);
+    ConsoleProxyInfo getConsoleProxyForVm(long dataCenterId, long userVmId);
 
     String getConsoleAccessUrlRoot(long vmId);
     
