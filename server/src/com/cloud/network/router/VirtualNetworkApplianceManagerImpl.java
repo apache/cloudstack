@@ -2023,8 +2023,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             if (sendDnsDhcpData) {
                 DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName());
-
-            	dhcpCommand.setDefaultRouter(_nicDao.findDefaultNicForVM(profile.getVirtualMachine().getId()).getGateway());             
+                
+                String defaultDhcpIp = findDefaultDhcpIp(profile.getVirtualMachine().getId());
+            	dhcpCommand.setDefaultRouter(defaultDhcpIp);             
                 
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
                 dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
@@ -2082,6 +2083,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         return rets;
     }
+
+	private String findDefaultDhcpIp(long userVmId) {
+		NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
+		
+		//check if the DhcpProvider is the domR
+		if (!_networkMgr.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter)) {
+			return null;
+		}
+		
+		//find domR's nic in the network
+		NicVO domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
+		return domrDefaultNic.getIp4Address();
+	}
 
     @Override
     public List<VirtualRouter> applyUserData(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, ReservationContext context, List<DomainRouterVO> routers)
@@ -2552,7 +2566,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
 
                     DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
-                    dhcpCommand.setDefaultRouter(_nicDao.findDefaultNicForVM(vm.getId()).getGateway());
+                    dhcpCommand.setDefaultRouter(findDefaultDhcpIp(vm.getId()));
                     
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -3000,4 +3014,5 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         return 0;
     }
+
 }
