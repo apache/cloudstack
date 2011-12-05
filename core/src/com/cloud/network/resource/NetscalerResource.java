@@ -24,8 +24,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.routing.CreateLBApplianceCommand;
-import com.cloud.agent.api.routing.DestroyLBApplianceCommand;
+import com.cloud.agent.api.routing.CreateLoadBalancerApplianceCommand;
+import com.cloud.agent.api.routing.DestroyLoadBalancerApplianceCommand;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
 import com.cloud.agent.api.MaintainAnswer;
@@ -49,6 +49,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
+import com.vmware.vim25.VirtualMachinePowerState;
 
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.resource.base.base_response;
@@ -59,12 +60,15 @@ import com.citrix.netscaler.nitro.resource.config.network.*;
 import com.citrix.netscaler.nitro.resource.config.ns.*;
 import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
+import com.citrix.sdx.nitro.resource.config.ns;
+import com.citrix.sdx.nitro.resource.config.mps;
 import org.apache.log4j.Logger;
 
 class NitroError {
     static final int NS_RESOURCE_EXISTS = 273;
     static final int NS_RESOURCE_NOT_EXISTS=258;
     static final int NS_NO_SERIVCE = 344;
+    static final int NS_OPERATION_NOT_PERMITTED = 257;
 }
 
 public class NetscalerResource implements ServerResource {
@@ -88,7 +92,12 @@ public class NetscalerResource implements ServerResource {
     protected Gson _gson;
     private String _objectNamePathSep = "-";
 
-    nitro_service _netscalerService ;
+    // interface to interact with VPX and MPX devices
+    com.citrix.netscaler.nitro.service.nitro_service _netscalerService ;
+
+    // interface to interact with service VM of the SDX appliance
+    com.citrix.sdx.nitro.service.nitro_service _netscalerSdxService;
+
     Long _timeout = new Long(100000);
     base_response apiCallResult;
 
@@ -133,12 +142,12 @@ public class NetscalerResource implements ServerResource {
             if (_publicInterface == null) {
                 throw new ConfigurationException("Unable to find public interface in the configuration parameters");
             }
-            
+
             _privateInterface = (String) params.get("privateinterface");
             if (_privateInterface == null) {
                 throw new ConfigurationException("Unable to find private interface in the configuration parameters");
             }
-            
+
             _numRetries = NumbersUtil.parseInt((String) params.get("numretries"), 2);
 
             _guid = (String)params.get("guid");
@@ -151,17 +160,17 @@ public class NetscalerResource implements ServerResource {
                 throw new ConfigurationException("Unable to find the device name in the configuration parameters");
             }
 
-            if (_deviceName.equalsIgnoreCase("NetscalerSDXLoadBalancer")) {
-                _isSdx = true;
-            }
+            _isSdx = _deviceName.equalsIgnoreCase("NetscalerSDXLoadBalancer");
 
             _inline = Boolean.parseBoolean((String) params.get("inline"));
 
-            // validate device configration parameters
+            // validate device configuration parameters
             login();
-            checkLoadBalancingFeatureEnabled();
-            validateInterfaces(_publicInterface, _privateInterface);
             validateDeviceType(_deviceName);
+            validateInterfaces(_publicInterface, _privateInterface);
+
+            //enable load balancing feature 
+            enableLoadBalancingFeature();
 
             return true;
         } catch (Exception e) {
@@ -171,12 +180,21 @@ public class NetscalerResource implements ServerResource {
 
     private void login() throws ExecutionException {
         try {
-            _netscalerService = new nitro_service(_ip, "https");
-            _netscalerService.set_credential(_username, _password);
-            _netscalerService.set_timeout(_timeout);
-            apiCallResult = _netscalerService.login();
-            if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
+            if (!_isSdx) {
+                _netscalerService = new nitro_service(_ip, "https");
+                _netscalerService.set_credential(_username, _password);
+                _netscalerService.set_timeout(_timeout);
+                apiCallResult = _netscalerService.login();
+                if (apiCallResult.errorcode != 0) {
+                    throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
+                }
+            } else {
+                _netscalerSdxService = new com.citrix.sdx.nitro.service.nitro_service(_ip, "https");
+                _netscalerSdxService.set_credential(_username, _password);
+                com.citrix.sdx.nitro.resource.base.login login  = _netscalerSdxService.login();
+                if (login == null) {
+                    throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
+                }
             }
         } catch (nitro_exception e) {
             throw new ExecutionException("Failed to log in to Netscaler device at " + _ip + " due to " + e.getMessage());
@@ -185,7 +203,10 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    private void checkLoadBalancingFeatureEnabled() throws ExecutionException {
+    private void enableLoadBalancingFeature() throws ExecutionException {
+        if (_isSdx) {
+            return;
+        }
         try {
             String[] features = _netscalerService.get_enabled_features();
             if (features != null) {
@@ -195,20 +216,73 @@ public class NetscalerResource implements ServerResource {
                     }
                 }
             }
-            throw new ExecutionException("Load balancing feature is not enabled on the device. Please enable the load balancing feature and add the device.");
+
+            // enable load balancing on the device
+            String[] feature = new String[1];
+            feature[0] = "LB";
+            apiCallResult = _netscalerService.enable_features(feature);
+            if (apiCallResult.errorcode != 0) {
+                throw new ExecutionException("Enabling load balancing feature on the device failed.");
+            }
         } catch (nitro_exception e) {
-            throw new ExecutionException("Failed to verify load balancing is enalbed due to error " + apiCallResult.errorcode + " and message " + e.getMessage());
+            throw new ExecutionException("Enabling load balancing feature on the device failed  due to " + e.getMessage());
         } catch (Exception e) {
-            throw new ExecutionException("Failed to verify load balancing is enalbed due to " + e.getMessage());
+            throw new ExecutionException("Enabling load balancing feature on the device failed due to " + e.getMessage());
         }
     }
 
     private void validateInterfaces(String publicInterface, String privateInterface) throws ExecutionException {
-        //FIXME verify the device type (VPX, MPX, SDX) specified indeed matches with actual device type
+        try {
+            if (_isSdx) { 
+                return;
+            } else {
+                Interface publicIf = Interface.get(_netscalerService, publicInterface);
+                Interface privateIf = Interface.get(_netscalerService, publicInterface);
+                if (publicIf != null || privateIf != null) {
+                    return;
+                } else {
+                    throw new ExecutionException("Invalid interface name specified for public/private interfaces.");
+                }
+            } 
+        } catch (nitro_exception e) {
+            if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
+                throw new ExecutionException("Invalid interface name specified for public and private interfaces.");
+            } else {
+                throw new ExecutionException("Failed to verify public interface and private intefaces are valid due to " + e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to verify public interface and private intefaces are valid due to " + e.getMessage());
+        }
     }
 
     private void validateDeviceType(String deviceType) throws ExecutionException {
-        //FIXME validate public and private interface strings as well
+        try {
+            if (!_isSdx) {
+                nshardware nsHw =  com.citrix.netscaler.nitro.resource.config.ns.nshardware.get(_netscalerService);
+                if (nsHw == null) {
+                    throw new ExecutionException("Failed to get the hardware description of the Netscaler device at " + _ip);
+                } else {
+                    if ((_deviceName.equalsIgnoreCase("NetscalerMPXLoadBalancer") && nsHw.get_hwdescription().contains("MPX"))
+                            || (_deviceName.equalsIgnoreCase("NetscalerVPXLoadBalancer") && nsHw.get_hwdescription().contains("NetScaler Virtual Appliance"))) {
+                        return;
+                    }
+                    throw new ExecutionException("Netscalar device type specified does not match with the actuall device type.");
+                }
+            } else {
+                mps serviceVM = mps.get(_netscalerSdxService);
+                if (serviceVM != null) {
+                    if (serviceVM.get_platform().contains("SDX") || serviceVM.get_product().contains("SDX")) {
+                        return;
+                    } else {
+                        throw new ExecutionException("Netscalar device type specified does not match with the actuall device type.");
+                    }
+                } else {
+                    throw new ExecutionException("Failed to get the hardware details of the Netscaler device at " + _ip);
+                }
+            }
+        } catch (Exception e) {
+            throw new ExecutionException("Failed to verify device type specified when matching with actuall device type due to " + e.getMessage());
+        }
     }
 
     @Override
@@ -228,7 +302,7 @@ public class NetscalerResource implements ServerResource {
     public Answer executeRequest(Command cmd) {
         return executeRequest(cmd, _numRetries);
     }    
-    
+
     private Answer executeRequest(Command cmd, int numRetries) {
         if (cmd instanceof ReadyCommand) {
             return execute((ReadyCommand) cmd);
@@ -239,11 +313,11 @@ public class NetscalerResource implements ServerResource {
         } else if (cmd instanceof LoadBalancerConfigCommand) {
             return execute((LoadBalancerConfigCommand) cmd, numRetries);
         } else if (cmd instanceof ExternalNetworkResourceUsageCommand) {
-            return execute((ExternalNetworkResourceUsageCommand) cmd);
-        } else if (cmd instanceof CreateLBApplianceCommand) {
-            return execute((CreateLBApplianceCommand) cmd, numRetries);
-        } else if (cmd instanceof DestroyLBApplianceCommand) {
-            return execute((DestroyLBApplianceCommand) cmd, numRetries);
+            return execute((ExternalNetworkResourceUsageCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateLoadBalancerApplianceCommand) {
+            return execute((CreateLoadBalancerApplianceCommand) cmd, numRetries);
+        } else if (cmd instanceof DestroyLoadBalancerApplianceCommand) {
+            return execute((DestroyLoadBalancerApplianceCommand) cmd, numRetries);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -270,31 +344,34 @@ public class NetscalerResource implements ServerResource {
                 long guestVlanTag = Long.valueOf(ip.getVlanId());
                 String vlanSelfIp = ip.getVlanGateway();
                 String vlanNetmask = ip.getVlanNetmask();
-                
-                // Check and delete any existing guest VLAN with this tag, self IP, and netmask
-                deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask);
-                
+
                 if (ip.isAdd()) {
                     // Add a new guest VLAN and its subnet and bind it to private interface
                     addGuestVlanAndSubnet(guestVlanTag, vlanSelfIp, vlanNetmask);
+                } else {
+                    // Check and delete guest VLAN with this tag, self IP, and netmask
+                    deleteGuestVlan(guestVlanTag, vlanSelfIp, vlanNetmask);
                 }
-                
+
                 saveConfiguration();
                 results[i++] = ip.getPublicIp() + " - success";
+                String action = ip.isAdd() ? "associate" : "remove";
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Netscaler load balancer " + _ip + " successfully executed IPAssocCommand to " + action + " IP " + ip);
+                }
             }
         } catch (ExecutionException e) {
-            s_logger.error("Failed to execute IPAssocCommand due to " + e);
-            
+            s_logger.error("Netscaler loadbalancer " + _ip+ " failed to execute IPAssocCommand due to " + e.getMessage());
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } else {
                 results[i++] = IpAssocAnswer.errorResult;
             }
-        }        
-        
+        }
+
         return new IpAssocAnswer(cmd, results);
     }
-    
+
     private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {
         try {
             if (_isSdx) {
@@ -440,7 +517,7 @@ public class NetscalerResource implements ServerResource {
                             }
                         }
                     }
-                    removeLBVirtualServer(nsVirtualServerName);    
+                    removeLBVirtualServer(nsVirtualServerName);
                 }
             }
 
@@ -467,26 +544,122 @@ public class NetscalerResource implements ServerResource {
         } 
     }
 
-    private synchronized Answer execute(CreateLBApplianceCommand cmd, int numRetries) {
-        assert(_isSdx) : "CreateLBApplianceCommand can only be sent to SDX device";
-        // FIXME: use nitro API to spin a new VPX instance on SDX
-        return new CreateLBApplianceAnswer(cmd, true);
-    }
+    private synchronized Answer execute(CreateLoadBalancerApplianceCommand cmd, int numRetries) {
 
-    private synchronized Answer execute(DestroyLBApplianceCommand cmd, int numRetries) {
-        assert(_isSdx) : "DestroyLBApplianceCommand can only be sent to SDX device";
-        // FIXME: use nitro API to destroy VPX instance on SDX
-        return new DestroyLBApplianceAnswer(cmd, true);
-    }
+        if (!_isSdx) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
 
-    private synchronized ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
         try {
-            return getPublicIpBytesSentAndReceived(cmd);
-        } catch (ExecutionException e) {
-            return new ExternalNetworkResourceUsageAnswer(cmd, e);
+            String vpxName = "Cloud-VPX-"+cmd.getLoadBalancerIP();
+            String ip = cmd.getLoadBalancerIP();
+            ns ns_obj = new ns();
+            ns_obj.set_name(vpxName);
+            ns_obj.set_ip_address(cmd.getLoadBalancerIP());
+            ns_obj.set_netmask(cmd.getNetmask());
+            ns_obj.set_gateway(cmd.getGateway());
+            ns_obj.set_username(cmd.getUsername());
+            ns_obj.set_password(cmd.getPassword());
+
+            // configure VPX instances with defaults
+            ns_obj.set_feature_license("Standard");
+            ns_obj.set_memory_total(new Double(2048));
+            ns_obj.set_throughput(new Double(1000));
+            ns_obj.set_pps(new Double(1000000));
+            ns_obj.set_nsroot_profile("NS_nsroot_profile");
+            ns_obj.set_number_of_ssl_cores(0);
+            ns_obj.set_image_name("NSVPX-XEN-9.3-52.4_nc.xva");
+            ns_obj.set_if_10_1(new Boolean(true));
+
+            // create new VPX instance
+            ns newVpx = ns.add(_netscalerSdxService, ns_obj);
+
+            if (newVpx == null) {
+                new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip));
+            }
+
+            // wait for VPX instance to start-up
+            long startTick = System.currentTimeMillis();
+            long startWaitMins = 200000;
+            while(!newVpx.get_ns_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMins) {
+                try { 
+                    Thread.sleep(1000);
+                } catch(InterruptedException e) {
+                }
+                ns refreshNsObj = new ns();
+                refreshNsObj.set_id(newVpx.get_id());
+                newVpx = ns.get(_netscalerSdxService, refreshNsObj);
+            }
+
+            // if vpx instance never came up then error out
+            if (!newVpx.get_ns_state().equalsIgnoreCase("up")) {
+                new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
+            }
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Successfully provisioned VPX instance " + vpxName + " on the Netscaler SDX device " + _ip);
+            }
+            return new CreateLoadBalancerApplianceAnswer(cmd, true, "provisioned VPX instance", "NetscalerVPXLoadBalancer", "Netscaler", new NetscalerResource());
+        } catch (Exception e) {
+
+            if (shouldRetry(numRetries)) {
+                return retry(cmd, numRetries);
+            } 
+
+            return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance", null, null, null);
         }
     }
-    
+
+    private synchronized Answer execute(DestroyLoadBalancerApplianceCommand cmd, int numRetries) {
+        String vpxName = "Cloud-VPX-"+cmd.getLoadBalancerIP();
+        if (!_isSdx) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+
+        try {
+            ns vpxToDelete =null;
+            ns[] vpxInstances = ns.get(_netscalerSdxService);
+            for (ns vpx : vpxInstances) {
+                if (vpx.get_name().equals(vpxName)) {
+                    vpxToDelete = vpx;
+                    break;
+                }
+            }
+
+            if (vpxToDelete == null) {
+                String msg = "There is no VPX instance " + vpxName + " on the Netscaler SDX device " + _ip + " to delete";
+                s_logger.warn(msg);
+                return new DestroyLoadBalancerApplianceAnswer(cmd, true, msg);
+            }
+
+            // destroy the VPX instance
+            vpxToDelete = ns.delete(_netscalerSdxService, vpxToDelete);
+            String msg =  "Deleted VPX instance " + vpxName + " on Netscaler SDX " + _ip + " successfully.";
+            s_logger.info(msg);
+            return new DestroyLoadBalancerApplianceAnswer(cmd, true,msg);
+        } catch (Exception e) {
+            if (shouldRetry(numRetries)) {
+                return retry(cmd, numRetries);
+            }
+            return new DestroyLoadBalancerApplianceAnswer(cmd, false, "Failed to delete VPX instance " + vpxName + " on Netscaler SDX " + _ip);
+        }
+    }
+
+    private synchronized Answer execute(ExternalNetworkResourceUsageCommand cmd, int numRetries) {
+        try {
+            if (!_isSdx) {
+                return getPublicIpBytesSentAndReceived(cmd);
+            } else {
+                return Answer.createUnsupportedCommandAnswer(cmd);
+            }
+        } catch (ExecutionException e) {
+            if (shouldRetry(numRetries)) {
+                return retry(cmd, numRetries);
+            } else {
+                return new ExternalNetworkResourceUsageAnswer(cmd, e);
+            }
+        }
+    }
+
     private void addGuestVlanAndSubnet(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
         try {
             if (!nsVlanExists(vlanTag)) {
@@ -523,7 +696,16 @@ public class NetscalerResource implements ServerResource {
                 vlanBinding.set_ifnum(_privateInterface);
                 vlanBinding.set_tagged(true);
                 vlanBinding.set_id(vlanTag);
-                apiCallResult = vlan_interface_binding.add(_netscalerService, vlanBinding);
+                try {
+                    apiCallResult = vlan_interface_binding.add(_netscalerService, vlanBinding);
+                } catch (nitro_exception e)  {
+                    // FIXME: Vlan binding (subsequent unbind) to an interfaces will fail on the VPX created on Xen server and on 
+                    // NetScaler SDX appliance till the VPX fix to handle VLAN's is released. Relaxing this restriction NetScaler until then
+                    if (!(_deviceName.equalsIgnoreCase("NetscalerVPXLoadBalancer") && e.getErrorCode() == NitroError.NS_OPERATION_NOT_PERMITTED)) {
+                        throw new ExecutionException("Failed to bind vlan to the interface while implementing guest network on the Netscaler device due to " + e.getMessage());
+                    }
+                }
+
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to bind vlan with tag:" + vlanTag + " with the interface " + _privateInterface + " due to " + apiCallResult.message);
                 }
@@ -531,9 +713,9 @@ public class NetscalerResource implements ServerResource {
                 throw new ExecutionException("Failed to configure Netscaler device for vlan with tag " + vlanTag + " as vlan already exisits");
             }
         }  catch (nitro_exception e) {
-            throw new ExecutionException("Failed to implement guest network on the Netscaler device");
+            throw new ExecutionException("Failed to implement guest network on the Netscaler device due to " + e.getMessage());
         }  catch (Exception e) {
-            throw new ExecutionException("Failed to implement guest network on the Netscaler device");
+            throw new ExecutionException("Failed to implement guest network on the Netscaler device " + e.getMessage());
         }
     }
 
@@ -549,7 +731,15 @@ public class NetscalerResource implements ServerResource {
                 vlanIfBinding.set_id(vlanTag);
                 vlanIfBinding.set_ifnum(_privateInterface);
                 vlanIfBinding.set_tagged(true);
-                apiCallResult = vlan_interface_binding.delete(_netscalerService, vlanIfBinding);
+                try {
+                    apiCallResult = vlan_interface_binding.delete(_netscalerService, vlanIfBinding);
+                } catch (nitro_exception e) {
+                    // FIXME: Vlan binding (subsequent unbind) to an interfaces will fail on the VPX created on Xen server and on 
+                    // NetScaler SDX appliance till the VPX fix to handle VLAN's is released. Relaxing this restriction NetScaler until then
+                    if (!(_deviceName.equalsIgnoreCase("NetscalerVPXLoadBalancer") && e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS)) {
+                        throw new ExecutionException("Failed to unbind vlan from the interface while shutdown of guest network on the Netscaler device due to " + e.getMessage());
+                    }
+                }
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to unbind vlan:" + vlanTag + " with the private interface due to " + apiCallResult.message);
                 }
@@ -638,13 +828,13 @@ public class NetscalerResource implements ServerResource {
             if (e.getErrorCode() == NitroError.NS_NO_SERIVCE) {
                 return false;
             } else {
-                throw new ExecutionException(e.getMessage());
+                throw new ExecutionException("Failed to verify service " +  serviceName + " exists due to " + e.getMessage());
             }
         } catch (Exception e) {
-            throw new ExecutionException(e.getMessage());
+            throw new ExecutionException("Failed to verify service " +  serviceName + " exists due to " + e.getMessage());
         }
     }
-    
+
     private boolean nsServiceBindingExists(String lbVirtualServer, String serviceName) throws ExecutionException {
         try {
             com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding[] serviceBindings = com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding.get(_netscalerService, lbVirtualServer);
@@ -657,12 +847,12 @@ public class NetscalerResource implements ServerResource {
             }
             return false;
         } catch (nitro_exception e) {
-            throw new ExecutionException(e.getMessage());
+            throw new ExecutionException("Failed to verify lb vserver " + lbVirtualServer + "and service " +  serviceName + " binding exists due to " + e.getMessage());
         } catch (Exception e) {
-            throw new ExecutionException(e.getMessage());
+            throw new ExecutionException("Failed to verify lb vserver " + lbVirtualServer + "and service " +  serviceName + " binding exists due to " + e.getMessage());
         }
     }
-    
+
     private void deleteServersInGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask) throws ExecutionException {
         try {
             com.citrix.netscaler.nitro.resource.config.basic.server[] serverList = com.citrix.netscaler.nitro.resource.config.basic.server.get(_netscalerService);
@@ -716,6 +906,8 @@ public class NetscalerResource implements ServerResource {
                 lbMethod = "ROUNDROBIN";
             } else if (lbMethod.equals("leastconn")) {
                 lbMethod = "LEASTCONNECTION";
+            } else if (lbMethod.equals("source")) {
+                lbMethod = "SOURCEIPHASH";
             } else {
                 throw new ExecutionException("Got invalid load balancing algorithm: " + lbMethod);
             }
@@ -739,30 +931,28 @@ public class NetscalerResource implements ServerResource {
                 apiCallResult = lbvserver.add(_netscalerService,vserver);
             }
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Failed to create new virtual server:" + virtualServerName+ " due to " + apiCallResult.message);
-            }            
+                throw new ExecutionException("Failed to create new load balancing virtual server:" + virtualServerName + " due to " + apiCallResult.message);
+            }
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Created load balancing virtual server " + virtualServerName + " on the Netscaler device");
             }
         } catch (nitro_exception e) {
-            if (e.getErrorCode() != NitroError.NS_RESOURCE_EXISTS) {
-                throw new ExecutionException("Failed to create new virtual server:" + virtualServerName + " due to " + e.getMessage());
-            }
+            throw new ExecutionException("Failed to create new virtual server:" + virtualServerName + " due to " + e.getMessage());
         } catch (Exception e) {
             throw new ExecutionException("Failed to create new virtual server:" + virtualServerName + " due to " + e.getMessage());
         }
     }
-    
+
     private void removeLBVirtualServer (String virtualServerName) throws ExecutionException {
         try {
             lbvserver vserver = lbvserver.get(_netscalerService, virtualServerName);
             if (vserver == null) {
-                throw new ExecutionException("Failed to find virtual server with name:" + virtualServerName);
+                return;
             }
             apiCallResult = lbvserver.delete(_netscalerService, vserver);
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Failed to remove virtual server:" + virtualServerName + " due to " + apiCallResult.message);
+                throw new ExecutionException("Failed to delete virtual server:" + virtualServerName + " due to " + apiCallResult.message);
             }
         } catch (nitro_exception e) {
             if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
@@ -774,7 +964,7 @@ public class NetscalerResource implements ServerResource {
             throw new ExecutionException("Failed to remove virtual server:" + virtualServerName +" due to " + e.getMessage());
         }
     }
-    
+
     private void saveConfiguration() throws ExecutionException {
         try {
             apiCallResult = nsconfig.save(_netscalerService);
@@ -790,10 +980,13 @@ public class NetscalerResource implements ServerResource {
 
     private ExternalNetworkResourceUsageAnswer getPublicIpBytesSentAndReceived(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
         ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
-        
+
         try {
-            
             lbvserver_stats[] stats = lbvserver_stats.get(_netscalerService);
+
+            if (stats == null || stats.length == 0) {
+                return answer;
+            }
 
             for (lbvserver_stats stat_entry : stats) {
                 String lbvserverName = stat_entry.get_name();
@@ -808,21 +1001,21 @@ public class NetscalerResource implements ServerResource {
                 bytesSentAndReceived[1] += stat_entry.get_totalresponsebytes();
 
                 if (bytesSentAndReceived[0] >= 0 && bytesSentAndReceived[1] >= 0) {
-                    answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);            
+                    answer.ipBytes.put(lbVirtualServerIp, bytesSentAndReceived);
                 }
             }
         } catch (Exception e) {
-            s_logger.error(e);
+            s_logger.error("Failed to get bytes sent and recived statistics due to " + e);
             throw new ExecutionException(e.getMessage());
         }
-        
+
         return answer;
     }
 
     private Answer retry(Command cmd, int numRetries) {
         int numRetriesRemaining = numRetries - 1;
-        s_logger.error("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
-        return executeRequest(cmd, numRetriesRemaining);    
+        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
+        return executeRequest(cmd, numRetriesRemaining);
     }
 
     private boolean shouldRetry(int numRetries) {
@@ -838,17 +1031,17 @@ public class NetscalerResource implements ServerResource {
     }
 
     private String generateNSVirtualServerName(String srcIp, long srcPort, String protocol) {
-        return genObjectName("cloud-VirtualServer", protocol, srcIp, srcPort);
+        return genObjectName("Cloud-VirtualServer", protocol, srcIp, srcPort);
     }
-    
+
     private String generateNSServerName(String serverIP) {
-        return genObjectName("cloud-server",  serverIP);
+        return genObjectName("Cloud-Server-",  serverIP);
     }
 
     private String generateNSServiceName(String ip, long port) {
-        return genObjectName("cloud-Service", ip, port);
+        return genObjectName("Cloud-Service", ip, port);
     }
-    
+
     private String genObjectName(Object... args) {
         String objectName = "";
         for (int i = 0; i < args.length; i++) {
@@ -859,7 +1052,7 @@ public class NetscalerResource implements ServerResource {
         }
         return objectName;
     }
-    
+
     @Override
     public IAgentControl getAgentControl() {
         return null;
@@ -894,7 +1087,7 @@ public class NetscalerResource implements ServerResource {
     public boolean stop() {
         return true;
     }    
-    
+
     @Override
     public void disconnected() {
         return;

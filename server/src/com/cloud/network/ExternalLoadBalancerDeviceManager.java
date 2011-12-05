@@ -27,6 +27,7 @@ import com.cloud.host.Host;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.exception.ExecutionException;
 
 /* ExternalLoadBalancerDeviceManager provides a abstract implementation for managing a external load balancer in device agnostic manner.
  * Device specific managers for external load balancers (like F5 and Netscaler) should be implemented as pluggable service extending 
@@ -98,6 +99,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException;
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, 
+            InsufficientCapacityException;
 
 }

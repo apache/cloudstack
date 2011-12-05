@@ -20,10 +20,30 @@ package com.cloud.network.resource;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.resource.ServerResource;
 
-public class CreateLBApplianceAnswer extends Answer {
-    public CreateLBApplianceAnswer(Command cmd, boolean success) {
-        
+public class CreateLoadBalancerApplianceAnswer extends Answer {
+    String deviceName;
+    String providerName;
+    ServerResource serverResource;
+
+    public CreateLoadBalancerApplianceAnswer(Command cmd, boolean success, String details, String deviceName, String providerName, ServerResource serverResource) {
+        this.deviceName = deviceName;
+        this.providerName = providerName;
+        this.serverResource = serverResource;
+        this.result = success;
+        this.details = details;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+    
+    public String getProviderName() {
+        return providerName;
+    }
+    
+    public ServerResource getServerResource() {
+        return serverResource;
+    }
 }

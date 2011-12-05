@@ -3138,7 +3138,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         tags = cleanupTags(tags);
 
         Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
-        boolean dedicatedLb = true;
+        boolean dedicatedLb = false;
         if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
             String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
             dedicatedLb = isolationCapability.contains("dedicated");

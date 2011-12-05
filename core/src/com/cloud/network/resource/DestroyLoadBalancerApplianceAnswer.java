@@ -16,12 +16,14 @@
  * 
  */
 
-/** NetworkElementCommand to destroy a VPX instance on the Netscaler SDX load balancer appliance */
+package com.cloud.network.resource;
 
-//TODO: fill in the Nitro API parameters required
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
-package com.cloud.agent.api.routing;
-
-public class DestroyLBApplianceCommand extends NetworkElementCommand {
-
+public class DestroyLoadBalancerApplianceAnswer extends Answer {
+    public DestroyLoadBalancerApplianceAnswer(Command cmd, boolean success, String details) {
+        this.result = success;
+        this.details = details;
+    }
 }
