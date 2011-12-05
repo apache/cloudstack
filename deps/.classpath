@@ -55,5 +55,6 @@
 	<classpathentry exported="true" kind="lib" path="cloud-google-gson-1.7.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-commons-httpclient-3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="cloud-netscaler.jar"/>
+	<classpathentry exported="true" kind="lib" path="cloud-netscaler-sdx.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
