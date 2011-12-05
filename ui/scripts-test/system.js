@@ -257,6 +257,7 @@
         types: {
           // Virtual router list view
           virtualRouter: {
+            type: 'detailView',
             id: 'virtualRouter-providers',
             label: 'Virtual Router',
             fields: {
@@ -306,29 +307,76 @@
                 },
                 notification: { poll: testData.notifications.testPoll }
               }
-            },              
-            dataProvider: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: [
-                    {
-                      name: 'Router0001S',
-                      ipaddress: '192.168.1.1',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0001B',
-                      ipaddress: '192.168.1.155',
-                      state: 'Enabled'
-                    },
-                    {
-                      name: 'Router0002',
-                      ipaddress: '192.168.1.13',
-                      state: 'Enabled'
-                    }
-                  ]
-                });
-              }, 500);
+            },
+            tabs: {
+              network: {
+                title: 'Network',
+                fields: [
+                  {
+                    name: { label: 'Name' }                    
+                  },
+                  {
+                    id: { label: 'ID' },
+                    ipaddress: { label: 'IP Address' },
+                    state: { label: 'State' }
+                  },
+                  {
+                    accounts: { label: 'Accounts' },
+                    instances: { label: 'Instances' },
+                    volumes: { label: 'Volumes' }
+                  },
+                  {
+                    Vpn: { label: 'VPN' },
+                    Dhcp: { label: 'DHCP' },
+                    Dns: { label: 'DNS' },
+                    Gateway: { label: 'Gateway' },
+                    Firewall: { label: 'Firewall' },
+                    Lb: { label: 'Load Balancer' },
+                    UserData: { label: 'UserData' },
+                    SourceNat: { label: 'Source NAT' },
+                    StaticNat: { label: 'Static NAT' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  setTimeout(function() {
+                    args.response.success({
+                      data: {
+                        id: '123918801030a-s-d-s123',
+                        name: 'Router0001B',
+                        ipaddress: '192.168.1.155',
+                        state: 'Enabled',
+                        accounts: 12,
+                        instances: 14,
+                        volumes: 23,
+                        Vpn: 'On',
+                        Dhcp: 'On',
+                        Dns: 'On',
+                        Gateway: 'On',
+                        Firewall: 'On',
+                        Lb: 'On',
+                        UserData: 'On',
+                        SourceNat: 'On',
+                        StaticNat: 'On'
+                      }
+                    });
+                  }, 500);
+                }
+              },
+
+              instances: {
+                title: 'Instances',
+                listView: {
+                  label: 'Virtual Appliances',
+                  fields: {
+                    name: { label: 'Name' },
+                    hostname: { label: 'Hostname' },
+                    publicip: { label: 'Public IP' },
+                    publicmacaddress: { label: 'Public MAC' },
+                    state: { label: 'Status', indicator: { 'Running': 'on', 'Stopped': 'off' } }
+                  },
+                  dataProvider: testData.dataProvider.listView('virtualAppliances')
+                }
+              }
             }
           },
 
@@ -885,6 +933,22 @@
       }
     }),
     subsections: {
+      systemVMs: {
+        type: 'select',
+        title: 'System VMs',
+        listView: {
+          label: 'System VMs',
+          fields: {
+            name: { label: 'Name' },
+            zonename: { label: 'Zone' },
+            hostname: { label: 'Hostname' },
+            privateip: { label: 'Private IP' },
+            publicip: { label: 'Public IP' },
+            state: { label: 'Status' }
+          },
+          dataProvider: testData.dataProvider.listView('systemVMs')
+        }
+      },
       networks: {
         sectionSelect: { label: 'Network type' },
         sections: {

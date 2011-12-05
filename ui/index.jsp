@@ -789,13 +789,7 @@
             </div>
           </div>
           <div class="head">
-            <span>Zone Configuration</span>            
-            
-            <!--
-            <div class="add">Add Physical Network</div>
-            -->
-            <div class="add">&nbsp;</div>
-            
+            <span>Zone Configuration</span>
           </div>
           <ul class="system-main">
             <li class="main public" rel="public">
@@ -805,6 +799,10 @@
             <li class="main management" rel="management">
               <div class="name">Management</div>
               <div class="view-all configure">Configure</div>
+            </li>
+            <li class="main system-vms">
+              <div class="name"><span>System VMs</span></div>
+              <div class="view-all" zone-target="systemVMs">View All</div>
             </li>
             <li class="main guest" rel="guest">
               <div class="name">Guest</div>

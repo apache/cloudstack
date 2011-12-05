@@ -3701,6 +3701,14 @@ Dialogs*/
   position: absolute;
 }
 
+.zone-chart .resources.naas ul.system-main li.main.system-vms {
+  /*+placement:shift 0px 239px;*/
+  position: relative;
+  left: 0px;
+  top: 239px;
+  position: absolute;
+}
+
 .zone-chart .resources.naas ul.system-main li.main.guest {
   /*+placement:shift 309px 153px;*/
   position: relative;

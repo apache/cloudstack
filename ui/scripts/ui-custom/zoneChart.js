@@ -404,11 +404,17 @@
                             )
                         );
                       } else {
-                        var $listView = $newPanel.listView({
-                          listView: naas.networkProviders.types[itemID]
-                        });
+                        var provider = naas.networkProviders.types[itemID];
 
-                        loadProviderActions($listView);
+                        if (provider.type == 'detailView') {
+                          var $detailView = $newPanel.detailView(provider);
+                        } else {
+                          var $listView = $newPanel.listView({
+                            listView: provider
+                          });
+
+                          loadProviderActions($listView); 
+                        }
                       }
                     }
                   });
