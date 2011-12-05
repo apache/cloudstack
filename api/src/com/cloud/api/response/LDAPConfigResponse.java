@@ -12,7 +12,7 @@ public class LDAPConfigResponse  extends BaseResponse {
     @SerializedName(ApiConstants.PORT) @Param(description="Specify the LDAP port if required, default is 389")
     private String port;
 
-    @SerializedName(ApiConstants.PORT) @Param(description="Check “Use SSL” if the external LDAP server is configured for LDAP over SSL")
+    @SerializedName(ApiConstants.PORT) @Param(description="Check Use SSL if the external LDAP server is configured for LDAP over SSL")
     private String useSSL;
 
     @SerializedName(ApiConstants.SEARCH_BASE) @Param(description="The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com")

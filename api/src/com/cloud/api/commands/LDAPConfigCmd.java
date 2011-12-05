@@ -50,7 +50,7 @@ public class LDAPConfigCmd extends BaseCmd  {
     @Parameter(name=ApiConstants.PORT, type=CommandType.INTEGER, description="Specify the LDAP port if required, default is 389.")
     private Integer port=0;
     
-    @Parameter(name=ApiConstants.USE_SSL, type=CommandType.BOOLEAN, description="Check “Use SSL” if the external LDAP server is configured for LDAP over SSL.")
+    @Parameter(name=ApiConstants.USE_SSL, type=CommandType.BOOLEAN, description="Check Use SSL if the external LDAP server is configured for LDAP over SSL.")
     private Boolean useSSL;
 
     @Parameter(name=ApiConstants.SEARCH_BASE, type=CommandType.STRING, required=true, description="The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.")
