@@ -36,6 +36,7 @@
       noSelect: true,
       fields: {
         'email': { edit: true, label: 'E-mail' },
+        'state': { edit: 'ignore', label: 'Status' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
@@ -94,7 +95,8 @@
               data: $.map(invites, function(elem) {
                 return {
                   id: elem.id,
-                  email: elem.email ? elem.email : elem.account
+                  email: elem.email ? elem.email : elem.account,
+                  state: elem.state
                 };
               })
             });
