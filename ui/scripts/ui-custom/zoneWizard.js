@@ -62,6 +62,12 @@
         var $targetStep = $($steps.hide()[targetIndex]).show();
         var formState = cloudStack.serializeForm($wizard.find('form'));
 
+        if (!targetIndex) {
+          $wizard.find('.button.previous').hide();
+        } else {
+          $wizard.find('.button.previous').show();
+        }
+
         // Hide conditional fields by default
         var $conditional = $targetStep.find('.conditional');
         $conditional.hide();
