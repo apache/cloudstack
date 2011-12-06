@@ -42,6 +42,7 @@ public class ClusterSyncAnswer extends Answer {
     public ClusterSyncAnswer(long clusterId, HashMap<String, Pair<String, State>> newStates){
         _clusterId = clusterId;
         _newStates = newStates;
+        _allStates = null;
         _type = DELTA_SYNC;
         result = true;
     }

@@ -6626,7 +6626,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 //check if host is changed
                 if (host_uuid != null && oldState != null){
-                    if (!host_uuid.equals(oldState.first())){
+                    if (!host_uuid.equals(oldState.first()) && newState != State.Stopped && newState != State.Stopping){
                         changes.put(vm, new Pair<String, State>(host_uuid, newState));
                         s_vms.put(_cluster, host_uuid, vm, newState);
                         continue;
@@ -6697,8 +6697,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } else if (oldState == State.Migrating) {
                     s_logger.warn("Ignoring VM " + vm + " in migrating state.");
                 } else {
-                    State newState = State.Stopped;
-                    changes.put(vm, new Pair<String, State>(host_uuid, newState));
+                    //State newState = State.Stopped;
+                    //changes.put(vm, new Pair<String, State>(host_uuid, newState));
                 }
             }
         }

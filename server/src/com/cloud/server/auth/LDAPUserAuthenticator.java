@@ -89,7 +89,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             // substitute the queryFilter with this user info
             queryFilter = queryFilter.replaceAll("\\%u", username);
             queryFilter = queryFilter.replaceAll("\\%n", user.getFirstname() + " " + user.getLastname());
-            queryFilter = queryFilter.replaceAll("%e", user.getEmail());
+            queryFilter = queryFilter.replaceAll("\\%e", user.getEmail());
             
 
             SearchControls sc = new SearchControls();
