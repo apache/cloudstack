@@ -61,7 +61,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     private Long domainId;
 
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
     
     @IdentityMapper(entityTableName="networks")
@@ -94,16 +94,21 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         return UserContext.current().getCaller().getDomainId();
     }
 
-    public long getZoneId() {
+    private long getZoneId() {
         return zoneId;
     }
     
     public Long getNetworkId() {
         if (networkId != null) {
             return networkId;
+        } 
+        Long zoneId = getZoneId();
+        
+        if (zoneId == null) {
+        	throw new InvalidParameterValueException("Either networkId or zoneId has to be specified");
         }
         
-        DataCenter zone = _configService.getZone(getZoneId());
+        DataCenter zone = _configService.getZone(zoneId);
         if (zone.getNetworkType() == NetworkType.Advanced) {
             List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
             if (networks.size() == 0) {
