@@ -919,9 +919,7 @@
                   name: { label: 'Name', validation: { required: true } },
 
                   displayText: { label: 'Display Text', validation: { required: true } },
-
-                  maxConnections: { label: 'Max Connections' },
-
+                
                   networkRate: { label: 'Network Rate' },
 
                   trafficType: {
@@ -990,9 +988,7 @@
                   },
 
                   specifyVlan: { label: 'Specify VLAN', isBoolean: true },
-
-                  vlanId: { label: 'VLAN ID', isHidden: true, dependsOn: 'specifyVlan'},
-
+          
                   supportedServices: { 
                     label: 'Supported Services',
 
