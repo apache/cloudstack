@@ -2958,14 +2958,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
 	protected String rebootVM(Connect conn, String vmName) {
-		String msg = stopVM(conn, vmName, defineOps.DEFINE_VM);
-
-		if (msg == null) {
 			Domain dm = null;
+			String msg = null;
 			try {
 				dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
-				dm.create();
-
+				String vmDef = dm.getXMLDesc(0);
+				s_logger.debug(vmDef);
+				msg = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
+				msg = startDomain(conn, vmName, vmDef);
 				return null;
 			} catch (LibvirtException e) {
 				s_logger.warn("Failed to create vm", e);
@@ -2982,7 +2982,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 		    	}
 		    }
-		}
 
 		return msg;
 	}
