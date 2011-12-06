@@ -248,7 +248,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
             profile.setBroadcastUri(null);
-            profile.setPhysicalNetworkId(null);
         }
     }
 
