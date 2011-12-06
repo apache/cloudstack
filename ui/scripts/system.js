@@ -1102,14 +1102,11 @@
                     name: { label: 'Name' }                    
                   },
                   {
-                    physicalnetworkid: { label: 'ID' },
-                    state: { label: 'State' }
-                  },
-                  {
-                    accounts: { label: 'Accounts' },
-                    instances: { label: 'Instances' },
-                    volumes: { label: 'Volumes' }
-                  },
+                    id: { label: 'ID' },
+                    state: { label: 'State' },
+                    physicalnetworkid: { label: 'Physical network ID' },
+                    destinationphysicalnetworkid: { label: 'Destination physical networkID' }
+                  },                 
                   {
                     Vpn: { label: 'VPN' },
                     Dhcp: { label: 'DHCP' },
@@ -1119,16 +1116,14 @@
                     Lb: { label: 'Load Balancer' },
                     UserData: { label: 'UserData' },
                     SourceNat: { label: 'Source NAT' },
-                    StaticNat: { label: 'Static NAT' }
+                    StaticNat: { label: 'Static NAT' },
+                    PortForwarding: { label: 'Port Forwarding' }
                   }
                 ],
                 dataProvider: function(args) {
                   args.response.success({
                     actionFilter: virtualRouterProviderActionFilter,
-                    data: $.extend(true, {}, nspMap["virtualRouter"], {
-                      accounts: 12,
-                      instances: 14,
-                      volumes: 23,
+                    data: $.extend(true, {}, nspMap["virtualRouter"], {                    
                       Vpn: 'On',
                       Dhcp: 'On',
                       Dns: 'On',
@@ -1137,7 +1132,8 @@
                       Lb: 'On',
                       UserData: 'On',
                       SourceNat: 'On',
-                      StaticNat: 'On'
+                      StaticNat: 'On',
+                      PortForwarding: 'On'
                     })
                   });
                 }
