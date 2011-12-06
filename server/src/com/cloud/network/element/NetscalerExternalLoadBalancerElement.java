@@ -19,6 +19,7 @@
 
 package com.cloud.network.element;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.ApiConstants;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
@@ -75,6 +77,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -191,8 +194,27 @@ public class NetscalerExternalLoadBalancerElement extends ExternalLoadBalancerDe
     @Override
     public ExternalLoadBalancerDeviceVO addNetscalerLoadBalancer(AddNetscalerLoadBalancerCmd cmd) {
         String deviceName = cmd.getDeviceType();
+
         if (!isNetscalerDevice(deviceName)) {
             throw new InvalidParameterValueException("Invalid Netscaler device type");
+        }
+
+        URI uri;
+        try {
+            uri = new URI(cmd.getUrl());
+        } catch (Exception e) {
+            String msg = "Error parsing the url parameter specified in addNetscalerLoadBalancer command due to " + e.getMessage();
+            s_logger.debug(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+        Map<String, String> configParams = new HashMap<String, String>();
+        UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
+        boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
+
+        if (dedicatedUse && !deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName())) {
+            String msg = "Only Netscaler VPX load balancers can be specified for dedicated use";
+            s_logger.debug(msg);
+            throw new InvalidParameterValueException(msg);
         }
 
         ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, (ServerResource) new NetscalerResource());
