@@ -685,10 +685,16 @@ body.login {
 }
 
 .install-wizard .step.intro .subtitle li {
+  background: url(../images/ajax-loader-small.gif) no-repeat 3px 0px;
   position: relative;
   width: 45%;
+  padding: 1px 0 1px 30px;
   height: 24px;
-  list-style: circle;
+  list-style: none;
+}
+
+.install-wizard .step.intro .subtitle li.complete {
+  background: url(../images/icons.png) -1px -224px;
 }
 
 .install-wizard .step.intro .subtitle li img {

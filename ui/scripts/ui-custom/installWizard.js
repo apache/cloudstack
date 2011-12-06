@@ -625,29 +625,19 @@
               .html('Now building your cloud...');
         var $subtitle = $('<div></div>').addClass('subtitle')
               .html('');
-        var $loading = $('<img>').attr({
-          src: 'images/ajax-loader-small.gif'
-        });
 
         cloudStack.installWizard.action({
           data: state,
           response: {
-            message: function(msg, options) {
-              if (!options) options = {};
-              $subtitle.append(function() {
-                var $li = $('<li>').html(msg);
+            message: function(msg) {
+              var $li = $('<li>').html(msg);
+              
+              $subtitle.append($li);
 
-                if (!options.ignoreLoadingAnim) {
-                    $li.append($loading);
-                } else {
-                  $loading.remove();
-                }
-
-                return $li;
-              });
+              $li.siblings().addClass('complete');
             },
             success: function() {
-              complete();
+              goTo('complete');
             }
           }
         });
@@ -656,6 +646,27 @@
 
         return $intro.append(
           $title, $subtitle
+        );
+      },
+
+      complete: function(args) {
+        var $intro = $('<div></div>').addClass('intro');
+        var $title = $('<div></div>').addClass('title')
+              .html('Cloud setup successful');
+        var $subtitle = $('<div></div>').addClass('subtitle')
+              .html('You may now continue.');
+        var $continue = elems.nextButton('Launch');
+
+        showDiagram('');
+
+        $continue.click(function() {
+          $installWizard.fadeOut(function() {
+            complete();
+          });
+        });
+
+        return $intro.append(
+          $title, $subtitle, $continue
         );
       }
     };

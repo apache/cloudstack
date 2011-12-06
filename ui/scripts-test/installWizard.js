@@ -271,10 +271,7 @@
 
       var pollSystemVMs = function() {
         message('Creating system VMs (this may take a while)');
-        setTimeout(function() {
-          message('Done!', { ignoreLoadingAnim: true });
-          setTimeout(complete, 1000);
-        }, 5000);
+        setTimeout(complete, 5000);
       };
 
       createZone();
