@@ -2563,17 +2563,24 @@ Dialogs*/
 }
 
 .ui-dialog .ui-widget-content .nothing-to-select {
-  width: 468px;
+  width: 386px;
   line-height: 21px;
   text-align: left;
   font-size: 16px;
   color: #3D3D3D;
-  padding: 162px 0 0;
+  padding: 4px 25px 180px 28px;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
+  background: #FFFFFF;
+  margin: 57px 0 0;
+  /*+border-radius:10px;*/
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px 10px 10px 10px;
 }
 
 .ui-dialog .ui-widget-content .nothing-to-select p {
