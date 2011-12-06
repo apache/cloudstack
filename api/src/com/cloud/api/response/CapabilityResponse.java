@@ -29,6 +29,9 @@ public class CapabilityResponse extends BaseResponse {
     @SerializedName(ApiConstants.VALUE) @Param(description="the capability value")
     private String value;
 
+    @SerializedName(ApiConstants.CAN_CHOOSE_SERVICE_CAPABILITY) @Param(description="can this service capability value can be choosable while creatine network offerings")
+    private boolean canChoose;
+
     public String getName() {
         return name;
     }
@@ -43,5 +46,13 @@ public class CapabilityResponse extends BaseResponse {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public boolean getCanChoose() {
+        return canChoose;
+    }
+
+    public void setCanChoose(boolean choosable) {
+        this.canChoose = choosable;
     }
 }

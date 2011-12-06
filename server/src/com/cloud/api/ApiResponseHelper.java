@@ -2606,7 +2606,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else if (Service.Firewall.getName().equalsIgnoreCase(service)) {
                 List<CapabilityResponse> fwCapResponse = new ArrayList<CapabilityResponse>();
                 CapabilityResponse sharedSourceNat = new CapabilityResponse();
-                sharedSourceNat.setName(Capability.SupportedLBIsolation.getName());
+                sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
                 sharedSourceNat.setValue(offering.getSharedSourceNat()?"perzone":"peraccount");
                 fwCapResponse.add(sharedSourceNat);
                 svcRsp.setCapabilities(fwCapResponse);
@@ -3074,6 +3074,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             CapabilityResponse capabilityResponse = new CapabilityResponse();
             capabilityResponse.setName(cap.getName());
             capabilityResponse.setObjectName("capability");
+            if (cap.getName().equals(Capability.SupportedLBIsolation.getName()) ||
+                    cap.getName().equals(Capability.SupportedSourceNatTypes.getName()) ||
+                    cap.getName().equals(Capability.RedundantRouter.getName()) ) {
+                capabilityResponse.setCanChoose(true);
+            } else {
+                capabilityResponse.setCanChoose(false);
+            }
             capabilityResponses.add(capabilityResponse);
         }
         response.setCapabilities(capabilityResponses);
