@@ -1428,7 +1428,7 @@
                       success: function(json) {
                         var items = json.listroutersresponse.router;
                         args.response.success({
-                          actionFilter: virtualRouterProviderActionFilter,
+                          actionFilter: routerActionfilter,
                           data: items
                         });
                       }

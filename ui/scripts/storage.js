@@ -36,14 +36,8 @@
                 confirm: function(args) {
                   return 'Are you sure you want to add a volume?';
                 },
-                success: function(args) {
-                  return 'Creating volume';
-                },
                 notification: function(args) {
                   return 'create volume';
-                },
-                complete: function(args) {
-                  return 'Volume has been created successfully!';
                 }
               },
 
@@ -161,16 +155,10 @@
               label: 'Take snapshot',
               messages: {
                 confirm: function(args) {
-                  return 'Please confirm that you want to take a snapshot'
-                },
-                success: function(args) {
-                  return 'Taking snapshot';
+                  return 'Please confirm that you want to take a snapshot';
                 },
                 notification: function(args) {
                   return 'Take snapshot';
-                },
-                complete: function(args) {
-                  return 'Snapshot has been taken successfully';
                 }
               },
               action: function(args) {
@@ -216,7 +204,7 @@
                       success: function(data) {
                         args.response.success({
                           data: $.map(
-                            data.listsnapshotpoliciesresponse.snapshotpolicy,
+                            data.listsnapshotpoliciesresponse.snapshotpolicy ? data.listsnapshotpoliciesresponse.snapshotpolicy : [],
                             function(snapshot, index) {
                               return {
                                 id: snapshot.id,
@@ -247,7 +235,7 @@
                       };
 
                       var convertTime = function(minute, hour, meridiem, extra) {
-                        var convertedHour = meridiem == 'PM' ? 
+                        var convertedHour = meridiem == 'PM' ?
                               (hour != 12 ? parseInt(hour) + 12 : 12) : (hour != 12 ? hour : '00');
                         var time = minute + ':' + convertedHour;
                         if (extra) time += ':' + extra;
@@ -445,20 +433,11 @@
             },
 
             attachDisk: {
-              
+              addRow: 'false',
               label: 'Attach Disk',
               messages: {
-                confirm: function(args) {
-                  return 'Are you sure you want to attach disk?';
-                },
-                success: function(args) {
-                  return 'Attaching disk';
-                },
                 notification: function(args) {
-                  return 'Attach disk';
-                },
-                complete: function(args) {
-                  return 'Disk has been attached to instance';
+                  return 'Attached disk';
                 }
               },
               createForm: {
@@ -507,7 +486,10 @@
                       {_custom:
                        {jobId: jid,
                         getUpdatedItem: function(json) {
-                          return json.queryasyncjobresultresponse.jobresult.volume;
+                          return $.extend(json.queryasyncjobresultresponse.jobresult.volume, {
+                            storagetype: 'shared',
+                            vmstate: 'Running'
+                          });
                         },
                         getActionFilter: function() {
                           return volumeActionfilter;
@@ -521,23 +503,15 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            }
-
-            ,
+            },
             detachDisk: {
               label: 'Detach disk',
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to detach disk ?';
                 },
-                success: function(args) {
-                  return 'Detaching disk';
-                },
                 notification: function(args) {
                   return 'Detach disk';
-                },
-                complete: function(args) {
-                  return 'Disk has been detached.';
                 }
               },
               action: function(args) {
@@ -551,7 +525,10 @@
                       {_custom:
                        {jobId: jid,
                         getUpdatedItem: function(json) {
-                          return json.queryasyncjobresultresponse.jobresult.volume;
+                          return {
+                            virtualmachineid: null,
+                            vmname: null
+                          };
                         },
                         getActionFilter: function() {
                           return volumeActionfilter;
@@ -572,9 +549,6 @@
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to download volume?';
-                },
-                success: function(args) {
-                  return 'Downloading volume';
                 },
                 notification: function(args) {
                   return 'Download volume';
@@ -612,13 +586,13 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            }	,
+            },
 
             createTemplate: {
               label: 'Create template',
               addRow: 'false',
               messages: {
-                confirm: function(args) {                 
+                confirm: function(args) {
                   return 'Are you sure you want to create template?';
                 },
                 success: function(args) {
@@ -626,9 +600,6 @@
                 },
                 notification: function(args) {
                   return 'Create template';
-                },
-                complete: function(args) {
-                  return 'Template has been created successfully.';
                 }
               },
               createForm: {
@@ -703,20 +674,14 @@
               }
             },
 
-            'delete': {
+            'destroy': {
               label: 'Delete volume',
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to delete volume?';
                 },
-                success: function(args) {
-                  return 'Deleting volume';
-                },
                 notification: function(args) {
                   return 'Delete volume';
-                },
-                complete: function(args) {
-                  return 'Volume has been deleted';
                 }
               },
               action: function(args) {
@@ -726,30 +691,26 @@
                   async: true,
                   success: function(json) {
                     var jid = json.deletevolumeresponse.jobid;
-                    args.response.success(
-                      {_custom:
-                       {jobId: jid
-                       }
+                    args.response.success({
+                      data: {
+                        state: 'Destroyed'
                       }
-                    );
+                    });
                   }
                 });
-              },
-              notification: {
-                poll: function(args) {args.complete();}
               }
             }
 
           },
 
-          dataProvider: function(args) {            
+          dataProvider: function(args) {
             var apiCmd = "listVolumes&page=" + args.page + "&pagesize=" + pageSize;
             if(args.context != null) {
               if("instances" in args.context) {
                 apiCmd += "&virtualMachineId=" + args.context.instances[0].id;
               }
-            }        
-          
+            }
+
             $.ajax({
               url: createURL(apiCmd),
               dataType: "json",
@@ -774,14 +735,8 @@
                   confirm: function(args) {
                     return 'Please confirm that you want to take a snapshot' ;
                   },
-                  success: function(args) {
-                    return 'Taking snapshot';
-                  },
                   notification: function(args) {
                     return 'Take snapshot';
-                  },
-                  complete: function(args) {
-                    return 'Snapshot has been taken successfully';
                   }
                 },
                 action: function(args) {
@@ -818,14 +773,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to attach disk?';
                   },
-                  success: function(args) {
-                    return 'Attaching disk';
-                  },
                   notification: function(args) {
                     return 'Attach disk';
-                  },
-                  complete: function(args) {
-                    return 'Disk has been attached to instance';
                   }
                 },
                 createForm: {
@@ -888,23 +837,15 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              }
-
-              ,
+              },
               detachDisk: {
                 label: 'Detach disk',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to detach disk?';
                   },
-                  success: function(args) {
-                    return 'Detaching disk';
-                  },
                   notification: function(args) {
                     return 'Detach disk';
-                  },
-                  complete: function(args) {
-                    return 'Disk has been detached.';
                   }
                 },
                 action: function(args) {
@@ -918,7 +859,10 @@
                         {_custom:
                          {jobId: jid,
                           getUpdatedItem: function(json) {
-                            return json.queryasyncjobresultresponse.jobresult.volume;
+                            return {
+                              virtualmachineid: null,
+                              vmname: null
+                            };
                           },
                           getActionFilter: function() {
                             return volumeActionfilter;
@@ -939,9 +883,6 @@
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to download volume?';
-                  },
-                  success: function(args) {
-                    return 'Downloading volume';
                   },
                   notification: function(args) {
                     return 'Downloading volume';
@@ -979,7 +920,7 @@
                 notification: {
                   poll: pollAsyncJobResult
                 }
-              }	,
+              },
 
               createTemplate: {
                 label: 'Create template',
@@ -987,14 +928,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to create template?';
                   },
-                  success: function(args) {
-                    return 'Creating template';
-                  },
                   notification: function(args) {
                     return 'Create template';
-                  },
-                  complete: function(args) {
-                    return 'Template has been created.';
                   }
                 },
                 createForm: {
@@ -1068,20 +1003,14 @@
                 }
               },
 
-              'delete': {
+              'destroy': {
                 label: 'Delete volume',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to delete volume?';
                   },
-                  success: function(args) {
-                    return 'Deleting volume';
-                  },
                   notification: function(args) {
                     return 'Delete volume';
-                  },
-                  complete: function(args) {
-                    return 'Volume has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -1090,21 +1019,20 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var jid = json.deletevolumeresponse.jobid;
-                      args.response.success(
-                        {_custom:
-                         {jobId: jid
-                         }
-                        }
-                      );
+                      args.response.success();
                     }
                   });
                 },
                 notification: {
-                  poll: function(args) {args.complete();}
+                  poll: function(args) {
+                    args.complete({
+                      data: {
+                        state: 'Destroyed'
+                      }
+                    });
+                  }
                 }
               }
-
             },
             tabs: {
               details: {
@@ -1185,7 +1113,7 @@
           label: 'Snapshots',
           fields: {
             volumename: { label: 'Volume' },
-            state: { label: 'State' },
+            state: { label: 'State', indicator: { 'BackedUp': 'on', 'Destroyed': 'off' } },
             intervaltype: { label: 'Interval Type' },
             created: { label: 'Date' }
           },
@@ -1198,14 +1126,8 @@
                 confirm: function(args) {
                   return 'Are you sure you want to create template?';
                 },
-                success: function(args) {
-                  return 'Creating template';
-                },
                 notification: function(args) {
                   return 'Create template';
-                },
-                complete: function(args) {
-                  return 'Template has been created.';
                 }
               },
               createForm: {
@@ -1286,14 +1208,8 @@
                 confirm: function(args) {
                   return 'Are you sure you want to create volume?';
                 },
-                success: function(args) {
-                  return 'Creating volume';
-                },
                 notification: function(args) {
                   return 'Create volume';
-                },
-                complete: function(args) {
-                  return 'Volume has been created.';
                 }
               },
               createForm: {
@@ -1340,20 +1256,14 @@
               }
             },
 
-            'delete': {
+            'destroy': {
               label: 'Delete snapshot',
               messages: {
                 confirm: function(args) {
                   return 'Are you sure you want to delete snapshot?';
                 },
-                success: function(args) {
-                  return 'Deleting snapshot';
-                },
                 notification: function(args) {
                   return 'Delete snapshot';
-                },
-                complete: function(args) {
-                  return 'Snapshot has been deleted.';
                 }
               },
               action: function(args) {
@@ -1373,19 +1283,21 @@
                 });
               },
               notification: {
-                poll: function(args) {args.complete();}
+                poll: function(args) {args.complete({
+                  data: { state: 'Destroyed' }
+                });}
               }
             }
           },
 
-          dataProvider: function(args) {            
+          dataProvider: function(args) {
             var apiCmd = "listSnapshots&page=" + args.page + "&pagesize=" + pageSize;
             if(args.context != null) {
               if("volumes" in args.context) {
                 apiCmd += "&volumeid=" + args.context.volumes[0].id;
               }
-            }       
-          
+            }
+
             $.ajax({
               url: createURL(apiCmd),
               dataType: "json",
@@ -1409,14 +1321,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to create template?';
                   },
-                  success: function(args) {
-                    return 'Creating template';
-                  },
                   notification: function(args) {
                     return 'Create template';
-                  },
-                  complete: function(args) {
-                    return 'Template has been created.';
                   }
                 },
                 createForm: {
@@ -1496,14 +1402,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to create volume?';
                   },
-                  success: function(args) {
-                    return 'Creating volume';
-                  },
                   notification: function(args) {
                     return 'Create volume';
-                  },
-                  complete: function(args) {
-                    return 'Volume has been created.';
                   }
                 },
                 createForm: {
@@ -1550,20 +1450,14 @@
                 }
               },
 
-              'delete': {
+              'destroy': {
                 label: 'Delete snapshot',
                 messages: {
                   confirm: function(args) {
                     return 'Are you sure you want to delete snapshot?';
                   },
-                  success: function(args) {
-                    return 'Deleting snapshot';
-                  },
                   notification: function(args) {
                     return 'Delete snapshot';
-                  },
-                  complete: function(args) {
-                    return 'Snapshot has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -1583,7 +1477,9 @@
                   });
                 },
                 notification: {
-                  poll: function(args) {args.complete();}
+                  poll: function(args) {
+                    args.complete({ data: { state: 'Destroyed' } });
+                  }
                 }
               }
             },
@@ -1626,6 +1522,11 @@
   var volumeActionfilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
+
+    if (jsonObj.state == 'Destroyed') {
+      return [];
+    }
+
     if(jsonObj.hypervisor != "Ovm") {
       allowedActions.push("takeSnapshot");
       allowedActions.push("recurringSnapshot");
@@ -1651,23 +1552,28 @@
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
             if(jsonObj.vmname == null || jsonObj.vmname == "none") {
-              allowedActions.push("delete");
+              allowedActions.push("destroy");
             }
           }
         }
       }
     }
     return allowedActions;
-  }
+  };
 
   var snapshotActionfilter = function(args) {
     var jsonObj = args.context.item;
+
+    if (jsonObj.state == 'Destroyed') {
+      return [];
+    }
+
     var allowedActions = [];
     if(jsonObj.state == "BackedUp") {
       allowedActions.push("createTemplate");
       allowedActions.push("createVolume");
     }
-    allowedActions.push("delete");
+    allowedActions.push("destroy");
     return allowedActions;
   }
 
