@@ -157,11 +157,11 @@
               );
             };
 
+            $step.find('.wizard-step-conditional').hide();
+
             return {
               response: {
                 success: function(args) {
-                  $step.find('.wizard-step-conditional').hide();
-
                   if (formData['select-template']) {
                     $step.find('.wizard-step-conditional').filter(function() {
                       return $(this).hasClass(formData['select-template']);
@@ -375,11 +375,12 @@
               });
             };
 
+            // Show relevant conditional sub-step if present
+            $step.find('.wizard-step-conditional').hide();
+
             return {
               response: {
                 success: function(args) {
-                  // Show relevant conditional sub-step if present
-                  $step.find('.wizard-step-conditional').hide();
                   if (args.type) {
                     $step.find('.wizard-step-conditional').filter(function() {
                       return $(this).hasClass(args.type);
