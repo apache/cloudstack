@@ -1375,26 +1375,17 @@
 
   var templateActionfilter = function(args) {
     var jsonObj = args.context.item;
-    var allowedActions = [];
-    allowedActions.push("copyTemplate");
-    allowedActions.push("downloadTemplate");
-    allowedActions.push("delete");
+    var allowedActions = [];   
 
     // "Edit Template", "Copy Template", "Create VM"
     if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
         || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
       //do nothing
     }
-    else {
-      //buildActionLinkForTab("label.action.edit.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
-      allowedActions.push("edit");
-
-      //buildActionLinkForTab("label.action.copy.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
-      allowedActions.push("copyTemplate");
-
-      // For Beta2, this simply doesn't work without a network.
-      //buildActionLinkForTab("label.action.create.vm", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
-      //allowedActions.push("createVm");
+    else {      
+      allowedActions.push("edit");      
+      allowedActions.push("copyTemplate");         
+      //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.   
     }
 
     // "Download Template"
@@ -1402,20 +1393,18 @@
         || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
       //do nothing
     }
-    else {
-      //buildActionLinkForTab("label.action.download.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    else {      
       allowedActions.push("downloadTemplate");
     }
 
     // "Delete Template"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
     if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
-        || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
-        || jsonObj.templatetype == "SYSTEM") {
+        || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)        
+        || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")) {   
       //do nothing
     }
-    else {
-      //buildActionLinkForTab("label.action.delete.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    else {      
       allowedActions.push("delete");
     }
 
@@ -1432,12 +1421,10 @@
        ) {
          //do nothing
        }
-    else {
-      //buildActionLinkForTab("label.action.edit.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    else {      
       allowedActions.push("edit");
 
-      if(jsonObj.id != 200) { //200 is ID of xsTools ISO
-        //buildActionLinkForTab("label.action.copy.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);
+      if(jsonObj.id != 200) { //200 is ID of xsTools ISO       
         allowedActions.push("copyISO");
       }
     }
@@ -1467,8 +1454,7 @@
        ) {
          //do nothing
        }
-    else {
-      //buildActionLinkForTab("label.action.download.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    else {      
       allowedActions.push("downloadISO");
     }
 
@@ -1480,8 +1466,7 @@
        ) {
          //do nothing
        }
-    else {
-      //buildActionLinkForTab("label.action.delete.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    else {     
       allowedActions.push("delete");
     }
 
