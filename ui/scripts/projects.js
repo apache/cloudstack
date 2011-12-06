@@ -270,7 +270,7 @@
         displaytext: { label: 'Display Text' },
         domain: { label: 'Domain' },
         account: { label: 'Owner' },
-        state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off' } }
+        state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off' } }
       },
 
       dataProvider: function(args) {
