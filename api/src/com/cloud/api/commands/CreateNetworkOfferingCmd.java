@@ -181,8 +181,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 HashMap<String, String> svcCapabilityMap = (HashMap<String, String>) iter.next();
                 Capability capability = null;
                 String svc = (String) svcCapabilityMap.get("service");
-                String capabilityName = (String) svcCapabilityMap.get("capabilityType");
-                String capabilityValue = (String) svcCapabilityMap.get("capabilityValue");
+                String capabilityName = (String) svcCapabilityMap.get("capabilitytype");
+                String capabilityValue = (String) svcCapabilityMap.get("capabilityvalue");
 
                 if (capabilityName != null) {
                     capability = Capability.getCapability(capabilityName);

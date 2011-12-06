@@ -74,7 +74,6 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DcDetailVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -86,7 +85,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
-import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -131,7 +129,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -3140,7 +3137,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean dedicatedLb = false;
         if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) { 
             String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
-            dedicatedLb = isolationCapability.contains("dedicated");
+            
+            if (isolationCapability != null) {
+            	dedicatedLb = isolationCapability.contains("dedicated");
+            } else {
+            	dedicatedLb = true;
+            }
+            
         }
 
         Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
@@ -3148,10 +3151,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean redundantRouter = false;
         if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) { 
             String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes.getName());
-            sharedSourceNat = sourceNatType.contains("perzone");
+            if (sourceNatType != null) {
+            	sharedSourceNat = sourceNatType.contains("perzone");
+            } else {
+            	sharedSourceNat = false;
+            }
+            
             String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
             if (param != null) {
                 redundantRouter = param.contains("true");
+            } else {
+            	redundantRouter = false;
             }
         }
 
