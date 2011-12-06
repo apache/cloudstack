@@ -120,7 +120,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
     
-    @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
     private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")

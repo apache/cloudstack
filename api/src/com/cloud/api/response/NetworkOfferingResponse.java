@@ -66,6 +66,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.GUEST_IP_TYPE) @Param(description="guest type of the network offering, can be Shared or Isolated")
     private String guestIpType;
+    
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering used by virtual router provider")
+    private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
    
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
@@ -149,5 +152,9 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setIsRedundantRouter(Boolean isRedundantRouter) {
         this.isRedundantRouter = isRedundantRouter;
+    }
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId.setValue(serviceOfferingId);
     }
 }

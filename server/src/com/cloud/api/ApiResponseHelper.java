@@ -56,11 +56,11 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.HypervisorCapabilitiesResponse;
 import com.cloud.api.response.IPAddressResponse;
-import com.cloud.api.response.LDAPConfigResponse;
-import com.cloud.api.response.SecurityGroupRuleResponse;
-import com.cloud.api.response.SecurityGroupRuleResultObject;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
+import com.cloud.api.response.LBStickinessPolicyResponse;
+import com.cloud.api.response.LBStickinessResponse;
+import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
@@ -77,6 +77,8 @@ import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
+import com.cloud.api.response.SecurityGroupRuleResponse;
+import com.cloud.api.response.SecurityGroupRuleResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
@@ -139,11 +141,12 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.security.SecurityRule;
-import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.SecurityRule;
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -195,9 +198,6 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmData;
 import com.cloud.vm.dao.UserVmData.NicData;
 import com.cloud.vm.dao.UserVmData.SecurityGroupData;
-import com.cloud.api.response.LBStickinessPolicyResponse;
-import com.cloud.api.response.LBStickinessResponse;
-import com.cloud.network.rules.StickinessPolicy;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -2573,6 +2573,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
+        response.setServiceOfferingId(offering.getServiceOfferingId());
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }

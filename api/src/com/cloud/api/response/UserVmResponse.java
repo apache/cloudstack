@@ -99,7 +99,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName("isodisplaytext") @Param(description="an alternate display text of the ISO attached to the virtual machine")
     private String isoDisplayText;
 
-    @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID) @Param(description="the ID of the service offering of the virtual machine")
     private IdentityProxy serviceOfferingId = new IdentityProxy("disk_offering");
 
     @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
