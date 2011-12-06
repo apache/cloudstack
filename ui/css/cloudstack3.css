@@ -445,7 +445,8 @@ body.login {
   margin-top: 15px;
 }
 
-.install-wizard .button.advanced-installation {
+.install-wizard .button.advanced-installation,
+.install-wizard .button.go-back {
   background: #E0DEDE;
   color: #7D7D7D;
   border: 1px solid #C7C2C2;
@@ -455,6 +456,18 @@ body.login {
   -o-text-shadow: 0px 0px #FFFFFF;
   text-shadow: 0px 0px #FFFFFF;
   float: left;
+}
+
+.install-wizard .button.go-back {
+  padding: 9px 16px 10px 18px;
+  font-size: 12px;
+}
+
+.install-wizard .setup-form .button.go-back {
+  /*+placement:shift 15px -14px;*/
+  position: relative;
+  left: 15px;
+  top: -14px;
 }
 
 .install-wizard .step {

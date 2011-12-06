@@ -3,7 +3,7 @@
     // Check if install wizard should be invoked
     check: function(args) {
       args.response.success({
-        doInstall: args.context.users[0].username == 'newuser'
+        doInstall: true
       });
     },
 

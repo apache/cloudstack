@@ -45,7 +45,7 @@
       }
 
       $body.children().fadeOut('fast', function() {
-        $(this).remove();
+        $body.children().detach();
         $nextStep.addClass('step').hide().appendTo($body).fadeIn();
       });
     };
@@ -55,7 +55,49 @@
      */
     var elems = {
       /**
-       * A standard wizard step template
+       * A standard intro text wizard step template
+       */
+      stepIntro: function(args) {
+        var title = args.title;
+        var subtitle = args.subtitle;
+        var copyID = args.copyID;
+        var prevStepID = args.prevStepID;
+        var nextStepID = args.nextStepID;
+        var diagram = args.diagram;
+
+        var $intro = $('<div></div>').addClass('intro');
+        var $title = $('<div></div>').addClass('title')
+              .html(title);
+        var $subtitle = $('<div></div>').addClass('subtitle')
+              .html(subtitle);
+        var $copy = getCopy(copyID, $('<p></p>'));
+        var $prev = elems.prevButton('Go back');
+        var $continue = elems.nextButton('OK');
+
+        $continue.click(function() {
+          goTo(nextStepID);
+
+          return false;
+        });
+
+        $prev.click(function() {
+          goTo(prevStepID);
+        });
+        
+        return function(args) {
+          showDiagram(diagram);
+
+          return $intro.append(
+            $title, $subtitle,
+            $copy,
+            $prev,
+            $continue
+          );
+        };
+      },
+      
+      /**
+       * A standard form-based wizard step template
        * -- relies on createForm for form generation
        */
       step: function(args) {
@@ -65,12 +107,14 @@
         var id = args.id;
         var stateID = args.stateID;
         var tooltipID = args.tooltipID;
+        var prevStepID = args.prevStepID;
         var nextStepID = args.nextStepID;
         var form;
 
         var $container = $('<div></div>').addClass(id);
         var $form = $('<div>').addClass('setup-form');
         var $save = elems.nextButton('Continue', { type: 'submit' });
+        var $prev = elems.prevButton('Go back');
         var $title = $('<div></div>').addClass('title').html(title);
 
         // Generate form
@@ -88,8 +132,9 @@
 
         $form.append(form.$formContainer);
         $form.find('.form-item').addClass('field');
+        $prev.appendTo($form.find('form'));
         $save.appendTo($form.find('form'));
-
+        
         // Submit handler
         $form.find('form').submit(function() {
           form.completeAction($form);
@@ -97,17 +142,24 @@
           return false;
         });
 
-        // Setup diagram, tooltips
-        showDiagram(diagram);
+        // Go back handler
+        $prev.click(function(event) {
+          goTo(prevStepID);
+        });
 
         // Cleanup
         $form.find('.message').remove();
         $form.find('label.error').hide();
-
         $container.append($form.prepend($title));
+
+        showTooltip($form, tooltipID);
         
         return function(args) {
-          showTooltip($form, tooltipID);
+          // Setup diagram, tooltips
+          showDiagram(diagram);
+          setTimeout(function() {
+            $form.find('input[type=text]:first').focus();
+          }, 600);
 
           return $container;
         };
@@ -155,6 +207,13 @@
         return $button;
       },
 
+      /**
+       * A standard previous/go back button
+       */
+      prevButton: function(label) {
+        return $('<div>').addClass('button go-back').html(label);
+      },
+
       diagramParts: function() {
         return $('<div>').addClass('diagram').append(
           $('<div>').addClass('part zone'),
@@ -199,10 +258,6 @@
       $formContainer.find('input').blur(function() {
         $tooltip.remove();
       });
-
-      setTimeout(function() {
-        $formContainer.find('input[type=text]:first').focus();
-      }, 600);
     };
 
     /**
@@ -287,30 +342,15 @@
        * Add zone intro text
        * @param args
        */
-      addZoneIntro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-          .html('Let\'s add a zone.');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('What is a zone?');
-        var $copy = getCopy('whatIsAZone', $('<p></p>'));
-        var $continue = elems.nextButton('OK');
-
-        $continue.click(function() {
-          goTo('addZone');
-
-          return false;
-        });
-
-        showDiagram('.part.zone');
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $continue
-        );
-      },
-
+      addZoneIntro: elems.stepIntro({
+        title: "Let's add a zone",
+        subtitle: 'What is a zone?',
+        copyID: 'whatIsAZone',
+        prevStepID: 'changeUser',
+        nextStepID: 'addZone',
+        diagram: '.part.zone'
+      }),
+      
       /**
        * Add zone form
        */
@@ -320,6 +360,7 @@
         stateID: 'zone',
         tooltipID: 'addZone',
         diagram: '.part.zone',
+        prevStepID: 'addZoneIntro',
         nextStepID: 'addPodIntro',
         form: {
           name: { label: 'Name', validation: { required: true } },
@@ -334,29 +375,14 @@
        * Add pod intro text
        * @param args
        */
-      addPodIntro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-          .html('Let\'s add a pod.');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('What is a pod?');
-        var $copy = getCopy('whatIsAPod', $('<p></p>'));
-        var $continue = elems.nextButton('OK');
-
-        $continue.click(function() {
-          goTo('addPod');
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.pod');
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $continue
-        );
-      },
+      addPodIntro: elems.stepIntro({
+        title: "Let's add a pod.",
+        subtitle: 'What is a pod?',
+        copyID: 'whatIsAPod',
+        prevStepID: 'addZone',
+        nextStepID: 'addPod',
+        diagram: '.part.zone, .part.pod'
+      }),
 
       /**
        * Add pod form
@@ -368,6 +394,7 @@
         stateID: 'pod',
         tooltipID: 'addPod',
         diagram: '.part.zone, .part.pod',
+        prevStepID: 'addPodIntro',
         nextStepID: 'addGuestNetwork',
         form: {
           name: { label: 'Name', validation: { required: true }},
@@ -386,6 +413,7 @@
         stateID: 'guestNetwork',
         tooltipID: 'addGuestNetwork',
         diagram: '.part.zone',
+        prevStepID: 'addPod',
         nextStepID: 'addClusterIntro',
         form: {
           name: { label: 'Name', validation: { required: true } },
@@ -400,29 +428,14 @@
        * Add cluster intro text
        * @param args
        */
-      addClusterIntro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-          .html('Let\'s add a cluster.');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('What is a cluster?');
-        var $copy = getCopy('whatIsACluster', $('<p></p>'));
-        var $continue = elems.nextButton('OK');
-
-        $continue.click(function() {
-          goTo('addCluster');
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.cluster');
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $continue
-        );
-      },
+      addClusterIntro: elems.stepIntro({
+        title: "Let's add a cluster.",
+        subtitle: 'What is a cluster?',
+        copyID: 'whatIsACluster',
+        prevStepID: 'addGuestNetwork',
+        nextStepID: 'addCluster',
+        diagram: '.part.zone, .part.cluster'
+      }),
 
       /**
        * Add cluster form
@@ -433,6 +446,7 @@
         id: 'add-cluster',
         stateID: 'cluster',
         tooltipID: 'addCluster',
+        prevStepID: 'addClusterIntro',
         nextStepID: 'addHostIntro',
         diagram: '.part.zone, .part.cluster',
         form: {
@@ -452,29 +466,14 @@
        * Add host intro text
        * @param args
        */
-      addHostIntro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-          .html('Let\'s add a host.');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-          .html('What is a host?');
-        var $copy = getCopy('whatIsAHost', $('<p></p>'));
-        var $continue = elems.nextButton('OK');
-
-        $continue.click(function() {
-          goTo('addHost');
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.host');
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $continue
-        );
-      },
+      addHostIntro: elems.stepIntro({
+        title: "Let's add a host.",
+        subtitle: 'What is a host?',
+        copyID: 'whatIsAHost',
+        prevStepID: 'addCluster',
+        nextStepID: 'addHost',
+        diagram: '.part.zone, .part.host'
+      }),
 
       /**
        * Add host form
@@ -485,6 +484,7 @@
         id: 'add-host',
         stateID: 'host',
         tooltipID: 'addHost',
+        prevStepID: 'addHostIntro',
         nextStepID: 'addPrimaryStorageIntro',
         diagram: '.part.zone, .part.host',
         form: {
@@ -510,29 +510,14 @@
        * Add primary storage intro text
        * @param args
        */
-      addPrimaryStorageIntro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-              .html('Let\'s add primary storage.');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('What is primary storage?');
-        var $copy = getCopy('whatIsPrimaryStorage', $('<p></p>'));
-        var $continue = elems.nextButton('OK');
-
-        $continue.click(function() {
-          goTo('addPrimaryStorage');
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.primaryStorage');
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $continue
-        );
-      },
+      addPrimaryStorageIntro: elems.stepIntro({
+        title: "Let's add primary storage.",
+        subtitle: 'What is primary storage?',
+        copyID: 'whatIsPrimaryStorage',
+        prevStepID: 'addHost',
+        nextStepID: 'addPrimaryStorage',
+        diagram: '.part.zone, .part.primaryStorage'
+      }),
 
       /**
        * Add primary storage
@@ -543,6 +528,7 @@
         id: 'add-primary-storage',
         stateID: 'primaryStorage',
         tooltipID: 'addPrimaryStorage',
+        prevStepID: 'addPrimaryStorageIntro',
         nextStepID: 'addSecondaryStorageIntro',
         diagram: '.part.zone, .part.primaryStorage',
         form: {
@@ -567,29 +553,14 @@
        * Add secondary storage intro text
        * @param args
        */
-      addSecondaryStorageIntro: function(args) {
-        var $intro = $('<div></div>').addClass('intro');
-        var $title = $('<div></div>').addClass('title')
-              .html('Let\'s add secondary storage.');
-        var $subtitle = $('<div></div>').addClass('subtitle')
-              .html('What is a secondary storage?');
-        var $copy = getCopy('whatIsSecondaryStorage', $('<p></p>'));
-        var $continue = elems.nextButton('OK');
-
-        $continue.click(function() {
-          goTo('addSecondaryStorage');
-
-          return false;
-        });
-
-        showDiagram('.part.zone, .part.secondaryStorage');
-
-        return $intro.append(
-          $title, $subtitle,
-          $copy,
-          $continue
-        );
-      },
+      addSecondaryStorageIntro: elems.stepIntro({
+        title: "Let's add secondary storage.",
+        subtitle: 'What is secondary storage?',
+        copyID: 'whatIsSecondaryStorage',
+        prevStepID: 'addPrimaryStorage',
+        nextStepID: 'addSecondaryStorage',
+        diagram: '.part.zone, .part.secondaryStorage'
+      }),
 
       /**
        * Add secondary storage
@@ -600,6 +571,7 @@
         id: 'add-secondary-storage',
         stateID: 'secondaryStorage',
         tooltipID: 'addSecondaryStorage',
+        prevStepID: 'addSecondaryStorageIntro',
         nextStepID: 'launchInfo',
         diagram: '.part.zone, .part.secondaryStorage',
         form: {
@@ -624,6 +596,7 @@
         var $subtitle = $('<div></div>').addClass('subtitle')
           .html('Click the launch button.');
         var $continue = elems.nextButton('Launch');
+        var $prev = elems.prevButton('Go back');
 
         $continue.click(function() {
           goTo('launch');
@@ -631,11 +604,15 @@
           return false;
         });
 
+        $prev.click(function() {
+          goTo('addSecondaryStorage');
+        });
+
         showDiagram('.part.zone, .part.secondaryStorage');
 
         return $intro.append(
           $title, $subtitle,
-          $continue
+          $prev, $continue
         );
       },
 
