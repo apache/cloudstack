@@ -286,4 +286,6 @@ public interface Network extends ControlledEntity {
     void setPhysicalNetworkId(Long physicalNetworkId);
 
 	ACLType getAclType();
+	
+	boolean isSpecifiedCidr();
 }

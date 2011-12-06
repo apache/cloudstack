@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.NetworkServiceMapVO;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.Provider;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -112,5 +113,18 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         sc.setParameters("service", service.getName());
         
         return customSearch(sc, null);
+    }
+
+    @Override
+    public boolean isProviderForNetworkOffering(long networkOfferingId, Provider provider) {
+    	SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();;
+    	
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        sc.setParameters("provider", provider.getName());
+        
+        if (findOneBy(sc) != null) {
+            return true;
+        }
+        return false;
     }
 }

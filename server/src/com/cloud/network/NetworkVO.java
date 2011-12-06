@@ -188,6 +188,7 @@ public class NetworkVO implements Network, Identity {
             state = State.Allocated;
         }
     	this.uuid = UUID.randomUUID().toString();
+    	this.specifiedCidr = that.isSpecifiedCidr();
     }
 
     /**
@@ -464,6 +465,7 @@ public class NetworkVO implements Network, Identity {
 		return aclType;
 	}
 
+	@Override
     public boolean isSpecifiedCidr() {
         return specifiedCidr;
     }

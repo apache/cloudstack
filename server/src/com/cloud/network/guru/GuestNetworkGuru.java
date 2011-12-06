@@ -111,6 +111,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             if (userSpecified.getCidr() != null) {
                 network.setCidr(userSpecified.getCidr());
                 network.setGateway(userSpecified.getGateway());
+                network.setSpecifiedCidr(true);
             } else {
                 String guestNetworkCidr = dc.getGuestNetworkCidr();
                 // guest network cidr can be null for Basic zone
@@ -125,7 +126,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
             }
-            network.setSpecifiedCidr(true);
         } else {
             String guestNetworkCidr = dc.getGuestNetworkCidr();
             String[] cidrTuple = guestNetworkCidr.split("\\/");

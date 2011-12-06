@@ -19,6 +19,7 @@ package com.cloud.offerings.dao;
 
 import java.util.List;
 
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.utils.db.GenericDao;
@@ -33,6 +34,7 @@ public interface NetworkOfferingServiceMapDao extends GenericDao<NetworkOffering
    List<NetworkOfferingServiceMapVO> listByNetworkOfferingId(long networkOfferingId);
    void deleteByOfferingId(long networkOfferingId);
    List<String> listProvidersForServiceForNetworkOffering(long networkOfferingId, Service service);
+   boolean isProviderForNetworkOffering(long networkOfferingId, Provider provider);
 }
 
 

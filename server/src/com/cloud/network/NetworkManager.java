@@ -248,6 +248,8 @@ public interface NetworkManager extends NetworkService {
 	boolean getAllowSubdomainAccessGlobal();
 	
 	boolean isProviderForNetwork(Provider provider, long networkId);
+	
+	boolean isProviderForNetworkOffering(Provider provider, long networkOfferingId);
 
 	void canProviderSupportServices(Map<Provider, Set<Service>> providersMap);
 

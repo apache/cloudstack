@@ -1871,6 +1871,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Cidr size can't be less than " + _cidrLimit);
             }
         }
+        
+        if (cidr != null && networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
+            throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external firewall!");
+        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -3112,6 +3116,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }    
 
+    public boolean networkOfferingIsConfiguredForExternalNetworking(long networkOfferingId) {
+        boolean netscalerInNetworkOffering = isProviderForNetworkOffering(Network.Provider.Netscaler, networkOfferingId);
+        boolean juniperInNetworkOffering = isProviderForNetworkOffering(Network.Provider.JuniperSRX, networkOfferingId);
+        boolean f5InNetworkOffering = isProviderForNetworkOffering(Network.Provider.F5BigIp, networkOfferingId);
+
+        if (netscalerInNetworkOffering || juniperInNetworkOffering || f5InNetworkOffering) {
+            return true;
+        } else {
+            return false;
+        }
+    }    
+
     @Override
     public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         return (_ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(networkOfferingId, services));
@@ -3342,6 +3358,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {
+                if (network.isSpecifiedCidr() && networkOfferingIsConfiguredForExternalNetworking(networkOfferingId)) {
+                    throw new InvalidParameterValueException("Network offering " + networkOffering + " contained external network elements, can't be upgraded from a CIDR specify network!");
+                }
                 //check if the network is upgradable
                 if (!canUpgrade(oldNetworkOfferingId, networkOfferingId)) {
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNetworkOfferingId + " to " + networkOfferingId + "; check logs for more information");
@@ -5088,6 +5107,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean isProviderForNetwork(Provider provider, long networkId) {
     	if (_ntwkSrvcDao.isProviderForNetwork(networkId, provider) != null) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
+    @Override
+    public boolean isProviderForNetworkOffering(Provider provider, long networkOfferingId) {
+    	if (_ntwkOfferingSrvcDao.isProviderForNetworkOffering(networkOfferingId, provider)) {
     		return true;
     	} else {
     		return false;
