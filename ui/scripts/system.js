@@ -5754,7 +5754,7 @@
 
               createForm: {
                 title: 'Add new host',
-                desc: 'Please fill in the following information to add a new host fro the specified zone configuration.',
+                desc: 'Please fill in the following information to add a new host for the specified zone configuration.',
                 fields: {
                   //always appear (begin)
                   podId: {
