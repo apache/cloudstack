@@ -1765,11 +1765,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
             }
-        } else if (zone.getNetworkType() == NetworkType.Advanced){
-            aclType = ACLType.Account;
-        } else if (zone.getNetworkType() == NetworkType.Basic){
-            aclType = ACLType.Domain;
-        }
+            //In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
+            if (networkOffering.getGuestType() == GuestType.Isolated) {
+        		if (aclType != ACLType.Account) {
+        			throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + Network.GuestType.Isolated);
+        		}
+        	} else if (networkOffering.getGuestType() == GuestType.Shared) {
+    			if (aclType != ACLType.Domain) {
+    				throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " for network of type " + Network.GuestType.Shared);
+        		}
+        	}  
+        } else {
+        	if (networkOffering.getGuestType() == GuestType.Isolated) {
+        		aclType = ACLType.Account;
+        	} else if (networkOffering.getGuestType() == GuestType.Shared) {
+        		aclType = ACLType.Domain;
+        	}  
+        } 
 
         // Check if the network is domain specific
         if (aclType == ACLType.Domain) {

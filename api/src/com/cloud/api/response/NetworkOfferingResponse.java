@@ -73,15 +73,6 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
-    @SerializedName(ApiConstants.IS_LB_SHARED) @Param(description="true if load balncer service offered is shared by multiple networks", responseObject = ServiceResponse.class)
-    private Boolean isLbShared;
-
-    @SerializedName(ApiConstants.IS_SOURCE_NAT_SHARED) @Param(description="true if soruce NAT service offered is shared by multiple networks", responseObject = ServiceResponse.class)
-    private Boolean isSourceNatShared;
-
-    @SerializedName(ApiConstants.REDUNDANT_ROUTER) @Param(description="true if gateway service offered redundant router", responseObject = ServiceResponse.class)
-    private Boolean isRedundantRouter;
-
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -140,18 +131,6 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setGuestIpType(String type) {
         this.guestIpType = type;
-    }
-
-    public void setIsLBShared(boolean isLbSared) {
-        this.isLbShared = isLbSared;
-    }
-
-    public void setIsSourceNatShared(boolean isSourceNatShared) {
-        this.isSourceNatShared = isSourceNatShared;
-    }
-
-    public void setIsRedundantRouter(Boolean isRedundantRouter) {
-        this.isRedundantRouter = isRedundantRouter;
     }
 
     public void setServiceOfferingId(Long serviceOfferingId) {

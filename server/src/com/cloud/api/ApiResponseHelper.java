@@ -2604,21 +2604,20 @@ public class ApiResponseHelper implements ResponseGenerator {
                 lbIsoaltion.setValue(offering.getDedicatedLB()?"dedicated":"shared");
                 lbCapResponse.add(lbIsoaltion);
                 svcRsp.setCapabilities(lbCapResponse);
-            } else if (Service.Firewall.getName().equalsIgnoreCase(service)) {
-                List<CapabilityResponse> fwCapResponse = new ArrayList<CapabilityResponse>();
+            } else if (Service.SourceNat.getName().equalsIgnoreCase(service)) {
+                List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
                 CapabilityResponse sharedSourceNat = new CapabilityResponse();
                 sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
                 sharedSourceNat.setValue(offering.getSharedSourceNat()?"perzone":"peraccount");
-                fwCapResponse.add(sharedSourceNat);
-                svcRsp.setCapabilities(fwCapResponse);
-            } else if (Service.Gateway.getName().equalsIgnoreCase(service)) {
-                List<CapabilityResponse> gatewayCapResponse = new ArrayList<CapabilityResponse>();
+                capabilities.add(sharedSourceNat);
+                
                 CapabilityResponse redundantRouter = new CapabilityResponse();
                 redundantRouter.setName(Capability.RedundantRouter.getName());
                 redundantRouter.setValue(offering.getRedundantRouter()?"true":"false");
-                gatewayCapResponse.add(redundantRouter);
-                svcRsp.setCapabilities(gatewayCapResponse);
-            }
+                capabilities.add(redundantRouter);
+                
+                svcRsp.setCapabilities(capabilities);
+            } 
 
             serviceResponses.add(svcRsp);
         }

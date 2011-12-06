@@ -88,7 +88,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private Map serviceProviderList;
 
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of network offering")
-    private Map serviceCapabilistList;
+    private Map serviceCapabilitystList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -173,9 +173,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public Map<Capability, String> getServiceCapabilities(Service service) {
         Map<Capability, String> capabilityMap = null;
 
-        if (serviceCapabilistList != null && !serviceCapabilistList.isEmpty()) {
+        if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
             capabilityMap = new HashMap <Capability, String>();
-            Collection serviceCapabilityCollection = serviceCapabilistList.values();
+            Collection serviceCapabilityCollection = serviceCapabilitystList.values();
             Iterator iter = serviceCapabilityCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> svcCapabilityMap = (HashMap<String, String>) iter.next();
