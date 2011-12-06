@@ -964,7 +964,7 @@
                     label: 'Service Offering',
                     select: function(args) {
                       $.ajax({
-                        url: createURL('listServiceOfferings'),
+                        url: createURL('listServiceOfferings&issystem=true'),
                         dataType: 'json',
                         async: true,
                         success: function(data) {
