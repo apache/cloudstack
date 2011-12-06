@@ -897,9 +897,10 @@
             $table.dataTable(null, { noSelect: uiCustom });
           },
           error: function(args) {
-            if (args.message) {
-              //cloudStack.dialog.notice({ message: args.message });
-            }
+            setLoadingArgs.loadingCompleted();
+            addTableRows(fields, [], $tbody, actions);
+            $table.find('td:first').html('ERROR');
+            $table.dataTable(null, { noSelect: uiCustom });
           }
         }
       });
