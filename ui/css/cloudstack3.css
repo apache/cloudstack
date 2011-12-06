@@ -684,6 +684,17 @@ body.login {
   margin-bottom: 9px;
 }
 
+.install-wizard .step.intro .subtitle li {
+  position: relative;
+  width: 45%;
+  height: 24px;
+  list-style: circle;
+}
+
+.install-wizard .step.intro .subtitle li img {
+  float: right;
+}
+
 /*Notifications*/
 div.notification-box {
   width: 323px;

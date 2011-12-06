@@ -3,7 +3,7 @@
     // Check if install wizard should be invoked
     check: function(args) {
       args.response.success({
-        doInstall: true
+        doInstall: args.context.users[0].username == 'newuser'
       });
     },
 
@@ -218,38 +218,62 @@
 
     action: function(args) {
       var complete = args.response.success;
+      var message = args.response.message;
 
       var createZone = function(args) {
-        createPod();
+        message('Creating zone');
+        setTimeout(function() {
+          createPod();
+        }, 500);
       };
 
       var createPod = function(args) {
-        createIPRange();
+        message('Creating pod');
+        setTimeout(function() {
+          createIPRange();
+        }, 500);
       };
 
       var createIPRange = function(args) {
-        createCluster();
+        message('Creating network');
+        setTimeout(function() {
+          createCluster();
+        }, 500);
       };
 
       var createCluster = function(args) {
-        createHost();
+        message('Creating cluster');
+        setTimeout(function() {
+          createHost();
+        }, 500);
       };
 
       var createHost = function(args) {
-        createPrimaryStorage();
+        message('Creating host');
+        setTimeout(function() {
+          createPrimaryStorage();
+        }, 500);
       };
 
       var createPrimaryStorage = function(args) {
-        createSecondaryStorage();
+        message('Creating primary storage');
+        setTimeout(function() {
+          createSecondaryStorage();
+        }, 500);
       };
 
       var createSecondaryStorage = function(args) {
-        pollSystemVMs();
+        message('Creating secondary storage');
+        setTimeout(function() {
+          pollSystemVMs();          
+        }, 500);
       };
 
       var pollSystemVMs = function() {
+        message('Creating system VMs (this may take a while)');
         setTimeout(function() {
-          complete();          
+          message('Done!', { ignoreLoadingAnim: true });
+          setTimeout(complete, 1000);
         }, 5000);
       };
 

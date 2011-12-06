@@ -625,10 +625,27 @@
               .html('Now building your cloud...');
         var $subtitle = $('<div></div>').addClass('subtitle')
               .html('');
+        var $loading = $('<img>').attr({
+          src: 'images/ajax-loader-small.gif'
+        });
 
         cloudStack.installWizard.action({
           data: state,
           response: {
+            message: function(msg, options) {
+              if (!options) options = {};
+              $subtitle.append(function() {
+                var $li = $('<li>').html(msg);
+
+                if (!options.ignoreLoadingAnim) {
+                    $li.append($loading);
+                } else {
+                  $loading.remove();
+                }
+
+                return $li;
+              });
+            },
             success: function() {
               complete();
             }

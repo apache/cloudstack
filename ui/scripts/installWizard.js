@@ -230,9 +230,11 @@
 
     action: function(args) {
       var complete = args.response.success;
+      var message = args.response.message;
       var data = args.data;
 
       var createZone = function(args) {
+        message('Creating zone');
         var addZoneAction = function(args) {
           var array1 = [];
 
@@ -445,6 +447,7 @@
       };
 
       var createPod = function(args) {
+        message('Creating pod');
         var array1 = [];
         array1.push("&zoneId=" + args.data.zone.id);
         array1.push("&name=" + todb(data.pod.name));
@@ -471,6 +474,7 @@
       };
 
       var createNetwork = function(args) {
+        message('Creating network');
         var createNetworkAction = function(selectedZoneObj, args) {
           var array1 = [];
           array1.push("&zoneId=" + selectedZoneObj.id);
@@ -626,6 +630,7 @@
       };
 
       var createCluster = function(args) {
+        message('Creating cluster');
         $.ajax({
           url: createURL('addCluster'),
           data: {
@@ -648,6 +653,7 @@
       };
 
       var createHost = function(args) {
+        message('Creating host');
         $.ajax({
           url: createURL('addHost'),
           data: {
@@ -673,6 +679,7 @@
       };
 
       var createPrimaryStorage = function(args) {
+        message('Creating primary storage');
         $.ajax({
           url: createURL('createStoragePool'),
           data: {
@@ -697,6 +704,7 @@
       };
 
       var createSecondaryStorage = function(args) {
+        message('Creating secondary storage');
         $.ajax({
           url: createURL('addSecondaryStorage'),
           data: {
@@ -713,6 +721,7 @@
       };
 
       var pollSystemVMs = function() {
+        message('Creating system VMs (this may take a while)');
         var poll = setInterval(function() {
           $.ajax({
             url: createURL('listSystemVms'),
@@ -726,7 +735,8 @@
                   return vm.state == 'Running';
                 }).length) {
                   clearInterval(poll);
-                  complete();
+                  message('Done!');
+                  setTimeout(complete, 1000);
                 }                
               }
             }
