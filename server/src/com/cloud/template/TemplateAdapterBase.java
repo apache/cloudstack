@@ -137,6 +137,9 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
         if (isExtractable == null) {
             isExtractable = Boolean.FALSE;
         }
+        if (sshkeyEnabled == null) {
+            sshkeyEnabled = Boolean.FALSE;
+        }
 
 		boolean isAdmin = _accountDao.findById(templateOwner.getId()).getType() == Account.ACCOUNT_TYPE_ADMIN;
 
