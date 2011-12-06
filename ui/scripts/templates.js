@@ -1422,11 +1422,8 @@
          //do nothing
        }
     else {      
-      allowedActions.push("edit");
-
-      if(jsonObj.id != 200) { //200 is ID of xsTools ISO       
-        allowedActions.push("copyISO");
-      }
+      allowedActions.push("edit");      
+      allowedActions.push("copyISO");      
     }
 
     // "Create VM"
@@ -1438,11 +1435,10 @@
      || (jsonObj.bootable == false)
      || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
      ) {
-     //do nothing
+       //do nothing
      }
-     else {
-     //buildActionLinkForTab("label.action.create.vm", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);
-     allowedActions.push("createVm");
+     else {     
+       allowedActions.push("createVm");
      }
      */
 
