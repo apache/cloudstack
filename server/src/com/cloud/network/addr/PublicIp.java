@@ -176,4 +176,9 @@ public class PublicIp implements PublicIpAddress {
     public Long getPhysicalNetworkId() {
         return _vlan.getPhysicalNetworkId();
     }
+
+	@Override
+	public void setState(State state) {
+		_addr.setState(state);
+	}
 }

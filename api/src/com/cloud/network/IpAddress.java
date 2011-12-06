@@ -75,4 +75,6 @@ public interface IpAddress extends ControlledEntity {
      * @return database id.
      */
     long getId();
+    
+    void setState(IpAddress.State state);
 }

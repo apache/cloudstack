@@ -2365,9 +2365,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (ipList == null) {
                 ipList = new ArrayList<PublicIpAddress>();
             }
-            //domR doesn't support release for sourceNat IP address
+            //domR doesn't support release for sourceNat IP address; so reset the state
             if (ipAddress.isSourceNat() && ipAddress.getState() == IpAddress.State.Releasing) {
-            	continue;
+            	ipAddress.setState(IpAddress.State.Allocated);
             }
             ipList.add(ipAddress);
             vlanIpMap.put(vlanTag, ipList);
@@ -2412,8 +2412,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 if (!firstIP || add)  {
                     firstIP = false;
                 }
-
-
             }
             IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
@@ -2689,7 +2687,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 // Have to resend all already associated ip addresses
                 createAssociateIPCommands(router, ipAddress, cmds, 0);
 
-                try{
+            	try{
                     result = sendCommandsToRouter(router, cmds);
                     connectedRouters.add(router);
                 } catch (AgentUnavailableException e) {
