@@ -1,9 +1,9 @@
 #!/bin/bash
 # $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> -s <mgmt server secret key>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
   printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver> -s <mgmt server secret key>]\n" $(basename $0) >&2
+  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
 }
 
 failed() {
@@ -72,10 +72,31 @@ fi
 
 dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-if [ "$sflag" == "1" ]
+encType=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if [ "$encType" == "file" ]
+then
+	msKey=$(cat /etc/cloud/management/key)
+elif [ "$encType" == "web" ]
+then
+	if [ ! "$sflag" == "1" ]
+	then
+		echo "Encryption type web requires mgmt secret key using -s option"
+		failed 9
+	fi
+fi
+
+if [[ "$encType" == "file" || "$encType" == "web" ]]
 then
 	encPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
-	dbPassword=(`java -classpath /usr/share/java/cloud-jasypt-1.8.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+	if [ ! $encPassword == "" ]
+	then
+		dbPassword=(`java -classpath /usr/share/java/cloud-jasypt-1.8.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+		if [ ! $dbPassword ]
+		then
+			echo "Failed to decrypt DB password from db.properties"
+			failed 9
+		fi
+	fi
 else
 	dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
 fi
