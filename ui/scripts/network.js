@@ -6,6 +6,10 @@
       var item = args.context.item;
       var status = item.state;
 
+      if (status == 'Released') {
+        return [];
+      }
+
       if (status == 'Destroyed' ||
           status == 'Releasing' ||
           status == 'Released' ||
