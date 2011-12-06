@@ -57,7 +57,7 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         DistinctProvidersSearch = createSearchBuilder(String.class);
         DistinctProvidersSearch.and("networkId", DistinctProvidersSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
-        DistinctProvidersSearch.select(null, Func.DISTINCT, DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
         
     }

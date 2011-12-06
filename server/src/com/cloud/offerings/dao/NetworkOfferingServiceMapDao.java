@@ -32,7 +32,7 @@ public interface NetworkOfferingServiceMapDao extends GenericDao<NetworkOffering
    boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
    List<NetworkOfferingServiceMapVO> listByNetworkOfferingId(long networkOfferingId);
    void deleteByOfferingId(long networkOfferingId);
-   String getProviderForServiceForNetworkOffering(long networkOfferingId, Service service);
+   List<String> listProvidersForServiceForNetworkOffering(long networkOfferingId, Service service);
 }
 
 

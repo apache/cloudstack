@@ -2849,7 +2849,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Map<Capability, String> serviceCapabilities = new HashMap<Capability, String>();
 
         //get the Provider for this Service for this offering
-        String provider = _ntwkOfferingSrvcDao.getProviderForServiceForNetworkOffering(offering.getId(), service);
+        List<String> providers = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), service);
+        if (providers.isEmpty()) {
+        	throw new InvalidParameterValueException("Service " + service.getName() + " is not supported by the network offering " + offering);
+        }
+        
+        //FIXME - in post 3.0 we are going to support multiple providers for the same service per network offering, so we have to calculate capabilities for all of them
+        String provider = providers.get(0);
 
         //FIXME we return the capabilities of the first provider of the service - what if we have multiple providers for same Service?
         NetworkElement element = getElementImplementingProvider(provider);
@@ -5104,6 +5110,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if(enabledServices.size() != element.getCapabilities().keySet().size()){
                     	StringBuilder servicesSet = new StringBuilder();
                     	for (Service requiredService: element.getCapabilities().keySet()) {
+                    		//skip gateway service as we don't allow setting it via API
+                    		if (requiredService == Service.Gateway) {
+                    			continue;
+                    		}
                     		servicesSet.append(requiredService.getName() + ", ");
                     	}
                     	servicesSet.delete(servicesSet.toString().length() -2, servicesSet.toString().length());

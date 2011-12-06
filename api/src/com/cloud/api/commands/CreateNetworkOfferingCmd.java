@@ -194,6 +194,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
                 if (svc.equalsIgnoreCase(service.getName())) {
                     capabilityMap.put(capability, capabilityValue);
+                } else {
+                	//throw new InvalidParameterValueException("Service is not equal ")
                 }
             }
         }

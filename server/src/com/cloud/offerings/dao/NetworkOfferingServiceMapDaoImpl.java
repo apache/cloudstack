@@ -23,17 +23,21 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.network.NetworkServiceMapVO;
 import com.cloud.network.Network.Service;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 
 @Local(value=NetworkOfferingServiceMapDao.class) @DB(txn=false)
 public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOfferingServiceMapVO, Long> implements NetworkOfferingServiceMapDao {
     final SearchBuilder<NetworkOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<NetworkOfferingServiceMapVO> MultipleServicesSearch;
+    final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ProvidersSearch;
     
     protected NetworkOfferingServiceMapDaoImpl() {
         super();
@@ -48,6 +52,12 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         MultipleServicesSearch.and("service", MultipleServicesSearch.entity().getService(), SearchCriteria.Op.IN);
         MultipleServicesSearch.and("provider", MultipleServicesSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.done();
+        
+        ProvidersSearch = createSearchBuilder(String.class);
+        ProvidersSearch.and("networkOfferingId", ProvidersSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        ProvidersSearch.and("service", ProvidersSearch.entity().getService(), SearchCriteria.Op.EQ);
+        ProvidersSearch.select(null, Func.DISTINCT, ProvidersSearch.entity().getProvider());
+        ProvidersSearch.done();
     }
     
     @Override
@@ -95,15 +105,12 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     }
     
     @Override
-    public String getProviderForServiceForNetworkOffering(long networkOfferingId, Service service) {
-        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
+    public List<String> listProvidersForServiceForNetworkOffering(long networkOfferingId, Service service) {
+    	SearchCriteria<String> sc = ProvidersSearch.create();;
+    	
         sc.setParameters("networkOfferingId", networkOfferingId);
         sc.setParameters("service", service.getName());
-        NetworkOfferingServiceMapVO ntwkSvc = findOneBy(sc);
-        if (ntwkSvc == null) {
-            throw new UnsupportedServiceException("Service " + service + " is not supported by network offering id=" + networkOfferingId);
-        }
         
-        return ntwkSvc.getProvider();
+        return customSearch(sc, null);
     }
 }
