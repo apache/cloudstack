@@ -54,6 +54,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.PhysicalNetworkSetupInfo;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -83,6 +86,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 @Inject ClusterDao _clusterDao;
 	 @Inject ResourceManager _resourceMgr;
 	 @Inject AgentManager _agentMgr;
+	 @Inject NetworkManager _networkMgr;
 	 
 	@Override
 	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
@@ -175,6 +179,19 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm", 3)) {
 				s_logger.debug("It's not a KVM enabled machine");
 				return null;
+			}
+			
+			List<PhysicalNetworkSetupInfo> networks = _networkMgr.getPhysicalNetworkInfo(dcId, HypervisorType.KVM);
+			if (networks.size() < 1) {
+				_kvmPublicNic = "cloudbr0";
+				_kvmPrivateNic = "cloudbr0";
+				_kvmGuestNic = "cloudbr0";
+				s_logger.debug("Can't find physical network devices on zone: " + dcId + ", use the default cloudbr0");
+			} else {
+				PhysicalNetworkSetupInfo network = networks.get(0);
+				_kvmPublicNic = network.getPublicNetworkName();
+				_kvmPrivateNic = network.getPrivateNetworkName();
+				_kvmGuestNic = network.getGuestNetworkName();
 			}
 			
 			String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";

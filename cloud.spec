@@ -224,6 +224,7 @@ Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: jna
+Requires: ebtables
 Group:     System Environment/Libraries
 
 Requires: kvm

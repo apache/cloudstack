@@ -72,7 +72,7 @@ class sysConfig(object):
     
 class sysConfigAgent(sysConfig):
     def __init__(self, env):
-        super(sysConfigServer, self).__init__(env)
+        super(sysConfigAgent, self).__init__(env)
 
     def check(self):
         if self.env.debug:

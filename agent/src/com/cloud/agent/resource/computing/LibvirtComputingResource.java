@@ -72,6 +72,8 @@ import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkAnswer;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckStateCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -179,6 +181,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
@@ -718,6 +721,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 		return new Pair<String, String>(privPif, pubPif);
 	}
+	
+	private boolean checkNetwork(String networkName) {
+		String name = Script.runSimpleBashScript("brctl show | grep " + networkName + " | awk '{print $4}'");	
+		if (name == null) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 	private String getVnetId(String vnetId) {
 		return vnetId;
 	}
@@ -935,6 +947,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                return execute((CleanupNetworkRulesCmd)cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
                return execute((CopyVolumeCommand)cmd);
+            } else if (cmd instanceof CheckNetworkCommand) {
+            	return execute((CheckNetworkCommand)cmd);
             } else {
         		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -944,7 +958,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 	}
 	
-	
+	private CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+		List<PhysicalNetworkSetupInfo> phyNics =  cmd.getPhysicalNetworkInfoList();
+		String errMsg = null;
+		for (PhysicalNetworkSetupInfo nic : phyNics) {
+			if (!checkNetwork(nic.getGuestNetworkName())) {
+				errMsg = "Can not find network: " + nic.getGuestNetworkName();
+				break;
+			} else if (!checkNetwork(nic.getPrivateNetworkName())) {
+				errMsg = "Can not find network: " + nic.getPrivateNetworkName();
+				break;
+			} else if (!checkNetwork(nic.getPublicNetworkName())) {
+				errMsg = "Can not find network: " + nic.getPublicNetworkName();
+				break;
+			}
+		}
+		
+		if (errMsg != null) {
+			return new CheckNetworkAnswer(cmd, false, errMsg);
+		} else {
+			return new CheckNetworkAnswer(cmd, true, null);
+		}
+	}
 	private CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
 	    boolean copyToSecondary = cmd.toSecondaryStorage();
 	    String volumePath = cmd.getVolumePath();

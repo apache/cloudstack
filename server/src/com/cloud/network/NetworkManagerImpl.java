@@ -4750,6 +4750,32 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
         return null;
     }
+    
+    @Override
+    public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfo(long dcId, HypervisorType hypervisorType) {
+    	List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+    	List<PhysicalNetworkVO> physicalNtwkList = _physicalNetworkDao.listByZone(dcId);
+    	for(PhysicalNetworkVO pNtwk : physicalNtwkList){
+    		String publicName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Public, hypervisorType);
+    		String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
+    		String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
+    		String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
+    		//String controlName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
+    		PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
+    		info.setPhysicalNetworkId(pNtwk.getId());
+    		info.setGuestNetworkName(guestName);
+    		info.setPrivateNetworkName(privateName);
+    		info.setPublicNetworkName(publicName);
+    		info.setStorageNetworkName(storageName);
+    		PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(pNtwk.getId(), TrafficType.Management);
+    		if(mgmtTraffic != null){
+    			String vlan = mgmtTraffic.getVlan();
+    			info.setMgmtVlan(vlan);
+    		}
+    		networkInfoList.add(info);
+    	}
+    	return networkInfoList;
+    }
 
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
