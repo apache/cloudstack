@@ -38,6 +38,7 @@
      * Generic error handling
      */
     $.ajaxSetup({
+      cache: false,
       error: function(data) {
         cloudStack.dialog.notice({ message: parseXMLHttpResponse(data) });
       }
