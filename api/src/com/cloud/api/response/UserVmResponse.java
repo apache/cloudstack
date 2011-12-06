@@ -69,7 +69,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the availablility zone for the virtual machine")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the name of the availability zone for the virtual machine")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
     @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the host for the virtual machine")

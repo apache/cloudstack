@@ -55,7 +55,7 @@ public class HostResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the host")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name of the host")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the host")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the host")

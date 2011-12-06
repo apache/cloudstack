@@ -61,7 +61,7 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone ID the object was extracted from")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="zone name the object was extracted from")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="zone name the object was extracted from")
     private String zoneName;
 
     @SerializedName("extractMode") @Param(description="the mode of extraction - upload or download")

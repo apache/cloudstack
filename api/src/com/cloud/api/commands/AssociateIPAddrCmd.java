@@ -94,7 +94,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         return UserContext.current().getCaller().getDomainId();
     }
 
-    private long getZoneId() {
+    private Long getZoneId() {
         return zoneId;
     }
     

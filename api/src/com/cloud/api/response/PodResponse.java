@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.List;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -33,7 +34,7 @@ public class PodResponse extends BaseResponse {
     @SerializedName("zoneid") @Param(description="the Zone ID of the Pod")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name of the Pod")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the Pod")
     private String zoneName;
 
     @SerializedName("gateway") @Param(description="the gateway of the Pod")

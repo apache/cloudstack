@@ -2662,8 +2662,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetmask(singleVlan.getVlanNetmask());
             response.setVlan(singleVlan.getVlanTag());
         }
-
+        
+        DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
         response.setZoneId(network.getDataCenterId());
+        response.setZoneName(zone.getName());       
         response.setPhysicalNetworkId(network.getPhysicalNetworkId());
 
         // populate network offering information

@@ -40,7 +40,7 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("zoneid") @Param(description="the Zone ID for the system VM")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name for the system VM")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the system VM")
     private String zoneName;
 
     @SerializedName("dns1") @Param(description="the first DNS for the system VM")

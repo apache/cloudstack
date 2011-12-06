@@ -58,6 +58,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
     
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the network belongs to")
+    private String zoneName;
+    
     @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
     private IdentityProxy networkOfferingId = new IdentityProxy("network_offerings");
     
@@ -259,5 +262,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
 	public void setSubdomainAccess(Boolean subdomainAccess) {
 		this.subdomainAccess = subdomainAccess;
+	}
+
+	public void setZoneName(String zoneName) {
+		this.zoneName = zoneName;
 	}
 }

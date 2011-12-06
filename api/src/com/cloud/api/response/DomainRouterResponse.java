@@ -33,7 +33,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID for the router")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name for the router")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the router")
     private String zoneName; 
 
     @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the router")

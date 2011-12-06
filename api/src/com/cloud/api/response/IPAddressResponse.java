@@ -38,7 +38,7 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone the public IP address belongs to")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the name of the zone the public IP address belongs to")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the public IP address belongs to")
     private String zoneName;
 
     @SerializedName("issourcenat") @Param(description="true if the IP address is a source nat address, false otherwise")

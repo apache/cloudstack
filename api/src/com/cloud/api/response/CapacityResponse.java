@@ -29,7 +29,7 @@ public class CapacityResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID")

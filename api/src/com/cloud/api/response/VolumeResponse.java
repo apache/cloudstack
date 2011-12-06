@@ -38,7 +38,7 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "ID of the availability zone")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename")
+    @SerializedName(ApiConstants.ZONE_NAME)
     @Param(description = "name of the availability zone")
     private String zoneName;
 

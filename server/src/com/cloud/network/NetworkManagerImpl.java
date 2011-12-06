@@ -647,6 +647,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        
+        //allow associating IP addresses to guest network only
+        if (network.getTrafficType() != TrafficType.Guest) {
+        	throw new InvalidParameterValueException("Ip address can be associated to the network with trafficType " + TrafficType.Guest);
+        }
+        
+        //In Advance zone only allow to do IP assoc for Isolated networks with source nat service enabled
+        if (zone.getNetworkType() == NetworkType.Advanced && !(network.getGuestType() == GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
+        	throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated only to the network of guest type " + GuestType.Isolated + " with the " + Service.SourceNat.getName() + " enabled");
+        }
 
         // Check that network belongs to IP owner - skip this check for Basic zone as there is just one guest network, and it
         // belongs to the system

@@ -32,7 +32,7 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName("zoneid") @Param(description="the Zone ID of the storage pool")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name of the storage pool")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the storage pool")
     private String zoneName;
 
     @SerializedName("podid") @Param(description="the Pod ID of the storage pool")

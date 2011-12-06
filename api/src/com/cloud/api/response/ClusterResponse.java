@@ -43,7 +43,7 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the cluster")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the Zone name of the cluster")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the cluster")
     private String zoneName;
 
     @SerializedName("hypervisortype") @Param(description="the hypervisor type of the cluster")

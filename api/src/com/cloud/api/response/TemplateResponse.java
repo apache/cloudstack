@@ -81,7 +81,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone for this template")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
 
-    @SerializedName("zonename") @Param(description="the name of the zone for this template")
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for this template")
     private String zoneName;
 
     @SerializedName(ApiConstants.STATUS) @Param(description="the status of the template")
