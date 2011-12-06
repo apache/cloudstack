@@ -5696,7 +5696,7 @@
                     zonename: { label: 'Zone' },
                     podname: { label: 'Pod' },
                     hypervisortype: { label: 'Hypervisor' },
-                    clustertype: { label: 'Clulster type' },
+                    clustertype: { label: 'Cluster type' },
                     allocationstate: { label: 'Allocation State' },
                     managedstate: { label: 'Managed State' }
                   }
