@@ -66,7 +66,10 @@
           options = options ? options : {};
 
           $(data).each(function() {
-            var $select = $('<div>').addClass('select')
+            var id = this[fields.id];
+            
+            var $select = $('<div>')
+                  .addClass('select')
                   .append(
                     $('<input>')
                       .attr({
@@ -74,8 +77,17 @@
                           return type ? type : 'radio';
                         })(options ? options.type : null),
                         name: name,
-                        value: this[fields.id],
                         'wizard-field': options['wizard-field']
+                      })
+                      .val(id)
+                      .click(function() {
+                        var $radio = $(this).closest('.select').find('input[type=radio]');
+
+                        if ($radio.is(':checked') && !$(this).is(':checked')) {
+                          return false; 
+                        }
+
+                        return true;
                       })
                   )
                   .append(
@@ -85,6 +97,27 @@
                   );
 
             $selects.append($select);
+
+            if (options.secondary) {
+              var $secondary = $('<div>').addClass('secondary-input').append(
+                $('<input>')
+                  .attr({
+                    type: options.secondary.type,
+                    name: options.secondary.name
+                  })
+                  .val(id)
+                  .click(function() {
+                    var $checkbox = $(this).closest('.select').find('input[type=checkbox]');
+
+                    if (!$checkbox.is(':checked')) {
+                      $checkbox.attr('checked', true);
+                    }
+                  })
+                  .after(
+                    $('<div>').addClass('name').html(options.secondary.desc)
+                  )
+              ).appendTo($select);
+            }
           });
 
           cloudStack.evenOdd($selects, 'div.select', {
@@ -351,22 +384,22 @@
           'network': function($step, formData) {
             var originalValues = function(formData) {
               // Default networks
-              $step.find('input[name=default-network]').filter(function() {
-                return $(this).val() == formData['default-network'];
+              $step.find('input[name=my-networks]').filter(function() {
+                return $(this).val() == formData['my-networks'];
               }).click();
 
               // Optional networks
               var selectedOptionalNetworks = [];
 
-              if ($.isArray(formData['optional-networks'])) {
-                $(formData['optional-networks']).each(function() {
+              if ($.isArray(formData['shared-networks'])) {
+                $(formData['shared-networks']).each(function() {
                   selectedOptionalNetworks.push(this);
                 });
               } else {
-                selectedOptionalNetworks.push(formData['optional-networks']);
+                selectedOptionalNetworks.push(formData['shared-networks']);
               }
 
-              var $checkboxes = $step.find('input[name=optional-networks]');
+              var $checkboxes = $step.find('input[name=shared-networks]');
               $(selectedOptionalNetworks).each(function() {
                 var networkID = this;
                 $checkboxes.filter(function() {
@@ -389,25 +422,36 @@
                     $step.find('.select-network').show();
                   }
 
-                  // Default network
-                  $step.find('.default-network .select-container').append(
-                    makeSelects('default-network', args.data.defaultNetworks, {
+                  // My networks
+                  $step.find('.my-networks .select-container').append(
+                    makeSelects('my-networks', args.data.myNetworks, {
                       name: 'name',
                       desc: 'displaytext',
                       id: 'id'
                     }, {
-                      'wizard-field': 'default-network'
+                      type: 'checkbox',
+                      'wizard-field': 'my-networks',
+                      secondary: {
+                        desc: 'Default',
+                        name: 'defaultNetwork',
+                        type: 'radio'
+                      }
                     })
                   );
 
-                  // Optional networks
-                  $step.find('.optional-networks .select-container').append(
-                    makeSelects('optional-networks', args.data.optionalNetworks, {
+                  // Shared networks
+                  $step.find('.shared-networks .select-container').append(
+                    makeSelects('shared-networks', args.data.sharedNetworks, {
                       name: 'name',
                       desc: 'displaytext',
                       id: 'id'
                     }, {
-                      type: 'checkbox'
+                      type: 'checkbox',
+                      secondary: {
+                        desc: 'Default',
+                        name: 'defaultNetwork',
+                        type: 'radio'
+                      }
                     })
                   );
 

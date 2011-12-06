@@ -190,11 +190,11 @@
                   <div class="main-desc">
                     Please select networks for your virtual machine
                   </div>
-                  <div class="select default-network">
+                  <div class="select my-networks">
                     <table>
                       <thead>
                         <tr>
-                          <th>Default network</th>
+                          <th>My networks (Isolated)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -207,11 +207,11 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="select optional-networks">
+                  <div class="select shared-networks">
                     <table>
                       <thead>
                         <tr>
-                          <th>Optional networks</th>
+                          <th>Shared networks</th>
                         </tr>
                       </thead>
                       <tbody>

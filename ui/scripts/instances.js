@@ -339,8 +339,8 @@
                     args.response.success({
                       type: 'select-network',
                       data: {
-                        defaultNetworks: defaultNetworkArray,
-                        optionalNetworks: optionalNetworkArray,
+                        myNetworks: defaultNetworkArray,
+                        sharedNetworks: optionalNetworkArray,
                         securityGroups: []
                       }
                     });

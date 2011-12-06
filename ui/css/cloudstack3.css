@@ -4347,14 +4347,14 @@ label.error {
 
 .multi-wizard .select-container .select {
   font-size: 13px;
-  margin: 0;
+  margin: -1px 0 0;
   padding: 0 0 14px;
   min-height: 35px;
   width: 100%;
   display: inline-block;
   text-align: left;
   float: left;
-  border-bottom: 1px solid #EBEFF4;
+  border: none;
   background: #FFFFFF;
 }
 
@@ -4369,11 +4369,11 @@ label.error {
 
 .multi-wizard .select-container .select .select-desc {
   max-width: 335px;
-  min-height: 34px;
+  min-height: 28px;
   overflow: hidden;
   float: left;
   clear: none;
-  margin: 15px 0 0;
+  margin: 21px 0 0;
   display: inline-block;
 }
 
@@ -4618,7 +4618,7 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select table .select-container {
   margin: 0px;
   border: 0;
-  height: 117px;
+  height: 112px;
 }
 
 .multi-wizard.instance-wizard .select-network .main-desc {
@@ -4626,20 +4626,47 @@ label.error {
   left: 12px;
 }
 
+.multi-wizard.instance-wizard .select-network .select .secondary-input {
+  float: right;
+  width: 80px;
+  height: 48px;
+  font-size: 11px;
+  border-left: 1px solid #D7D7D7;
+  color: #000000;
+}
+
+.multi-wizard.instance-wizard .select-network .select .secondary-input input {
+  margin: 0 !important;
+  padding: 0 !important;
+  /*+placement:shift 9px 21px;*/
+  position: relative;
+  left: 9px;
+  top: 21px;
+}
+
+.multi-wizard.instance-wizard .select-network .select .secondary-input .name {
+  float: right;
+  /*+placement:shift -16px 22px;*/
+  position: relative;
+  left: -16px;
+  top: 22px;
+}
+
 .multi-wizard.instance-wizard .select-network .select-container .select {
   width: 100%;
   float: left;
-  padding: 0 0 4px;
+  padding: 0;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select input {
-  margin: 14px 15px 0px;
+  margin: 21px 15px 0px;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select .select-desc .desc {
   font-size: 11px;
   color: #808080;
   float: left;
+  max-width: 113px;
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select .select-desc .name {

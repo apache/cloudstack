@@ -96,10 +96,10 @@
                   args.response.success({
                     type: 'select-network',
                     data: {
-                      defaultNetworks: $.grep(testData.data.networks, function(elem) {
+                      myNetworks: $.grep(testData.data.networks, function(elem) {
                         return elem.isdefault === true;
                       }),
-                      optionalNetworks: $.grep(testData.data.networks, function(elem) {
+                      sharedNetworks: $.grep(testData.data.networks, function(elem) {
                         return elem.isdefault === false;
                       }),
                       securityGroups: testData.data.securityGroups
