@@ -1420,9 +1420,9 @@
                       }
                     }
                   },
-                  dataProvider: function(args) {
+                  dataProvider: function(args) {                   
                     $.ajax({
-                      url: createURL('listRouters&page=' + args.page + '&pagesize=' + pageSize),
+                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize),
                       dataType: 'json',
                       async: true,
                       success: function(json) {
@@ -3460,9 +3460,9 @@
               }
             }
           },
-          dataProvider: function(args) {
+          dataProvider: function(args) {          
             $.ajax({
-              url: createURL("listSystemVms&page=" + args.page + "&pagesize=" + pageSize),
+              url: createURL("listSystemVms&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
               async: true,
               success: function(json) {
