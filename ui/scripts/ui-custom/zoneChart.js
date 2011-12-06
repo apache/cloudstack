@@ -34,6 +34,7 @@
               context: { zones: listViewArgs.context.physicalResources },
               response: {
                 success: function(args) {
+                  $(window).trigger('cloudStack.fullRefresh');
                   if (options.success) options.success($.extend(args, {
                     action: action
                   }));
