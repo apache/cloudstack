@@ -124,8 +124,6 @@
               var $projectSwitcher = $(this);
               var $container = $('html body');
 
-              if ($target.hasClass('active')) return false;
-
               if ($target.closest('.select.project-view').size()) {
                 $('#cloudStack3-container').addClass('project-view');
                 $projectSwitcher.addClass('alt');
