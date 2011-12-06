@@ -392,7 +392,7 @@
             name: 'IP address detail',
             tabFilter: function(args) {
               var item = args.context.ipAddresses[0];
-              
+
               // Get VPN data
               $.ajax({
                 url: createURL('listRemoteAccessVpns'),
@@ -409,7 +409,7 @@
                   };
                 }
               });
-              
+
               var disabledTabs = [];
               var ipAddress = args.context.ipAddresses[0];
 
@@ -632,6 +632,7 @@
                     ipaddress: { label: 'IP' }
                   },
                   {
+                    networkname: { label: 'Network' },
                     state: { label: 'State' },
                     zonename: { label: 'Zone' },
                     vlanname: { label: 'VLAN' },
@@ -653,7 +654,7 @@
                       $.ajax({
                         url: createURL('listNetworks'),
                         data: {
-                          networkid: this.networkid
+                          networkid: this.associatednetworkid
                         },
                         dataType: 'json',
                         async: true,
@@ -675,6 +676,7 @@
 
                               // Check if data retrieval complete
                               item.network = data.listnetworksresponse.network[0];
+                              item.networkname = item.network.name;
 
                               args.response.success({
                                 actionFilter: actionFilters.ipAddress,
@@ -694,6 +696,10 @@
                   preFilter: function(args) {
                     if (args.context.ipAddresses[0].isstaticnat) {
                       return args.items; // All items filtered means static NAT
+                    }
+
+                    if (g_firewallRuleUiEnabled != 'true') {
+                      return ['firewall'];
                     }
 
                     return [];
@@ -969,7 +975,7 @@
                               });
                             }
                           });
-                        } 
+                        }
                       }
                     }),
                     multipleAdd: true,
@@ -1132,7 +1138,7 @@
                               });
                             }
                           });
-                        } 
+                        }
                       }
                     }),
                     fields: {
