@@ -806,7 +806,7 @@
                         success: function(json) {
                           var osTypeObjs = json.listostypesresponse.ostype;
                           var items = [];
-                          items.push({id: "", description: "None"});
+                          //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
                           $(osTypeObjs).each(function(){
                             items.push({id: this.id, description: this.description});
                           });
