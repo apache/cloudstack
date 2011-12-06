@@ -296,7 +296,7 @@ ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `fk_security_group_rule
 ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_network_id`(`security_group_id`);
 ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_allowed_network`(`allowed_network_id`);
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `enable_sshkey` int(1) unsigned NOT NULL default 0 COMMENT 'true if this template supports sshkey reset';
-ALTER TABLE `cloud`.`host` DROP COLUMN `resource_state`;
+ALTER TABLE `cloud`.`host` DROP COLUMN `allocation_state`;
 ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources';
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
