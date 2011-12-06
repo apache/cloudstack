@@ -73,9 +73,19 @@
           },
           fields: {
             name: { label: 'Name' },
+            type: { label: 'Type' },
             traffictype: { label: 'Traffic Type' },
             gateway: { label: 'Gateway' },
-            vlan: { label: 'VLAN' }
+            broadcasturi: {
+              label: 'VLAN',
+              converter: function(value) {
+                if (value)
+                  return value.split('vlan://')[1];
+
+                return 'Untagged';
+              }
+            },
+            state: { label: 'State', indicator: { 'Setup': 'on' } }
           },
           dataProvider: function(args) {
             $.ajax({
@@ -104,7 +114,7 @@
                     name: { label: 'Name' }
                   },
                   {
-                    name: { label: 'Short name' },
+                    type: { label: 'Type' },
                     displaytext: { label: 'Description' },
                     traffictype: { label: 'Traffic Type' },
                     gateway: { label: 'Gateway' },
