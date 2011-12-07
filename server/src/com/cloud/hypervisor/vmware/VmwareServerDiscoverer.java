@@ -41,6 +41,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.resource.ResourceStateAdapter.DeleteHostAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -279,8 +280,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-	    // TODO Auto-generated method stub
-	    return null;
+		if (host.getType() != com.cloud.host.Host.Type.Routing || host.getHypervisorType() != HypervisorType.VMware) {
+			return null;
+		}
+		
+		_resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
+		return new DeleteHostAnswer(true);
     }
 	
     @Override

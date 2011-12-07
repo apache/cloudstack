@@ -236,8 +236,12 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
 
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-	    // TODO Auto-generated method stub
-	    return null;
+		if (host.getType() != com.cloud.host.Host.Type.Routing || host.getHypervisorType() != HypervisorType.Ovm) {
+			return null;
+		}
+		
+		_resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
+		return new DeleteHostAnswer(true);
     }
 
 }

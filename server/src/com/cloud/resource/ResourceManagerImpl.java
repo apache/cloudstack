@@ -706,10 +706,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
         
         ResourceStateAdapter.DeleteHostAnswer answer = (ResourceStateAdapter.DeleteHostAnswer) dispatchToStateAdapters(ResourceStateAdapter.Event.DELETE_HOST, false, host, new Boolean(isForced), new Boolean(isForceDeleteStorage));
-        
+
         if (answer == null) {
-            s_logger.warn("Unable to delete host: " + hostId);
-            return false;
+        	throw new CloudRuntimeException("No resource adapter respond to DELETE_HOST event for " + host.getName() + " id = " + hostId + ", hypervisorType is " + host.getHypervisorType() + ", host type is " + host.getType());
         }
         
         if (answer.getIsException()) {

@@ -39,6 +39,7 @@ import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -77,6 +78,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.resource.ResourceStateAdapter.DeleteHostAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -658,8 +660,37 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-	    // TODO Auto-generated method stub
-	    return null;
+		if (host.getType() != com.cloud.host.Host.Type.Routing || host.getHypervisorType() != HypervisorType.XenServer) {
+			return null;
+		}
+		
+		_resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
+		if (host.getClusterId() != null) {
+			List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(com.cloud.host.Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+			hosts.add(host);
+			boolean success = true;
+			for (HostVO thost : hosts) {
+				long thostId = thost.getId();
+				PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
+				Answer answer = _agentMgr.easySend(thostId, eject);
+				if (answer != null && answer.getResult()) {
+					s_logger.debug("Eject Host: " + host.getId() + " from " + thostId + " Succeed");
+					success = true;
+					break;
+				} else {
+					success = false;
+					s_logger.warn("Eject Host: " + host.getId() + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
+				}
+			}
+			if (!success) {
+				String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid="
+				        + host.getGuid() + "in this host " + host.getPrivateIpAddress();
+				s_logger.warn(msg);
+				_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
+			}
+		}
+		
+		return new DeleteHostAnswer(true);
     }
 	
     @Override
