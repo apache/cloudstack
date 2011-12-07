@@ -49,6 +49,7 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 public class PremiumComponentLibrary extends DefaultComponentLibrary {
     @Override
     protected void populateDaos() {
+    	super.populateDaos();
         addDao("UsageJobDao", UsageJobDaoImpl.class);
         addDao("UsageDao", UsageDaoImpl.class);
         addDao("UsageIpAddressDao", UsageIPAddressDaoImpl.class);
@@ -61,6 +62,7 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
     @Override
     protected void populateManagers() {
     	// override FOSS SSVM manager
+    	super.populateManagers();
         addManager("secondary storage vm manager", PremiumSecondaryStorageManagerImpl.class);
 	
         addManager("HA Manager", HighAvailabilityManagerExtImpl.class);

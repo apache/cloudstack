@@ -31,7 +31,7 @@
     </system-integrity-checker>
 
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
-    <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
+    <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.PremiumComponentLibrary">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
         </dao>
