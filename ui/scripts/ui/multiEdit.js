@@ -622,7 +622,9 @@
     getData();
 
     $(window).bind('cloudStack.fullRefresh', function(event) {
-      getData();
+      if ($multi.is(':visible')) {
+        getData(); 
+      }
     });
 
     $multi.bind('change select', function() {
