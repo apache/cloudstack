@@ -1574,6 +1574,11 @@ public class ManagementServerImpl implements ManagementServer {
         Pair<List<Long>, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         List<Long> permittedAccounts = accountDomainPair.first();
         Long domainId = accountDomainPair.second();
+        
+        boolean skipProjectRouters = true;
+        if (cmd.getProjectId() != null) {
+        	skipProjectRouters = false;
+        }
 
         Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1601,6 +1606,12 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
+        
+        if (skipProjectRouters) {
+        	SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+       	 	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+       	 	sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         if (networkId != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
@@ -1614,6 +1625,11 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         SearchCriteria<DomainRouterVO> sc = sb.create();
+        
+        if (skipProjectRouters) {
+        	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
+        }
+        
         if (keyword != null) {
             SearchCriteria<DomainRouterVO> ssc = _routerDao.createSearchCriteria();
             ssc.addOr("hostName", SearchCriteria.Op.LIKE, "%" + keyword + "%");

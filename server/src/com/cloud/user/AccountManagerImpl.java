@@ -1386,7 +1386,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         //set project information
         if (projectId != null) {
         	if (projectId == -1) {
-        		permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
         	} else {
         		permittedAccounts.clear();
                 Project project = _projectMgr.getProject(projectId);
