@@ -92,7 +92,7 @@ public class ExternalNetworkManagerImpl implements ExternalNetworkManager {
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
-		_externalNetworkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.RouterStatsInterval.key()), 300);
+		_externalNetworkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ExternalNetworkStatsInterval.key()), 300);
 		if (_externalNetworkStatsInterval > 0){
 			_executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ExternalNetworkMonitor"));		
 		}

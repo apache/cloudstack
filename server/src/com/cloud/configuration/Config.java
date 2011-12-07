@@ -154,6 +154,7 @@ public enum Config {
 	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", String.valueOf(VirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ), "Default CPU speed (MHz) for router VM.", null),
 	RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time (in seconds) between retries to restart a vm", null),
 	RouterStatsInterval("Advanced", NetworkManager.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
+	ExternalNetworkStatsInterval("Advanced", NetworkManager.class, Integer.class, "external.network.stats.interval", "300", "Interval (in seconds) to report external network statistics.", null),
 	RouterTemplateId("Advanced", NetworkManager.class, Long.class, "router.template.id", "1", "Default ID for template.", null),
     RouterExtraPublicNics("Advanced", NetworkManager.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
 	StartRetry("Advanced", AgentManager.class, Integer.class, "start.retry", "10", "Number of times to retry create and start commands", null),
