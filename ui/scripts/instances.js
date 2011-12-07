@@ -338,7 +338,7 @@
                     });                                      
                     
                     $.ajax({
-                      url: createURL("listNetworkOfferings"),
+                      url: createURL("listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled"), //get the network offering for isolated network with sourceNat
                       dataType: "json",
                       async: false,
                       success: function(json) {                        
