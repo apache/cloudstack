@@ -1,7 +1,7 @@
 (function($, cloudStack, testData) {
 
-  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, isoObjs, serviceOfferingObjs, diskOfferingObjs;
-  var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj;
+  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, isoObjs, serviceOfferingObjs, diskOfferingObjs, networkOfferingObjs;
+  var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
   cloudStack.sections.instances = {
@@ -130,25 +130,31 @@
                 // Step 3: Service offering
                 function(args) {
                   if(args.currentData["select-template"] == "select-template") {
-                    for(var i=0; i < featuredTemplateObjs.length; i++) {
-                      if(featuredTemplateObjs[i].id == args.currentData.templateid) {
-                        selectedTemplateObj = featuredTemplateObjs[i];
-                        break;
-                      }
-                    }
-                    if(selectedTemplateObj == null) {
-                      for(var i=0; i < communityTemplateObjs.length; i++) {
-                        if(communityTemplateObjs[i].id == args.currentData.templateid) {
-                          selectedTemplateObj = communityTemplateObjs[i];
+                    if(featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
+                      for(var i=0; i < featuredTemplateObjs.length; i++) {
+                        if(featuredTemplateObjs[i].id == args.currentData.templateid) {
+                          selectedTemplateObj = featuredTemplateObjs[i];
                           break;
                         }
                       }
                     }
                     if(selectedTemplateObj == null) {
-                      for(var i=0; i < myTemplateObjs.length; i++) {
-                        if(myTemplateObjs[i].id == args.currentData.templateid) {
-                          selectedTemplateObj = myTemplateObjs[i];
-                          break;
+                      if(communityTemplateObjs != null && communityTemplateObjs.length > 0) {
+                        for(var i=0; i < communityTemplateObjs.length; i++) {
+                          if(communityTemplateObjs[i].id == args.currentData.templateid) {
+                            selectedTemplateObj = communityTemplateObjs[i];
+                            break;
+                          }
+                        }
+                      }
+                    }
+                    if(selectedTemplateObj == null) {
+                      if(myTemplateObjs != null && myTemplateObjs.length > 0) {
+                        for(var i=0; i < myTemplateObjs.length; i++) {
+                          if(myTemplateObjs[i].id == args.currentData.templateid) {
+                            selectedTemplateObj = myTemplateObjs[i];
+                            break;
+                          }
                         }
                       }
                     }
@@ -228,7 +234,7 @@
                       }
                     });
                                        
-                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true") { //???
+                    if(includingSecurityGroupService == false || selectedHypervisor == "VMware" || g_directAttachSecurityGroupsEnabled != "true") { 
                       step5ContainerType = 'nothing-to-select';
                     }
                     else {
@@ -257,6 +263,7 @@
                         var networks = json.listnetworksresponse.network;
 
                         //***** check if there is an isolated network with sourceNAT (begin) *****
+                        /*
                         var isolatedSourcenatNetwork = null;
                         if(selectedZoneObj.securitygroupsenabled == false) {
                           if (networks != null && networks.length > 0) {
@@ -302,31 +309,24 @@
                             });
                           }                          
                         }
+                        */
                         //***** check if there is an isolated network with sourceNAT (end) *****
                    
 
                         //***** populate all networks (begin) **********************************
                         //isolatedSourcenatNetwork is first radio button in default network section. Show isolatedSourcenatNetwork when its networkofferingavailability is 'Required' or'Optional'
+                        /*
                         if (isolatedSourcenatNetwork.networkofferingavailability == 'Required' || isolatedSourcenatNetwork.networkofferingavailability == 'Optional') {
                           defaultNetworkArray.push(isolatedSourcenatNetwork);
                         }
+                        */
                         
                         //default networks are in default network section 
                         //non-default networks are in additional network section                         
                         if (networks != null && networks.length > 0) {
-                          for (var i = 0; i < networks.length; i++) {
-                            //if selectedZoneObj.securitygroupsenabled is true and users still choose to select network instead of security group (from dialog), then UI won't show networks whose securitygroupenabled is true.
-                            //if(selectedZoneObj.securitygroupsenabled == true && networks[i].securitygroupenabled == true) {
-                            //  continue;
-                            //}
-
-                            if (networks[i].isdefault) {
-                              if (isolatedSourcenatNetwork.networkofferingavailability == 'Required') {
-                                continue; //don't display 2nd~Nth radio buttons in default network section when isolatedSourcenatNetwork.networkofferingavailability == 'Required'
-                              }
-                              if(networks[i].id != isolatedSourcenatNetwork.id) {
-                                defaultNetworkArray.push(networks[i]);
-                              }
+                          for (var i = 0; i < networks.length; i++) {    
+                            if (networks[i].isdefault) {     
+                              defaultNetworkArray.push(networks[i]);                              
                             }
                             else {
                               optionalNetworkArray.push(networks[i]);
@@ -335,13 +335,25 @@
                         }
                         //***** populate all networks (end) ************************************
                       }
+                    });                                      
+                    
+                    $.ajax({
+                      url: createURL("listNetworkOfferings"),
+                      dataType: "json",
+                      async: false,
+                      success: function(json) {                        
+                        networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;                                             
+                      }
                     });
+                    
+                    
                     args.response.success({
                       type: 'select-network',
                       data: {
                         myNetworks: defaultNetworkArray,
                         sharedNetworks: optionalNetworkArray,
-                        securityGroups: []
+                        securityGroups: [],
+                        networkOfferings: networkOfferingObjs
                       }
                     });
                   }
@@ -378,7 +390,7 @@
                       data: {
                         defaultNetworks: [],
                         optionalNetworks: [],
-                        securityGroups: []
+                        securityGroups: []                        
                       }
                     });
                   }
@@ -419,26 +431,55 @@
                     array1.push("&size=" + args.data.size);
                 }
 
-                //step 5: select network
-                if (step5ContainerType == 'select-network') {
-                  var array2 = [];
-                  var defaultNetwork = args.data["default-network"];
-                  if(defaultNetwork != null && defaultNetwork.length > 0)
-                    array2.push(defaultNetwork);
-
-                  var optionalNetworks = args.data["optional-networks"];
-                  //optionalNetworks might be: (1) an array of string, e.g. ["203", "202"],
-                  if(typeof(optionalNetworks) == "object" && optionalNetworks.length != null) {
-                    if(optionalNetworks != null && optionalNetworks.length > 0) {
-                      for(var i=0; i < optionalNetworks.length; i++) {
-                        array2.push(optionalNetworks[i]);
+                //step 5: select network      ???      
+                if (step5ContainerType == 'select-network') {                
+                  var array2 = [];                 
+                  var defaultNetwork = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to "new-network"                  
+                  var checkedNetworks = args.data["my-networks"]; 
+                
+                  //create new network starts here  
+                  if(args.data["new-network"] == "create-new-network") {                  
+                    var selectedNetworkOfferingId;
+                    if(networkOfferingObjs != null && networkOfferingObjs.length > 0) {
+                      for(var k=0; k < networkOfferingObjs.length; k++) {
+                        if(networkOfferingObjs[k].name == args.data["new-network-serviceofferingid"])
+                          selectedNetworkOfferingId = networkOfferingObjs[k].id;
                       }
                     }
+                                      
+                    var networkName = "new Network";
+                    $.ajax({
+                      url: createURL("createNetwork&networkOfferingId="+selectedNetworkOfferingId+"&name="+todb(networkName)+"&displayText="+todb(networkName)+"&zoneId="+selectedZoneObj.id),
+                      dataType: "json",
+                      async: false,
+                      success: function(json) {                      
+                        newNetwork = json.createnetworkresponse.network;
+                        checkedNetworks.push(newNetwork.id);
+                        if(defaultNetwork == "new-network")
+                          defaultNetwork = newNetwork.id;
+                      }
+                    });  
+                  }                    
+                  //create new network ends here
+                  
+                  //add default network first
+                  if(defaultNetwork != null && defaultNetwork.length > 0)
+                    array2.push(defaultNetwork);
+                 
+                  //then, add other checked networks                 
+                  if(typeof(checkedNetworks) == "object" && checkedNetworks.length != null) { //checkedNetworks might be: (1) an array of string, e.g. ["203", "202"],
+                    if(checkedNetworks != null && checkedNetworks.length > 0) {
+                      for(var i=0; i < checkedNetworks.length; i++) {
+                        if(checkedNetworks[i] != defaultNetwork) //exclude defaultNetwork that has been added to array2
+                          array2.push(checkedNetworks[i]);
+                      }
+                    }
+                  }                  
+                  else if(typeof(checkedNetworks) == "string" && checkedNetworks.length > 0) { //checkedNetworks might be: (2) just an string, e.g. "202"
+                    if(checkedNetworks != defaultNetwork) //exclude defaultNetwork that has been added to array2
+                      array2.push(checkedNetworks);
                   }
-                  //optionalNetworks might be: (2) just an string, e.g. "202"
-                  else if(typeof(optionalNetworks) == "string" && optionalNetworks.length > 0) {
-                    array2.push(optionalNetworks);
-                  }
+                               
                   array1.push("&networkIds=" + array2.join(","));
                 }
                 else if (step5ContainerType == 'select-security-group') {
