@@ -22,7 +22,7 @@
         // Save instance and close wizard
         var completeAction = function() {
           var data = cloudStack.serializeForm($form);
-          
+
           args.action({
             // Populate data
             data: data,
@@ -67,7 +67,7 @@
 
           $(data).each(function() {
             var id = this[fields.id];
-            
+
             var $select = $('<div>')
                   .addClass('select')
                   .append(
@@ -84,7 +84,7 @@
                         var $radio = $(this).closest('.select').find('input[type=radio]');
 
                         if ($radio.is(':checked') && !$(this).is(':checked')) {
-                          return false; 
+                          return false;
                         }
 
                         return true;
@@ -243,7 +243,7 @@
                     [
                       ['featuredtemplates', 'instance-wizard-featured-templates'],
                       ['communitytemplates', 'instance-wizard-community-templates'],
-					            ['mytemplates', 'instance-wizard-my-templates'],
+                      ['mytemplates', 'instance-wizard-my-templates'],
                       ['isos', 'instance-wizard-my-isos']
                     ]
                   ).each(function() {
@@ -266,7 +266,7 @@
               if (formData.serviceofferingid) {
                 $step.find('input[type=radio]').filter(function() {
                   return $(this).val() == formData.serviceofferingid;
-                }).click(); 
+                }).click();
               } else {
                 $step.find('input[type=radio]:first').click();
               }
@@ -332,7 +332,7 @@
                     var item = $.grep(args.data.diskOfferings, function(elem) {
                       return elem.id == val;
                     })[0];
-                    
+
                     if (!item) return true;
 
                     var custom = item[args.customFlag];
@@ -384,14 +384,14 @@
           'network': function($step, formData) {
             var originalValues = function(formData) {
               // Default networks
-              $step.find('input[name=my-networks]').filter(function() {
-                return $(this).val() == formData['my-networks'];
+              $step.find('input[type=radio]').filter(function() {
+                return $(this).val() == formData['defaultNetwork'];
               }).click();
 
               // Optional networks
               var selectedOptionalNetworks = [];
 
-              if ($.isArray(formData['shared-networks'])) {
+              if ($.isArray(formData['shared-networks']) != -1) {
                 $(formData['shared-networks']).each(function() {
                   selectedOptionalNetworks.push(this);
                 });
@@ -408,12 +408,40 @@
               });
             };
 
+            var $newNetworkFields = $step.find('.new-network').addClass('unselected').find('.desc, .secondary-input');
+
+            // Setup new network field
+            $step.find('.new-network input[type=checkbox]').unbind('click');
+            $step.find('.new-network input[type=checkbox]').click(function() {
+              $newNetworkFields.toggle();
+
+              if ($newNetworkFields.is(':hidden') &&
+                  $newNetworkFields.find('input[type=radio]').is(':checked')) {
+                $step.find('input[type=radio]:first').click();
+              }              
+            });
+
+            setTimeout(function() {
+              $step.find('.new-network input[type=checkbox]').attr('checked', false);
+              $newNetworkFields.hide();
+            });
+
             // Show relevant conditional sub-step if present
             $step.find('.wizard-step-conditional').hide();
 
             return {
               response: {
                 success: function(args) {
+                  // Populate network offering drop-down
+                  $(args.data.networkOfferings).each(function() {
+                    $('<option>')
+                      .attr({
+                        id: this.id
+                      })
+                      .html(this.name)
+                      .appendTo($newNetworkFields.find('select'));
+                  });
+
                   if (args.type) {
                     $step.find('.wizard-step-conditional').filter(function() {
                       return $(this).hasClass(args.type);
@@ -424,29 +452,13 @@
 
                   // My networks
                   $step.find('.my-networks .select-container').append(
-                    makeSelects('my-networks', args.data.myNetworks, {
+                    makeSelects('my-networks', $.merge(args.data.myNetworks, args.data.sharedNetworks), {
                       name: 'name',
-                      desc: 'displaytext',
+                      desc: 'type',
                       id: 'id'
                     }, {
                       type: 'checkbox',
                       'wizard-field': 'my-networks',
-                      secondary: {
-                        desc: 'Default',
-                        name: 'defaultNetwork',
-                        type: 'radio'
-                      }
-                    })
-                  );
-
-                  // Shared networks
-                  $step.find('.shared-networks .select-container').append(
-                    makeSelects('shared-networks', args.data.sharedNetworks, {
-                      name: 'name',
-                      desc: 'displaytext',
-                      id: 'id'
-                    }, {
-                      type: 'checkbox',
                       secondary: {
                         desc: 'Default',
                         name: 'defaultNetwork',
@@ -490,7 +502,7 @@
                     }
 
                     if (fieldName) {
-                      $(this).html(fieldName);                      
+                      $(this).html(fieldName);
                     } else {
                       $(this).html('(None)');
                     }
@@ -517,7 +529,7 @@
           var formData = cloudStack.serializeForm($form);
 
           if (!$targetStep.hasClass('review')) { // Review row content is not autogenerated
-            $targetStep.find('.select-container div, option').remove();
+            $targetStep.find('.select-container:not(.fixed) div, option:not(:disabled)').remove();
           }
 
           dataProvider(

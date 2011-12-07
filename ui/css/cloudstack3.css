@@ -63,6 +63,7 @@ table thead {
 }
 
 table thead th {
+  height: 31px;
   border: 1px solid #C6C3C3;
   color: #566677;
   border-top: none;
@@ -4117,7 +4118,7 @@ label.error {
 .multi-wizard .content {
   background: #FFFFFF;
   width: 430px;
-  height: 366px;
+  height: 401px;
   margin: 24px 0 0;
   /*+border-radius:6px;*/
   -moz-border-radius: 6px;
@@ -4613,12 +4614,36 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select table td {
   padding: 0;
   margin: 0;
+  vertical-align: top;
 }
 
 .multi-wizard.instance-wizard .select-network .select table .select-container {
   margin: 0px;
   border: 0;
-  height: 112px;
+  height: 253px;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network table .select-container {
+  height: 29px;
+  overflow: visible;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network table .select-container .select {
+  padding: 0;
+  margin: -12px 0 0;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network table .select-container .select select {
+  width: 178px;
+  margin: 0px 0 0;
+  /*+placement:shift;*/
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network {
+  margin: -17px 0 0;
 }
 
 .multi-wizard.instance-wizard .select-network .main-desc {
@@ -4662,6 +4687,26 @@ label.error {
   margin: 21px 15px 0px;
 }
 
+/**** New network*/
+.multi-wizard.instance-wizard .select-network .select.new-network {
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network input {
+  margin-top: 24px;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .secondary-input {
+  width: 97px;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .secondary-input .name {
+  margin: 0 17px 0 0;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select-desc {
+  width: 255px;
+}
+
 .multi-wizard.instance-wizard .select-network .select-container .select .select-desc .desc {
   font-size: 11px;
   color: #808080;
@@ -4670,11 +4715,24 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .select-network .select-container .select .select-desc .name {
+  width: 116px;
   font-size: 11px;
   font-weight: normal;
   float: left;
   color: #000000;
   margin: 0 16px 0 0;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select-desc .name {
+  width: 61px;
+  margin: 4px 0 0;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network.unselected .select-desc .name {
+  color: #808080;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .select-desc .desc {
 }
 
 /*** Confirmation*/

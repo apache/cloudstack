@@ -194,7 +194,7 @@
                     <table>
                       <thead>
                         <tr>
-                          <th>My networks (Isolated)</th>
+                          <th>Networks</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -207,17 +207,34 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="select shared-networks">
+                  <div class="select new-network">
                     <table>
                       <thead>
                         <tr>
-                          <th>Shared networks</th>
+                          <th>Add new network</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
                           <td>
-                            <div class="select-container">
+                            <div class="select-container fixed">
+                              <div class="select even">
+                                <input type="checkbox" name="new-network"
+                                       wizard-field="my-networks"
+                                       value="create-new-network"
+                                       checked="checked" />
+                                <div class="select-desc">
+                                  <div class="name">NEW</div>
+                                  <div class="desc">
+                                    <select name="new-network-serviceofferingid">
+                                    </select>
+                                  </div>
+                                </div>
+                                <div class="secondary-input">
+                                  <input type="radio" name="defaultNetwork" value="new-network" />
+                                  <div class="name">Default</div>
+                                </div>
+                              </div>
                             </div>
                           </td>
                         </tr>

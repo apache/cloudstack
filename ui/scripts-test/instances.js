@@ -102,7 +102,8 @@
                       sharedNetworks: $.grep(testData.data.networks, function(elem) {
                         return elem.isdefault === false;
                       }),
-                      securityGroups: testData.data.securityGroups
+                      securityGroups: testData.data.securityGroups,
+                      networkOfferings: testData.data.networkOfferings
                     }
                   });
                 },
