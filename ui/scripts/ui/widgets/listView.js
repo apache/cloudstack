@@ -929,10 +929,14 @@
         .html(args.sectionSelect.label + ':');
 
       sectionPreFilter = args.sectionSelect.preFilter ?
-            args.sectionSelect.preFilter({
-              context: cloudStack.context
-            }) :
-          null;
+        args.sectionSelect.preFilter({
+          context: cloudStack.context
+        }) : null;
+
+      // No need to display switcher if only one entry is present
+      if (sectionPreFilter && sectionPreFilter.length == 1) {
+        $switcher.hide();
+      }
     } else {
       $sectionSelect.hide();
     }
