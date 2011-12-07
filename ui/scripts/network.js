@@ -344,7 +344,7 @@
               });
 
             if (args.context.networks) {
-              $.extend(data, { networkId: args.context.networks[0].id });
+              $.extend(data, { associatedNetworkId: args.context.networks[0].id });
             }
 
             $.ajax({
