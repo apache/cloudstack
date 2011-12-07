@@ -53,12 +53,7 @@
     id: 'network',
     sectionSelect: {
       preFilter: function(args) {
-        if (g_directAttachSecurityGroupsEnabled == "true") {
-          return args.context.sections;
-        }
-        else {
-          return ['networks', 'ipAddresses'];
-        }
+        return ['networks'];
       },
       label: 'Select view'
     },
@@ -67,31 +62,19 @@
         type: 'select',
         title: 'Networks',
         listView: {
-          filters: {
-            all: { label: 'All' },
-            mine: { label: 'My network' }
-          },
           fields: {
             name: { label: 'Name' },
+            zonename: { label: 'Zone' },
             type: { label: 'Type' },
             traffictype: { label: 'Traffic Type' },
             gateway: { label: 'Gateway' },
-            broadcasturi: {
-              label: 'VLAN',
-              converter: function(value) {
-                if (value)
-                  return value.split('vlan://')[1];
-
-                return 'Untagged';
-              }
-            },
-            state: { label: 'State', indicator: { 'Setup': 'on' } }
+            state: { label: 'State', indicator: { 'Implemented': 'on', 'Setup': 'on' } }
           },
           dataProvider: function(args) {
             $.ajax({
               url: createURL('listNetworks'),
               data: {
-                trafficType: 'Guest'
+                type: 'isolated'
               },
               dataType: 'json',
               async: true,
@@ -105,7 +88,7 @@
 
           detailView: {
             name: 'Network details',
-            viewAll: { path: 'network.ipAddresses', label: 'IP Addresses' },
+            viewAll: { path: 'network.ipAddresses', label: 'Associated IP Addresses' },
             tabs: {
               details: {
                 title: 'Details',
@@ -117,8 +100,7 @@
                     type: { label: 'Type' },
                     displaytext: { label: 'Description' },
                     traffictype: { label: 'Traffic Type' },
-                    gateway: { label: 'Gateway' },
-                    vlan: { label: 'VLAN' }
+                    gateway: { label: 'Gateway' }
                   },
                   {
                     startip: { label: 'Start IP' },
@@ -381,7 +363,7 @@
               });
 
             if (args.context.networks) {
-              $.extend(data, { associatedNetworkId: args.context.networks[0].id });
+              $.extend(data, { networkId: args.context.networks[0].id });
             }
 
             $.ajax({
