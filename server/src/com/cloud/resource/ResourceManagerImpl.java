@@ -685,7 +685,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     @DB
-    private boolean doDeleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
+    protected boolean doDeleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage) {
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         // Verify that host exists
         HostVO host = _hostDao.findById(hostId);
