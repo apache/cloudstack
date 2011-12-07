@@ -969,7 +969,10 @@
 
     // No need to display switcher if only one entry is present
     if (sectionPreFilter && sectionPreFilter.length == 1) {
-      $switcher.hide();
+      $switcher.find('select').hide();
+      $switcher.find('label').html(
+        'Viewing ' + sections[sectionPreFilter[0]].title
+      );
     }
 
     $.each(sections, function(key) {
@@ -1061,6 +1064,10 @@
       listViewData = args.sections[
         $switcher.find('select').val()
       ].listView;
+
+      if (listViewData.id != 'zones') {
+        args.activeSection = listViewData.id;        
+      }
     }
 
     // Add panel controls

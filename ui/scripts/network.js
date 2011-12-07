@@ -53,6 +53,7 @@
     id: 'network',
     sectionSelect: {
       preFilter: function(args) {
+        return ['securityGroups'];
         var isSecurityGroupEnabled = false;
         
         $.ajax({

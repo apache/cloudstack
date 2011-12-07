@@ -11,10 +11,19 @@
   cloudStack.sections.accounts = {
     title: 'Accounts',
     id: 'accounts',
-
+    sectionSelect: {
+      label: 'Select View',
+      preFilter: function() {
+        return ['accounts'];
+      }
+    },
     sections: {
       accounts: {
+        type: 'select',
+        id: 'accounts',
+        title: 'Accounts',
         listView: {
+          id: 'accounts',
           fields: {
             name: { label: 'Name' },
             accounttype: {
@@ -676,6 +685,7 @@
       },
       users: {
         type: 'select',
+        id: 'users',
         title: 'Users',
         listView: {
           id: 'users',
