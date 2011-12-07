@@ -32,6 +32,9 @@
 
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
+        <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
+             <param name="premium">true</param>
+        </dao>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
@@ -49,7 +52,7 @@
             <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
         </adapters>
         <adapters key="com.cloud.network.guru.NetworkGuru">
-            <adapter name="GuestNetworkGuru" class="com.cloud.network.guru.GuestNetworkGuru"/>
+            <adapter name="ExternalGuestNetworkGuru" class="com.cloud.network.guru.ExternalGuestNetworkGuru"/>
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
             <adapter name="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru"/>
             <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
@@ -91,6 +94,10 @@
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+            <adapter name="VShpereServer" class="com.cloud.hypervisor.vmware.VmwareServerDiscoverer"/>
+            <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
+            <adapter name="SCVMMServer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer"/>            
+			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
@@ -98,25 +105,45 @@
             <adapter name="UserConcentratedPod" class="com.cloud.deploy.UserConcentratedPodPlanner"/>
             <adapter name="BareMetal Fit" class="com.cloud.deploy.BareMetalPlanner"/>
         </adapters>
-        <adapters key="com.cloud.network.element.NetworkElement">
-            <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
-            <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
-            <adapter name="ElasticLoadBalancer" class="com.cloud.network.element.ElasticLoadBalancerElement"/>
-            
+        <adapters key="com.cloud.alert.AlertAdapter">
+            <adapter name="ClusterAlert" class="com.cloud.alert.ClusterAlertAdapter"/>
+            <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter"/>
+            <adapter name="SecondaryStorageVmAlert" class="com.cloud.alert.SecondaryStorageVmAlertAdapter"/>
         </adapters>
         <adapters key="com.cloud.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
+        <adapters key="com.cloud.network.element.NetworkElement">
+        	<adapter name="JuniperSRXExternalFirewallElement" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
+        	<adapter name="NetscalerExternalLoadBalancerElement" class="com.cloud.network.element.NetscalerExternalLoadBalancerElement"/>
+        	<adapter name="F5ExternalLoadBalancerElement" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
+            <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="Ovs" class="com.cloud.network.element.OvsElement"/>
+            <adapter name="ExternalDhcp" class="com.cloud.network.element.ExternalDhcpElement"/>
+            <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
+            <adapter name="ElasticLoadBalancer" class="com.cloud.network.element.ElasticLoadBalancerElement"/>
+            <adapter name="SecurityGroup" class="com.cloud.network.element.SecurityGroupElement"/>
+        </adapters>
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
         </adapters>
-
+        <adapters key="com.cloud.hypervisor.HypervisorGuru">
+            <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
+            <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
+            <adapter name="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru"/>
+            <adapter name="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru"/>
+            <adapter name="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru"/>            
+            <adapter name="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru" />
+        </adapters>
+        <adapters key="com.cloud.agent.StartupCommandProcessor">
+            <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
+        </adapters>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
-             <param name="premium">false</param>
+             <param name="premium">true</param>
         </dao>
         <dao name="Snapshot policy defaults" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" singleton="false"/>
         <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>         

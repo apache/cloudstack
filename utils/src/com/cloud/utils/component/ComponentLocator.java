@@ -825,9 +825,9 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
         
         if (configFile == null || PropertiesUtil.findConfigFile(configFile) == null) {
-            configFile = "components-premium.xml";
+            configFile = "components.xml";
             if (PropertiesUtil.findConfigFile(configFile) == null){
-                configFile = "components.xml";
+                throw new CloudRuntimeException("Can not find components.xml");
             }
         }
         return getLocatorInternal(server, true, configFile, "log4j-cloud");
