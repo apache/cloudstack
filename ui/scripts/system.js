@@ -6439,6 +6439,7 @@
                   },
                   {
                     id: { label: 'ID' },
+                    resourcestate: { label: 'Resource state' },
                     state: { label: 'State' },
                     type: { label: 'Type' },
                     zonename: { label: 'Zone' },
