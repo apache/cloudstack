@@ -667,9 +667,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 		_resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
 		if (host.getClusterId() != null) {
 			List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(com.cloud.host.Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
-			hosts.add(host);
 			boolean success = true;
 			for (HostVO thost : hosts) {
+				if (thost.getId() == host.getId()) {
+					continue;
+				}
+				
 				long thostId = thost.getId();
 				PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
 				Answer answer = _agentMgr.easySend(thostId, eject);
