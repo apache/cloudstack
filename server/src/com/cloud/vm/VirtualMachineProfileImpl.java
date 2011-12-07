@@ -61,7 +61,8 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
         if (_params == null) {
             _params = new HashMap<Param, Object>();
         }
-        _type = vm.getType();
+        if (vm != null)
+        	_type = vm.getType();
     }
     
     public VirtualMachineProfileImpl(T vm) {
@@ -102,7 +103,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     
     @Override
     public VirtualMachineTemplate getTemplate() {
-        if (_template == null) {
+        if (_template == null && _vm != null) {
             _template = s_templateDao.findByIdIncludingRemoved(_vm.getTemplateId());
         }
         return _template;
