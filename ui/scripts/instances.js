@@ -437,19 +437,11 @@
                   var defaultNetwork = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to "new-network"                  
                   var checkedNetworks = args.data["my-networks"]; 
                 
-                  //create new network starts here  
-                  if(args.data["new-network"] == "create-new-network") {                  
-                    var selectedNetworkOfferingId;
-                    if(networkOfferingObjs != null && networkOfferingObjs.length > 0) {
-                      for(var k=0; k < networkOfferingObjs.length; k++) {
-                        if(networkOfferingObjs[k].name == args.data["new-network-serviceofferingid"])
-                          selectedNetworkOfferingId = networkOfferingObjs[k].id;
-                      }
-                    }
-                                      
+                  //create new network starts here                   
+                  if(args.data["new-network"] == "create-new-network") {   
                     var networkName = "new Network";
                     $.ajax({
-                      url: createURL("createNetwork&networkOfferingId="+selectedNetworkOfferingId+"&name="+todb(networkName)+"&displayText="+todb(networkName)+"&zoneId="+selectedZoneObj.id),
+                      url: createURL("createNetwork&networkOfferingId="+args.data["new-network-networkofferingid"]+"&name="+todb(args.data["new-network-name"])+"&displayText="+todb(args.data["new-network-name"])+"&zoneId="+selectedZoneObj.id),
                       dataType: "json",
                       async: false,
                       success: function(json) {                      
