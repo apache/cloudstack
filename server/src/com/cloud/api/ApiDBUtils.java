@@ -81,6 +81,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -722,5 +723,10 @@ public class ApiDBUtils {
     
     public static long countFreePublicIps() {
     	return _ipAddressDao.countFreeIPs();
+    }
+    
+    public static long findDefaultRouterServiceOffering() {
+        ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName("Cloud.Com-SoftwareRouter");
+        return serviceOffering.getId();
     }
 }

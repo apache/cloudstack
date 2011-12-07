@@ -2573,7 +2573,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setServiceOfferingId(offering.getServiceOfferingId());
+        if (offering.getServiceOfferingId() != null) {
+            response.setServiceOfferingId(offering.getServiceOfferingId());
+        } else {
+            response.setServiceOfferingId(ApiDBUtils.findDefaultRouterServiceOffering());
+        }
         if (offering.getGuestType() != null) {
             response.setGuestIpType(offering.getGuestType().toString());
         }
