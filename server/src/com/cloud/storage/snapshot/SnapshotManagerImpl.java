@@ -111,6 +111,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -958,19 +959,23 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         
         //set project information
+        boolean skipProjectSnapshots = true;
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else {
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        } 
+        	if (projectId == -1) {
+                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(project.getProjectAccountId());
+        	}
+        	skipProjectSnapshots = false;
+        }
 
         Object name = cmd.getSnapshotName();
         Object id = cmd.getId();
@@ -1001,8 +1006,18 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
             accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
         }
+        
+        if (skipProjectSnapshots) {
+        	SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+       	 	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+       	 	sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<SnapshotVO> sc = sb.create();
+        
+        if (skipProjectSnapshots) {
+        	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
+        }
 
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);

@@ -3115,7 +3115,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
         }
         
-        
         if (groupId != null && (Long) groupId == -1) {
             sc.setJoinParameters("vmSearch", "instanceId", (Object) null);
         } else if (groupId != null) {

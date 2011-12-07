@@ -1687,19 +1687,23 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //set project information
+        boolean skipProjectVolumes = true;
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(project.getProjectAccountId());
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL){
-            permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
-        } 
+        	if (projectId == -1) {
+                permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(project.getProjectAccountId());
+        	}
+        	skipProjectVolumes = false;
+        }
 
         Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1747,6 +1751,12 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
+        
+        if (skipProjectVolumes) {
+        	SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+       	 	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
+       	 	sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         // display user vm volumes only
         SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
@@ -1762,6 +1772,10 @@ public class ManagementServerImpl implements ManagementServer {
             ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+        
+        if (skipProjectVolumes) {
+        	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
         }
 
         if (name != null) {
