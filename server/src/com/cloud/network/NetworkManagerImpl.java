@@ -5104,12 +5104,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             
             Set<Service> enabledServices = providersMap.get(provider);
-            
+
             if(enabledServices != null && !enabledServices.isEmpty()){
                 if(!element.canEnableIndividualServices()){
-                    if(enabledServices.size() != element.getCapabilities().keySet().size()){
+                	Set<Network.Service> requiredServices = element.getCapabilities().keySet();
+                	if (requiredServices.contains(Network.Service.Gateway)) {
+                		requiredServices.remove(Network.Service.Gateway);
+                	}
+                	
+                	//exclude gateway service
+                    if(enabledServices.size() != requiredServices.size()){
                     	StringBuilder servicesSet = new StringBuilder();
-                    	for (Service requiredService: element.getCapabilities().keySet()) {
+                    	
+                    	for (Service requiredService: requiredServices) {
                     		//skip gateway service as we don't allow setting it via API
                     		if (requiredService == Service.Gateway) {
                     			continue;
