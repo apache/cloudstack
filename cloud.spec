@@ -527,7 +527,6 @@ fi
 %files client
 %defattr(0644,root,root,0775)
 %config(noreplace) %{_sysconfdir}/%{name}/management/*
-%config %{_sysconfdir}/%{name}/management/*premium*
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
