@@ -1193,30 +1193,34 @@ public class ManagementServerImpl implements ManagementServer {
             permittedAccounts.add(_accountMgr.finalizeOwner(caller, accountName, domainId, null));
         } 
         
-        //set project information
+      //set project information
+        boolean skipProjectTemplates = true;
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(_accountMgr.getAccount(project.getProjectAccountId()));
-        } else {
-            List<Long> permittedAccountIds = _projectMgr.listPermittedProjectAccounts(caller.getId());
-            for (Long permittedAccountId : permittedAccountIds) {
-                permittedAccounts.add(_accountMgr.getAccount(permittedAccountId));
-            }
-        } 
+        	if (projectId == -1) {
+        		 List<Long> permittedAccountIds = _projectMgr.listPermittedProjectAccounts(caller.getId());
+                 for (Long permittedAccountId : permittedAccountIds) {
+                     permittedAccounts.add(_accountMgr.getAccount(permittedAccountId));
+                 }
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(_accountMgr.getAccount(project.getProjectAccountId()));
+                skipProjectTemplates = false;
+        	}
+        }
 
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (isAdmin(caller.getType())) && (accountName != null) && (domainId != null);
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific,
-                true, cmd.listInReadyState(), permittedAccounts, caller);
+                true, cmd.listInReadyState(), permittedAccounts, caller, skipProjectTemplates);
     }
 
     @Override
@@ -1235,34 +1239,38 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //set project information
+        boolean skipProjectTemplates = true;
         if (projectId != null) {
-            permittedAccounts.clear();
-            Project project = _projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
-            }
-            if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
-            }
-            permittedAccounts.add(_accountMgr.getAccount(project.getProjectAccountId()));
-        } else {
-            List<Long> permittedAccountIds = _projectMgr.listPermittedProjectAccounts(caller.getId());
-            for (Long permittedAccountId : permittedAccountIds) {
-                permittedAccounts.add(_accountMgr.getAccount(permittedAccountId));
-            }
+        	if (projectId == -1) {
+        		 List<Long> permittedAccountIds = _projectMgr.listPermittedProjectAccounts(caller.getId());
+                 for (Long permittedAccountId : permittedAccountIds) {
+                     permittedAccounts.add(_accountMgr.getAccount(permittedAccountId));
+                 }
+        	} else {
+        		permittedAccounts.clear();
+                Project project = _projectMgr.getProject(projectId);
+                if (project == null) {
+                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                }
+                if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                }
+                permittedAccounts.add(_accountMgr.getAccount(project.getProjectAccountId()));
+                skipProjectTemplates = false;
+        	}
         } 
-
+        
         // It is account specific if account is admin type and domainId and accountName are not null
         boolean isAccountSpecific = (caller == null || isAdmin(caller.getType())) && (accountName != null) && (domainId != null);
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, isAccountSpecific,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller);
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller, skipProjectTemplates);
     }
 
     private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize, Long startIndex,
-            Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller) {
+            Long zoneId, HypervisorType hyperType, boolean isAccountSpecific, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller, boolean skipProjectTemplates) {
         
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1297,7 +1305,7 @@ public class ManagementServerImpl implements ManagementServer {
                         permittedAccounts, caller);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller);
+                        permittedAccounts, caller, skipProjectTemplates);
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), 0L))) {
                         templateZonePairSet.add(tmpltPair);
@@ -1315,7 +1323,7 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             if (template == null) {
                 templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller);
+                        permittedAccounts, caller, skipProjectTemplates);
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {

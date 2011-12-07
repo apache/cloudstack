@@ -440,7 +440,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
 	@Override
-	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts, Account caller) {
+	public Set<Pair<Long, Long>> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr,List<Account> permittedAccounts, Account caller, boolean skipProjectTemplates) {
         
         StringBuilder builder = new StringBuilder();
         if (!permittedAccounts.isEmpty()) {
@@ -486,9 +486,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	}
         	       	
         	sql +=  guestOSJoin + templateHostRefJoin + dataCenterJoin;
-        	String whereClause = "";        	
+        	String whereClause = "";
+        	
+        	//All joins have to be made before we start setting the condition settings
+        	boolean joinedWithAccounts = false;
+        	if (skipProjectTemplates || (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.featured))) {
+        		whereClause += " INNER JOIN account a on (t.account_id = a.id)";
+        		if (skipProjectTemplates) {
+        			whereClause += " WHERE a.type != " + Account.ACCOUNT_TYPE_PROJECT;
+        		}
+        		joinedWithAccounts = true;
+        	}
 
-        	if ( !isIso ) {
+        	if (!isIso) {
         	    if ( hypers.isEmpty() ) {
         	        return templateZonePairList;
         	    } else {
@@ -503,8 +513,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     whereClause += " AND t.hypervisor_type IN (" + relatedHypers + ")";
         	    }
         	}
+        	
             if (!permittedAccounts.isEmpty()) {
-                
                 for (Account account : permittedAccounts) {
                     //accountType = account.getType();
                     //accountId = Long.toString(account.getId());
@@ -532,18 +542,29 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     }
                     relatedDomainIds.setLength(relatedDomainIds.length()-1);
                 }
-            } 
+            }
+            
+            String attr = " AND ";
+            if (whereClause.endsWith(" WHERE ")) {
+            	attr += " WHERE ";
+            }
+            
+            if (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)) {
+            	whereClause += attr + "t.account_id IN (" + permittedAccountsStr + ")";
+            }
 
         	if (templateFilter == TemplateFilter.featured) {
-            	whereClause += " WHERE t.public = 1 AND t.featured = 1";
+            	whereClause += attr + "t.public = 1 AND t.featured = 1";
             	if (!permittedAccounts.isEmpty()) {
-            	    whereClause += " AND (dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
+            	    whereClause += attr + "(dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
             	}
+            	
             } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             	if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            		whereClause += " INNER JOIN account a on (t.account_id = a.id) INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
-            	} else {
-            		whereClause += " WHERE t.account_id IN (" + permittedAccountsStr + ")";
+            		if (!joinedWithAccounts) {
+            			whereClause += " INNER JOIN account a on (t.account_id = a.id)";
+            		}
+            		 whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
             	}
             } else if (templateFilter == TemplateFilter.sharedexecutable && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             	if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
@@ -551,17 +572,20 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 	" (t.account_id IN (" + permittedAccountsStr + ") OR" +
                 	" lp.account_id IN (" + permittedAccountsStr + "))";
             	} else {
-            		whereClause += " INNER JOIN account a on (t.account_id = a.id) INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
-            	}            	
+            		if (!joinedWithAccounts) {
+            			whereClause += " INNER JOIN account a on (t.account_id = a.id)";
+            		}
+            		whereClause += " INNER JOIN domain d on (a.domain_id = d.id) WHERE d.path LIKE '" + domain.getPath() + "%'";
+            	}	
             } else if (templateFilter == TemplateFilter.executable && !permittedAccounts.isEmpty()) {
-            	whereClause += " WHERE (t.public = 1 OR t.account_id IN (" + permittedAccountsStr + "))";
+            	whereClause += attr + "(t.public = 1 OR t.account_id IN (" + permittedAccountsStr + "))";
             } else if (templateFilter == TemplateFilter.community) {
-            	whereClause += " WHERE t.public = 1 AND t.featured = 0";
+            	whereClause += attr + "t.public = 1 AND t.featured = 0";
             	if (!permittedAccounts.isEmpty()) {
-            	    whereClause += " AND (dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
+            	    whereClause += attr + "(dc.domain_id IN (" + relatedDomainIds + ") OR dc.domain_id is NULL)";
             	}
             } else if (templateFilter == TemplateFilter.all && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            	whereClause += " WHERE ";
+        		whereClause += attr;
             } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             	return templateZonePairList;
             }
@@ -571,7 +595,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             } else if (!whereClause.equals(" WHERE ")) {
             	whereClause += " AND ";
             }
-
+            
             sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType, zoneId, onlyReady, showDomr) + groupByClause + getOrderByLimit(pageSize, startIndex);
 
             pstmt = txn.prepareStatement(sql);
