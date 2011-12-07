@@ -246,7 +246,9 @@
         listViewArgs.activeSection
       ] = [$instanceRow.data('jsonObj')];
 
-      if (!args.action.createForm && !action.custom && !action.uiCustom)
+      if (!args.action.createForm &&
+          !args.action.addRow == 'true' &&
+          !action.custom && !action.uiCustom)
         cloudStack.dialog.confirm({
           message: messages.confirm(messageArgs),
           action: function() {
@@ -263,34 +265,63 @@
         var addRow = args.action.addRow == "false" ? false : true;
         var createFormContext = $.extend({}, context);
 
-        cloudStack.dialog.createForm({
-          form: args.action.createForm,
-          after: function(args) {
-            var $newItem;
-            if (addRow != false) {
-              $newItem = $listView.listView('prependItem', {
-                data: [
-                  $.extend(args.data, {
-                    state: 'Creating',
-                    status: 'Creating',
-                    allocationstate: 'Creating'
-                  })
-                ]
-              });
-            } else {
-              $newItem = $instanceRow;
-            }
+        if (args.action.createForm) {
+          cloudStack.dialog.createForm({
+            form: args.action.createForm,
+            after: function(args) {
+              var $newItem;
+              if (addRow != false) {
+                $newItem = $listView.listView('prependItem', {
+                  data: [
+                    $.extend(args.data, {
+                      state: 'Creating',
+                      status: 'Creating',
+                      allocationstate: 'Creating'
+                    })
+                  ]
+                });
+              } else {
+                $newItem = $instanceRow;
+              }
 
-            performAction(args.data, {
-              ref: args.ref,
-              context: createFormContext,
-              $item: $newItem,
-              $form: args.$form
-            });
-          },
-          ref: listViewArgs.ref,
-          context: createFormContext
-        });
+              performAction(args.data, {
+                ref: args.ref,
+                context: createFormContext,
+                $item: $newItem,
+                $form: args.$form
+              });
+            },
+            ref: listViewArgs.ref,
+            context: createFormContext
+          }); 
+        } else {
+          cloudStack.dialog.confirm({
+            message: messages.confirm(messageArgs),
+            action: function() {
+              var $newItem;
+              if (addRow != false) {
+                $newItem = $listView.listView('prependItem', {
+                  data: [
+                    $.extend(args.data, {
+                      state: 'Creating',
+                      status: 'Creating',
+                      allocationstate: 'Creating'
+                    })
+                  ]
+                });
+              } else {
+                $newItem = $instanceRow;
+              }
+
+              performAction(args.data, {
+                ref: args.ref,
+                context: createFormContext,
+                $item: $newItem,
+                $form: args.$form
+              });
+            }
+          });
+        }
       }
     },
     edit: function($instanceRow, args) {
