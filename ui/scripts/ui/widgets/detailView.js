@@ -95,6 +95,7 @@
       var _custom = $detailView.data('_custom');
       var customAction = action.action.custom;
       var noAdd = action.noAdd;
+      var noRefresh = additional.noRefresh;
 
       var updateTabContent = function(newData) {
         var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
@@ -139,8 +140,12 @@
 
                 // Success
                 function(args) {
-                  $loading.remove();
-                  updateTabContent(args.data);
+                $loading.remove();
+
+                  if (!noRefresh) {
+                    updateTabContent(args.data);
+                  }
+                  
                   replaceListViewItem($detailView, args.data);
                 },
 
@@ -175,7 +180,10 @@
                   function(args) {
                     if ($detailView.is(':visible')) {
                       $loading.remove();
-                      updateTabContent(args.data);
+
+                      if (!noRefresh) {
+                        updateTabContent(args.data);
+                      }
                     }
 
                     if (messages.complete) {
@@ -264,6 +272,7 @@
 
     destroy: function($detailView, args) {
       uiActions.standard($detailView, args, {
+        noRefresh: true,
         complete: function(args) {
           var $browser = $detailView.data('view-args').$browser;
           var $panel = $detailView.closest('.panel');
