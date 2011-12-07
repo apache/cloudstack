@@ -160,7 +160,7 @@
             zonename: { label: 'Zone' },
             vlanname: { label: 'VLAN' },
             account: { label: 'Account' },
-            state: { label: 'State', indicator: { 'Allocated': 'on' } }
+            state: { label: 'State', indicator: { 'Allocated': 'on', 'Released': 'off' } }
           },
           actions: {
             add: {
