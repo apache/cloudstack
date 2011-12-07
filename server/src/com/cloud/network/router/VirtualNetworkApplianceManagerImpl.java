@@ -341,7 +341,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     String _mgmt_cidr;
 
     int _routerStatsInterval = 300;
-    int _checkRouterInterval = 30;
+    int _routerCheckInterval = 30;
     private ServiceOfferingVO _offering;
     private String _dnsBasicZoneUpdates = "all";
 
@@ -627,6 +627,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
 
+        value = configs.get("router.check.interval");
+        _routerCheckInterval = NumbersUtil.parseInt(value, 30);
+        
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -719,7 +722,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }else{
             s_logger.debug("router.stats.interval - " + _routerStatsInterval+ " so not scheduling the router stats thread");
         }
-        _checkExecutor.scheduleAtFixedRate(new CheckRouterTask(), _checkRouterInterval, _checkRouterInterval, TimeUnit.SECONDS);
+        
+        if (_routerCheckInterval > 0) {
+            _checkExecutor.scheduleAtFixedRate(new CheckRouterTask(), _routerCheckInterval, _routerCheckInterval, TimeUnit.SECONDS);
+        } else {
+            s_logger.debug("router.check.interval - " + _routerCheckInterval+ " so not scheduling the redundant router checking thread");
+        }
 
         return true;
     }

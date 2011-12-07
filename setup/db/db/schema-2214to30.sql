@@ -274,6 +274,7 @@ CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
 DELETE FROM configuration WHERE name='host.capacity.checker.wait';
 DELETE FROM configuration WHERE name='host.capacity.checker.interval'; 
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'disable.extraction' , 'false', 'Flag for disabling extraction of template, isos and volumes');
+INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.check.interval' , '30', 'Interval (in seconds) to report redundant router status.');
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
