@@ -63,7 +63,6 @@ table thead {
 }
 
 table thead th {
-  height: 31px;
   border: 1px solid #C6C3C3;
   color: #566677;
   border-top: none;
@@ -4620,7 +4619,7 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select table .select-container {
   margin: 0px;
   border: 0;
-  height: 253px;
+  height: 223px;
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network table .select-container {
@@ -4629,13 +4628,14 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network table .select-container .select {
-  padding: 0;
   margin: -12px 0 0;
+  position: relative;
+  text-align: right;
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network table .select-container .select select {
-  width: 178px;
-  margin: 0px 0 0;
+  width: 145px;
+  margin: 4px 0 0;
   /*+placement:shift;*/
   position: relative;
   left: 0;
@@ -4691,12 +4691,51 @@ label.error {
 .multi-wizard.instance-wizard .select-network .select.new-network {
 }
 
+.multi-wizard.instance-wizard .select-network .select.new-network .hide-if-selected {
+  display: none;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network.unselected .hide-if-unselected {
+  display: none;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network.unselected .hide-if-selected {
+  display: block;
+}
+
 .multi-wizard.instance-wizard .select-network .select.new-network input {
   margin-top: 24px;
 }
 
+.multi-wizard.instance-wizard .select-network .select.new-network .field {
+  /*+placement:shift 41px 21px;*/
+  position: relative;
+  left: 41px;
+  top: 21px;
+  font-size: 11px;
+  color: #000000;
+  position: absolute;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .field .name {
+  width: 99px;
+  float: left;
+  padding: 3px 0 0;
+  /*[empty]display:;*/
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .field .value {
+  float: left;
+}
+
+.multi-wizard.instance-wizard .select-network .select.new-network .field .value input {
+  width: 138px;
+  margin: 0 0 0 11px;
+}
+
 .multi-wizard.instance-wizard .select-network .select.new-network .secondary-input {
   width: 97px;
+  padding: 13px 0 17px;
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network .secondary-input .name {
@@ -4724,7 +4763,7 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .select-network .select.new-network .select-desc .name {
-  width: 61px;
+  width: 99px;
   margin: 4px 0 0;
 }
 
@@ -5078,14 +5117,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view>ul {
+.tree-view > ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view>ul>li {
+.tree-view > ul > li {
   left: 5px;
 }
 
@@ -5120,7 +5159,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded>.expand {
+.tree-view ul li.expanded > .expand {
   background-position: -631px -228px;
 }
 
@@ -5537,7 +5576,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms>div {
+.recurring-snapshots .schedule .forms > div {
 }
 
 .recurring-snapshots .schedule .forms form {

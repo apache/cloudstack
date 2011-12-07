@@ -408,22 +408,24 @@
               });
             };
 
-            var $newNetworkFields = $step.find('.new-network').addClass('unselected').find('.desc, .secondary-input');
+            var $newNetwork = $step.find('.new-network');
+            var $newNetworkCheckbox = $newNetwork.find('input[type=checkbox]');
 
             // Setup new network field
-            $step.find('.new-network input[type=checkbox]').unbind('click');
-            $step.find('.new-network input[type=checkbox]').click(function() {
-              $newNetworkFields.toggle();
+            $newNetworkCheckbox.unbind('click');
+            $newNetworkCheckbox.click(function() {
+              $newNetwork.toggleClass('unselected');
 
-              if ($newNetworkFields.is(':hidden') &&
-                  $newNetworkFields.find('input[type=radio]').is(':checked')) {
+              // Select another default if hiding field
+              if ($newNetwork.hasClass('unselected')) {
                 $step.find('input[type=radio]:first').click();
-              }              
+              } else {
+                $newNetwork.find('input[type=radio]').click();
+              }
             });
 
             setTimeout(function() {
-              $step.find('.new-network input[type=checkbox]').attr('checked', false);
-              $newNetworkFields.hide();
+              $step.find('.new-network input[type=checkbox]').click();
             });
 
             // Show relevant conditional sub-step if present
@@ -439,7 +441,7 @@
                         id: this.id
                       })
                       .html(this.name)
-                      .appendTo($newNetworkFields.find('select'));
+                      .appendTo($newNetwork.find('select'));
                   });
 
                   if (args.type) {

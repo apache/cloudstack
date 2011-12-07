@@ -223,14 +223,29 @@
                                        wizard-field="my-networks"
                                        value="create-new-network"
                                        checked="checked" />
-                                <div class="select-desc">
+                                <!-- Default (NEW) -->
+                                <div class="select-desc hide-if-selected">
                                   <div class="name">NEW</div>
+                                </div>
+
+                                <!-- Name -->
+                                <div class="field name hide-if-unselected">
+                                  <div class="name">Name</div>
+                                  <div class="value">
+                                    <input type="text" name="new-network-name" />
+                                  </div>
+                                </div>
+
+                                <!-- Service offering -->
+                                <div class="select-desc field service-offering hide-if-unselected">
+                                  <div class="name">Service Offering</div>
                                   <div class="desc">
-                                    <select name="new-network-serviceofferingid">
+                                    <select name="new-network-networkofferingid">
                                     </select>
                                   </div>
                                 </div>
-                                <div class="secondary-input">
+
+                                <div class="secondary-input hide-if-unselected">
                                   <input type="radio" name="defaultNetwork" value="new-network" />
                                   <div class="name">Default</div>
                                 </div>
