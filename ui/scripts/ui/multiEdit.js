@@ -551,6 +551,14 @@
             text: 'Apply',
             'class': 'ok',
             click: function() {
+              if (!$dataList.find(
+                'input[type=radio]:checked, input[type=checkbox]:checked'
+              ).size()) {
+                cloudStack.dialog.notice({ message: 'Please select an instance '});
+                
+                return false;
+              }
+              
               $dataList.fadeOut(function() {
                 addItem($.map(
                   $dataList.find('tr.multi-edit-selected'),
@@ -566,6 +574,8 @@
               $('div.overlay').fadeOut(function() {
                 $('div.overlay').remove();
               });
+
+              return true;
             }
           },
           {
