@@ -257,11 +257,11 @@ body.login {
   margin: 5px 0 0;
   text-indent: 7px;
   border: none;
-  /*+border-radius:3px;*/
-  -moz-border-radius: 3px;
-  -webkit-border-radius: 3px;
-  -khtml-border-radius: 3px;
-  border-radius: 3px 3px 3px 3px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset 0px 1px 1px #4E4E4E;*/
   -moz-box-shadow: inset 0px 1px 1px #4E4E4E;
   -webkit-box-shadow: inset 0px 1px 1px #4E4E4E;
@@ -426,11 +426,11 @@ body.login {
 .install-wizard .button {
   background: url(../images/bg-gradients.png) 0px -221px;
   padding: 7px 16px 7px 18px;
-  /*+border-radius:10px;*/
-  -moz-border-radius: 10px;
-  -webkit-border-radius: 10px;
-  -khtml-border-radius: 10px;
-  border-radius: 10px 10px 10px 10px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
   border: 1px solid #505050;
   color: #FFFFFF;
   font-size: 12px;
@@ -738,11 +738,11 @@ div.notification-box .container {
   -webkit-box-shadow: inset 0px 3px 7px #656565;
   -o-box-shadow: inset 0px 3px 7px #656565;
   box-shadow: inset 0px 3px 7px #656565;
-  /*+border-radius:8px;*/
-  -moz-border-radius: 8px;
-  -webkit-border-radius: 8px;
-  -khtml-border-radius: 8px;
-  border-radius: 8px 8px 8px 8px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
   border: 1px solid #8198AE;
 }
 
@@ -1284,11 +1284,11 @@ div.list-view td.state.off {
   color: #FFFFFF;
   font-size: 12px;
   font-weight: bold;
-  /*+border-radius:10px;*/
-  -moz-border-radius: 10px;
-  -webkit-border-radius: 10px;
-  -khtml-border-radius: 10px;
-  border-radius: 10px 10px 10px 10px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
   /*+text-shadow:0px -1px 2px #000000;*/
   -moz-text-shadow: 0px -1px 2px #000000;
   -webkit-text-shadow: 0px -1px 2px #000000;
@@ -1614,11 +1614,11 @@ div.detail-group.actions td {
   -webkit-box-shadow: inset 0px -1px 2px #6D6D6D;
   -o-box-shadow: inset 0px -1px 2px #6D6D6D;
   box-shadow: inset 0px -1px 2px #6D6D6D;
-  /*+border-radius:3px 0 0 3px;*/
-  -moz-border-radius: 3px 0 0 3px;
-  -webkit-border-radius: 3px 0 0 3px;
-  -khtml-border-radius: 3px 0 0 3px;
-  border-radius: 3px 0 0 3px;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
   border-right: none;
   /*[empty]border-top:;*/
   min-width: 75px;
@@ -1647,11 +1647,11 @@ div.detail-group.actions td {
   border-top: 1px solid #7A7A7A;
   border-bottom: 1px solid #ADADAD;
   border-left: 1px solid #B5B5B5;
-  /*+border-radius:0 5px 5px 0;*/
-  -moz-border-radius: 0 5px 5px 0;
-  -webkit-border-radius: 0 5px 5px 0;
-  -khtml-border-radius: 0 5px 5px 0;
-  border-radius: 0 5px 5px 0;
+  /*+border-radius:0 4px 4px 0;*/
+  -moz-border-radius: 0 4px 4px 0;
+  -webkit-border-radius: 0 4px 4px 0;
+  -khtml-border-radius: 0 4px 4px 0;
+  border-radius: 0 4px 4px 0;
   /*+box-shadow:inset 1px 0px 2px #6D6D6D;*/
   -moz-box-shadow: inset 1px 0px 2px #6D6D6D;
   -webkit-box-shadow: inset 1px 0px 2px #6D6D6D;
@@ -1907,11 +1907,11 @@ div.detail-group.actions td {
   border-bottom: 1px solid #43586B;
   border-right: 1px solid #43586B;
   border-left: 1px solid #43586B;
-  /*+border-radius:2px;*/
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
-  -khtml-border-radius: 2px;
-  border-radius: 2px 2px 2px 2px;
+  /*+border-radius:0 2px 2px;*/
+  -moz-border-radius: 0 2px 2px;
+  -webkit-border-radius: 0 2px 2px;
+  -khtml-border-radius: 0 2px 2px;
+  border-radius: 0 2px 2px 2px;
   /*+placement:shift 0px -1px;*/
   position: relative;
   left: 0px;
@@ -2201,11 +2201,11 @@ div.list-view div.toolbar div.section-switcher div.section.first a {
 }
 
 div.list-view div.toolbar div.section-switcher div.section.last a {
-  /*+border-radius:0 5px 5px 0px;*/
-  -moz-border-radius: 0 5px 5px 0px;
-  -webkit-border-radius: 0 5px 5px 0px;
-  -khtml-border-radius: 0 5px 5px 0px;
-  border-radius: 0 5px 5px 0px;
+  /*+border-radius:0 4px 4px 0px;*/
+  -moz-border-radius: 0 4px 4px 0px;
+  -webkit-border-radius: 0 4px 4px 0px;
+  -khtml-border-radius: 0 4px 4px 0px;
+  border-radius: 0 4px 4px 0px;
 }
 
 div.list-view div.toolbar div.section-switcher div.section.first.last a {
@@ -2267,11 +2267,11 @@ div.toolbar div.filters select {
   height: 21px;
   font-size: 12px;
   border: 1px solid #808080;
-  /*+border-radius:3px;*/
-  -moz-border-radius: 3px;
-  -webkit-border-radius: 3px;
-  -khtml-border-radius: 3px;
-  border-radius: 3px 3px 3px 3px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
   padding: 0px 0 0;
 }
 
@@ -2544,11 +2544,11 @@ Dialogs*/
 .ui-dialog {
   background: #E9E9E9 url(../images/bg-dialog-body.png) repeat-x 0px 0px;
   text-align: left;
-  /*+border-radius:10px;*/
-  -moz-border-radius: 10px;
-  -webkit-border-radius: 10px;
-  -khtml-border-radius: 10px;
-  border-radius: 10px 10px 10px 10px;
+  /*+border-radius:7px;*/
+  -moz-border-radius: 7px;
+  -webkit-border-radius: 7px;
+  -khtml-border-radius: 7px;
+  border-radius: 7px 7px 7px 7px;
   /*+box-shadow:0px -4px 15px #4C4A4A;*/
   -moz-box-shadow: 0px -4px 15px #4C4A4A;
   -webkit-box-shadow: 0px -4px 15px #4C4A4A;
@@ -2601,11 +2601,11 @@ Dialogs*/
   border: none;
   background: url(../images/gradients.png) -2px -481px;
   border: 1px solid #BFBCBC;
-  /*+border-radius:5px;*/
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px 5px 5px 5px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
 }
 
 .ui-dialog .ui-button:hover {
@@ -2635,11 +2635,11 @@ Dialogs*/
   -webkit-text-shadow: 0px -1px 1px #011238;
   -o-text-shadow: 0px -1px 1px #011238;
   text-shadow: 0px -1px 1px #011238;
-  /*+border-radius:5px;*/
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px 5px 5px 5px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
 }
 
 .ui-dialog .ui-button.ok:hover {
@@ -2871,11 +2871,11 @@ Dialogs*/
   float: right;
   margin-right: 13px;
   border: 1px solid #AAAAAA;
-  /*+border-radius:5px;*/
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px 5px 5px 5px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
 }
 
 .ui-dialog.create-form .ui-button.cancel:hover {
@@ -2892,11 +2892,11 @@ Dialogs*/
   max-height: 211px;
   overflow: auto;
   border: 1px solid #CDCDCD;
-  /*+border-radius:6px;*/
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  -khtml-border-radius: 6px;
-  border-radius: 6px 6px 6px 6px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset -1px 1px 1px #636363;*/
   -moz-box-shadow: inset -1px 1px 1px #636363;
   -webkit-box-shadow: inset -1px 1px 1px #636363;
