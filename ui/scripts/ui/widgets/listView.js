@@ -247,7 +247,7 @@
       ] = [$instanceRow.data('jsonObj')];
 
       if (!args.action.createForm &&
-          !args.action.addRow == 'true' &&
+          args.action.addRow != 'true' &&
           !action.custom && !action.uiCustom)
         cloudStack.dialog.confirm({
           message: messages.confirm(messageArgs),
@@ -293,7 +293,7 @@
             },
             ref: listViewArgs.ref,
             context: createFormContext
-          }); 
+          });
         } else {
           cloudStack.dialog.confirm({
             message: messages.confirm(messageArgs),
@@ -963,13 +963,13 @@
         args.sectionSelect.preFilter({
           context: cloudStack.context
         }) : null;
-
-      // No need to display switcher if only one entry is present
-      if (sectionPreFilter && sectionPreFilter.length == 1) {
-        $switcher.hide();
-      }
     } else {
       $sectionSelect.hide();
+    }
+
+    // No need to display switcher if only one entry is present
+    if (sectionPreFilter && sectionPreFilter.length == 1) {
+      $switcher.hide();
     }
 
     $.each(sections, function(key) {
@@ -1046,6 +1046,23 @@
     var actions = listViewData.actions;
     var reorder = listViewData.reorder;
 
+    var $switcher;
+    if (args.sections) {
+      $switcher = createSectionSwitcher(args);
+      if (section) {
+        $switcher
+          .appendTo($toolbar)
+          .find('a.' + section).addClass('active');
+        $switcher.find('div.section-select select').val(section);
+      }
+    }
+
+    if (section) {
+      listViewData = args.sections[
+        $switcher.find('select').val()
+      ].listView;
+    }
+
     // Add panel controls
     $('<div class="panel-controls">').append($('<div class="control expand">').attr({
       'ui-id': 'toggle-expand-panel'
@@ -1066,18 +1083,6 @@
     $('<tbody>').appendTo($table);
 
     createHeader(listViewData.fields, $table, actions, { reorder: reorder });
-
-    var $switcher;
-    if (args.sections) {
-      $switcher = createSectionSwitcher(args);
-      if (section) {
-        $switcher
-          .appendTo($toolbar)
-          .find('a.' + section).addClass('active');
-        $switcher.find('div.section-select select').val(section);
-      }
-    }
-
     createFilters($toolbar, listViewData.filters);
     createSearchBar($toolbar);
 
