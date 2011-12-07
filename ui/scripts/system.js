@@ -2780,7 +2780,7 @@
           type: 'select',
           title: 'Physical Resources',
           listView: {
-            id: 'zones',
+            id: 'physicalResources',
             label: 'Physical Resources',
             fields: {
               name: { label: 'Zone' },

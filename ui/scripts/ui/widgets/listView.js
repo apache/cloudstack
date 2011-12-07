@@ -1060,14 +1060,12 @@
       }
     }
 
-    if (section) {
+    if ($switcher && $switcher.find('option').size() == 1) {
       listViewData = args.sections[
         $switcher.find('select').val()
       ].listView;
 
-      if (listViewData.id != 'zones') {
-        args.activeSection = listViewData.id;        
-      }
+      args.activeSection = listViewData.id;
     }
 
     // Add panel controls

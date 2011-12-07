@@ -77,9 +77,11 @@
     },
     sections: {
       networks: {
+        id: 'networks',
         type: 'select',
         title: 'Networks',
         listView: {
+          id: 'networks',
           fields: {
             name: { label: 'Name' },
             zonename: { label: 'Zone' },
