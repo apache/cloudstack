@@ -437,9 +437,7 @@
                   // Populate network offering drop-down
                   $(args.data.networkOfferings).each(function() {
                     $('<option>')
-                      .attr({
-                        id: this.id
-                      })
+                      .val(this.id)
                       .html(this.name)
                       .appendTo($newNetwork.find('select'));
                   });
