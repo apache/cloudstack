@@ -53,6 +53,24 @@
     id: 'network',
     sectionSelect: {
       preFilter: function(args) {
+        var isSecurityGroupEnabled = false;
+        
+        $.ajax({
+          url: createURL('listNetworks'),
+          data: {
+            supportedServices: 'SecurityGroup'
+          },
+          dataType: 'json',
+          async: false,
+          success: function(data) {
+            if (data.listnetworksresponse.network &&
+                data.listnetworksresponse.network.length) {
+              isSecurityGroupEnabled = true;
+            }
+          }
+        });
+
+        if (isSecurityGroupEnabled) return ['securityGroups'];
         return ['networks'];
       },
       label: 'Select view'
@@ -74,7 +92,8 @@
             $.ajax({
               url: createURL('listNetworks'),
               data: {
-                type: 'isolated'
+                type: 'isolated',
+                supportedServices: 'SourceNat'
               },
               dataType: 'json',
               async: true,
@@ -144,12 +163,12 @@
           actions: {
             add: {
               label: 'Acquire new IP',
-
+              addRow: 'true',
               action: function(args) {
                 $.ajax({
                   url: createURL('associateIpAddress'),
                   data: {
-                    networkId: args.data.networkid
+                    networkId: args.context.networks[0].id
                   },
                   dataType: 'json',
                   async: true,
@@ -174,48 +193,10 @@
 
               messages: {
                 confirm: function(args) {
-                  return 'Are you sure you want to add this new IP?';
+                  return 'Please confirm that you would like to acquire a net IP for this network.';
                 },
                 notification: function(args) {
                   return 'Allocated IP';
-                }
-              },
-
-              createForm: {
-                title: 'Acquire new IP',
-                desc: 'Please select a network from which you want to acquire your new IP from.',
-                fields: {
-                  networkid: {
-                    label: 'Network',
-                    select: function(args) {
-                      if (args.context.networks && args.context.networks[0]) {
-                        args.response.success({
-                          data: [
-                            {
-                              id: args.context.networks[0].id,
-                              description: args.context.networks[0].name
-                            }
-                          ]
-                        });
-                      } else {
-                        $.ajax({
-                          url: createURL('listNetworks'),
-                          dataType: 'json',
-                          async: true,
-                          success: function(data) {
-                            args.response.success({
-                              data: $.map(data.listnetworksresponse.network, function(network) {
-                                return {
-                                  id: network.id,
-                                  description: network.name
-                                };
-                              })
-                            });
-                          }
-                        });                        
-                      }
-                    }
-                  }
                 }
               },
 
@@ -1374,6 +1355,7 @@
       securityGroups: {
         type: 'select',
         title: 'Security Groups',
+        id: 'securityGroups',
         listView: {
           id: 'securityGroups',
           label: 'Security Groups',
