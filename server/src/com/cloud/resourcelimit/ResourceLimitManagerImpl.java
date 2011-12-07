@@ -18,6 +18,7 @@
 package com.cloud.resourcelimit;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,7 +116,9 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
     long _resourceCountCheckInterval=0;
-
+    Map<ResourceType, Long> accountResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class); 
+    Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class); 
+    
     @Override
     public String getName() {
         return _name;
@@ -148,6 +151,19 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
         if (_resourceCountCheckInterval > 0){
             _rcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ResourceCountChecker"));
         }
+        
+        projectResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPublicIPs.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectSnapshots.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.template, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectTemplates.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.user_vm, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectUserVms.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.volume, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVolumes.key())));        
+        
+        accountResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.template, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.user_vm, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountUserVms.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.volume, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVolumes.key())));                
+        
         return true;
     }
     
@@ -183,50 +199,24 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager{
     
     @Override
     public long findCorrectResourceLimitForAccount(Account account, ResourceType type) {
-        long max = -1;
-
+        
+    	long max = -1; //if resource limit is not found, then we treat it as unlimited
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(account.getId(), ResourceOwnerType.Account, type);
 
         // Check if limit is configured for account
         if (limit != null) {
             max = limit.getMax().longValue();
         } else {
-            // If the account has an no limit set, then return global default account limits
-            try {
-                if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                    if (type == Resource.ResourceType.public_ip) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPublicIPs.key()));
-                    } else if (type == ResourceType.snapshot) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectSnapshots.key()));
-                    } else if (type == ResourceType.template) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectTemplates.key()));
-                    } else if (type == ResourceType.user_vm) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectUserVms.key()));
-                    } else if (type == ResourceType.volume) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVolumes.key()));
-                    }  else {
-                        //if resource limit is not supported, then we treat it as unlimited
-                        return -1;
-                    }
-                } else {
-                    if (type == Resource.ResourceType.public_ip) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key()));
-                    } else if (type == ResourceType.snapshot) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key()));
-                    } else if (type == ResourceType.template) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key()));
-                    } else if (type == ResourceType.user_vm) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountUserVms.key()));
-                    } else if (type == ResourceType.volume) {
-                        max = Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVolumes.key()));
-                    }  else {
-                        //if resource limit is not supported, then we treat it as unlimited
-                        return -1;
-                    }
-                } 
-            } catch (NumberFormatException nfe) {
-                s_logger.error("Invalid value is set for the default account limit.");
-            }
+            // If the account has an no limit set, then return global default account limits            
+        	Long value = null;            
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            	value = projectResourceLimitMap.get(type);                	
+            } else {
+            	value = accountResourceLimitMap.get(type);
+            } 
+            if (value != null){
+        		return value;
+            }            
         }
 
         return max;
