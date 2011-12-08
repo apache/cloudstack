@@ -1234,7 +1234,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (accountName != null && domainId != null) {
             permittedAccounts.add(_accountMgr.finalizeOwner(caller, accountName, domainId, null));
-        } else {
+        } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
             permittedAccounts.add(caller);
         }
         
