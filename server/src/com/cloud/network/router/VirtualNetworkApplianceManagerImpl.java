@@ -911,7 +911,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     command.setWait(60);
-                    final CheckRouterAnswer answer = (CheckRouterAnswer) _agentMgr.easySend(router.getHostId(), command);
+                    final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
+                    CheckRouterAnswer answer = null;
+                    if (origAnswer instanceof CheckRouterAnswer) {
+                        answer = (CheckRouterAnswer)origAnswer;
+                    } else {
+                        s_logger.warn("Unable to update router " + router.getHostName() + "'s status");
+                    }
                     RedundantState state = RedundantState.UNKNOWN;
                     boolean isBumped = router.getIsPriorityBumpUp();
                     if (answer != null && answer.getResult()) {
@@ -1330,7 +1336,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
-        if (router.getRole() == Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
+        if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
             return this.start(router, user, caller, params, null);
         }
 
