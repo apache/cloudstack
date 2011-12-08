@@ -24,14 +24,8 @@
                 confirm: function(args) {
                   return 'Are you sure you want to add a service offering?';
                 },
-                success: function(args) {
-                  return 'Your new service offering is being created.';
-                },
                 notification: function(args) {
                   return 'Creating new service offering';
-                },
-                complete: function(args) {
-                  return 'Service offering has been created successfully!';
                 }
               },
 
@@ -213,14 +207,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to delete this service offering?';
                   },
-                  success: function(args) {
-                    return 'Service offering is being deleted.';
-                  },
                   notification: function(args) {
                     return 'Deleting service offering';
-                  },
-                  complete: function(args) {
-                    return 'Service offering has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -320,14 +308,8 @@
                 confirm: function(args) {
                   return 'Are you sure you want to add a system service offering?';
                 },
-                success: function(args) {
-                  return 'Your new system service offering is being created.';
-                },
                 notification: function(args) {
                   return 'Creating new system service offering';
-                },
-                complete: function(args) {
-                  return 'System service offering has been created successfully!';
                 }
               },
 
@@ -506,14 +488,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to delete this system service offering?';
                   },
-                  success: function(args) {
-                    return 'System service offering is being deleted.';
-                  },
                   notification: function(args) {
                     return 'Deleting system service offering';
-                  },
-                  complete: function(args) {
-                    return 'System service offering has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -630,14 +606,8 @@
                 confirm: function(args) {
                   return 'Are you sure you want to add a disk offering?';
                 },
-                success: function(args) {
-                  return 'Your new disk offering is being created.';
-                },
                 notification: function(args) {
                   return 'Creating new disk offering';
-                },
-                complete: function(args) {
-                  return 'Disk offering has been created successfully!';
                 }
               },
 
@@ -755,14 +725,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to delete this disk offering?';
                   },
-                  success: function(args) {
-                    return 'Disk offering is being deleted.';
-                  },
                   notification: function(args) {
                     return 'Deleting disk offering';
-                  },
-                  complete: function(args) {
-                    return 'Disk offering has been deleted.';
                   }
                 },
                 action: function(args) {
@@ -1387,14 +1351,8 @@
                   confirm: function(args) {
                     return 'Are you sure you want to disable this network offering?';
                   },
-                  success: function(args) {
-                    return 'This network offering is being disabled.';
-                  },
                   notification: function(args) {
                     return 'Disabling network offering';
-                  },
-                  complete: function(args) {
-                    return 'Network offering has been disabled.';
                   }
                 },
                 action: function(args) {
