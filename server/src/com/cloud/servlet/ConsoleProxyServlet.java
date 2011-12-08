@@ -38,6 +38,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.IdentityService;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOSVO;
@@ -398,26 +399,21 @@ public class ConsoleProxyServlet extends HttpServlet {
         switch(vm.getType())
         {
         case User :
-        	if(vm.getAccountId() != accountObj.getId()) {
-        		
-        		// access from another normal user
-        		if(accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-	        		if(s_logger.isDebugEnabled()) {
+        	try {
+            	_accountMgr.checkAccess(accountObj, null, vm);
+        	} catch (PermissionDeniedException ex) {
+        		if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+        			if (s_logger.isDebugEnabled()) {
 	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
 		        			+ " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
 	                }
-	        		return false;
+        		} else if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+        			if(s_logger.isDebugEnabled()) {
+	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
+		        			+ " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
+	                }
         		}
-        		
-        		if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
-        			if(!_domainMgr.isChildDomain(accountObj.getDomainId(), vm.getDomainId())) {
-    	        		if(s_logger.isDebugEnabled()) {
-    	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
-    		        			+ " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
-    	                }
-        				return false;
-        			}
-        		}
+        		return false;
         	}
         	break;
         	
