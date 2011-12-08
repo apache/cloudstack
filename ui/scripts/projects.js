@@ -282,7 +282,8 @@
           async: true,
           success: function(data) {
             args.response.success({
-              data: data.listprojectsresponse.project
+              data: data.listprojectsresponse.project,
+              actionFilter: projectsActionFilter
             });
           }
         });
@@ -354,5 +355,13 @@
         }
       }
     }
+  };
+
+  var projectsActionFilter = function(args) {
+    if (args.context.item.account == args.context.users[0].account) {
+      return ['destroy'];
+    }
+
+    return [];
   };
 } (cloudStack, testData));
