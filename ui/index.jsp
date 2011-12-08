@@ -238,7 +238,7 @@
 
                                 <!-- Service offering -->
                                 <div class="select-desc field service-offering hide-if-unselected">
-                                  <div class="name">Service Offering</div>
+                                  <div class="name">Network Offering</div>
                                   <div class="desc">
                                     <select name="new-network-networkofferingid">
                                     </select>
