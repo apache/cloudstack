@@ -4116,14 +4116,16 @@ label.error {
 
 .multi-wizard .content {
   background: #FFFFFF;
-  width: 430px;
-  height: 401px;
+  width: 440px;
+  min-height: 366px;
   margin: 24px 0 0;
-  /*+border-radius:6px;*/
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  -khtml-border-radius: 6px;
-  border-radius: 6px 6px 6px 6px;
+  padding-bottom: 8px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
+  display: inline-block;
   float: left;
 }
 
@@ -4282,9 +4284,9 @@ label.error {
   display: block;
   height: 41px;
   border: none;
-  /*+placement:shift 0px 5px;*/
+  /*+placement:shift -6px 5px;*/
   position: relative;
-  left: 0px;
+  left: -6px;
   top: 5px;
   overflow: hidden;
   display: inline-block;
