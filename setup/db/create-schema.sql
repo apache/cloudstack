@@ -1096,7 +1096,7 @@ CREATE TABLE  `cloud`.`template_zone_ref` (
 CREATE TABLE  `cloud`.`console_proxy` (
   `id` bigint unsigned NOT NULL auto_increment,
   `public_mac_address` varchar(17) unique COMMENT 'mac address of the public facing network card',
-  `public_ip_address` char(40) UNIQUE COMMENT 'public ip address for the console proxy',
+  `public_ip_address` char(40) COMMENT 'public ip address for the console proxy',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the console proxy',
   `active_session` int(10) NOT NULL DEFAULT 0 COMMENT 'active session number',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
@@ -1108,7 +1108,7 @@ CREATE TABLE  `cloud`.`console_proxy` (
 CREATE TABLE  `cloud`.`secondary_storage_vm` (
   `id` bigint unsigned NOT NULL auto_increment,
   `public_mac_address` varchar(17)  unique COMMENT 'mac address of the public facing network card',
-  `public_ip_address` char(40) UNIQUE COMMENT 'public ip address for the sec storage vm',
+  `public_ip_address` char(40) COMMENT 'public ip address for the sec storage vm',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the sec storage vm',
   `guid` varchar(255)  COMMENT 'copied from guid of secondary storage host',
   `nfs_share` varchar(255)  COMMENT 'server and path exported by the nfs server ',

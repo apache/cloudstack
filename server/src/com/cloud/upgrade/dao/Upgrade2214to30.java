@@ -24,6 +24,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -61,7 +64,10 @@ public class Upgrade2214to30 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+    	//encrypt data
         encryptData(conn);
+        //drop keys
+        dropKeysIfExist(conn);
     }
 
     @Override
@@ -219,6 +225,21 @@ public class Upgrade2214to30 implements DbUpgrade {
                 }
             } catch (SQLException e) {
             }
+        }
+    }
+    
+    
+    private void dropKeysIfExist(Connection conn) {
+        HashMap<String, List<String>> uniqueKeys = new HashMap<String, List<String>>();
+        List<String> keys = new ArrayList<String>();
+        keys.add("public_ip_address");
+        uniqueKeys.put("console_proxy", keys);
+        uniqueKeys.put("secondary_storage_vm", keys);
+
+        // drop keys
+        s_logger.debug("Dropping public_ip_address keys from secondary_storage_vm and console_proxy tables...");
+        for (String tableName : uniqueKeys.keySet()) {
+            DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), true);
         }
     }
 }
