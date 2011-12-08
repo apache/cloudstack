@@ -5,6 +5,10 @@
     <title>CloudStack</title>
     <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+
+    <!--[if IE 7]>
+        <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
+    <![endif]-->
   </head>
   <body>
     <!-- CloudStack widget content -->

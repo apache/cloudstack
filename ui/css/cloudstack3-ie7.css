@@ -1,0 +1,14 @@
+/*[fmt]1C20-1C0D-E*/
+div.panel div.list-view {
+  position: relative;
+  overflow-x: hidden;
+}
+
+div.toolbar {
+  top: expression(this.offsetParent.scrollTop);;
+}
+
+div.panel div.list-view div.fixed-header {
+  top: expression(this.offsetParent.scrollTop + 30);;
+}
+
