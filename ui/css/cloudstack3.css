@@ -1237,9 +1237,15 @@ div.list-view td.state.off {
   height: 78%;
   width: 97%;
   padding-top: 7px;
-  overflow: auto;
+  overflow: hidden;
   height: 591px;
   margin: -4px 0 0;
+}
+
+.detail-view .main-groups {
+  max-height: 469px;
+  overflow: auto;
+  margin-right: 12px;
 }
 
 .detail-group table {
@@ -1301,6 +1307,11 @@ div.list-view td.state.off {
   margin: 0 0 0 12px;
   padding: 9px 20px;
   background: url(../images/bg-gradients.png) 0px -221px;
+  /*+placement:shift -1px 550px;*/
+  position: relative;
+  left: -1px;
+  top: 550px;
+  position: absolute;
 }
 
 .detail-view .button.done:hover {

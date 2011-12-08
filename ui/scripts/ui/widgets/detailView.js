@@ -601,12 +601,14 @@
       });
     }
 
+    $detailGroups.append($('<div>').addClass('main-groups'));
+
     $(fields).each(function() {
       var fieldGroup = this;
 
       var $detailTable = $('<tbody></tbody>').appendTo(
         $('<table></table>').appendTo(
-          $('<div></div>').addClass('detail-group').appendTo($detailGroups)
+          $('<div></div>').addClass('detail-group').appendTo($detailGroups.find('.main-groups'))
         ));
 
       $.each(fieldGroup, function(key, value) {
@@ -678,7 +680,7 @@
           actionFilter: actionFilter,
           data: data,
           context: $detailView.data('view-args').context
-        }).prependTo($firstRow.closest('div.detail-group'));
+        }).prependTo($firstRow.closest('div.detail-group').closest('.details'));
 
       // 'View all' button
       if (detailViewArgs.viewAll) {
