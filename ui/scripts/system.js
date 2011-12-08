@@ -259,9 +259,15 @@
                       selectedZoneObj = json.updatezoneresponse.zone; //override selectedZoneObj after update zone
                     }
                   });
-
+                 
+                  var vlan;                  
+                  if(args.data.endVlan == null || args.data.endVlan.length == 0)
+                    vlan = args.data.startVlan;
+                  else
+                    vlan = args.data.startVlan + "-" + args.data.endVlan;                  
+                  
                   $.ajax({
-                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + "&vlan=" + todb(args.data.vlan)),
+                    url: createURL("updatePhysicalNetwork&id=" + selectedPhysicalNetworkObj.id + "&vlan=" + todb(vlan)),
                     dataType: "json",
                     success: function(json) {
                       var jobId = json.updatephysicalnetworkresponse.jobid;
@@ -291,10 +297,22 @@
                   {
                     id: { label: 'ID' },
                     state: { label: 'State' },
+                    
+                    /*
                     vlan: {
                       label: 'VLAN',
                       isEditable: true
                     },
+                    */
+                    startVlan: { 
+                      label: 'Start Vlan', 
+                      isEditable: true 
+                    },
+                    endVlan: { 
+                      label: 'End Vlan', 
+                      isEditable: true 
+                    },
+                    
                     broadcastdomainrange: { label: 'Broadcast domain range' },
                     zoneid: { label: 'Zone ID' },
                     guestcidraddress: {
@@ -305,6 +323,23 @@
                 ],
                 dataProvider: function(args) {
                   selectedPhysicalNetworkObj["guestcidraddress"] = selectedZoneObj.guestcidraddress;
+                                    
+                  var startVlan, endVlan;
+                  var vlan = selectedPhysicalNetworkObj.vlan;                  
+                  
+                  if(vlan != null && vlan.length > 0) {
+                    if(vlan.indexOf("-") != -1) {
+                      var vlanArray = vlan.split("-");
+                      startVlan = vlanArray[0];
+                      endVlan = vlanArray[1];
+                    }
+                    else {
+                      startVlan = vlan;
+                    }
+                    selectedPhysicalNetworkObj["startVlan"] = startVlan;
+                    selectedPhysicalNetworkObj["endVlan"] = endVlan;
+                  }  
+                                    
                   args.response.success({
                     actionFilter: function() {
                       var allowedActions = [];
