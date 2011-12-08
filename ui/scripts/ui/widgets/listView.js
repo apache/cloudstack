@@ -926,6 +926,10 @@
               reorder: reorder
             });
             $table.dataTable(null, { noSelect: uiCustom });
+
+            setTimeout(function() {
+              $table.dataTable('refresh');              
+            });
           },
           error: function(args) {
             setLoadingArgs.loadingCompleted();
