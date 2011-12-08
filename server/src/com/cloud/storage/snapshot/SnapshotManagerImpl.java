@@ -993,11 +993,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
 
+        SearchBuilder<AccountVO> accountSearch = null;
         if ((permittedAccounts.isEmpty()) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+            accountSearch = _accountDao.createSearchBuilder();
             sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
-
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             if (isRecursive) {
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -1008,9 +1008,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         
         if (skipProjectSnapshots) {
-        	SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-       	 	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
-       	 	sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        	if(accountSearch == null){
+        		accountSearch = _accountDao.createSearchBuilder();
+       	 		sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        	}
+        	accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.NEQ);
         }
 
         SearchCriteria<SnapshotVO> sc = sb.create();
