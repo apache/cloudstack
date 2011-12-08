@@ -73,10 +73,6 @@ table thead th {
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
-  /*+placement:shift;*/
-  position: relative;
-  left: 0;
-  top: 0;
   font-weight: normal;
 }
 
@@ -107,7 +103,6 @@ table th {
   font-size: 12px;
   overflow: hidden;
   vertical-align: middle;
-  position: relative;
 }
 
 table tbody td.loading {
@@ -218,7 +213,10 @@ body.login {
   display: block;
   width: 100%;
   height: 245px;
-  margin: 166px auto auto;
+  /*+placement:shift 0 100px;*/
+  position: relative;
+  left: 0;
+  top: 100px;
   background: #FFFFFF;
   /*+box-shadow:0px 3px 5px #D5D5D5;*/
   -moz-box-shadow: 0px 3px 5px #D5D5D5;
@@ -389,11 +387,11 @@ body.login {
   margin: -352px auto auto;
   z-index: 10;
   background: #FFFFFF -114px -141px;
-  /*+box-shadow:0px -4px 10px #C6C6C6;*/
-  -moz-box-shadow: 0px -4px 10px #C6C6C6;
-  -webkit-box-shadow: 0px -4px 10px #C6C6C6;
-  -o-box-shadow: 0px -4px 10px #C6C6C6;
-  box-shadow: 0px -4px 10px #C6C6C6;
+  /*+box-shadow:0px -7px 10px #C6C6C6;*/
+  -moz-box-shadow: 0px -7px 10px #C6C6C6;
+  -webkit-box-shadow: 0px -7px 10px #C6C6C6;
+  -o-box-shadow: 0px -7px 10px #C6C6C6;
+  box-shadow: 0px -7px 10px #C6C6C6;
 }
 
 .install-wizard h2 {
@@ -1367,10 +1365,10 @@ div.detail-group td.view-all:hover a {
 }
 
 div.detail-group td.view-all a span {
-  /*+placement:shift -4px 8px;*/
+  /*+placement:shift -4px 7px;*/
   position: relative;
   left: -4px;
-  top: 8px;
+  top: 7px;
 }
 
 div.detail-group td.view-all div.view-all div.end {
@@ -1520,12 +1518,12 @@ div.detail-group.actions td {
 }
 
 #header div.logo {
-  width: 250px;
+  width: 170px;
   height: 47px;
   position: relative;
   float: left;
-  margin: 4px 0 0 5px;
-  background: url(../images/logo.png) no-repeat center;
+  margin: 4px 0 0 19px;
+  background: url(../images/logo.png) no-repeat 0 center;
 }
 
 #header div.controls {
@@ -1534,7 +1532,6 @@ div.detail-group.actions td {
   float: right;
   width: auto;
   margin-top: 8px;
-  max-width: 886px;
   display: inline-block;
   background: url(../images/citrix-logo-darkbg.png) no-repeat 97% 8px;
   padding: 0 96px 0 0;
@@ -1595,7 +1592,6 @@ div.detail-group.actions td {
 }
 
 #user {
-  width: 139px;
   height: 30px;
   margin: 5px 6px 0 0;
   position: relative;
@@ -1606,8 +1602,9 @@ div.detail-group.actions td {
 
 #user div.name {
   background: url(../images/bg-gradients.png) 0px -867px;
+  display: inline-block;
   float: left;
-  padding: 9px 18px 7px 13px;
+  padding: 9px 18px 7px 12px;
   border: 1px solid #7A7A7A;
   border-bottom: 1px solid #ADADAD;
   /*+box-shadow:inset 0px -1px 2px #6D6D6D;*/
@@ -1624,7 +1621,6 @@ div.detail-group.actions td {
   /*[empty]border-top:;*/
   min-width: 75px;
   text-align: center;
-  max-width: 75px;
   height: 12px;
   overflow: hidden;
   font-weight: bold;
@@ -1633,6 +1629,7 @@ div.detail-group.actions td {
   -webkit-text-shadow: 0px -1px 1px #464646;
   -o-text-shadow: 0px -1px 1px #464646;
   text-shadow: 0px -1px 1px #464646;
+  margin: 0;
 }
 
 #user div.options {
@@ -2085,10 +2082,10 @@ div.toolbar div.button.refresh span {
 div.toolbar div.button.add span {
   padding: 0px 0 0px 18px;
   background: url(../images/icons.png) no-repeat -626px -209px;
-  /*+placement:shift 0px 1px;*/
+  /*+placement:shift 0px 0px;*/
   position: relative;
   left: 0px;
-  top: 1px;
+  top: 0px;
 }
 
 #browser div.panel.selected div.toolbar {
@@ -2538,6 +2535,18 @@ table td.actions .action.disabled .icon {
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=20);
   -moz-opacity: 0.2;
   opacity: 0.2;
+}
+
+table tr.odd td.actions .action.disabled .icon {
+  background-color: #F2F0F0;
+}
+
+table tr.even td.actions .action.disabled .icon {
+  background-color: #DFE1E3;
+}
+
+table tr.selected td.actions .action.disabled .icon {
+  background-color: #CBDDF3;
 }
 
 /*** Action icons
@@ -3840,8 +3849,22 @@ Dialogs*/
 
 /*** Add initial resource form*/
 .panel .add-first-network-resource {
-  padding: 37px;
+  margin: 37px;
   font-size: 14px;
+  background: #FFFFFF;
+  padding: 19px 19px 79px;
+  /*+border-radius:12px;*/
+  -moz-border-radius: 12px;
+  -webkit-border-radius: 12px;
+  -khtml-border-radius: 12px;
+  border-radius: 12px 12px 12px 12px;
+  border: 1px solid #ECECEC;
+}
+
+.panel .add-first-network-resource form {
+  display: inline-block;
+  height: 442px;
+  overflow: auto;
 }
 
 .panel .add-first-network-resource .title {
@@ -3871,6 +3894,8 @@ Dialogs*/
 
 .panel .add-first-network-resource .form-item label {
   float: left;
+  width: 109px;
+  text-align: right;
 }
 
 .panel .add-first-network-resource .form-item label.error {
@@ -3922,7 +3947,7 @@ Dialogs*/
   border: 1px solid #858585;
   color: #FFFFFF;
   clear: both;
-  /*[empty]font-size:;*/
+  /*[empty]position:;*/
 }
 
 .panel .add-first-network-resource .multi-array {
@@ -4413,11 +4438,11 @@ label.error {
   cursor: pointer;
   font-weight: bold;
   font-size: 12px;
-  /*+border-radius:8px;*/
-  -moz-border-radius: 8px;
-  -webkit-border-radius: 8px;
-  -khtml-border-radius: 8px;
-  border-radius: 8px 8px 8px 8px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px 4px 4px 4px;
 }
 
 .multi-wizard .buttons .button.next {
@@ -5120,14 +5145,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view > ul {
+.tree-view>ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view > ul > li {
+.tree-view>ul>li {
   left: 5px;
 }
 
@@ -5162,7 +5187,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded > .expand {
+.tree-view ul li.expanded>.expand {
   background-position: -631px -228px;
 }
 
@@ -5273,9 +5298,6 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .multi-edit th.add-rule,
 .multi-edit td.add-rule {
-  min-width: 45px !important;
-  max-width: 45px !important;
-  width: 45px !important;
 }
 
 .multi-edit .data-table td.add-vm:hover {
@@ -5579,7 +5601,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms > div {
+.recurring-snapshots .schedule .forms>div {
 }
 
 .recurring-snapshots .schedule .forms form {
@@ -6307,7 +6329,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: 0px;
   top: -10px;
-  margin-right: 60px;
+  margin-right: 10px;
 }
 
 #header div.view-switcher.alt {
@@ -6495,6 +6517,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: -31px;
 }
 
+.project-view .project-dashboard .ui-tabs .multi-edit table td {
+  background: #EAEAEA;
+}
+
 /*** New project form*/
 .new-project {
   display: inline-block;
@@ -6527,10 +6553,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
-  width: 736px;
+  width: 686px;
   display: inline-block;
   background: #DFDFDF;
-  margin: -2px 0 -1px -27px;
+  margin: -2px 0 -4px auto;
 }
 
 .new-project .field span.value {
@@ -6543,7 +6569,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .new-project .field label {
   display: block;
-  width: 150px;
+  width: 104px;
   height: 59px;
   color: #5B5B5B;
   float: left;
@@ -6555,9 +6581,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .new-project .field label.error {
   color: #FF0000;
   font-size: 9px;
-  /*+placement:displace 204px 29px;*/
+  /*+placement:displace 154px 29px;*/
   position: absolute;
-  margin-left: 204px;
+  margin-left: 154px;
   margin-top: 29px;
   background: none;
   width: auto;
@@ -6593,10 +6619,10 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
   cursor: pointer;
   color: #838181;
-  /*+placement:shift 488px 0px;*/
+  /*+placement:shift 488px 9px;*/
   position: relative;
   left: 488px;
-  top: 0px;
+  top: 9px;
   margin: 19px 0 0 40px;
 }
 
@@ -6609,11 +6635,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   display: inline-block;
   height: 31px;
   border: none;
-  /*+placement:float-right 63px 9px;*/
+  /*+placement:float-right 63px 18px;*/
   float: right;
   position: relative;
   left: 63px;
-  top: 9px;
+  top: 18px;
   color: #FFFFFF;
   /*+text-shadow:0px -1px 1px #465259;*/
   -moz-text-shadow: 0px -1px 1px #465259;
@@ -6681,9 +6707,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .new-project .review .ui-tabs ul {
   text-align: left;
-  /*+placement:shift -111px 1px;*/
+  /*+placement:shift -233px 1px;*/
   position: relative;
-  left: -111px;
+  left: -233px;
   top: 1px;
 }
 
@@ -6766,7 +6792,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   box-shadow: inset 0px 2px 2px #FFFFFF;
   float: right;
   font-size: 13px;
-  margin: 10px -40px 0 0;
+  margin: 19px -40px 0 0;
   padding: 13px 7px 14px 8px;
   /*+border-radius:10px;*/
   -moz-border-radius: 10px;
@@ -6940,22 +6966,22 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .enable .icon,
 .enableStaticNAT .icon {
-  background-position: -104px -92px;
+  background-position: -102px -92px;
 }
 
 .enable:hover .icon,
 .enableStaticNAT:hover .icon {
-  background-position: -104px -676px;
+  background-position: -102px -676px;
 }
 
 .disable .icon,
 .disableStaticNAT .icon {
-  background-position: -138px -93px;
+  background-position: -136px -93px;
 }
 
 .disable:hover .icon,
 .disableStaticNAT:hover .icon {
-  background-position: -138px -677px;
+  background-position: -136px -677px;
 }
 
 .add .icon,
@@ -7055,19 +7081,19 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .enableVPN .icon {
-  background-position: -200px -3px;
+  background-position: -198px -3px;
 }
 
 .enableVPN:hover .icon {
-  background-position: -199px -586px;
+  background-position: -197px -586px;
 }
 
 .disableVPN .icon {
-  background-position: -200px -32px;
+  background-position: -198px -32px;
 }
 
 .disableVPN:hover .icon {
-  background-position: -199px -615px;
+  background-position: -197px -615px;
 }
 
 .addIpRange .icon {
