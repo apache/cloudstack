@@ -885,15 +885,11 @@
               <div class="select">
                 <label>Zone:</label>
                 <select>
-                  <option>San Jose</option>
                 </select>
               </div>
               <div class="select">
                 <label>Pods:</label>
                 <select>
-                  <option>All Pods</option>
-                  <option>Pod A</option>
-                  <option>Pod B</option>
                 </select>
               </div>
             </div>
@@ -904,49 +900,49 @@
                 <div class="name">Public IP Addresses</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">35</span> / <span class="total">100</span>
+                    Allocated: <span class="allocated">0</span> / <span class="total">0</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 35%;"></div>
+                  <div class="chart-line" style="width: 0%;"></div>
                 </div>
-                <div class="percentage"><span class="value">35</span>%</div>
+                <div class="percentage"><span class="value">0</span>%</div>
               </li>
               <li>
                 <div class="name">Private IP Addresses</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">15</span> / <span class="total">100</span>
+                    Allocated: <span class="allocated">0</span> / <span class="total">0</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 15%;"></div>
+                  <div class="chart-line" style="width: 0%;"></div>
                 </div>
-                <div class="percentage"><span class="value">15</span>%</div>
+                <div class="percentage"><span class="value">0</span>%</div>
               </li>
               <li>
                 <div class="name">Memory Allocated</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">23mb</span> / <span class="total">100mb</span>
+                    Allocated: <span class="allocated">0mb</span> / <span class="total">0mb</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 23%;"></div>
+                  <div class="chart-line" style="width: 0%;"></div>
                 </div>
-                <div class="percentage"><span class="value">23</span>%</div>
+                <div class="percentage"><span class="value">0</span>%</div>
               </li>
               <li>
                 <div class="name">CPU Allocated</div>
                 <div class="value">
                   <div class="content">
-                    Allocated: <span class="allocated">75</span> / <span class="total">100</span>
+                    Allocated: <span class="allocated">0</span> / <span class="total">0</span>
                   </div>
                 </div>
                 <div class="chart">
-                  <div class="chart-line" style="width: 75%;"></div>
+                  <div class="chart-line" style="width: 0%;"></div>
                 </div>
-                <div class="percentage"><span class="value">75</span>%</div>
+                <div class="percentage"><span class="value">0</span>%</div>
               </li>
             </ul>
           </div>
@@ -961,26 +957,26 @@
           <ul>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 1</span>
+                <p>Alert 1</p>
               </div>
             </li>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 2</span>
+                <p>Alert 2</p>
               </div>
             </li>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 3</span>
+                <p>Alert 3</p>
               </div>
             </li>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 4</span>
+                <p>Alert 4</p>
               </div>
             </li>
           </ul>
@@ -995,26 +991,26 @@
           <ul>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 1</span>
+                <p>Alert 1</p>
               </div>
             </li>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 2</span>
+                <p>Alert 2</p>
               </div>
             </li>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 3</span>
+                <p>Alert 3</p>
               </div>
             </li>
             <li class="error">
               <div class="content">
-                <span class="title">Monitoring - Console Proxy</span>
-                <p>Unable to restart v-14-VM</p>
+                <span class="title">Alert 4</span>
+                <p>Alert 4</p>
               </div>
             </li>
           </ul>

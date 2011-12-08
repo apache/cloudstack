@@ -3,7 +3,13 @@
   cloudStack.sections.dashboard = {
     title: 'Dashboard',
     show: function() {
-      return $('#template').find('div.dashboard.admin').clone();
+      var $dashboard = $('#template').find('div.dashboard.admin').clone();
+
+      $dashboard.find('.view-all').click(function() {
+        $('#navigation li.events').click();
+      });
+
+      return $dashboard;
     }
   };
 
