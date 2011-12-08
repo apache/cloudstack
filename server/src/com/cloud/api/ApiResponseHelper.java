@@ -2654,7 +2654,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         //FIXME - either set netmask or cidr
         response.setCidr(network.getCidr());
-        response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+        if(network.getCidr() != null){
+        	response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+        }
         
         //FIXME - either set broadcast URI or vlan
         if (network.getBroadcastUri() != null) {
