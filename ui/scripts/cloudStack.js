@@ -38,6 +38,8 @@
      * Generic error handling
      */
     $.ajaxSetup({
+      async: true,
+      dataType: 'json',
       cache: false,
       error: function(data) {
         cloudStack.dialog.notice({ message: parseXMLHttpResponse(data) });
