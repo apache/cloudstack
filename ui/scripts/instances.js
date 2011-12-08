@@ -431,36 +431,35 @@
                     array1.push("&size=" + args.data.size);
                 }
 
-                //step 5: select network      ???      
+                //step 5: select network          
                 if (step5ContainerType == 'select-network') {                
-                  var array2 = [];    
-                                
-                  var defaultNetwork = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID                    
-                  
-                  var checkedNetworks;                 
+                  var array2 = [];  
+                  var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID                    
+                
+                  var checkedNetworkIdArray;                 
                   if(typeof(args.data["my-networks"]) == "object" && args.data["my-networks"].length != null) { //args.data["my-networks"] is an array of string, e.g. ["203", "202"],
-                    checkedNetworks = args.data["my-networks"];                          
+                    checkedNetworkIdArray = args.data["my-networks"];                          
                   }
                   else if(typeof(args.data["my-networks"]) == "string" && args.data["my-networks"].length > 0) { //args.data["my-networks"] is a string, e.g. "202"
-                    checkedNetworks = [];
-                    checkedNetworks.push(args.data["my-networks"]);
+                    checkedNetworkIdArray = [];
+                    checkedNetworkIdArray.push(args.data["my-networks"]);
                   }
                   else { // typeof(args.data["my-networks"]) == null 
-                    checkedNetworks = [];
+                    checkedNetworkIdArray = [];
                   }
                 
                   //create new network starts here  
                   if(args.data["new-network"] == "create-new-network") {                       
-                    var isCreateNetworkSuccessful = true;
+                    var isCreateNetworkSuccessful = true;                    
                     $.ajax({
                       url: createURL("createNetwork&networkOfferingId="+args.data["new-network-networkofferingid"]+"&name="+todb(args.data["new-network-name"])+"&displayText="+todb(args.data["new-network-name"])+"&zoneId="+selectedZoneObj.id),
                       dataType: "json",
                       async: false,
                       success: function(json) {                      
                         newNetwork = json.createnetworkresponse.network;                                           
-                        checkedNetworks.push(newNetwork.id);                                                
-                        if(defaultNetwork == "new-network")
-                          defaultNetwork = newNetwork.id;  
+                        checkedNetworkIdArray.push(newNetwork.id);                                                
+                        if(defaultNetworkId == "new-network")
+                          defaultNetworkId = newNetwork.id;  
                       },                      
                       error: function(XMLHttpResponse) {      
                         isCreateNetworkSuccessful = false;                          
@@ -468,32 +467,24 @@
                         alert(errorMsg);
                         args.response.error(errorMsg);    //args.response.error(errorMsg) here doesn't show errorMsg. Waiting for Brian to fix it. use alert(errorMsg) to show errorMsg for now.                    
                       }  
-                    });  
-                  }  
-                    
-                  if(isCreateNetworkSuccessful == false) {                    
-                    return;  
-                  }                    
+                    });                     
+                    if(isCreateNetworkSuccessful == false)                     
+                      return;                                             
+                  }               
                   //create new network ends here
                   
-                  //add default network first
-                  if(defaultNetwork != null && defaultNetwork.length > 0)
-                    array2.push(defaultNetwork);
+                  //add default network first                  
+                  if(defaultNetworkId != null && defaultNetworkId.length > 0)
+                    array2.push(defaultNetworkId);
                  
-                  //then, add other checked networks                 
-                  if(typeof(checkedNetworks) == "object" && checkedNetworks.length != null) { //checkedNetworks might be: (1) an array of string, e.g. ["203", "202"],
-                    if(checkedNetworks != null && checkedNetworks.length > 0) {
-                      for(var i=0; i < checkedNetworks.length; i++) {
-                        if(checkedNetworks[i] != defaultNetwork) //exclude defaultNetwork that has been added to array2
-                          array2.push(checkedNetworks[i]);
-                      }
+                  //then, add other checked networks  
+                  if(checkedNetworkIdArray.length > 0) {
+                    for(var i=0; i < checkedNetworkIdArray.length; i++) {
+                      if(checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+                        array2.push(checkedNetworkIdArray[i]);
                     }
-                  }                  
-                  else if(typeof(checkedNetworks) == "string" && checkedNetworks.length > 0) { //checkedNetworks might be: (2) just an string, e.g. "202"
-                    if(checkedNetworks != defaultNetwork) //exclude defaultNetwork that has been added to array2
-                      array2.push(checkedNetworks);
-                  }
-                               
+                  }                                   
+                                                
                   array1.push("&networkIds=" + array2.join(","));
                 }
                 else if (step5ContainerType == 'select-security-group') {
