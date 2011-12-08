@@ -1493,6 +1493,7 @@ div.detail-group.actions td {
 .detail-group table td.detail-actions div.action.single a {
   width: 31px;
   height: 26px;
+  background: url(../images/buttons.png);
   background-position: -414px -625px;
 }
 
