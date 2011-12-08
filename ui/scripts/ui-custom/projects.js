@@ -23,7 +23,9 @@
         }
       };
 
-      if (cloudStack.context.projects) {
+      // Only show management tabs to owner of project
+      if (cloudStack.context.projects &&
+          (cloudStack.context.projects[0].account == cloudStack.context.users[0].account)) {
         tabs['Users'] = function() {
           return $('<div>').addClass('management');
         };
