@@ -3988,6 +3988,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_DELETE, eventDescription = "deleting physical network", async = true)
+    @DB
     public boolean deletePhysicalNetwork(Long physicalNetworkId) {
 
         // verify input parameters
