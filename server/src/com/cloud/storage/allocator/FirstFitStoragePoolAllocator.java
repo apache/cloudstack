@@ -56,7 +56,10 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
  
 	    VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
-	    Account account = vmProfile.getOwner();
+	    Account account = null;
+	    if(vmProfile.getVirtualMachine() != null){
+	    	account = vmProfile.getOwner();
+	    }
 	    
     	List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
@@ -84,7 +87,8 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         
         StatsCollector sc = StatsCollector.getInstance();
 
-        if(_allocationAlgorithm.equals("random")) {
+        //FixMe: We are ignoring userdispersing algorithm when account is null. Find a way to get account ID when VMprofile is null
+        if(_allocationAlgorithm.equals("random") || (account == null)) {
             // Shuffle this so that we don't check the pools in the same order.
             Collections.shuffle(pools);
         }else if(_allocationAlgorithm.equals("userdispersing")){
