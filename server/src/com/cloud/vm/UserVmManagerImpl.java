@@ -2216,20 +2216,24 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             NetworkVO defaultNetwork = null;
 
             // if no network is passed in
-            // 1) Check if default virtual network offering has Availability=Required. If it's true, search for corresponding
+            // Check if default virtual network offering has Availability=Required. If it's true, search for corresponding
             // network
             // * if network is found, use it. If more than 1 virtual network is found, throw an error
             // * if network is not found, create a new one and use it
 
-            List<NetworkOfferingVO> defaultVirtualOffering = _networkOfferingDao.listByTrafficTypeGuestTypeAndState(NetworkOffering.State.Enabled, TrafficType.Guest, Network.GuestType.Isolated);
+            List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+            if (requiredOfferings.size() < 1) {
+            	throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required + " to automatically create the network as a part of vm creation");
+            }
+            
             PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
-            if (defaultVirtualOffering.get(0).getAvailability() == Availability.Required) {
+            if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
 
                 if (virtualNetworks.isEmpty()) {
-                    s_logger.debug("Creating default Virtual network for account " + owner + " as a part of deployVM process");
-                    Network newNetwork = _networkMgr.createGuestNetwork(defaultVirtualOffering.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
+                    Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
                             null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
@@ -2237,21 +2241,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 } else {
                     defaultNetwork = virtualNetworks.get(0);
                 }
+            } else {
+            	throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled); 
             }
 
             networkList.add(defaultNetwork);
 
         } else {
-
-            boolean requiredNetworkOfferingIsPresent = false;
-            List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
-            Long requiredOfferingId = null;
-
-            if (!requiredOfferings.isEmpty()) {
-                // in 2.2.x there can be only one required offering - default Virtual
-                requiredOfferingId = requiredOfferings.get(0).getId();
-            }
-
             for (Long networkId : networkIdList) {
                 NetworkVO network = _networkDao.findById(networkId);
                 if (network == null) {
@@ -2275,18 +2271,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (networkOffering.isSystemOnly()) {
                     throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
                 }
-
-                if (requiredOfferingId != null && network.getNetworkOfferingId() == requiredOfferingId.longValue()) {
-                    requiredNetworkOfferingIsPresent = true;
-                }
-
                 networkList.add(network);
-            }
-
-            // If default Virtual network offering is Required, it has to be specified in the network list
-            if (requiredOfferingId != null && !requiredNetworkOfferingIsPresent) {
-                throw new InvalidParameterValueException("Network created from the network offering id=" + requiredOfferingId
-                        + " is required; change network offering availability to be Optional to relax this requirement");
             }
         }
 

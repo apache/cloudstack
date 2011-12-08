@@ -3132,6 +3132,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         tags = cleanupTags(tags);
+        
+        //validate availability value
+        if (availability == NetworkOffering.Availability.Required) {
+	        boolean canOffBeRequired = (type == GuestType.Isolated && serviceProviderMap.containsKey(Service.SourceNat));
+	        if (!canOffBeRequired) {
+	        	throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with " + Service.SourceNat.getName() + " enabled");
+	        }
+        
+	        //only one network offering in the system can be Required
+        	List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+            if (!offerings.isEmpty()) {
+            	throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
+            }
+        }
 
         Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
         boolean dedicatedLb = false;
@@ -3143,7 +3157,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             } else {
             	dedicatedLb = true;
             }
-            
         }
 
         Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
@@ -3433,6 +3446,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (availability == null) {
                 throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
             } else {
+            	if (availability == NetworkOffering.Availability.Required) {
+	            	boolean canOffBeRequired = (offering.getGuestType() == GuestType.Isolated && _networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Service.SourceNat));
+	                if (!canOffBeRequired) {
+	                	throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with " + Service.SourceNat.getName() + " enabled");
+	                }
+	                
+	                //only one network offering in the system can be Required
+	                List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+	                if (!offerings.isEmpty() || offerings.get(0).getId() != offering.getId()) {
+	                	throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
+	                }
+            	}
                 offering.setAvailability(availability);
             }
         }
