@@ -433,24 +433,43 @@
 
                 //step 5: select network      ???      
                 if (step5ContainerType == 'select-network') {                
-                  var array2 = [];                 
-                  var defaultNetwork = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to "new-network"                  
-                  var checkedNetworks = args.data["my-networks"]; 
+                  var array2 = [];    
+                                
+                  var defaultNetwork = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID                    
+                  
+                  var checkedNetworks;                 
+                  if(typeof(args.data["my-networks"]) == "object" && args.data["my-networks"].length != null) { //args.data["my-networks"] is an array of string, e.g. ["203", "202"],
+                    checkedNetworks = args.data["my-networks"];                          
+                  }
+                  else if(typeof(args.data["my-networks"]) == "string" && args.data["my-networks"].length > 0) { //args.data["my-networks"] is a string, e.g. "202"
+                    checkedNetworks = [];
+                    checkedNetworks.push(args.data["my-networks"]);
+                  }
                 
-                  //create new network starts here                   
-                  if(args.data["new-network"] == "create-new-network") {   
-                    var networkName = "new Network";
+                  //create new network starts here  
+                  if(args.data["new-network"] == "create-new-network") {                       
+                    var isCreateNetworkSuccessful = true;
                     $.ajax({
                       url: createURL("createNetwork&networkOfferingId="+args.data["new-network-networkofferingid"]+"&name="+todb(args.data["new-network-name"])+"&displayText="+todb(args.data["new-network-name"])+"&zoneId="+selectedZoneObj.id),
                       dataType: "json",
                       async: false,
                       success: function(json) {                      
-                        newNetwork = json.createnetworkresponse.network;
-                        checkedNetworks.push(newNetwork.id);
+                        newNetwork = json.createnetworkresponse.network;                                           
+                        checkedNetworks.push(newNetwork.id);                                                
                         if(defaultNetwork == "new-network")
-                          defaultNetwork = newNetwork.id;
-                      }
+                          defaultNetwork = newNetwork.id;  
+                      },                      
+                      error: function(XMLHttpResponse) {      
+                        isCreateNetworkSuccessful = false;  
+                        args.response.error("Failed to create new network. Please try again."); //wait for Brian to implement
+                      }  
                     });  
+                    
+                  }  
+                    
+                  if(isCreateNetworkSuccessful == false) {
+                    alert("Failed to create new network, unable to proceed to deploy VM.");
+                    return;  
                   }                    
                   //create new network ends here
                   
