@@ -303,3 +303,9 @@ ALTER TABLE `cloud`.`vm_template` ADD COLUMN `sort_key` int(32) NOT NULL default
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
+
+
+
+ALTER TABLE `cloud`.`network_offerings` MODIFY `name` varchar(64) COMMENT 'name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) COMMENT 'unique name of the network offering';
+

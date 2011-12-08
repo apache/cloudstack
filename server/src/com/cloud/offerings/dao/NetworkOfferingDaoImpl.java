@@ -38,6 +38,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 @Local(value=NetworkOfferingDao.class) @DB(txn=false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
@@ -122,12 +123,16 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         return listBy(sc, null);
     }
     
-    @Override
+    @Override @DB
     public boolean remove(Long networkOfferingId){
+    	Transaction txn = Transaction.currentTxn();
+    	txn.start();
         NetworkOfferingVO offering = findById(networkOfferingId);
-        offering.setName(null);
+        offering.setUniqueName(null);
         update(networkOfferingId, offering);
-        return super.remove(networkOfferingId);
+        boolean result = super.remove(networkOfferingId);
+        txn.commit();
+        return result;
     }
     
     @Override

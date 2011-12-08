@@ -323,4 +323,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     public int getSortKey() {
     	return sortKey;
     }
+    
+    public void setUniqueName(String uniqueName) {
+    	this.uniqueName = uniqueName;
+    }
+    
 }
