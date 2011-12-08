@@ -445,6 +445,9 @@
                     checkedNetworks = [];
                     checkedNetworks.push(args.data["my-networks"]);
                   }
+                  else { // typeof(args.data["my-networks"]) == null 
+                    checkedNetworks = [];
+                  }
                 
                   //create new network starts here  
                   if(args.data["new-network"] == "create-new-network") {                       
