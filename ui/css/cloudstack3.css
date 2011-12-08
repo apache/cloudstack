@@ -4979,7 +4979,8 @@ label.error {
   width: 100%;
   height: 461px;
   float: none;
-  margin: 64px auto auto;
+  margin: 7px auto auto;
+  padding-bottom: 28px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area {
@@ -5145,14 +5146,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view>ul {
+.tree-view > ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view>ul>li {
+.tree-view > ul > li {
   left: 5px;
 }
 
@@ -5187,7 +5188,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded>.expand {
+.tree-view ul li.expanded > .expand {
   background-position: -631px -228px;
 }
 
@@ -5601,7 +5602,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms>div {
+.recurring-snapshots .schedule .forms > div {
 }
 
 .recurring-snapshots .schedule .forms form {
