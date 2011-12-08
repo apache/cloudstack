@@ -1467,7 +1467,7 @@
                   return clientConsoleUrl + '?cmd=access&vm=' + args.context.instances[0].id;                  
                 },
                 title: function(args) {                                 
-                  return getVmName(args.context.instances[0].name, args.context.instances[0].displayname) + ' console';                  
+                  return "console";  //can't have space in window name in window.open()                
                 },
                 width: 820,
                 height: 640

@@ -1735,7 +1735,7 @@
                               return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;
                             },
                             title: function(args) {
-                              return args.context.routers[0].name + ' console';
+                              return "console";  //can't have space in window name in window.open()  
                             },
                             width: 820,
                             height: 640
@@ -3980,7 +3980,7 @@
                       return clientConsoleUrl + '?cmd=access&vm=' + args.context.systemVMs[0].id;
                     },
                     title: function(args) {
-                      return args.context.systemVMs[0].systemvmtype + ' console';
+                      return "console";  //can't have space in window name in window.open()  
                     },
                     width: 820,
                     height: 640
