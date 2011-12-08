@@ -2641,9 +2641,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getBroadcastDomainType() != null) {
             response.setBroadcastDomainType(network.getBroadcastDomainType().toString());
         }
-        if (network.getBroadcastUri() != null) {
-            response.setBroadcastUri(network.getBroadcastUri().toString());
-        }
 
         if (network.getTrafficType() != null) {
             response.setTrafficType(network.getTrafficType().name());
@@ -2652,18 +2649,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getGuestType() != null) {
             response.setType(network.getGuestType().toString());
         }
-
-        // get start ip and end ip of corresponding vlan
-        List<? extends Vlan> vlan = ApiDBUtils.listVlanByNetworkId(network.getId());
-        if (vlan != null && !vlan.isEmpty()) {
-            Vlan singleVlan = vlan.get(0);
-            String ipRange = singleVlan.getIpRange();
-            String[] range = ipRange.split("-");
-            response.setStartIp(range[0]);
-            response.setEndIp(range[1]);
-            response.setGateway(singleVlan.getVlanGateway());
-            response.setNetmask(singleVlan.getVlanNetmask());
-            response.setVlan(singleVlan.getVlanTag());
+        
+        response.setGateway(network.getGateway());
+        
+        //FIXME - either set netmask or cidr
+        response.setCidr(network.getCidr());
+        response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+        
+        //FIXME - either set broadcast URI or vlan
+        if (network.getBroadcastUri() != null) {
+        	String broadcastUri = network.getBroadcastUri().toString();
+            response.setBroadcastUri(broadcastUri);
+            String vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+            response.setVlan(vlan);
         }
         
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());

@@ -49,11 +49,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.NETMASK) @Param(description="the network's netmask")
     private String netmask;
     
-    @SerializedName(ApiConstants.START_IP) @Param(description="the start ip of the network")
-    private String startIp;
-
-    @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the network")
-    private String endIp;
+    @SerializedName(ApiConstants.CIDR) @Param(description="the cidr the network")
+    private String cidr;
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
@@ -206,14 +203,6 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.displaytext = displaytext;
     }
 
-    public void setStartIp(String startIp) {
-        this.startIp = startIp;
-    }
-
-    public void setEndIp(String endIp) {
-        this.endIp = endIp;
-    }
-
     public void setVlan(String vlan) {
         this.vlan = vlan;
     }
@@ -266,5 +255,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
 	public void setZoneName(String zoneName) {
 		this.zoneName = zoneName;
+	}
+
+	public void setCidr(String cidr) {
+		this.cidr = cidr;
 	}
 }
