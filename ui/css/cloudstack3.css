@@ -1056,18 +1056,18 @@ div.list-view td.state span {
   text-shadow: 0px 1px 1px #FFFFFF;
 }
 
-div.list-view td.state.on {
+div.list-view td.state.on span {
   background-image: url(../images/sprites.png);
   background-repeat: no-repeat;
   color: #008000;
-  background-position: 10px -452px;
+  background-position: 1px -460px;
 }
 
-div.list-view td.state.off {
+div.list-view td.state.off span {
   background-image: url(../images/sprites.png);
   background-repeat: no-repeat;
   color: #B90606;
-  background-position: 10px -488px;
+  background-position: 1px -496px;
 }
 
 /*Details page*/
@@ -3521,7 +3521,6 @@ Dialogs*/
 
 .zone-chart {
   height: 1061px;
-  overflow: hidden;
 }
 
 .zone-chart .resources {
