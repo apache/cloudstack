@@ -2720,7 +2720,7 @@
                   dataProvider: function(args) {
                     args.response.success({data: args.context.srxProviders[0]});
                   }
-                },
+                }
               }
             }
           },
@@ -2729,40 +2729,60 @@
           securityGroups: {
             id: 'securityGroup-providers',
             label: 'Security Groups',
-            providerActionFilter: function(args) {
-              var allowedActions = [];
-              var jsonObj = nspMap["securityGroups"];
-              if(jsonObj.state == "Enabled")
-                allowedActions.push("disable");
-              else if(jsonObj.state == "Disabled")
-                allowedActions.push("enable");
-              return allowedActions;
+            type: 'detailView',
+            viewAll: { label: 'Security Groups', path: 'network.securityGroups' },
+            tabs: {
+              details: {
+                title: 'Details',
+                fields: [
+                  {
+                    name: { label: 'Name' }
+                  },
+                  {
+                    state: { label: 'State' },
+                    id: { label: 'ID' },
+                    physicalnetworkid: { label: 'Physical network ID' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  args.response.success({
+                    actionFilter: function(args) {
+                      var allowedActions = [];
+                      var jsonObj = nspMap["securityGroups"];
+                      if(jsonObj.state == "Enabled")
+                        allowedActions.push("disable");
+                      else if(jsonObj.state == "Disabled")
+                        allowedActions.push("enable");
+                      return allowedActions;
+                    },
+                    data: nspMap["securityGroups"]
+                  });
+                }
+              }
             },
-            providerActions: {
+            actions: {
               enable: {
                 label: 'Enable provider',
                 action: function(args) {
                   $.ajax({
                     url: createURL("updateNetworkServiceProvider&id=" + nspMap["securityGroups"].id + "&state=Enabled"),
-                    dataType: "json",
+                    async: true,
                     success: function(json) {
                       var jid = json.updatenetworkserviceproviderresponse.jobid;
                       args.response.success(
                         {_custom:
                           {
-                            jobId: jid,
-                            getUpdatedItem: function(json) {
-                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                              nspMap["securityGroups"] = item;
-                              return item;
-                            }
+                            jobId: jid
                           }
                         }
                       );
+
+                      $(window).trigger('cloudStack.fullRefresh');
                     }
                   });
                 },
                 messages: {
+                  confirm: function() { return 'Are you sure you want to enable security groups?'; },
                   notification: function() { return 'Provider is enabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2779,18 +2799,16 @@
                         {_custom:
                           {
                             jobId: jid,
-                            getUpdatedItem: function(json) {
-                              var item = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
-                              nspMap["securityGroups"] = item;
-                              return item;
-                            }
                           }
                         }
                       );
+
+                      $(window).trigger('cloudStack.fullRefresh');
                     }
                   });
                 },
                 messages: {
+                  confirm: function() { return 'Are you sure you want to disable security groups?'; },
                   notification: function() { return 'Provider is disabled'; }
                 },
                 notification: { poll: pollAsyncJobResult }
@@ -2801,10 +2819,7 @@
               id: { label: 'ID' },
               name: { label: 'Name' }//,
               //state: { label: 'Status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
-            },
-            dataProvider: function(args) {
-              args.response.success({data: nspMap["securityGroups"]});
-            }
+            }            
           }
         }
       }

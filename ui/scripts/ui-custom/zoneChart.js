@@ -408,7 +408,9 @@
                         var provider = naas.networkProviders.types[itemID];
 
                         if (provider.type == 'detailView') {
-                          var $detailView = $newPanel.detailView(provider);
+                          var $detailView = $newPanel.detailView($.extend(true, {}, provider, {
+                            $browser: $browser
+                          }));
                         } else {
                           var $listView = $newPanel.listView({
                             listView: provider
