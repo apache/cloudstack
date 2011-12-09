@@ -46,6 +46,7 @@ public class ProjectResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the project")
     private String state;
+ 
 
     public void setId(Long id) {
         this.id.setValue(id);

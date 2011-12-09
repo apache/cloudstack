@@ -18,9 +18,11 @@
 
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class CapabilitiesResponse extends BaseResponse {
     @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
@@ -36,25 +38,16 @@ public class CapabilitiesResponse extends BaseResponse {
     
     @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
     private String supportELB;
-
-    public boolean getSecurityGroupsEnabled() {
-        return securityGroupsEnabled;
-    }
+    
+    @SerializedName(ApiConstants.PROJECT_INVITE_REQUIRED) @Param(description="If invitation confirmation is required when add account to project")
+    private Boolean projectInviteRequired;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
 
-    public String getCloudStackVersion() {
-        return cloudStackVersion;
-    }
-
     public void setCloudStackVersion(String cloudStackVersion) {
         this.cloudStackVersion = cloudStackVersion;
-    }
-    
-    public boolean getUserPublicTemplateEnabled() {
-        return securityGroupsEnabled;
     }
 
     public void setUserPublicTemplateEnabled(boolean userPublicTemplateEnabled) {
@@ -65,15 +58,11 @@ public class CapabilitiesResponse extends BaseResponse {
         this.supportELB = supportELB;
     }
 
-    public String getSupportELB() {
-        return supportELB;
-    }
-
     public void setFirewallRuleUiEnabled(boolean firewallRuleUiEnabled) {
     	this.firewallRuleUiEnabled = firewallRuleUiEnabled;
     }
-    
-    public boolean getFirewallRuleUiEnabled() {
-    	return firewallRuleUiEnabled;
-    }
+
+	public void setProjectInviteRequired(Boolean projectInviteRequired) {
+		this.projectInviteRequired = projectInviteRequired;
+	}
 }

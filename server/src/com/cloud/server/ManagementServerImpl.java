@@ -3110,6 +3110,8 @@ public class ManagementServerImpl implements ManagementServer {
         capabilities.put("cloudStackVersion", getVersion());
         capabilities.put("supportELB", supportELB);
         capabilities.put("firewallRuleUiEnabled", (firewallRuleUiEnabled != null && firewallRuleUiEnabled.equals("true")) ? true : false);
+        capabilities.put("firewallRuleUiEnabled", (firewallRuleUiEnabled != null && firewallRuleUiEnabled.equals("true")) ? true : false);
+        capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         return capabilities;
     }
 

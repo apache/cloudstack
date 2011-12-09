@@ -1124,4 +1124,10 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     		}
     	}
     }
+
+    @Override
+	public boolean projectInviteRequired() {
+		return _invitationRequired;
+	}
+
 }
