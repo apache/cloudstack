@@ -144,7 +144,7 @@ public class AgentMonitor extends Thread implements Listener {
                 	SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
                 	sc.selectField(sc.getEntity().getResourceState());
                 	sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
-                	HostVO h = sc.find();
+                	HostVO h = sc.list().get(0);
                 	ResourceState resourceState = h.getResourceState();
                 	if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.Unmanaged || resourceState == ResourceState.ErrorInMaintenance) {
                 		/* Host is in non-operation state, so no investigation and direct put agent to Disconnected */

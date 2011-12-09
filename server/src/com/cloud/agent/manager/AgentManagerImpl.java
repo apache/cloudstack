@@ -925,12 +925,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
         
         handleDisconnectWithoutInvestigation(attache, event);
-        /*TODO: call HA manager in monitors
-         *         host = _hostDao.findById(host.getId());
-        if (!event.equals(Event.PrepareUnmanaged) && !event.equals(Event.HypervisorVersionChanged) && (host.getStatus() == Status.Alert || host.getStatus() == Status.Down)) {
-            _haMgr.scheduleRestartForVmsOnHost(host, investigate);
+        host = _hostDao.findById(host.getId());
+        if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
+            _haMgr.scheduleRestartForVmsOnHost(host, true);
         }
-         * */
+
         return true;
     }
 
