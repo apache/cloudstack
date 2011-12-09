@@ -3,7 +3,7 @@
     requireInvitation: function(args) {
       return window.g_projectsInviteRequired;
     },
-    
+
     add: function(args) {
       setTimeout(function() {
         $.ajax({
@@ -36,16 +36,18 @@
       noSelect: true,
       fields: {
         'email': { edit: true, label: 'E-mail' },
+        'account': { edit: 'ignore', label: 'Account' },
         'state': { edit: 'ignore', label: 'Status' },
         'add-user': { addButton: true, label: '' }
       },
       add: {
-        label: 'Invite',
+        label: 'E-mail invite',
         action: function(args) {
           $.ajax({
             url: createURL('addAccountToProject', { ignoreProject: true }),
             data: {
               projectId: args.context.projects[0].id,
+              account: args.data.account,
               email: args.data.email
             },
             dataType: 'json',
@@ -65,7 +67,7 @@
             error: function(data) {
               args.response.error('Could not create user');
             }
-          });          
+          });
         }
       },
       actionPreFilter: function(args) {
@@ -78,7 +80,28 @@
         return ['destroy'];
       },
 
-      actions: {},
+      actions: {
+        destroy: {
+          label: 'Revoke invitation',
+          action: function(args) {
+            $.ajax({
+              url: createURL('deleteProjectInvitation'),
+              data: {
+                id: args.context.multiRule[0].id
+              },
+              success: function(data) {
+                args.response.success({
+                  _custom: { jobId: data.deleteprojectinvitationresponse.jobid },
+                  notification: {
+                    label: 'Un-invited user',
+                    poll: pollAsyncJobResult
+                  }
+                });
+              }
+            });
+          }
+        }
+      },
 
       // Project users data provider
       dataProvider: function(args) {
@@ -95,7 +118,8 @@
               data: $.map(invites, function(elem) {
                 return {
                   id: elem.id,
-                  email: elem.email ? elem.email : elem.account,
+                  account: elem.account,
+                  email: elem.email,
                   state: elem.state
                 };
               })
@@ -123,7 +147,6 @@
             dataType: 'json',
             async: true,
             success: function(data) {
-              data: args.data,
               args.response.success({
                 _custom: {
                   jobId: data.addaccounttoprojectresponse.jobid
@@ -133,6 +156,10 @@
                   poll: pollAsyncJobResult
                 }
               });
+
+              if (g_capabilities.projectinviterequired) {
+                cloudStack.dialog.notice({ message: 'Invite sent to user; they will be added to the project once they accept the invitation' });
+              }
             }
           });
         }
@@ -266,91 +293,248 @@
   cloudStack.sections.projects = {
     title: 'Projects',
     id: 'projects',
-    listView: {
-      fields: {
-        name: { label: 'Project Name' },
-        displaytext: { label: 'Display Text' },
-        domain: { label: 'Domain' },
-        account: { label: 'Owner' },
-        state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off' } }
-      },
-
-      dataProvider: function(args) {
-        $.ajax({
-          url: createURL('listProjects', { ignoreProject: true }),
-          dataType: 'json',
-          async: true,
-          success: function(data) {
-            args.response.success({
-              data: data.listprojectsresponse.project,
-              actionFilter: projectsActionFilter
-            });
-          }
-        });
-      },
-
-      actions: {
-        add: {
-          label: 'New Project',
-          action: {
-            custom: function(args) {
-              $(window).trigger('cloudStack.newProject');
-            }
+    sectionSelect: {
+      label: 'Select view'
+    },
+    sections: {
+      projects: {
+        type: 'select',
+        id: 'projects',
+        title: 'Projects',
+        listView: {
+          fields: {
+            name: { label: 'Project Name' },
+            displaytext: { label: 'Display Text' },
+            domain: { label: 'Domain' },
+            account: { label: 'Owner' },
+            state: { label: 'Status', indicator: { 'Active': 'on', 'Destroyed': 'off', 'Disabled': 'off', 'Left Project': 'off' } }
           },
 
-          messages: {
-            confirm: function(args) {
-              return 'Are you sure you want to remove ' + args.name + '?';
-            },
-            notification: function(args) {
-              return 'Removed project';
-            }
-          },
-
-          notification: {
-            poll: testData.notifications.testPoll
-          }
-        },
-
-        destroy: {
-          label: 'Remove project',
-          action: function(args) {
+          dataProvider: function(args) {
             $.ajax({
-              url: createURL('deleteProject', { ignoreProject: true }),
-              data: {
-                id: args.data.id
-              },
+              url: createURL('listProjects', { ignoreProject: true }),
               dataType: 'json',
               async: true,
               success: function(data) {
                 args.response.success({
-                  _custom: {
-                    getUpdatedItem: function(data) {
-                      return $.extend(data, { state: 'Destroyed' });
-                    },
-                    getActionFilter: function(args) {
-                      return function() {
-                        return [];
-                      };
-                    },
-                    jobId: data.deleteprojectresponse.jobid
-                  }
+                  data: data.listprojectsresponse.project,
+                  actionFilter: projectsActionFilter
                 });
               }
             });
           },
 
-          messages: {
-            confirm: function(args) {
-              return 'Are you sure you want to remove ' + args.name + '?';
+          actions: {
+            add: {
+              label: 'New Project',
+              action: {
+                custom: function(args) {
+                  $(window).trigger('cloudStack.newProject');
+                }
+              },
+
+              actions: {
+                add: {
+                  label: 'New Project',
+                  action: {
+                    custom: function(args) {
+                      $(window).trigger('cloudStack.newProject');
+                    }
+                  },
+
+                  messages: {
+                    confirm: function(args) {
+                      return 'Are you sure you want to remove ' + args.name + '?';
+                    },
+                    notification: function(args) {
+                      return 'Removed project';
+                    }
+                  },
+
+                  notification: {
+                    poll: testData.notifications.testPoll
+                  }
+                },
+
+                destroy: {
+                  label: 'Remove project',
+                  action: function(args) {
+                    $.ajax({
+                      url: createURL('deleteProject', { ignoreProject: true }),
+                      data: {
+                        id: args.data.id
+                      },
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        args.response.success({
+                          _custom: {
+                            getUpdatedItem: function(data) {
+                              return $.extend(data, { state: 'Destroyed' });
+                            },
+                            getActionFilter: function(args) {
+                              return function() {
+                                return [];
+                              };
+                            },
+                            jobId: data.deleteprojectresponse.jobid
+                          }
+                        });
+                      }
+                    });
+                  },
+
+                  messages: {
+                    confirm: function(args) {
+                      return 'Are you sure you want to remove ' + args.name + '?';
+                    },
+                    notification: function(args) {
+                      return 'Removed project';
+                    }
+                  },
+
+                  notification: {
+                    poll: pollAsyncJobResult
+                  }
+                }
+              }
             },
-            notification: function(args) {
-              return 'Removed project';
+
+            destroy: {
+              label: 'Remove project',
+              action: function(args) {
+                $.ajax({
+                  url: createURL('deleteProject', { ignoreProject: true }),
+                  data: {
+                    id: args.data.id
+                  },
+                  dataType: 'json',
+                  async: true,
+                  success: function(data) {
+                    args.response.success({
+                      _custom: {
+                        getUpdatedItem: function(data) {
+                          return $.extend(data, { state: 'Destroyed' });
+                        },
+                        getActionFilter: function(args) {
+                          return function() {
+                            return [];
+                          };
+                        },
+                        jobId: data.deleteprojectresponse.jobid
+                      }
+                    });
+                  }
+                });
+              },
+
+              messages: {
+                confirm: function(args) {
+                  return 'Are you sure you want to remove ' + args.name + '?';
+                },
+                notification: function(args) {
+                  return 'Removed project';
+                }
+              },
+
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+          }
+        }
+      },
+
+      invitations: {
+        type: 'select',
+        id: 'invitations',
+        title: 'Invitations',
+        listView: {
+          fields: {
+            project: { label: 'Project' },
+            domain: { label: 'Domain' },
+            state: {
+              label: 'Status',
+              indicator: {
+                'Accepted': 'on', 'Completed': 'on',
+                'Pending': 'off', 'Declined': 'off'
+              }
             }
           },
 
-          notification: {
-            poll: pollAsyncJobResult
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL('listProjectInvitations'),
+              data: {
+                account: cloudStack.context.users[0].account,
+                domainid: cloudStack.context.users[0].domainid,
+                state: 'Pending'
+              },
+              success: function(data) {
+                args.response.success({
+                  actionFilter: projectInvitationActionFilter,
+                  data: data.listprojectinvitationsresponse.projectinvitation
+                });
+              }
+            });
+          },
+
+          actions: {
+            accept: {
+              label: 'Accept Invitation',
+              action: function(args) {
+                $.ajax({
+                  url: createURL('updateProjectInvitation'),
+                  data: {
+                    projectid: args.context.invitations[0].projectid,
+                    account: args.context.users[0].account,
+                    domainid: args.context.users[0].domainid,
+                    accept: true
+                  },
+                  success: function(data) {
+                    args.response.success({
+                      _custom: {
+                        jobId: data.updateprojectinvitationresponse.jobid,
+                        getUpdatedItem: function() { return { state: 'Accepted' }; }
+                      }
+                    });
+                  }
+                });
+              },
+              messages: {
+                confirm: function() { return 'Please confirm you wish to join this project.'; },
+                notification: function() { return 'Accepted project invitation'; }
+              },
+              notification: { poll: pollAsyncJobResult }
+            },
+
+            decline: {
+              label: 'Decline Invitation',
+              action: function(args) {
+                $.ajax({
+                  url: createURL('updateProjectInvitation'),
+                  data: {
+                    projectid: args.context.invitations[0].projectid,
+                    account: args.context.users[0].account,
+                    accept: false
+                  },
+
+                  success: function(data) {
+                    args.response.success({
+                      _custom: {
+                        jobId: data.updateprojectinvitationresponse.jobid,
+                        getUpdatedItem: function() { return { state: 'Declined' }; }
+                      }
+                    });
+                  }
+                });
+              },
+              notification: { poll: pollAsyncJobResult },
+              messages: {
+                confirm: function() { return 'Are you sure you want to decline this project invitation?'; },
+                notification: function() { return 'Declined project invitation'; }
+              }
+            }
           }
         }
       }
@@ -358,10 +542,20 @@
   };
 
   var projectsActionFilter = function(args) {
-    if (args.context.item.account == args.context.users[0].account) {
+    if (args.context.item.account == cloudStack.context.users[0].account) {
       return ['destroy'];
     }
 
     return [];
+  };
+
+  var projectInvitationActionFilter = function(args) {
+    var state = args.context.item.state;
+
+    if (state == 'Accepted' || state == 'Completed' || state == 'Declined') {
+      return [];
+    }
+
+    return ['accept', 'decline'];
   };
 } (cloudStack, testData));

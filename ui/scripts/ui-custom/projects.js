@@ -18,21 +18,23 @@
      */
     dashboard: function() {
       var tabs = {
-        Overview: function() {
-          return $('<img>').attr('src', 'images/screens/ProjectDashboard.png');
+        overview: function() {
+          return $('<img>').attr('src', 'images/screens/ProjectDashboard.png').data('tab-title', 'Overview');
         }
       };
 
       // Only show management tabs to owner of project
       if (cloudStack.context.projects &&
           (cloudStack.context.projects[0].account == cloudStack.context.users[0].account)) {
-        tabs['Users'] = function() {
-          return $('<div>').addClass('management');
+        tabs.users = function() {
+          return $('<div>').addClass('management').data('tab-title', 'Users');
         };
 
-        tabs['Invitations'] = function() {
-          return $('<div>').addClass('management-invite');
-        };
+        if (g_capabilities.projectinviterequired) {
+          tabs.invitations = function() {
+            return $('<div>').addClass('management-invite').data('tab-title', 'Invitations');
+          };          
+        }
       }
 
       var $tabs = $('<div>').addClass('tab-content').append($('<ul>'));
@@ -43,7 +45,7 @@
         var $tab = $('<li>').appendTo($tabs.find('ul'));
         var $tabLink = $('<a>')
               .attr({ href: '#project-view-dashboard-' + tabName })
-              .html(tabName)
+              .html(tab().data('tab-title'))
               .appendTo($tab);
         var $content = $('<div>')
               .appendTo($tabs)

@@ -242,7 +242,6 @@ body.login {
   position: absolute;
   margin-left: 11px;
   margin-top: 12px;
-  cursor: text;
 }
 
 .login .fields .field label.error {
@@ -2290,7 +2289,7 @@ div.toolbar div.filters select {
   max-height: 29px;
   background: url(../images/bg-breadcrumbs.png) repeat-x;
   overflow: hidden;
-  width: 794px;
+  width: 100%;
 }
 
 .project-view #breadcrumbs {
@@ -2403,7 +2402,6 @@ div.toolbar div.filters select {
   margin-left: -10px;
   text-indent: 13px;
   font-weight: bold;
-  overflow: hidden;
 }
 
 #breadcrumbs div.active-project {
@@ -6880,7 +6878,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .destroy .icon,
-.delete .icon {
+.delete .icon,
+.decline .icon {
   background-position: 1px -92px;
 }
 

@@ -93,6 +93,7 @@
              * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
              * g_supportELB: "false"   â€“ no ELB support
              */
+            g_capabilities = json.listcapabilitiesresponse.capability;
             g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
             $.cookie('supportELB', g_supportELB, { expires: 1});
 
@@ -196,6 +197,7 @@
                  * g_supportELB: "public"  - ips are allocated on public network (so use 'forvirtualnetwork' = true)
                  * g_supportELB: "false"   – no ELB support
                  */
+                g_capabilities = json.listcapabilitiesresponse.capability;
                 g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
                 $.cookie('supportELB', g_supportELB, { expires: 1});
 
