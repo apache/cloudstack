@@ -320,6 +320,7 @@ public class ApiConstants {
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
     public static final String RESOURCE_STATE = "resourcestate";
     public static final String PROJECT_INVITE_REQUIRED = "projectinviterequired";
+    public static final String RESTART_REQUIRED = "restartrequired";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

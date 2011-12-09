@@ -78,6 +78,9 @@ public class ListNetworksCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
     private List<String> supportedServices;
+    
+    @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list network offerings by restartRequired option")
+    private Boolean restartRequired;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -127,7 +130,11 @@ public class ListNetworksCmd extends BaseListCmd {
         return supportedServices;
     }
 
-    /////////////////////////////////////////////////////
+    public Boolean getRestartRequired() {
+		return restartRequired;
+	}
+
+	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override

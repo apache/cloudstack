@@ -49,6 +49,7 @@ public class NetworkProfile implements Network {
     private Long physicalNetworkId;
     private ACLType aclType;
     private boolean specifiedCidr;
+    private boolean restartRequired;
 
     public NetworkProfile(Network network) {
         this.id = network.getId();
@@ -72,6 +73,7 @@ public class NetworkProfile implements Network {
         this.physicalNetworkId = network.getPhysicalNetworkId();
         this.aclType = network.getAclType();
         this.specifiedCidr = network.isSpecifiedCidr();
+        this.restartRequired = network.isRestartRequired();
     }
 
     public String getDns1() {
@@ -207,5 +209,11 @@ public class NetworkProfile implements Network {
     public void setSpecifiedCidr(boolean specifiedCidr) {
         this.specifiedCidr = specifiedCidr;
     }
+
+	@Override
+	public boolean isRestartRequired() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }

@@ -1359,6 +1359,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             implementNetworkElementsAndResources(dest, context, network, offering); 
 
             network.setState(Network.State.Implemented);
+            network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
             return implemented;
@@ -2109,6 +2110,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String path = null;
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         List<String> supportedServicesStr = cmd.getSupportedServices();
+        Boolean restartRequired= cmd.getRestartRequired();
 
         //1) default is system to false if not specified
         //2) reset parameter to false if it's specified by the regular user
@@ -2198,17 +2200,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (isSystem == null || !isSystem) {
             //Get domain level networks
             if (domainId != null) {
-                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks), searchFilter, domainId));
+                networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, domainId));
             } else if (permittedAccounts.isEmpty()){
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks), searchFilter, path));
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, path));
             }
 
             //get account specific networks
             if (!permittedAccounts.isEmpty()){
-                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks), searchFilter, permittedAccounts));
+                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired), searchFilter, permittedAccounts));
             }
         } else {
-            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks), searchFilter);
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
@@ -2237,7 +2239,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId, String aclType, boolean skipProjectNetworks) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId, String aclType, boolean skipProjectNetworks, Boolean restartRequired) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -2276,6 +2278,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (skipProjectNetworks) {
         	sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
+        }
+        
+        if (restartRequired != null) {
+            sc.addAnd("restartRequired", SearchCriteria.Op.EQ, restartRequired);
         }
 
         return sc;
@@ -2391,6 +2397,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             applyProfileToNetwork(network, profile);
 
             network.setState(Network.State.Allocated);
+            network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
 
@@ -2685,6 +2692,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
+        
+        //don't allow clenaup=true for the network in Basic zone
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        if (zone.getNetworkType() == NetworkType.Basic && cleanup) {
+        	throw new InvalidParameterValueException("Cleanup can't be true when restart network in Basic zone");
+        }
 
         _accountMgr.checkAccess(callerAccount, null, network);
 
@@ -2731,6 +2744,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (!shutdownNetworkElementsAndResources(context, cleanup, network)) {
             s_logger.debug("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
+            setRestartRequired(network, true);
             return false;
         }
 
@@ -2742,13 +2756,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         try {
             implementNetworkElementsAndResources(dest, context, network, offering);
+            setRestartRequired(network, true);
         } catch (Exception ex) {
             s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network restart due to ", ex);
             return false;
         }
-
+        setRestartRequired(network, false);
         return true;
     }
+
+	private void setRestartRequired(NetworkVO network, boolean restartRequired) {
+		s_logger.debug("Marking network " + network + " with restartRequired=" + restartRequired);
+		network.setRestartRequired(restartRequired);
+		_networksDao.update(network.getId(), network);
+	}
 
 
     //This method re-programs the rules/ips for existing network

@@ -145,6 +145,9 @@ public class NetworkVO implements Network, Identity {
     @Column(name="specified_cidr")
     boolean specifiedCidr;
     
+    @Column(name="restart_required")
+    boolean restartRequired = false;
+    
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -474,4 +477,12 @@ public class NetworkVO implements Network, Identity {
         this.specifiedCidr = specifiedCidr;
     }
 
+	public void setRestartRequired(boolean restartRequired) {
+		this.restartRequired = restartRequired;
+	}
+
+	@Override
+	public boolean isRestartRequired() {
+		return restartRequired;
+	}
 }

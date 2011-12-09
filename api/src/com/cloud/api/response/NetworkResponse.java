@@ -127,6 +127,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
     
+    @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true network requires restart")
+    private Boolean restartRequired;
+    
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -259,5 +262,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
 	public void setCidr(String cidr) {
 		this.cidr = cidr;
+	}
+
+	public void setRestartRequired(Boolean restartRequired) {
+		this.restartRequired = restartRequired;
 	}
 }

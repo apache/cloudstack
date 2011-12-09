@@ -476,3 +476,5 @@ ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `physical_network_id` bigint u
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on';
 ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the network';
