@@ -86,12 +86,11 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
-import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
-import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -118,9 +117,9 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.Nic.State;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
@@ -768,7 +767,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         }
 
                         // If a NIC doesn't exist for the load balancing IP address, create one
-                        loadBalancingIpNic = _nicDao.findByIp4Address(loadBalancingIpAddress);
+                        loadBalancingIpNic = _nicDao.findByIp4AddressAndNetworkId(loadBalancingIpAddress, network.getId());
                         if (loadBalancingIpNic == null) {
                             loadBalancingIpNic = savePlaceholderNic(network, loadBalancingIpAddress); 
                         }

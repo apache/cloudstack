@@ -434,11 +434,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (mapping != null) {
                 _nicDao.expunge(mapping.getNicId());
                 _inlineLoadBalancerNicMapDao.expunge(mapping.getId());
-                
             }
         }
         
-
         String action = add ? "implemented" : "shut down";
         s_logger.debug("External firewall has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() + ") with VLAN tag " + guestVlanTag);
 

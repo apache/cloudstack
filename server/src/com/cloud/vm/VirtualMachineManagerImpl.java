@@ -1133,10 +1133,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public <T extends VMInstanceVO> boolean remove(T vm, User user, Account caller) {
-        // expunge the corresponding nics
-        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
-        _networkMgr.expungeNics(profile);
-        s_logger.trace("Nics of the vm " + vm + " are expunged successfully");
         return _vmDao.remove(vm.getId());
     }
 
