@@ -242,6 +242,7 @@ body.login {
   position: absolute;
   margin-left: 11px;
   margin-top: 12px;
+  cursor: text;
 }
 
 .login .fields .field label.error {
