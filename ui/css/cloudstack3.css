@@ -2290,7 +2290,7 @@ div.toolbar div.filters select {
   max-height: 29px;
   background: url(../images/bg-breadcrumbs.png) repeat-x;
   overflow: hidden;
-  width: 100%;
+  width: 794px;
 }
 
 .project-view #breadcrumbs {
@@ -2403,6 +2403,7 @@ div.toolbar div.filters select {
   margin-left: -10px;
   text-indent: 13px;
   font-weight: bold;
+  overflow: hidden;
 }
 
 #breadcrumbs div.active-project {

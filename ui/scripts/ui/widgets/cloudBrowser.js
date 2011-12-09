@@ -5,6 +5,41 @@
    * Breadcrumb-related functions
    */
   var _breadcrumb = cloudStack.ui.widgets.browser.breadcrumb = {
+    fixSize: function($breadcrumbContainer) {
+      var width = 0;
+      var containerWidth = $breadcrumbContainer.width();
+      var $elems = $breadcrumbContainer.find('ul li, div');
+
+      $elems.each(function() {
+        width += $(this).width();
+      });
+
+      if (width > containerWidth) {
+        $elems.filter('li').each(function() {
+          var targetWidth = $(this).width() - (
+            (width - containerWidth) / $elems.filter('li').size()
+          ) - 10;
+
+          $(this).width(targetWidth);
+
+          // Concatenate title
+          var $text = $(this).find('span');
+          var text = $(this).attr('title');
+
+          $text.html(
+            text
+              .substring(0, text.length - targetWidth / 15)
+              .concat('...')
+          );
+        });
+      } else {
+        $elems.css({ width: '' });
+        $elems.find('span').each(function() {
+          $(this).html($(this).closest('li').attr('title'));
+        });
+      }
+    },
+
     /**
      * Generate new breadcrumb
      */
@@ -14,7 +49,13 @@
         'cloudBrowser', 'breadcrumb',
         $('<div>')
           .append(
-            $('<li>').append($('<span>').html(title))
+            $('<li>')
+              .attr({
+                title: title
+              })
+              .append(
+                $('<span>').html(title)
+              )
           )
           .append($('<div>').addClass('end'))
           .children(),
@@ -74,7 +115,7 @@
      */
     width: function($container, options) {
       options = options ? options : {};
-      var width = $container.find('div.panel').size() < 1 || options.maximized == true ? 
+      var width = $container.find('div.panel').size() < 1 || options.maximized == true ?
         $container.width() : $container.width() - $container.width() / 4;
 
       return width;
@@ -186,6 +227,7 @@
           .removeClass('maximized')
           .addClass('reduced')
       ).removeClass('active maximized');
+      _breadcrumb.fixSize($('#breadcrumbs'));
 
       $toRemove.animate(
         _panel.initialState($container),
@@ -247,24 +289,26 @@
       if ($parent) {
         // Cleanup transitioning panels -- prevent old complete actions from running
         $parent.siblings().stop();
-        
+
         _breadcrumb.filter(
           $('div.panel.maximized')
             .removeClass('maximized')
             .addClass('reduced')
         ).removeClass('active maximized');
-   
+
         $parent.removeClass('maximized');
         _breadcrumb.filter($parent.next()).remove();
         $container.find($parent.next()).remove();
       }
-      
+
       // Append panel
       $panel.appendTo($container);
       _breadcrumb.filter($panel.siblings()).removeClass('active');
       _breadcrumb.create($panel, args.title)
         .addClass('active')
         .appendTo('#breadcrumbs ul');
+
+      _breadcrumb.fixSize($('#breadcrumbs'));
 
       // Reduced appearance for previous panels
       $panel.siblings().filter(function() {
@@ -313,6 +357,7 @@
       this.element.find('div.panel').remove();
       $('#breadcrumbs').find('ul li').remove();
       $('#breadcrumbs').find('ul div.end').remove();
+      _breadcrumb.fixSize($('#breadcrumbs'));
     }
   });
 
