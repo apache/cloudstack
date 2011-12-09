@@ -717,19 +717,26 @@
                     },
                     isextractable: {
                       label: 'Extractable',
+                      isBoolean: true,
+                      //isEditable: true,  //uncomment after Brian fix it to be checkbox instead of textfield
                       converter:cloudStack.converters.toBooleanText
                     },
                     passwordenabled: {
                       label: 'Password Enabled',
+                      isBoolean: true,
                       //isEditable: true,  //uncomment after Brian fix it to be checkbox instead of textfield
                       converter:cloudStack.converters.toBooleanText
                     },
                     ispublic: {
                       label: 'Public',
+                      isBoolean: true,
+                      //isEditable: true,  //uncomment after Brian fix it to be checkbox instead of textfield
                       converter:cloudStack.converters.toBooleanText
                     },
                     isfeatured: {
                       label: 'Featured',
+                      isBoolean: true,
+                      //isEditable: true,  //uncomment after Brian fix it to be checkbox instead of textfield
                       converter:cloudStack.converters.toBooleanText
                     },
                     crossZones: {
