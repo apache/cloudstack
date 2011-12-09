@@ -76,6 +76,7 @@ public abstract class AbstractInvestigatorImpl implements Investigator {
     // Host.status is up and Host.type is routing
     protected List<Long> findHostByPod(long podId, Long excludeHostId) {
     	SearchCriteriaService<HostVO, Long> sc = SearchCriteria2.create(HostVO.class, Long.class);
+    	sc.selectField(sc.getEntity().getId());
         sc.addAnd(sc.getEntity().getType(), Op.EQ, Type.Routing);
         sc.addAnd(sc.getEntity().getPodId(), Op.EQ, podId);
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
