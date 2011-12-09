@@ -1541,7 +1541,6 @@ div.detail-group.actions td {
   height: 39px;
   position: relative;
   float: right;
-  width: auto;
   margin-top: 8px;
   display: inline-block;
   background: url(../images/citrix-logo-darkbg.png) no-repeat 97% 8px;
@@ -1607,7 +1606,8 @@ div.detail-group.actions td {
   margin: 5px 6px 0 0;
   position: relative;
   cursor: default !important;
-  float: right;
+  display: inline-block;
+  float: left;
   background: none;
 }
 
@@ -1644,7 +1644,7 @@ div.detail-group.actions td {
 }
 
 #user div.options {
-  float: right;
+  float: left;
   width: 31px;
   height: 28px;
   /*+placement:shift 0px 0px;*/
