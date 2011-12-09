@@ -1766,20 +1766,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
     
     private boolean doUmanageHost(long hostId) {
-    	try {
-    		HostVO host = _hostDao.findById(hostId);
-    		if (host == null) {
-    			s_logger.debug("Cannot find host " + hostId + ", assuming it has been deleted, skip umanage");
-    			return true;
-    		}
-    		
-    		_agentMgr.disconnectWithoutInvestigation(hostId, Event.ShutdownRequested);
-    		resourceStateTransitTo(host, ResourceState.Event.Unmanaged, _nodeId);
+		HostVO host = _hostDao.findById(hostId);
+		if (host == null) {
+			s_logger.debug("Cannot find host " + hostId + ", assuming it has been deleted, skip umanage");
 			return true;
-		} catch (NoTransitionException e) {
-			s_logger.debug("Cannot transmit host " + hostId + "to Enabled state", e);
-			return false;
-		}        
+		}
+
+		_agentMgr.disconnectWithoutInvestigation(hostId, Event.ShutdownRequested);
+		return true;
     }
     
     
