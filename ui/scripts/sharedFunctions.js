@@ -59,7 +59,6 @@ var pollAsyncJobResult = function(args) {
         else if (result.jobstatus == 2) { // Failed          
           var msg = (result.jobresult.errortext == null)? "": result.jobresult.errortext;
           args.error({message: msg});
-          cloudStack.dialog.notice({ message: msg });
         }
       }
     },

@@ -1,4 +1,4 @@
-(function($) {
+(function($, cloudStack) {
   /**
    * Notification handling
    */
@@ -89,7 +89,7 @@
           incomplete: function(args) {},
           error: function(args) {
             if (args.message) {
-              //cloudStack.dialog.notice({ message: args.message });
+              cloudStack.dialog.notice({ message: args.message });
             }
 
             clearInterval(pollTimer);
@@ -287,4 +287,4 @@
     if ($popup.size())
       notifications.popup.reposition($popup, $popup.data('notifications-attach-to'));
   });
-})(window.jQuery);
+})(window.jQuery, cloudStack);

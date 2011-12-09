@@ -220,9 +220,9 @@
                   }
                 );
               },
-              error: function(data){
-                // if (data.message)
-                //   cloudStack.dialog.notice({ message: data.message });
+              error: function(message){
+                if (message)
+                  cloudStack.dialog.notice({ message: message });
               }
             }
           };
@@ -372,9 +372,9 @@
 
               if (options.success) options.success(args);
             },
-            error: function(args) {
-              if (args.message) {
-                //cloudStack.dialog.notice({ message: args.message });
+            error: function(message) {
+              if (message) {
+                cloudStack.dialog.notice({ message: message });
                 $edit.hide(),
                 $label.html(oldVal).fadeIn();
                 $instanceRow.closest('div.data-table').dataTable('refresh');

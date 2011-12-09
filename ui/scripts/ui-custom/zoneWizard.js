@@ -37,12 +37,12 @@
 
               close();
             },
-            error: function(args) {
+            error: function(message) {
               $wizard.remove();
               $('div.overlay').remove();
 
-              if (args.message) {
-                //cloudStack.dialog.notice({ message: args.message });
+              if (message) {
+                cloudStack.dialog.notice({ message: message });
               }
             }
           }
