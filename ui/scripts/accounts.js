@@ -527,7 +527,9 @@
                 },
                 notification: {
                   poll: function(args) {
-                    args.complete();
+                    args.complete({
+                      data: { state: 'enabled' }
+                    });
                   }
                 }
               },
