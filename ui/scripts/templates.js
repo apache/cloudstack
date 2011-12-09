@@ -107,8 +107,61 @@
                           args.response.success({data: items});
                         }
                       });
+                      
+                      args.$select.change(function() {
+                        var $form = $(this).closest('form');                        
+                        if($(this).val() == "VMware") {
+                          $form.find('.form-item[rel=rootDiskControllerType]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=nicAdapterType]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
+                        }
+                        else {
+                          $form.find('.form-item[rel=rootDiskControllerType]').hide();
+                          $form.find('.form-item[rel=nicAdapterType]').hide();
+                          $form.find('.form-item[rel=keyboardType]').hide();
+                        }                        
+                      });                      
                     }
                   },
+                  
+                  //fields for hypervisor == "VMware" (starts here)
+                  rootDiskControllerType: {
+                    label: 'Root disk controller',
+                    isHidden: true,
+                    select: function(args) {
+                      var items = []
+                      items.push({id: "", description: ""});
+                      items.push({id: "scsi", description: "scsi"});
+                      items.push({id: "ide", description: "ide"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  nicAdapterType: {
+                    label: 'NIC adapter type',
+                    isHidden: true,
+                    select: function(args) {
+                      var items = []
+                      items.push({id: "", description: ""});
+                      items.push({id: "E1000", description: "E1000"});
+                      items.push({id: "PCNet32", description: "PCNet32"});
+                      items.push({id: "Vmxnet2", description: "Vmxnet2"});
+                      items.push({id: "Vmxnet3", description: "Vmxnet3"});
+                      args.response.success({data: items});
+                    }
+                  },
+                  keyboardType: {
+                    label: 'Keyboard type',
+                    isHidden: true,
+                    select: function(args) {
+                      var items = []
+                      items.push({id: "", description: ""});
+                      items.push({id: "us", description: "US"});  
+                      items.push({id: "jp", description: "Japanese"});                                         
+                      args.response.success({data: items});
+                    }
+                  },
+                  //fields for hypervisor == "VMware" (ends here)
+                  
                   format: {
                     label: 'Format',
                     dependsOn: 'hypervisor',
@@ -194,6 +247,15 @@
                 if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
                   array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
 
+                //VMware only (starts here)
+                if(args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "")
+                  array1.push("&details[0].rootDiskController=" + args.data.rootDiskControllerType);                    
+                if(args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "")
+                  array1.push("&details[0].nicAdapter=" + args.data.nicAdapterType);                    
+                if(args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "")
+                  array1.push("&details[0].keyboard=" + args.data.keyboardType);  
+                //VMware only (ends here)
+                
                 $.ajax({
                   url: createURL("registerTemplate" + array1.join("")),
                   dataType: "json",
