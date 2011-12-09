@@ -3925,7 +3925,7 @@
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
-                          url: createURL("listHosts&VirtualMachineId=" + args.data.id),
+                          url: createURL("listHosts&VirtualMachineId=" + args.context.systemVMs[0].id),
                           //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
                           dataType: "json",
                           async: true,
