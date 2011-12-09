@@ -1628,20 +1628,14 @@
       allowedActions.push("stop");
       allowedActions.push("restart");
       allowedActions.push("destroy");
-      if (isAdmin()
-          && (jsonObj.rootdevicetype == 'NetworkFilesystem' || jsonObj.rootdevicetype == 'IscsiLUN' || jsonObj.rootdevicetype == 'PreSetup'  || jsonObj.rootdevicetype == 'OCFS2')
-          //&& (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == 'VMware')
-          )
-      {
-        allowedActions.push("migrate");
-      }
+      
+      if (isAdmin()) 
+        allowedActions.push("migrate");      
 
-      if (jsonObj.isoid == null)	{
-        allowedActions.push("attachISO");
-      }
-      else {
-        allowedActions.push("detachISO");
-      }
+      if (jsonObj.isoid == null)	
+        allowedActions.push("attachISO");      
+      else 
+        allowedActions.push("detachISO");      
 
       allowedActions.push("resetPassword");
       allowedActions.push("changeService");
