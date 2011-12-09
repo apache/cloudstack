@@ -83,6 +83,7 @@ import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.host.Status.Event;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1772,6 +1773,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     			return true;
     		}
     		
+    		_agentMgr.disconnectWithoutInvestigation(hostId, Event.ShutdownRequested);
     		resourceStateTransitTo(host, ResourceState.Event.Unmanaged, _nodeId);
 			return true;
 		} catch (NoTransitionException e) {

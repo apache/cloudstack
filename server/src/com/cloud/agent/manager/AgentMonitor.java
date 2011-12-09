@@ -146,7 +146,7 @@ public class AgentMonitor extends Thread implements Listener {
                 	sc.addAnd(sc.getEntity().getId(), Op.EQ, agentId);
                 	HostVO h = sc.list().get(0);
                 	ResourceState resourceState = h.getResourceState();
-                	if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.Unmanaged || resourceState == ResourceState.ErrorInMaintenance) {
+                	if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.ErrorInMaintenance) {
                 		/* Host is in non-operation state, so no investigation and direct put agent to Disconnected */
                 		status_Logger.debug("Ping timeout but host " + agentId + " is in resource state of " + resourceState + ", so no investigation");
                 		_agentMgr.disconnectWithoutInvestigation(agentId, Event.ShutdownRequested);
