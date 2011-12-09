@@ -80,7 +80,7 @@ public class Upgrade2214to30 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-2214to30-cleanup.sql");
         }
         
-        return null;
+        return new File[] { new File(script) };
     }
  
     private void setupPhysicalNetworks(Connection conn) {
