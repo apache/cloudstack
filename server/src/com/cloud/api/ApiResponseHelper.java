@@ -2568,7 +2568,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDisplayText(offering.getDisplayText());
         response.setTags(offering.getTags());
         response.setTrafficType(offering.getTrafficType().toString());
-        response.setMaxconnections(offering.getConcurrentConnections());
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());

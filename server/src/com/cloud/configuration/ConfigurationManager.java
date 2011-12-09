@@ -175,20 +175,18 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param displayText
 	 * @param trafficType
 	 * @param tags
-	 * @param maxConnections
 	 * @param networkRate TODO
 	 * @param serviceProviderMap TODO
 	 * @param isDefault TODO
 	 * @param type TODO
 	 * @param systemOnly TODO
+	 * @param serviceOfferingId
 	 * @param id
 	 * @param specifyVlan;
-	 * @param serviceOfferingId
-     * @return network offering object
+	 * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
-            Map<Service, Map<Capability, String>> serviceCapabilityMap);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, Map<Service, Map<Capability, String>> serviceCapabilityMap);
 
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId, Long physicalNetworkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     

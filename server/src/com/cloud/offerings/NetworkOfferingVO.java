@@ -59,9 +59,6 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     @Column(name="mc_rate")
     Integer multicastRateMbps;
     
-    @Column(name="concurrent_connections")
-    Integer concurrentConnections;
-    
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
@@ -156,11 +153,6 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
     
     public Date getRemoved() {
         return removed;
-    }
-    
-    @Override
-    public Integer getConcurrentConnections() {
-        return concurrentConnections;
     }
     
     @Override
@@ -259,13 +251,12 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.redundantRouter = redundantRouter;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections,
-            boolean isDefault, Availability availability, String tags, Network.GuestType guestType) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
+            Availability availability, String tags, Network.GuestType guestType) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
-        this.concurrentConnections = concurrentConnections;
         this.trafficType = trafficType;
         this.systemOnly = systemOnly;
         this.specifyVlan = specifyVlan;
@@ -280,9 +271,9 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this.redundantRouter= false;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections,
-            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter) {
-        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, concurrentConnections, isDefault,  availability,  tags, guestType);
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
+            Availability availability, String tags, Network.GuestType guestType, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability,  tags,  guestType);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -297,7 +288,7 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, null, true, Availability.Required, null, null);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null);
         this.state = State.Enabled;
     }
     

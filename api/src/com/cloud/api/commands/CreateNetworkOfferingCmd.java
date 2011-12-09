@@ -59,9 +59,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering. Supported type in current release is GUEST only")
     private String traffictype;
     
-    @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
-    private Integer maxConnections;
-    
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering.", length=4096)
     private String tags; 
     
@@ -109,10 +106,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public String getTraffictype() {
         return traffictype;
     }
-
-    public Integer getMaxconnections() {
-        return maxConnections;
-    }
     
     public Boolean getSpecifyVlan() {
         return specifyVlan == null ? false : specifyVlan;
@@ -128,10 +121,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public static String getName() {
         return _name;
-    }
-
-    public Integer getMaxConnections() {
-        return maxConnections;
     }
 
     public Long getServiceOfferingId() {

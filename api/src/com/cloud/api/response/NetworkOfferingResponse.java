@@ -43,9 +43,6 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.CREATED) @Param(description="the date this network offering was created")
     private Date created;
     
-    @SerializedName(ApiConstants.MAX_CONNECTIONS) @Param(description="the max number of concurrent connection the network offering supports")
-    private Integer maxConnections;
-    
     @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
     private String trafficType;
     
@@ -93,20 +90,12 @@ public class NetworkOfferingResponse extends BaseResponse{
         this.created = created;
     }
 
-    public void setMaxconnections(Integer maxConnections) {
-        this.maxConnections = maxConnections;
-    }
-
     public void setTrafficType(String trafficType) {
         this.trafficType = trafficType;
     }
 
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
-    }
-
-    public void setMaxConnections(Integer maxConnections) {
-        this.maxConnections = maxConnections;
     }
 
     public void setSpecifyVlan(Boolean specifyVlan) {

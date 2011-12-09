@@ -2973,8 +2973,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
         }
 
-        Integer maxConnections = cmd.getMaxconnections();
-
         Long serviceOfferingId = cmd.getServiceOfferingId();
         
         if (serviceOfferingId != null) {
@@ -3078,8 +3076,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.Lb, lbServiceCapabilityMap);
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, networkRate, serviceProviderMap, false,
-                guestType, false, serviceOfferingId, serviceCapabilityMap);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
+                false, serviceOfferingId, serviceCapabilityMap);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3125,9 +3123,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @DB
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan,
-            Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, 
-            boolean systemOnly, Long serviceOfferingId, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
+            Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, 
+            Long serviceOfferingId, Map<Service, Map<Capability, String>> serviceCapabilityMap) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3178,7 +3176,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, maxConnections, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat, redundantRouter);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability, tags, type, dedicatedLb, sharedSourceNat, redundantRouter);
         
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

@@ -850,8 +850,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultSharedNetworkOfferingWithSGService, 
                 "Offering for Shared Security group enabled networks", 
                 TrafficType.Guest, 
-                false, true, null, null, null, true, 
-                Availability.Optional, null, Network.GuestType.Shared);
+                false, true, null, null, true, Availability.Optional, 
+                null, Network.GuestType.Shared);
         
         deafultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         deafultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(deafultSharedSGNetworkOffering);
@@ -867,8 +867,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultSharedNetworkOffering, 
                 "Offering for Shared networks", 
                 TrafficType.Guest, 
-                false, true, null, null, null, true, 
-                Availability.Optional, null, Network.GuestType.Shared);
+                false, true, null, null, true, Availability.Optional, 
+                null, Network.GuestType.Shared);
         
         defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
@@ -884,8 +884,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, 
                 "Offering for Isolated networks with Source Nat service enabled", 
                 TrafficType.Guest, 
-                false, false, null, null, null, true, 
-                Availability.Required, null, Network.GuestType.Isolated);
+                false, false, null, null, true, Availability.Required, 
+                null, Network.GuestType.Isolated);
         
         defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
@@ -902,8 +902,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultIsolatedNetworkOffering, 
                 "Offering for Isolated networks with no Source Nat service", 
                 TrafficType.Guest, 
-                false, true, null, null, null, true, 
-                Availability.Optional, null, Network.GuestType.Isolated);
+                false, true, null, null, true, Availability.Optional, 
+                null, Network.GuestType.Isolated);
         
         defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);

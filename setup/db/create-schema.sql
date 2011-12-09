@@ -253,7 +253,6 @@ CREATE TABLE `cloud`.`network_offerings` (
   `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
   `nw_rate` smallint unsigned COMMENT 'network rate throttle mbits/s',
   `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',
-  `concurrent_connections` int(10) unsigned COMMENT 'concurrent connections supported on this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
   `tags` varchar(4096) COMMENT 'tags supported by this offering',
   `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',

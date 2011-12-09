@@ -68,11 +68,6 @@ public interface NetworkOffering {
      */
     Integer getMulticastRateMbps();
     
-    /**
-     * @return concurrent connections to be supported.
-     */
-    Integer getConcurrentConnections();
-    
     TrafficType getTrafficType();
     
     boolean getSpecifyVlan();
