@@ -970,14 +970,18 @@ public class ApiServer implements HttpRequestHandler {
             if (errorCode == BaseCmd.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
                 responseName = "errorresponse";
             } else {
-                String cmdName = ((String[]) apiCommandParams.get("command"))[0];
-                cmdClassName = _apiCommands.getProperty(cmdName);
-                if (cmdClassName != null) {
-                    Class<?> claz = Class.forName(cmdClassName);
-                    responseName = ((BaseCmd) claz.newInstance()).getCommandName();
-                } else {
-                    responseName = "errorresponse";
-                }
+            	Object cmdObj = apiCommandParams.get("command");
+            	//cmd name can be null when "command" parameter is missing in the request
+            	if (cmdObj != null) {
+            		String cmdName = ((String[])cmdObj) [0];
+                	cmdClassName = _apiCommands.getProperty(cmdName);
+                    if (cmdClassName != null) {
+                        Class<?> claz = Class.forName(cmdClassName);
+                        responseName = ((BaseCmd) claz.newInstance()).getCommandName();
+                    } else {
+                        responseName = "errorresponse";
+                    }
+            	}
             }
 
             ExceptionResponse apiResponse = new ExceptionResponse();

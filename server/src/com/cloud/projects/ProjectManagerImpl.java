@@ -18,11 +18,15 @@
 package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.mail.Authenticator;
@@ -63,9 +67,11 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -106,8 +112,10 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     private ProjectInvitationDao _projectInvitationDao;
     
     protected boolean _invitationRequired = false;
-    protected long _invitationTimeOut = 86400;
+    protected long _invitationTimeOut = 86400000;
     protected boolean _allowUserToCreateProjet = true;
+    protected ScheduledExecutorService _executor;
+    protected int _projectCleanupExpInvInterval = 60; //Interval defining how often project invitation cleanup thread is running
     
     
     @Override
@@ -116,7 +124,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         Map<String, String> configs = _configDao.getConfiguration(params);
         _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
-        _invitationTimeOut = Long.valueOf(configs.get(Config.ProjectInvitationExpirationTime.key()));
+        _invitationTimeOut = Long.valueOf(configs.get(Config.ProjectInvitationExpirationTime.key()))*1000;
         _allowUserToCreateProjet = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
         
         
@@ -136,12 +144,14 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
 
         _emailInvite = new EmailInvite(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Project-ExpireInvitations"));
         
         return true;
     }
     
     @Override
     public boolean start() {
+    	_executor.scheduleWithFixedDelay(new ExpiredInvitationsCleanup(), _projectCleanupExpInvInterval, _projectCleanupExpInvInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -671,36 +681,54 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         return _projectAccountDao.search(sc, searchFilter);
     }
     
-    public ProjectInvitation createAccountInvitation(Project project, Long accountId) {
-        //verify if the invitation was already generated
-        ProjectInvitationVO invite = _projectInvitationDao.findPendingByAccountIdProjectId(accountId, project.getId());
+    public ProjectInvitation createAccountInvitation(Project project, Long accountId) { 
+        if (activeInviteExists(project, accountId, null)) {
+            throw new InvalidParameterValueException("There is already a pending invitation for account id=" + accountId + " to the project id=" + project);
+        }
         
+        ProjectInvitation invitation= _projectInvitationDao.persist(new ProjectInvitationVO(project.getId(), accountId, project.getDomainId(), null, null));
+        
+        return invitation;
+    }
+
+    @DB
+	public boolean activeInviteExists(Project project, Long accountId, String email) {
+		Transaction txn = Transaction.currentTxn();
+    	txn.start();
+    	//verify if the invitation was already generated
+    	ProjectInvitationVO invite = null;
+    	if (accountId != null) {
+    		invite = _projectInvitationDao.findByAccountIdProjectId(accountId, project.getId());
+    	} else if (email != null) {
+    		 invite = _projectInvitationDao.findByEmailAndProjectId(email, project.getId());
+    	}
+    	
         if (invite != null) {
-            if (_projectInvitationDao.isActive(invite.getId(), _invitationTimeOut)) {
-                throw new InvalidParameterValueException("There is already a pending invitation for account id=" + accountId + " to the project id=" + project);
+            if (invite.getState() == ProjectInvitation.State.Completed || _projectInvitationDao.isActive(invite.getId(), _invitationTimeOut)) {
+            	return true;
             } else {
                 if (invite.getState() == ProjectInvitation.State.Pending) {
                     expireInvitation(invite);
                 }
+                //remove the expired/declined invitation
+                if (accountId != null) {
+                    s_logger.debug("Removing invitation in state " + invite.getState() + " for account id=" + accountId + " to project " + project);
+                } else if (email != null) {
+                	s_logger.debug("Removing invitation in state " + invite.getState() + " for email " + email + " to project " + project);
+                }
+
+                _projectInvitationDao.expunge(invite.getId());
             }
         }
-        
-        return _projectInvitationDao.persist(new ProjectInvitationVO(project.getId(), accountId, project.getDomainId(), null, null));
-    }
+        txn.commit();
+        return false;
+	}
     
     public ProjectInvitation generateTokenBasedInvitation(Project project, String email, String token) {
         //verify if the invitation was already generated
-        ProjectInvitationVO invite = _projectInvitationDao.findPendingByEmailAndProjectId(email, project.getId());
-        
-        if (invite != null) {
-            if (_projectInvitationDao.isActive(invite.getId(), _invitationTimeOut)) {
-                throw new InvalidParameterValueException("There is already a pending invitation for email=" + email + " to the project id=" + project);
-            } else {
-                if (invite.getState() == ProjectInvitation.State.Pending) {
-                    expireInvitation(invite);
-                }
-            }
-        }
+    	 if (activeInviteExists(project, null, email)) {
+             throw new InvalidParameterValueException("There is already a pending invitation for email " + email + " to the project id=" + project);
+         }
         
         ProjectInvitation projectInvitation = _projectInvitationDao.persist(new ProjectInvitationVO(project.getId(), null, project.getDomainId(), email, token));
         try {
@@ -794,7 +822,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         
         if (activeOnly) {
             sc.setParameters("state", ProjectInvitation.State.Pending);
-            sc.setParameters("created", new Date((System.currentTimeMillis() >> 10) - _invitationTimeOut));
+            sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - _invitationTimeOut));
         }
         
         return _projectInvitationDao.search(sc, searchFilter);
@@ -837,9 +865,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         //check that invitation exists
         ProjectInvitationVO invite = null;
         if (token == null) {
-            invite = _projectInvitationDao.findPendingByAccountIdProjectId(accountId, projectId);
+            invite = _projectInvitationDao.findByAccountIdProjectId(accountId, projectId, ProjectInvitation.State.Pending);
         } else {
-            invite = _projectInvitationDao.findPendingByTokenAndProjectId(token, projectId);
+            invite = _projectInvitationDao.findPendingByTokenAndProjectId(token, projectId, ProjectInvitation.State.Pending);
         }
         
         if (invite != null) {
@@ -1034,7 +1062,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                 msg.setFrom(new InternetAddress(_emailSender, _emailSender));
                 msg.addRecipient(RecipientType.TO, address);
                 msg.setSubject("You are invited to join the cloud stack project id=" + projectId);
-                msg.setSentDate(new Date(System.currentTimeMillis() >> 10));
+                msg.setSentDate(new Date(DateUtil.currentGMTTime().getTime() >> 10));
                 msg.setContent(content, "text/plain");
                 msg.saveChanges();
 
@@ -1075,5 +1103,25 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             s_logger.debug("Failed to remove project invitation id=" + id);
             return false; 
         }
+    }
+    
+    public class ExpiredInvitationsCleanup implements Runnable {
+    	@Override
+    	public void run() {
+    		try {
+    			TimeZone.getDefault();
+    			List<ProjectInvitationVO> invitationsToExpire = _projectInvitationDao.listInvitationsToExpire(_invitationTimeOut);
+    			if (!invitationsToExpire.isEmpty()) {
+    				s_logger.debug("Found " + invitationsToExpire.size() + " projects to expire");
+    				for (ProjectInvitationVO invitationToExpire : invitationsToExpire) {
+        				invitationToExpire.setState(ProjectInvitation.State.Expired);
+        				_projectInvitationDao.update(invitationToExpire.getId(), invitationToExpire);
+        				s_logger.trace("Expired project invitation id=" + invitationToExpire.getId());
+        			}
+    			}
+    		} catch (Exception ex) {
+    			s_logger.warn("Exception while running expired invitations cleanup", ex);
+    		}
+    	}
     }
 }

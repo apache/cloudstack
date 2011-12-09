@@ -18,7 +18,6 @@
 
 package com.cloud.utils;
 
-import java.net.URI;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

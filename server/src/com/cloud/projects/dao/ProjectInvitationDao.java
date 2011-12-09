@@ -19,16 +19,18 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
+import com.cloud.projects.ProjectInvitation.State;
 import com.cloud.projects.ProjectInvitationVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ProjectInvitationDao extends GenericDao<ProjectInvitationVO, Long>{
-    ProjectInvitationVO findPendingByAccountIdProjectId(long accountId, long projectId);
+    ProjectInvitationVO findByAccountIdProjectId(long accountId, long projectId, State... inviteState);
     List<ProjectInvitationVO> listExpiredInvitations();
     boolean expirePendingInvitations(long timeOut);
     boolean isActive(long id, long timeout);
-    ProjectInvitationVO findPendingByEmailAndProjectId(String email, long projectId);
-    ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId);
+    ProjectInvitationVO findByEmailAndProjectId(String email, long projectId, State... inviteState);
+    ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId, State... inviteState);
     void cleanupInvitations(long projectId); 
     ProjectInvitationVO findPendingById(long id);
+    List<ProjectInvitationVO> listInvitationsToExpire(long timeOut);
 }

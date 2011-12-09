@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.projects.ProjectInvitation.State;
 import com.cloud.projects.ProjectInvitationVO;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -25,7 +26,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         AllFieldsSearch.and("projectId", AllFieldsSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("created", AllFieldsSearch.entity().getCreated(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("projectAccountId", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.IN);
         AllFieldsSearch.and("email", AllFieldsSearch.entity().getEmail(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("token", AllFieldsSearch.entity().getToken(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -42,12 +43,14 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     
     
     @Override
-    public ProjectInvitationVO findPendingByAccountIdProjectId(long accountId, long projectId) {
+    public ProjectInvitationVO findByAccountIdProjectId(long accountId, long projectId, State... inviteState) {
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("projectId", projectId);
-        sc.setParameters("state", State.Pending);
-        
+        if (inviteState != null && inviteState.length > 0) {
+        	sc.setParameters("state", (Object[])inviteState);
+        }
+
         return findOneBy(sc);
     }
     
@@ -64,7 +67,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         boolean success = true;
         
         SearchCriteria<ProjectInvitationVO> sc = InactiveSearch.create();
-        sc.setParameters("created", new Date((System.currentTimeMillis() >> 10) - timeout));
+        sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime() >> 10) - timeout));
         sc.setParameters("state", State.Pending);
         
         List<ProjectInvitationVO> invitationsToExpire = listBy(sc);
@@ -75,8 +78,15 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
                 success = false;
             }
         }
-        
         return success;
+    }
+    
+    @Override
+	public List<ProjectInvitationVO> listInvitationsToExpire (long timeOut) {
+    	SearchCriteria<ProjectInvitationVO> sc = InactiveSearch.create();
+        sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - timeOut));
+        sc.setParameters("state", State.Pending);
+        return listBy(sc);
     }
     
     @Override
@@ -90,7 +100,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
             return false;
         }
         
-        sc.setParameters("created", new Date((System.currentTimeMillis() >> 10) - timeout));
+        sc.setParameters("created", new Date((DateUtil.currentGMTTime().getTime()) - timeout));
         
         if (findOneBy(sc) == null) {
             return true;
@@ -100,21 +110,25 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     }
     
     @Override
-    public ProjectInvitationVO findPendingByEmailAndProjectId(String email, long projectId) {
+    public ProjectInvitationVO findByEmailAndProjectId(String email, long projectId, State... inviteState) {
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
         sc.setParameters("email", email);
         sc.setParameters("projectId", projectId);
-        sc.setParameters("state", State.Pending);
+        if (inviteState != null && inviteState.length > 0) {
+        	sc.setParameters("state", (Object[])inviteState);
+        }
         
         return findOneBy(sc);
     }
     
     @Override
-    public ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId) {
+    public ProjectInvitationVO findPendingByTokenAndProjectId(String token, long projectId, State... inviteState) {
         SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
         sc.setParameters("token", token);
         sc.setParameters("projectId", projectId);
-        sc.setParameters("state", State.Pending);
+        if (inviteState != null && inviteState.length > 0) {
+        	sc.setParameters("state", (Object[])inviteState);
+        }
         
         return findOneBy(sc);
     }
