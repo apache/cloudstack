@@ -1371,9 +1371,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (vol.getType() == Volume.Type.ISO) {
                     controllerKey = ideControllerKey;
                 } else {
-                	if(vmSpec.getDetails() != null && vmSpec.getDetails().get("root.disk.controller") != null)
+                	if(vmSpec.getDetails() != null && vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER) != null)
                 	{
-                		if(vmSpec.getDetails().get("root.disk.controller").equalsIgnoreCase("scsi"))
+                		if(vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER).equalsIgnoreCase("scsi"))
 	                		controllerKey = scsiControllerKey;
 	                	else
 	                		controllerKey = ideControllerKey;

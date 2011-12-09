@@ -19,5 +19,6 @@ package com.cloud.vm;
 
 public interface VmDetailConstants {
 	public static final String KEYBOARD = "keyboard";
-	public static final String NIC_ADAPTER = "nic_adapter";
+	public static final String NIC_ADAPTER = "nicAdapter";
+	public static final String ROOK_DISK_CONTROLLER = "rootDiskController";
 }
