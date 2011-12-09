@@ -439,9 +439,14 @@
           return false;
         });
 
-        $(window).bind('cloudStack.fullRefresh', function(event) {
-          refreshChart();
-        });
+        var fullRefreshEvent = function(event) {
+          if ($charts.is(':visible')) {
+            refreshChart();
+          } else {
+            $(window).unbind('cloudStack.fullRefresh', fullRefreshEvent);
+          }
+        };
+        $(window).bind('cloudStack.fullRefresh', fullRefreshEvent);
       };
 
       loadNetworkData();

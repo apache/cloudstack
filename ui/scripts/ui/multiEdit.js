@@ -159,7 +159,7 @@
                                 $loading.remove();
                                 $dataItem.remove();
                               } else {
-                                $(window).trigger('cloudStack.fullRefresh');
+                                $multi.trigger('refresh');
                               }
 
                               complete();
@@ -168,7 +168,7 @@
                               error(args);
                               $loading.remove();
                               $dataItem.show();
-                              
+
                               return cloudStack.dialog.error;
                             }
                           });
@@ -513,7 +513,7 @@
                       complete: function(completeArgs) {
                         complete(args);
                         $loading.remove();
-                        $(window).trigger('cloudStack.fullRefresh');
+                        getData();
                       },
 
                       error: function(args) {
@@ -555,10 +555,10 @@
                 'input[type=radio]:checked, input[type=checkbox]:checked'
               ).size()) {
                 cloudStack.dialog.notice({ message: 'Please select an instance '});
-                
+
                 return false;
               }
-              
+
               $dataList.fadeOut(function() {
                 addItem($.map(
                   $dataList.find('tr.multi-edit-selected'),
@@ -631,11 +631,15 @@
     // Get existing data
     getData();
 
-    $(window).bind('cloudStack.fullRefresh', function(event) {
+    var fullRefreshEvent = function(event) {
       if ($multi.is(':visible')) {
-        getData(); 
+        getData();
+      } else {
+        $(window).unbind('cloudStack.fullRefresh', fullRefreshEvent);
       }
-    });
+    };
+    $(window).bind('cloudStack.fullRefresh', fullRefreshEvent);
+    $multi.bind('refresh', fullRefreshEvent);
 
     $multi.bind('change select', function() {
       _medit.refreshItemWidths($multi);
