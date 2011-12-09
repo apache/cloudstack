@@ -13,10 +13,10 @@
         listView: {
           id: 'templates',
           label: 'Templates',          
-          filters: {
-            mine: { label: 'Mine' },
+          filters: {            
             featured: { label: 'Featured' },
-            community: { label: 'Community' }
+            community: { label: 'Community' },
+            mine: { label: 'Mine' }
           },          
           fields: {
             name: { label: 'Name' },
@@ -455,16 +455,16 @@
         	  var array1 = [];          	
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
-                switch(args.filterBy.kind) {                          
-                case "mine":
-                  array1.push("&templatefilter=self");
-                  break;
+                switch(args.filterBy.kind) {   
                 case "featured":
                   array1.push("&templatefilter=featured");
                   break;
                 case "community":
                   array1.push("&templatefilter=community");
-                  break;                
+                  break;   
+                case "mine":
+                  array1.push("&templatefilter=self");
+                  break;                  
                 }
               }
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
@@ -788,10 +788,10 @@
         title: 'ISOs',
         listView: {
           label: 'ISOs',
-          filters: {
-            mine: { label: 'Mine' },
+          filters: {            
             featured: { label: 'Featured' },
-            community: { label: 'Community' }
+            community: { label: 'Community' },
+            mine: { label: 'Mine' }
           },      
           fields: {
             displaytext: { label: 'Name' },
@@ -1119,16 +1119,16 @@
             var array1 = [];          	
             if(args.filterBy != null) {
               if(args.filterBy.kind != null) {
-                switch(args.filterBy.kind) {                          
-                case "mine":
-                  array1.push("&isofilter=self");
-                  break;
+                switch(args.filterBy.kind) {   
                 case "featured":
                   array1.push("&isofilter=featured");
                   break;
                 case "community":
                   array1.push("&isofilter=community");
-                  break;                
+                  break;    
+                case "mine":
+                  array1.push("&isofilter=self");
+                  break;                  
                 }
               }
               if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
