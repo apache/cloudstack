@@ -1342,18 +1342,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     controllerKey = ideControllerKey;
                 } else {
                     if(vol.getType() == Volume.Type.ROOT) {
-                        if(vmSpec.getDetails() != null && vmSpec.getDetails().get("root.disk.controller") != null)
-                        {
-                            if(vmSpec.getDetails().get("root.disk.controller").equalsIgnoreCase("scsi"))
-                                controllerKey = scsiControllerKey;
-                            else
-                                controllerKey = ideControllerKey;
-                        } else {
-                            if(_rootDiskController == DiskControllerType.scsi)
-                                controllerKey = scsiControllerKey;
-                            else
-                                controllerKey = ideControllerKey;
-                        }
+                    	if(vmSpec.getDetails() != null && vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER) != null)
+                    	{
+                    		if(vmSpec.getDetails().get(VmDetailConstants.ROOK_DISK_CONTROLLER).equalsIgnoreCase("scsi"))
+    	                		controllerKey = scsiControllerKey;
+    	                	else
+    	                		controllerKey = ideControllerKey;
+                    	} else {
+    	                	if(_rootDiskController == DiskControllerType.scsi)
+    	                		controllerKey = scsiControllerKey;
+    	                	else
+    	                		controllerKey = ideControllerKey;
+                    	}
                     } else {
                         // data volume always uses SCSI
                         controllerKey = scsiControllerKey;
