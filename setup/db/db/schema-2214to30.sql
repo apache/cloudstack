@@ -2,8 +2,6 @@
 -- Schema upgrade from 2.2.14 to 3.0;
 --;
 
-ALTER TABLE `cloud`.`template_host_ref` DROP COLUMN `pool_id`;
-
 ALTER TABLE `cloud`.`host` ADD COLUMN `hypervisor_version` varchar(32) COMMENT 'hypervisor version' AFTER hypervisor_type;
 
 CREATE TABLE `cloud`.`hypervisor_capabilities` (
@@ -126,12 +124,8 @@ ALTER TABLE `cloud`.`domain_router` ADD COLUMN `template_version` varchar(100) C
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `scripts_version` varchar(100) COMMENT 'scripts version' AFTER template_version;
 ALTER TABLE `cloud`.`alert` ADD `cluster_id` bigint unsigned;
 
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(255); 
-DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
-
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_received` bigint unsigned NOT NULL default '0';
 ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `agg_bytes_sent` bigint unsigned NOT NULL default '0';
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(255); 
 ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `uuid` varchar(40); 
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `uc_vm_instance_uuid` UNIQUE (`uuid`);
 
@@ -243,7 +237,6 @@ DELETE FROM configuration WHERE name='use.user.concentrated.pod.allocation';
 UPDATE configuration SET description = '[''random'', ''firstfit'', ''userdispersing'', ''userconcentratedpod''] : Order in which hosts within a cluster will be considered for VM/volume allocation.' WHERE name = 'vm.allocation.algorithm';
 
 
-
 --;
 -- Usage db upgrade from 2.2.13 to 3.0;
 --;
@@ -262,13 +255,13 @@ ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_received`;
 ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
 
 CREATE TABLE  `cloud_usage`.`usage_vpn_user` (
-  `zone_id` bigint unsigned NOT NULL,
-  `account_id` bigint unsigned NOT NULL,
-  `domain_id` bigint unsigned NOT NULL,
-  `user_id` bigint unsigned NOT NULL,
-  `user_name` varchar(32),
-  `created` DATETIME NOT NULL,
-  `deleted` DATETIME NULL
+ `zone_id` bigint unsigned NOT NULL,
+ `account_id` bigint unsigned NOT NULL,
+ `domain_id` bigint unsigned NOT NULL,
+ `user_id` bigint unsigned NOT NULL,
+ `user_name` varchar(32),
+ `created` DATETIME NOT NULL,
+ `deleted` DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DELETE FROM configuration WHERE name='host.capacity.checker.wait';
@@ -278,14 +271,6 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'NetworkManager'
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_vpn_user` ADD INDEX `i_usage_vpn_user__deleted`(`deleted`);
-
-ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `private_netmask`; 
-
-ALTER TABLE `cloud`.`security_ingress_rule` drop foreign key `fk_security_ingress_rule___security_group_id`;
-ALTER TABLE `cloud`.`security_ingress_rule` drop foreign key `fk_security_ingress_rule___allowed_network_id`;
-ALTER TABLE `cloud`.`security_ingress_rule` drop index `i_security_ingress_rule_network_id`;
-ALTER TABLE `cloud`.`security_ingress_rule` drop index `i_security_ingress_rule_allowed_network`;
-
 ALTER TABLE `cloud`.`security_ingress_rule` RENAME TO `security_group_rule`;
 
 ALTER TABLE `cloud`.`security_group_rule` ADD COLUMN `type` varchar(10) default 'ingress' AFTER security_group_id;
@@ -297,7 +282,6 @@ ALTER TABLE `cloud`.`security_group_rule` ADD CONSTRAINT `fk_security_group_rule
 ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_network_id`(`security_group_id`);
 ALTER TABLE `cloud`.`security_group_rule` ADD INDEX `i_security_group_rule_allowed_network`(`allowed_network_id`);
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `enable_sshkey` int(1) unsigned NOT NULL default 0 COMMENT 'true if this template supports sshkey reset';
-ALTER TABLE `cloud`.`host` DROP COLUMN `allocation_state`;
 ALTER TABLE `cloud`.`host` ADD COLUMN `resource_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'Is this host enabled for allocation for new resources';
 ALTER TABLE `cloud`.`vm_template` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
@@ -309,3 +293,186 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `sort_key` int(32) NOT NULL d
 ALTER TABLE `cloud`.`network_offerings` MODIFY `name` varchar(64) COMMENT 'name of the network offering';
 ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` varchar(64) COMMENT 'unique name of the network offering';
 ALTER TABLE `cloud`.`network_offerings` DROP `concurrent_connections`;
+
+--;
+--NAAS;
+--;
+CREATE TABLE  `ntwk_offering_service_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network_offering_id',
+  `service` varchar(255) NOT NULL COMMENT 'service',
+  `provider` varchar(255) COMMENT 'service provider',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_ntwk_offering_service_map__network_offering_id` FOREIGN KEY(`network_offering_id`) REFERENCES `network_offerings`(`id`) ON DELETE CASCADE,
+  UNIQUE (`network_offering_id`, `service`, `provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `ntwk_service_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_id` bigint unsigned NOT NULL COMMENT 'network_id',
+  `service` varchar(255) NOT NULL COMMENT 'service',
+  `provider` varchar(255) COMMENT 'service provider',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_ntwk_service_map__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  UNIQUE (`network_id`, `service`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud`.`physical_network` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this physical network belongs to',
+  `vnet` varchar(255),
+  `speed` varchar(32),  
+  `domain_id` bigint unsigned COMMENT 'foreign key to domain id',
+  `broadcast_domain_range` varchar(32) NOT NULL DEFAULT 'POD' COMMENT 'range of broadcast domain : POD/ZONE', 
+  `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'what state is this configuration in',
+  `created` datetime COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_physical_network__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  CONSTRAINT `uc_physical_networks__uuid` UNIQUE (`uuid`),
+  INDEX `i_physical_network__removed`(`removed`) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_tags` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `tag` varchar(255) NOT NULL COMMENT 'tag',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_tags__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  UNIQUE KEY(`physical_network_id`, `tag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_isolation_methods` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `isolation_method` varchar(255) NOT NULL COMMENT 'isolation method(VLAN, L3 or GRE)',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_imethods__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  UNIQUE KEY(`physical_network_id`, `isolation_method`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_traffic_types` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
+  `xen_network_label` varchar(255) COMMENT 'The network name label of the physical device dedicated to this traffic on a XenServer host',
+  `kvm_network_label` varchar(255) DEFAULT 'cloudbr0' COMMENT 'The network name label of the physical device dedicated to this traffic on a KVM host',
+  `vmware_network_label` varchar(255) DEFAULT 'vSwitch0' COMMENT 'The network name label of the physical device dedicated to this traffic on a VMware host',
+  `vlan` varchar(255) COMMENT 'The vlan tag to be sent down to a VMware host',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_physical_network_traffic_types__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_traffic_types__uuid` UNIQUE (`uuid`),
+  UNIQUE KEY(`physical_network_id`, `traffic_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`physical_network_service_providers` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name',
+  `state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'provider state',
+  `destination_physical_network_id` bigint unsigned COMMENT 'id of the physical network to bridge to',
+  `vpn_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is VPN service provided',
+  `dhcp_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is DHCP service provided',
+  `dns_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is DNS service provided',
+  `gateway_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Gateway service provided',
+  `firewall_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Firewall service provided',
+  `source_nat_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Source NAT service provided',
+  `load_balance_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is LB service provided',
+  `static_nat_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Static NAT service provided',
+  `port_forwarding_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Port Forwarding service provided',
+  `user_data_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is UserData service provided',
+  `security_group_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is SG service provided',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_service_providers__uuid` UNIQUE (`uuid`),
+  UNIQUE KEY(`physical_network_id`, `provider_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`external_load_balancer_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which load balancer device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this load balancer device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the load balancer device',
+  `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the load balancer device',
+  `device_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
+  `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned for dedicated use only',
+  `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer will be used in in-line configuration with firewall',
+  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by by cloudstack',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
+  `parent_host_id` bigint unsigned COMMENT 'if the load balancer appliance is cloudstack managed, then host id on which this appliance is provisioned',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_lb_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_lb_devices_parent_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_lb_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`external_firewall_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which firewall device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this firewall device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the firewall device',
+  `device_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
+  `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance meant for dedicated use only',
+  `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Allocated) of the device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external firewall device',
+  `capacity` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Capacity of the external firewall device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_firewall_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_firewall_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_external_lb_device_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
+  `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device assigned for this network',
+  `created` datetime COMMENT 'Date from when network started using the device',
+  `removed` datetime COMMENT 'Date till the network stopped using the device ',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_external_lb_devices_network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_external_lb_devices_device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_external_firewall_device_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `network_id` bigint unsigned NOT NULL COMMENT ' guest network id',
+  `external_firewall_device_id` bigint unsigned NOT NULL COMMENT 'id of external firewall device assigned for this device',
+  `created` datetime COMMENT 'Date from when network started using the device',
+  `removed` datetime COMMENT 'Date till the network stopped using the device ',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_external_firewall_devices_network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_external_firewall_devices_device_id` FOREIGN KEY (`external_firewall_device_id`) REFERENCES `external_firewall_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`virtual_router_providers` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
+  `uuid` varchar(40),
+  `type` varchar(255) NOT NULL COMMENT 'Virtual router, or ElbVM',
+  `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_virtual_router_providers__nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_virtual_router_providers__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('physical_networks_seq', 200);
+ALTER TABLE `cloud`.`networks` ADD COLUMN `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on' AFTER network_offering_id;
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on';
+ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`);
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network the vnet belongs to';
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on';
+ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;

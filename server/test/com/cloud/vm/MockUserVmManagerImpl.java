@@ -316,12 +316,6 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd, boolean skipProjectVms) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public HypervisorType getHypervisorTypeOfUserVM(long vmid) {
         // TODO Auto-generated method stub
         return null;
@@ -392,5 +386,11 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    @Override
+    public List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

@@ -5,19 +5,15 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
-import com.cloud.agent.AgentManager;
+
 import com.cloud.agent.MockAgentManagerImpl;
 import com.cloud.configuration.DefaultInterceptorLibrary;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.MockNetworkManagerImpl;
-import com.cloud.network.security.dao.IngressRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
@@ -30,8 +26,6 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.MockComponentLocator;
 import com.cloud.vm.MockUserVmManagerImpl;
 import com.cloud.vm.MockVirtualMachineManagerImpl;
-import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
@@ -48,7 +42,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addDao("ConfigurationDao", ConfigurationDaoImpl.class);
         locator.addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         
-        locator.addDao("IngressRuleDao", IngressRuleDaoImpl.class);
+        //locator.addDao("IngressRuleDao", IngressRuleDaoImpl.class);
         locator.addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         locator.addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         locator.addDao("UserVmDao", UserVmDaoImpl.class);

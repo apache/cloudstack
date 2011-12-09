@@ -9,6 +9,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker.AccessType;
 import com.cloud.api.commands.DeleteUserCmd;
+import com.cloud.api.commands.ListAccountsCmd;
+import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateUserCmd;
@@ -55,19 +57,19 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
     }
 
     @Override
-    public Account disableAccount(String accountName, Long domainId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account enableAccount(String accountName, long domainId) {
+    public Account enableAccount(String accountName, Long domainId, Long accountId) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Account lockAccount(String accountName, Long domainId) {
+    public Account lockAccount(String accountName, Long domainId, Long accountId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -276,5 +278,17 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    @Override
+    public List<? extends Account> searchForAccounts(ListAccountsCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends UserAccount> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

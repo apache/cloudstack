@@ -711,4 +711,22 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		
 	}
 
+    @Override
+    public boolean isProviderForNetworkOffering(Provider provider, long networkOfferingId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(long physicalNetworkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfo(long dcId, HypervisorType hypervisorType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
