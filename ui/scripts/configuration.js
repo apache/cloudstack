@@ -798,9 +798,9 @@
         listView: {
           label: 'Network Offerings',
           fields: {
-            name: { label: 'Name' },
-            displaytext: { label: 'Description' },
-            traffictype: { label: 'Traffic Type'},
+            name: { label: 'Name' },           
+            guestiptype: { label: 'Guest type' },
+            availability: { label: 'Availability' },           
             state: { label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }}
           },
           dataProvider: function(args) {
@@ -1419,6 +1419,9 @@
                       isEditable: true
                     },
                     state: { label: 'State' },
+                    guestiptype: {
+                      label: 'Guest type'
+                    },
                     availability: {
                       label: 'Availability',
                       isEditable: true,
