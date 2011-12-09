@@ -519,7 +519,10 @@
                       {_custom:
                        {jobId: jid,
                         getUpdatedItem: function(json) {
-                          return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                          var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;                       
+                          if (item.passwordenabled == true) 
+                            alert("Password of new VM " + getVmName(item.name, item.displayname) + " is  " + item.password);   
+                          return item;
                         },
                         getActionFilter: function() {
                           return vmActionfilter;
