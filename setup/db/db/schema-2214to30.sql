@@ -478,3 +478,4 @@ ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `physical_network_id` bigint un
 ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the network';
+DELETE FROM `cloud`.`configuration` where name='cmd.wait';
