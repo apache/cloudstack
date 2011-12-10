@@ -289,7 +289,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     }
     
     @Override
-    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) {
+    public AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd) {
         Account caller = UserContext.current().getCaller();
 
         AsyncJobVO job = _jobDao.findById(cmd.getId());
@@ -310,7 +310,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
             _accountMgr.checkAccess(caller, null, jobOwner);
         }
         
-        return queryAsyncJobResult(cmd.getId());
+        //poll the job
+        queryAsyncJobResult(cmd.getId());
+        return _jobDao.findById(cmd.getId());
     }
 
     @Override @DB

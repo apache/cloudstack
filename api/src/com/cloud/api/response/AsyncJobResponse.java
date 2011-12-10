@@ -22,9 +22,11 @@ import java.util.Date;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.IdentityProxy;
 import com.cloud.api.ResponseObject;
+import com.cloud.async.AsyncJob;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class AsyncJobResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the account that executed the async command")
     private IdentityProxy accountId = new IdentityProxy("account");
@@ -59,101 +61,69 @@ public class AsyncJobResponse extends BaseResponse {
     @SerializedName(ApiConstants.CREATED) @Param(description="	the created date of the job")
     private Date created;
 
-    public Long getAccountId() {
-        return accountId.getValue();
-    }
-
     public void setAccountId(Long accountId) {
         this.accountId.setValue(accountId);
-    }
-
-    public Long getUserId() {
-        return userId.getValue();
     }
 
     public void setUserId(Long userId) {
         this.userId.setValue(userId);
     }
 
-    public String getCmd() {
-        return cmd;
-    }
-
     public void setCmd(String cmd) {
         this.cmd = cmd;
-    }
-
-    public Integer getJobStatus() {
-        return jobStatus;
     }
 
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
     }
 
-    public Integer getJobProcStatus() {
-        return jobProcStatus;
-    }
-
     public void setJobProcStatus(Integer jobProcStatus) {
         this.jobProcStatus = jobProcStatus;
-    }
-
-    public Integer getJobResultCode() {
-        return jobResultCode;
     }
 
     public void setJobResultCode(Integer jobResultCode) {
         this.jobResultCode = jobResultCode;
     }
 
-    public String getJobResultType() {
-        return jobResultType;
-    }
-
     public void setJobResultType(String jobResultType) {
         this.jobResultType = jobResultType;
-    }
-
-    public ResponseObject getJobResult() {
-        return jobResult;
     }
 
     public void setJobResult(ResponseObject jobResult) {
         this.jobResult = jobResult;
     }
 
-    public String getJobInstanceType() {
-        return jobInstanceType;
-    }
-
     public void setJobInstanceType(String jobInstanceType) {
         this.jobInstanceType = jobInstanceType;
 
         if(jobInstanceType != null) {
-        	if(jobInstanceType.equalsIgnoreCase("volume")) {
+        	if(jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Volume.toString())) {
         		this.jobInstanceId.setTableName("volumes");
-        	} else if(jobInstanceType.equalsIgnoreCase("template")) {
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Template.toString())) {
         		this.jobInstanceId.setTableName("vm_template");
-        	} else if(jobInstanceType.equalsIgnoreCase("iso")) {
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Iso.toString())) {
         		this.jobInstanceId.setTableName("vm_template");
-        	} else {
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.VirtualMachine.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.ConsoleProxy.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.SystemVm.toString()) || jobInstanceType.equalsIgnoreCase(AsyncJob.Type.DomainRouter.toString()) ) {
+        		this.jobInstanceId.setTableName("vm_instance");
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Snapshot.toString())) {
+        		this.jobInstanceId.setTableName("snapshots");
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Host.toString())) {
+        		this.jobInstanceId.setTableName("host");
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.StoragePool.toString())) {
+        		this.jobInstanceId.setTableName("storage_pool");
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.IpAddress.toString())) {
+        		this.jobInstanceId.setTableName("user_ip_address");
+        	} else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.SecurityGroup.toString())) {
+        		this.jobInstanceId.setTableName("security_group");
+        	} else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
         		assert(false);
         	}
         }
     }
 
-    public Long getJobInstanceId() {
-        return this.jobInstanceId.getValue();
-    }
-
     public void setJobInstanceId(Long jobInstanceId) {
     	this.jobInstanceId.setValue(jobInstanceId);
-    }
-
-    public Date getCreated() {
-        return created;
     }
 
     public void setCreated(Date created) {

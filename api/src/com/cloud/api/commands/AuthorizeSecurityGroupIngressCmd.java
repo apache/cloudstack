@@ -33,14 +33,12 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
-import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 

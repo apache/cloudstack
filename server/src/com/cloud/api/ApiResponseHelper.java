@@ -98,7 +98,6 @@ import com.cloud.api.response.VolumeResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -2169,20 +2168,35 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {
         AsyncJobResponse jobResponse = new AsyncJobResponse();
         jobResponse.setAccountId(job.getAccountId());
+        jobResponse.setUserId(job.getUserId());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
     	jobResponse.setJobId(job.getId());
+    	jobResponse.setJobStatus(job.getStatus());
+    	jobResponse.setJobProcStatus(job.getProcessStatus());
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
             jobResponse.setJobInstanceId(job.getInstanceId());
         }
-        jobResponse.setJobProcStatus(job.getProcessStatus());
-        jobResponse.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(job.getResult()));
         jobResponse.setJobResultCode(job.getResultCode());
-        jobResponse.setJobStatus(job.getStatus());
-        jobResponse.setUserId(job.getUserId());
-
+        
+        boolean savedValue = SerializationContext.current().getUuidTranslation();
+        SerializationContext.current().setUuidTranslation(false);
+        jobResponse.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(job.getResult()));
+        SerializationContext.current().setUuidTranslation(savedValue);
+        
+        Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
+        if (resultObject != null) {
+            Class<?> clz = resultObject.getClass();
+            if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
+                jobResponse.setJobResultType("text");
+            } else {
+            	jobResponse.setJobResultType("object");
+            }
+        }
+        
+        
         jobResponse.setObjectName("asyncjobs");
         return jobResponse;
     }
@@ -2459,30 +2473,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) {
-        AsyncJobResult result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
-        AsyncJobResponse response = new AsyncJobResponse();
-        
-    	response.setJobId(result.getJobId());
-        response.setJobStatus(result.getJobStatus());
-        response.setJobProcStatus(result.getProcessStatus());
-        response.setJobResultCode(result.getResultCode());
-        
-        boolean savedValue = SerializationContext.current().getUuidTranslation();
-        SerializationContext.current().setUuidTranslation(false);
-        response.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(result.getResult()));
-        SerializationContext.current().setUuidTranslation(savedValue);
-
-        Object resultObject = result.getResultObject();
-        if (resultObject != null) {
-            Class<?> clz = resultObject.getClass();
-            if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
-                response.setJobResultType("text");
-            } else {
-                response.setJobResultType("object");
-            }
-        }
-
-        return response;
+        AsyncJob result = ApiDBUtils._asyncMgr.queryAsyncJobResult(cmd);
+        return createAsyncJobResponse(result);
     }
 
     @Override

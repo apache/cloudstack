@@ -48,5 +48,5 @@ public interface AsyncJobManager extends Manager {
      * @param cmd the command that specifies the job id
      * @return an async-call result object
      */
-    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
+    public AsyncJob queryAsyncJobResult(QueryAsyncJobResultCmd cmd);
 }
