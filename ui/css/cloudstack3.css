@@ -238,9 +238,9 @@ body.login {
 .login .fields .field label {
   font-size: 11px;
   color: #4E4F53;
-  /*+placement:displace 11px 12px;*/
+  /*+placement:displace 10px 12px;*/
   position: absolute;
-  margin-left: 11px;
+  margin-left: 10px;
   margin-top: 12px;
 }
 
@@ -5156,14 +5156,14 @@ label.error {
   width: 100%;
 }
 
-.tree-view>ul {
+.tree-view > ul {
   /*+placement:shift 3px 40px;*/
   position: relative;
   left: 3px;
   top: 40px;
 }
 
-.tree-view>ul>li {
+.tree-view > ul > li {
   left: 5px;
 }
 
@@ -5198,7 +5198,7 @@ label.error {
   position: absolute;
 }
 
-.tree-view ul li.expanded>.expand {
+.tree-view ul li.expanded > .expand {
   background-position: -631px -228px;
 }
 
@@ -5612,7 +5612,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: 2px;
 }
 
-.recurring-snapshots .schedule .forms>div {
+.recurring-snapshots .schedule .forms > div {
 }
 
 .recurring-snapshots .schedule .forms form {
