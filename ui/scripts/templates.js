@@ -527,8 +527,7 @@
                     url: createURL("listTemplates&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + "&templatefilter=self"),
                     dataType: "json",
                     async: false,
-                    success: function(json){
-                      debugger;
+                    success: function(json){            
                       var item = json.listtemplatesresponse.template;
                       args.response.success({data: item});
                     }
