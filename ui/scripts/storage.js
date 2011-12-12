@@ -19,11 +19,11 @@
           id: 'volumes',
           label: 'Volumes',
           fields: {
-            name: { label: 'Name', editable: true },
+            name: { label: 'Name' },
+            state: { label: 'State' },
             type: { label: 'Type' },
-            zonename: { label: 'Zone' },
-            deviceid: { label: 'Device ID' },
-            size: { label: 'Size' }
+            storagetype: { label: 'Storage Type' },                    
+            vmdisplayname: { label: 'VM Display Name' }          
           },
 
           // List view actions
@@ -872,7 +872,75 @@
                   poll: pollAsyncJobResult
                 }
               },
-
+                            
+              migrateToAnotherStorage: {
+                label: 'Migrate volume to another primary storage',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you want to migrate volume to another primary storage.';
+                  },
+                  success: function(args) {
+                    return 'Volume is being migrated to another primary storage.';
+                  },
+                  notification: function(args) {
+                    return 'Migrating volume to another primary storage.';
+                  },
+                  complete: function(args) {
+                    return 'Volume has been migrated to another primary storage.';
+                  }
+                },
+                createForm: {
+                  title: 'Migrate volumeto another primary storage',
+                  desc: '',
+                  fields: {
+                    storageId: {
+                      label: 'Primary storage',
+                      validation: { required: true },
+                      select: function(args) {     
+                        $.ajax({  
+                          url: createURL("listStoragePools&zoneid=" + args.context.volumes[0].zoneid),
+                          dataType: "json",
+                          async: true,
+                          success: function(json) {                        
+                            var pools = json.liststoragepoolsresponse.storagepool;
+                            var items = [];
+                            $(pools).each(function() {                          
+                              items.push({id: this.id, description: this.name});
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+                      }
+                    }
+                  }
+                },
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("migrateVolume&storageid=" + args.data.storageId + "&volumeid=" + args.context.volumes[0].id),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.migratevolumeresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid,
+                          getUpdatedItem: function(json) {  
+                            return json.queryasyncjobresultresponse.jobresult.volume;                       
+                          },
+                          getActionFilter: function() {
+                            return volumeActionfilter;
+                          }
+                         }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },   
+             
               'destroy': {
                 label: 'Delete volume',
                 messages: {
@@ -1419,6 +1487,7 @@
           }
         }
         else { // Disk not attached
+          allowedActions.push("migrateToAnotherStorage");
           if (jsonObj.storagetype == "shared") {
             allowedActions.push("attachDisk");
             if(jsonObj.vmname == null || jsonObj.vmname == "none") {
