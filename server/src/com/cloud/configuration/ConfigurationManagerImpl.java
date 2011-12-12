@@ -1487,10 +1487,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //String defaultXenLabel = "cloud-private";
         
         //add default Traffic types to the physical network
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Guest.toString(), null, null, null, null);
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Public.toString(), null, null, null, null);
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Management.toString(), null, null, null, null);
-        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Storage.toString(), null, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Guest.toString(), null, null, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Public.toString(), null, null, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Management.toString(), null, null, null, null, null);
+        _networkMgr.addTrafficTypeToPhysicalNetwork(defaultNetwork.getId(), TrafficType.Storage.toString(), null, null, null, null, null);
 
         return defaultNetwork.getId();
     }

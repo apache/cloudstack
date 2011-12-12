@@ -59,7 +59,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     
     @Parameter(name=ApiConstants.VMWARE_NETWORK_LABEL, type=CommandType.STRING, description="The network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
-    
+        
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
@@ -90,6 +90,11 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     public String getVmwareLabel() {
         return vmwareLabel;
+    }
+    
+    public String getSimulatorLabel() {
+    	//simulators will have no labels
+    	return ""; 
     }
 
     public void setVlan(String vlan) {
@@ -129,7 +134,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getVlan());
+        PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getSimulatorLabel(), getVlan());
         if (result != null) {
             setEntityId(result.getId());
         } else {
