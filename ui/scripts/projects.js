@@ -542,7 +542,7 @@
   };
 
   var projectsActionFilter = function(args) {
-    if (args.context.item.account == cloudStack.context.users[0].account) {
+    if (args.context.item.account == cloudStack.context.users[0].account || args.context.users[0].role == '1') {
       return ['destroy'];
     }
 
